@@ -84,7 +84,7 @@ def objective(trial):
 
     # Generate the optimizers.
     optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
-    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
     optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
 
     # Get the MNIST dataset.

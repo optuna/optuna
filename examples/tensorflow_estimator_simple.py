@@ -61,11 +61,11 @@ def create_optimizer(trial):
 
     optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "SGD"])
     if optimizer_name == "Adam":
-        adam_lr = trial.suggest_loguniform("adam_lr", 1e-5, 1e-1)
+        adam_lr = trial.suggest_float("adam_lr", 1e-5, 1e-1, log=True)
         return lambda: tf.keras.optimizers.Adam(learning_rate=adam_lr)
     else:
-        sgd_lr = trial.suggest_loguniform("sgd_lr", 1e-5, 1e-1)
-        sgd_momentum = trial.suggest_loguniform("sgd_momentum", 1e-5, 1e-1)
+        sgd_lr = trial.suggest_float("sgd_lr", 1e-5, 1e-1, log=True)
+        sgd_momentum = trial.suggest_float("sgd_momentum", 1e-5, 1e-1, log=True)
         return lambda: tf.keras.optimizers.SGD(learning_rate=sgd_lr, momentum=sgd_momentum)
 
 

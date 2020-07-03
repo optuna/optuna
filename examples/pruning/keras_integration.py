@@ -39,14 +39,14 @@ def create_model(trial):
     n_layers = trial.suggest_int("n_layers", 1, 3)
     model = Sequential()
     for i in range(n_layers):
-        num_hidden = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
+        num_hidden = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
         model.add(Dense(num_hidden, activation="relu"))
         dropout = trial.suggest_float("dropout_l{}".format(i), 0.2, 0.5)
         model.add(Dropout(rate=dropout))
     model.add(Dense(CLASSES, activation="softmax"))
 
     # We compile our model with a sampled learning rate.
-    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
     model.compile(
         loss="categorical_crossentropy",
         optimizer=keras.optimizers.RMSprop(lr=lr),

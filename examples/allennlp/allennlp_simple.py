@@ -97,7 +97,7 @@ def objective(trial):
     if DEVICE > -1:
         model.to(torch.device("cuda:{}".format(DEVICE)))
 
-    lr = trial.suggest_loguniform("lr", 1e-1, 1e0)
+    lr = trial.suggest_float("lr", 1e-1, 1e0, log=True)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
     iterator = allennlp.data.iterators.BasicIterator(batch_size=10,)

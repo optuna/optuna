@@ -50,7 +50,7 @@ def create_model(num_features, trial):
     model.add(Dense(1, kernel_initializer="normal", activation="linear"))
 
     optimizer = SGD(
-        lr=trial.suggest_loguniform("lr", 1e-5, 1e-1),
+        lr=trial.suggest_float("lr", 1e-5, 1e-1, log=True),
         momentum=trial.suggest_float("momentum", 0.0, 1.0),
     )
     model.compile(loss="mean_squared_error", optimizer=optimizer)

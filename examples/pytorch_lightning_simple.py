@@ -68,7 +68,7 @@ class Net(nn.Module):
         dropout = trial.suggest_float("dropout", 0.2, 0.5)
         input_dim = 28 * 28
         for i in range(n_layers):
-            output_dim = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
+            output_dim = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
             self.layers.append(nn.Linear(input_dim, output_dim))
             self.dropouts.append(nn.Dropout(dropout))
             input_dim = output_dim

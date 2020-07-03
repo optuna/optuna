@@ -37,11 +37,11 @@ EPOCHS = 1
 def create_model(trial):
     # We optimize the numbers of layers, their units and weight decay parameter.
     n_layers = trial.suggest_int("n_layers", 1, 3)
-    weight_decay = trial.suggest_loguniform("weight_decay", 1e-10, 1e-3)
+    weight_decay = trial.suggest_float("weight_decay", 1e-10, 1e-3, log=True)
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.Flatten())
     for i in range(n_layers):
-        num_hidden = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
+        num_hidden = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
         model.add(
             tf.keras.layers.Dense(
                 num_hidden,
@@ -61,14 +61,18 @@ def create_optimizer(trial):
     optimizer_options = ["RMSprop", "Adam", "SGD"]
     optimizer_selected = trial.suggest_categorical("optimizer", optimizer_options)
     if optimizer_selected == "RMSprop":
-        kwargs["learning_rate"] = trial.suggest_loguniform("rmsprop_learning_rate", 1e-5, 1e-1)
+        kwargs["learning_rate"] = trial.suggest_float(
+            "rmsprop_learning_rate", 1e-5, 1e-1, log=True
+        )
         kwargs["decay"] = trial.suggest_float("rmsprop_decay", 0.85, 0.99)
-        kwargs["momentum"] = trial.suggest_loguniform("rmsprop_momentum", 1e-5, 1e-1)
+        kwargs["momentum"] = trial.suggest_float("rmsprop_momentum", 1e-5, 1e-1, log=True)
     elif optimizer_selected == "Adam":
-        kwargs["learning_rate"] = trial.suggest_loguniform("adam_learning_rate", 1e-5, 1e-1)
+        kwargs["learning_rate"] = trial.suggest_float("adam_learning_rate", 1e-5, 1e-1, log=True)
     elif optimizer_selected == "SGD":
-        kwargs["learning_rate"] = trial.suggest_loguniform("sgd_opt_learning_rate", 1e-5, 1e-1)
-        kwargs["momentum"] = trial.suggest_loguniform("sgd_opt_momentum", 1e-5, 1e-1)
+        kwargs["learning_rate"] = trial.suggest_float(
+            "sgd_opt_learning_rate", 1e-5, 1e-1, log=True
+        )
+        kwargs["momentum"] = trial.suggest_float("sgd_opt_momentum", 1e-5, 1e-1, log=True)
 
     optimizer = getattr(tf.optimizers, optimizer_selected)(**kwargs)
     return optimizer
