@@ -33,6 +33,8 @@ class TensorBoardCallback(object):
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
         if len(self._hp_params) == 0:
             self._initialization(study)
+        if trial.state != optuna.trial.TrialState.COMPLETE:
+            return
         trial_value = trial.value if trial.value is not None else float("nan")
         hparams = dict()
         for param_name, param_value in trial.params.items():
