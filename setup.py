@@ -110,11 +110,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
             "bokeh<2.0.0",
-            "ConfigSpace<0.4.13",  # Required for `fanova` with Python 3.5.
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
-            "fanova",
             "lightgbm",
             "mlflow",
             "mpi4py",
