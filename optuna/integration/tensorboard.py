@@ -2,6 +2,7 @@ import os
 from typing import Dict
 
 import optuna
+from optuna._experimental import experimental
 from optuna._imports import try_import
 
 with try_import() as _imports:
@@ -9,6 +10,7 @@ with try_import() as _imports:
     import tensorflow as tf
 
 
+@experimental("2.0.0")
 class TensorBoardCallback(object):
     """Callback to track Optuna trials with TensorBoard.
 
@@ -31,6 +33,8 @@ class TensorBoardCallback(object):
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
         if len(self._hp_params) == 0:
             self._initialization(study)
+        if trial.state != optuna.trial.TrialState.COMPLETE:
+            return
         trial_value = trial.value if trial.value is not None else float("nan")
         hparams = dict()
         for param_name, param_value in trial.params.items():
