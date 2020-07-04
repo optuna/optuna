@@ -1,7 +1,6 @@
 import pytest
 
 from optuna.study import create_study
-from optuna import type_checking
 from optuna.visualization import plot_edf
 
 

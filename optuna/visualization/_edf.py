@@ -1,20 +1,16 @@
 import itertools
-import math
 from typing import List
 from typing import Union
 
 import numpy as np
 
 from optuna.logging import get_logger
-from optuna.trial import TrialState
 from optuna.study import Study
+from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 
 if _imports.is_successful():
-    from optuna.visualization._plotly_imports import Contour
     from optuna.visualization._plotly_imports import go
-    from optuna.visualization._plotly_imports import plotly
-    from optuna.visualization._plotly_imports import Scatter
 
 _logger = get_logger(__name__)
 
