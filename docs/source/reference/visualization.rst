@@ -14,6 +14,7 @@ optuna.visualization
    :nosignatures:
 
    optuna.visualization.plot_contour
+   optuna.visualization.plot_edf
    optuna.visualization.plot_intermediate_values
    optuna.visualization.plot_optimization_history
    optuna.visualization.plot_parallel_coordinate
