@@ -41,6 +41,11 @@ em.sig-param > span:not(:nth-child(1)):not(:nth-child(2)) {
   border-left: solid 3px #6ab0de;
 }
 
+/* Main content */
+.wy-nav-content {
+    max-width: 1200px;
+}
+
 /* Sidebar header (and topbar for mobile) */
 .wy-side-nav-search,
 .wy-nav-top {
