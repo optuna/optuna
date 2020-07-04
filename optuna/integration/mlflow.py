@@ -129,6 +129,7 @@ class MLflowCallback(object):
             # see https://github.com/mlflow/mlflow/issues/2931
             max_mlflow_tag_length = 5000
             for key, value in tags.items():
+                value = str(value)  # make sure it is a string
                 if len(value) > max_mlflow_tag_length:
                     tags[key] = value[:max_mlflow_tag_length]
 
