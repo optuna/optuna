@@ -113,7 +113,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
-            "fanova",
             "lightgbm",
             "mlflow",
             "mpi4py",
@@ -154,16 +153,6 @@ def find_any_distribution(pkgs: List[str]) -> Optional[pkg_resources.Distributio
             pass
     return None
 
-
-pfnopt_pkg = find_any_distribution(["pfnopt"])
-if pfnopt_pkg is not None:
-    msg = (
-        "We detected that PFNOpt is installed in your environment.\n"
-        "PFNOpt has been renamed Optuna. Please uninstall the old\n"
-        "PFNOpt in advance (e.g. by executing `$ pip uninstall pfnopt`)."
-    )
-    print(msg)
-    exit(1)
 
 setup(
     name="optuna",
