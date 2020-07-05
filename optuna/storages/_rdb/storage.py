@@ -19,7 +19,6 @@ import alembic.script
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
 from sqlalchemy.sql import functions
@@ -99,7 +98,6 @@ class RDBStorage(BaseStorage):
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
-        self._get_trials_failed_excluded_trial_ids_len = float("inf")
 
         self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
@@ -933,45 +931,6 @@ class RDBStorage(BaseStorage):
         # Ensure that the study exists.
         models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        if len(excluded_trial_ids) >= self._get_trials_failed_excluded_trial_ids_len:
-            trial_models = self._get_trial_models_inclusive(study_id, excluded_trial_ids, session)
-        else:
-            try:
-                trial_models = (
-                    session.query(models.TrialModel)
-                    .filter(
-                        ~models.TrialModel.trial_id.in_(excluded_trial_ids),
-                        models.TrialModel.study_id == study_id,
-                    )
-                    .all()
-                )
-            except OperationalError as e:
-                # Likely exceeding the number of maximum allowed variables. This number differ
-                # between database dialects. For SQLite for instance,
-                # see https://www.sqlite.org/limits.html and the section describing
-                # SQLITE_MAX_VARIABLE_NUMBER.
-
-                _logger.warning(
-                    "Caught an error from sqlalchemy: {}. Falling back to a slower alternative. "
-                    "".format(str(e))
-                )
-
-                # Bookkeeping to circumvent the same error in the next call.
-                self._get_trials_failed_excluded_trial_ids_len = len(excluded_trial_ids)
-
-                trial_models = self._get_trial_models_inclusive(
-                    study_id, excluded_trial_ids, session
-                )
-
-        trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
-
-        self._commit(session)
-
-        return trials
-
-    def _get_trial_models_inclusive(
-        self, study_id: int, excluded_trial_ids: Set[int], session: orm.Session
-    ) -> List[models.TrialModel]:
         trial_ids = (
             session.query(models.TrialModel.trial_id)
             .filter(models.TrialModel.study_id == study_id,)
@@ -986,7 +945,12 @@ class RDBStorage(BaseStorage):
             )
             .all()
         )
-        return trial_models
+
+        trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
+
+        self._commit(session)
+
+        return trials
 
     @staticmethod
     def _build_frozen_trial_from_trial_model(trial: models.TrialModel) -> FrozenTrial:
