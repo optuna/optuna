@@ -7,8 +7,8 @@ from optuna.visualization import plot_edf
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_plot_optimization_history(direction: str) -> None:
     # Test with no studies.
-    with pytest.raises(ValueError):
-        plot_edf([])
+    figure = plot_edf(create_study(direction=direction))
+    assert len(figure.data) == 0
 
     # Test with no trials.
     figure = plot_edf(create_study(direction=direction))

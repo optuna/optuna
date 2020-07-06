@@ -90,14 +90,15 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
 
 
 def _get_edf_plot(studies: List[Study]) -> "go.Figure":
-    if len(studies) == 0:
-        raise ValueError("No studies were given.")
-
     layout = go.Layout(
         title="EDF Plot",
         xaxis={"title": "Objective Value"},
         yaxis={"title": "Cumulative Probability"},
     )
+
+    if len(studies) == 0:
+        _logger.warning("There are no studies.")
+        return go.Figure(data=[], layout=layout)
 
     all_trials = list(
         itertools.chain.from_iterable(
