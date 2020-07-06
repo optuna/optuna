@@ -120,16 +120,15 @@ def _get_edf_plot(studies: List[Study]) -> "go.Figure":
 
     traces = []
     for study in studies:
-        trials = [
-            trial
-            for trial in study.get_trials(deepcopy=False)
-            if trial.state == TrialState.COMPLETE
-        ]
+        values = np.asarray(
+            [
+                trial.value
+                for trial in study.get_trials(deepcopy=False)
+                if trial.state == TrialState.COMPLETE
+            ]
+        )
 
-        y_values = []
-        for x in x_values:
-            y = len([trial for trial in trials if trial.value <= x]) / len(trials)
-            y_values.append(y)
+        y_values = np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size
 
         traces.append(go.Scatter(x=x_values, y=y_values, name=study.study_name, mode="lines"))
 
