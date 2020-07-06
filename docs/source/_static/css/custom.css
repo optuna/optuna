@@ -43,7 +43,7 @@ em.sig-param > span:not(:nth-child(1)):not(:nth-child(2)) {
 
 /* Main content */
 .wy-nav-content {
-    max-width: 1200px;
+  max-width: 1200px;
 }
 
 /* Sidebar header (and topbar for mobile) */
