@@ -1,5 +1,6 @@
 import itertools
 from typing import List
+from typing import Sequence
 from typing import Union
 
 import numpy as np
@@ -15,7 +16,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_edf(study: Union[Study, List[Study]]) -> "go.Figure":
+def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
     """Plot the objective value EDF (empirical distribution function) of a study.
 
     .. note::
@@ -80,10 +81,10 @@ def plot_edf(study: Union[Study, List[Study]]) -> "go.Figure":
 
     _imports.check()
 
-    if isinstance(study, list):
-        studies = study
-    else:
+    if isinstance(study, Study):
         studies = [study]
+    else:
+        studies = list(study)
 
     return _get_edf_plot(studies)
 
