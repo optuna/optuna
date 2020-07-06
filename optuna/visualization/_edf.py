@@ -19,6 +19,8 @@ _logger = get_logger(__name__)
 def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
     """Plot the objective value EDF (empirical distribution function) of a study.
 
+    Note that only the complete trials are considered when plotting the EDF.
+
     .. note::
 
         EDF is useful to analyze and improve search spaces.
