@@ -1,3 +1,4 @@
+import textwrap
 from typing import Optional
 
 import optuna
@@ -131,6 +132,6 @@ class MLflowCallback(object):
             for key, value in tags.items():
                 value = str(value)  # make sure it is a string
                 if len(value) > max_mlflow_tag_length:
-                    tags[key] = value[:max_mlflow_tag_length]
+                    tags[key] = textwrap.shorten(value, max_mlflow_tag_length)
 
             mlflow.set_tags(tags)
