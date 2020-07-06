@@ -32,7 +32,7 @@ class WFG(BaseHypervolume):
         self._reference_point = reference_point
         self._frames = np.zeros((reference_point.shape[0],) + solution_set.shape)
         self._frames[0] = solution_set
-        self._frame_sizes = np.zeros((reference_point.shape[0],))
+        self._frame_sizes = np.zeros((reference_point.shape[0],), dtype=int)
         self._frame_sizes[0] = solution_set.shape[0]
         self._slice = reference_point.shape[0]
 
@@ -87,12 +87,12 @@ class WFG(BaseHypervolume):
 
             self._frames[rec_level, m] = np.maximum(points[i], p)
 
-            comp_results = np.zeros((m,))
+            comp_results = []
             q = self._frames[rec_level, m]
             keep_q = True
 
             for j in range(m):
-                comp_results[j] = dom(q, self._frames[rec_level, j], self._slice)
+                comp_results.append(dom(q, self._frames[rec_level, j], self._slice))
                 if comp_results[j] == DomRelation.P2_DOM_P1:
                     keep_q = False
                     break
