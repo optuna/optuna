@@ -45,18 +45,10 @@ Additional conventions are described in the [Wiki](https://github.com/optuna/opt
 When adding a new feature to the framework, you also need to document it in the reference.
 The documentation source is stored under the [docs](./docs) directory and written in [reStructuredText format](http://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html).
 
-To build the documentation, you need to install [Sphinx](http://www.sphinx-doc.org):
+To build the documentation, you need to run:
 
 ```bash
-pip install sphinx sphinx_rtd_theme
-```
-
-Note that docstrings (documentation comments in the source code) are collected from the installed
-Optuna module. If you modified docstrings, make sure to install the module
-before building the documentation.
-
-```bash
-pip install -e .
+pip install -e ".[document]"
 ```
 
 Then you can build the documentation in HTML format locally:
