@@ -15,6 +15,7 @@ class TensorBoardCallback(object):
     """Callback to track Optuna trials with TensorBoard.
 
     This callback adds relevant information that is tracked by Optuna to TensorBoard.
+
     Args:
         dirname:
             Directory to store TensorBoard logs.
@@ -22,6 +23,7 @@ class TensorBoardCallback(object):
             Name of the metric. Since the metric itself is just a number,
             `metric_name` can be used to give it a name. So you know later
             if it was roc-auc or accuracy.
+
     """
 
     def __init__(self, dirname: str, metric_name: str) -> None:
