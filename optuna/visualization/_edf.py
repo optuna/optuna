@@ -27,6 +27,11 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
         For instance, you can see a practical use case of EDF in the paper
         `Designing Network Design Spaces <ttps://arxiv.org/abs/2003.13678>`_.
 
+    .. note::
+
+        The plotted EDF assumes that the value of the objective function is in 
+        accordance with the uniform distribution over the objective space.
+        
     Example:
 
         The following code snippet shows how to plot EDF.
