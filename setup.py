@@ -63,7 +63,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "document": [
             # TODO(hvy): Unpin `sphinx` version after:
             # https://github.com/sphinx-doc/sphinx/issues/7807.
-            "sphinx>=3.0.0,!=3.1.0,!=3.1.1",
+            "sphinx>=3.0.0,!=3.1.0,!=3.1.1,!=3.1.2",
             # As reported in: https://github.com/readthedocs/sphinx_rtd_theme/issues/949,
             # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
             "sphinx_rtd_theme<0.5.0",
@@ -114,7 +114,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
-            "fanova",
             "lightgbm",
             "mlflow",
             "mpi4py",
@@ -155,16 +154,6 @@ def find_any_distribution(pkgs: List[str]) -> Optional[pkg_resources.Distributio
             pass
     return None
 
-
-pfnopt_pkg = find_any_distribution(["pfnopt"])
-if pfnopt_pkg is not None:
-    msg = (
-        "We detected that PFNOpt is installed in your environment.\n"
-        "PFNOpt has been renamed Optuna. Please uninstall the old\n"
-        "PFNOpt in advance (e.g. by executing `$ pip uninstall pfnopt`)."
-    )
-    print(msg)
-    exit(1)
 
 setup(
     name="optuna",

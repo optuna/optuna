@@ -1,7 +1,7 @@
 import shutil
-import sys
 import tempfile
 
+import catalyst
 import pytest
 import torch
 
@@ -9,13 +9,13 @@ import optuna
 from optuna.integration import CatalystPruningCallback
 from optuna.testing.integration import DeterministicPruner
 
-catalyst = pytest.importorskip("catalyst")
+
+def test_catalyst_pruning_callback_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        CatalystPruningCallback(None)  # type: ignore
 
 
-@pytest.mark.skipif(sys.version_info < (3, 6), reason="catalyst requires python3.6 or higher")
-def test_catalyst_pruning_callback():
-    # type: () -> None
-
+def test_catalyst_pruning_callback() -> None:
     data = torch.zeros(3, 4, dtype=torch.float32)
     target = torch.zeros(3, dtype=torch.float32)
     dataset = torch.utils.data.TensorDataset(data, target)

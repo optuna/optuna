@@ -6,7 +6,8 @@ optuna.integration
    :nosignatures:
 
    optuna.integration.ChainerPruningExtension
-   optuna.integration.ChainerMNStudy 
+   optuna.integration.ChainerMNStudy
+   optuna.integration.CatalystPruningCallback
    optuna.integration.PyCmaSampler
    optuna.integration.CmaEsSampler
    optuna.integration.FastAIPruningCallback
@@ -20,6 +21,7 @@ optuna.integration
    optuna.integration.PyTorchIgnitePruningHandler
    optuna.integration.PyTorchLightningPruningCallback
    optuna.integration.SkoptSampler
+   optuna.integration.TensorBoardCallback
    optuna.integration.TensorFlowPruningHook
    optuna.integration.TFKerasPruningCallback
    optuna.integration.XGBoostPruningCallback

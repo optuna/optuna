@@ -1,3 +1,4 @@
+import textwrap
 from typing import Optional
 
 import optuna
@@ -121,4 +122,16 @@ class MLflowCallback(object):
                 (k + "_distribution"): str(v) for (k, v) in trial.distributions.items()
             }
             tags.update(distributions)
+
+            # This is a temporary fix on Optuna side. It avoids an error with user
+            # attributes that are too long. It should be fixed on MLflow side later.
+            # When it is fixed on MLflow side this codeblock can be removed.
+            # see https://github.com/optuna/optuna/issues/1340
+            # see https://github.com/mlflow/mlflow/issues/2931
+            max_mlflow_tag_length = 5000
+            for key, value in tags.items():
+                value = str(value)  # make sure it is a string
+                if len(value) > max_mlflow_tag_length:
+                    tags[key] = textwrap.shorten(value, max_mlflow_tag_length)
+
             mlflow.set_tags(tags)

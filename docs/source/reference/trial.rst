@@ -8,5 +8,5 @@ optuna.trial
    optuna.trial.Trial
    optuna.trial.FixedTrial
    optuna.trial.FrozenTrial
-   optuna.trial.FrozenTrial
    optuna.trial.TrialState
+   optuna.trial.create_trial

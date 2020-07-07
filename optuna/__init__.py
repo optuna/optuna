@@ -23,6 +23,7 @@ from optuna.study import get_all_study_summaries  # NOQA
 from optuna.study import load_study  # NOQA
 from optuna.study import Study  # NOQA
 from optuna.trial import Trial  # NOQA
+from optuna.trial import create_trial  # NOQA
 from optuna.version import __version__  # NOQA
 from optuna.type_checking import TYPE_CHECKING  # NOQA
 

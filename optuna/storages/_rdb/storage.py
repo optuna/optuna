@@ -19,6 +19,7 @@ import alembic.script
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import orm
 from sqlalchemy.sql import functions
@@ -931,14 +932,43 @@ class RDBStorage(BaseStorage):
         # Ensure that the study exists.
         models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        trial_models = (
-            session.query(models.TrialModel)
-            .filter(
-                ~models.TrialModel.trial_id.in_(excluded_trial_ids),
-                models.TrialModel.study_id == study_id,
-            )
+        trial_ids = (
+            session.query(models.TrialModel.trial_id)
+            .filter(models.TrialModel.study_id == study_id,)
             .all()
         )
+        trial_ids = set(
+            trial_id_tuple[0]
+            for trial_id_tuple in trial_ids
+            if trial_id_tuple[0] not in excluded_trial_ids
+        )
+        try:
+            trial_models = (
+                session.query(models.TrialModel)
+                .filter(
+                    models.TrialModel.trial_id.in_(trial_ids),
+                    models.TrialModel.study_id == study_id,
+                )
+                .all()
+            )
+        except OperationalError as e:
+            # Likely exceeding the number of maximum allowed variables using IN. This number differ
+            # between database dialects. For SQLite for instance, see
+            # https://www.sqlite.org/limits.html and the section describing
+            # SQLITE_MAX_VARIABLE_NUMBER.
+
+            _logger.warning(
+                "Caught an error from sqlalchemy: {}. Falling back to a slower alternative. "
+                "".format(str(e))
+            )
+
+            trial_models = (
+                session.query(models.TrialModel)
+                .filter(models.TrialModel.study_id == study_id)
+                .all()
+            )
+            trial_models = [t for t in trial_models if t.trial_id in trial_ids]
+
         trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
 
         self._commit(session)

@@ -215,7 +215,7 @@ class MultiObjectiveStudy(object):
         timeout: Optional[int] = None,
         n_trials: Optional[int] = None,
         n_jobs: int = 1,
-        catch: Union[Tuple[()], Tuple[Type[Exception]]] = (),
+        catch: Tuple[Type[Exception], ...] = (),
         callbacks: Optional[List[CallbackFuncType]] = None,
         gc_after_trial: bool = True,
         show_progress_bar: bool = False,
@@ -391,6 +391,10 @@ class MultiObjectiveStudy(object):
     @property
     def _storage(self) -> BaseStorage:
         return self._study._storage
+
+    @property
+    def _study_id(self) -> int:
+        return self._study._study_id
 
 
 def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:

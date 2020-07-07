@@ -22,6 +22,7 @@ from optuna import storages
 from optuna.study import create_study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
+from optuna.trial._frozen import create_trial
 from optuna.trial import FixedTrial
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
@@ -890,3 +891,36 @@ def test_frozen_trial_repr():
     )
 
     assert trial == eval(repr(trial))
+
+
+# TODO(hvy): Write exhaustive test include invalid combinations when feature is no longer
+# experimental.
+@pytest.mark.parametrize("state", [None, TrialState.COMPLETE, TrialState.FAIL])
+def test_create_trial(state: TrialState) -> None:
+    value = 0.2
+    params = {"x": 10}
+    distributions = {"x": UniformDistribution(5, 12)}
+    user_attrs = {"foo": "bar"}
+    system_attrs = {"baz": "qux"}
+    intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
+
+    trial = create_trial(
+        state=state,
+        value=value,
+        params=params,
+        distributions=distributions,
+        user_attrs=user_attrs,
+        system_attrs=system_attrs,
+        intermediate_values=intermediate_values,
+    )
+
+    assert isinstance(trial, FrozenTrial)
+    assert trial.state == (state if state is not None else TrialState.COMPLETE)
+    assert trial.value == value
+    assert trial.params == params
+    assert trial.distributions == distributions
+    assert trial.user_attrs == user_attrs
+    assert trial.system_attrs == system_attrs
+    assert trial.intermediate_values == intermediate_values
+    assert trial.datetime_start is not None
+    assert (trial.datetime_complete is not None) == (state is None or state.is_finished())
