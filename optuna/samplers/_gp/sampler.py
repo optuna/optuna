@@ -57,6 +57,8 @@ class GPSampler(BaseSampler):
         n_startup_trials:
             The random sampling is used instead of the BO algorithm until the given number
             of trials finish in the same study.
+        consider_pruned_trials:
+            If this is :obj:`True`, the PRUNED trials are considered for sampling.
         seed:
             Seed for random number generator.
     """
@@ -70,6 +72,7 @@ class GPSampler(BaseSampler):
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
         n_startup_trials: int = 1,
+        consider_pruned_trials: bool = False,
         seed: Optional[int] = None
     ) -> None:
         self._boc_kwargs = {
@@ -81,6 +84,7 @@ class GPSampler(BaseSampler):
         self._independent_sampler = independent_sampler or RandomSampler()
         self._warn_independent_sampling = warn_independent_sampling
         self._n_startup_trials = n_startup_trials
+        self._consider_pruned_trials = consider_pruned_trials
         self._rng = np.random.RandomState(seed)
 
         self._search_space = IntersectionSearchSpace()
