@@ -12,7 +12,7 @@ from optuna import logging
 from optuna.samplers import BaseSampler
 from optuna.samplers import IntersectionSearchSpace
 from optuna.samplers import RandomSampler
-from optuna.samplers._gp.contoller import _BayesianOptimizationContoller
+from optuna.samplers._gp.controller import _BayesianOptimizationController
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -65,7 +65,6 @@ class GPSampler(BaseSampler):
 
     def __init__(
         self,
-        kernel: str = 'Matern52',
         model: str = 'SVGP',
         acquisition: str = 'EI',
         optimizer: str = 'LBFGS',
@@ -75,8 +74,8 @@ class GPSampler(BaseSampler):
         consider_pruned_trials: bool = False,
         seed: Optional[int] = None
     ) -> None:
+
         self._boc_kwargs = {
-            'kernel': kernel,
             'model': model,
             'acquisition': acquisition,
             'optimizer': optimizer
@@ -136,7 +135,7 @@ class GPSampler(BaseSampler):
         if len(trials) < self._n_startup_trials:
             return {}
 
-        controller = _BayesianOptimizationContoller(search_space=search_space, **self._boc_kwargs)
+        controller = _BayesianOptimizationController(search_space=search_space, **self._boc_kwargs)
         controller.tell(study, trials)
         return controller.ask()
 
