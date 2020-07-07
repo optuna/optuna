@@ -464,6 +464,15 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
+        # The following line is necessary because this method, i.e. the creation of a trial, is not
+        # an atomic operation. The default isolation level respects repeatable reads, meaning that
+        # multiple processes entering this code section (note that a session is already created)
+        # simultaneously will lead to multiple trials being created with same trial numbers (but
+        # different trial IDs). `count_past_trials` used to determine the trial number must be
+        # allowed to read uncommitted data in such cases to compute the correct trial number based
+        # the trials created by other simultaneous processes.
+        session.connection(execution_options={"isolation_level": "READ_UNCOMMITTED"})
+
         # Ensure that that study exists.
         models.StudyModel.find_or_raise_by_id(study_id, session)
 
