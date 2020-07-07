@@ -29,9 +29,9 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
 
     .. note::
 
-        The plotted EDF assumes that the value of the objective function is in 
+        The plotted EDF assumes that the value of the objective function is in
         accordance with the uniform distribution over the objective space.
-        
+
     Example:
 
         The following code snippet shows how to plot EDF.
