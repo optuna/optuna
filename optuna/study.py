@@ -704,6 +704,19 @@ class Study(BaseStudy):
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
+    def add_trials(
+        self, trials,  # type: List[FrozenTrial]
+    ):
+        # type: (...) -> None
+
+        cnt = 0
+        for trial in trials:
+            if trial is not None:
+                self.add_trial(trial)
+                cnt += 1
+        message = "add {} trials".format(cnt)
+        _logger.info(message)
+
     def _reseed_and_optimize_sequential(
         self,
         func: ObjectiveFuncType,
@@ -1101,37 +1114,17 @@ def delete_study(
     storage.delete_study(study_id)
 
 
-def build_study(
-    study,  # type: Study
-    converter,  # type: Callable[[FrozenTrial], FrozenTrial]
-):
-    # type: (...) -> Study
-    new_study = create_study()
-    for trial in study.trials:
-        new_trial = converter(trial)
-        if new_trial is None:
-            continue
-        new_study._storage.create_new_trial(study._study_id, template_trial=new_trial)
-
-    message = "Import {} trials".format(len(new_study.trials))
-    _logger.info(message)
-    return new_study
-
-
-def new_metric_converter(
+def new_metric_map(
     metric_name,  # type: str
     metrics_attr="metrics",  # type: str
 ):
     # type: (...) -> Callable
     def converter(trial):
         # type: (FrozenTrial) -> FrozenTrial
-        new_trial = FrozenTrial(
-            number=-1,  # dummy value.
-            trial_id=-1,  # dummy value.
+
+        new_trial = create_trial(
             state=trial.state,
             value=trial.user_attrs[metrics_attr][metric_name],
-            datetime_start=trial.datetime_start,
-            datetime_complete=trial.datetime_complete,
             params=trial.params,
             distributions=trial.distributions,
             user_attrs=trial.user_attrs,
@@ -1155,7 +1148,7 @@ def _check_param(
     return True
 
 
-def new_objective_converter(
+def new_objective_map(
     new_objective,  # type: ObjectiveFuncType
     add_default_values,  # type: Dict[str, Any]
 ):
@@ -1199,20 +1192,15 @@ def new_objective_converter(
         new_params = trial.params.copy()
         new_params.update(add_default_values)
 
-        new_trial = FrozenTrial(
-            number=-1,  # dummy value.
-            trial_id=-1,  # dummy value.
+        new_trial = create_trial(
             state=trial.state,
             value=trial.value,
-            datetime_start=trial.datetime_start,
-            datetime_complete=trial.datetime_complete,
             params=new_params,
             distributions=new_distributions,
             user_attrs=trial.user_attrs,
             system_attrs=trial.system_attrs,
             intermediate_values=trial.intermediate_values,
         )
-        new_trial._validate()
         return new_trial
 
     return converter
