@@ -50,7 +50,8 @@ class MedianPruner(PercentilePruner):
         n_startup_trials:
             Pruning is disabled until the given number of trials finish in the same study.
         n_warmup_steps:
-            Pruning is disabled until the trial exceeds the given number of step.
+            Pruning is disabled until the trial exceeds the given number of step. Note that
+            this feature assumes that ``step`` starts at zero.
         interval_steps:
             Interval in number of steps between the pruning checks, offset by the warmup steps.
             If no value has been reported at the time of a pruning check, that particular check
