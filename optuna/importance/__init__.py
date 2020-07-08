@@ -4,7 +4,6 @@ from typing import Optional
 
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
-
 from optuna.importance._mean_decrease_impurity import (  # NOQA
     MeanDecreaseImpurityImportanceEvaluator,
 )
