@@ -3,8 +3,10 @@ from typing import List
 from typing import Optional
 
 from optuna.importance._base import BaseImportanceEvaluator
-from optuna.importance._fanova import FanovaImportanceEvaluator  # NOQA
-from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
+from optuna.importance._fanova import FanovaImportanceEvaluator
+from optuna.importance._mean_decrease_impurity import (  # NOQA
+    MeanDecreaseImpurityImportanceEvaluator,  # NOQA
+)
 from optuna.study import Study
 
 
@@ -57,7 +59,7 @@ def get_param_importances(
         assessed importances.
     """
     if evaluator is None:
-        evaluator = MeanDecreaseImpurityImportanceEvaluator()
+        evaluator = FanovaImportanceEvaluator()
 
     if not isinstance(evaluator, BaseImportanceEvaluator):
         raise TypeError("Evaluator must be a subclass of BaseImportanceEvaluator.")
