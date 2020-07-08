@@ -269,6 +269,11 @@ class Study(BaseStudy):
                 when ``n_jobs`` :math:`\\ne 1`.
         """
 
+        self._func = func
+        self._catch = catch
+        self._callbacks = callbacks
+        self._gc_after_trial = gc_after_trial
+
         if not isinstance(catch, tuple):
             raise TypeError(
                 "The catch argument is of type '{}' but must be a tuple.".format(
@@ -276,6 +281,16 @@ class Study(BaseStudy):
                 )
             )
 
+        self._optimize(n_trials, timeout, n_jobs, show_progress_bar)
+
+    def _optimize(
+        self,
+        n_trials,  # type: Optional[int]
+        timeout,  # type: Optional[float]
+        n_jobs,  # type: int
+        show_progress_bar,  # type: bool
+    ):
+        # type: (...) -> None
         if not self._optimize_lock.acquire(False):
             raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
@@ -288,9 +303,7 @@ class Study(BaseStudy):
 
         try:
             if n_jobs == 1:
-                self._optimize_sequential(
-                    func, n_trials, timeout, catch, callbacks, gc_after_trial, None
-                )
+                self._optimize_sequential(n_trials, timeout, None)
             else:
                 if show_progress_bar:
                     msg = "Progress bar only supports serial execution (`n_jobs=1`)."
@@ -327,9 +340,7 @@ class Study(BaseStudy):
                         warnings.warn(msg, UserWarning)
 
                     parallel(
-                        delayed(self._reseed_and_optimize_sequential)(
-                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start,
-                        )
+                        delayed(self._reseed_and_optimize_sequential)(1, timeout, time_start,)
                         for _ in _iter
                     )
         finally:
@@ -605,29 +616,19 @@ class Study(BaseStudy):
 
     def _reseed_and_optimize_sequential(
         self,
-        func,  # type: ObjectiveFuncType
         n_trials,  # type: Optional[int]
         timeout,  # type: Optional[float]
-        catch,  # type: Tuple[Type[Exception], ...]
-        callbacks,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial,  # type: bool
         time_start,  # type: Optional[datetime.datetime]
     ):
         # type: (...) -> None
 
         self.sampler.reseed_rng()
-        self._optimize_sequential(
-            func, n_trials, timeout, catch, callbacks, gc_after_trial, time_start
-        )
+        self._optimize_sequential(n_trials, timeout, time_start)
 
     def _optimize_sequential(
         self,
-        func,  # type: ObjectiveFuncType
         n_trials,  # type: Optional[int]
         timeout,  # type: Optional[float]
-        catch,  # type: Tuple[Type[Exception], ...]
-        callbacks,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial,  # type: bool
         time_start,  # type: Optional[datetime.datetime]
     ):
         # type: (...) -> None
@@ -651,7 +652,7 @@ class Study(BaseStudy):
                 if elapsed_seconds >= timeout:
                     break
 
-            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
+            self._run_trial_and_callbacks()
 
             self._progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
 
@@ -673,27 +674,16 @@ class Study(BaseStudy):
 
         return None
 
-    def _run_trial_and_callbacks(
-        self,
-        func,  # type: ObjectiveFuncType
-        catch,  # type: Tuple[Type[Exception], ...]
-        callbacks,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial,  # type: bool
-    ):
+    def _run_trial_and_callbacks(self,):
         # type: (...) -> None
 
-        trial = self._run_trial(func, catch, gc_after_trial)
-        if callbacks is not None:
+        trial = self._run_trial()
+        if self._callbacks is not None:
             frozen_trial = copy.deepcopy(self._storage.get_trial(trial._trial_id))
-            for callback in callbacks:
+            for callback in self._callbacks:
                 callback(self, frozen_trial)
 
-    def _run_trial(
-        self,
-        func,  # type: ObjectiveFuncType
-        catch,  # type: Tuple[Type[Exception], ...]
-        gc_after_trial,  # type: bool
-    ):
+    def _run_trial(self,):
         # type: (...) -> trial_module.Trial
 
         # Sync storage once at the beginning of the objective evaluation.
@@ -706,7 +696,7 @@ class Study(BaseStudy):
         trial_number = trial.number
 
         try:
-            result = func(trial)
+            result = self._func(trial)
         except exceptions.TrialPruned as e:
             message = "Trial {} pruned. {}".format(trial_number, str(e))
             _logger.info(message)
@@ -729,7 +719,7 @@ class Study(BaseStudy):
             self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
             self._storage.set_trial_state(trial_id, TrialState.FAIL)
 
-            if isinstance(e, catch):
+            if isinstance(e, self._catch):
                 return trial
             raise
         finally:
@@ -737,7 +727,7 @@ class Study(BaseStudy):
             # environments (e.g., services that use computing containers such as CircleCI).
             # Please refer to the following PR for further details:
             # https://github.com/optuna/optuna/pull/325.
-            if gc_after_trial:
+            if self._gc_after_trial:
                 gc.collect()
 
         try:
