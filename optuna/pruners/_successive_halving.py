@@ -29,6 +29,9 @@ class SuccessiveHalvingPruner(BasePruner):
     ``EPOCH`` number in `chainer_integration.py
     <https://github.com/optuna/optuna/tree/c5777b3e/examples/pruning/chainer_integration.py#L65>`_).
 
+    .. seealso::
+        Please refer to :meth:`~optuna.trial.Trial.report`.
+
     Example:
 
         We minimize an objective function with ``SuccessiveHalvingPruner``.

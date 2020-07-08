@@ -544,7 +544,10 @@ class Trial(BaseTrial):
             value:
                 A value returned from the objective function.
             step:
-                Step of the trial (e.g., Epoch of neural network training).
+                Step of the trial (e.g., Epoch of neural network training). Note that pruners
+                assume that ``step`` starts at zero. For example,
+                :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
+                ``n_warmup_steps`` as the warmup mechanism.
         """
 
         try:
