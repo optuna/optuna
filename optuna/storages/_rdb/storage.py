@@ -464,11 +464,12 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
         try:
-            # Lock all trials belonging to this study. This might lead to a deadlock
-            # (`OperationalError`) in which case we will retry.
-            session.query(models.TrialModel).filter(
-                models.TrialModel.study_id == study_id
-            ).with_for_update().all()
+            # Locking within a study is necessary since the creation of a trial is not an atomic
+            # operation. More precisely, the trial number computed in `_get_prepared_new_trial` is
+            # prone to race conditions within this lock.
+            session.query(models.StudyModel).filter(
+                models.StudyModel.study_id == study_id
+            ).with_for_update().one()
 
             trial = self._get_prepared_new_trial(study_id, template_trial, session)
             self._commit(session)
