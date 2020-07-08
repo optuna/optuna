@@ -51,7 +51,7 @@ kind: Service
 metadata:
   name: mlflow
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: mlflow
   ports:
