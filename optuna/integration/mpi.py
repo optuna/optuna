@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from datetime import datetime
-import gc
 import warnings
 
 from typing import Any
