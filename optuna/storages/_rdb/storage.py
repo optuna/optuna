@@ -470,7 +470,7 @@ class RDBStorage(BaseStorage):
         try:
             # Locking within a study is necessary since the creation of a trial is not an atomic
             # operation. More precisely, the trial number computed in `_get_prepared_new_trial` is
-            # prone to race conditions within this lock.
+            # prone to race conditions without this lock.
             session.query(models.StudyModel).filter(
                 models.StudyModel.study_id == study_id
             ).with_for_update().one()
