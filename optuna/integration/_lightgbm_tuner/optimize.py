@@ -363,6 +363,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
         self._start_time = None  # type: Optional[float]
+        self._use_pbar = True
         self._optuna_callbacks = optuna_callbacks
         self._best_params = {}
 
@@ -436,6 +437,7 @@ class _LightGBMBaseTuner(_BaseTuner):
             optuna.logging.disable_default_handler()
             self.lgbm_params["verbose"] = -1
             self.lgbm_kwargs["verbose_eval"] = False
+            self._use_pbar = False
 
         # Handling aliases.
         _handling_alias_parameters(self.lgbm_params)
@@ -511,7 +513,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         sampler: optuna.samplers.BaseSampler,
         step_name: str,
     ) -> _OptunaObjective:
-        pbar = tqdm.tqdm(total=n_trials, ascii=True)
+        pbar = tqdm.tqdm(total=n_trials, ascii=True) if self._use_pbar else None
 
         # Set current best parameters.
         self.lgbm_params.update(self.best_params)
@@ -548,8 +550,9 @@ class _LightGBMBaseTuner(_BaseTuner):
                 callbacks=self._optuna_callbacks,
             )
 
-        pbar.close()
-        del pbar
+        if pbar:
+            pbar.close()
+            del pbar
 
         return objective
 
@@ -559,7 +562,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         target_param_names: List[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: tqdm.tqdm,
+        pbar: Optional[tqdm.tqdm],
     ) -> _OptunaObjective:
 
         raise NotImplementedError
@@ -784,7 +787,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         target_param_names: List[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: tqdm.tqdm,
+        pbar: Optional[tqdm.tqdm],
     ) -> _OptunaObjective:
         return _OptunaObjective(
             target_param_names,
@@ -899,7 +902,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         target_param_names: List[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: tqdm.tqdm,
+        pbar: Optional[tqdm.tqdm],
     ) -> _OptunaObjective:
         return _OptunaObjectiveCV(
             target_param_names,
