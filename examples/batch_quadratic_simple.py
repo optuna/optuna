@@ -29,6 +29,4 @@ def callback(study, trial):
 batch_size = 4
 study = optuna.create_study(direction="maximize")
 bstudy = optuna._batch_study.BatchStudy(study, batch_size)
-bstudy.batch_optimize(
-    objective, n_batches=10, callbacks=[callback]
-)
+bstudy.batch_optimize(objective, n_batches=10, callbacks=[callback])
