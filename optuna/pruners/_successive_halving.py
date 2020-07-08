@@ -29,10 +29,8 @@ class SuccessiveHalvingPruner(BasePruner):
     ``EPOCH`` number in `chainer_integration.py
     <https://github.com/optuna/optuna/tree/c5777b3e/examples/pruning/chainer_integration.py#L65>`_).
 
-    .. note::
-        ``SuccessiveHalvingPruner`` assumes that ``step`` starts at zero when it calculates the
-        resource for each trial. Please ensure that ``step`` is zero-based numbering when you
-        report the intermediate values using :meth:`~optuna.trial.Trial.report`.
+    .. seealso::
+        Please refer to :meth:`~optuna.trial.Trial.report`.
 
     Example:
 
