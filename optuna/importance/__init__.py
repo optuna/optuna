@@ -5,9 +5,9 @@ from typing import Optional
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 
-# fmt: off
-from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator  # NOQA
-# fmt: on
+from optuna.importance._mean_decrease_impurity import (  # NOQA
+    MeanDecreaseImpurityImportanceEvaluator,
+)
 from optuna.study import Study
 
 
