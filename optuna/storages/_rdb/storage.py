@@ -463,6 +463,10 @@ class RDBStorage(BaseStorage):
         """
 
         session = self.scoped_session()
+
+        # Ensure that that study exists.
+        models.StudyModel.find_or_raise_by_id(study_id, session)
+
         try:
             # Locking within a study is necessary since the creation of a trial is not an atomic
             # operation. More precisely, the trial number computed in `_get_prepared_new_trial` is
@@ -503,9 +507,6 @@ class RDBStorage(BaseStorage):
     def _get_prepared_new_trial(
         self, study_id: int, template_trial: Optional[FrozenTrial], session: orm.Session
     ) -> models.TrialModel:
-        # Ensure that that study exists.
-        models.StudyModel.find_or_raise_by_id(study_id, session)
-
         if template_trial is None:
             trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING)
         else:
