@@ -374,8 +374,12 @@ def test_run_trial(storage_mode):
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
 
+        study._func = func
+        study._catch = (Exception,)
+        study._gc_after_trial = True
+
         # Test trial without exception.
-        study._run_trial(func, catch=(Exception,), gc_after_trial=True)
+        study._run_trial()
         check_study(study)
 
         # Test trial with acceptable exception.
@@ -384,7 +388,11 @@ def test_run_trial(storage_mode):
 
             raise ValueError
 
-        trial = study._run_trial(func_value_error, catch=(ValueError,), gc_after_trial=True)
+        study._func = func_value_error
+        study._catch = (ValueError,)
+        study._gc_after_trial = True
+
+        trial = study._run_trial()
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = "Trial 1 failed because of the following error: ValueError()"
@@ -392,8 +400,11 @@ def test_run_trial(storage_mode):
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
         # Test trial with unacceptable exception.
+        study._func = func_value_error
+        study._catch = (ArithmeticError,)
+        study._gc_after_trial = True
         with pytest.raises(ValueError):
-            study._run_trial(func_value_error, catch=(ArithmeticError,), gc_after_trial=True)
+            study._run_trial()
 
         # Test trial with invalid objective value: None
         def func_none(_):
@@ -401,7 +412,10 @@ def test_run_trial(storage_mode):
 
             return None  # type: ignore
 
-        trial = study._run_trial(func_none, catch=(Exception,), gc_after_trial=True)
+        study._func = func_none
+        study._catch = (Exception,)
+        study._gc_after_trial = True
+        trial = study._run_trial()
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = (
@@ -418,7 +432,10 @@ def test_run_trial(storage_mode):
 
             return float("nan")
 
-        trial = study._run_trial(func_nan, catch=(Exception,), gc_after_trial=True)
+        study._func = func_nan
+        study._catch = (Exception,)
+        study._gc_after_trial = True
+        trial = study._run_trial()
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = "Trial 4 failed, because the objective function returned nan."
@@ -445,7 +462,11 @@ def test_run_trial_with_trial_pruned(trial_pruned_class, report_value):
 
         raise trial_pruned_class()
 
-    trial = study._run_trial(func_with_trial_pruned, catch=(), gc_after_trial=True)
+    study._func = func_with_trial_pruned
+    study._catch = ()
+    study._gc_after_trial = True
+
+    trial = study._run_trial()
     frozen_trial = study._storage.get_trial(trial._trial_id)
     assert frozen_trial.value == report_value
     assert frozen_trial.state == optuna.trial.TrialState.PRUNED
