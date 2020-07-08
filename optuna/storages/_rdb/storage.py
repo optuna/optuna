@@ -464,16 +464,13 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        # Ensure that that study exists.
-        models.StudyModel.find_or_raise_by_id(study_id, session)
-
         try:
+            # Ensure that that study exists.
+            #
             # Locking within a study is necessary since the creation of a trial is not an atomic
             # operation. More precisely, the trial number computed in `_get_prepared_new_trial` is
             # prone to race conditions without this lock.
-            session.query(models.StudyModel).filter(
-                models.StudyModel.study_id == study_id
-            ).with_for_update().one()
+            models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
 
             trial = self._get_prepared_new_trial(study_id, template_trial, session)
             self._commit(session)
