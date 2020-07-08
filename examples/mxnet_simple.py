@@ -44,7 +44,7 @@ def create_model(trial):
     data = mx.symbol.Variable("data")
     data = mx.sym.flatten(data=data)
     for i in range(n_layers):
-        num_hidden = int(trial.suggest_float("n_units_l{}".format(i), 4, 128, log=True))
+        num_hidden = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
         data = mx.symbol.FullyConnected(data=data, num_hidden=num_hidden)
         data = mx.symbol.Activation(data=data, act_type="relu")
 
