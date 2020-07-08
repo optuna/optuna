@@ -11,5 +11,3 @@ RUN pip install --no-cache-dir optuna psycopg2-binary mlflow \
     && pip install pytorch-lightning
 
 COPY pytorch_lightning_distributed.py .
-
-CMD ["python", "pytorch_lightning_distributed.py"]
