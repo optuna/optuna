@@ -98,7 +98,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
 
 def _get_edf_plot(studies: List[Study]) -> "go.Figure":
     layout = go.Layout(
-        title="EDF Plot",
+        title="Empirical Distribution Function Plot",
         xaxis={"title": "Objective Value"},
         yaxis={"title": "Cumulative Probability"},
     )
