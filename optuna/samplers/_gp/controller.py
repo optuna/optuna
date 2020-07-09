@@ -23,7 +23,7 @@ class _BayesianOptimizationController(object):
     def __init__(
         self,
         search_space: Dict[str, distributions.BaseDistribution],
-        model: Union[str, BaseModel] = 'SVGP',
+        model: Union[str, BaseModel] = 'GPyExact',
         acquisition: Union[str, BaseAcquisitionFunction] = 'EI',
         optimizer: Union[str, BaseOptimizer] = 'L-BFGS-B',
     ) -> None:
