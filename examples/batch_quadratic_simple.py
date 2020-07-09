@@ -1,5 +1,3 @@
-import numpy as np
-
 import optuna
 import optuna._batch_study
 
@@ -14,10 +12,10 @@ def objective(btrial):
     x = btrial.suggest_float("x", -1, 1)
     y = btrial.suggest_float("y", -1, 1)
 
-    z = f(np.array(x), np.array(y))
+    z = f(x, y)
 
     # The return value is expected to be a list of float values.
-    return z.tolist()
+    return z
 
 
 def callback(study, trial):
@@ -26,7 +24,6 @@ def callback(study, trial):
         print("best trial is Trial {}".format(trial.number))
 
 
-batch_size = 4
 study = optuna.create_study(direction="maximize")
-bstudy = optuna._batch_study.BatchStudy(study, batch_size)
+bstudy = optuna._batch_study.BatchStudy(study, batch_size=4)
 bstudy.batch_optimize(objective, n_batches=10, callbacks=[callback])

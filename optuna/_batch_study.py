@@ -9,6 +9,8 @@ from typing import Tuple  # NOQA
 from typing import Type  # NOQA
 from typing import Union  # NOQA
 
+import numpy as np
+
 import optuna
 from optuna import exceptions
 from optuna import logging
@@ -24,8 +26,8 @@ if type_checking.TYPE_CHECKING:
 
     ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
-BatchObjectiveFuncType = Callable[[BatchTrial], Sequence[float]]
-BatchMultiObjectiveFuncType = Callable[[BatchMultiObjectiveTrial], Sequence[Sequence[float]]]
+BatchObjectiveFuncType = Callable[[BatchTrial], np.ndarray]
+BatchMultiObjectiveFuncType = Callable[[BatchMultiObjectiveTrial], Sequence[np.ndarray]]
 
 _logger = logging.get_logger(__name__)
 
@@ -215,14 +217,14 @@ class BatchMultiObjectiveStudy(MultiObjectiveStudy):
         gc_after_trial: bool = True,
         show_progress_bar: bool = False,
     ) -> None:
-        def mo_objective(trial: BatchTrial) -> List[float]:
+        def mo_objective(trial: BatchTrial) -> np.ndarray:
             trials = [
                 optuna.multi_objective.trial.MultiObjectiveTrial(trial) for trial in trial._trials
             ]
             mo_trial = BatchMultiObjectiveTrial(trials)
             values = objective(mo_trial)
             mo_trial._report_complete_values(values)
-            return [0.0] * len(trials)  # Dummy value.
+            return np.zeros(len(trials))  # Dummy value.
 
         # # Wraps a multi-objective callback so that we can pass it to the `Study.optimize` method.
         # def wrap_mo_callback(callback: CallbackFuncType) -> Callable[[Study, FrozenTrial], None]:

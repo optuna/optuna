@@ -1,4 +1,3 @@
-import numpy as np
 import optuna
 import optuna._batch_study
 
@@ -14,13 +13,12 @@ def objective(trial):
     x = trial.suggest_float("x", 0, 5)
     y = trial.suggest_float("y", 0, 3)
 
-    v0, v1 = func(np.array(x), np.array(y))
-    return list(zip(v0.tolist(), v1.tolist()))
+    v0, v1 = func(x, y)
+    return v0, v1
 
 
-batch_size = 4
 study = optuna.multi_objective.create_study(["minimize", "minimize"])
-bstudy = optuna._batch_study.BatchMultiObjectiveStudy(study, batch_size)
+bstudy = optuna._batch_study.BatchMultiObjectiveStudy(study, batch_size=4)
 bstudy.batch_optimize(
     objective, n_batches=10,
 )

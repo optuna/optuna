@@ -178,6 +178,14 @@ class Study(BaseStudy):
 
         state = self.__dict__.copy()
         del state["_optimize_lock"]
+        if "_func" in state:
+            del state["_func"]
+        if "_catch" in state:
+            del state["_catch"]
+        if "_callbacks" in state:
+            del state["_callbacks"]
+        if "_gc_after_trial" in state:
+            del state["_gc_after_trial"]
         return state
 
     def __setstate__(self, state):

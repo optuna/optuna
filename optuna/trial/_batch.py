@@ -1,4 +1,5 @@
 import abc
+import numpy as np
 from typing import Any
 from typing import List
 from typing import Optional
@@ -26,29 +27,34 @@ class BaseBatchTrial(metaclass=abc.ABCMeta):
         *,
         step: Optional[float] = None,
         log: bool = False
-    ) -> List[float]:
-        return [t.suggest_float(name, low, high, step=step, log=log) for t in self._get_trials()]
+    ) -> np.ndarray:
+        return np.array(
+            [t.suggest_float(name, low, high, step=step, log=log) for t in self._get_trials()]
+        )
 
-    def suggest_uniform(self, name: str, low: float, high: float) -> List[float]:
-        return [t.suggest_uniform(name, low, high) for t in self._get_trials()]
+    def suggest_uniform(self, name: str, low: float, high: float) -> np.ndarray:
+        return np.array([t.suggest_uniform(name, low, high) for t in self._get_trials()])
 
-    def suggest_loguniform(self, name: str, low: float, high: float) -> List[float]:
-        return [t.suggest_loguniform(name, low, high) for t in self._get_trials()]
+    def suggest_loguniform(self, name: str, low: float, high: float) -> np.ndarray:
+        return np.array([t.suggest_loguniform(name, low, high) for t in self._get_trials()])
 
+    # TODO(Yanase): Which type do we use for return values?
     def suggest_categorical(
         self, name: str, choices: Sequence["CategoricalChoiceType"]
     ) -> List["CategoricalChoiceType"]:
-        return [t.suggest_categorical(name, choices) for t in self._get_trials()]
+        return np.array([t.suggest_categorical(name, choices) for t in self._get_trials()])
 
-    def suggest_discrete_uniform(
-        self, name: str, low: float, high: float, q: float
-    ) -> List[float]:
-        return [t.suggest_discrete_uniform(name, low, high, q) for t in self._get_trials()]
+    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> np.ndarray:
+        return np.array(
+            [t.suggest_discrete_uniform(name, low, high, q) for t in self._get_trials()]
+        )
 
     def suggest_int(
         self, name: str, low: int, high: int, step: int = 1, log: bool = False
-    ) -> List[int]:
-        return [t.suggest_int(name, low, high, step=step, log=log) for t in self._get_trials()]
+    ) -> np.ndarray:
+        return np.array(
+            [t.suggest_int(name, low, high, step=step, log=log) for t in self._get_trials()]
+        )
 
     def set_user_attr(self, key: str, value: Any) -> None:
         for trial in self._get_trials():
@@ -60,13 +66,13 @@ class BaseBatchTrial(metaclass=abc.ABCMeta):
 
 
 class BatchTrial(BaseBatchTrial):
-    def __init__(self, trials: Sequence["optuna.trial.Trial"]):
+    def __init__(self, trials: Sequence["optuna.trial.Trial"]) -> None:
         self._trials = trials
 
     def _get_trials(self) -> Sequence["optuna.trial.Trial"]:
         return self._trials
 
-    def report(self, values: Sequence[float], step: int) -> None:
+    def report(self, values: np.ndarray, step: int) -> None:
         for value, trial in zip(values, self._trials):
             trial.report(value, step=step)
 
@@ -75,7 +81,7 @@ class BatchTrial(BaseBatchTrial):
 
 
 class BatchMultiObjectiveTrial(BaseBatchTrial):
-    def __init__(self, trials: Sequence[MultiObjectiveTrial]):
+    def __init__(self, trials: Sequence[MultiObjectiveTrial]) -> None:
         self._trials = trials
 
     def _get_trials(self) -> Sequence[MultiObjectiveTrial]:
@@ -85,6 +91,7 @@ class BatchMultiObjectiveTrial(BaseBatchTrial):
         for value, trial in zip(values, self._trials):
             trial.report(value, step)
 
-    def _report_complete_values(self, values: Sequence[Sequence[float]]) -> None:
+    def _report_complete_values(self, values: Sequence[np.ndarray]) -> None:
+        values = np.array(values).transpose()
         for value, trial in zip(values, self._trials):
             trial._report_complete_values(value)
