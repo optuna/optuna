@@ -36,7 +36,7 @@ class EI(BaseAcquisitionFunction):
             y = np.einsum("ijk,ik->ij", sigma, gamma * _Phi + _phi)
             return y
 
-        y = np.sum([_compute() for _ in range(model.n_mcmc_samples)]) / model.n_mcmc_samples
+        y = np.sum([_compute() for _ in range(model.hmc_n_samples)]) / model.hmc_n_samples
 
         self._verify_output_acq(y, model)
 
@@ -64,7 +64,7 @@ class EI(BaseAcquisitionFunction):
             dy = np.einsum("Iijp,Ip->Iij", dsigma, z) + np.einsum("Ijp,Iip->Iij", sigma, dz)
             return dy
 
-        dy = np.sum([_compute() for _ in range(model.n_mcmc_samples)]) / model.n_mcmc_samples
+        dy = np.sum([_compute() for _ in range(model.hmc_n_samples)]) / model.hmc_n_samples
 
         self._verify_output_grad(dy, model)
 

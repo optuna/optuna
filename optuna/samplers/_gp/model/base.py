@@ -1,4 +1,5 @@
 import abc
+from typing import Optional
 from typing import Tuple
 
 import numpy as np
@@ -8,19 +9,11 @@ class BaseModel(object, metaclass=abc.ABCMeta):
     """Base class for Gaussian process models"""
 
     @property
-    def input_dim(self) -> int:
-        raise NotImplementedError
-
-    @input_dim.setter
-    def input_dim(self, n: int) -> None:
+    def input_dim(self) -> Optional[int]:
         raise NotImplementedError
 
     @property
-    def output_dim(self) -> int:
-        raise NotImplementedError
-
-    @output_dim.setter
-    def output_dim(self, n: int) -> None:
+    def output_dim(self) -> Optional[int]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -82,6 +75,8 @@ class BaseModel(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def _verify_input(self, x: np.ndarray) -> None:
+        assert self.input_dim is not None
+
         if x.ndim != 2:
             raise ValueError(
                 "In `BaseModel.[predict, predict_gradient]`, `x.ndim` should be 2, "
@@ -96,6 +91,8 @@ class BaseModel(object, metaclass=abc.ABCMeta):
             )
 
     def _verify_output_predict(self, mu: np.ndarray, sigma: np.ndarray) -> None:
+        assert  self.output_dim is not None
+
         if mu.ndim != 2:
             raise ValueError(
                 "In `mu, sigma = BaseModel.predict()`, `mu.ndim` should be 2, "
@@ -123,6 +120,9 @@ class BaseModel(object, metaclass=abc.ABCMeta):
             )
 
     def _verify_output_grad(self, dmu: np.ndarray, dsigma: np.ndarray) -> None:
+        assert self.input_dim is not None
+        assert self.output_dim is not None
+
         if dmu.ndim != 3:
             raise ValueError(
                 "In `dmu, dsigma = BaseModel.predict_gradient()`, `dmu.ndim` should be 3, "
