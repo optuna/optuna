@@ -969,6 +969,10 @@ class RDBStorage(BaseStorage):
         try:
             trial_models = (
                 session.query(models.TrialModel)
+                .options(orm.selectinload(models.TrialModel.params))
+                .options(orm.selectinload(models.TrialModel.values))
+                .options(orm.selectinload(models.TrialModel.user_attributes))
+                .options(orm.selectinload(models.TrialModel.system_attributes))
                 .filter(
                     models.TrialModel.trial_id.in_(trial_ids),
                     models.TrialModel.study_id == study_id,
@@ -988,6 +992,10 @@ class RDBStorage(BaseStorage):
 
             trial_models = (
                 session.query(models.TrialModel)
+                .options(orm.selectinload(models.TrialModel.params))
+                .options(orm.selectinload(models.TrialModel.values))
+                .options(orm.selectinload(models.TrialModel.user_attributes))
+                .options(orm.selectinload(models.TrialModel.system_attributes))
                 .filter(models.TrialModel.study_id == study_id)
                 .all()
             )
