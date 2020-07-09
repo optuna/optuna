@@ -10,7 +10,7 @@ from optuna.samplers._gp.optimizer.base import BaseOptimizer
 
 
 class ScipyOptimizer(BaseOptimizer):
-    """ An acquisition function optimizer which uses the `scipy.optimize`.
+    """An acquisition function optimizer which uses the `scipy.optimize`.
 
     .. note::
         The default optimization algorithm is L-BFGS. Please see the original paper:
@@ -99,10 +99,10 @@ class ScipyOptimizer(BaseOptimizer):
         res = scipy_optimize.minimize(fun=f, x0=x0, method=self._method, jac=df, bounds=self._bounds, options={'maxiter': self._maxiter})
 
         if res.success:
-            x = np.atleast_2d(res.x)
+            x = np.asarray(res.x).flatten()
             fx = np.atleast_2d(res.fun)
         else:
-            x = np.atleast_2d(x0)
+            x = np.asarray(x0).flatten()
             fx = np.atleast_2d(f(x0))
 
         return x, fx
