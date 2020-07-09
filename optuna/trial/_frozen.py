@@ -6,7 +6,14 @@ from typing import Optional
 from optuna._experimental import experimental
 from optuna import distributions
 from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna import logging
+from optuna.trial._base import BaseTrial
 from optuna.trial._state import TrialState
 from optuna import type_checking
 
@@ -20,7 +27,7 @@ if type_checking.TYPE_CHECKING:
 _logger = logging.get_logger(__name__)
 
 
-class FrozenTrial(object):
+class FrozenTrial(BaseTrial):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
     Attributes:
@@ -60,32 +67,34 @@ class FrozenTrial(object):
     ):
         # type: (...) -> None
 
-        self.number = number
+        self._number = number
         self.state = state
         self.value = value
-        self.datetime_start = datetime_start
+        self._datetime_start = datetime_start
         self.datetime_complete = datetime_complete
-        self.params = params
-        self.user_attrs = user_attrs
-        self.system_attrs = system_attrs
+        self._params = params
+        self._user_attrs = user_attrs
+        self._system_attrs = system_attrs
         self.intermediate_values = intermediate_values
         self._distributions = distributions
         self._trial_id = trial_id
+        self._suggested_params = {}  # type: Dict[str, Any]
 
     # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
     # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
     _ordered_fields = [
-        "number",
+        "_number",
         "value",
-        "datetime_start",
+        "_datetime_start",
         "datetime_complete",
-        "params",
+        "_params",
         "_distributions",
-        "user_attrs",
-        "system_attrs",
+        "_user_attrs",
+        "_system_attrs",
         "intermediate_values",
         "_trial_id",
         "state",
+        "_suggested_params",
     ]
 
     def __eq__(self, other):
@@ -199,6 +208,161 @@ class FrozenTrial(object):
             return self.datetime_complete - self.datetime_start
         else:
             return None
+
+        if step is not None:
+            if log:
+                raise ValueError("The parameter `step` is not supported when `log` is True.")
+            else:
+                return self._suggest(name, DiscreteUniformDistribution(low=low, high=high, q=step))
+        else:
+            if log:
+                return self._suggest(name, LogUniformDistribution(low=low, high=high))
+            else:
+                return self._suggest(name, UniformDistribution(low=low, high=high))
+
+    def suggest_float(
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: Optional[float] = None,
+        log: bool = False
+    ) -> float:
+
+        if step is not None:
+            if log:
+                raise ValueError("The parameter `step` is not supported when `log` is True.")
+            else:
+                return self._suggest(name, DiscreteUniformDistribution(low=low, high=high, q=step))
+        else:
+            if log:
+                return self._suggest(name, LogUniformDistribution(low=low, high=high))
+            else:
+                return self._suggest(name, UniformDistribution(low=low, high=high))
+
+
+    def suggest_uniform(self, name, low, high):
+        # type: (str, float, float) -> float
+
+        return self._suggest(name, UniformDistribution(low=low, high=high))
+
+    def suggest_loguniform(self, name, low, high):
+        # type: (str, float, float) -> float
+
+        return self._suggest(name, LogUniformDistribution(low=low, high=high))
+
+    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
+        discrete = DiscreteUniformDistribution(low=low, high=high, q=q)
+        return self._suggest(name, discrete)
+
+    def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
+        if step != 1:
+            if log:
+                raise ValueError(
+                    "The parameter `step != 1` is not supported when `log` is True."
+                    "The specified `step` is {}.".format(step)
+                )
+            else:
+                distribution = IntUniformDistribution(
+                    low=low, high=high, step=step
+                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+        else:
+            if log:
+                distribution = IntLogUniformDistribution(low=low, high=high)
+            else:
+                distribution = IntUniformDistribution(low=low, high=high, step=step)
+        return int(self._suggest(name, distribution))
+
+    def suggest_categorical(self, name, choices):
+        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
+
+        choices = tuple(choices)
+        return self._suggest(name, CategoricalDistribution(choices=choices))
+
+    def _suggest(self, name, distribution):
+        # type: (str, BaseDistribution) -> Any
+
+        if name not in self._params:
+            raise ValueError(
+                "The value of the parameter '{}' is not found. Please set it at "
+                "the construction of the FixedTrial object.".format(name)
+            )
+
+        value = self._params[name]
+        param_value_in_internal_repr = distribution.to_internal_repr(value)
+        if not distribution._contains(param_value_in_internal_repr):
+            raise ValueError(
+                "The value {} of the parameter '{}' is out of "
+                "the range of the distribution {}.".format(value, name, distribution)
+            )
+
+        if name in self._distributions:
+            distributions.check_distribution_compatibility(self._distributions[name], distribution)
+
+        self._suggested_params[name] = value
+        self._distributions[name] = distribution
+
+        return value
+
+    def report(self, value, step):
+        # type: (float, int) -> None
+
+        pass
+
+    def should_prune(self) -> bool:
+
+        return False
+
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self._user_attrs[key] = value
+
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self._system_attrs[key] = value
+
+    def set_number(self, number: int):
+        # type: (int) -> None
+
+        self._number = number
+
+    @property
+    def params(self):
+        # type: () -> Dict[str, Any]
+
+        return self._suggested_params
+
+    @property
+    def distributions(self):
+        # type: () -> Dict[str, BaseDistribution]
+
+        return self._distributions
+
+    @property
+    def user_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self._user_attrs
+
+    @property
+    def system_attrs(self):
+        # type: () -> Dict[str, Any]
+
+        return self._system_attrs
+
+    @property
+    def datetime_start(self):
+        # type: () -> Optional[datetime.datetime]
+
+        return self._datetime_start
+
+    @property
+    def number(self) -> int:
+
+        return self._number
 
 
 @experimental("2.0.0")
