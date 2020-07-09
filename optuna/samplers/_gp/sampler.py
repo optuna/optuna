@@ -9,10 +9,10 @@ import numpy as np
 from optuna._experimental import experimental
 from optuna import distributions
 from optuna import logging
+from optuna.samplers._gp.controller import _BayesianOptimizationController
 from optuna.samplers import BaseSampler
 from optuna.samplers import IntersectionSearchSpace
 from optuna.samplers import RandomSampler
-from optuna.samplers._gp.controller import _BayesianOptimizationController
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -65,21 +65,17 @@ class GPSampler(BaseSampler):
 
     def __init__(
         self,
-        model: str = 'SVGP',
-        acquisition: str = 'EI',
-        optimizer: str = 'LBFGS',
+        model: str = "SVGP",
+        acquisition: str = "EI",
+        optimizer: str = "LBFGS",
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
         n_startup_trials: int = 1,
         consider_pruned_trials: bool = False,
-        seed: Optional[int] = None
+        seed: Optional[int] = None,
     ) -> None:
 
-        self._boc_kwargs = {
-            'model': model,
-            'acquisition': acquisition,
-            'optimizer': optimizer
-        }
+        self._boc_kwargs = {"model": model, "acquisition": acquisition, "optimizer": optimizer}
         self._independent_sampler = independent_sampler or RandomSampler()
         self._warn_independent_sampling = warn_independent_sampling
         self._n_startup_trials = n_startup_trials

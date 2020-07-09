@@ -28,7 +28,9 @@ class EI(BaseAcquisitionFunction):
         def _compute():
             y_best = np.min(model.Y, axis=0)
             mu, sigma = model.predict(x)  # Predict after sampling hyperparameters by MCMC
-            inv_sigma = np.asarray([linalg.inv(sigma[i] + _SIGMA0_2 * np.eye(model.output_dim)) for i in range(n)])
+            inv_sigma = np.asarray(
+                [linalg.inv(sigma[i] + _SIGMA0_2 * np.eye(model.output_dim)) for i in range(n)]
+            )
             gamma = np.einsum("ijk,ik->ij", inv_sigma, mu - y_best)
 
             _Phi = stats.norm.cdf(gamma)
@@ -36,7 +38,7 @@ class EI(BaseAcquisitionFunction):
             y = np.einsum("ijk,ik->ij", sigma, gamma * _Phi + _phi)
             return y
 
-        y = np.sum([_compute() for _ in range(model.hmc_n_samples)]) / model.hmc_n_samples
+        y = np.sum([_compute() for _ in range(model.n_mcmc_samples)]) / model.n_mcmc_samples
 
         self._verify_output_acq(y, model)
 
@@ -52,9 +54,13 @@ class EI(BaseAcquisitionFunction):
             mu, sigma = model.predict(x)  # Predict after sampling hyperparameters by MCMC
             dmu, dsigma = model.predict_gradient(x)  # Same as above
 
-            inv_sigma = np.asarray([linalg.inv(sigma[i] + _SIGMA0_2 * np.eye(model.output_dim)) for i in range(n)])
+            inv_sigma = np.asarray(
+                [linalg.inv(sigma[i] + _SIGMA0_2 * np.eye(model.output_dim)) for i in range(n)]
+            )
             gamma = np.einsum("ijk,ik->ij", inv_sigma, mu - y_best)
-            dgamma = - np.einsum("Ipr,Iirs,Is->Iip", inv_sigma, dsigma, gamma) + np.einsum("Ipq,Iiq->Iip", inv_sigma, dmu - y_best)
+            dgamma = -np.einsum("Ipr,Iirs,Is->Iip", inv_sigma, dsigma, gamma) + np.einsum(
+                "Ipq,Iiq->Iip", inv_sigma, dmu - y_best
+            )
 
             _Phi = stats.norm.cdf(gamma)
             _phi = stats.norm.pdf(gamma)
@@ -64,7 +70,7 @@ class EI(BaseAcquisitionFunction):
             dy = np.einsum("Iijp,Ip->Iij", dsigma, z) + np.einsum("Ijp,Iip->Iij", sigma, dz)
             return dy
 
-        dy = np.sum([_compute() for _ in range(model.hmc_n_samples)]) / model.hmc_n_samples
+        dy = np.sum([_compute() for _ in range(model.n_mcmc_samples)]) / model.n_mcmc_samples
 
         self._verify_output_grad(dy, model)
 

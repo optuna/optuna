@@ -28,8 +28,7 @@ class BaseAcquisitionFunction(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def compute_grad(self, x: np.ndarray, model: BaseModel) -> np.ndarray:
-        """Computes the gradient of the acquisition function given input point x,
-        based on the given model.
+        """Computes the gradient of the acquisition function given input point x, based on the given model.
 
         Args:
             x:

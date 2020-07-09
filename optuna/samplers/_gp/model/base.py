@@ -16,6 +16,10 @@ class BaseModel(object, metaclass=abc.ABCMeta):
     def output_dim(self) -> Optional[int]:
         raise NotImplementedError
 
+    @property
+    def n_mcmc_samples(self) -> int:
+        raise NotImplementedError
+
     @abc.abstractmethod
     def add_data(self, x: np.ndarray, y: np.ndarray) -> None:
         """Add observation data to the model.
@@ -35,8 +39,10 @@ class BaseModel(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def predict(self, x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute the posterior mean vector and the square root of the posterior covariance
-        matrix.
+        """Compute the prediction.
+
+        This function computes the posterior mean vector and the square root of the posterior
+        covariance matrix.
 
         Args:
             x:
@@ -55,8 +61,10 @@ class BaseModel(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def predict_gradient(self, x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute the gradient of the posterior mean vector and the gradient of the square root of
-        the posterior covariance matrix.
+        """Compute the gradient of the prediction.
+
+        This function computes the posterior mean vector and the gradient of the square root of the
+        posterior covariance matrix.
 
         Args:
             x:
@@ -91,7 +99,7 @@ class BaseModel(object, metaclass=abc.ABCMeta):
             )
 
     def _verify_output_predict(self, mu: np.ndarray, sigma: np.ndarray) -> None:
-        assert  self.output_dim is not None
+        assert self.output_dim is not None
 
         if mu.ndim != 2:
             raise ValueError(
@@ -116,7 +124,9 @@ class BaseModel(object, metaclass=abc.ABCMeta):
             raise ValueError(
                 "In `mu, sigma = BaseModel.predict(), "
                 "`mu.shape[1:]` should be `(output_dim, output_dim) = {}`, "
-                "but `mu.shape[1:] = {} is specified".format((self.output_dim, self.output_dim), mu.shape[1:])
+                "but `mu.shape[1:] = {} is specified".format(
+                    (self.output_dim, self.output_dim), mu.shape[1:]
+                )
             )
 
     def _verify_output_grad(self, dmu: np.ndarray, dsigma: np.ndarray) -> None:
@@ -139,12 +149,16 @@ class BaseModel(object, metaclass=abc.ABCMeta):
             raise ValueError(
                 "In `dmu, dsigma = BaseModel.predict_gradient(), "
                 "`dmu.shape[1:]` should be `(input_dim, output_dim) = {}`, "
-                "but `dmu.shape[1:] = {} is specified".format((self.input_dim, self.output_dim), dmu.shape[1:])
+                "but `dmu.shape[1:] = {} is specified".format(
+                    (self.input_dim, self.output_dim), dmu.shape[1:]
+                )
             )
 
         if dsigma.shape[1:] != (self.input_dim, self.output_dim, self.output_dim):
             raise ValueError(
                 "In `dmu, dsigma = BaseModel.predict_gradient(), "
                 "`dsigma.shape[1:]` should be `(input_dim, output_dim, output_dim) = {}`, "
-                "but `dsigma.shape[1:] = {} is specified".format((self.input_dim, self.output_dim, self.output_dim), dsigma.shape[1:])
+                "but `dsigma.shape[1:] = {} is specified".format(
+                    (self.input_dim, self.output_dim, self.output_dim), dsigma.shape[1:]
+                )
             )

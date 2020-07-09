@@ -23,9 +23,9 @@ class _BayesianOptimizationController(object):
     def __init__(
         self,
         search_space: Dict[str, distributions.BaseDistribution],
-        model: Union[str, BaseModel] = 'GPyExact',
-        acquisition: Union[str, BaseAcquisitionFunction] = 'EI',
-        optimizer: Union[str, BaseOptimizer] = 'L-BFGS-B',
+        model: Union[str, BaseModel] = "GPyExact",
+        acquisition: Union[str, BaseAcquisitionFunction] = "EI",
+        optimizer: Union[str, BaseOptimizer] = "L-BFGS-B",
     ) -> None:
 
         self._search_space = search_space
@@ -62,7 +62,6 @@ class _BayesianOptimizationController(object):
         self._model.add_data(xs, ys)
 
     def ask(self) -> Dict[str, Any]:
-
         def objective(x):
             return self._acquisition.compute_acq(x=x, model=self._model)
 
@@ -71,7 +70,9 @@ class _BayesianOptimizationController(object):
 
         param_values = self._optimizer.optimize(f=objective, df=derivative)
         params = {}
-        for (name, distribution), param_value in zip(sorted(self._search_space.items()), param_values):
+        for (name, distribution), param_value in zip(
+            sorted(self._search_space.items()), param_values
+        ):
             if isinstance(distribution, distributions.LogUniformDistribution):
                 param_value = math.exp(param_value)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
@@ -146,13 +147,13 @@ class _BayesianOptimizationController(object):
                 low = math.log(distribution.low)
                 high = math.log(distribution.high)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
-                low = 0.
+                low = 0.0
                 high = np.round((distribution.high - distribution.low) / distribution.q)
             elif isinstance(distribution, distributions.IntUniformDistribution):
-                low = 0.
+                low = 0.0
                 high = np.round((distribution.high - distribution.low) / distribution.step)
             elif isinstance(distribution, distributions.IntLogUniformDistribution):
-                low = 0.
+                low = 0.0
                 high = np.round(math.log(distribution.high) - math.log(distribution.low))
             else:
                 raise NotImplementedError(

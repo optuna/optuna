@@ -22,11 +22,11 @@ class GPyExact(BaseModel):
         self,
         x: Optional[np.ndarray] = None,
         y: Optional[np.ndarray] = None,
-        noise_var: Union[float, str] = 'gpy_default',
-        kernel: str = 'Matern52',
+        noise_var: Union[float, str] = "gpy_default",
+        kernel: str = "Matern52",
         consider_ard: bool = True,
-        gamma_prior_expectation: float = 2.,
-        gamma_prior_variance: float = 4.,
+        gamma_prior_expectation: float = 2.0,
+        gamma_prior_variance: float = 4.0,
         max_optimize_iters: int = 200,
         hmc_step_size: float = 0.1,
         hmc_burnin: int = 100,
@@ -70,7 +70,7 @@ class GPyExact(BaseModel):
 
         return self._output_dim
 
-    def hmc_n_samples(self) -> int:
+    def n_mcmc_samples(self) -> int:
 
         return self._hmc_n_samples
 
@@ -82,20 +82,26 @@ class GPyExact(BaseModel):
 
         assert self._input_dim is not None
         assert self._output_dim is not None
-        if self._kernel == 'SquaredExponential' or self._kernel == 'RBF':
-            k = GPy.kern.RBF(input_dim=self._input_dim, variance=1., ARD=self._consider_ard)
-        elif self._kernel == 'Matern52':
-            k = GPy.kern.Matern52(input_dim=self._input_dim, variance=1., ARD=self._consider_ard)
+        if self._kernel == "SquaredExponential" or self._kernel == "RBF":
+            k = GPy.kern.RBF(input_dim=self._input_dim, variance=1.0, ARD=self._consider_ard)
+        elif self._kernel == "Matern52":
+            k = GPy.kern.Matern52(input_dim=self._input_dim, variance=1.0, ARD=self._consider_ard)
         else:
-            kernel_list = ['RBF', 'Squared Exponential', 'Matern52']
+            kernel_list = ["RBF", "Squared Exponential", "Matern52"]
             raise NotImplementedError(
-                'The kernel should be one of the {}. '
-                'However, {} is specified.'.format(kernel_list, self._kernel)
+                "The kernel should be one of the {}. "
+                "However, {} is specified.".format(kernel_list, self._kernel)
             )
 
-        self._gpy_model = GPy.models.GPRegression(self._x, self._y, kernel=k, noise_var=self._noise_var)
-        self._gpy_model.kern.set_prior(GPy.priors.Gamma.from_EV(self._gamma_prior_expectation, self._gamma_prior_variance))
-        self._gpy_model.likelihood.variance.set_prior(GPy.priors.Gamma.from_EV(self._gamma_prior_expectation, self._gamma_prior_variance))
+        self._gpy_model = GPy.models.GPRegression(
+            self._x, self._y, kernel=k, noise_var=self._noise_var
+        )
+        self._gpy_model.kern.set_prior(
+            GPy.priors.Gamma.from_EV(self._gamma_prior_expectation, self._gamma_prior_variance)
+        )
+        self._gpy_model.likelihood.variance.set_prior(
+            GPy.priors.Gamma.from_EV(self._gamma_prior_expectation, self._gamma_prior_variance)
+        )
 
         self._update_model()
 
@@ -105,17 +111,21 @@ class GPyExact(BaseModel):
         if x.ndim != 2 or y.ndim != 2 or x.shape[0] != y.shape[0]:
             raise ValueError(
                 "The shape of the `x` and `y` should be `(n, input_dim)` and `(n, output_dim)`, "
-                "but `x.shape = {}` and `y.shape = {}` are specified."
-                .format(x.shape, y.shape)
+                "but `x.shape = {}` and `y.shape = {}` are specified.".format(x.shape, y.shape)
             )
 
     def _update_model(self) -> None:
 
         self._gpy_model.optimize(max_iters=self._max_optimize_iters)
-        self._gpy_model.param_array[:] = self._gpy_model.param_array * (1. + np.random.randn(self._gpy_model.param_array.size) * 0.01)
+        self._gpy_model.param_array[:] = self._gpy_model.param_array * (
+            1.0 + np.random.randn(self._gpy_model.param_array.size) * 0.01
+        )
         self._hmc = GPy.inference.mcmc.HMC(self._gpy_model, stepsize=self._hmc_step_size)
-        samples = self._hmc.sample(num_samples=self._hmc_burnin + self._hmc_n_samples * self._hmc_subsample_interval, hmc_iters=self._hmc_iters)
-        self._hmc_samples = samples[self._hmc_burnin::self._hmc_subsample_interval]
+        samples = self._hmc.sample(
+            num_samples=self._hmc_burnin + self._hmc_n_samples * self._hmc_subsample_interval,
+            hmc_iters=self._hmc_iters,
+        )
+        self._hmc_samples = samples[self._hmc_burnin :: self._hmc_subsample_interval]
 
     def add_data(self, x: np.ndarray, y: np.ndarray) -> None:
 

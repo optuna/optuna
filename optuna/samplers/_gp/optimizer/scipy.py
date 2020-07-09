@@ -22,7 +22,7 @@ class ScipyOptimizer(BaseOptimizer):
         self,
         bounds: np.ndarray,
         maxiter: int = 1000,
-        method: str = 'L-BFGS-B',
+        method: str = "L-BFGS-B",
         n_samples_for_anchor: int = 1000,
         n_anchor: int = 5,
     ):
@@ -34,13 +34,18 @@ class ScipyOptimizer(BaseOptimizer):
         self._n_anchor = n_anchor
 
     def optimize(
-            self, f: Callable[[Any], Any], df: Optional[Callable[[Any], Any]] = None
+        self, f: Callable[[Any], Any], df: Optional[Callable[[Any], Any]] = None
     ) -> np.ndarray:
 
         # Change the optimization problem from maximization to minimization for scipy.optimize.
-        obj = lambda x: - f(x)
+        def obj(x):
+            return -f(x)
+
         if df is not None:
-            dobj = lambda x: - df(x)
+
+            def dobj(x):
+                return -df(x)
+
         else:
             dobj = None
 
@@ -68,20 +73,24 @@ class ScipyOptimizer(BaseOptimizer):
 
         candidate_points = np.zeros((self._n_samples_for_anchor, len(self._bounds)))
         for i in range(len(self._bounds)):
-            candidate_points[:, i] = np.random.uniform(low=self._bounds[i][0], high=self._bounds[i][1], size=self._n_samples_for_anchor)
+            candidate_points[:, i] = np.random.uniform(
+                low=self._bounds[i][0], high=self._bounds[i][1], size=self._n_samples_for_anchor
+            )
         assert candidate_points.ndim == 2
         assert candidate_points.shape[0] == self._n_samples_for_anchor
 
         scores = f(candidate_points).flatten()
         assert scores.ndim == 1
 
-        anchor_points = candidate_points[np.argsort(scores)[:min(len(scores), self._n_anchor)], :]
+        anchor_points = candidate_points[np.argsort(scores)[: min(len(scores), self._n_anchor)], :]
         assert anchor_points.ndim == 2
         assert anchor_points.shape[0] == self._n_anchor or anchor_points.shape[0] == len(scores)
 
         return anchor_points
 
-    def _optimize_with_x0(self, x0: np.ndarray, f: Callable[[Any], Any], df: Optional[Callable[[Any], Any]] = None) -> Tuple[np.ndarray, np.ndarray]:
+    def _optimize_with_x0(
+        self, x0: np.ndarray, f: Callable[[Any], Any], df: Optional[Callable[[Any], Any]] = None
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Optimize (minimize) the given objective function f.
 
         Args:
@@ -96,7 +105,14 @@ class ScipyOptimizer(BaseOptimizer):
             The tuple of the optimized point and the objective value.
         """
 
-        res = scipy_optimize.minimize(fun=f, x0=x0, method=self._method, jac=df, bounds=self._bounds, options={'maxiter': self._maxiter})
+        res = scipy_optimize.minimize(
+            fun=f,
+            x0=x0,
+            method=self._method,
+            jac=df,
+            bounds=self._bounds,
+            options={"maxiter": self._maxiter},
+        )
 
         if res.success:
             x = np.asarray(res.x).flatten()
