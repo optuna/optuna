@@ -565,6 +565,32 @@ class TestLightGBMTuner(object):
             tuner2.tune_regularization_factors()
         assert n_trials == len(study.trials)
 
+    @pytest.mark.parametrize(
+        "verbosity, level, pbar",
+        [
+            (-2, optuna.logging.FATAL, False),
+            (-1, optuna.logging.FATAL, False),
+            (0, optuna.logging.WARNING, False),
+            (1, optuna.logging.INFO, True),
+            (2, optuna.logging.DEBUG, True),
+        ],
+    )
+    def test_run_verbosity(self, verbosity: int, level: int, pbar: bool) -> None:
+        params = {"verbose": -1}  # type: Dict
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        study = optuna.create_study()
+        tuner = LightGBMTuner(
+            params, dataset, valid_sets=dataset, study=study, verbosity=verbosity, time_budget=1
+        )
+
+        with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=1.0):
+            tuner.run()
+
+        assert optuna.logging.get_verbosity() == level
+        assert tuner._use_pbar is pbar
+        assert tuner.lgbm_params["verbose"] == -1
+
     def test_get_best_booster(self) -> None:
         unexpected_value = 20  # out of scope.
 
@@ -810,6 +836,30 @@ class TestLightGBMTunerCV(object):
         with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
             tuner2.tune_regularization_factors()
         assert n_trials == len(study.trials)
+
+    @pytest.mark.parametrize(
+        "verbosity, level, pbar",
+        [
+            (-2, optuna.logging.FATAL, False),
+            (-1, optuna.logging.FATAL, False),
+            (0, optuna.logging.WARNING, False),
+            (1, optuna.logging.INFO, True),
+            (2, optuna.logging.DEBUG, True),
+        ],
+    )
+    def test_run_verbosity(self, verbosity: int, level: int, pbar: bool) -> None:
+        params = {"verbose": -1}  # type: Dict
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        study = optuna.create_study()
+        tuner = LightGBMTunerCV(params, dataset, study=study, verbosity=verbosity, time_budget=1)
+
+        with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+            tuner.run()
+
+        assert optuna.logging.get_verbosity() == level
+        assert tuner._use_pbar is pbar
+        assert tuner.lgbm_params["verbose"] == -1
 
     def test_optuna_callback(self) -> None:
         params = {"verbose": -1}  # type: Dict[str, Any]

@@ -337,7 +337,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
-        verbosity: Optional[int] = 1,
+        verbosity: int = 1,
     ) -> None:
 
         _imports.check()
@@ -432,10 +432,19 @@ class _LightGBMBaseTuner(_BaseTuner):
 
     def run(self) -> None:
         """Perform the hyperparameter-tuning with given parameters."""
-        # Suppress log messages.
-        if self.auto_options["verbosity"] == 0:
-            optuna.logging.disable_default_handler()
-            self.lgbm_params["verbose"] = -1
+        verbosity = self.auto_options["verbosity"]
+        if verbosity > 1:
+            optuna.logging.set_verbosity(optuna.logging.DEBUG)
+            self._use_pbar = True
+        elif verbosity == 1:
+            optuna.logging.set_verbosity(optuna.logging.INFO)
+            self._use_pbar = True
+        elif verbosity == 0:
+            optuna.logging.set_verbosity(optuna.logging.WARNING)
+            self.lgbm_kwargs["verbose_eval"] = False
+            self._use_pbar = False
+        else:
+            optuna.logging.set_verbosity(optuna.logging.FATAL)
             self.lgbm_kwargs["verbose_eval"] = False
             self._use_pbar = False
 
@@ -678,7 +687,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         study: Optional[optuna.study.Study] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         model_dir: Optional[str] = None,
-        verbosity: Optional[int] = 1,
+        verbosity: int = 1,
     ) -> None:
 
         super(LightGBMTuner, self).__init__(
