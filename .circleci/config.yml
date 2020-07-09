@@ -123,6 +123,8 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get -y install openmpi-bin libopenmpi-dev
+            sudo apt-get -y install default-mysql-server default-mysql-client
+            sudo apt-get -y install postgresql postgresql-client
 
             python -m venv venv || virtualenv venv
             . venv/bin/activate
@@ -136,6 +138,9 @@ jobs:
 
             # Install all dependencies needed for testing.
             pip install --progress-bar off $(ls dist/*.tar.gz)[testing] -f https://download.pytorch.org/whl/torch_stable.html
+
+            # Install RDB bindings for storage tests.
+            pip install --progress-bar off PyMySQL cryptography psycopg2-binary
 
       - run:
           name: install-codecov
