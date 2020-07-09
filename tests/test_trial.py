@@ -835,7 +835,7 @@ def test_frozen_trial_lt():
     trial_other = copy.copy(trial)
     assert not trial < trial_other
 
-    trial_other.number = trial.number + 1
+    trial_other.set_number(trial.number + 1)
     assert trial < trial_other
     assert not trial_other < trial
 

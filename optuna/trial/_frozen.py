@@ -94,7 +94,6 @@ class FrozenTrial(BaseTrial):
         "intermediate_values",
         "_trial_id",
         "state",
-        "_suggested_params",
     ]
 
     def __eq__(self, other):
@@ -324,10 +323,20 @@ class FrozenTrial(BaseTrial):
 
         self._system_attrs[key] = value
 
-    def set_number(self, number: int):
+    def set_number(self, number):
         # type: (int) -> None
 
         self._number = number
+
+    def set_param(self, params):
+        # type: (Dict[str, Any]) -> None
+
+        self._params = params
+
+    def set_distributions(self, distributions):
+        # type: (Dict[str, BaseDistribution]) -> None
+
+        self._distributions = distributions
 
     @property
     def params(self):
