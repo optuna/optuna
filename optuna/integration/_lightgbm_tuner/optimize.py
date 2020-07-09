@@ -433,6 +433,7 @@ class _LightGBMBaseTuner(_BaseTuner):
     def run(self) -> None:
         """Perform the hyperparameter-tuning with given parameters."""
         verbosity = self.auto_options["verbosity"]
+        assert verbosity is not None
         if verbosity > 1:
             optuna.logging.set_verbosity(optuna.logging.DEBUG)
             self._use_pbar = True
