@@ -234,7 +234,7 @@ class _CachedStorage(BaseStorage):
                     # ones. By INSERT, it is assumed that no previous entry has been persisted
                     # already.
                     self._backend._check_and_set_param_distribution(
-                        trial_id, param_name, param_value_internal, distribution
+                        study_id, trial_id, param_name, param_value_internal, distribution
                     )
                     self._studies[study_id].param_distribution[param_name] = distribution
 
