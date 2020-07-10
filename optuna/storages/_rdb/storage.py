@@ -462,22 +462,31 @@ class RDBStorage(BaseStorage):
 
         """
 
-        session = self.scoped_session()
+        # Retry a couple of times. Deadlocks may occur in distributed environments.
+        n_retries = 0
+        while True:
+            session = self.scoped_session()
 
-        try:
-            # Ensure that that study exists.
-            #
-            # Locking within a study is necessary since the creation of a trial is not an atomic
-            # operation. More precisely, the trial number computed in `_get_prepared_new_trial` is
-            # prone to race conditions without this lock.
-            models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
+            try:
+                # Ensure that that study exists.
+                #
+                # Locking within a study is necessary since the creation of a trial is not an
+                # atomic operation. More precisely, the trial number computed in
+                # `_get_prepared_new_trial` is prone to race conditions without this lock.
+                models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
 
-            trial = self._get_prepared_new_trial(study_id, template_trial, session)
-            self._commit(session)
-        except OperationalError:
-            # Retry after deadlock. This may happen in distributed environments.
-            session.rollback()
-            return self._create_new_trial(study_id, template_trial)
+                trial = self._get_prepared_new_trial(study_id, template_trial, session)
+
+                self._commit(session)
+
+                break  # Successfully created trial.
+            except OperationalError:
+                session.rollback()
+
+                if n_retries > 2:
+                    raise
+
+            n_retries += 1
 
         if template_trial:
             frozen = copy.deepcopy(template_trial)
