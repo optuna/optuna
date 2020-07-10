@@ -9,6 +9,14 @@ class BaseModel(object, metaclass=abc.ABCMeta):
     """Base class for Gaussian process models"""
 
     @property
+    def x(self) -> np.ndarray:
+        raise NotImplementedError
+
+    @property
+    def y(self) -> np.ndarray:
+        raise NotImplementedError
+
+    @property
     def input_dim(self) -> Optional[int]:
         raise NotImplementedError
 

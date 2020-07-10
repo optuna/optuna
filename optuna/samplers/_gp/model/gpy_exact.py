@@ -54,28 +54,41 @@ class GPyExact(BaseModel):
         self._gpy_model = None
         self._hmc = None
         self._hmc_samples = None
-        self._cached_mus = {}
-        self._cached_sigmas = {}
-        self._cached_dmus = {}
-        self._cached_dsigmas = {}
 
         if x is not None and y is not None:
             self._initialize()
 
+    @property
+    def x(self) -> np.ndarray:
+
+        assert self._x is not None
+        return self._x
+
+    @property
+    def y(self) -> np.ndarray:
+
+        assert self._y is not None
+        return self._y
+
+    @property
     def input_dim(self) -> Optional[int]:
 
         return self._input_dim
 
+    @property
     def output_dim(self) -> Optional[int]:
 
         return self._output_dim
 
+    @property
     def n_mcmc_samples(self) -> int:
 
         return self._hmc_n_samples
 
     def _initialize(self) -> None:
 
+        assert self._x is not None
+        assert self._y is not None
         self._verify_data(self._x, self._y)
         self._input_dim = self._x.shape[1]
         self._output_dim = self._y.shape[1]
@@ -93,9 +106,17 @@ class GPyExact(BaseModel):
                 "However, {} is specified.".format(kernel_list, self._kernel)
             )
 
-        self._gpy_model = GPy.models.GPRegression(
-            self._x, self._y, kernel=k, noise_var=self._noise_var
-        )
+        if self._noise_var == "gpy_default":
+            noise_var = self._y.var() * 0.01
+        elif isinstance(self._noise_var, float):
+            noise_var = self._noise_var
+        else:
+            noise_vare_list = ["gpy_default"]
+            raise ValueError(
+                "The noise variance should float or one of the {}. "
+                "However, {} is specified.".format(noise_vare_list, self._noise_var)
+            )
+        self._gpy_model = GPy.models.GPRegression(self._x, self._y, kernel=k, noise_var=noise_var)
         self._gpy_model.kern.set_prior(
             GPy.priors.Gamma.from_EV(self._gamma_prior_expectation, self._gamma_prior_variance)
         )
@@ -116,6 +137,7 @@ class GPyExact(BaseModel):
 
     def _update_model(self) -> None:
 
+        assert self._gpy_model is not None
         self._gpy_model.optimize(max_iters=self._max_optimize_iters)
         self._gpy_model.param_array[:] = self._gpy_model.param_array * (
             1.0 + np.random.randn(self._gpy_model.param_array.size) * 0.01
@@ -142,66 +164,92 @@ class GPyExact(BaseModel):
 
     def predict(self, x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
-        mu, sigma = None, None
-        if self._cached_mus[x] > 0:
-            mu = self._cached_mus[x].pop()
-        if self._cached_sigmas[x] > 0:
-            sigma = self._cached_sigmas[x].pop()
+        assert self._gpy_model is not None
+        x = np.atleast_2d(x)
+        ps = self._gpy_model.param_array.copy()
+        _mus = []
+        _sigmas = []
+        for s in self._hmc_samples:
+            if self._gpy_model._fixes_ is None:
+                self._gpy_model[:] = s
+            else:
+                self._gpy_model[self._gpy_model._fixes_] = s
+            self._gpy_model._trigger_params_changed()
+            m, v = self._gpy_model.predict(x)
+            _mus.append(m)
+            _sigmas.append(np.sqrt(np.clip(v, 1e-10, np.inf)))
+        self._gpy_model.param_array[:] = ps
+        self._gpy_model._trigger_params_changed()
+        _mus = np.asarray(_mus)
+        _sigmas = np.asarray(_sigmas)
 
-        if mu is None or sigma is None:
-            x = np.atleast_2d(x)
-            ps = self._gpy_model.param_array.copy()
-            _mus = []
-            _sigmas = []
-            for s in self._hmc_samples:
-                if self._gpy_model._fixes_ is None:
-                    self._gpy_model[:] = s
-                else:
-                    self._gpy_model[self._gpy_model._fixes_] = s
-                self._gpy_model.trigger_params_changed()
-                m, v = self._gpy_model.predict(x)
-                _mus.append(m)
-                _sigmas.append(np.sqrt(np.clip(v, 1e-10, np.inf)))
-            self._gpy_model.param_array[:] = ps
-            self._gpy_model.trigger_params_changed()
-            self._cached_mus[x] = _mus
-            self._cached_sigmas[x] = _sigmas
-            mu = self._cached_mus[x].pop()
-            sigma = self._cached_sigmas[x].pop()
+        while _mus.ndim < 3:
+            _mus = _mus.reshape(_mus.shape + (1,))
+        while _sigmas.ndim < 4:
+            _sigmas = _sigmas.reshape(_sigmas.shape + (1,))
 
-        return mu, sigma
+        if (
+            _mus.shape[0] != self._hmc_n_samples
+            or _sigmas.shape[0] != self._hmc_n_samples
+            or _mus.shape[1] != _sigmas.shape[1]
+            or _mus.shape[2] != self._output_dim
+            or _sigmas.shape[2] != self._output_dim
+            or _sigmas.shape[3] != self._output_dim
+        ):
+            raise ValueError(
+                "In mus, sigmas = GPyExact.predict(), "
+                "mus.shape should be (n_mcmc_samples, n, output_dim) and "
+                "sigmas.shape should be (n_mcmc_samples, n, output_dim, output_dim), "
+                "but {} and {} are specified.".format(_mus.shape, _sigmas.shape)
+            )
+
+        return _mus, _sigmas
 
     def predict_gradient(self, x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
-        dmu, dsigma = None, None
-        if self._cached_dmus[x] > 0:
-            dmu = self._cached_dmus[x].pop()
-        if self._cached_dsigmas[x] > 0:
-            dsigma = self._cached_dsigmas[x].pop()
+        assert self._gpy_model is not None
+        x = np.atleast_2d(x)
+        ps = self._gpy_model.param_array.copy()
+        _dmus = []
+        _dsigmas = []
+        for s in self._hmc_samples:
+            if self._gpy_model._fixes_ is None:
+                self._gpy_model[:] = s
+            else:
+                self._gpy_model[self._gpy_model._fixes_] = s
+            self._gpy_model._trigger_params_changed()
+            _, v = self._gpy_model.predict(x)
+            std = np.sqrt(np.clip(v, 1e-10, np.inf))
+            dm, dv = self._gpy_model.predictive_gradients(x)
+            dm = dm[:, :, 0]
+            ds = dv / (2 * std)
+            _dmus.append(dm)
+            _dsigmas.append(ds)
+        self._gpy_model.param_array[:] = ps
+        self._gpy_model._trigger_params_changed()
+        _dmus = np.asarray(_dmus)
+        _dsigmas = np.asarray(_dsigmas)
 
-        if dmu is None or dsigma is None:
-            x = np.atleast_2d(x)
-            ps = self._gpy_model.param_array.copy()
-            _dmus = []
-            _dsigmas = []
-            for s in self._hmc_samples:
-                if self._gpy_model._fixes_ is None:
-                    self._gpy_model[:] = s
-                else:
-                    self._gpy_model[self._gpy_model._fixes_] = s
-                self._gpy_model.trigger_params_changed()
-                _, v = self._gpy_model.predict(x)
-                std = np.sqrt(np.clip(v, 1e-10, np.inf))
-                dm, dv = self._gpy_model.predictive_gradients(x)
-                dm = dm[:, :, 0]
-                ds = dv / (2 * std)
-                _dmus.append(dm)
-                _dsigmas.append(ds)
-            self._gpy_model.param_array[:] = ps
-            self._gpy_model.trigger_params_changed()
-            self._cached_dmus[x] = _dmus
-            self._cached_dsigmas[x] = _dsigmas
-            dmu = self._cached_dmus[x].pop()
-            dsigma = self._cached_dsigmas[x].pop()
+        while _dmus.ndim < 4:
+            _dmus = _dmus.reshape(_dmus.shape + (1,))
+        while _dsigmas.ndim < 5:
+            _dsigmas = _dsigmas.reshape(_dsigmas.shape + (1,))
 
-        return dmu, dsigma
+        if (
+            _dmus.shape[0] != self._hmc_n_samples
+            or _dsigmas.shape[0] != self._hmc_n_samples
+            or _dmus.shape[1] != _dsigmas.shape[1]
+            or _dmus.shape[2] != self._input_dim
+            or _dmus.shape[3] != self._output_dim
+            or _dsigmas.shape[2] != self._input_dim
+            or _dsigmas.shape[3] != self._output_dim
+            or _dsigmas.shape[4] != self._output_dim
+        ):
+            raise ValueError(
+                "In dmus, dsigmas = GPyExact.predict_gradient(), "
+                "dmus.shape should be (n_mcmc_samples, n, input_dim, output_dim) and "
+                "dsigmas.shape should be (n_mcmc_samples, n, input_dim, output_dim, output_dim), "
+                "but {} and {} are specified.".format(_dmus.shape, _dsigmas.shape)
+            )
+
+        return _dmus, _dsigmas

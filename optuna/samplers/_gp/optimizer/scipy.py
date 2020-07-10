@@ -38,16 +38,16 @@ class ScipyOptimizer(BaseOptimizer):
     ) -> np.ndarray:
 
         # Change the optimization problem from maximization to minimization for scipy.optimize.
-        def obj(x):
+        def obj(x: Any) -> Any:
             return -f(x)
 
-        if df is not None:
-
-            def dobj(x):
-                return -df(x)
-
+        if df is None:
+            dobj = None  # type: Optional[Callable[[Any], Any]]
         else:
-            dobj = None
+
+            def dobj(x: Any) -> Any:
+                assert df is not None
+                return -df(x)
 
         anchor_points = self._suggest_anchor_points(f=obj)
         optimized_points = []

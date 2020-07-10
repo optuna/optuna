@@ -23,9 +23,12 @@ class _BayesianOptimizationController(object):
     def __init__(
         self,
         search_space: Dict[str, distributions.BaseDistribution],
-        model: Union[str, BaseModel] = "GPyExact",
-        acquisition: Union[str, BaseAcquisitionFunction] = "EI",
-        optimizer: Union[str, BaseOptimizer] = "L-BFGS-B",
+        model: Union[str, BaseModel],
+        acquisition: Union[str, BaseAcquisitionFunction],
+        optimizer: Union[str, BaseOptimizer],
+        model_kwargs: Dict[str, Any],
+        acquisition_kwargs: Dict[str, Any],
+        optimizer_kwargs: Dict[str, Any],
     ) -> None:
 
         self._search_space = search_space
@@ -33,17 +36,19 @@ class _BayesianOptimizationController(object):
         if isinstance(model, BaseModel):
             self._model = model
         else:
-            self._model = model_selector(model)
+            self._model = model_selector(model, model_kwargs)
 
         if isinstance(acquisition, BaseAcquisitionFunction):
             self._acquisition = acquisition
         else:
-            self._acquisition = acquisition_selector(acquisition)
+            self._acquisition = acquisition_selector(acquisition, acquisition_kwargs)
 
         if isinstance(optimizer, BaseOptimizer):
             self._optimizer = optimizer
         else:
-            self._optimizer = optimizer_selector(optimizer, self._convert_search_space())
+            self._optimizer = optimizer_selector(
+                optimizer, self._convert_search_space(), optimizer_kwargs
+            )
 
     def tell(self, study: Study, trials: List[FrozenTrial]) -> None:
 
@@ -62,10 +67,10 @@ class _BayesianOptimizationController(object):
         self._model.add_data(xs, ys)
 
     def ask(self) -> Dict[str, Any]:
-        def objective(x):
+        def objective(x: np.ndarray) -> np.ndarray:
             return self._acquisition.compute_acq(x=x, model=self._model)
 
-        def derivative(x):
+        def derivative(x: np.ndarray) -> np.ndarray:
             return self._acquisition.compute_grad(x=x, model=self._model)
 
         param_values = self._optimizer.optimize(f=objective, df=derivative)
@@ -110,7 +115,7 @@ class _BayesianOptimizationController(object):
 
     def _trial_to_observation_pair(
         self, study: Study, trial: FrozenTrial
-    ) -> Tuple[List[Any], float]:
+    ) -> Tuple[List[Any], List[float]]:
 
         param_values = []
         for name, distribution in sorted(self._search_space.items()):
@@ -133,7 +138,7 @@ class _BayesianOptimizationController(object):
         if study.direction == StudyDirection.MAXIMIZE:
             value = -value
 
-        return param_values, value
+        return param_values, [value]
 
     def _convert_search_space(self) -> np.ndarray:
 

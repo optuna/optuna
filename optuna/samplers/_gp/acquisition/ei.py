@@ -6,9 +6,6 @@ from optuna.samplers._gp.acquisition.base import BaseAcquisitionFunction
 from optuna.samplers._gp.model import BaseModel
 
 
-_SIGMA0_2 = 1e-10
-
-
 class EI(BaseAcquisitionFunction):
     """Expected Improvement acquisition function.
 
@@ -17,19 +14,21 @@ class EI(BaseAcquisitionFunction):
     functions. Journal of Global Optimization, 13:455–492, 1998.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, sigma0: float = 1e-10):
+        self._sigma0 = sigma0
 
     def compute_acq(self, x: np.ndarray, model: BaseModel) -> np.ndarray:
 
+        x = np.atleast_2d(x)
         self._verify_input(x, model)
         n = x.shape[0]
+        mus, sigmas = model.predict(x)
 
-        def _compute():
-            y_best = np.min(model.Y, axis=0)
-            mu, sigma = model.predict(x)  # Predict after sampling hyperparameters by MCMC
+        def _compute(a: int) -> np.ndarray:
+            mu, sigma = mus[a], sigmas[a]
+            y_best = np.min(model.y, axis=0)
             inv_sigma = np.asarray(
-                [linalg.inv(sigma[i] + _SIGMA0_2 * np.eye(model.output_dim)) for i in range(n)]
+                [linalg.inv(sigma[i] + self._sigma0 * np.eye(model.output_dim)) for i in range(n)]
             )
             gamma = np.einsum("ijk,ik->ij", inv_sigma, mu - y_best)
 
@@ -38,7 +37,10 @@ class EI(BaseAcquisitionFunction):
             y = np.einsum("ijk,ik->ij", sigma, gamma * _Phi + _phi)
             return y
 
-        y = np.sum([_compute() for _ in range(model.n_mcmc_samples)]) / model.n_mcmc_samples
+        y = (
+            np.sum([_compute(a) for a in range(model.n_mcmc_samples)], axis=0)
+            / model.n_mcmc_samples
+        )
 
         self._verify_output_acq(y, model)
 
@@ -46,16 +48,17 @@ class EI(BaseAcquisitionFunction):
 
     def compute_grad(self, x: np.ndarray, model: BaseModel) -> np.ndarray:
 
+        x = np.atleast_2d(x)
         self._verify_input(x, model)
         n = x.shape[0]
+        mus, sigmas = model.predict(x)
+        dmus, dsigmas = model.predict_gradient(x)
 
-        def _compute():
-            y_best = np.min(model.Y, axis=0)
-            mu, sigma = model.predict(x)  # Predict after sampling hyperparameters by MCMC
-            dmu, dsigma = model.predict_gradient(x)  # Same as above
-
+        def _compute(a: int) -> np.ndarray:
+            mu, sigma, dmu, dsigma = mus[a], sigmas[a], dmus[a], dsigmas[a]
+            y_best = np.min(model.y, axis=0)
             inv_sigma = np.asarray(
-                [linalg.inv(sigma[i] + _SIGMA0_2 * np.eye(model.output_dim)) for i in range(n)]
+                [linalg.inv(sigma[i] + self._sigma0 * np.eye(model.output_dim)) for i in range(n)]
             )
             gamma = np.einsum("ijk,ik->ij", inv_sigma, mu - y_best)
             dgamma = -np.einsum("Ipr,Iirs,Is->Iip", inv_sigma, dsigma, gamma) + np.einsum(
@@ -70,7 +73,10 @@ class EI(BaseAcquisitionFunction):
             dy = np.einsum("Iijp,Ip->Iij", dsigma, z) + np.einsum("Ijp,Iip->Iij", sigma, dz)
             return dy
 
-        dy = np.sum([_compute() for _ in range(model.n_mcmc_samples)]) / model.n_mcmc_samples
+        dy = (
+            np.sum([_compute(a) for a in range(model.n_mcmc_samples)], axis=0)
+            / model.n_mcmc_samples
+        )
 
         self._verify_output_grad(dy, model)
 

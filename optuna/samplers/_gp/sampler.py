@@ -10,9 +10,9 @@ from optuna._experimental import experimental
 from optuna import distributions
 from optuna import logging
 from optuna.samplers._gp.controller import _BayesianOptimizationController
+from optuna.samplers._random import RandomSampler
 from optuna.samplers import BaseSampler
 from optuna.samplers import IntersectionSearchSpace
-from optuna.samplers import RandomSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -65,17 +65,25 @@ class GPSampler(BaseSampler):
 
     def __init__(
         self,
-        model: str = "SVGP",
+        model: str = "GPyExact",
         acquisition: str = "EI",
-        optimizer: str = "LBFGS",
+        optimizer: str = "L-BFGS-B",
+        model_kwargs: Optional[Dict[str, Any]] = None,
+        acquisition_kwargs: Optional[Dict[str, Any]] = None,
+        optimizer_kwargs: Optional[Dict[str, Any]] = None,
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
-        n_startup_trials: int = 1,
+        n_startup_trials: int = 10,
         consider_pruned_trials: bool = False,
         seed: Optional[int] = None,
     ) -> None:
 
-        self._boc_kwargs = {"model": model, "acquisition": acquisition, "optimizer": optimizer}
+        self._model = model
+        self._acquisition = acquisition
+        self._optimizer = optimizer
+        self._model_kwargs = model_kwargs or {}
+        self._acquisition_kwargs = acquisition_kwargs or {}
+        self._optimizer_kwargs = optimizer_kwargs or {}
         self._independent_sampler = independent_sampler or RandomSampler()
         self._warn_independent_sampling = warn_independent_sampling
         self._n_startup_trials = n_startup_trials
@@ -93,7 +101,7 @@ class GPSampler(BaseSampler):
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, distributions.BaseDistribution]:
 
-        search_space = {}
+        search_space = {}  # type: Dict[str, distributions.BaseDistribution]
         for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
                 # `GPSampler` cannot handle distributions that contain just a single value,
@@ -131,7 +139,15 @@ class GPSampler(BaseSampler):
         if len(trials) < self._n_startup_trials:
             return {}
 
-        controller = _BayesianOptimizationController(search_space=search_space, **self._boc_kwargs)
+        controller = _BayesianOptimizationController(
+            search_space=search_space,
+            model=self._model,
+            acquisition=self._acquisition,
+            optimizer=self._optimizer,
+            model_kwargs=self._model_kwargs,
+            acquisition_kwargs=self._acquisition_kwargs,
+            optimizer_kwargs=self._optimizer_kwargs,
+        )
         controller.tell(study, trials)
         return controller.ask()
 
