@@ -1,5 +1,6 @@
 from optuna import create_study
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
+from optuna.samplers import RandomSampler
 from optuna import Trial
 
 
@@ -13,7 +14,7 @@ def objective(trial: Trial) -> float:
 def test_mean_decrease_impurity_importance_evaluator_n_trees() -> None:
     # Assumes that `seed` can be fixed to reproduce identical results.
 
-    study = create_study()
+    study = create_study(sampler=RandomSampler(seed=0))
     study.optimize(objective, n_trials=3)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(n_trees=10, seed=0)
@@ -28,7 +29,7 @@ def test_mean_decrease_impurity_importance_evaluator_n_trees() -> None:
 def test_mean_decrease_impurity_importance_evaluator_max_depth() -> None:
     # Assumes that `seed` can be fixed to reproduce identical results.
 
-    study = create_study()
+    study = create_study(sampler=RandomSampler(seed=0))
     study.optimize(objective, n_trials=3)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(max_depth=1, seed=0)
@@ -41,7 +42,7 @@ def test_mean_decrease_impurity_importance_evaluator_max_depth() -> None:
 
 
 def test_mean_decrease_impurity_importance_evaluator_seed() -> None:
-    study = create_study()
+    study = create_study(sampler=RandomSampler(seed=0))
     study.optimize(objective, n_trials=3)
 
     evaluator = MeanDecreaseImpurityImportanceEvaluator(seed=2)
