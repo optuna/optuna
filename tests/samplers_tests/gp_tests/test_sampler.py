@@ -5,8 +5,7 @@ import optuna
 from optuna.samplers import GPSampler
 
 
-def test_optimize():
-    # type: (bool) -> None
+def test_optimize_1d() -> None:
 
     sampler = GPSampler(
         model_kwargs={
@@ -20,6 +19,27 @@ def test_optimize():
     )
     study = optuna.create_study(sampler=sampler)
     study.optimize(lambda t: t.suggest_uniform("x", 10, 20), n_trials=20)
+
+
+def test_optimize_2d() -> None:
+
+    def objective(trial):
+        x = trial.suggest_float('x', -1., 1.)
+        y = trial.suggest_float('y', -1., 1.)
+        return x ** 2 + y
+
+    sampler = GPSampler(
+        model_kwargs={
+            "max_optimize_iters": 10,
+            "hmc_burnin": 1,
+            "hmc_n_samples": 1,
+            "hmc_subsample_interval": 1,
+            "hmc_iters": 1,
+        },
+        optimizer_kwargs={"maxiter": 10, "n_samples_for_anchor": 1, "n_anchor": 1},
+    )
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=20)
 
 
 def test_sample_relative() -> None:

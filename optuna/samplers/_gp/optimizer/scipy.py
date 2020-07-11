@@ -51,7 +51,7 @@ class ScipyOptimizer(BaseOptimizer):
 
         anchor_points = self._suggest_anchor_points(f=obj)
         optimized_points = []
-        for i, a in enumerate(anchor_points):
+        for a in anchor_points:
             res = self._optimize_with_x0(a, f=obj, df=dobj)
             optimized_points.append(res)
 

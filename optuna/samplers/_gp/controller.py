@@ -166,6 +166,6 @@ class _BayesianOptimizationController(object):
                 )
 
             bounds[i][0] = low
-            bounds[i][1] = high
+            bounds[i][1] = high - (high - low) * 1e-10  # GPy includes the right endpoint.
 
         return bounds

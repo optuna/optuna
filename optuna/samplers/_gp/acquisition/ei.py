@@ -30,7 +30,7 @@ class EI(BaseAcquisitionFunction):
             inv_sigma = np.asarray(
                 [linalg.inv(sigma[i] + self._sigma0 * np.eye(model.output_dim)) for i in range(n)]
             )
-            gamma = np.einsum("ijk,ik->ij", inv_sigma, mu - y_best)
+            gamma = np.einsum("ijk,ik->ij", inv_sigma, y_best - mu)
 
             _Phi = stats.norm.cdf(gamma)
             _phi = stats.norm.pdf(gamma)
@@ -60,9 +60,9 @@ class EI(BaseAcquisitionFunction):
             inv_sigma = np.asarray(
                 [linalg.inv(sigma[i] + self._sigma0 * np.eye(model.output_dim)) for i in range(n)]
             )
-            gamma = np.einsum("ijk,ik->ij", inv_sigma, mu - y_best)
+            gamma = np.einsum("ijk,ik->ij", inv_sigma, y_best - mu)
             dgamma = -np.einsum("Ipr,Iirs,Is->Iip", inv_sigma, dsigma, gamma) + np.einsum(
-                "Ipq,Iiq->Iip", inv_sigma, dmu - y_best
+                "Ipq,Iiq->Iip", inv_sigma, y_best - dmu
             )
 
             _Phi = stats.norm.cdf(gamma)
