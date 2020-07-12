@@ -13,7 +13,6 @@ import pytest
 
 import optuna
 from optuna.integration._lightgbm_tuner.optimize import _BaseTuner
-from optuna.integration._lightgbm_tuner.optimize import _LightGBMBaseTuner
 from optuna.integration._lightgbm_tuner.optimize import _OptunaObjective
 from optuna.integration._lightgbm_tuner.optimize import _OptunaObjectiveCV
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
