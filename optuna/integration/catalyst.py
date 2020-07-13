@@ -18,7 +18,7 @@ class CatalystPruningCallback(Callback):
 
     See `the example <https://github.com/optuna/optuna/blob/master/
     examples/catalyst_simple.py>`_ if you want to add a pruning callback
-    which observes accuracy of a Catalyst's SupervisedRunner.
+    which observes the accuracy of Catalyst's ``SupervisedRunner``.
 
     Args:
         trial:
