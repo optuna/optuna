@@ -2,7 +2,6 @@ import collections
 import itertools
 import random
 
-from optuna._experimental import experimental
 from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
 from optuna import type_checking
@@ -25,7 +24,6 @@ if type_checking.TYPE_CHECKING:
 _logger = get_logger(__name__)
 
 
-@experimental("1.2.0")
 class GridSampler(BaseSampler):
     """Sampler using grid search.
 

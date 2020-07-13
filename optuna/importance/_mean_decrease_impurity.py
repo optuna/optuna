@@ -7,7 +7,6 @@ from typing import ValuesView
 
 import numpy
 
-from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
@@ -22,7 +21,6 @@ with try_import() as _imports:
     from sklearn.preprocessing import OneHotEncoder
 
 
-@experimental("1.5.0")
 class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
     """Mean Decrease Impurity (MDI) parameter importance evaluator.
 
@@ -36,28 +34,28 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
         <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html#sklearn.ensemble.RandomForestClassifier.feature_importances_>`_.
 
     Args:
-        n_estimators:
+        n_trees:
             Number of trees in the random forest.
         max_depth:
             The maximum depth of each tree in the random forest.
-        random_seed:
+        seed:
             Seed for the random forest.
     """
 
     def __init__(
-        self, n_estimators: int = 16, max_depth: int = 64, random_state: Optional[int] = None
+        self, *, n_trees: int = 64, max_depth: int = 64, seed: Optional[int] = None
     ) -> None:
         _imports.check()
 
         self._forest = RandomForestRegressor(
-            n_estimators=n_estimators,
+            n_estimators=n_trees,
             max_depth=max_depth,
             min_samples_split=2,
             min_samples_leaf=1,
-            random_state=random_state,
+            random_state=seed,
         )
 
-    def evaluate(self, study: Study, params: Optional[List[str]]) -> Dict[str, float]:
+    def evaluate(self, study: Study, params: Optional[List[str]] = None) -> Dict[str, float]:
         distributions = _get_distributions(study, params)
         params_data, values_data = _get_study_data(study, distributions)
 

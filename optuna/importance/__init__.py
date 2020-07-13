@@ -2,16 +2,16 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from optuna._experimental import experimental
 from optuna.importance._base import BaseImportanceEvaluator
-from optuna.importance._fanova import FanovaImportanceEvaluator  # NOQA
-from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
+from optuna.importance._fanova import FanovaImportanceEvaluator
+from optuna.importance._mean_decrease_impurity import (  # NOQA
+    MeanDecreaseImpurityImportanceEvaluator,  # NOQA
+)
 from optuna.study import Study
 
 
-@experimental("1.3.0")
 def get_param_importances(
-    study: Study, evaluator: BaseImportanceEvaluator = None, params: Optional[List[str]] = None
+    study: Study, *, evaluator: BaseImportanceEvaluator = None, params: Optional[List[str]] = None
 ) -> Dict[str, float]:
     """Evaluate parameter importances based on completed trials in the given study.
 
@@ -59,7 +59,7 @@ def get_param_importances(
         assessed importances.
     """
     if evaluator is None:
-        evaluator = MeanDecreaseImpurityImportanceEvaluator()
+        evaluator = FanovaImportanceEvaluator()
 
     if not isinstance(evaluator, BaseImportanceEvaluator):
         raise TypeError("Evaluator must be a subclass of BaseImportanceEvaluator.")

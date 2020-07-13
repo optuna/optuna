@@ -1,31 +1,14 @@
-.. module:: optuna.pruners
-
 optuna.pruners
 ==============
 
-.. autoclass:: BasePruner
-    :members:
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autoclass:: MedianPruner
-    :members:
-    :exclude-members: prune
-
-.. autoclass:: NopPruner
-    :members:
-    :exclude-members: prune
-
-.. autoclass:: PercentilePruner
-    :members:
-    :exclude-members: prune
-
-.. autoclass:: SuccessiveHalvingPruner
-    :members:
-    :exclude-members: prune
-
-.. autoclass:: HyperbandPruner
-    :members:
-    :exclude-members: prune
-
-.. autoclass:: ThresholdPruner
-    :members:
-    :exclude-members: prune
+   optuna.pruners.BasePruner
+   optuna.pruners.MedianPruner
+   optuna.pruners.NopPruner
+   optuna.pruners.PercentilePruner
+   optuna.pruners.SuccessiveHalvingPruner
+   optuna.pruners.HyperbandPruner
+   optuna.pruners.ThresholdPruner

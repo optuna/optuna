@@ -65,10 +65,10 @@ class Net(nn.Module):
 
         # We optimize the number of layers, hidden units in each layer and dropouts.
         n_layers = trial.suggest_int("n_layers", 1, 3)
-        dropout = trial.suggest_uniform("dropout", 0.2, 0.5)
+        dropout = trial.suggest_float("dropout", 0.2, 0.5)
         input_dim = 28 * 28
         for i in range(n_layers):
-            output_dim = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
+            output_dim = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
             self.layers.append(nn.Linear(input_dim, output_dim))
             self.dropouts.append(nn.Dropout(dropout))
             input_dim = output_dim
@@ -149,7 +149,7 @@ def objective(trial):
         val_percent_check=PERCENT_VALID_EXAMPLES,
         checkpoint_callback=checkpoint_callback,
         max_epochs=EPOCHS,
-        gpus=0 if torch.cuda.is_available() else None,
+        gpus=1 if torch.cuda.is_available() else None,
         callbacks=[metrics_callback],
         early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="val_acc"),
     )

@@ -4,7 +4,6 @@ from typing import Optional
 from typing import Union
 
 import optuna
-from optuna._experimental import experimental
 from optuna import logging
 from optuna.pruners._base import BasePruner
 from optuna.pruners._successive_halving import SuccessiveHalvingPruner
@@ -13,7 +12,6 @@ from optuna.trial._state import TrialState
 _logger = logging.get_logger(__name__)
 
 
-@experimental("1.1.0")
 class HyperbandPruner(BasePruner):
     """Pruner using Hyperband.
 
@@ -57,6 +55,9 @@ class HyperbandPruner(BasePruner):
         Please set ``reduction_factor`` so that the number of brackets is not too large　(about 4 ~
         6 in most use cases).　Please see Section 3.6 of the `original paper
         <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
+
+    .. seealso::
+        Please refer to :meth:`~optuna.trial.Trial.report`.
 
     Example:
 

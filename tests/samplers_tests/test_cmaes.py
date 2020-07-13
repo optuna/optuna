@@ -1,4 +1,6 @@
+from typing import List
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import numpy as np
@@ -9,6 +11,7 @@ from optuna.samplers._cmaes import _initialize_sigma0
 from optuna.samplers._cmaes import _initialize_x0
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
+from optuna.trial import FrozenTrial
 
 
 def test_consider_pruned_trials_experimental_warning() -> None:
@@ -118,3 +121,55 @@ def test_reseed_rng() -> None:
     ) as mock_object:
         sampler.reseed_rng()
         assert mock_object.call_count == 1
+
+
+def test_get_trials() -> None:
+
+    with patch("optuna.Study.get_trials", new=Mock(side_effect=lambda deepcopy: _create_trials())):
+        sampler = optuna.samplers.CmaEsSampler(consider_pruned_trials=False)
+        study = optuna.create_study(sampler=sampler)
+        trials = sampler._get_trials(study)
+        assert len(trials) == 1
+
+        sampler = optuna.samplers.CmaEsSampler(consider_pruned_trials=True)
+        study = optuna.create_study(sampler=sampler)
+        trials = sampler._get_trials(study)
+        assert len(trials) == 2
+        assert trials[0].value == 1.0
+        assert trials[1].value == 2.0
+
+
+def _create_trials() -> List[FrozenTrial]:
+
+    trials = []
+    trials.append(
+        FrozenTrial(
+            number=0,
+            value=1.0,
+            state=optuna.trial.TrialState.COMPLETE,
+            user_attrs={},
+            system_attrs={},
+            params={},
+            distributions={},
+            intermediate_values={},
+            datetime_start=None,
+            datetime_complete=None,
+            trial_id=0,
+        )
+    )
+    trials.append(
+        FrozenTrial(
+            number=1,
+            value=None,
+            state=optuna.trial.TrialState.PRUNED,
+            user_attrs={},
+            system_attrs={},
+            params={},
+            distributions={},
+            intermediate_values={0: 2.0},
+            datetime_start=None,
+            datetime_complete=None,
+            trial_id=0,
+        )
+    )
+    return trials

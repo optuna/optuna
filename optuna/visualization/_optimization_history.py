@@ -33,7 +33,7 @@ def plot_optimization_history(study: Study) -> "go.Figure":
 
         .. raw:: html
 
-            <iframe src="../_static/plot_optimization_history.html"
+            <iframe src="../../_static/plot_optimization_history.html"
              width="100%" height="500px" frameborder="0">
             </iframe>
 

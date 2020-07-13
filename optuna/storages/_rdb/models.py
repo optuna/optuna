@@ -45,18 +45,21 @@ class StudyModel(BaseModel):
     direction = Column(Enum(StudyDirection), nullable=False)
 
     @classmethod
-    def find_by_id(cls, study_id, session):
-        # type: (int, orm.Session) -> Optional[StudyModel]
+    def find_by_id(cls, study_id, session, for_update=False):
+        # type: (int, orm.Session, bool) -> Optional[StudyModel]
 
-        study = session.query(cls).filter(cls.study_id == study_id).one_or_none()
+        query = session.query(cls).filter(cls.study_id == study_id)
 
-        return study
+        if for_update:
+            query = query.with_for_update()
+
+        return query.one_or_none()
 
     @classmethod
-    def find_or_raise_by_id(cls, study_id, session):
-        # type: (int, orm.Session) -> StudyModel
+    def find_or_raise_by_id(cls, study_id, session, for_update=False):
+        # type: (int, orm.Session, bool) -> StudyModel
 
-        study = cls.find_by_id(study_id, session)
+        study = cls.find_by_id(study_id, session, for_update)
         if study is None:
             raise KeyError(NOT_FOUND_MSG)
 

@@ -7,11 +7,11 @@ on:
   release:
     types: [published]
   pull_request:
-    branches:
-      - master
+    paths:
+      - Dockerfile
+      - setup.py
 
 env:
-  DOCKER_BASE_NAME: docker.pkg.github.com/${{ github.repository }}/optuna
   DOCKER_HUB_BASE_NAME: optuna/optuna
 
 jobs:
@@ -35,16 +35,19 @@ jobs:
         export TAG_NAME="py${{ matrix.python_version }}"
         if [ "${{ github.event_name }}" = 'release' ]; then
           export TAG_NAME="${{ github.event.release.tag_name }}-${TAG_NAME}"
+          export BASE_IMAGE="python"
         fi
         if [ "${{matrix.build_type}}" = 'dev' ]; then
           export TAG_NAME="${TAG_NAME}-dev"
+          export BASE_IMAGE="circleci/python"
         fi
         echo "::set-env name=HUB_TAG::${DOCKER_HUB_BASE_NAME}:${TAG_NAME}"
 
 
     - name: Build the Docker image
       run: |
-        docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
+        docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --build-arg BASE_IMAG
+E="${BASE_IMAGE}" --file Dockerfile --tag "${HUB_TAG}"
 
     - name: Login & Push to Docker Hub
       if: ${{ github.event_name != 'pull_request' }}

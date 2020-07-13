@@ -1,6 +1,3 @@
-.. module:: optuna.visualization
-
-
 optuna.visualization
 ====================
 
@@ -12,16 +9,15 @@ optuna.visualization
     .. _JupyterLab: https://github.com/jupyterlab/jupyterlab
     .. _installation guide: https://github.com/plotly/plotly.py#jupyterlab-support-python-35
 
-.. autofunction:: plot_contour
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autofunction:: plot_intermediate_values
-
-.. autofunction:: plot_optimization_history
-
-.. autofunction:: plot_parallel_coordinate
-
-.. autofunction:: plot_param_importances
-
-.. autofunction:: plot_slice
-
-.. autofunction:: is_available
+   optuna.visualization.plot_contour
+   optuna.visualization.plot_edf
+   optuna.visualization.plot_intermediate_values
+   optuna.visualization.plot_optimization_history
+   optuna.visualization.plot_parallel_coordinate
+   optuna.visualization.plot_param_importances
+   optuna.visualization.plot_slice
+   optuna.visualization.is_available

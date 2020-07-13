@@ -69,7 +69,7 @@ jobs:
       - run:
           name: install
           command: |
-            python -m venv venv || virtualenv venv --python=python3
+            python -m venv venv || virtualenv venv --python=python3.8
             . venv/bin/activate
             pip install -U pip
             pip install --progress-bar off .[document]
@@ -123,16 +123,6 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get -y install openmpi-bin libopenmpi-dev
-
-            # Install swig which is required by pyrfr which is required by fanova.
-            wget http://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz
-            tar -zxvf swig-3.0.12.tar.gz
-            pushd swig-3.0.12
-            ./configure
-            make
-            sudo make install
-            popd
-            swig -version
 
             python -m venv venv || virtualenv venv
             . venv/bin/activate
@@ -194,6 +184,7 @@ jobs:
             . venv/bin/activate
             pytest tests --ignore tests/integration_tests/test_fastai.py \
                 --ignore tests/integration_tests/test_keras.py \
+                --ignore tests/integration_tests/test_tensorboard.py \
                 --ignore tests/integration_tests/test_tensorflow.py \
                 --ignore tests/integration_tests/test_tfkeras.py \
                 --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
@@ -236,6 +227,7 @@ jobs:
             . venv/bin/activate
             pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py \
                 --ignore tests/integration_tests/test_fastai.py \
-                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
+                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py \
+                --ignore tests/integration_tests/test_catalyst.py
 
       - run: *tests-mn

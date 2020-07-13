@@ -3,7 +3,6 @@ from typing import List
 from typing import Optional
 
 import optuna
-from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -36,7 +35,6 @@ if _imports.is_successful():
 logger = get_logger(__name__)
 
 
-@experimental("1.5.0")
 def plot_param_importances(
     study: Study, evaluator: BaseImportanceEvaluator = None, params: Optional[List[str]] = None
 ) -> "go.Figure":
@@ -63,7 +61,7 @@ def plot_param_importances(
 
         .. raw:: html
 
-            <iframe src="../_static/plot_param_importances.html"
+            <iframe src="../../_static/plot_param_importances.html"
              width="100%" height="500px" frameborder="0">
             </iframe>
 

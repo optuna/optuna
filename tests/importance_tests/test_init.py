@@ -142,7 +142,7 @@ def test_get_param_importances_invalid_evaluator_type() -> None:
     study.optimize(objective, n_trials=3)
 
     with pytest.raises(TypeError):
-        get_param_importances(study, evaluator={})
+        get_param_importances(study, evaluator={})  # type: ignore
 
 
 @parametrize_evaluator
@@ -199,7 +199,7 @@ def test_get_param_importances_invalid_params_type(
     study.optimize(objective, n_trials=3)
 
     with pytest.raises(TypeError):
-        get_param_importances(study, evaluator=evaluator_init_func(), params={})
+        get_param_importances(study, evaluator=evaluator_init_func(), params={})  # type: ignore
 
     with pytest.raises(TypeError):
-        get_param_importances(study, evaluator=evaluator_init_func(), params=[0])
+        get_param_importances(study, evaluator=evaluator_init_func(), params=[0])  # type: ignore

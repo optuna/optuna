@@ -13,14 +13,12 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
-import warnings
 
 import numpy as np
 import tqdm
 
 import optuna
 from optuna._deprecated import deprecated
-from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
@@ -365,6 +363,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
         self._start_time = None  # type: Optional[float]
+        self._use_pbar = True
         self._optuna_callbacks = optuna_callbacks
         self._best_params = {}
 
@@ -437,8 +436,8 @@ class _LightGBMBaseTuner(_BaseTuner):
         if self.auto_options["verbosity"] == 0:
             optuna.logging.disable_default_handler()
             self.lgbm_params["verbose"] = -1
-            self.lgbm_params["seed"] = 111
             self.lgbm_kwargs["verbose_eval"] = False
+            self._use_pbar = False
 
         # Handling aliases.
         _handling_alias_parameters(self.lgbm_params)
@@ -470,10 +469,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         param_name = "feature_fraction"
         param_values = np.linspace(0.4, 1.0, n_trials).tolist()
 
-        # TODO(toshihikoyanase): Remove catch_warnings after GridSampler becomes non-experimental.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
-            sampler = optuna.samplers.GridSampler({param_name: param_values})
+        sampler = optuna.samplers.GridSampler({param_name: param_values})
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction")
 
     def tune_num_leaves(self, n_trials: int = 20) -> None:
@@ -492,10 +488,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         ).tolist()
         param_values = [val for val in param_values if val >= 0.4 and val <= 1.0]
 
-        # TODO(toshihikoyanase): Remove catch_warnings after GridSampler becomes non-experimental.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
-            sampler = optuna.samplers.GridSampler({param_name: param_values})
+        sampler = optuna.samplers.GridSampler({param_name: param_values})
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction_stage2")
 
     def tune_regularization_factors(self, n_trials: int = 20) -> None:
@@ -510,10 +503,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         param_name = "min_child_samples"
         param_values = [5, 10, 25, 50, 100]
 
-        # TODO(toshihikoyanase): Remove catch_warnings after GridSampler becomes non-experimental.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=optuna.exceptions.ExperimentalWarning)
-            sampler = optuna.samplers.GridSampler({param_name: param_values})
+        sampler = optuna.samplers.GridSampler({param_name: param_values})
         self._tune_params([param_name], len(param_values), sampler, "min_data_in_leaf")
 
     def _tune_params(
@@ -523,7 +513,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         sampler: optuna.samplers.BaseSampler,
         step_name: str,
     ) -> _OptunaObjective:
-        pbar = tqdm.tqdm(total=n_trials, ascii=True)
+        pbar = tqdm.tqdm(total=n_trials, ascii=True) if self._use_pbar else None
 
         # Set current best parameters.
         self.lgbm_params.update(self.best_params)
@@ -560,8 +550,9 @@ class _LightGBMBaseTuner(_BaseTuner):
                 callbacks=self._optuna_callbacks,
             )
 
-        pbar.close()
-        del pbar
+        if pbar:
+            pbar.close()
+            del pbar
 
         return objective
 
@@ -571,7 +562,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         target_param_names: List[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: tqdm.tqdm,
+        pbar: Optional[tqdm.tqdm],
     ) -> _OptunaObjective:
 
         raise NotImplementedError
@@ -620,7 +611,6 @@ class _LightGBMBaseTuner(_BaseTuner):
         return _StepwiseStudy(study, step_name)
 
 
-@experimental("1.5.0")
 class LightGBMTuner(_LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM.
 
@@ -797,7 +787,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         target_param_names: List[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: tqdm.tqdm,
+        pbar: Optional[tqdm.tqdm],
     ) -> _OptunaObjective:
         return _OptunaObjective(
             target_param_names,
@@ -811,7 +801,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
         )
 
 
-@experimental("1.5.0")
 class LightGBMTunerCV(_LightGBMBaseTuner):
     """Hyperparameter tuner for LightGBM with cross-validation.
 
@@ -913,7 +902,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         target_param_names: List[str],
         train_set: "lgb.Dataset",
         step_name: str,
-        pbar: tqdm.tqdm,
+        pbar: Optional[tqdm.tqdm],
     ) -> _OptunaObjective:
         return _OptunaObjectiveCV(
             target_param_names,

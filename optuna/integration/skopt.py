@@ -1,27 +1,26 @@
+import copy
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+
 import numpy as np
 
 import optuna
+from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna import distributions
 from optuna import samplers
 from optuna.samplers import BaseSampler
+from optuna.study import Study
 from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna import type_checking
 
-with optuna._imports.try_import() as _imports:
+with try_import() as _imports:
     import skopt
     from skopt.space import space
-
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
-
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
 
 
 class SkoptSampler(BaseSampler):
@@ -78,16 +77,33 @@ class SkoptSampler(BaseSampler):
         n_startup_trials:
             The independent sampling is used until the given number of trials finish in the
             same study.
+
+        consider_pruned_trials:
+            If this is :obj:`True`, the PRUNED trials are considered for sampling.
+
+            .. note::
+                Added in v2.0.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.0.0.
+
+            .. note::
+                As the number of trials :math:`n` increases, each sampling takes longer and longer
+                on a scale of :math:`O(n^3)`. And, if this is :obj:`True`, the number of trials
+                will increase. So, it is suggested to set this flag :obj:`False` when each
+                evaluation of the objective function is relatively faster than each sampling. On
+                the other hand, it is suggested to set this flag :obj:`True` when each evaluation
+                of the objective function is relatively slower than each sampling.
     """
 
     def __init__(
         self,
-        independent_sampler=None,
-        warn_independent_sampling=True,
-        skopt_kwargs=None,
-        n_startup_trials=1,
-    ):
-        # type: (Optional[BaseSampler], bool, Optional[Dict[str, Any]], int) -> None
+        independent_sampler: Optional[BaseSampler] = None,
+        warn_independent_sampling: bool = True,
+        skopt_kwargs: Optional[Dict[str, Any]] = None,
+        n_startup_trials: int = 1,
+        *,
+        consider_pruned_trials: bool = False
+    ) -> None:
 
         _imports.check()
 
@@ -99,13 +115,22 @@ class SkoptSampler(BaseSampler):
         self._warn_independent_sampling = warn_independent_sampling
         self._n_startup_trials = n_startup_trials
         self._search_space = samplers.IntersectionSearchSpace()
+        self._consider_pruned_trials = consider_pruned_trials
+
+        if self._consider_pruned_trials:
+            self._raise_experimental_warning_for_consider_pruned_trials()
+
+    @experimental("2.0.0", name="`consider_pruned_trials = True` in SkoptSampler")
+    def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
+        pass
 
     def reseed_rng(self) -> None:
 
         self._independent_sampler.reseed_rng()
 
-    def infer_relative_search_space(self, study, trial):
-        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, distributions.BaseDistribution]:
 
         search_space = {}
         for name, distribution in self._search_space.calculate(study).items():
@@ -121,13 +146,17 @@ class SkoptSampler(BaseSampler):
 
         return search_space
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def sample_relative(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        search_space: Dict[str, distributions.BaseDistribution],
+    ) -> Dict[str, Any]:
 
         if len(search_space) == 0:
             return {}
 
-        complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+        complete_trials = self._get_trials(study)
         if len(complete_trials) < self._n_startup_trials:
             return {}
 
@@ -135,11 +164,16 @@ class SkoptSampler(BaseSampler):
         optimizer.tell(study, complete_trials)
         return optimizer.ask()
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: distributions.BaseDistribution,
+    ) -> Any:
 
         if self._warn_independent_sampling:
-            complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+            complete_trials = self._get_trials(study)
             if len(complete_trials) >= self._n_startup_trials:
                 self._log_independent_sampling(trial, param_name)
 
@@ -147,8 +181,7 @@ class SkoptSampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def _log_independent_sampling(self, trial, param_name):
-        # type: (FrozenTrial, str) -> None
+    def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
 
         logger = optuna.logging.get_logger(__name__)
         logger.warning(
@@ -162,10 +195,30 @@ class SkoptSampler(BaseSampler):
             )
         )
 
+    def _get_trials(self, study: Study) -> List[FrozenTrial]:
+        complete_trials = []
+        for t in study.get_trials(deepcopy=False):
+            if t.state == TrialState.COMPLETE:
+                complete_trials.append(t)
+            elif (
+                t.state == TrialState.PRUNED
+                and len(t.intermediate_values) > 0
+                and self._consider_pruned_trials
+            ):
+                _, value = max(t.intermediate_values.items())
+                if value is None:
+                    continue
+                # We rewrite the value of the trial `t` for sampling, so we need a deepcopy.
+                copied_t = copy.deepcopy(t)
+                copied_t.value = value
+                complete_trials.append(copied_t)
+        return complete_trials
+
 
 class _Optimizer(object):
-    def __init__(self, search_space, skopt_kwargs):
-        # type: (Dict[str, BaseDistribution], Dict[str, Any]) -> None
+    def __init__(
+        self, search_space: Dict[str, distributions.BaseDistribution], skopt_kwargs: Dict[str, Any]
+    ) -> None:
 
         self._search_space = search_space
 
@@ -200,8 +253,7 @@ class _Optimizer(object):
 
         self._optimizer = skopt.Optimizer(dimensions, **skopt_kwargs)
 
-    def tell(self, study, complete_trials):
-        # type: (Study, List[FrozenTrial]) -> None
+    def tell(self, study: Study, complete_trials: List[FrozenTrial]) -> None:
 
         xs = []
         ys = []
@@ -216,8 +268,7 @@ class _Optimizer(object):
 
         self._optimizer.tell(xs, ys)
 
-    def ask(self):
-        # type: () -> Dict[str, Any]
+    def ask(self) -> Dict[str, Any]:
 
         params = {}
         param_values = self._optimizer.ask()
@@ -227,18 +278,14 @@ class _Optimizer(object):
             if isinstance(distribution, distributions.IntUniformDistribution):
                 value = value * distribution.step + distribution.low
             if isinstance(distribution, distributions.IntLogUniformDistribution):
-                value = int(
-                    np.round((value - distribution.low) / distribution.step) * distribution.step
-                    + distribution.low
-                )
+                value = int(np.round(value))
                 value = min(max(value, distribution.low), distribution.high)
 
             params[name] = value
 
         return params
 
-    def _is_compatible(self, trial):
-        # type: (FrozenTrial) -> bool
+    def _is_compatible(self, trial: FrozenTrial) -> bool:
 
         # Thanks to `intersection_search_space()` function, in sequential optimization,
         # the parameters of complete trials are always compatible with the search space.
@@ -258,8 +305,9 @@ class _Optimizer(object):
 
         return True
 
-    def _complete_trial_to_skopt_observation(self, study, trial):
-        # type: (Study, FrozenTrial) -> Tuple[List[Any], float]
+    def _complete_trial_to_skopt_observation(
+        self, study: Study, trial: FrozenTrial
+    ) -> Tuple[List[Any], float]:
 
         param_values = []
         for name, distribution in sorted(self._search_space.items()):
