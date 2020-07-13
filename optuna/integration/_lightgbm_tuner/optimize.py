@@ -684,7 +684,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
                 Please use :func:`~optuna.logging.set_verbosity` instead.
 
         show_progress_bar:
-            Flag to show progress bars or not. To disable progress bar, set this ``False``.
+            Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
 
             .. note::
                 Progress bars will be fragmented by logging messages of LightGBM and Optuna.
@@ -887,7 +887,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
                 Please use :func:`~optuna.logging.set_verbosity` instead.
 
         show_progress_bar:
-            Flag to show progress bars or not. To disable progress bar, set this ``False``.
+            Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
 
             .. note::
                 Progress bars will be fragmented by logging messages of LightGBM and Optuna.
