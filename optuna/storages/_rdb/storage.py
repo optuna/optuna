@@ -710,7 +710,7 @@ class RDBStorage(BaseStorage):
                     value_dict = {value_model.step: value_model for value_model in value_models}
                     for s, v in intermediate_values.items():
                         if s in value_dict:
-                            value_dict[s] = v
+                            value_dict[s].value = v
                     session.add_all(v for (k, v) in value_dict.items() if k in intermediate_values)
                     session.add_all(
                         models.TrialValueModel(step=s, value=v, trial_id=trial_id)
