@@ -462,11 +462,57 @@ class RDBStorage(BaseStorage):
 
         """
 
-        session = self.scoped_session()
+        # Retry a couple of times. Deadlocks may occur in distributed environments.
+        n_retries = 0
+        while True:
+            session = self.scoped_session()
 
-        # Ensure that that study exists.
-        models.StudyModel.find_or_raise_by_id(study_id, session)
+            try:
+                # Ensure that that study exists.
+                #
+                # Locking within a study is necessary since the creation of a trial is not an
+                # atomic operation. More precisely, the trial number computed in
+                # `_get_prepared_new_trial` is prone to race conditions without this lock.
+                models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
 
+                trial = self._get_prepared_new_trial(study_id, template_trial, session)
+
+                self._commit(session)
+
+                break  # Successfully created trial.
+            except OperationalError:
+                session.rollback()
+
+                if n_retries > 2:
+                    raise
+
+            n_retries += 1
+
+        if template_trial:
+            frozen = copy.deepcopy(template_trial)
+            frozen.number = trial.number
+            frozen.datetime_start = trial.datetime_start
+            frozen._trial_id = trial.trial_id
+        else:
+            frozen = FrozenTrial(
+                number=trial.number,
+                state=trial.state,
+                value=None,
+                datetime_start=trial.datetime_start,
+                datetime_complete=None,
+                params={},
+                distributions={},
+                user_attrs={},
+                system_attrs={},
+                intermediate_values={},
+                trial_id=trial.trial_id,
+            )
+
+        return frozen
+
+    def _get_prepared_new_trial(
+        self, study_id: int, template_trial: Optional[FrozenTrial], session: orm.Session
+    ) -> models.TrialModel:
         if template_trial is None:
             trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING)
         else:
@@ -518,29 +564,7 @@ class RDBStorage(BaseStorage):
         trial.number = trial.count_past_trials(session)
         session.add(trial)
 
-        self._commit(session)
-
-        if template_trial:
-            frozen = copy.deepcopy(template_trial)
-            frozen.number = trial.number
-            frozen.datetime_start = trial.datetime_start
-            frozen._trial_id = trial.trial_id
-        else:
-            frozen = FrozenTrial(
-                number=trial.number,
-                state=trial.state,
-                value=None,
-                datetime_start=trial.datetime_start,
-                datetime_complete=None,
-                params={},
-                distributions={},
-                user_attrs={},
-                system_attrs={},
-                intermediate_values={},
-                trial_id=trial.trial_id,
-            )
-
-        return frozen
+        return trial
 
     def _update_trial(
         self,
