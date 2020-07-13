@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import copy
 from datetime import datetime
 import json
@@ -604,110 +605,151 @@ class RDBStorage(BaseStorage):
         Returns:
             True when success.
 
+        ..Note:
+            The content of the database might be partially updated even when this method raises
+            an error.
+
         """
 
-        session = self.scoped_session()
-        trial_model = (
-            session.query(models.TrialModel)
-            .filter(models.TrialModel.trial_id == trial_id)
-            .with_for_update()
-            .one_or_none()
-        )
-        if trial_model is None:
-            session.rollback()
-            raise KeyError(models.NOT_FOUND_MSG)
-        if trial_model.state.is_finished():
-            session.rollback()
-            raise RuntimeError("Cannot change attributes of finished trial.")
-        if (
-            state
-            and trial_model.state != state
-            and state == TrialState.RUNNING
-            and trial_model.state != TrialState.WAITING
-        ):
-            session.rollback()
-            return False
+        N_RETRY = 3
 
-        if state:
-            trial_model.state = state
+        for retry in range(N_RETRY):
+            with self._session_scope(retry, N_RETRY) as session:
+                trial_model = (
+                    session.query(models.TrialModel)
+                    .filter(models.TrialModel.trial_id == trial_id)
+                    .with_for_update()
+                    .one_or_none()
+                )
+                if trial_model is None:
+                    session.rollback()
+                    raise KeyError(models.NOT_FOUND_MSG)
+                if trial_model.state.is_finished():
+                    session.rollback()
+                    raise RuntimeError("Cannot change attributes of finished trial.")
+                if (
+                    state
+                    and trial_model.state != state
+                    and state == TrialState.RUNNING
+                    and trial_model.state != TrialState.WAITING
+                ):
+                    session.rollback()
+                    return False
 
-        if datetime_complete:
-            trial_model.datetime_complete = datetime_complete
+                if state:
+                    trial_model.state = state
 
-        if value is not None:
-            trial_model.value = value
+                if datetime_complete:
+                    trial_model.datetime_complete = datetime_complete
+
+                if value is not None:
+                    trial_model.value = value
+
+                session.add(trial_model)
+                break
 
         if user_attrs:
-            trial_user_attrs = (
-                session.query(models.TrialUserAttributeModel)
-                .filter(models.TrialUserAttributeModel.trial_id == trial_id)
-                .with_for_update()
-                .all()
-            )
-            trial_user_attrs_dict = {attr.key: attr for attr in trial_user_attrs}
-            for k, v in user_attrs.items():
-                if k in trial_user_attrs_dict:
-                    trial_user_attrs_dict[k].value_json = json.dumps(v)
-                    session.add(trial_user_attrs_dict[k])
-            trial_model.user_attributes.extend(
-                models.TrialUserAttributeModel(key=k, value_json=json.dumps(v))
-                for k, v in user_attrs.items()
-                if k not in trial_user_attrs_dict
-            )
+            for retry in range(N_RETRY):
+                with self._session_scope(retry, N_RETRY) as session:
+                    trial_user_attrs = (
+                        session.query(models.TrialUserAttributeModel)
+                        .filter(models.TrialUserAttributeModel.trial_id == trial_id)
+                        .with_for_update()
+                        .all()
+                    )
+                    trial_user_attrs_dict = {attr.key: attr for attr in trial_user_attrs}
+                    for k, v in user_attrs.items():
+                        if k in trial_user_attrs_dict:
+                            trial_user_attrs_dict[k].value_json = json.dumps(v)
+                    session.add_all(
+                        v for (k, v) in trial_user_attrs_dict.items() if k in user_attrs
+                    )
+                    session.add_all(
+                        models.TrialUserAttributeModel(
+                            key=k, value_json=json.dumps(v), trial_id=trial_id
+                        )
+                        for k, v in user_attrs.items()
+                        if k not in trial_user_attrs_dict
+                    )
+                    break
+
         if system_attrs:
-            trial_system_attrs = (
-                session.query(models.TrialSystemAttributeModel)
-                .filter(models.TrialSystemAttributeModel.trial_id == trial_id)
-                .with_for_update()
-                .all()
-            )
-            trial_system_attrs_dict = {attr.key: attr for attr in trial_system_attrs}
-            for k, v in system_attrs.items():
-                if k in trial_system_attrs_dict:
-                    trial_system_attrs_dict[k].value_json = json.dumps(v)
-                    session.add(trial_system_attrs_dict[k])
-            trial_model.system_attributes.extend(
-                models.TrialSystemAttributeModel(key=k, value_json=json.dumps(v))
-                for k, v in system_attrs.items()
-                if k not in trial_system_attrs_dict
-            )
+            for retry in range(N_RETRY):
+                with self._session_scope(retry, N_RETRY) as session:
+                    trial_system_attrs = (
+                        session.query(models.TrialSystemAttributeModel)
+                        .filter(models.TrialSystemAttributeModel.trial_id == trial_id)
+                        .with_for_update()
+                        .all()
+                    )
+                    trial_system_attrs_dict = {attr.key: attr for attr in trial_system_attrs}
+                    for k, v in system_attrs.items():
+                        if k in trial_system_attrs_dict:
+                            trial_system_attrs_dict[k].value_json = json.dumps(v)
+                    session.add_all(
+                        v for (k, v) in trial_system_attrs_dict.items() if k in system_attrs
+                    )
+                    session.add_all(
+                        models.TrialSystemAttributeModel(
+                            key=k, value_json=json.dumps(v), trial_id=trial_id
+                        )
+                        for k, v in system_attrs.items()
+                        if k not in trial_system_attrs_dict
+                    )
+                    break
+
         if intermediate_values:
-            value_models = (
-                session.query(models.TrialValueModel)
-                .filter(models.TrialValueModel.trial_id == trial_id)
-                .with_for_update()
-                .all()
-            )
-            value_dict = {value_model.step: value_model for value_model in value_models}
-            for s, v in value_dict.items():
-                if s in value_dict:
-                    value_dict[s] = v
-                    session.add(value_dict[s])
-            trial_model.values.extend(
-                models.TrialValueModel(step=s, value=v)
-                for s, v in intermediate_values.items()
-                if s not in value_dict
-            )
+            for retry in range(N_RETRY):
+                with self._session_scope(retry, N_RETRY) as session:
+                    value_models = (
+                        session.query(models.TrialValueModel)
+                        .filter(models.TrialValueModel.trial_id == trial_id)
+                        .with_for_update()
+                        .all()
+                    )
+                    value_dict = {value_model.step: value_model for value_model in value_models}
+                    for s, v in intermediate_values.items():
+                        if s in value_dict:
+                            value_dict[s] = v
+                    session.add_all(v for (k, v) in value_dict.items() if k in intermediate_values)
+                    session.add_all(
+                        models.TrialValueModel(step=s, value=v, trial_id=trial_id)
+                        for s, v in intermediate_values.items()
+                        if s not in value_dict
+                    )
+                    break
+
         if params and distributions_:
-            trial_param = (
-                session.query(models.TrialParamModel)
-                .filter(models.TrialParamModel.trial_id == trial_id)
-                .all()
-            )
-            param_keys = set(param.param_name for param in trial_param)
-            trial_model.params.extend(
-                models.TrialParamModel(
-                    param_name=param_name,
-                    param_value=param_value,
-                    distribution_json=distributions.distribution_to_json(
-                        distributions_[param_name]
-                    ),
-                )
-                for param_name, param_value in params.items()
-                if param_name not in param_keys
-            )
-        session.add(trial_model)
-        self._commit(session)
+            for retry in range(N_RETRY):
+                with self._session_scope(retry, N_RETRY) as session:
+                    trial_param = (
+                        session.query(models.TrialParamModel)
+                        .filter(models.TrialParamModel.trial_id == trial_id)
+                        .all()
+                    )
+                    param_dict = {
+                        param_model.param_name: param_model for param_model in trial_param
+                    }
+                    for k, v in params.items():
+                        if k in param_dict:
+                            param_dict[k].param_value = v
+                            param_dict[k].distribution_json = distributions.distribution_to_json(
+                                distributions_[k]
+                            )
+                    session.add_all(v for (k, v) in param_dict.items() if k in params)
+                    session.add_all(
+                        models.TrialParamModel(
+                            param_name=param_name,
+                            param_value=param_value,
+                            distribution_json=distributions.distribution_to_json(
+                                distributions_[param_name]
+                            ),
+                            trial_id=trial_id,
+                        )
+                        for param_name, param_value in params.items()
+                        if param_name not in param_dict
+                    )
+                    break
 
         return True
 
@@ -1164,6 +1206,33 @@ class RDBStorage(BaseStorage):
         """Return the schema version list."""
 
         return self._version_manager.get_all_versions()
+
+    @contextmanager
+    def _session_scope(self, retry_count: int, max_retry: int) -> orm.Session:
+        """This context yields a session and automatically commit or close it.
+
+        This scope is intended to work with ``retry_count``.
+        In some databases, we should retry insertion operation on failures.
+        See `#1499<https://github.com/optuna/optuna/issues/1499>`_ for more details.
+
+        Args:
+            retry_count: 0-indexed retry number count.
+            max_retry: Maximum retry count.
+
+        Returns:
+            A new scoped session object.
+
+        """
+        session = self.scoped_session()
+        try:
+            yield session
+            session.commit()
+        except OperationalError:
+            session.rollback()
+            if retry_count + 1 >= max_retry:
+                raise
+        finally:
+            session.close()
 
 
 class _VersionManager(object):
