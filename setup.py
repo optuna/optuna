@@ -154,8 +154,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-ignite",
             "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
-            "torch==1.4.0" if sys.platform == "darwin" else "torch==1.4.0+cpu",
-            "torchvision==0.5.0" if sys.platform == "darwin" else "torchvision==0.5.0+cpu",
+            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
+            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
         ]
         + (
