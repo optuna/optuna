@@ -266,7 +266,7 @@ def test_update_trial_second_write() -> None:
         "number": trial_before_update.number,
         "state": TrialState.RUNNING,
         "value": 1.1,
-        "params": {"paramA": 0.1, "paramB": 1.1, "paramC": 2.3},
+        "params": {"paramA": 0.2, "paramB": 1.1, "paramC": 2.3},
         "_distributions": {
             "paramA": UniformDistribution(0, 1),
             "paramB": UniformDistribution(0, 2),
