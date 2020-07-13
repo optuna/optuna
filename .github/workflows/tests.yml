@@ -36,16 +36,6 @@ jobs:
       run: |
         sudo apt-get update
 
-        # Install swig which is required by pyrfr which is required by fanova.
-        wget http://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz
-        tar -zxvf swig-3.0.12.tar.gz
-        pushd swig-3.0.12
-        ./configure
-        make
-        sudo make install
-        popd
-        swig -version
-
     - name: Install
       run: |
         python -m pip install --upgrade pip
