@@ -11,9 +11,9 @@ workflows:
       - tests-python37
       - tests-python36
       - tests-python35
+      - tests-rdbstorage
 
 jobs:
-
   # Lint and static type checking
 
   checks:
@@ -123,8 +123,6 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get -y install openmpi-bin libopenmpi-dev
-            sudo apt-get -y install default-mysql-server default-mysql-client
-            sudo apt-get -y install postgresql postgresql-client
 
             python -m venv venv || virtualenv venv
             . venv/bin/activate
@@ -138,9 +136,6 @@ jobs:
 
             # Install all dependencies needed for testing.
             pip install --progress-bar off $(ls dist/*.tar.gz)[testing] -f https://download.pytorch.org/whl/torch_stable.html
-
-            # Install RDB bindings for storage tests.
-            pip install --progress-bar off PyMySQL cryptography psycopg2-binary
 
       - run:
           name: install-codecov
@@ -236,3 +231,39 @@ jobs:
                 --ignore tests/integration_tests/test_catalyst.py
 
       - run: *tests-mn
+
+  tests-rdbstorage:
+    docker:
+      - image: circleci/python:3.7
+      - image: circleci/redis:5.0.7
+      - image: circleci/mysql:5.7
+        environment:
+          MYSQL_DATABASE: optunatest
+          MYSQL_USER: user
+          MYSQL_PASSWORD: test
+      - image: circleci/postgres:10.1-alpine
+        environment:
+          POSTGRES_USER: user
+          POSTGRES_DB: optunatest
+          POSTGRES_PASSWORD: test
+    steps:
+      - checkout
+
+      - run: *checkout-merge-master
+
+      - run: *install
+
+      - run: &tests-rdb
+          name: tests-rdb
+          command: |
+            . venv/bin/activate
+            # Install RDB bindings for storage tests.
+            pip install --progress-bar off PyMySQL cryptography psycopg2-binary
+
+            export TEST_DB_URL=mysql+pymysql://user:test@127.0.0.1/optunatest
+            pytest tests/storages_tests/rdb_tests/test_with_server.py
+
+            export TEST_DB_URL=postgres+psycopg2://user:test@127.0.0.1/optunatest
+            pytest tests/storages_tests/rdb_tests/test_with_server.py
+          environment:
+            OMP_NUM_THREADS: 1
