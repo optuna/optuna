@@ -23,6 +23,7 @@ from optuna.study import create_study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial._frozen import create_trial
+from optuna.trial import BaseTrial
 from optuna.trial import FixedTrial
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
@@ -897,8 +898,7 @@ def test_frozen_trial_repr():
 def test_frozen_trial_sampling(storage_init_func):
     # type: (Callable[[], storages.BaseStorage]) -> None
 
-    def objective(trial):
-        # type: (BaseTrial) -> float
+    def objective(trial: BaseTrial) -> float:
 
         trial.suggest_uniform("a", 0, 10)
         trial.suggest_loguniform("b", 0.1, 10)
