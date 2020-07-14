@@ -893,6 +893,31 @@ def test_frozen_trial_repr():
     assert trial == eval(repr(trial))
 
 
+@parametrize_storage
+def test_frozen_trial_sampling(storage_init_func):
+    # type: (Callable[[], storages.BaseStorage]) -> None
+
+    def objective(trial):
+        # type: (BaseTrial) -> float
+
+        trial.suggest_uniform("a", 0, 10)
+        trial.suggest_loguniform("b", 0.1, 10)
+        trial.suggest_discrete_uniform("c", 0, 10, 1)
+        trial.suggest_int("d", 0, 10)
+        trial.suggest_categorical("e", ["foo", "bar", "baz"])
+        trial.suggest_int("f", 1, 10, log=True)
+
+        return 1.0
+
+    study = create_study(storage_init_func())
+    study.optimize(objective, n_trials=1)
+
+    best_trial = study.best_trial
+    objective(best_trial)
+
+    assert best_trial._suggested_params == study.best_trial.params
+
+
 # TODO(hvy): Write exhaustive test include invalid combinations when feature is no longer
 # experimental.
 @pytest.mark.parametrize("state", [None, TrialState.COMPLETE, TrialState.FAIL])
