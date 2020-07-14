@@ -95,7 +95,7 @@ def test_loaded_trials(storage_url: str) -> None:
     _check_trials(trials)
 
     # Create a new study to confirm the study can load trial properly.
-    loaded_study = optuna.create_study(study_name=_STUDY_NAME, storage=storage_url,)
+    loaded_study = optuna.load_study(study_name=_STUDY_NAME, storage=storage_url,)
     _check_trials(loaded_study.trials)
 
 
