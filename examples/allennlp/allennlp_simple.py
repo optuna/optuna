@@ -82,7 +82,7 @@ def create_model(vocab, trial):
         output_dim=output_dim,
     )
 
-    dropout = trial.suggest_uniform("dropout", 0, 0.5)
+    dropout = trial.suggest_float("dropout", 0, 0.5)
     model = allennlp.models.BasicClassifier(
         text_field_embedder=embedder, seq2vec_encoder=encoder, dropout=dropout, vocab=vocab,
     )
@@ -97,7 +97,7 @@ def objective(trial):
     if DEVICE > -1:
         model.to(torch.device("cuda:{}".format(DEVICE)))
 
-    lr = trial.suggest_loguniform("lr", 1e-1, 1e0)
+    lr = trial.suggest_float("lr", 1e-1, 1e0, log=True)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
     iterator = allennlp.data.iterators.BasicIterator(batch_size=10,)

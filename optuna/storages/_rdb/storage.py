@@ -776,6 +776,7 @@ class RDBStorage(BaseStorage):
 
     def _check_and_set_param_distribution(
         self,
+        study_id: int,
         trial_id: int,
         param_name: str,
         param_value_internal: float,
@@ -784,16 +785,17 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        # Acquire a lock of this trial.
-        trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
+        # Acquire lock.
+        #
+        # Assume that study exists.
+        models.StudyModel.find_by_id(study_id, session, for_update=True)
 
-        if trial is None:
-            raise KeyError(models.NOT_FOUND_MSG)
+        models.TrialModel.find_or_raise_by_id(trial_id, session)
 
         previous_record = (
             session.query(models.TrialParamModel)
             .join(models.TrialModel)
-            .filter(models.TrialModel.study_id == trial.study_id)
+            .filter(models.TrialModel.study_id == study_id)
             .filter(models.TrialParamModel.param_name == param_name)
             .first()
         )
