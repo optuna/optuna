@@ -67,8 +67,20 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     assert all((trial.params["y"] == trial.intermediate_values[1] for trial in trials))
 
     # Check attrs.
-    assert all((trial.user_attrs["x"] == trial.params["x"] for trial in trials))
-    assert all((trial.system_attrs["y"] == trial.params["y"] for trial in trials))
+    assert all(
+        np.isclose(
+            [trial.user_attrs["x"] for trial in trials],
+            [trial.params["x"] for trial in trials],
+            atol=1e-4
+        )
+    )
+    assert all(
+        np.isclose(
+            [trial.system_attrs["y"] for trial in trials],
+            [trial.params["y"] for trial in trials],
+            atol=1e-4
+        )
+    )
 
 
 def test_many_trials(storage: str) -> None:
