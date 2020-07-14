@@ -25,7 +25,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
 
         EDF is useful to analyze and improve search spaces.
         For instance, you can see a practical use case of EDF in the paper
-        `Designing Network Design Spaces <ttps://arxiv.org/abs/2003.13678>`_.
+        `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     .. note::
 
