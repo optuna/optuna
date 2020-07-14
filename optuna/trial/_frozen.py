@@ -90,7 +90,7 @@ class FrozenTrial(BaseTrial):
         "datetime_start",
         "datetime_complete",
         "params",
-        "distributions",
+        "_distributions",
         "user_attrs",
         "system_attrs",
         "intermediate_values",
