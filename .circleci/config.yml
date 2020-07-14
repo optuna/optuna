@@ -274,4 +274,4 @@ jobs:
             pytest tests/storages_tests/rdb_tests/test_with_server.py
           environment:
             OMP_NUM_THREADS: 1
-            TEST_DB_URL: postgres+psycopg2://user:test@127.0.0.1/optunatest
+            TEST_DB_URL: postgresql+psycopg2://user:test@127.0.0.1/optunatest
