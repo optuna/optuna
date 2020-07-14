@@ -71,14 +71,14 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
         np.isclose(
             [trial.user_attrs["x"] for trial in trials],
             [trial.params["x"] for trial in trials],
-            atol=1e-4
+            atol=1e-4,
         )
     )
     assert all(
         np.isclose(
             [trial.system_attrs["y"] for trial in trials],
             [trial.params["y"] for trial in trials],
-            atol=1e-4
+            atol=1e-4,
         )
     )
 
@@ -93,6 +93,10 @@ def test_many_trials(storage: str) -> None:
     assert len(trials) == N_TRIALS
 
     _check_trials(trials)
+
+    # Create a new study to confirm the study can load trial properly.
+    loaded_study = optuna.create_study(study_name=_STUDY_NAME, storage=storage,)
+    _check_trials(loaded_study.trials)
 
 
 def test_multiprocess(storage: str) -> None:
