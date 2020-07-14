@@ -174,29 +174,60 @@ class FrozenTrial(BaseTrial):
                 )
 
     @property
-    def distributions(self):
-        # type: () -> Dict[str, BaseDistribution]
+    def number(self) -> int:
+        return self._number
+
+    @number.setter
+    def number(self, value: int) -> None:
+        self._number = value
+
+    @property
+    def datetime_start(self) -> Optional[datetime.datetime]:
+        return self._datetime_start
+
+    def set_user_attr(self, key: str, value: Any) -> None:
+
+        self._user_attrs[key] = value
+
+    def set_system_attr(self, key: str, value: Any) -> None:
+
+        self._system_attrs[key] = value
+
+    @property
+    def params(self) -> Dict[str, Any]:
+        return self._suggested_params
+
+    @params.setter
+    def params(self, params: Dict[str, Any]) -> None:
+        self._params = params
+
+    @property
+    def distributions(self) -> Dict[str, BaseDistribution]:
         """Dictionary that contains the distributions of :attr:`params`."""
 
         return self._distributions
 
     @distributions.setter
-    def distributions(self, value):
-        # type: (Dict[str, BaseDistribution]) -> None
+    def distributions(self, value: Dict[str, BaseDistribution]) -> None:
         self._distributions = value
 
     @property
-    def last_step(self):
-        # type: () -> Optional[int]
+    def user_attrs(self) -> Dict[str, Any]:
+        return self._user_attrs
 
+    @property
+    def system_attrs(self) -> Dict[str, Any]:
+        return self._system_attrs
+
+    @property
+    def last_step(self) -> Optional[int]:
         if len(self.intermediate_values) == 0:
             return None
         else:
             return max(self.intermediate_values.keys())
 
     @property
-    def duration(self):
-        # type: () -> Optional[datetime.timedelta]
+    def duration(self) -> Optional[datetime.timedelta]:
         """Return the elapsed time taken to complete the trial.
 
         Returns:
@@ -207,17 +238,6 @@ class FrozenTrial(BaseTrial):
             return self.datetime_complete - self.datetime_start
         else:
             return None
-
-        if step is not None:
-            if log:
-                raise ValueError("The parameter `step` is not supported when `log` is True.")
-            else:
-                return self._suggest(name, DiscreteUniformDistribution(low=low, high=high, q=step))
-        else:
-            if log:
-                return self._suggest(name, LogUniformDistribution(low=low, high=high))
-            else:
-                return self._suggest(name, UniformDistribution(low=low, high=high))
 
     def suggest_float(
         self,
@@ -240,15 +260,10 @@ class FrozenTrial(BaseTrial):
             else:
                 return self._suggest(name, UniformDistribution(low=low, high=high))
 
-
-    def suggest_uniform(self, name, low, high):
-        # type: (str, float, float) -> float
-
+    def suggest_uniform(self, name: str, low: float, high: float) -> float:
         return self._suggest(name, UniformDistribution(low=low, high=high))
 
-    def suggest_loguniform(self, name, low, high):
-        # type: (str, float, float) -> float
-
+    def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         return self._suggest(name, LogUniformDistribution(low=low, high=high))
 
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
@@ -304,74 +319,12 @@ class FrozenTrial(BaseTrial):
 
         return value
 
-    def report(self, value, step):
-        # type: (float, int) -> None
-
+    def report(self, value: float, step: int) -> None:
         pass
 
     def should_prune(self) -> bool:
 
         return False
-
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._user_attrs[key] = value
-
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._system_attrs[key] = value
-
-    def set_number(self, number):
-        # type: (int) -> None
-
-        self._number = number
-
-    def set_param(self, params):
-        # type: (Dict[str, Any]) -> None
-
-        self._params = params
-
-    def set_distributions(self, distributions):
-        # type: (Dict[str, BaseDistribution]) -> None
-
-        self._distributions = distributions
-
-    @property
-    def params(self):
-        # type: () -> Dict[str, Any]
-
-        return self._suggested_params
-
-    @property
-    def distributions(self):
-        # type: () -> Dict[str, BaseDistribution]
-
-        return self._distributions
-
-    @property
-    def user_attrs(self):
-        # type: () -> Dict[str, Any]
-
-        return self._user_attrs
-
-    @property
-    def system_attrs(self):
-        # type: () -> Dict[str, Any]
-
-        return self._system_attrs
-
-    @property
-    def datetime_start(self):
-        # type: () -> Optional[datetime.datetime]
-
-        return self._datetime_start
-
-    @property
-    def number(self) -> int:
-
-        return self._number
 
 
 @experimental("2.0.0")
