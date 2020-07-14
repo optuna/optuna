@@ -193,7 +193,7 @@ class InMemoryStorage(BaseStorage):
 
             trial_id = self._max_trial_id + 1
             self._max_trial_id += 1
-            trial.set_number(len(self._studies[study_id].trials))
+            trial.number = len(self._studies[study_id].trials)
             trial._trial_id = trial_id
             self._trial_id_to_study_id_and_number[trial_id] = (study_id, trial.number)
             self._studies[study_id].trials.append(trial)
@@ -262,9 +262,9 @@ class InMemoryStorage(BaseStorage):
 
             # Set param.
             trial = copy.copy(trial)
-            trial.set_param(copy.copy(trial.params))
+            trial.params = copy.copy(trial.params)
             trial.params[param_name] = distribution.to_external_repr(param_value_internal)
-            trial.set_distributions(copy.copy(trial.distributions))
+            trial.distributions = copy.copy(trial.distributions)
             trial.distributions[param_name] = distribution
             self._set_trial(trial_id, trial)
 

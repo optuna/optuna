@@ -236,11 +236,11 @@ class _CachedStorage(BaseStorage):
 
                 params = copy.copy(cached_trial.params)
                 params[param_name] = distribution.to_external_repr(param_value_internal)
-                cached_trial.set_param(params)
+                cached_trial.params = params
 
                 dists = copy.copy(cached_trial.distributions)
                 dists[param_name] = distribution
-                cached_trial.set_distributions(dists)
+                cached_trial.distributions = dists
 
                 if cached_dist:
                     updates = self._get_updates(trial_id)
@@ -319,7 +319,7 @@ class _CachedStorage(BaseStorage):
                 updates = self._get_updates(trial_id)
                 attrs = copy.copy(cached_trial.system_attrs)
                 attrs[key] = value
-                cached_trial.set_system_attr(key, value)
+                cached_trial.system_attrs = attrs
                 updates.system_attrs[key] = value
                 self._flush_trial(trial_id)
                 return

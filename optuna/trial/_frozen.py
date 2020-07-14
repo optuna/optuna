@@ -94,6 +94,7 @@ class FrozenTrial(BaseTrial):
         "intermediate_values",
         "_trial_id",
         "state",
+        "_suggested_params",
     ]
 
     def __eq__(self, other):

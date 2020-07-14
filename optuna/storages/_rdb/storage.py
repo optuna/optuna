@@ -671,7 +671,7 @@ class RDBStorage(BaseStorage):
                 .all()
             )
             param_keys = set(param.param_name for param in trial_param)
-            trial_model._params.extend(
+            trial_model.params.extend(
                 models.TrialParamModel(
                     param_name=param_name,
                     param_value=param_value,
