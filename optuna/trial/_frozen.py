@@ -191,7 +191,7 @@ class FrozenTrial(BaseTrial):
 
     @property
     def params(self) -> Dict[str, Any]:
-        return self._suggested_params
+        return self._params
 
     @params.setter
     def params(self, params: Dict[str, Any]) -> None:
@@ -296,7 +296,7 @@ class FrozenTrial(BaseTrial):
         if name not in self._params:
             raise ValueError(
                 "The value of the parameter '{}' is not found. Please set it at "
-                "the construction of the FixedTrial object.".format(name)
+                "the construction of the FrozenTrial object.".format(name)
             )
 
         value = self._params[name]
