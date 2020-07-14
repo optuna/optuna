@@ -252,17 +252,26 @@ jobs:
 
       - run: *install
 
-      - run: &tests-rdb
-          name: tests-rdb
+      - run: &install-rdb-bindings
+          name: tests-mysql
           command: |
             . venv/bin/activate
-            # Install RDB bindings for storage tests.
             pip install --progress-bar off PyMySQL cryptography psycopg2-binary
 
-            export TEST_DB_URL=mysql+pymysql://user:test@127.0.0.1/optunatest
-            pytest tests/storages_tests/rdb_tests/test_with_server.py
-
-            export TEST_DB_URL=postgres+psycopg2://user:test@127.0.0.1/optunatest
+      - run: &tests-mysql
+          name: tests-mysql
+          command: |
+            . venv/bin/activate
             pytest tests/storages_tests/rdb_tests/test_with_server.py
           environment:
             OMP_NUM_THREADS: 1
+            TEST_DB_URL: mysql+pymysql://user:test@127.0.0.1/optunatest
+
+      - run: &tests-postgresql
+          name: tests-postgresql
+          command: |
+            . venv/bin/activate
+            pytest tests/storages_tests/rdb_tests/test_with_server.py
+          environment:
+            OMP_NUM_THREADS: 1
+            TEST_DB_URL: postgres+psycopg2://user:test@127.0.0.1/optunatest
