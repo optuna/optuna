@@ -85,14 +85,14 @@ class FrozenTrial(BaseTrial):
     # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
     # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
     _ordered_fields = [
-        "_number",
+        "number",
         "value",
-        "_datetime_start",
+        "datetime_start",
         "datetime_complete",
-        "_params",
-        "_distributions",
-        "_user_attrs",
-        "_system_attrs",
+        "params",
+        "distributions",
+        "user_attrs",
+        "system_attrs",
         "intermediate_values",
         "_trial_id",
         "state",
