@@ -35,7 +35,7 @@ def run_optimize(args: Tuple[str, str]) -> None:
 
 
 @pytest.fixture
-def storage() -> str:
+def storage_url() -> str:
     if "TEST_DB_URL" not in os.environ:
         pytest.skip("This test requires TEST_DB_URL.")
     storage_url = os.environ["TEST_DB_URL"]
