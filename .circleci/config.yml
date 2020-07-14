@@ -253,7 +253,7 @@ jobs:
       - run: *install
 
       - run: &install-rdb-bindings
-          name: tests-mysql
+          name: install-rdb-bindings
           command: |
             . venv/bin/activate
             pip install --progress-bar off PyMySQL cryptography psycopg2-binary
