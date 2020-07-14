@@ -2,16 +2,19 @@ import datetime
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import Sequence
 
 from optuna._experimental import experimental
 from optuna import distributions
 from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType  # NOQA
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+
 from optuna import logging
 from optuna.trial._base import BaseTrial
 from optuna.trial._state import TrialState
@@ -53,19 +56,18 @@ class FrozenTrial(BaseTrial):
 
     def __init__(
         self,
-        number,  # type: int
-        state,  # type: TrialState
-        value,  # type: Optional[float]
-        datetime_start,  # type: Optional[datetime.datetime]
-        datetime_complete,  # type: Optional[datetime.datetime]
-        params,  # type: Dict[str, Any]
-        distributions,  # type: Dict[str, BaseDistribution]
-        user_attrs,  # type: Dict[str, Any]
-        system_attrs,  # type: Dict[str, Any]
-        intermediate_values,  # type: Dict[int, float]
-        trial_id,  # type: int
-    ):
-        # type: (...) -> None
+        number: int,
+        state: TrialState,
+        value: Optional[float],
+        datetime_start: Optional[datetime.datetime],
+        datetime_complete: Optional[datetime.datetime],
+        params: Dict[str, Any],
+        distributions: Dict[str, BaseDistribution],
+        user_attrs: Dict[str, Any],
+        system_attrs: Dict[str, Any],
+        intermediate_values: Dict[int, float],
+        trial_id: int,
+    ) -> None:
 
         self._number = number
         self.state = state
@@ -97,36 +99,31 @@ class FrozenTrial(BaseTrial):
         "_suggested_params",
     ]
 
-    def __eq__(self, other):
-        # type: (Any) -> bool
+    def __eq__(self, other: Any) -> bool:
 
         if not isinstance(other, FrozenTrial):
             return NotImplemented
         return other.__dict__ == self.__dict__
 
-    def __lt__(self, other):
-        # type: (Any) -> bool
+    def __lt__(self, other: Any) -> bool:
 
         if not isinstance(other, FrozenTrial):
             return NotImplemented
 
         return self.number < other.number
 
-    def __le__(self, other):
-        # type: (Any) -> bool
+    def __le__(self, other: Any) -> bool:
 
         if not isinstance(other, FrozenTrial):
             return NotImplemented
 
         return self.number <= other.number
 
-    def __hash__(self):
-        # type: () -> int
+    def __hash__(self) -> int:
 
         return hash(tuple(getattr(self, field) for field in self._ordered_fields))
 
-    def __repr__(self):
-        # type: () -> str
+    def __repr__(self) -> str:
 
         return "{cls}({kwargs})".format(
             cls=self.__class__.__name__,
@@ -139,8 +136,7 @@ class FrozenTrial(BaseTrial):
             ),
         )
 
-    def _validate(self):
-        # type: () -> None
+    def _validate(self) -> None:
 
         if self.datetime_start is None:
             raise ValueError("`datetime_start` is supposed to be set.")
@@ -289,14 +285,12 @@ class FrozenTrial(BaseTrial):
                 distribution = IntUniformDistribution(low=low, high=high, step=step)
         return int(self._suggest(name, distribution))
 
-    def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
+    def suggest_categorical(self, name: str, choices: Sequence[CategoricalChoiceType]) -> CategoricalChoiceType:
 
         choices = tuple(choices)
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
-    def _suggest(self, name, distribution):
-        # type: (str, BaseDistribution) -> Any
+    def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
 
         if name not in self._params:
             raise ValueError(
