@@ -1003,7 +1003,7 @@ def test_frozen_trial_suggest_discrete_uniform() -> None:
         trial.suggest_discrete_uniform("y", 0.0, 1.0, 0.1)
 
 
-def test_fixed_trial_suggest_int() -> None:
+def test_frozen_trial_suggest_int() -> None:
 
     trial = FrozenTrial(
         number=0,
@@ -1025,7 +1025,7 @@ def test_fixed_trial_suggest_int() -> None:
         trial.suggest_int("y", 0, 10)
 
 
-def test_fixed_trial_suggest_int_log() -> None:
+def test_frozen_trial_suggest_int_log() -> None:
 
     trial = FrozenTrial(
         number=0,
@@ -1050,7 +1050,7 @@ def test_fixed_trial_suggest_int_log() -> None:
         trial.suggest_int("y", 1, 10, log=True)
 
 
-def test_fixed_trial_suggest_categorical() -> None:
+def test_frozen_trial_suggest_categorical() -> None:
 
     # Integer categories.
     trial = FrozenTrial(
