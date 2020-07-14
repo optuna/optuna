@@ -609,6 +609,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         # Lock all related tables with eager joins.
+        # TODO(hvy): Naive in terms of performance. Avoid joining with unncessary tables.
         trial_model = (
             session.query(models.TrialModel)
             .filter(models.TrialModel.trial_id == trial_id)
