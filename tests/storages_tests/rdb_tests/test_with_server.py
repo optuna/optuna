@@ -84,6 +84,8 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
 
 
 def test_loaded_trials(storage_url: str) -> None:
+    # Please create the tables by placing this function before the multi-process tests.
+
     N_TRIALS = 20
     study = optuna.create_study(study_name=_STUDY_NAME, storage=storage_url,)
     # Run optimization
