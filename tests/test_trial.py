@@ -918,6 +918,189 @@ def test_frozen_trial_sampling(storage_init_func):
     assert best_trial._suggested_params == study.best_trial.params
 
 
+def test_frozen_trial_suggest_float() -> None:
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 0.2},
+        distributions={"x": UniformDistribution(0.0, 1.0)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+
+    assert trial.suggest_float("x", 0.0, 1.0) == 0.2
+
+    with pytest.raises(ValueError):
+        trial.suggest_float("x", 0.0, 1.0, step=10, log=True)
+
+    with pytest.raises(ValueError):
+        trial.suggest_uniform("y", 0.0, 1.0)
+
+
+def test_frozen_trial_suggest_uniform() -> None:
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 0.2},
+        distributions={"x": UniformDistribution(0.0, 1.0)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+
+    assert trial.suggest_uniform("x", 0.0, 1.0) == 0.2
+
+    with pytest.raises(ValueError):
+        trial.suggest_uniform("y", 0.0, 1.0)
+
+
+def test_frozen_trial_suggest_loguniform() -> None:
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 0.99},
+        distributions={"x": LogUniformDistribution(0.1, 1.0)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    assert trial.suggest_loguniform("x", 0.1, 1.0) == 0.99
+
+    with pytest.raises(ValueError):
+        trial.suggest_loguniform("y", 0.0, 1.0)
+
+
+def test_frozen_trial_suggest_discrete_uniform() -> None:
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 0.9},
+        distributions={"x": DiscreteUniformDistribution(0.0, 1.0, q=0.1)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    assert trial.suggest_discrete_uniform("x", 0.0, 1.0, 0.1) == 0.9
+
+    with pytest.raises(ValueError):
+        trial.suggest_discrete_uniform("y", 0.0, 1.0, 0.1)
+
+
+def test_fixed_trial_suggest_int() -> None:
+
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 1},
+        distributions={"x": IntUniformDistribution(0, 10)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+
+    assert trial.suggest_int("x", 0, 10) == 1
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("y", 0, 10)
+
+
+def test_fixed_trial_suggest_int_log() -> None:
+
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 1},
+        distributions={"x": IntLogUniformDistribution(1, 10)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+
+    assert trial.suggest_int("x", 1, 10, log=True) == 1
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("x", 1, 10, step=2, log=True)
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("y", 1, 10, log=True)
+
+
+def test_fixed_trial_suggest_categorical() -> None:
+
+    # Integer categories.
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 1},
+        distributions={"x": CategoricalDistribution((0, 1, 2, 3))},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    assert trial.suggest_categorical("x", (0, 1, 2, 3)) == 1
+
+    with pytest.raises(ValueError):
+        trial.suggest_categorical("y", [0, 1, 2, 3])
+
+    # String categories.
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": "baz"},
+        distributions={"x": CategoricalDistribution(("foo", "bar", "baz"))},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    assert trial.suggest_categorical("x", ("foo", "bar", "baz")) == "baz"
+
+    # Unknown parameter.
+    with pytest.raises(ValueError):
+        trial.suggest_categorical("y", ["foo", "bar", "baz"])
+
+    # Not in choices.
+    with pytest.raises(ValueError):
+        trial.suggest_categorical("x", ["foo", "bar"])
+
+    # Unkown parameter and bad category type.
+    with pytest.warns(UserWarning):
+        with pytest.raises(ValueError):  # Must come after `pytest.warns` to catch failures.
+            trial.suggest_categorical("x", [{"foo": "bar"}])  # type: ignore
+
+
 # TODO(hvy): Write exhaustive test include invalid combinations when feature is no longer
 # experimental.
 @pytest.mark.parametrize("state", [None, TrialState.COMPLETE, TrialState.FAIL])
