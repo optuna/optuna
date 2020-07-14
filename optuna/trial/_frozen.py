@@ -181,6 +181,10 @@ class FrozenTrial(BaseTrial):
     def datetime_start(self) -> Optional[datetime.datetime]:
         return self._datetime_start
 
+    @datetime_start.setter
+    def datetime_start(self, value: Optional[datetime.datetime]) -> None:
+        self._datetime_start = value
+
     def set_user_attr(self, key: str, value: Any) -> None:
 
         self._user_attrs[key] = value
@@ -211,9 +215,17 @@ class FrozenTrial(BaseTrial):
     def user_attrs(self) -> Dict[str, Any]:
         return self._user_attrs
 
+    @user_attrs.setter
+    def user_attrs(self, value: Dict[str, Any]) -> None:
+        self._user_attrs = value
+
     @property
     def system_attrs(self) -> Dict[str, Any]:
         return self._system_attrs
+
+    @system_attrs.setter
+    def system_attrs(self, value: Dict[str, Any]) -> None:
+        self._system_attrs = value
 
     @property
     def last_step(self) -> Optional[int]:
