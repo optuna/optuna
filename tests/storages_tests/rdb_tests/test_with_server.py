@@ -48,10 +48,10 @@ def storage_url() -> str:
 
 def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     # Check trial states.
-    assert all((trial.state == optuna.trial.TrialState.COMPLETE for trial in trials))
+    assert all(trial.state == optuna.trial.TrialState.COMPLETE for trial in trials)
 
     # Check trial values and params.
-    assert all(("x" in trial.params for trial in trials))
+    assert all("x" in trial.params for trial in trials)
     assert all("y" in trial.params for trial in trials)
     assert all(
         np.isclose(
@@ -62,9 +62,9 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     )
 
     # Check intermediate values.
-    assert all((len(trial.intermediate_values) == 2 for trial in trials))
-    assert all((trial.params["x"] == trial.intermediate_values[0] for trial in trials))
-    assert all((trial.params["y"] == trial.intermediate_values[1] for trial in trials))
+    assert all(len(trial.intermediate_values) == 2 for trial in trials)
+    assert all(trial.params["x"] == trial.intermediate_values[0] for trial in trials)
+    assert all(trial.params["y"] == trial.intermediate_values[1] for trial in trials)
 
     # Check attrs.
     assert all(
