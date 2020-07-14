@@ -3,11 +3,11 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import Union
 
 from optuna._experimental import experimental
 from optuna import distributions
 from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalChoiceType  # NOQA
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
@@ -21,13 +21,13 @@ from optuna.trial._state import TrialState
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from typing import Union  # NOQA
-
     FloatingPointDistributionType = Union[
         distributions.UniformDistribution, distributions.LogUniformDistribution
     ]
 
 _logger = logging.get_logger(__name__)
+
+CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
 class FrozenTrial(BaseTrial):
@@ -285,7 +285,9 @@ class FrozenTrial(BaseTrial):
                 distribution = IntUniformDistribution(low=low, high=high, step=step)
         return int(self._suggest(name, distribution))
 
-    def suggest_categorical(self, name: str, choices: Sequence[CategoricalChoiceType]) -> CategoricalChoiceType:
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
 
         choices = tuple(choices)
         return self._suggest(name, CategoricalDistribution(choices=choices))
