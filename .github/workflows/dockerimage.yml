@@ -46,7 +46,8 @@ jobs:
 
     - name: Build the Docker image
       run: |
-        docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --build-arg BASE_IMAGE="${BASE_IMAGE}" --file Dockerfile --tag "${HUB_TAG}"
+        docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --build-arg BASE_IMAG
+E="${BASE_IMAGE}" --file Dockerfile --tag "${HUB_TAG}"
 
     - name: Login & Push to Docker Hub
       if: ${{ github.event_name != 'pull_request' }}
