@@ -13,6 +13,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
+import warnings
 
 import numpy as np
 import tqdm
@@ -337,7 +338,8 @@ class _LightGBMBaseTuner(_BaseTuner):
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
-        verbosity: Optional[int] = 1,
+        verbosity: Optional[int] = None,
+        show_progress_bar: bool = True,
     ) -> None:
 
         _imports.check()
@@ -360,10 +362,10 @@ class _LightGBMBaseTuner(_BaseTuner):
             time_budget=time_budget,
             sample_size=sample_size,
             verbosity=verbosity,
+            show_progress_bar=show_progress_bar,
         )  # type: Dict[str, Any]
         self._parse_args(*args, **kwargs)
         self._start_time = None  # type: Optional[float]
-        self._use_pbar = True
         self._optuna_callbacks = optuna_callbacks
         self._best_params = {}
 
@@ -392,6 +394,15 @@ class _LightGBMBaseTuner(_BaseTuner):
                     "Please set 'minimize' as the direction.".format(metric_name)
                 )
 
+        if verbosity is not None:
+            warnings.warn(
+                "`verbosity` argument is deprecated and will be removed in the future. "
+                "The removal of this feature is currently scheduled for v4.0.0, "
+                "but this schedule is subject to change. Please use optuna.logging.set_verbosity()"
+                " instead.",
+                FutureWarning,
+            )
+
     @property
     def best_score(self) -> float:
         """Return the score of the best booster."""
@@ -417,7 +428,7 @@ class _LightGBMBaseTuner(_BaseTuner):
 
         self.auto_options = {
             option_name: kwargs.get(option_name)
-            for option_name in ["time_budget", "sample_size", "verbosity"]
+            for option_name in ["time_budget", "sample_size", "verbosity", "show_progress_bar"]
         }
 
         # Split options.
@@ -432,12 +443,16 @@ class _LightGBMBaseTuner(_BaseTuner):
 
     def run(self) -> None:
         """Perform the hyperparameter-tuning with given parameters."""
-        # Suppress log messages.
-        if self.auto_options["verbosity"] == 0:
-            optuna.logging.disable_default_handler()
-            self.lgbm_params["verbose"] = -1
-            self.lgbm_kwargs["verbose_eval"] = False
-            self._use_pbar = False
+        verbosity = self.auto_options["verbosity"]
+        if verbosity is not None:
+            if verbosity > 1:
+                optuna.logging.set_verbosity(optuna.logging.DEBUG)
+            elif verbosity == 1:
+                optuna.logging.set_verbosity(optuna.logging.INFO)
+            elif verbosity == 0:
+                optuna.logging.set_verbosity(optuna.logging.WARNING)
+            else:
+                optuna.logging.set_verbosity(optuna.logging.CRITICAL)
 
         # Handling aliases.
         _handling_alias_parameters(self.lgbm_params)
@@ -513,7 +528,11 @@ class _LightGBMBaseTuner(_BaseTuner):
         sampler: optuna.samplers.BaseSampler,
         step_name: str,
     ) -> _OptunaObjective:
-        pbar = tqdm.tqdm(total=n_trials, ascii=True) if self._use_pbar else None
+        pbar = (
+            tqdm.tqdm(total=n_trials, ascii=True)
+            if self.auto_options["show_progress_bar"]
+            else None
+        )
 
         # Set current best parameters.
         self.lgbm_params.update(self.best_params)
@@ -653,7 +672,26 @@ class LightGBMTuner(_LightGBMBaseTuner):
             created. The filenames of the boosters will be ``{model_dir}/{trial_number}.pkl``
             (e.g., ``./boosters/0.pkl``).
 
+        verbosity:
+            A verbosity level to change Optuna's logging level. The level is aligned to
+            `LightGBM's verbosity`_ .
+
+            .. warning::
+                Deprecated in v2.0.0. ``verbosity`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v4.0.0,
+                but this schedule is subject to change.
+
+                Please use :func:`~optuna.logging.set_verbosity` instead.
+
+        show_progress_bar:
+            Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
+
+            .. note::
+                Progress bars will be fragmented by logging messages of LightGBM and Optuna.
+                Please suppress such messages to show the progress bars properly.
+
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
+    .. _LightGBM's verbosity: https://lightgbm.readthedocs.io/en/latest/Parameters.html#verbosity
     """
 
     def __init__(
@@ -678,7 +716,8 @@ class LightGBMTuner(_LightGBMBaseTuner):
         study: Optional[optuna.study.Study] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         model_dir: Optional[str] = None,
-        verbosity: Optional[int] = 1,
+        verbosity: Optional[int] = None,
+        show_progress_bar: bool = True,
     ) -> None:
 
         super(LightGBMTuner, self).__init__(
@@ -697,6 +736,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
             study=study,
             optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
+            show_progress_bar=show_progress_bar,
         )
 
         self.lgbm_kwargs["valid_sets"] = valid_sets
@@ -835,8 +875,27 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
             Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
 
+        verbosity:
+            A verbosity level to change Optuna's logging level. The level is aligned to
+            `LightGBM's verbosity`_ .
+
+            .. warning::
+                Deprecated in v2.0.0. ``verbosity`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v4.0.0,
+                but this schedule is subject to change.
+
+                Please use :func:`~optuna.logging.set_verbosity` instead.
+
+        show_progress_bar:
+            Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
+
+            .. note::
+                Progress bars will be fragmented by logging messages of LightGBM and Optuna.
+                Please suppress such messages to show the progress bars properly.
+
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     .. _lightgbm.cv(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html
+    .. _LightGBM's verbosity: https://lightgbm.readthedocs.io/en/latest/Parameters.html#verbosity
     """
 
     def __init__(
@@ -868,7 +927,8 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
-        verbosity: int = 1,
+        verbosity: Optional[int] = None,
+        show_progress_bar: bool = True,
     ) -> None:
 
         super(LightGBMTunerCV, self).__init__(
@@ -887,6 +947,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             study=study,
             optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
+            show_progress_bar=show_progress_bar,
         )
 
         self.lgbm_kwargs["folds"] = folds
