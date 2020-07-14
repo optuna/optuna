@@ -607,9 +607,15 @@ class RDBStorage(BaseStorage):
         """
 
         session = self.scoped_session()
+
+        # Lock all related tables with eager joins.
         trial_model = (
             session.query(models.TrialModel)
             .filter(models.TrialModel.trial_id == trial_id)
+            .options(orm.selectinload(models.TrialModel.params))
+            .options(orm.selectinload(models.TrialModel.values))
+            .options(orm.selectinload(models.TrialModel.user_attributes))
+            .options(orm.selectinload(models.TrialModel.system_attributes))
             .with_for_update()
             .one_or_none()
         )
@@ -641,7 +647,6 @@ class RDBStorage(BaseStorage):
             trial_user_attrs = (
                 session.query(models.TrialUserAttributeModel)
                 .filter(models.TrialUserAttributeModel.trial_id == trial_id)
-                .with_for_update()
                 .all()
             )
             trial_user_attrs_dict = {attr.key: attr for attr in trial_user_attrs}
@@ -658,7 +663,6 @@ class RDBStorage(BaseStorage):
             trial_system_attrs = (
                 session.query(models.TrialSystemAttributeModel)
                 .filter(models.TrialSystemAttributeModel.trial_id == trial_id)
-                .with_for_update()
                 .all()
             )
             trial_system_attrs_dict = {attr.key: attr for attr in trial_system_attrs}
@@ -675,7 +679,6 @@ class RDBStorage(BaseStorage):
             value_models = (
                 session.query(models.TrialValueModel)
                 .filter(models.TrialValueModel.trial_id == trial_id)
-                .with_for_update()
                 .all()
             )
             value_dict = {value_model.step: value_model for value_model in value_models}
