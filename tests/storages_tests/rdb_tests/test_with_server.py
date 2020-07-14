@@ -27,9 +27,9 @@ def objective(trial: optuna.Trial) -> float:
 
 def run_optimize(args: Tuple[str, str]) -> None:
     study_name = args[0]
-    storage = args[1]
+    storage_url = args[1]
     # Create a study
-    study = optuna.create_study(study_name=study_name, storage=storage, load_if_exists=True,)
+    study = optuna.create_study(study_name=study_name, storage=storage_url, load_if_exists=True,)
     # Run optimization
     study.optimize(objective, n_trials=20)
 
@@ -83,9 +83,9 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     )
 
 
-def test_many_trials(storage: str) -> None:
+def test_many_trials(storage_url: str) -> None:
     N_TRIALS = 1000
-    study = optuna.create_study(study_name=_STUDY_NAME, storage=storage,)
+    study = optuna.create_study(study_name=_STUDY_NAME, storage=storage_url,)
     # Run optimization
     study.optimize(objective, n_trials=N_TRIALS)
 
@@ -95,18 +95,17 @@ def test_many_trials(storage: str) -> None:
     _check_trials(trials)
 
     # Create a new study to confirm the study can load trial properly.
-    loaded_study = optuna.create_study(study_name=_STUDY_NAME, storage=storage,)
+    loaded_study = optuna.create_study(study_name=_STUDY_NAME, storage=storage_url,)
     _check_trials(loaded_study.trials)
 
 
-def test_multiprocess(storage: str) -> None:
+def test_multiprocess(storage_url: str) -> None:
     n_workers = 8
     study_name = _STUDY_NAME
-    storage = storage
     with Pool(n_workers) as pool:
-        pool.map(run_optimize, [(study_name, storage)] * n_workers)
+        pool.map(run_optimize, [(study_name, storage_url)] * n_workers)
 
-    study = optuna.load_study(study_name=study_name, storage=storage)
+    study = optuna.load_study(study_name=study_name, storage=storage_url)
 
     trials = study.trials
     assert len(trials) == n_workers * 20
