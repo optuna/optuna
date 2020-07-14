@@ -235,7 +235,6 @@ jobs:
   tests-rdbstorage:
     docker:
       - image: circleci/python:3.7
-      - image: circleci/redis:5.0.7
       - image: circleci/mysql:5.7
         environment:
           MYSQL_DATABASE: optunatest
