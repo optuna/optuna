@@ -19,6 +19,7 @@ EXAMPLE_DISTRIBUTIONS = {
     "iu": distributions.IntUniformDistribution(low=1, high=9, step=2),
     "c1": distributions.CategoricalDistribution(choices=(2.71, -float("inf"))),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
+    "c3": distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"]),
     "ilu": distributions.IntLogUniformDistribution(low=2, high=12, step=2),
 }  # type: Dict[str, Any]
 
@@ -30,6 +31,7 @@ EXAMPLE_JSONS = {
     "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 9, "step": 2}}',
     "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
+    "c3": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
     "ilu": '{"name": "IntLogUniformDistribution", '
     '"attributes": {"low": 2, "high": 12, "step": 2}}',
 }
@@ -390,3 +392,12 @@ def test_int_log_uniform_distribution_deprecation():
     with pytest.warns(FutureWarning):
         d.step = 2
         assert d.step == 2
+
+
+def test_categorical_distribution_different_sequence_types():
+    # type: () -> None
+
+    c1 = distributions.CategoricalDistribution(choices=("Roppongi", "Azabu"))
+    c2 = distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"])
+
+    assert c1 == c2
