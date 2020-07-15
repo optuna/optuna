@@ -849,13 +849,14 @@ def test_frozen_trial_sampling(storage_init_func):
 
     def objective(trial: BaseTrial) -> float:
 
-        a = trial.suggest_uniform("a", 0, 10)
-        b = trial.suggest_loguniform("b", 0.1, 10)
-        c = trial.suggest_discrete_uniform("c", 0, 10, 1)
+        a = trial.suggest_uniform("a", 0.0, 10.0)
+        b = trial.suggest_loguniform("b", 0.1, 10.0)
+        c = trial.suggest_discrete_uniform("c", 0.0, 10.0, 1.0)
         d = trial.suggest_int("d", 0, 10)
         e = trial.suggest_categorical("e", [0, 1, 2])
         f = trial.suggest_int("f", 1, 10, log=True)
 
+        assert isinstance(e, int)
         return a + b + c + d + e + f
 
     study = create_study(storage_init_func())
