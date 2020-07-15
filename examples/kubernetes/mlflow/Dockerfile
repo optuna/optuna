@@ -1,4 +1,4 @@
-# TODO(crcrpar): Use optuna/optuna:py3.7 instead once it gets fixed.
+# NOTE(crcrpar): optuna/optuna:py3.7-dev can be used as base instead.
 FROM python:3.7-slim-buster
 
 WORKDIR /usr/src/
