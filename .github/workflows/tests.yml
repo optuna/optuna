@@ -37,6 +37,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Setup Cache
+      uses: actions/cache@v2
+      env:
+        cache-name: test
+      with:
+        path: /opt/**/site-packages
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-
     - name: Setup environment
       run: |
         sudo apt-get update
