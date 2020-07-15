@@ -140,7 +140,8 @@ if __name__ == "__main__":
     torch.manual_seed(41)
     numpy.random.seed(41)
 
-    study = optuna.create_study(direction="maximize")
+    pruner = optuna.pruners.HyperbandPruner()
+    study = optuna.create_study(direction="maximize", pruner=pruner)
     study.optimize(objective, n_trials=50, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
