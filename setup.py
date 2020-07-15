@@ -86,7 +86,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         ]
         + (["stable-baselines3>=0.7.0"] if (3, 5) < sys.version_info[:2] else [])
         + (
-            ["allennlp", "fastai<2", "pytorch_lightning>=0.7.1"]
+            ["allennlp<1", "fastai<2", "pytorch_lightning>=0.7.1"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
         )
