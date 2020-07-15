@@ -8,8 +8,7 @@ RUN apt-get update \
     && apt-get -y install openmpi-bin libopenmpi-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir -U pip \
-    && pip install ${PIP_OPTIONS} -U setuptools \
-    && pip install ${PIP_OPTIONS} Cython  # for automl/ConfigSpace
+    && pip install ${PIP_OPTIONS} -U setuptools
 
 WORKDIR /workspaces
 COPY . .
