@@ -135,6 +135,81 @@ class FrozenTrial(BaseTrial):
             ),
         )
 
+    def suggest_float(
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: Optional[float] = None,
+        log: bool = False
+    ) -> float:
+
+        if step is not None:
+            if log:
+                raise ValueError("The parameter `step` is not supported when `log` is True.")
+            else:
+                return self._suggest(name, DiscreteUniformDistribution(low=low, high=high, q=step))
+        else:
+            if log:
+                return self._suggest(name, LogUniformDistribution(low=low, high=high))
+            else:
+                return self._suggest(name, UniformDistribution(low=low, high=high))
+
+    def suggest_uniform(self, name: str, low: float, high: float) -> float:
+
+        return self._suggest(name, UniformDistribution(low=low, high=high))
+
+    def suggest_loguniform(self, name: str, low: float, high: float) -> float:
+
+        return self._suggest(name, LogUniformDistribution(low=low, high=high))
+
+    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
+
+        discrete = DiscreteUniformDistribution(low=low, high=high, q=q)
+        return self._suggest(name, discrete)
+
+    def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
+
+        if step != 1:
+            if log:
+                raise ValueError(
+                    "The parameter `step != 1` is not supported when `log` is True."
+                    "The specified `step` is {}.".format(step)
+                )
+            else:
+                distribution = IntUniformDistribution(
+                    low=low, high=high, step=step
+                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+        else:
+            if log:
+                distribution = IntLogUniformDistribution(low=low, high=high)
+            else:
+                distribution = IntUniformDistribution(low=low, high=high, step=step)
+        return int(self._suggest(name, distribution))
+
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
+
+        choices = tuple(choices)
+        return self._suggest(name, CategoricalDistribution(choices=choices))
+
+    def report(self, value: float, step: int) -> None:
+        pass
+
+    def should_prune(self) -> bool:
+
+        return False
+
+    def set_user_attr(self, key: str, value: Any) -> None:
+
+        self._user_attrs[key] = value
+
+    def set_system_attr(self, key: str, value: Any) -> None:
+
+        self._system_attrs[key] = value
+
     def _validate(self) -> None:
 
         if self.datetime_start is None:
@@ -169,140 +244,6 @@ class FrozenTrial(BaseTrial):
                     "{}.".format(param_value, param_name, distribution)
                 )
 
-    @property
-    def number(self) -> int:
-        return self._number
-
-    @number.setter
-    def number(self, value: int) -> None:
-        self._number = value
-
-    @property
-    def datetime_start(self) -> Optional[datetime.datetime]:
-        return self._datetime_start
-
-    @datetime_start.setter
-    def datetime_start(self, value: Optional[datetime.datetime]) -> None:
-        self._datetime_start = value
-
-    def set_user_attr(self, key: str, value: Any) -> None:
-
-        self._user_attrs[key] = value
-
-    def set_system_attr(self, key: str, value: Any) -> None:
-
-        self._system_attrs[key] = value
-
-    @property
-    def params(self) -> Dict[str, Any]:
-        return self._params
-
-    @params.setter
-    def params(self, params: Dict[str, Any]) -> None:
-        self._params = params
-
-    @property
-    def distributions(self) -> Dict[str, BaseDistribution]:
-        """Dictionary that contains the distributions of :attr:`params`."""
-
-        return self._distributions
-
-    @distributions.setter
-    def distributions(self, value: Dict[str, BaseDistribution]) -> None:
-        self._distributions = value
-
-    @property
-    def user_attrs(self) -> Dict[str, Any]:
-        return self._user_attrs
-
-    @user_attrs.setter
-    def user_attrs(self, value: Dict[str, Any]) -> None:
-        self._user_attrs = value
-
-    @property
-    def system_attrs(self) -> Dict[str, Any]:
-        return self._system_attrs
-
-    @system_attrs.setter
-    def system_attrs(self, value: Dict[str, Any]) -> None:
-        self._system_attrs = value
-
-    @property
-    def last_step(self) -> Optional[int]:
-        if len(self.intermediate_values) == 0:
-            return None
-        else:
-            return max(self.intermediate_values.keys())
-
-    @property
-    def duration(self) -> Optional[datetime.timedelta]:
-        """Return the elapsed time taken to complete the trial.
-
-        Returns:
-            The duration.
-        """
-
-        if self.datetime_start and self.datetime_complete:
-            return self.datetime_complete - self.datetime_start
-        else:
-            return None
-
-    def suggest_float(
-        self,
-        name: str,
-        low: float,
-        high: float,
-        *,
-        step: Optional[float] = None,
-        log: bool = False
-    ) -> float:
-
-        if step is not None:
-            if log:
-                raise ValueError("The parameter `step` is not supported when `log` is True.")
-            else:
-                return self._suggest(name, DiscreteUniformDistribution(low=low, high=high, q=step))
-        else:
-            if log:
-                return self._suggest(name, LogUniformDistribution(low=low, high=high))
-            else:
-                return self._suggest(name, UniformDistribution(low=low, high=high))
-
-    def suggest_uniform(self, name: str, low: float, high: float) -> float:
-        return self._suggest(name, UniformDistribution(low=low, high=high))
-
-    def suggest_loguniform(self, name: str, low: float, high: float) -> float:
-        return self._suggest(name, LogUniformDistribution(low=low, high=high))
-
-    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
-        discrete = DiscreteUniformDistribution(low=low, high=high, q=q)
-        return self._suggest(name, discrete)
-
-    def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
-        if step != 1:
-            if log:
-                raise ValueError(
-                    "The parameter `step != 1` is not supported when `log` is True."
-                    "The specified `step` is {}.".format(step)
-                )
-            else:
-                distribution = IntUniformDistribution(
-                    low=low, high=high, step=step
-                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
-        else:
-            if log:
-                distribution = IntLogUniformDistribution(low=low, high=high)
-            else:
-                distribution = IntUniformDistribution(low=low, high=high, step=step)
-        return int(self._suggest(name, distribution))
-
-    def suggest_categorical(
-        self, name: str, choices: Sequence[CategoricalChoiceType]
-    ) -> CategoricalChoiceType:
-
-        choices = tuple(choices)
-        return self._suggest(name, CategoricalDistribution(choices=choices))
-
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
 
         if name not in self._params:
@@ -327,12 +268,87 @@ class FrozenTrial(BaseTrial):
 
         return value
 
-    def report(self, value: float, step: int) -> None:
-        pass
+    @property
+    def number(self) -> int:
 
-    def should_prune(self) -> bool:
+        return self._number
 
-        return False
+    @number.setter
+    def number(self, value: int) -> None:
+
+        self._number = value
+
+    @property
+    def datetime_start(self) -> Optional[datetime.datetime]:
+
+        return self._datetime_start
+
+    @datetime_start.setter
+    def datetime_start(self, value: Optional[datetime.datetime]) -> None:
+
+        self._datetime_start = value
+
+    @property
+    def params(self) -> Dict[str, Any]:
+
+        return self._params
+
+    @params.setter
+    def params(self, params: Dict[str, Any]) -> None:
+
+        self._params = params
+
+    @property
+    def distributions(self) -> Dict[str, BaseDistribution]:
+        """Dictionary that contains the distributions of :attr:`params`."""
+
+        return self._distributions
+
+    @distributions.setter
+    def distributions(self, value: Dict[str, BaseDistribution]) -> None:
+
+        self._distributions = value
+
+    @property
+    def user_attrs(self) -> Dict[str, Any]:
+
+        return self._user_attrs
+
+    @user_attrs.setter
+    def user_attrs(self, value: Dict[str, Any]) -> None:
+
+        self._user_attrs = value
+
+    @property
+    def system_attrs(self) -> Dict[str, Any]:
+
+        return self._system_attrs
+
+    @system_attrs.setter
+    def system_attrs(self, value: Dict[str, Any]) -> None:
+
+        self._system_attrs = value
+
+    @property
+    def last_step(self) -> Optional[int]:
+
+        if len(self.intermediate_values) == 0:
+            return None
+        else:
+            return max(self.intermediate_values.keys())
+
+    @property
+    def duration(self) -> Optional[datetime.timedelta]:
+        """Return the elapsed time taken to complete the trial.
+
+        Returns:
+            The duration.
+        """
+
+        if self.datetime_start and self.datetime_complete:
+            return self.datetime_complete - self.datetime_start
+        else:
+            return None
 
 
 @experimental("2.0.0")
