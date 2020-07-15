@@ -71,14 +71,7 @@ def prepare_data():
 
 
 def create_model(vocab, trial):
-    embedding = allennlp.modules.Embedding(
-        embedding_dim=50,
-        trainable=True,
-        pretrained_file="https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.50d.txt.gz",  # NOQA
-        vocab=vocab,
-    )
-
-    embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder({"tokens": embedding})
+    dropout = trial.suggest_float("dropout", 0, 0.5)
     output_dim = trial.suggest_int("output_dim", 16, 128)
     max_filter_size = trial.suggest_int("max_filter_size", 3, 6)
     num_filters = trial.suggest_int("num_filters", 16, 128)
@@ -89,7 +82,14 @@ def create_model(vocab, trial):
         output_dim=output_dim,
     )
 
-    dropout = trial.suggest_float("dropout", 0, 0.5)
+    embedding = allennlp.modules.Embedding(
+        embedding_dim=50,
+        trainable=True,
+        pretrained_file="https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.50d.txt.gz",  # NOQA
+        vocab=vocab,
+    )
+
+    embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder({"tokens": embedding})
     model = allennlp.models.BasicClassifier(
         text_field_embedder=embedder, seq2vec_encoder=encoder, dropout=dropout, vocab=vocab,
     )
