@@ -890,7 +890,7 @@ def test_frozen_trial_suggest_float() -> None:
         trial.suggest_float("x", 0.0, 1.0, step=10, log=True)
 
     with pytest.raises(ValueError):
-        trial.suggest_uniform("y", 0.0, 1.0)
+        trial.suggest_float("y", 0.0, 1.0)
 
 
 def test_frozen_trial_suggest_uniform() -> None:
