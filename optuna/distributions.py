@@ -333,7 +333,7 @@ class IntLogUniformDistribution(BaseDistribution):
         kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
         return "{}({})".format(self.__class__.__name__, kwargs)
 
-    def _asdict(self) -> Dict[str, Any]:
+    def _asdict(self) -> Dict:
         d = copy.copy(self.__dict__)
         d["step"] = d.pop("_step")
         return d
