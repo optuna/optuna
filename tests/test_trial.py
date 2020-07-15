@@ -862,7 +862,8 @@ def test_frozen_trial_sampling(storage_init_func):
     study.optimize(objective, n_trials=1)
 
     best_trial = study.best_trial
-    objective(best_trial)
+    v = objective(best_trial)
+    assert v == best_trial.value
 
     assert best_trial._suggested_params == study.best_trial.params
 
