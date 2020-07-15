@@ -29,7 +29,7 @@ local ENCODER = CNN_FIELDS(
     lazy: false,
     type: 'text_classification_json',
     tokenizer: {
-      word_splitter: 'just_spaces',
+      type: 'spacy',
     },
     token_indexers: {
       tokens: {
@@ -53,9 +53,8 @@ local ENCODER = CNN_FIELDS(
     seq2vec_encoder: ENCODER,
     dropout: DROPOUT,
   },
-  iterator: {
-    batch_size: 10,
-    type: 'basic',
+  data_loader: {
+    batch_size: 64,
   },
 
   trainer: {
@@ -66,7 +65,6 @@ local ENCODER = CNN_FIELDS(
       type: 'adam',
     },
     patience: 2,
-    num_serialized_models_to_keep: 1,
     validation_metric: '+accuracy',
   },
 }
