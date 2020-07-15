@@ -109,6 +109,12 @@ class _BaseTuner(object):
         else:
             raise NotImplementedError
 
+        if self.lgbm_params.get("metric") == "None":
+            if len(booster.best_score[valid_name].keys()) > 0:
+                metric = list(booster.best_score[valid_name].keys())[0]
+            else:
+                raise ValueError("No given metric in parameters.")
+
         val_score = booster.best_score[valid_name][metric]
         return val_score
 
