@@ -21,7 +21,10 @@ We have the following two ways to execute this example:
 """
 
 import os.path
+import pkg_resources
 import shutil
+
+import allennlp
 
 import optuna
 from optuna.integration.allennlp import dump_best_config
@@ -50,6 +53,9 @@ def objective(trial):
 
 
 if __name__ == "__main__":
+    if pkg_resources.parse_version(allennlp.__version__) < pkg_resources.parse_version("1.0.0"):
+        raise RuntimeError("AllenNLP>=1.0.0 is required for this example.")
+
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=50, timeout=600)
 

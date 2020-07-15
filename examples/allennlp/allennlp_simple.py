@@ -19,6 +19,7 @@ We have the following two ways to execute this example:
 """
 
 import os
+import pkg_resources
 import random
 import shutil
 
@@ -132,6 +133,9 @@ def objective(trial):
 
 
 if __name__ == "__main__":
+    if pkg_resources.parse_version(allennlp.__version__) < pkg_resources.parse_version("1.0.0"):
+        raise RuntimeError("AllenNLP>=1.0.0 is required for this example.")
+
     random.seed(41)
     torch.manual_seed(41)
     numpy.random.seed(41)
