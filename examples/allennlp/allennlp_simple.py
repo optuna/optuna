@@ -19,59 +19,60 @@ We have the following two ways to execute this example:
 """
 
 import os
+import pkg_resources
+import random
 import shutil
 
 import allennlp
 import allennlp.data
 import allennlp.models
 import allennlp.modules
+import numpy
 import torch
 
 import optuna
+from optuna.integration import AllenNLPPruningCallback
 
 
 DEVICE = -1  # If you want to use GPU, use DEVICE = 0.
 MAX_DATA_SIZE = 3000
+MODEL_DIR = os.path.join(os.getcwd(), "result")
+TARGET_METRIC = "accuracy"
 
-DIR = os.getcwd()
-MODEL_DIR = os.path.join(DIR, "result")
 
-GLOVE_FILE_PATH = "https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.50d.txt.gz"
+class SubsampledDatasetReader(allennlp.data.dataset_readers.TextClassificationJsonReader):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def _read(self, datapath):
+        data = list(super()._read(datapath))
+        random.shuffle(data)
+        yield from data[:MAX_DATA_SIZE]
 
 
 def prepare_data():
     glove_indexer = allennlp.data.token_indexers.SingleIdTokenIndexer(lowercase_tokens=True)
-    tokenizer = allennlp.data.tokenizers.WordTokenizer(
-        word_splitter=allennlp.data.tokenizers.word_splitter.JustSpacesWordSplitter(),
-    )
+    tokenizer = allennlp.data.tokenizers.whitespace_tokenizer.WhitespaceTokenizer()
 
-    reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
+    reader = SubsampledDatasetReader(
         token_indexers={"tokens": glove_indexer}, tokenizer=tokenizer,
     )
     train_dataset = reader.read(
         "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/train.jsonl"
     )
-    train_dataset = train_dataset[:MAX_DATA_SIZE]
 
     valid_dataset = reader.read(
         "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl"
     )
-    valid_dataset = valid_dataset[:MAX_DATA_SIZE]
 
     vocab = allennlp.data.Vocabulary.from_instances(train_dataset)
+    train_dataset.index_with(vocab)
+    valid_dataset.index_with(vocab)
     return train_dataset, valid_dataset, vocab
 
 
 def create_model(vocab, trial):
-    embedding = allennlp.modules.Embedding(
-        embedding_dim=50,
-        trainable=True,
-        pretrained_file=GLOVE_FILE_PATH,
-        num_embeddings=vocab.get_vocab_size("tokens"),
-    )
-
-    embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder({"tokens": embedding})
-
+    dropout = trial.suggest_float("dropout", 0, 0.5)
     output_dim = trial.suggest_int("output_dim", 16, 128)
     max_filter_size = trial.suggest_int("max_filter_size", 3, 6)
     num_filters = trial.suggest_int("num_filters", 16, 128)
@@ -82,7 +83,14 @@ def create_model(vocab, trial):
         output_dim=output_dim,
     )
 
-    dropout = trial.suggest_float("dropout", 0, 0.5)
+    embedding = allennlp.modules.Embedding(
+        embedding_dim=50,
+        trainable=True,
+        pretrained_file="https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.50d.txt.gz",  # NOQA
+        vocab=vocab,
+    )
+
+    embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder({"tokens": embedding})
     model = allennlp.models.BasicClassifier(
         text_field_embedder=embedder, seq2vec_encoder=encoder, dropout=dropout, vocab=vocab,
     )
@@ -97,31 +105,44 @@ def objective(trial):
     if DEVICE > -1:
         model.to(torch.device("cuda:{}".format(DEVICE)))
 
-    lr = trial.suggest_float("lr", 1e-1, 1e0, log=True)
+    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
-    iterator = allennlp.data.iterators.BasicIterator(batch_size=10,)
-    iterator.index_with(vocab)
+    data_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=64, collate_fn=allennlp.data.allennlp_collate
+    )
+    validation_data_loader = torch.utils.data.DataLoader(
+        valid_dataset, batch_size=64, collate_fn=allennlp.data.allennlp_collate
+    )
 
     serialization_dir = os.path.join(MODEL_DIR, "trial_{}".format(trial.number))
-    trainer = allennlp.training.Trainer(
+    trainer = allennlp.training.GradientDescentTrainer(
         model=model,
         optimizer=optimizer,
-        iterator=iterator,
-        train_dataset=train_dataset,
-        validation_dataset=valid_dataset,
-        patience=3,
-        num_epochs=6,
+        data_loader=data_loader,
+        validation_data_loader=validation_data_loader,
+        validation_metric="+" + TARGET_METRIC,
+        patience=None,  # `patience=None` since it could conflict with AllenNLPPruningCallback
+        num_epochs=50,
         cuda_device=DEVICE,
         serialization_dir=serialization_dir,
+        epoch_callbacks=[AllenNLPPruningCallback(trial, "validation_" + TARGET_METRIC)],
     )
     metrics = trainer.train()
-    return metrics["best_validation_accuracy"]
+    return metrics["best_validation_" + TARGET_METRIC]
 
 
 if __name__ == "__main__":
-    study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=80, timeout=600)
+    if pkg_resources.parse_version(allennlp.__version__) < pkg_resources.parse_version("1.0.0"):
+        raise RuntimeError("AllenNLP>=1.0.0 is required for this example.")
+
+    random.seed(41)
+    torch.manual_seed(41)
+    numpy.random.seed(41)
+
+    pruner = optuna.pruners.HyperbandPruner()
+    study = optuna.create_study(direction="maximize", pruner=pruner)
+    study.optimize(objective, n_trials=50, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
     print("Best trial:")

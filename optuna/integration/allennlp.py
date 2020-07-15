@@ -5,18 +5,21 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
-import warnings
 
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
 
 with try_import() as _imports:
+    import allennlp
     import allennlp.commands
     import allennlp.common.util
+    from allennlp.training import EpochCallback
 
 if _imports.is_successful():
     import _jsonnet
+else:
+    EpochCallback = object  # NOQA
 
 
 def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
@@ -137,7 +140,6 @@ class AllenNLPExecutor(object):
             import_func = allennlp.common.util.import_submodules
         except AttributeError:
             import_func = allennlp.common.util.import_module_and_submodules
-            warnings.warn("AllenNLP>0.9 has not been supported officially yet.")
 
         for package_name in self._include_package:
             import_func(package_name)
@@ -147,3 +149,45 @@ class AllenNLPExecutor(object):
 
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]
+
+
+@experimental("2.0.0")
+class AllenNLPPruningCallback(EpochCallback):
+    """AllenNLP callback to prune unpromising trials.
+
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/allennlp/allennlp_simple.py>`__
+    if you want to add a proning callback which observes a metric.
+
+    Args:
+        trial:
+            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            objective function.
+        monitor:
+            An evaluation metric for pruning, e.g. ``validation_loss`` or
+            ``validation_accuracy``.
+    """
+
+    def __init__(self, trial: optuna.trial.Trial, monitor: str):
+        _imports.check()
+
+        if allennlp.__version__ < "1.0.0":
+            raise Exception("AllenNLPPruningCallback requires `allennlp`>=1.0.0.")
+
+        self._trial = trial
+        self._monitor = monitor
+
+    def __call__(
+        self,
+        trainer: "allennlp.training.GradientDescentTrainer",
+        metrics: Dict[str, Any],
+        epoch: int,
+        is_master: bool,
+    ) -> None:
+        value = metrics.get(self._monitor)
+        if value is None:
+            return
+
+        self._trial.report(float(value), epoch)
+        if self._trial.should_prune():
+            raise optuna.TrialPruned()
