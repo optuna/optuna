@@ -13,27 +13,31 @@ In order to run this example you have to do the following steps:
 1. (Optional) If run locally inside [minikube](https://github.com/kubernetes/minikube) you have to use the Docker daemon inside of it:
 
 ```bash
-eval $(minikube docker-env)
+$ eval $(minikube docker-env)
 ```
 
 2. Build and tag the example docker image:
 
 ```bash
-docker build -t optuna-kubernetes-mlflow:example .
+$ docker build -t optuna-kubernetes-mlflow:example .
 ```
 
 3. Apply the kubernetes manifests:
 
 ```bash
-kubectl apply -f k8s-manifest.yaml
+$ kubectl apply -f k8s-manifest.yaml
 ```
 
 4. Track the study by checking MLflow dashboard:
 
-You can tell the IP address of MLflow dashboard via `minikube service mlflow --url`.
-
-Also, you can track the progress of each worker by checking their logs directly:
+You can tell the IP address of MLflow dashboard as follows:
 
 ```bash
-kubectl logs worker-<pod id>
+$ minikube service mlflow --url`.
+```
+
+Also, if you want to track the progress of each worker by checking their logs directly:
+
+```bash
+$ kubectl logs worker-<pod id>
 ```
