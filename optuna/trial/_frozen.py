@@ -4,18 +4,9 @@ from typing import Dict
 from typing import Optional
 
 from optuna._experimental import experimental
-from optuna import distributions
 from optuna.distributions import BaseDistribution
 from optuna import logging
 from optuna.trial._state import TrialState
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import Union  # NOQA
-
-    FloatingPointDistributionType = Union[
-        distributions.UniformDistribution, distributions.LogUniformDistribution
-    ]
 
 _logger = logging.get_logger(__name__)
 
