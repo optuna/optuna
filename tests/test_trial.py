@@ -588,7 +588,7 @@ def test_fixed_trial_suggest_categorical():
     with pytest.raises(ValueError):
         trial.suggest_categorical("x", ["foo", "bar"])
 
-    # Unkown parameter and bad category type.
+    # Unknown parameter and bad category type.
     with pytest.warns(UserWarning):
         with pytest.raises(ValueError):  # Must come after `pytest.warns` to catch failures.
             trial.suggest_categorical("x", [{"foo": "bar"}])  # type: ignore
@@ -765,57 +765,6 @@ def test_study_id():
     assert trial._study_id == trial.study._study_id
 
 
-def test_frozen_trial_validate():
-    # type: () -> None
-
-    # Valid.
-    valid_trial = _create_frozen_trial()
-    valid_trial._validate()
-
-    # Invalid: `datetime_start` is not set.
-    invalid_trial = copy.copy(valid_trial)
-    invalid_trial.datetime_start = None
-    with pytest.raises(ValueError):
-        invalid_trial._validate()
-
-    # Invalid: `state` is `RUNNING` and `datetime_complete` is set.
-    invalid_trial = copy.copy(valid_trial)
-    invalid_trial.state = TrialState.RUNNING
-    with pytest.raises(ValueError):
-        invalid_trial._validate()
-
-    # Invalid: `state` is not `RUNNING` and `datetime_complete` is not set.
-    for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
-        invalid_trial = copy.copy(valid_trial)
-        invalid_trial.state = state
-        invalid_trial.datetime_complete = None
-        with pytest.raises(ValueError):
-            invalid_trial._validate()
-
-    # Invalid: `state` is `COMPLETE` and `value` is not set.
-    invalid_trial = copy.copy(valid_trial)
-    invalid_trial.value = None
-    with pytest.raises(ValueError):
-        invalid_trial._validate()
-
-    # Invalid: Inconsistent `params` and `distributions`
-    inconsistent_pairs = [
-        # `params` has an extra element.
-        ({"x": 0.1, "y": 0.5}, {"x": UniformDistribution(0, 1)}),
-        # `distributions` has an extra element.
-        ({"x": 0.1}, {"x": UniformDistribution(0, 1), "y": LogUniformDistribution(0.1, 1.0)}),
-        # The value of `x` isn't contained in the distribution.
-        ({"x": -0.5}, {"x": UniformDistribution(0, 1)}),
-    ]  # type: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]]
-
-    for params, distributions in inconsistent_pairs:
-        invalid_trial = copy.copy(valid_trial)
-        invalid_trial.params = params
-        invalid_trial.distributions = distributions
-        with pytest.raises(ValueError):
-            invalid_trial._validate()
-
-
 def test_frozen_trial_eq_ne():
     # type: () -> None
 
@@ -919,6 +868,7 @@ def test_frozen_trial_sampling(storage_init_func):
 
 
 def test_frozen_trial_suggest_float() -> None:
+
     trial = FrozenTrial(
         number=0,
         trial_id=0,
@@ -943,6 +893,7 @@ def test_frozen_trial_suggest_float() -> None:
 
 
 def test_frozen_trial_suggest_uniform() -> None:
+
     trial = FrozenTrial(
         number=0,
         trial_id=0,
@@ -964,6 +915,7 @@ def test_frozen_trial_suggest_uniform() -> None:
 
 
 def test_frozen_trial_suggest_loguniform() -> None:
+
     trial = FrozenTrial(
         number=0,
         trial_id=0,
@@ -984,6 +936,7 @@ def test_frozen_trial_suggest_loguniform() -> None:
 
 
 def test_frozen_trial_suggest_discrete_uniform() -> None:
+
     trial = FrozenTrial(
         number=0,
         trial_id=0,
@@ -1095,10 +1048,178 @@ def test_frozen_trial_suggest_categorical() -> None:
     with pytest.raises(ValueError):
         trial.suggest_categorical("x", ["foo", "bar"])
 
-    # Unkown parameter and bad category type.
+    # Unknown parameter and bad category type.
     with pytest.warns(UserWarning):
         with pytest.raises(ValueError):  # Must come after `pytest.warns` to catch failures.
             trial.suggest_categorical("x", [{"foo": "bar"}])  # type: ignore
+
+
+def test_frozen_trial_report() -> None:
+
+    # FrozenTrial ignores reported values.
+    trial = _create_frozen_trial()
+    trial.report(1.0, 1)
+    trial.report(2.0, 2)
+
+
+def test_frozen_trial_should_prune() -> None:
+
+    # FrozenTrial never prunes trials.
+    assert _create_frozen_trial().should_prune() is False
+
+
+def test_frozen_trial_set_user_attrs() -> None:
+
+    trial = _create_frozen_trial()
+    trial.set_user_attr("data", "MNIST")
+    assert trial.user_attrs["data"] == "MNIST"
+
+
+def test_frozen_trial_set_system_attrs() -> None:
+
+    trial = _create_frozen_trial()
+    trial.set_system_attr("system_message", "test")
+    assert trial.system_attrs["system_message"] == "test"
+
+
+def test_frozen_trial_validate() -> None:
+
+    # Valid.
+    valid_trial = _create_frozen_trial()
+    valid_trial._validate()
+
+    # Invalid: `datetime_start` is not set.
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.datetime_start = None
+    with pytest.raises(ValueError):
+        invalid_trial._validate()
+
+    # Invalid: `state` is `RUNNING` and `datetime_complete` is set.
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.state = TrialState.RUNNING
+    with pytest.raises(ValueError):
+        invalid_trial._validate()
+
+    # Invalid: `state` is not `RUNNING` and `datetime_complete` is not set.
+    for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL]:
+        invalid_trial = copy.copy(valid_trial)
+        invalid_trial.state = state
+        invalid_trial.datetime_complete = None
+        with pytest.raises(ValueError):
+            invalid_trial._validate()
+
+    # Invalid: `state` is `COMPLETE` and `value` is not set.
+    invalid_trial = copy.copy(valid_trial)
+    invalid_trial.value = None
+    with pytest.raises(ValueError):
+        invalid_trial._validate()
+
+    # Invalid: Inconsistent `params` and `distributions`
+    inconsistent_pairs = [
+        # `params` has an extra element.
+        ({"x": 0.1, "y": 0.5}, {"x": UniformDistribution(0, 1)}),
+        # `distributions` has an extra element.
+        ({"x": 0.1}, {"x": UniformDistribution(0, 1), "y": LogUniformDistribution(0.1, 1.0)}),
+        # The value of `x` isn't contained in the distribution.
+        ({"x": -0.5}, {"x": UniformDistribution(0, 1)}),
+    ]  # type: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]]
+
+    for params, distributions in inconsistent_pairs:
+        invalid_trial = copy.copy(valid_trial)
+        invalid_trial.params = params
+        invalid_trial.distributions = distributions
+        with pytest.raises(ValueError):
+            invalid_trial._validate()
+
+
+def test_frozen_trial_number() -> None:
+
+    trial = _create_frozen_trial()
+    assert trial.number == 0
+
+    trial.number = 2
+    assert trial.number == 2
+
+
+def test_frozen_trial_datetime_start() -> None:
+
+    trial = _create_frozen_trial()
+    assert trial.datetime_start is not None
+    old_date_time_start = trial.datetime_start
+    trial.datetime_complete = datetime.datetime.now()
+    assert trial.datetime_complete != old_date_time_start
+
+
+def test_frozen_trial_params() -> None:
+
+    params = {"x": 1}
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params=params,
+        distributions={"x": UniformDistribution(0, 10)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+
+    assert trial._suggested_params == {}
+    assert trial.suggest_uniform("x", 0, 10) == 1
+    assert trial.params == params
+    assert trial._suggested_params == params
+
+    params = {"x": 2}
+    trial.params = params
+    assert trial.suggest_uniform("x", 0, 10) == 2
+    assert trial.params == params
+    assert trial._suggested_params == params
+
+
+def test_frozen_trial_distributions() -> None:
+
+    distributions = {"x": UniformDistribution(0, 10)}
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 1},
+        distributions=dict(distributions),
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    assert trial.distributions == distributions
+
+    distributions = {"x": UniformDistribution(1, 9)}
+    trial.distributions = dict(distributions)
+    assert trial.distributions == distributions
+
+
+def test_frozen_trial_user_attrs() -> None:
+
+    trial = _create_frozen_trial()
+    assert trial.user_attrs == {}
+
+    user_attrs = {"data": "MNIST"}
+    trial.user_attrs = user_attrs
+    assert trial.user_attrs == user_attrs
+
+
+def test_frozen_trial_system_attrs() -> None:
+
+    trial = _create_frozen_trial()
+    assert trial.system_attrs == {}
+
+    system_attrs = {"system_message": "test"}
+    trial.system_attrs = system_attrs
+    assert trial.system_attrs == system_attrs
 
 
 # TODO(hvy): Write exhaustive test include invalid combinations when feature is no longer
