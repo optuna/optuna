@@ -108,10 +108,10 @@ def objective(trial):
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
     data_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=10, collate_fn=allennlp.data.allennlp_collate
+        train_dataset, batch_size=64, collate_fn=allennlp.data.allennlp_collate
     )
     validation_data_loader = torch.utils.data.DataLoader(
-        valid_dataset, batch_size=10, collate_fn=allennlp.data.allennlp_collate
+        valid_dataset, batch_size=64, collate_fn=allennlp.data.allennlp_collate
     )
 
     serialization_dir = os.path.join(MODEL_DIR, "trial_{}".format(trial.number))
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     numpy.random.seed(41)
 
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=80, timeout=600)
+    study.optimize(objective, n_trials=50, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
     print("Best trial:")
