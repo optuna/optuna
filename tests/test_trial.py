@@ -849,14 +849,14 @@ def test_frozen_trial_sampling(storage_init_func):
 
     def objective(trial: BaseTrial) -> float:
 
-        trial.suggest_uniform("a", 0, 10)
-        trial.suggest_loguniform("b", 0.1, 10)
-        trial.suggest_discrete_uniform("c", 0, 10, 1)
-        trial.suggest_int("d", 0, 10)
-        trial.suggest_categorical("e", ["foo", "bar", "baz"])
-        trial.suggest_int("f", 1, 10, log=True)
+        a = trial.suggest_uniform("a", 0, 10)
+        b = trial.suggest_loguniform("b", 0.1, 10)
+        c = trial.suggest_discrete_uniform("c", 0, 10, 1)
+        d = trial.suggest_int("d", 0, 10)
+        e = trial.suggest_categorical("e", [0, 1, 2])
+        f = trial.suggest_int("f", 1, 10, log=True)
 
-        return 1.0
+        return a + b + c + d + e + f
 
     study = create_study(storage_init_func())
     study.optimize(objective, n_trials=1)
