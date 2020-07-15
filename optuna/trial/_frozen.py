@@ -14,16 +14,9 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-
 from optuna import logging
 from optuna.trial._base import BaseTrial
 from optuna.trial._state import TrialState
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    FloatingPointDistributionType = Union[
-        distributions.UniformDistribution, distributions.LogUniformDistribution
-    ]
 
 _logger = logging.get_logger(__name__)
 

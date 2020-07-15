@@ -20,8 +20,6 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
 
-    FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
-
 
 class FixedTrial(BaseTrial):
     """A trial class which suggests a fixed value for each parameter.

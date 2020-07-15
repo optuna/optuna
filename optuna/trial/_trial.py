@@ -25,8 +25,6 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
 
-    FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
-
 
 _logger = logging.get_logger(__name__)
 

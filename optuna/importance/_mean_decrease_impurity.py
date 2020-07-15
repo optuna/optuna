@@ -43,7 +43,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
     """
 
     def __init__(
-        self, *, n_trees: int = 16, max_depth: int = 64, seed: Optional[int] = None
+        self, *, n_trees: int = 64, max_depth: int = 64, seed: Optional[int] = None
     ) -> None:
         _imports.check()
 

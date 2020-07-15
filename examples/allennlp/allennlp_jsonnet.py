@@ -37,7 +37,7 @@ BEST_CONFIG_PATH = "best_classifier.json"
 
 
 def objective(trial):
-    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    trial.suggest_float("DROPOUT", 0.0, 0.5)
     trial.suggest_int("EMBEDDING_DIM", 20, 50)
     trial.suggest_int("MAX_FILTER_SIZE", 3, 6)
     trial.suggest_int("NUM_FILTERS", 16, 32)

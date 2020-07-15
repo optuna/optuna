@@ -50,7 +50,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        dropout_rate = trial.suggest_uniform("dropout_rate", 0, 1)
+        dropout_rate = trial.suggest_float("dropout_rate", 0, 1)
         self.conv2_drop = nn.Dropout2d(p=dropout_rate)
         fc2_input_dim = trial.suggest_int("fc2_input_dim", 40, 80)
         self.fc1 = nn.Linear(320, fc2_input_dim)
