@@ -405,7 +405,7 @@ class CategoricalDistribution(BaseDistribution):
                 )
                 warnings.warn(message)
 
-        self.choices = choices
+        self.choices = tuple(choices)
 
     def to_external_repr(self, param_value_in_internal_repr: float) -> CategoricalChoiceType:
 

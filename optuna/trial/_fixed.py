@@ -124,7 +124,6 @@ class FixedTrial(BaseTrial):
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
 
-        choices = tuple(choices)
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
     def _suggest(self, name, distribution):
