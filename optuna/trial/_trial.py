@@ -483,9 +483,6 @@ class Trial(BaseTrial):
         Returns:
             A suggested value.
         """
-
-        choices = tuple(choices)
-
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
 
