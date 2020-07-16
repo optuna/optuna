@@ -126,6 +126,25 @@ class FixedTrial(BaseTrial):
 
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
+    def report(self, value, step):
+        # type: (float, int) -> None
+
+        pass
+
+    def should_prune(self) -> bool:
+
+        return False
+
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self._user_attrs[key] = value
+
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self._system_attrs[key] = value
+
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
 
@@ -150,25 +169,6 @@ class FixedTrial(BaseTrial):
         self._distributions[name] = distribution
 
         return value
-
-    def report(self, value, step):
-        # type: (float, int) -> None
-
-        pass
-
-    def should_prune(self) -> bool:
-
-        return False
-
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._user_attrs[key] = value
-
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._system_attrs[key] = value
 
     @property
     def params(self):
