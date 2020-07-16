@@ -76,7 +76,7 @@ def plot_param_importances(
             An importance evaluator object that specifies which algorithm to base the importance
             assessment on.
             Defaults to
-            :class:`~optuna.importance._mean_decrease_impurity.MeanDecreaseImpurityImportanceEvaluator`.
+            :class:`~optuna.importance.FanovaImportanceEvaluator`.
         params:
             A list of names of parameters to assess.
             If :obj:`None`, all parameters that are present in all of the completed trials are
