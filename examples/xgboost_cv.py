@@ -77,14 +77,12 @@ def objective(trial):
     trial.set_user_attr("n_estimators", len(xgb_cv_results))
 
     # Save cross-validation results.
-    filepath = os.path.join(CV_RESULT_DIR, '{}.csv'.format(trial.number))
+    filepath = os.path.join(CV_RESULT_DIR, "{}.csv".format(trial.number))
     xgb_cv_results.to_csv(filepath, index=False)
 
     # Extract the best score.
     best_score = xgb_cv_results["test-auc-mean"].values[-1]
     return best_score
-
-shutil.rmtree(CV_RESULT_DIR)
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
@@ -99,3 +97,5 @@ if __name__ == "__main__":
         print("    {}: {}".format(key, value))
 
     print("  Number of estimators: {}".format(trial.user_attrs["n_estimators"]))
+
+    shutil.rmtree(CV_RESULT_DIR)
