@@ -185,7 +185,6 @@ class FrozenTrial(BaseTrial):
         self, name: str, choices: Sequence[CategoricalChoiceType]
     ) -> CategoricalChoiceType:
 
-        choices = tuple(choices)
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
     def report(self, value: float, step: int) -> None:
