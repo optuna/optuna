@@ -37,11 +37,11 @@ def default_gamma(x: int, _: int) -> int:
     The second argument can be used to change gamma dynamically based on the number of nondominated
     trials.
     Example:
-        def dynamic_gamma(x: int, n: int) -> int:
-            return int(np.ceil(0.8 * n))  # 80% of nondominated trials
+        def dynamic_gamma(_: int, x: int) -> int:
+            return max(0, int(np.ceil(0.10 * x) - 1))
     """
 
-    return int(np.ceil(0.1 * x))
+    return max(0, int(np.ceil(0.1 * x)) - 1)
 
 
 def default_weights(x: int) -> np.ndarray:
@@ -49,6 +49,32 @@ def default_weights(x: int) -> np.ndarray:
         return np.asarray([])
     else:
         return np.ones(x)
+
+
+def default_hssp_reference_point(observations: np.ndarray, _: np.ndarray) -> np.ndarray:
+    """
+    Args:
+        The first argument is the all of the observed function values so far.
+        The second argument is a subset of the observed function values that are an input for a
+        hypervolume subset selection problem (HSSP).
+
+    The second argument can be used to set a reference_point based on the input set for HSSP.
+    Example:
+        def hssp_reference_point(_: int, observations: int) -> int:
+            worst_point = np.max(observations, axis=0)
+            reference_point = 1.1 * worst_point
+            return reference_point
+    """
+
+    worst_point = np.max(observations, axis=0)
+    reference_point = np.maximum(
+        np.maximum(
+            1.1 * worst_point,  # case: value > 0
+            0.9 * worst_point  # case: value < 0
+        ),
+        np.full(len(worst_point), EPS)  # case: value = 0
+    )
+    return reference_point
 
 
 @experimental("2.0.0")
@@ -99,6 +125,11 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             See the original paper for more details.
         weights:
             A function that takes the number of finished trials and returns a weight for them.
+        hssp_reference_point:
+            A function that takes the all of the observed function values and a subset of the
+            observed function values that are an input for a hypervolume subset selection problem
+            (HSSP) and returns a reference point for HSSP.
+            See the original paper for more details.
         seed:
             Seed for random number generator.
     """
@@ -113,6 +144,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             n_ehvi_candidates: int = 24,
             gamma: Callable[[int], int] = default_gamma,
             weights: Callable[[int], np.ndarray] = default_weights,
+            hssp_reference_point: Callable[[np.ndarray, np.ndarray], np.ndarray] = \
+                default_hssp_reference_point,
             seed: Optional[int] = None
         ) -> None:
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
@@ -123,6 +156,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         self._n_ehvi_candidates = n_ehvi_candidates
         self._gamma = gamma
         self._weights = weights
+        self._hssp_reference_point = hssp_reference_point
 
         self._rng = np.random.RandomState(seed)
         self._random_sampler = RandomSampler(seed=seed)
@@ -236,22 +270,13 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             # Hypervolume subset selection problem (HSSP)-based selection
             subset_size = n_below - len(below_indices)
             if subset_size > 0:
-                # NOTE: This reference_point selection is heuristic.
-                worst_point = np.max(loss_vals, axis=0)
-                reference_point = np.maximum(
-                    np.maximum(
-                        1.1 * worst_point, # case: value > 0
-                        0.9 * worst_point # case: value < 0
-                    ),
-                    np.full(len(worst_point), EPS) # case: value = 0
-                )
                 rank_i_loss_vals = loss_vals[nondomination_ranks == i]
                 rank_i_indices = indices[nondomination_ranks == i]
+                reference_point = self._hssp_reference_point(loss_vals, rank_i_loss_vals)
                 below_indices = np.append(below_indices, _solve_hssp(
                     rank_i_loss_vals, rank_i_indices, subset_size, reference_point
                 ))
             assert len(below_indices) == n_below
-
             above_indices = np.setdiff1d(indices, below_indices)
 
             study._storage.set_trial_system_attr(
@@ -263,6 +288,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         below = np.asarray([v for v in below if v is not None], dtype=float)
         above = config_vals[above_indices]
         above = np.asarray([v for v in above if v is not None], dtype=float)
+
         return below, above
 
     def _sample_uniform(
@@ -363,7 +389,6 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         parzen_estimator_above = _ParzenEstimator(
             mus=above, low=low, high=high, parameters=self._parzen_estimator_parameters
         )
-
         log_likelihoods_above = self._gmm_log_pdf(
             samples=samples_below,
             parzen_estimator=parzen_estimator_above,
@@ -424,7 +449,6 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         mus = parzen_estimator.mus
         sigmas = parzen_estimator.sigmas
         weights, mus, sigmas = map(np.asarray, (weights, mus, sigmas))
-
         if low >= high:
             raise ValueError(
                 "The 'low' should be lower than the 'high'. "
@@ -443,7 +467,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 scale=sigmas[active],
                 random_state=self._rng,
             )
-            if (samples < high).all():
+            if (samples >= low).all() and (samples < high).all():
                 break
 
         if q is None:
@@ -486,7 +510,6 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 - MOTPEMultiObjectiveSampler._normal_cdf(low, mus, sigmas)
             )
         )
-
         if q is None:
             distance = samples[..., None] - mus
             mahalanobis = (distance / np.maximum(sigmas, EPS)) ** 2
@@ -569,7 +592,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         return np.log(np.exp(x - m[:, None]).sum(axis=1)) + m
 
     @classmethod
-    def _normal_cdf(cls, x: float, mu: np.ndarray, sigma:np.ndarray) -> np.ndarray:
+    def _normal_cdf(cls, x: float, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
         mu, sigma = map(np.asarray, (mu, sigma))
         denominator = x - mu
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
@@ -589,7 +612,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
 def _calculate_nondomination_rank(
         loss_vals: List[List[float]],
-    ):
+    ) -> np.ndarray:
     vecs = loss_vals.copy()
     ranks = np.zeros(len(vecs))
 
@@ -609,11 +632,11 @@ def _calculate_nondomination_rank(
 
 
 def _solve_hssp(
-        rank_i_loss_vals,
-        rank_i_indices,
-        subset_size,
-        reference_point,
-    ):
+        rank_i_loss_vals: np.ndarray,
+        rank_i_indices: np.ndarray,
+        subset_size: int,
+        reference_point: np.ndarray,
+    ) -> np.ndarray:
     """Solve a hypervolume subset selection problem (HSSP) via a greedy algorithm.
 
     This method is a 1-1/e approximation algorithm to solve HSSP.
@@ -629,8 +652,7 @@ def _solve_hssp(
     contributions = [hypervolume([v]).compute(reference_point) for v in rank_i_loss_vals]
     MARK_AS_SELECTED = np.finfo(float).min
     hv_selected = 0
-    i = 0
-    while i < subset_size:
+    while len(selected_indices) < subset_size:
         max_index = np.argmax(contributions)
         contributions[max_index] = MARK_AS_SELECTED
         selected_index = rank_i_indices[max_index]
@@ -645,7 +667,7 @@ def _solve_hssp(
         selected_vecs += [selected_vec]
         selected_indices += [selected_index]
         hv_selected = hypervolume(selected_vecs).compute(reference_point)
-        i += 1
+
     return np.asarray(selected_indices, dtype=int)
 
 
