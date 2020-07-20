@@ -868,7 +868,6 @@ def test_frozen_trial_sampling(storage_init_func):
     v = objective(best_trial)
 
     assert v == best_trial.value
-    assert best_trial._suggested_params == study.best_trial.params
 
 
 def test_frozen_trial_suggest_float() -> None:
@@ -1171,16 +1170,13 @@ def test_frozen_trial_params() -> None:
         intermediate_values={},
     )
 
-    assert trial._suggested_params == {}
     assert trial.suggest_uniform("x", 0, 10) == 1
     assert trial.params == params
-    assert trial._suggested_params == params
 
     params = {"x": 2}
     trial.params = params
     assert trial.suggest_uniform("x", 0, 10) == 2
     assert trial.params == params
-    assert trial._suggested_params == params
 
 
 def test_frozen_trial_distributions() -> None:

@@ -73,7 +73,6 @@ class FrozenTrial(BaseTrial):
         self.intermediate_values = intermediate_values
         self._distributions = distributions
         self._trial_id = trial_id
-        self._suggested_params = {}  # type: Dict[str, Any]
 
     # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
     # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
@@ -188,6 +187,7 @@ class FrozenTrial(BaseTrial):
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
     def report(self, value: float, step: int) -> None:
+
         pass
 
     def should_prune(self) -> bool:
@@ -255,7 +255,6 @@ class FrozenTrial(BaseTrial):
         if name in self._distributions:
             distributions.check_distribution_compatibility(self._distributions[name], distribution)
 
-        self._suggested_params[name] = value
         self._distributions[name] = distribution
 
         return value
