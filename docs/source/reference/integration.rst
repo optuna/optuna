@@ -28,3 +28,4 @@ optuna.integration
    optuna.integration.OptunaSearchCV
    optuna.integration.AllenNLPExecutor
    optuna.integration.allennlp.dump_best_config
+   optuna.integration.AllenNLPPruningCallback

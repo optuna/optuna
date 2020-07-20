@@ -50,8 +50,7 @@ local LEARNING_RATE = std.extVar('LEARNING_RATE');
       bidirectional: true,
     },
   },
-  iterator: {
-    type: 'basic',
+  data_loader: {
     batch_size: 32,
   },
   trainer: {

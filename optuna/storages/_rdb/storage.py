@@ -676,9 +676,9 @@ class RDBStorage(BaseStorage):
                 .all()
             )
             value_dict = {value_model.step: value_model for value_model in value_models}
-            for s, v in value_dict.items():
+            for s, v in intermediate_values.items():
                 if s in value_dict:
-                    value_dict[s] = v
+                    value_dict[s].value = v
                     session.add(value_dict[s])
             trial_model.values.extend(
                 models.TrialValueModel(step=s, value=v)
@@ -691,7 +691,14 @@ class RDBStorage(BaseStorage):
                 .filter(models.TrialParamModel.trial_id == trial_id)
                 .all()
             )
-            param_keys = set(param.param_name for param in trial_param)
+            trial_param_dict = {attr.param_name: attr for attr in trial_param}
+            for name, v in params.items():
+                if name in trial_param_dict:
+                    trial_param_dict[name].distribution_json = distributions.distribution_to_json(
+                        distributions_[name]
+                    )
+                    trial_param_dict[name].param_value = v
+                    session.add(trial_param_dict[name])
             trial_model.params.extend(
                 models.TrialParamModel(
                     param_name=param_name,
@@ -701,7 +708,7 @@ class RDBStorage(BaseStorage):
                     ),
                 )
                 for param_name, param_value in params.items()
-                if param_name not in param_keys
+                if param_name not in trial_param_dict
             )
         session.add(trial_model)
         self._commit(session)
@@ -969,6 +976,10 @@ class RDBStorage(BaseStorage):
         try:
             trial_models = (
                 session.query(models.TrialModel)
+                .options(orm.selectinload(models.TrialModel.params))
+                .options(orm.selectinload(models.TrialModel.values))
+                .options(orm.selectinload(models.TrialModel.user_attributes))
+                .options(orm.selectinload(models.TrialModel.system_attributes))
                 .filter(
                     models.TrialModel.trial_id.in_(trial_ids),
                     models.TrialModel.study_id == study_id,
@@ -988,6 +999,10 @@ class RDBStorage(BaseStorage):
 
             trial_models = (
                 session.query(models.TrialModel)
+                .options(orm.selectinload(models.TrialModel.params))
+                .options(orm.selectinload(models.TrialModel.values))
+                .options(orm.selectinload(models.TrialModel.user_attributes))
+                .options(orm.selectinload(models.TrialModel.system_attributes))
                 .filter(models.TrialModel.study_id == study_id)
                 .all()
             )
