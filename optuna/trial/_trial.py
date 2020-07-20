@@ -743,17 +743,6 @@ class Trial(BaseTrial):
             )
 
     @property
-    def number(self):
-        # type: () -> int
-        """Return trial's number which is consecutive and unique in a study.
-
-        Returns:
-            A trial number.
-        """
-
-        return self.storage.get_trial_number_from_id(self._trial_id)
-
-    @property
     def params(self):
         # type: () -> Dict[str, Any]
         """Return parameters to be optimized.
@@ -806,3 +795,14 @@ class Trial(BaseTrial):
             Datetime where the :class:`~optuna.trial.Trial` started.
         """
         return self.storage.get_trial(self._trial_id).datetime_start
+
+    @property
+    def number(self):
+        # type: () -> int
+        """Return trial's number which is consecutive and unique in a study.
+
+        Returns:
+            A trial number.
+        """
+
+        return self.storage.get_trial_number_from_id(self._trial_id)
