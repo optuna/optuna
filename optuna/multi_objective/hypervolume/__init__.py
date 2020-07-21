@@ -75,6 +75,8 @@ def dom(point1: np.ndarray, point2: np.ndarray, dim_bound: Optional[int] = None)
     if dim_bound is None or dim_bound == 0:
         dim_bound = point1.shape[0]
 
+    assert isinstance(dim_bound, int)
+
     _validate_2_points(point1, point2, dim_bound)
 
     for i in range(dim_bound):

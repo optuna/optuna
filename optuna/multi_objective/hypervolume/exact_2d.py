@@ -10,7 +10,7 @@ class Exact2d(BaseHypervolume):
     This class exactly calculates the hypervolume in the 2-dimensional case.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     def compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
