@@ -359,6 +359,11 @@ class FrozenTrial(BaseTrial):
 
     @property
     def last_step(self) -> Optional[int]:
+        """Return the maximum step of `intermediate_values` in the trial.
+
+        Returns:
+            The maximum step of intermediates.
+        """
 
         if len(self.intermediate_values) == 0:
             return None
