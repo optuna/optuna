@@ -26,6 +26,33 @@ CategoricalChoiceType = Union[None, bool, int, float, str]
 class FrozenTrial(BaseTrial):
     """Status and results of a :class:`~optuna.trial.Trial`.
 
+    This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests best
+    parameter values among performed trials. In contrast to :class:`~optuna.trial.Trial`,
+    :class:`~optuna.trial.FrozenTrial` does not depend on :class:`~optuna.study.Study`, and it is
+    useful for deploying optimization results.
+
+    Example:
+
+        Re-evaluate an objective function with parameter values optimized study.
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_uniform('x', -1, 1)
+                return x ** 2
+
+            study = optuna.create_study()
+            study.optimize(objective, n_trials=3)
+
+            assert objective(study.best_trial) == study.best_value
+
+
+    .. note::
+        Please refer to :class:`~optuna.trial.Trial` for details of methods and properties.
+
+
     Attributes:
         number:
             Unique and consecutive number of :class:`~optuna.trial.Trial` for each
@@ -196,7 +223,7 @@ class FrozenTrial(BaseTrial):
         The suggestion is always :obj:`False` regardless of a pruning algorithm.
 
         .. note::
-            :class:`~optuna.trial.FrozenTrial` only samples one combination of hyper-parameters.
+            :class:`~optuna.trial.FrozenTrial` only samples one combination of parameters.
 
         Returns:
             A boolean value: :obj:`False`.
