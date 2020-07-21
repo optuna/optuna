@@ -60,8 +60,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-optimize",
             "mlflow",
         ],
-        # TODO(hvy): Unpin `sphinx` version after https://github.com/sphinx-doc/sphinx/issues/7807.
-        "document": ["sphinx>=3.0.0,!=3.1.0,!=3.1.1", "sphinx_rtd_theme"],
+        "document": [
+            # TODO(hvy): Unpin `sphinx` version after:
+            # https://github.com/sphinx-doc/sphinx/issues/7807.
+            "sphinx>=3.0.0,!=3.1.0,!=3.1.1,!=3.1.2",
+            # As reported in: https://github.com/readthedocs/sphinx_rtd_theme/issues/949,
+            # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
+            "sphinx_rtd_theme<0.5.0",
+        ],
         "example": [
             "catboost",
             "chainer",
@@ -74,12 +80,13 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-image",
             "scikit-learn",
             "thop",
-            "torch==1.4.0" if sys.platform == "darwin" else "torch==1.4.0+cpu",
-            "torchvision==0.5.0" if sys.platform == "darwin" else "torchvision==0.5.0+cpu",
+            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
+            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
         ]
+        + (["stable-baselines3>=0.7.0"] if (3, 5) < sys.version_info[:2] else [])
         + (
-            ["allennlp<1", "fastai<2", "pytorch_lightning>=0.7.1"]
+            ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
         )
@@ -97,7 +104,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             ]
             if sys.version_info[:2] < (3, 8)
             else []
-        ),
+        )
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
         "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -106,7 +114,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
-            "fanova",
             "lightgbm",
             "mlflow",
             "mpi4py",
@@ -117,15 +124,53 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-ignite",
             "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
-            "torch==1.4.0" if sys.platform == "darwin" else "torch==1.4.0+cpu",
-            "torchvision==0.5.0" if sys.platform == "darwin" else "torchvision==0.5.0+cpu",
+            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
+            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
         ]
         + (
-            ["allennlp<1", "fastai<2", "pytorch_lightning>=0.7.1"]
+            ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
         )
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
+        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
+        + (
+            ["keras<2.4.0", "tensorflow", "tensorflow-datasets"]
+            if sys.version_info[:2] < (3, 8)
+            else []
+        ),
+        "tests": ["fakeredis", "pytest"],
+        "optional": [
+            "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
+            "pandas",  # optuna/study.py
+            "plotly>=4.0.0",  # optuna/visualization.
+            "redis",  # optuna/storages/redis.py.
+            "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
+        ],
+        "integration": [
+            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
+            # https://github.com/optuna/optuna/issues/1000.
+            "chainer>=5.0.0",
+            "cma",
+            "lightgbm",
+            "mlflow",
+            "mpi4py",
+            "mxnet",
+            "pandas",
+            "pytorch-ignite",
+            "scikit-learn>=0.19.0,<0.23.0",
+            "scikit-optimize",
+            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
+            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
+            "xgboost",
+        ]
+        + (
+            ["allennlp==1.0.0", "fastai<2", "pytorch-lightning>=0.7.1"]
+            if (3, 5) < sys.version_info[:2] < (3, 8)
+            else []
+        )
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
         + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
         + (
             ["keras<2.4.0", "tensorflow", "tensorflow-datasets"]
@@ -146,16 +191,6 @@ def find_any_distribution(pkgs: List[str]) -> Optional[pkg_resources.Distributio
             pass
     return None
 
-
-pfnopt_pkg = find_any_distribution(["pfnopt"])
-if pfnopt_pkg is not None:
-    msg = (
-        "We detected that PFNOpt is installed in your environment.\n"
-        "PFNOpt has been renamed Optuna. Please uninstall the old\n"
-        "PFNOpt in advance (e.g. by executing `$ pip uninstall pfnopt`)."
-    )
-    print(msg)
-    exit(1)
 
 setup(
     name="optuna",

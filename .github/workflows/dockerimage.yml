@@ -7,11 +7,11 @@ on:
   release:
     types: [published]
   pull_request:
-    branches:
-      - master
+    paths:
+      - Dockerfile
+      - setup.py
 
 env:
-  DOCKER_BASE_NAME: docker.pkg.github.com/${{ github.repository }}/optuna
   DOCKER_HUB_BASE_NAME: optuna/optuna
 
 jobs:

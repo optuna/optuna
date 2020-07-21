@@ -20,8 +20,6 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
 
-    FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
-
 
 class FixedTrial(BaseTrial):
     """A trial class which suggests a fixed value for each parameter.
@@ -118,7 +116,7 @@ class FixedTrial(BaseTrial):
                 )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
         else:
             if log:
-                distribution = IntLogUniformDistribution(low=low, high=high, step=step)
+                distribution = IntLogUniformDistribution(low=low, high=high)
             else:
                 distribution = IntUniformDistribution(low=low, high=high, step=step)
         return int(self._suggest(name, distribution))
@@ -126,8 +124,26 @@ class FixedTrial(BaseTrial):
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
 
-        choices = tuple(choices)
         return self._suggest(name, CategoricalDistribution(choices=choices))
+
+    def report(self, value, step):
+        # type: (float, int) -> None
+
+        pass
+
+    def should_prune(self) -> bool:
+
+        return False
+
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self._user_attrs[key] = value
+
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self._system_attrs[key] = value
 
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
@@ -153,25 +169,6 @@ class FixedTrial(BaseTrial):
         self._distributions[name] = distribution
 
         return value
-
-    def report(self, value, step):
-        # type: (float, int) -> None
-
-        pass
-
-    def should_prune(self) -> bool:
-
-        return False
-
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._user_attrs[key] = value
-
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._system_attrs[key] = value
 
     @property
     def params(self):

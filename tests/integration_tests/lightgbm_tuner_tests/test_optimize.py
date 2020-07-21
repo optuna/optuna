@@ -6,6 +6,7 @@ from typing import Generator
 from typing import List
 from typing import Optional
 from unittest import mock
+import warnings
 
 import numpy as np
 import pytest
@@ -286,6 +287,12 @@ class TestLightGBMTuner(object):
         runner = lgb.LightGBMTuner(params, train_set, **kwargs)
         return runner
 
+    def test_deprecated_args(self) -> None:
+        dummy_dataset = lgb.Dataset(None)
+
+        with pytest.warns(FutureWarning):
+            LightGBMTuner({}, dummy_dataset, valid_sets=[dummy_dataset], verbosity=1)
+
     def test_no_eval_set_args(self):
         # type: () -> None
 
@@ -565,6 +572,67 @@ class TestLightGBMTuner(object):
             tuner2.tune_regularization_factors()
         assert n_trials == len(study.trials)
 
+    @pytest.mark.parametrize(
+        "verbosity, level",
+        [
+            (None, optuna.logging.INFO),
+            (-2, optuna.logging.CRITICAL),
+            (-1, optuna.logging.CRITICAL),
+            (0, optuna.logging.WARNING),
+            (1, optuna.logging.INFO),
+            (2, optuna.logging.DEBUG),
+        ],
+    )
+    def test_run_verbosity(self, verbosity: int, level: int) -> None:
+        # We need to reconstruct our default handler to properly capture stderr.
+        optuna.logging._reset_library_root_logger()
+        optuna.logging.set_verbosity(optuna.logging.INFO)
+
+        params = {"verbose": -1}  # type: Dict
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        study = optuna.create_study()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            tuner = LightGBMTuner(
+                params,
+                dataset,
+                valid_sets=dataset,
+                study=study,
+                verbosity=verbosity,
+                time_budget=1,
+            )
+
+        with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=1.0):
+            tuner.run()
+
+        assert optuna.logging.get_verbosity() == level
+        assert tuner.lgbm_params["verbose"] == -1
+
+    @pytest.mark.parametrize(
+        "show_progress_bar, expected", [(True, 6), (False, 0)],
+    )
+    def test_run_show_progress_bar(self, show_progress_bar: bool, expected: int) -> None:
+        params = {"verbose": -1}  # type: Dict
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        study = optuna.create_study()
+        tuner = LightGBMTuner(
+            params,
+            dataset,
+            valid_sets=dataset,
+            study=study,
+            time_budget=1,
+            show_progress_bar=show_progress_bar,
+        )
+
+        with mock.patch.object(
+            _BaseTuner, "_get_booster_best_score", return_value=1.0
+        ), mock.patch("tqdm.tqdm") as mock_tqdm:
+            tuner.run()
+
+        assert mock_tqdm.call_count == expected
+
     def test_get_best_booster(self) -> None:
         unexpected_value = 20  # out of scope.
 
@@ -584,7 +652,7 @@ class TestLightGBMTuner(object):
         assert best_booster.params["lambda_l1"] != unexpected_value
 
         # TODO(toshihikoyanase): Remove this check when LightGBMTuner.best_booster is removed.
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             tuner.best_booster
 
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
@@ -686,6 +754,12 @@ class TestLightGBMTunerCV(object):
 
         runner = LightGBMTunerCV(params, train_set, **kwargs)
         return runner
+
+    def test_deprecated_args(self) -> None:
+        dummy_dataset = lgb.Dataset(None)
+
+        with pytest.warns(FutureWarning):
+            LightGBMTunerCV({}, dummy_dataset, verbosity=1)
 
     @pytest.mark.parametrize(
         "metric, study_direction",
@@ -810,6 +884,57 @@ class TestLightGBMTunerCV(object):
         with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
             tuner2.tune_regularization_factors()
         assert n_trials == len(study.trials)
+
+    @pytest.mark.parametrize(
+        "verbosity, level",
+        [
+            (None, optuna.logging.INFO),
+            (-2, optuna.logging.CRITICAL),
+            (-1, optuna.logging.CRITICAL),
+            (0, optuna.logging.WARNING),
+            (1, optuna.logging.INFO),
+            (2, optuna.logging.DEBUG),
+        ],
+    )
+    def test_run_verbosity(self, verbosity: int, level: int) -> None:
+        # We need to reconstruct our default handler to properly capture stderr.
+        optuna.logging._reset_library_root_logger()
+        optuna.logging.set_verbosity(optuna.logging.INFO)
+
+        params = {"verbose": -1}  # type: Dict
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        study = optuna.create_study()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=FutureWarning)
+            tuner = LightGBMTunerCV(
+                params, dataset, study=study, verbosity=verbosity, time_budget=1
+            )
+
+        with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+            tuner.run()
+
+        assert optuna.logging.get_verbosity() == level
+        assert tuner.lgbm_params["verbose"] == -1
+
+    @pytest.mark.parametrize(
+        "show_progress_bar, expected", [(True, 6), (False, 0)],
+    )
+    def test_run_show_progress_bar(self, show_progress_bar: bool, expected: int) -> None:
+        params = {"verbose": -1}  # type: Dict
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        study = optuna.create_study()
+        tuner = LightGBMTunerCV(
+            params, dataset, study=study, time_budget=1, show_progress_bar=show_progress_bar
+        )
+
+        with mock.patch.object(
+            _OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]
+        ), mock.patch("tqdm.tqdm") as mock_tqdm:
+            tuner.run()
+
+        assert mock_tqdm.call_count == expected
 
     def test_optuna_callback(self) -> None:
         params = {"verbose": -1}  # type: Dict[str, Any]

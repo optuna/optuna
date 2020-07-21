@@ -266,7 +266,8 @@ def test_update_trial_second_write() -> None:
         "number": trial_before_update.number,
         "state": TrialState.RUNNING,
         "value": 1.1,
-        "params": {"paramA": 0.1, "paramB": 1.1, "paramC": 2.3},
+        "params": {"paramA": 0.2, "paramB": 1.1, "paramC": 2.3},
+        "intermediate_values": {3: 2.3, 5: 9.2, 7: 3.3},
         "_distributions": {
             "paramA": UniformDistribution(0, 1),
             "paramB": UniformDistribution(0, 2),
@@ -277,3 +278,18 @@ def test_update_trial_second_write() -> None:
     }
     for key, value in expected_attrs.items():
         assert getattr(trial_after_update, key) == value
+
+
+def test_get_trials_excluded_trial_ids() -> None:
+    storage = create_test_storage()
+    study_id = storage.create_new_study()
+
+    storage.create_new_trial(study_id)
+
+    trials = storage._get_trials(study_id, excluded_trial_ids=set())
+    assert len(trials) == 1
+
+    # A large exclusion list used to raise errors. Check that it is not an issue.
+    # See https://github.com/optuna/optuna/issues/1457.
+    trials = storage._get_trials(study_id, excluded_trial_ids=set(range(500000)))
+    assert len(trials) == 0

@@ -11,6 +11,9 @@ class TrialPruned(OptunaError):
     supposed to be raised after :func:`optuna.trial.Trial.should_prune` as shown in the following
     example.
 
+    See also:
+        :class:`optuna.TrialPruned` is an alias of :class:`optuna.exceptions.TrialPruned`.
+
     Example:
 
         .. testcode::

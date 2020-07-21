@@ -11,6 +11,7 @@ import optuna
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
@@ -23,7 +24,7 @@ from optuna.trial import TrialState
 
 
 def test_cmaes_deprecation_warning() -> None:
-    with pytest.deprecated_call():
+    with pytest.warns(FutureWarning):
         optuna.integration.CmaEsSampler()
 
 
@@ -151,6 +152,7 @@ class TestOptimizer(object):
             "d": DiscreteUniformDistribution(-1, 9, 2),
             "i": IntUniformDistribution(-1, 1),
             "ii": IntUniformDistribution(-1, 3, 2),
+            "il": IntLogUniformDistribution(2, 16),
             "l": LogUniformDistribution(0.001, 0.1),
             "u": UniformDistribution(-2, 2),
         }
@@ -164,6 +166,7 @@ class TestOptimizer(object):
             "d": -1,
             "i": -1,
             "ii": -1,
+            "il": 2,
             "l": 0.001,
             "u": -2,
         }
@@ -176,13 +179,13 @@ class TestOptimizer(object):
                 search_space, x0, 0.2, None, {"popsize": 5, "seed": 1}
             )
             assert mock_obj.mock_calls[0] == call(
-                [0, 0, -1, -1, math.log(0.001), -2],
+                [0, 0, -1, -1, math.log(2), math.log(0.001), -2],
                 0.2,
                 {
                     "BoundaryHandler": cma.BoundTransform,
                     "bounds": [
-                        [-0.5, -1.0, -1.5, -1.5, math.log(0.001), -2],
-                        [1.5, 11.0, 1.5, 3.5, math.log(0.1), 2],
+                        [-0.5, -1.0, -1.5, -2.0, math.log(1.5), math.log(0.001), -2,],
+                        [1.5, 11.0, 1.5, 4.0, math.log(16.5), math.log(0.1), 2],
                     ],
                     "popsize": 5,
                     "seed": 1,

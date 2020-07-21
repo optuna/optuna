@@ -37,7 +37,6 @@ from torchvision.transforms import ToTensor
 
 import optuna
 
-
 EPOCHS = 10
 TRAIN_BATCH_SIZE = 64
 VAL_BATCH_SIZE = 1000
@@ -51,7 +50,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        dropout_rate = trial.suggest_uniform("dropout_rate", 0, 1)
+        dropout_rate = trial.suggest_float("dropout_rate", 0, 1)
         self.conv2_drop = nn.Dropout2d(p=dropout_rate)
         fc2_input_dim = trial.suggest_int("fc2_input_dim", 40, 80)
         self.fc1 = nn.Linear(320, fc2_input_dim)
@@ -90,6 +89,7 @@ def objective(trial):
     device = "cpu"
     if torch.cuda.is_available():
         device = "cuda"
+        model.cuda(device)
 
     optimizer = Adam(model.parameters())
     trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)

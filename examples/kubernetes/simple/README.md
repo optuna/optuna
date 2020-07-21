@@ -34,5 +34,3 @@ kubectl apply -f k8s-manifests.yaml
 ```bash
 kubectl logs worker-<pod id>
 ```
-
-

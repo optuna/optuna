@@ -55,8 +55,8 @@ def _is_first_in_interval_step(step, intermediate_steps, n_warmup_steps, interva
     # type: (int, KeysView[int], int, int) -> bool
 
     nearest_lower_pruning_step = (
-        (step - n_warmup_steps - 1) // interval_steps * interval_steps + n_warmup_steps + 1
-    )
+        step - n_warmup_steps
+    ) // interval_steps * interval_steps + n_warmup_steps
     assert nearest_lower_pruning_step >= 0
 
     # `intermediate_steps` may not be sorted so we must go through all elements.
@@ -118,7 +118,8 @@ class PercentilePruner(BasePruner):
         n_startup_trials:
             Pruning is disabled until the given number of trials finish in the same study.
         n_warmup_steps:
-            Pruning is disabled until the trial exceeds the given number of step.
+            Pruning is disabled until the trial exceeds the given number of step. Note that
+            this feature assumes that ``step`` starts at zero.
         interval_steps:
             Interval in number of steps between the pruning checks, offset by the warmup steps.
             If no value has been reported at the time of a pruning check, that particular check
@@ -167,7 +168,7 @@ class PercentilePruner(BasePruner):
             return False
 
         n_warmup_steps = self._n_warmup_steps
-        if step <= n_warmup_steps:
+        if step < n_warmup_steps:
             return False
 
         if not _is_first_in_interval_step(

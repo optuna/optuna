@@ -25,8 +25,6 @@ if type_checking.TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType  # NOQA
     from optuna.study import Study  # NOQA
 
-    FloatingPointDistributionType = Union[UniformDistribution, LogUniformDistribution]
-
 
 _logger = logging.get_logger(__name__)
 
@@ -432,7 +430,7 @@ class Trial(BaseTrial):
                 )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
         else:
             if log:
-                distribution = IntLogUniformDistribution(low=low, high=high, step=step)
+                distribution = IntLogUniformDistribution(low=low, high=high)
             else:
                 distribution = IntUniformDistribution(low=low, high=high, step=step)
 
@@ -485,9 +483,6 @@ class Trial(BaseTrial):
         Returns:
             A suggested value.
         """
-
-        choices = tuple(choices)
-
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
 
@@ -544,7 +539,10 @@ class Trial(BaseTrial):
             value:
                 A value returned from the objective function.
             step:
-                Step of the trial (e.g., Epoch of neural network training).
+                Step of the trial (e.g., Epoch of neural network training). Note that pruners
+                assume that ``step`` starts at zero. For example,
+                :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
+                ``n_warmup_steps`` as the warmup mechanism.
         """
 
         try:
@@ -745,17 +743,6 @@ class Trial(BaseTrial):
             )
 
     @property
-    def number(self):
-        # type: () -> int
-        """Return trial's number which is consecutive and unique in a study.
-
-        Returns:
-            A trial number.
-        """
-
-        return self.storage.get_trial_number_from_id(self._trial_id)
-
-    @property
     def params(self):
         # type: () -> Dict[str, Any]
         """Return parameters to be optimized.
@@ -808,3 +795,14 @@ class Trial(BaseTrial):
             Datetime where the :class:`~optuna.trial.Trial` started.
         """
         return self.storage.get_trial(self._trial_id).datetime_start
+
+    @property
+    def number(self):
+        # type: () -> int
+        """Return trial's number which is consecutive and unique in a study.
+
+        Returns:
+            A trial number.
+        """
+
+        return self.storage.get_trial_number_from_id(self._trial_id)

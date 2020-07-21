@@ -95,16 +95,16 @@ def test_median_pruner_n_warmup_steps():
     study = optuna.study.create_study()
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial.report(1, 0)
     trial.report(1, 1)
-    trial.report(1, 2)
     study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.report(2, 1)
+    trial.report(2, 0)
     # A pruner is not activated during warm-up steps.
     assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
 
-    trial.report(2, 2)
+    trial.report(2, 1)
     # A pruner is activated after warm-up steps.
     assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
 
@@ -112,11 +112,11 @@ def test_median_pruner_n_warmup_steps():
 @pytest.mark.parametrize(
     "n_warmup_steps,interval_steps,report_steps,expected_prune_steps",
     [
-        (1, 2, 1, [2, 4]),
-        (0, 3, 10, list(range(1, 30))),
-        (2, 3, 10, list(range(11, 30))),
-        (0, 10, 3, [1, 2, 3, 13, 14, 15, 22, 23, 24]),
-        (2, 10, 3, [4, 5, 6, 13, 14, 15, 25, 26, 27]),
+        (1, 2, 1, [1, 3]),
+        (0, 3, 10, list(range(29))),
+        (2, 3, 10, list(range(10, 29))),
+        (0, 10, 3, [0, 1, 2, 12, 13, 14, 21, 22, 23]),
+        (2, 10, 3, [3, 4, 5, 12, 13, 14, 24, 25, 26]),
     ],
 )
 def test_median_pruner_interval_steps(
@@ -129,7 +129,7 @@ def test_median_pruner_interval_steps(
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     n_steps = max(expected_prune_steps)
-    base_index = 1
+    base_index = 0
     for i in range(base_index, base_index + n_steps):
         trial.report(base_index, i)
     study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
@@ -139,5 +139,5 @@ def test_median_pruner_interval_steps(
         if (i - base_index) % report_steps == 0:
             trial.report(2, i)
         assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id)) == (
-            i > n_warmup_steps and i in expected_prune_steps
+            i >= n_warmup_steps and i in expected_prune_steps
         )

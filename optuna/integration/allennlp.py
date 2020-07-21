@@ -5,18 +5,21 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
-import warnings
 
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
 
 with try_import() as _imports:
+    import allennlp
     import allennlp.commands
     import allennlp.common.util
+    from allennlp.training import EpochCallback
 
 if _imports.is_successful():
     import _jsonnet
+else:
+    EpochCallback = object  # NOQA
 
 
 def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
@@ -56,6 +59,13 @@ class AllenNLPExecutor(object):
     master/examples/allennlp/allennlp_jsonnet.py>`_ and
     `config file <https://github.com/optuna/optuna/blob/master/
     examples/allennlp/classifier.jsonnet>`_.
+
+    .. note::
+        In :class:`~optuna.integration.AllenNLPExecutor`,
+        you can pass parameters to AllenNLP by either defining a search space using
+        Optuna suggest methods or setting environment variables just like AllenNLP CLI.
+        If a value is set in both a search space in Optuna and the environment variables,
+        the executor will use the value specified in the search space in Optuna.
 
     Args:
         trial:
@@ -100,17 +110,29 @@ class AllenNLPExecutor(object):
             self._include_package = include_package
 
     def _build_params(self) -> Dict[str, Any]:
-        """Create a dict of params for AllenNLP."""
-        # _build_params is based on allentune's train_func.
-        # https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
-        for key, value in self._params.items():
-            self._params[key] = str(value)
-        _params = json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=self._params))
+        """Create a dict of params for AllenNLP.
 
-        # _params contains a list of string or string as value values.
+        _build_params is based on allentune's train_func.
+        For more detail, please refer to
+        https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
+
+        """
+        params = self._environment_variables()
+        params.update({key: str(value) for key, value in self._params.items()})
+
+        allennlp_params = json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=params))
+        # allennlp_params contains a list of string or string as value values.
         # Some params couldn't be casted correctly and
         # infer_and_cast converts them into desired values.
-        return allennlp.common.params.infer_and_cast(_params)
+        return allennlp.common.params.infer_and_cast(allennlp_params)
+
+    @staticmethod
+    def _is_encodable(value: str) -> bool:
+        # https://github.com/allenai/allennlp/blob/master/allennlp/common/params.py#L77-L85
+        return (value == "") or (value.encode("utf-8", "ignore") != b"")
+
+    def _environment_variables(self) -> Dict[str, str]:
+        return {key: value for key, value in os.environ.items() if self._is_encodable(value)}
 
     def run(self) -> float:
         """Train a model using AllenNLP."""
@@ -118,7 +140,6 @@ class AllenNLPExecutor(object):
             import_func = allennlp.common.util.import_submodules
         except AttributeError:
             import_func = allennlp.common.util.import_module_and_submodules
-            warnings.warn("AllenNLP>0.9 has not been supported officially yet.")
 
         for package_name in self._include_package:
             import_func(package_name)
@@ -128,3 +149,45 @@ class AllenNLPExecutor(object):
 
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]
+
+
+@experimental("2.0.0")
+class AllenNLPPruningCallback(EpochCallback):
+    """AllenNLP callback to prune unpromising trials.
+
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/allennlp/allennlp_simple.py>`__
+    if you want to add a proning callback which observes a metric.
+
+    Args:
+        trial:
+            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            objective function.
+        monitor:
+            An evaluation metric for pruning, e.g. ``validation_loss`` or
+            ``validation_accuracy``.
+    """
+
+    def __init__(self, trial: optuna.trial.Trial, monitor: str):
+        _imports.check()
+
+        if allennlp.__version__ < "1.0.0":
+            raise Exception("AllenNLPPruningCallback requires `allennlp`>=1.0.0.")
+
+        self._trial = trial
+        self._monitor = monitor
+
+    def __call__(
+        self,
+        trainer: "allennlp.training.GradientDescentTrainer",
+        metrics: Dict[str, Any],
+        epoch: int,
+        is_master: bool,
+    ) -> None:
+        value = metrics.get(self._monitor)
+        if value is None:
+            return
+
+        self._trial.report(float(value), epoch)
+        if self._trial.should_prune():
+            raise optuna.TrialPruned()

@@ -7,7 +7,8 @@ from optuna.type_checking import TYPE_CHECKING
 
 
 _import_structure = {
-    "allennlp": ["AllenNLPExecutor"],
+    "allennlp": ["AllenNLPExecutor", "AllenNLPPruningCallback"],
+    "catalyst": ["CatalystPruningCallback"],
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
     "cma": ["CmaEsSampler", "PyCmaSampler"],
@@ -19,6 +20,7 @@ _import_structure = {
     "sklearn": ["OptunaSearchCV"],
     "mxnet": ["MXNetPruningCallback"],
     "skopt": ["SkoptSampler"],
+    "tensorboard": ["TensorBoardCallback"],
     "tensorflow": ["TensorFlowPruningHook"],
     "tfkeras": ["TFKerasPruningCallback"],
     "xgboost": ["XGBoostPruningCallback"],
@@ -31,6 +33,8 @@ __all__ = list(_import_structure.keys()) + sum(_import_structure.values(), [])
 
 if TYPE_CHECKING:
     from optuna.integration.allennlp import AllenNLPExecutor  # NOQA
+    from optuna.integration.allennlp import AllenNLPPruningCallback  # NOQA
+    from optuna.integration.catalyst import CatalystPruningCallback  # NOQA
     from optuna.integration.chainer import ChainerPruningExtension  # NOQA
     from optuna.integration.chainermn import ChainerMNStudy  # NOQA
     from optuna.integration.cma import CmaEsSampler  # NOQA
@@ -46,6 +50,7 @@ if TYPE_CHECKING:
     from optuna.integration.pytorch_lightning import PyTorchLightningPruningCallback  # NOQA
     from optuna.integration.sklearn import OptunaSearchCV  # NOQA
     from optuna.integration.skopt import SkoptSampler  # NOQA
+    from optuna.integration.tensorboard import TensorBoardCallback  # NOQA
     from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA
     from optuna.integration.tfkeras import TFKerasPruningCallback  # NOQA
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
