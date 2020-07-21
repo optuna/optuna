@@ -2,12 +2,14 @@ from functools import partial
 from typing import Any
 from typing import Tuple
 
+import fastai.basic_data
 from fastai.basic_data import DataBunch
 from fastai.basic_train import Learner
 from fastai.metrics import accuracy
 import numpy as np
 import pytest
 import torch.nn as nn
+import torch.utils.data
 from torch.utils.data import Dataset
 
 import optuna
@@ -74,3 +76,7 @@ def test_fastai_pruning_callback(tmpdir: Any) -> None:
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+
+
+# https://github.com/optuna/optuna/pull/1399#issuecomment-646956305
+torch.utils.data.DataLoader.__init__ = fastai.basic_data.old_dl_init

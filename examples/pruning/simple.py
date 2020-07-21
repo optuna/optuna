@@ -28,7 +28,7 @@ def objective(trial):
         iris.data, iris.target, test_size=0.25
     )
 
-    alpha = trial.suggest_loguniform("alpha", 1e-5, 1e-1)
+    alpha = trial.suggest_float("alpha", 1e-5, 1e-1, log=True)
     clf = sklearn.linear_model.SGDClassifier(alpha=alpha)
 
     for step in range(100):

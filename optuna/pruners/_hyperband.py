@@ -56,6 +56,9 @@ class HyperbandPruner(BasePruner):
         6 in most use cases).　Please see Section 3.6 of the `original paper
         <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
 
+    .. seealso::
+        Please refer to :meth:`~optuna.trial.Trial.report`.
+
     Example:
 
         We minimize an objective function with Hyperband pruning algorithm.

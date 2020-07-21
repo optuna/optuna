@@ -62,7 +62,7 @@ def objective(trial):
     model.add(Dense(CLASSES, activation="softmax"))
 
     # We compile our model with a sampled learning rate.
-    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
     model.compile(
         loss="sparse_categorical_crossentropy", optimizer=RMSprop(lr=lr), metrics=["accuracy"]
     )

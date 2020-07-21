@@ -16,6 +16,10 @@ if not _imports.is_successful():
 class CatalystPruningCallback(Callback):
     """Catalyst callback to prune unpromising trials.
 
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/catalyst_simple.py>`_ if you want to add a pruning callback
+    which observes the accuracy of Catalyst's ``SupervisedRunner``.
+
     Args:
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the

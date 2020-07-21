@@ -21,7 +21,10 @@ We have the following two ways to execute this example:
 """
 
 import os.path
+import pkg_resources
 import shutil
+
+import allennlp
 
 import optuna
 from optuna.integration.allennlp import dump_best_config
@@ -37,7 +40,7 @@ BEST_CONFIG_PATH = "best_classifier.json"
 
 
 def objective(trial):
-    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    trial.suggest_float("DROPOUT", 0.0, 0.5)
     trial.suggest_int("EMBEDDING_DIM", 20, 50)
     trial.suggest_int("MAX_FILTER_SIZE", 3, 6)
     trial.suggest_int("NUM_FILTERS", 16, 32)
@@ -50,6 +53,9 @@ def objective(trial):
 
 
 if __name__ == "__main__":
+    if pkg_resources.parse_version(allennlp.__version__) < pkg_resources.parse_version("1.0.0"):
+        raise RuntimeError("AllenNLP>=1.0.0 is required for this example.")
+
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=50, timeout=600)
 

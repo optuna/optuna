@@ -41,7 +41,7 @@ def define_model(trial):
         out_features = trial.suggest_int("n_units_l{}".format(i), 4, 128)
         layers.append(nn.Linear(in_features, out_features))
         layers.append(nn.ReLU())
-        p = trial.suggest_uniform("dropout_l{}".format(i), 0.2, 0.5)
+        p = trial.suggest_float("dropout_l{}".format(i), 0.2, 0.5)
         layers.append(nn.Dropout(p))
 
         in_features = out_features
@@ -77,7 +77,7 @@ def objective(trial):
 
     # Generate the optimizers.
     optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
-    lr = trial.suggest_uniform("lr", 1e-5, 1e-1)
+    lr = trial.suggest_float("lr", 1e-5, 1e-1)
     optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
 
     # Get the MNIST dataset.

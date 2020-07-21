@@ -11,9 +11,9 @@ workflows:
       - tests-python37
       - tests-python36
       - tests-python35
+      - tests-rdbstorage
 
 jobs:
-
   # Lint and static type checking
 
   checks:
@@ -231,3 +231,47 @@ jobs:
                 --ignore tests/integration_tests/test_catalyst.py
 
       - run: *tests-mn
+
+  tests-rdbstorage:
+    docker:
+      - image: circleci/python:3.7
+      - image: circleci/mysql:5.7
+        environment:
+          MYSQL_DATABASE: optunatest
+          MYSQL_USER: user
+          MYSQL_PASSWORD: test
+      - image: circleci/postgres:10.1-alpine
+        environment:
+          POSTGRES_USER: user
+          POSTGRES_DB: optunatest
+          POSTGRES_PASSWORD: test
+    steps:
+      - checkout
+
+      - run: *checkout-merge-master
+
+      - run: *install
+
+      - run: &install-rdb-bindings
+          name: install-rdb-bindings
+          command: |
+            . venv/bin/activate
+            pip install --progress-bar off PyMySQL cryptography psycopg2-binary
+
+      - run: &tests-mysql
+          name: tests-mysql
+          command: |
+            . venv/bin/activate
+            pytest tests/storages_tests/rdb_tests/test_with_server.py
+          environment:
+            OMP_NUM_THREADS: 1
+            TEST_DB_URL: mysql+pymysql://user:test@127.0.0.1/optunatest
+
+      - run: &tests-postgresql
+          name: tests-postgresql
+          command: |
+            . venv/bin/activate
+            pytest tests/storages_tests/rdb_tests/test_with_server.py
+          environment:
+            OMP_NUM_THREADS: 1
+            TEST_DB_URL: postgresql+psycopg2://user:test@127.0.0.1/optunatest

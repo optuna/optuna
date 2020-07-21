@@ -16,6 +16,9 @@ class TensorBoardCallback(object):
 
     This callback adds relevant information that is tracked by Optuna to TensorBoard.
 
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/tensorboard_simple.py>`_.
+
     Args:
         dirname:
             Directory to store TensorBoard logs.

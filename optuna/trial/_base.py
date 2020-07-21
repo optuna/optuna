@@ -1,7 +1,6 @@
 import abc
 from typing import Optional
 
-from optuna import distributions
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -9,14 +8,9 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
     from typing import Sequence  # NOQA
-    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
-
-    FloatingPointDistributionType = Union[
-        distributions.UniformDistribution, distributions.LogUniformDistribution
-    ]
 
 
 class BaseTrial(object, metaclass=abc.ABCMeta):

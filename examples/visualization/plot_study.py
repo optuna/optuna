@@ -41,7 +41,7 @@ def objective(trial):
         hidden_layer_sizes=tuple(
             [trial.suggest_int("n_units_l{}".format(i), 32, 64) for i in range(3)]
         ),
-        learning_rate_init=trial.suggest_loguniform("lr_init", 1e-5, 1e-1),
+        learning_rate_init=trial.suggest_float("lr_init", 1e-5, 1e-1, log=True),
     )
 
     for step in range(100):
