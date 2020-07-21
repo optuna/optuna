@@ -191,6 +191,16 @@ class FrozenTrial(BaseTrial):
         pass
 
     def should_prune(self) -> bool:
+        """Suggest whether the trial should be pruned or not.
+
+        The suggestion is always :obj:`False` regardless of a pruning algorithm.
+
+        .. note::
+            :class:`~optuna.trial.FrozenTrial` only samples one combination of hyper-parameters.
+
+        Returns:
+            A boolean value: :obj:`False`.
+        """
 
         return False
 
