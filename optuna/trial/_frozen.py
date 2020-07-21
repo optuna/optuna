@@ -48,6 +48,40 @@ class FrozenTrial(BaseTrial):
 
             assert objective(study.best_trial) == study.best_value
 
+    .. note::
+        Attributes are set in :func:`optuna.Study.optimize`,
+        but several attributes can be updated after the optimization.
+        That means such attributes are overwritten by the re-evaluation
+        if your objective updates attributes of :class:`~optuna.trial.Trial`.
+
+
+        Example:
+
+            Overwritten attributes.
+
+            .. testcode::
+
+                import optuna
+                import datetime
+
+                def objective(trial):
+                    x = trial.suggest_uniform('x', -1, 1)
+
+                    # this user attribute always differs
+                    trial.set_user_attr('evaluation time', datetime.datetime.now())
+
+                    return x**2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
+                best_trial = study.best_trial
+
+                # re-evaluate
+                objective(t)
+
+                # the user attribute is overwritten by re-evaluation
+                assert t.user_attrs != best_trial.user_attrs
 
     .. note::
         Please refer to :class:`~optuna.trial.Trial` for details of methods and properties.
