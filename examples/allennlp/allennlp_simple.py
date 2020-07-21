@@ -35,7 +35,7 @@ import optuna
 from optuna.integration import AllenNLPPruningCallback
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from subsample_dataset_reader import SubsampledDatasetReader  # NOQA
+from subsample_dataset_reader import SubsampleDatasetReader  # NOQA
 
 
 DEVICE = -1  # If you want to use GPU, use DEVICE = 0.
@@ -49,7 +49,7 @@ def prepare_data():
     indexer = allennlp.data.token_indexers.SingleIdTokenIndexer(lowercase_tokens=True)
     tokenizer = allennlp.data.tokenizers.whitespace_tokenizer.WhitespaceTokenizer()
 
-    reader = SubsampledDatasetReader(
+    reader = SubsampleDatasetReader(
         token_indexers={"tokens": indexer},
         tokenizer=tokenizer,
         train_data_size=N_TRAIN_DATA_SIZE,
@@ -75,9 +75,7 @@ def create_model(vocab, trial):
     num_filters = trial.suggest_int("num_filters", 32, 128)
 
     embedding = allennlp.modules.Embedding(
-        embedding_dim=embedding_dim,
-        trainable=True,
-        vocab=vocab,
+        embedding_dim=embedding_dim, trainable=True, vocab=vocab,
     )
 
     encoder = allennlp.modules.seq2vec_encoders.CnnEncoder(
