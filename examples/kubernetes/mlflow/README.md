@@ -33,7 +33,7 @@ $ kubectl apply -f k8s-manifest.yaml
 You can tell the IP address of MLflow dashboard as follows:
 
 ```bash
-$ minikube service mlflow --url`.
+$ minikube service mlflow --url .
 ```
 
 Also, if you want to track the progress of each worker by checking their logs directly:
