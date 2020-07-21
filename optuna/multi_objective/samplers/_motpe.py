@@ -19,9 +19,9 @@ from optuna import distributions
 from optuna.distributions import BaseDistribution
 from optuna import multi_objective
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
+from optuna.multi_objective.samplers import RandomMultiObjectiveSampler
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
-from optuna.samplers import RandomSampler
 from optuna.study import StudyDirection
 
 EPS = 1e-12
@@ -70,11 +70,8 @@ def default_hssp_reference_point(observations: np.ndarray, _: np.ndarray) -> np.
 
     worst_point = np.max(observations, axis=0)
     reference_point = np.maximum(
-        np.maximum(
-            1.1 * worst_point,  # case: value > 0
-            0.9 * worst_point  # case: value < 0
-        ),
-        np.full(len(worst_point), EPS)  # case: value = 0
+        np.maximum(1.1 * worst_point, 0.9 * worst_point),  # case: value > 0 and case: value < 0
+        np.full(len(worst_point), EPS),  # case: value = 0
     )
     return reference_point
 
@@ -136,19 +133,20 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """
 
     def __init__(
-            self,
-            consider_prior: bool = True,
-            prior_weight: float = 1.0,
-            consider_magic_clip: bool = True,
-            consider_endpoints: bool = False,
-            n_startup_trials: int = 10,
-            n_ehvi_candidates: int = 24,
-            gamma: Callable[[int], int] = default_gamma,
-            weights: Callable[[int], np.ndarray] = default_weights,
-            hssp_reference_point: Callable[[np.ndarray, np.ndarray], np.ndarray] = \
-                default_hssp_reference_point,
-            seed: Optional[int] = None
-        ) -> None:
+        self,
+        consider_prior: bool = True,
+        prior_weight: float = 1.0,
+        consider_magic_clip: bool = True,
+        consider_endpoints: bool = False,
+        n_startup_trials: int = 10,
+        n_ehvi_candidates: int = 24,
+        gamma: Callable[[int, int], int] = default_gamma,
+        weights: Callable[[int], np.ndarray] = default_weights,
+        hssp_reference_point: Callable[
+            [np.ndarray, np.ndarray], np.ndarray
+        ] = default_hssp_reference_point,
+        seed: Optional[int] = None,
+    ) -> None:
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             consider_prior, prior_weight, consider_magic_clip, consider_endpoints, weights
         )
@@ -160,30 +158,30 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         self._hssp_reference_point = hssp_reference_point
 
         self._rng = np.random.RandomState(seed)
-        self._random_sampler = RandomSampler(seed=seed)
+        self._random_sampler = RandomMultiObjectiveSampler(seed=seed)
 
     def infer_relative_search_space(
-            self,
-            study: "multi_objective.study.MultiObjectiveStudy",
-            trial: "multi_objective.trial.FrozenMultiObjectiveTrial"
-        ) -> Dict[str, BaseDistribution]:
+        self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
+    ) -> Dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
-            self,
-            study: "multi_objective.study.MultiObjectiveStudy",
-            trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
-            search_space: Dict[str, BaseDistribution],
-        ) -> Dict[str, Any]:
+        self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
+        search_space: Dict[str, BaseDistribution],
+    ) -> Dict[str, Any]:
         return {}
 
     def sample_independent(
-            self,
-            study: "multi_objective.study.MultiObjectiveStudy",
-            trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
-            param_name: str,
-            param_distribution: BaseDistribution
-        ) -> Any:
+        self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
+        param_name: str,
+        param_distribution: BaseDistribution,
+    ) -> Any:
         values, scores = _get_observation_pairs(study, param_name)
         n = len(values)
         if n < self._n_startup_trials:
@@ -232,12 +230,12 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             )
 
     def _split_observation_pairs(
-            self,
-            study: "multi_objective.study.MultiObjectiveStudy",
-            trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
-            config_vals: List[Optional[float]],
-            loss_vals: List[List[float]]
-        ) -> Tuple[np.ndarray, np.ndarray]:
+        self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
+        config_vals: List[Optional[float]],
+        loss_vals: List[List[float]],
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Split observations into observations for l(x) and observations for g(x) with the ratio
            of gamma:1-gamma.
 
@@ -254,8 +252,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         # Therefore, we cache the result of splitting.
         if _SPLITCACHE_KEY in trial.system_attrs:
             split_cache = trial.system_attrs[_SPLITCACHE_KEY]
-            below_indices = split_cache['below_indices']
-            above_indices = split_cache['above_indices']
+            below_indices = split_cache["below_indices"]
+            above_indices = split_cache["above_indices"]
         else:
             nondomination_ranks = _calculate_nondomination_rank(loss_vals)
             n_below = self._gamma(len(config_vals), len(nondomination_ranks))
@@ -274,15 +272,17 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 rank_i_loss_vals = loss_vals[nondomination_ranks == i]
                 rank_i_indices = indices[nondomination_ranks == i]
                 reference_point = self._hssp_reference_point(loss_vals, rank_i_loss_vals)
-                below_indices = np.append(below_indices, _solve_hssp(
-                    rank_i_loss_vals, rank_i_indices, subset_size, reference_point
-                ))
+                below_indices = np.append(
+                    below_indices,
+                    _solve_hssp(rank_i_loss_vals, rank_i_indices, subset_size, reference_point),
+                )
             assert len(below_indices) == n_below
             above_indices = np.setdiff1d(indices, below_indices)
 
             study._storage.set_trial_system_attr(
-                trial._trial_id, _SPLITCACHE_KEY,
-                {'below_indices': below_indices, 'above_indices': above_indices}
+                trial._trial_id,
+                _SPLITCACHE_KEY,
+                {"below_indices": below_indices, "above_indices": above_indices},
             )
 
         below = config_vals[below_indices]
@@ -293,31 +293,28 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         return below, above
 
     def _sample_uniform(
-            self,
-            distribution: distributions.UniformDistribution,
-            below: np.ndarray,
-            above: np.ndarray
-        ) -> float:
+        self, distribution: distributions.UniformDistribution, below: np.ndarray, above: np.ndarray
+    ) -> float:
         low = distribution.low
         high = distribution.high
         return self._sample_numerical(low, high, below, above)
 
     def _sample_loguniform(
-            self,
-            distribution: distributions.LogUniformDistribution,
-            below: np.ndarray,
-            above: np.ndarray
-        ) -> float:
+        self,
+        distribution: distributions.LogUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> float:
         low = distribution.low
         high = distribution.high
         return self._sample_numerical(low, high, below, above, is_log=True)
 
     def _sample_discrete_uniform(
-            self,
-            distribution: distributions.DiscreteUniformDistribution,
-            below: np.ndarray,
-            above: np.ndarray
-        ) -> float:
+        self,
+        distribution: distributions.DiscreteUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> float:
         q = distribution.q
         r = distribution.high - distribution.low
         # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
@@ -332,22 +329,22 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         return min(max(best_sample, distribution.low), distribution.high)
 
     def _sample_int(
-            self,
-            distribution: distributions.IntUniformDistribution,
-            below: np.ndarray,
-            above: np.ndarray
-        ) -> int:
+        self,
+        distribution: distributions.IntUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> int:
         d = distributions.DiscreteUniformDistribution(
             low=distribution.low, high=distribution.high, q=distribution.step
         )
         return int(self._sample_discrete_uniform(d, below, above))
 
     def _sample_int_loguniform(
-            self,
-            distribution: distributions.IntLogUniformDistribution,
-            below: np.ndarray,
-            above: np.ndarray
-        ) -> int:
+        self,
+        distribution: distributions.IntLogUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> int:
         low = distribution.low - 0.5
         high = distribution.high + 0.5
 
@@ -357,14 +354,14 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         return int(min(max(best_sample, distribution.low), distribution.high))
 
     def _sample_numerical(
-            self,
-            low: float,
-            high: float,
-            below: np.ndarray,
-            above: np.ndarray,
-            q: Optional[float] = None,
-            is_log: bool = False
-        ) -> float:
+        self,
+        low: float,
+        high: float,
+        below: np.ndarray,
+        above: np.ndarray,
+        q: Optional[float] = None,
+        is_log: bool = False,
+    ) -> float:
         if is_log:
             low = np.log(low)
             high = np.log(high)
@@ -406,11 +403,11 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         return math.exp(ret) if is_log else ret
 
     def _sample_categorical_index(
-            self,
-            distribution: distributions.CategoricalDistribution,
-            below: np.ndarray,
-            above: np.ndarray
-        ) -> int:
+        self,
+        distribution: distributions.CategoricalDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> int:
         choices = distribution.choices
         below = list(map(int, below))
         above = list(map(int, above))
@@ -423,14 +420,16 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         weighted_below /= weighted_below.sum()
         samples_below = self._sample_from_categorical_dist(weighted_below, size)
         log_likelihoods_below = MOTPEMultiObjectiveSampler._categorical_log_pdf(
-            samples_below, weighted_below)
+            samples_below, weighted_below
+        )
 
         weights_above = self._weights(len(above))
         counts_above = np.bincount(above, minlength=upper, weights=weights_above)
         weighted_above = counts_above + self._prior_weight
         weighted_above /= weighted_above.sum()
         log_likelihoods_above = MOTPEMultiObjectiveSampler._categorical_log_pdf(
-            samples_below, weighted_above)
+            samples_below, weighted_above
+        )
 
         return int(
             MOTPEMultiObjectiveSampler._compare(
@@ -439,13 +438,13 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         )
 
     def _sample_from_gmm(
-            self,
-            parzen_estimator: _ParzenEstimator,
-            low: float,
-            high: float,
-            q: Optional[float] = None,
-            size: Tuple = ()
-        ) -> np.ndarray:
+        self,
+        parzen_estimator: _ParzenEstimator,
+        low: float,
+        high: float,
+        q: Optional[float] = None,
+        size: Tuple = (),
+    ) -> np.ndarray:
         weights = parzen_estimator.weights
         mus = parzen_estimator.mus
         sigmas = parzen_estimator.sigmas
@@ -477,13 +476,13 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             return np.round(samples / q) * q
 
     def _gmm_log_pdf(
-            self,
-            samples: np.ndarray,
-            parzen_estimator: _ParzenEstimator,
-            low: float,
-            high: float,
-            q: Optional[float] = None
-        ) -> np.ndarray:
+        self,
+        samples: np.ndarray,
+        parzen_estimator: _ParzenEstimator,
+        low: float,
+        high: float,
+        q: Optional[float] = None,
+    ) -> np.ndarray:
         weights = parzen_estimator.weights
         mus = parzen_estimator.mus
         sigmas = parzen_estimator.sigmas
@@ -516,7 +515,9 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             mahalanobis = (distance / np.maximum(sigmas, EPS)) ** 2
             Z = np.sqrt(2 * np.pi) * sigmas
             coefficient = weights / Z / p_accept
-            return MOTPEMultiObjectiveSampler._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
+            return MOTPEMultiObjectiveSampler._logsum_rows(
+                -0.5 * mahalanobis + np.log(coefficient)
+            )
         else:
             cdf_func = MOTPEMultiObjectiveSampler._normal_cdf
             upper_bound = np.minimum(samples + q / 2.0, high)
@@ -532,10 +533,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             return np.log(probabilities + EPS) - np.log(p_accept + EPS)
 
     def _sample_from_categorical_dist(
-            self,
-            probabilities: np.ndarray,
-            size: Tuple[int]
-        ) -> np.ndarray:
+        self, probabilities: np.ndarray, size: Tuple[int]
+    ) -> np.ndarray:
 
         if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
             probabilities = probabilities[0]
@@ -554,23 +553,14 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         return return_val
 
     @classmethod
-    def _categorical_log_pdf(
-            cls,
-            sample: np.ndarray,
-            p: np.ndarray
-        ) -> np.ndarray:
+    def _categorical_log_pdf(cls, sample: np.ndarray, p: np.ndarray) -> np.ndarray:
         if sample.size:
             return np.log(np.asarray(p)[sample])
         else:
             return np.asarray([])
 
     @classmethod
-    def _compare(
-            cls,
-            samples: np.ndarray,
-            log_l: np.ndarray,
-            log_g: np.ndarray
-        ) -> np.ndarray:
+    def _compare(cls, samples: np.ndarray, log_l: np.ndarray, log_g: np.ndarray) -> np.ndarray:
         samples, log_l, log_g = map(np.asarray, (samples, log_l, log_g))
         if samples.size:
             score = log_l - log_g
@@ -611,9 +601,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         return 0.5 + 0.5 * scipy.special.erf(z)
 
 
-def _calculate_nondomination_rank(
-        loss_vals: List[List[float]],
-    ) -> np.ndarray:
+def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
     vecs = loss_vals.copy()
     ranks = np.zeros(len(vecs))
 
@@ -622,9 +610,13 @@ def _calculate_nondomination_rank(
     MARK_AS_RANKED = np.finfo(float).max
     while num_unranked > 0:
         extended = np.tile(vecs, (vecs.shape[0], 1, 1))
-        counts = np.sum(np.logical_and(
-            np.all(extended <= np.swapaxes(extended, 0, 1), axis=2),
-            np.any(extended < np.swapaxes(extended, 0, 1), axis=2)), axis=1)
+        counts = np.sum(
+            np.logical_and(
+                np.all(extended <= np.swapaxes(extended, 0, 1), axis=2),
+                np.any(extended < np.swapaxes(extended, 0, 1), axis=2),
+            ),
+            axis=1,
+        )
         vecs[counts == 0] = MARK_AS_RANKED
         ranks[counts == 0] = rank
         rank += 1
@@ -633,11 +625,11 @@ def _calculate_nondomination_rank(
 
 
 def _solve_hssp(
-        rank_i_loss_vals: np.ndarray,
-        rank_i_indices: np.ndarray,
-        subset_size: int,
-        reference_point: np.ndarray,
-    ) -> np.ndarray:
+    rank_i_loss_vals: np.ndarray,
+    rank_i_indices: np.ndarray,
+    subset_size: int,
+    reference_point: np.ndarray,
+) -> np.ndarray:
     """Solve a hypervolume subset selection problem (HSSP) via a greedy algorithm.
 
     This method is a 1-1/e approximation algorithm to solve HSSP.
@@ -648,8 +640,8 @@ def _solve_hssp(
        <https://ieeexplore.ieee.org/document/7570501>`_
     """
 
-    selected_vecs = []
-    selected_indices = []
+    selected_vecs = []  # type: List[np.ndarray]
+    selected_indices = []  # type: List[int]
     contributions = [hypervolume([v]).compute(reference_point) for v in rank_i_loss_vals]
     MARK_AS_SELECTED = np.finfo(float).min
     hv_selected = 0
@@ -673,13 +665,12 @@ def _solve_hssp(
 
 
 def _get_observation_pairs(
-        study: "multi_objective.study.MultiObjectiveStudy",
-        param_name: str,
-    ) -> Tuple[List[Optional[float]], List[List[float]]]:
+    study: "multi_objective.study.MultiObjectiveStudy", param_name: str,
+) -> Tuple[List[Optional[float]], List[List[float]]]:
     """Get observation pairs from the study.
 
        This function collects observation pairs from the complete trials of the study.
-       Currently, pruning is not supported.
+       Pruning is currently not supported.
        The values for trials that don't contain the parameter named ``param_name`` are set to None.
 
        Objective values are negated if their directions are maximization and all objectives are
@@ -694,7 +685,7 @@ def _get_observation_pairs(
     values = []
     scores = []
     for trial in trials:
-        if trial.state != optuna.trial.TrialState.COMPLETE:
+        if trial.state != optuna.trial.TrialState.COMPLETE or None in trial.values:
             continue
 
         param_value = None  # type: Optional[float]
@@ -703,8 +694,9 @@ def _get_observation_pairs(
             param_value = distribution.to_internal_repr(trial.params[param_name])
 
         # Convert all objectives to minimization
-        score = [v if d == StudyDirection.MINIMIZE else -v \
-                 for d, v in zip(study.directions, trial.values)]
+        score = [
+            v if d == StudyDirection.MINIMIZE else -v for d, v in zip(study.directions, trial.values)  # type: ignore
+        ]
 
         values.append(param_value)
         scores.append(score)
