@@ -214,6 +214,23 @@ class FrozenTrial(BaseTrial):
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
     def report(self, value: float, step: int) -> None:
+        """Interface of report function.
+
+        Since :class:`~optuna.trial.FrozenTrial` is not pruned,
+        this report function does nothing.
+
+        .. seealso::
+            Please refer to :func:`~optuna.trial.FrozenTrial.should_prune`.
+
+        Args:
+            value:
+                A value returned from the objective function.
+            step:
+                Step of the trial (e.g., Epoch of neural network training). Note that pruners
+                assume that ``step`` starts at zero. For example,
+                :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
+                ``n_warmup_steps`` as the warmup mechanism.
+        """
 
         pass
 
@@ -226,7 +243,7 @@ class FrozenTrial(BaseTrial):
             :class:`~optuna.trial.FrozenTrial` only samples one combination of parameters.
 
         Returns:
-            A boolean value: :obj:`False`.
+            :obj:`False`.
         """
 
         return False
