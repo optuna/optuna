@@ -119,11 +119,11 @@ class GPyExact(BaseModel):
         self._gpy_model = GPy.models.GPRegression(self._x, self._y, kernel=k, noise_var=noise_var)
         self._gpy_model.kern.set_prior(
             GPy.priors.Gamma.from_EV(self._gamma_prior_expectation, self._gamma_prior_variance),
-            warning=False
+            warning=False,
         )
         self._gpy_model.likelihood.variance.set_prior(
             GPy.priors.Gamma.from_EV(self._gamma_prior_expectation, self._gamma_prior_variance),
-            warning=False
+            warning=False,
         )
 
         self._update_model()

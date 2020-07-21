@@ -22,10 +22,9 @@ def test_optimize_1d() -> None:
 
 
 def test_optimize_2d() -> None:
-
     def objective(trial):
-        x = trial.suggest_float('x', -1., 1.)
-        y = trial.suggest_float('y', -1., 1.)
+        x = trial.suggest_float("x", -1.0, 1.0)
+        y = trial.suggest_float("y", -1.0, 1.0)
         return x ** 2 + y
 
     sampler = GPSampler(

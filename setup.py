@@ -71,6 +71,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "example": [
             "catboost",
             "chainer",
+            "GPy",
             "lightgbm",
             "mlflow",
             "mpi4py",
@@ -114,6 +115,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
+            "GPy",
             "lightgbm",
             "mlflow",
             "mpi4py",
@@ -127,7 +129,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
             "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
-            "GPy",
         ]
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
