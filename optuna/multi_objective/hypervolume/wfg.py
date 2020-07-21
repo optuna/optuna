@@ -1,5 +1,3 @@
-import functools
-
 import numpy as np
 
 from optuna.multi_objective.hypervolume import BaseHypervolume
@@ -18,104 +16,68 @@ class WFG(BaseHypervolume):
         : 86-95.`.
     """
 
-    def __init__(self):
-        self._solution_set = None
-        self._reference_point = None
-        self._slice = None
+    def __init__(self) -> None:
+        self._r = np.ndarray(shape=())
 
     def compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
         self._validate(solution_set, reference_point)
-        self._initialize(solution_set, reference_point)
-        return self._compute_rec(1)
+        self._r = reference_point
+        return self._compute_rec(solution_set)
 
-    def _initialize(self, solution_set: np.ndarray, reference_point: np.ndarray) -> None:
-        self._reference_point = reference_point
-        self._frames = np.zeros((reference_point.shape[0],) + solution_set.shape)
-        self._frames[0] = solution_set
-        self._frame_sizes = np.zeros((reference_point.shape[0],), dtype=int)
-        self._frame_sizes[0] = solution_set.shape[0]
-        self._slice = reference_point.shape[0]
-
-    def _compute_rec(self, rec_level: int) -> float:
-        points = self._frames[rec_level - 1]
-        n_points = self._frame_sizes[rec_level - 1]
+    def _compute_rec(self, solution_set: np.ndarray) -> float:
+        n_points = solution_set.shape[0]
+        dim_bound = solution_set.shape[1]
 
         if n_points == 1:
-            return compute_2points_volume(
-                points[0], self._reference_point, self._slice
-            )
+            return compute_2points_volume(solution_set[0], self._r, dim_bound)
         elif n_points == 2:
             v = 0.0
-            v += compute_2points_volume(points[0], self._reference_point, self._slice)
-            v += compute_2points_volume(points[1], self._reference_point, self._slice)
-            l_edges_for_intersection = self._reference_point - np.maximum(points[0], points[1])
-            v -= np.prod(l_edges_for_intersection[:self._slice])
+            v += compute_2points_volume(solution_set[0], self._r, dim_bound)
+            v += compute_2points_volume(solution_set[1], self._r, dim_bound)
+            l_edges_for_intersection = self._r - np.maximum(solution_set[0], solution_set[1])
+            v -= np.prod(l_edges_for_intersection[:dim_bound])
+
             return v
 
         # n_points >= 3
-        if self._slice == 2:
-            return Exact2d().compute(points[:, :2], self._reference_point[:2])
+        if dim_bound == 2:
+            return Exact2d().compute(solution_set[:, :2], self._r[:2])
+
+        solution_set = np.asarray(sorted(solution_set, key=lambda s: s[0], reverse=True))
 
         # n_points >= 3 and self._slice >= 3
-        sorted(points[:n_points], key=functools.cmp_to_key(self._comp_points))
-
-        v = 0.
-        self._slice -= 1
+        v = 0.0
         for i in range(n_points):
-            self._limit(i + 1, i, rec_level)
-            v += np.abs((points[i, self._slice] - self._reference_point[self._slice]) * self._compute_exclusive_hv(i, rec_level))
-        self._slice += 1
+            v += self._compute_exclusive_hv(solution_set[i], solution_set[i + 1 :])
         return v
 
-    def _comp_points(self, point1: np.ndarray, point2: np.ndarray) -> bool:
-        for i in range(self._slice-1, -1, -1):
-            if point1[i] > point2[i]:
-                return True
-            elif point1[i] < point2[i]:
-                return False
-        return False
-
-    def _limit(self, begin_index: int, index: int, rec_level: int) -> None:
-        points = self._frames[rec_level - 1]
-        n_points = self._frame_sizes[rec_level - 1]
-        m = 0
-        p = points[index]
-
-        for i in range(begin_index, n_points):
-            if i == index:
-                continue
-
-            self._frames[rec_level, m] = np.maximum(points[i], p)
-
-            comp_results = []
-            q = self._frames[rec_level, m]
-            keep_q = True
-
-            for j in range(m):
-                comp_results.append(dom(q, self._frames[rec_level, j], self._slice))
-                if comp_results[j] == DomRelation.P2_DOM_P1:
-                    keep_q = False
-                    break
-
-            if keep_q:
-                prev = 0
-                nxt = 0
-                while nxt < m:
-                    if comp_results[nxt] != DomRelation.P1_DOM_P2 and comp_results[nxt] != DomRelation.EQUAL:
-                        if prev < nxt:
-                            self._frames[rec_level, prev] = self._frames[rec_level, nxt]
-                        prev += 1
-                    nxt += 1
-                if prev < nxt:
-                    self._frames[rec_level, prev] = q
-                m = prev + 1
-
-        self._frame_sizes[rec_level] = m
-
-    def _compute_exclusive_hv(self, index: int, rec_level: int) -> float:
-        v = compute_2points_volume(self._frames[rec_level - 1, index], self._reference_point, self._slice)
-        if self._frame_sizes[rec_level] == 1:
-            v -= compute_2points_volume(self._frames[rec_level, 0], self._reference_point, self._slice)
-        else:
-            v -= self._compute_rec(rec_level + 1)
+    def _compute_exclusive_hv(self, p: np.ndarray, s: np.ndarray) -> float:
+        dim_bound = p.shape[0]
+        v = compute_2points_volume(p, self._r, dim_bound)
+        limited_s = self._limit(p, s)
+        n_points_of_s = limited_s.shape[0]
+        if n_points_of_s == 1:
+            v -= compute_2points_volume(limited_s[0], self._r, dim_bound)
+        elif n_points_of_s > 1:
+            v -= self._compute_rec(limited_s)
         return v
+
+    @staticmethod
+    def _limit(p: np.ndarray, s: np.ndarray) -> np.ndarray:
+        n_points_of_s = s.shape[0]
+        dim = p.shape[0]
+        limited_s = []
+        p_is_not_inserted = True
+
+        for i in range(n_points_of_s):
+            if dom(p, s[i]) == DomRelation.P2_DOM_P1:
+                if p_is_not_inserted:
+                    assert all(p == np.maximum(s[i], p))
+                    limited_s.append(np.maximum(s[i], p))
+                    p_is_not_inserted = False
+                else:
+                    continue
+            limited_s.append(np.maximum(s[i], p))
+
+        limited_s = np.asarray(limited_s).reshape((len(limited_s), dim))
+        return limited_s

@@ -4,8 +4,7 @@ import numpy as np
 
 
 class BaseHypervolume(object, metaclass=abc.ABCMeta):
-    """Base class for hypervolume calculators
-    """
+    """Base class for hypervolume calculators"""
 
     @abc.abstractmethod
     def compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
@@ -36,7 +35,9 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
         if reference_point.ndim != 1:
             raise ValueError("The given reference point must be a 1-d array.")
 
-        if any([solution_set[i].ndim != solution_set[0].ndim for i in range(solution_set.ndim)]):
+        if any(
+            [solution_set[i].ndim != solution_set[0].ndim for i in range(solution_set.shape[0])]
+        ):
             raise ValueError("The dimension of each point in the solution set must be same.")
 
         if solution_set[0].shape != reference_point.shape:

@@ -20,7 +20,9 @@ def _validate_2_points(point1: np.ndarray, point2: np.ndarray, dim_bound: int) -
         )
 
 
-def compute_2points_volume(point1: np.ndarray, point2: np.ndarray, dim_bound: Optional[int] = None) -> float:
+def compute_2points_volume(
+    point1: np.ndarray, point2: np.ndarray, dim_bound: Optional[int] = None
+) -> float:
     """Compute the hypervolume of the hypercube, whose diagonal endpoints are given 2 points.
 
     Args:
@@ -36,7 +38,7 @@ def compute_2points_volume(point1: np.ndarray, point2: np.ndarray, dim_bound: Op
         dim_bound = point1.shape[0]
 
     _validate_2_points(point1, point2, dim_bound)
-    return float(np.abs(np.sum(point1[:dim_bound] * point2[:dim_bound])))
+    return float(np.abs(np.prod(point1[:dim_bound] - point2[:dim_bound])))
 
 
 class DomRelation(enum.Enum):
@@ -70,7 +72,7 @@ def dom(point1: np.ndarray, point2: np.ndarray, dim_bound: Optional[int] = None)
         dim_bound:
             The bound of the dimension to compare the domination relationship.
     """
-    if dim_bound is None:
+    if dim_bound is None or dim_bound == 0:
         dim_bound = point1.shape[0]
 
     _validate_2_points(point1, point2, dim_bound)
