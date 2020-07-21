@@ -35,13 +35,15 @@ StudyDirection = _study_direction.StudyDirection
 TrialState = trial.TrialState
 
 
-FrozenTrial = deprecated(
+@deprecated(
     "1.4.0",
     text=(
         "This class was moved to :mod:`~optuna.trial`. Please use "
         ":class:`~optuna.trial.FrozenTrial` instead."
     ),
-)(trial.FrozenTrial)
+)
+class FrozenTrial(trial.FrozenTrial):
+    pass
 
 
 @deprecated(
