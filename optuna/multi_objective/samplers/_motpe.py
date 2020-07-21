@@ -29,15 +29,16 @@ _SPLITCACHE_KEY = "multi_objective:motpe:splitcache"
 
 
 def default_gamma(x: int, _: int) -> int:
-    """
+    """Default gamma function for MOTPE.
     Args:
         The first argument is the number of trials.
         The second argument is the number of nondominated trials.
 
     The second argument can be used to change gamma dynamically based on the number of nondominated
     trials.
+
     Example:
-        def dynamic_gamma(_: int, x: int) -> int:
+        def dynamic_gamma(_, x):
             return max(0, int(np.ceil(0.10 * x) - 1))
     """
 
@@ -52,15 +53,16 @@ def default_weights(x: int) -> np.ndarray:
 
 
 def default_hssp_reference_point(observations: np.ndarray, _: np.ndarray) -> np.ndarray:
-    """
+    """Default reference point for HSSP.
     Args:
         The first argument is the all of the observed function values so far.
         The second argument is a subset of the observed function values that are an input for a
         hypervolume subset selection problem (HSSP).
 
     The second argument can be used to set a reference_point based on the input set for HSSP.
+
     Example:
-        def hssp_reference_point(_: int, observations: int) -> int:
+        def hssp_reference_point(_, observations):
             worst_point = np.max(observations, axis=0)
             reference_point = 1.1 * worst_point
             return reference_point
@@ -81,13 +83,12 @@ def default_hssp_reference_point(observations: np.ndarray, _: np.ndarray) -> np.
 class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
-    This sampler is a multiobjective version of the TPE sampler.
+    This sampler is a multiobjective version of :class:`~optuna.samplers.TPESampler`.
 
     For further information about MOTPE algorithm, please refer to the following paper:
 
     - `Multiobjective tree-structured parzen estimator for computationally expensive optimization
-       problems
-       <https://dl.acm.org/doi/abs/10.1145/3377930.3389817>`_
+      problems <https://dl.acm.org/doi/abs/10.1145/3377930.3389817>`_
 
     Args:
         consider_prior:
