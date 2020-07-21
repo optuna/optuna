@@ -40,7 +40,7 @@ from subsample_dataset_reader import SubsampleDatasetReader  # NOQA
 
 DEVICE = -1  # If you want to use GPU, use DEVICE = 0.
 N_TRAIN_DATA_SIZE = 2000
-N_VALID_DATA_SIZE = 1000
+N_VALIDATION_DATA_SIZE = 1000
 MODEL_DIR = os.path.join(os.getcwd(), "result")
 TARGET_METRIC = "accuracy"
 
@@ -53,7 +53,7 @@ def prepare_data():
         token_indexers={"tokens": indexer},
         tokenizer=tokenizer,
         train_data_size=N_TRAIN_DATA_SIZE,
-        valid_data_size=N_VALID_DATA_SIZE,
+        validation_data_size=N_VALIDATION_DATA_SIZE,
     )
     train_dataset = reader.read(
         "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/train.jsonl"
