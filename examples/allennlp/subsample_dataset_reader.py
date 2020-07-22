@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 
 
 @DatasetReader.register("subsample")
-class SubsampledDatasetReader(allennlp.data.dataset_readers.TextClassificationJsonReader):
+class SubsampleDatasetReader(allennlp.data.dataset_readers.TextClassificationJsonReader):
     def __init__(self, train_data_size, validation_data_size, **kwargs):
         super().__init__(**kwargs)
         self.train_data_size = train_data_size
