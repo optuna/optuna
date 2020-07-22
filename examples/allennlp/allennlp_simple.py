@@ -1,6 +1,6 @@
 """
 Optuna example that optimizes a classifier configuration for IMDB movie review dataset.
-This script is based on the example of allentune (https://github.com/allenai/allentune).
+This script is based on the example of AllenTune (https://github.com/allenai/allentune).
 
 In this example, we optimize the validation accuracy of sentiment classification using AllenNLP.
 Since it is too time-consuming to use the entire dataset, we here use a small subset of it.
