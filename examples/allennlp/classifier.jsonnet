@@ -1,8 +1,10 @@
 // Use dev.jsonl for training to reduce computation time.
 local TRAIN_PATH = 'https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl';
 local VALIDATION_PATH = 'https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/test.jsonl';
-local DROPOUT = std.extVar('DROPOUT');
-local EMBEDDING_DIM = std.extVar('EMBEDDING_DIM');
+
+// std.parseJson for floating point
+local DROPOUT = std.parseJson(std.extVar('DROPOUT'));
+local EMBEDDING_DIM = std.parseInt(std.extVar('EMBEDDING_DIM'));
 local CNN_FIELDS(max_filter_size, embedding_dim, hidden_size, num_filters) = {
   type: 'cnn',
   ngram_filter_sizes: std.range(1, max_filter_size),
@@ -16,8 +18,8 @@ local CNN_FIELDS(max_filter_size, embedding_dim, hidden_size, num_filters) = {
 local ENCODER = CNN_FIELDS(
   std.parseInt(std.extVar('MAX_FILTER_SIZE')),
   EMBEDDING_DIM,
-  std.extVar('HIDDEN_SIZE'),
-  std.extVar('NUM_FILTERS')
+  std.parseInt(std.extVar('HIDDEN_SIZE')),
+  std.parseInt(std.extVar('NUM_FILTERS'))
 );
 
 
