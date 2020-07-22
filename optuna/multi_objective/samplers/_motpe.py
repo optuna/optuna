@@ -137,6 +137,44 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             A function that takes the number of finished trials and returns a weight for them.
         seed:
             Seed for random number generator.
+
+    The original paper utilizes Latin hypercube sampling (LHS) for initialization. The following
+    code is an example of initializing MOTPE using LHS. Here we use
+    `pyDOE2 <https://pypi.org/project/pyDOE2/>`_ for LHS.
+
+    Example:
+
+        .. testcode::
+
+                import numpy as np
+                import pyDOE2
+
+                seed = 128
+                num_variables = 9
+                n_startup_trials = 11 * num_variables - 1
+
+                def objective(trial):
+                    x = []
+                    for i in range(1, num_variables + 1):
+                        x.append(trial.suggest_uniform(f"x{i}", 0.0, 2.0 * i))
+                    return x
+
+                sampler = optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler(
+                    n_startup_trials=n_startup_trials,
+                    n_ehvi_candidates=24,
+                    consider_endpoints=True,
+                    seed=seed
+                )
+                # NOTE: Sampled vectors are normalized. Denormalization is needed when a search
+                # space is not normalized.
+                initial_samples = pyDOE2.lhs(
+                    num_variables, samples=n_startup_trials, criterion='maximin',
+                    random_state=np.random.RandomState(seed)
+                )
+                for s in initial_samples:
+                    study.enqueue_trial({f'x{i}': v for i, v in enumerate(s, start=1)})
+
+                study.optimize(objective, n_trials=250)
     """
 
     def __init__(
