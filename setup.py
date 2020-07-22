@@ -68,6 +68,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             # As reported in: https://github.com/readthedocs/sphinx_rtd_theme/issues/949,
             # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
             "sphinx_rtd_theme<0.5.0",
+            "sphinx-gallery",
+            "pillow",
+            "matplotlib",
+            "scikit-learn",
         ],
         "example": [
             "catboost",
