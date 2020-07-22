@@ -1,3 +1,4 @@
+"""
 .. _cli:
 
 Command-Line Interface
@@ -19,48 +20,49 @@ Optuna provides command-line interface as shown in the above table.
 
 Let us assume you are not in IPython shell and writing Python script files instead.
 It is totally fine to write scripts like the following:
-
-.. code-block:: python
-
-    import optuna
+"""
 
 
-    def objective(trial):
-        x = trial.suggest_uniform('x', -10, 10)
-        return (x - 2) ** 2
+import optuna
 
 
-    if __name__ == '__main__':
-        study = optuna.create_study()
-        study.optimize(objective, n_trials=100)
-        print('Best value: {} (params: {})\n'.format(study.best_value, study.best_params))
+def objective(trial):
+    x = trial.suggest_uniform('x', -10, 10)
+    return (x - 2) ** 2
 
-However, we can reduce boilerplate codes by using our ``optuna`` command.
-Let us assume that ``foo.py`` contains only the following code.
 
-.. code-block:: python
+if __name__ == '__main__':
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=100)
+    print('Best value: {} (params: {})\n'.format(study.best_value, study.best_params))
 
-    def objective(trial):
-        x = trial.suggest_uniform('x', -10, 10)
-        return (x - 2) ** 2
+###################################################################################################
+# However, we can reduce boilerplate codes by using our ``optuna`` command.
+# Let us assume that ``foo.py`` contains only the following code.
 
-Even so, we can invoke the optimization as follows. (Don't care about ``--storage sqlite:///example.db`` for now, which is described in :ref:`rdb`.)
 
-.. code-block:: bash
+def objective(trial):
+    x = trial.suggest_uniform('x', -10, 10)
+    return (x - 2) ** 2
 
-    $ cat foo.py
-    def objective(trial):
-        x = trial.suggest_uniform('x', -10, 10)
-        return (x - 2) ** 2
-
-    $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
-    $ optuna study optimize foo.py objective --n-trials=100 --storage sqlite:///example.db --study-name $STUDY_NAME
-    [I 2020-07-21 13:49:40,808] Trial 0 finished with value: 91.34792552132396 and parameters: {'x': -7.557610868900446}. Best is trial 0 with value: 91.34792552132396.
-    [I 2020-07-21 13:49:40,836] Trial 1 finished with value: 1.0825827248798499 and parameters: {'x': 0.9595276433850586}. Best is trial 1 with value: 1.0825827248798499.
-    ...
-    [I 2020-07-21 13:49:43,628] Trial 99 finished with value: 16.50931763395415 and parameters: {'x': 6.063165961901403}. Best is trial 63 with value: 3.297426737916738e-07.
-
-Please note that ``foo.py`` only contains the definition of the objective function.
-By giving the script file name and the method name of objective function to ``optuna study optimize`` command,
-we can invoke the optimization.
-
+###################################################################################################
+# Even so, we can invoke the optimization as follows.
+# (Don't care about ``--storage sqlite:///example.db`` for now, which is described in :ref:`sphx_glr_tutorial_003_rdb.py`.)
+#
+# .. code-block:: bash
+#
+#     $ cat foo.py
+#     def objective(trial):
+#         x = trial.suggest_uniform('x', -10, 10)
+#         return (x - 2) ** 2
+#
+#     $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`
+#     $ optuna study optimize foo.py objective --n-trials=100 --storage sqlite:///example.db --study-name $STUDY_NAME
+#     [I 2018-05-09 10:40:25,196] Finished a trial resulted in value: 54.353767789264026. Current best value is 54.353767789264026 with parameters: {'x': -5.372500782588228}.
+#     [I 2018-05-09 10:40:25,197] Finished a trial resulted in value: 15.784266965526376. Current best value is 15.784266965526376 with parameters: {'x': 5.972941852774387}.
+#     ...
+#     [I 2018-05-09 10:40:26,204] Finished a trial resulted in value: 14.704254135013741. Current best value is 2.280758099793617e-06 with parameters: {'x': 1.9984897821018828}.
+#
+# Please note that ``foo.py`` only contains the definition of the objective function.
+# By giving the script file name and the method name of objective function to
+# ``optuna study optimize`` command, we can invoke the optimization.
