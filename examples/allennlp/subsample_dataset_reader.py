@@ -1,9 +1,7 @@
 import itertools
-import random
 
 import allennlp
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
-from sklearn.model_selection import train_test_split
 
 
 @DatasetReader.register("subsample")
