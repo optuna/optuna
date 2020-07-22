@@ -1,3 +1,4 @@
+import itertools
 import random
 
 import allennlp
@@ -13,14 +14,9 @@ class SubsampleDatasetReader(allennlp.data.dataset_readers.TextClassificationJso
         self.validation_data_size = validation_data_size
 
     def _read(self, datapath):
-        data = list(super()._read(datapath))
-        labels = list(map(lambda instance: instance.get("label").label, data))
-
         if datapath.endswith("train.jsonl"):
-            train_size = self.train_data_size
+            data_size = self.train_data_size
         else:
-            train_size = self.validation_data_size
+            data_size = self.validation_data_size
 
-        _data, _ = train_test_split(data, stratify=labels, train_size=train_size)
-        random.shuffle(_data)
-        yield from _data
+        yield from itertools.islice(super()._read(datapath), data_size)
