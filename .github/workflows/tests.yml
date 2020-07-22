@@ -42,10 +42,10 @@ jobs:
       env:
         cache-name: test
       with:
-        path: /opt/**/site-packages
-        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ env.cache-name }}
     - name: Setup environment
       run: |
         sudo apt-get update
