@@ -121,7 +121,7 @@ class CmaEsSampler(BaseSampler):
 
         inc_popsize:
             Multiplier for increasing population size before each restart.
-            This argument will be used when sett `restart_mode = "ipop"`.
+            This argument will be used when set `restart_mode = "ipop"`.
     """
 
     def __init__(
@@ -306,7 +306,7 @@ class CmaEsSampler(BaseSampler):
         self,
         search_space: Dict[str, BaseDistribution],
         ordered_keys: List[str],
-        popsize: int = None,
+        population_size: int = None,
     ) -> CMA:
         if self._x0 is None:
             self._x0 = _initialize_x0(search_space)
@@ -325,7 +325,7 @@ class CmaEsSampler(BaseSampler):
             bounds=bounds,
             seed=self._cma_rng.randint(1, 2 ** 31 - 2),
             n_max_resampling=10 * n_dimension,
-            population_size=popsize,
+            population_size=population_size,
         )
 
     def sample_independent(
