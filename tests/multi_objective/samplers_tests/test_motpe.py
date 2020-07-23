@@ -26,6 +26,18 @@ if optuna.type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
+class PatchTrial:
+    class PatchSystemAttr:
+        def __init__(self, weights: Callable[[int], np.ndarray]) -> None:
+            self._weights = weights
+
+        def __getitem__(self, _: str) -> dict:
+            return {"weights_below": self._weights}
+
+    def __init__(self, weights: Callable[[int], np.ndarray] = lambda x: np.ones(x)) -> None:
+        self.system_attrs = self.PatchSystemAttr(weights)
+
+
 def test_sample_relative() -> None:
     sampler = MOTPEMultiObjectiveSampler()
     # Study and frozen-trial are not supposed to be accessed.
@@ -43,130 +55,140 @@ def test_infer_relative_search_space() -> None:
 
 
 def test_sample_independent_seed_fix() -> None:
-    study = optuna.multi_objective.create_study(directions=['minimize', 'maximize'])
+    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
     random.seed(128)
-    past_trials = [
-        frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)
-    ]
+    past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
 
     # Prepare a trial and a sample for later checks.
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         assert sampler.sample_independent(study, trial, "param-a", dist) == suggestion
 
     sampler = MOTPEMultiObjectiveSampler(seed=1)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
+
 def test_sample_independent_prior() -> None:
-    study = optuna.multi_objective.create_study(directions=['minimize', 'maximize'])
+    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
     random.seed(128)
-    past_trials = [
-        frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)
-    ]
+    past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
 
     # Prepare a trial and a sample for later checks.
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     sampler = MOTPEMultiObjectiveSampler(consider_prior=False, seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = MOTPEMultiObjectiveSampler(prior_weight=0.5, seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
 def test_sample_independent_n_startup_trial() -> None:
-    study = optuna.multi_objective.create_study(directions=['minimize', 'maximize'])
+    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
     random.seed(128)
-    past_trials = [
-        frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)
-    ]
+    past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(n_startup_trials=16, seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials[:15]), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None), \
-         patch.object(optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-                      "sample_independent", return_value=1.0) as sample_method:
+    with patch.object(
+        study._storage, "get_all_trials", return_value=past_trials[:15]
+    ), patch.object(study._storage, "set_trial_system_attr", return_value=None), patch.object(
+        study._storage, "get_trial", return_value=PatchTrial()
+    ), patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
         sampler.sample_independent(study, trial, "param-a", dist)
     assert sample_method.call_count == 1
+
     sampler = MOTPEMultiObjectiveSampler(n_startup_trials=16, seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None), \
-         patch.object(optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-                      "sample_independent", return_value=1.0) as sample_method:
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()), patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
         sampler.sample_independent(study, trial, "param-a", dist)
     assert sample_method.call_count == 0
 
 
 def test_sample_independent_misc_arguments() -> None:
-    study = optuna.multi_objective.create_study(directions=['minimize', 'maximize'])
+    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
     random.seed(128)
-    past_trials = [
-        frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)
-    ]
+    past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(32)]
 
     # Prepare a trial and a sample for later checks.
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     # Test misc. parameters.
     sampler = MOTPEMultiObjectiveSampler(n_ehvi_candidates=13, seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = MOTPEMultiObjectiveSampler(gamma=lambda _1, _2: 5, seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
-    sampler = MOTPEMultiObjectiveSampler(
-        weights=lambda i: np.asarray([i * 0.11 for i in range(16)]), seed=0
-    )
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    weights = lambda i: np.asarray([i * 0.05 for _ in range(i)])
+    sampler = MOTPEMultiObjectiveSampler(weights=weights, seed=0)
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
 def test_sample_independent_uniform_distributions() -> None:
     # Prepare sample from uniform distribution for cheking other distributions.
-    study = optuna.multi_objective.create_study(directions=['minimize', 'maximize'])
+    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
     random.seed(128)
-    past_trials = [
-        frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)
-    ]
+    past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
 
     uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
     assert 1.0 <= uniform_suggestion < 100.0
 
@@ -174,17 +196,16 @@ def test_sample_independent_uniform_distributions() -> None:
 def test_sample_independent_log_uniform_distributions() -> None:
     """Prepare sample from uniform distribution for cheking other distributions."""
 
-    study = optuna.multi_objective.create_study(directions=['minimize', 'maximize'])
+    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
     random.seed(128)
 
     uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
-    past_trials = [
-        frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)
-    ]
+    past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
 
     # Test sample from log-uniform is different from uniform.
@@ -194,8 +215,9 @@ def test_sample_independent_log_uniform_distributions() -> None:
     ]
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         loguniform_suggestion = sampler.sample_independent(study, trial, "param-a", log_dist)
     assert 1.0 <= loguniform_suggestion < 100.0
     assert uniform_suggestion != loguniform_suggestion
@@ -204,7 +226,7 @@ def test_sample_independent_log_uniform_distributions() -> None:
 def test_sample_independent_disrete_uniform_distributions() -> None:
     """Test samples from discrete have expected intervals."""
 
-    study = optuna.multi_objective.create_study(directions=['minimize', 'maximize'])
+    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
     random.seed(128)
 
     disc_dist = optuna.distributions.DiscreteUniformDistribution(1.0, 100.0, 0.1)
@@ -215,13 +237,15 @@ def test_sample_independent_disrete_uniform_distributions() -> None:
     past_trials = [
         frozen_trial_factory(
             i, [random.random(), random.random()], dist=disc_dist, value_fn=value_fn
-        ) for i in range(16)
+        )
+        for i in range(16)
     ]
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         discrete_uniform_suggestion = sampler.sample_independent(
             study, trial, "param-a", disc_dist
         )
@@ -232,7 +256,7 @@ def test_sample_independent_disrete_uniform_distributions() -> None:
 def test_sample_independent_categorical_distributions() -> None:
     """Test samples are drawn from the specified category."""
 
-    study = optuna.multi_objective.create_study(directions=['minimize', 'maximize'])
+    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
     random.seed(128)
 
     categories = [i * 0.3 + 1.0 for i in range(330)]
@@ -244,13 +268,15 @@ def test_sample_independent_categorical_distributions() -> None:
     past_trials = [
         frozen_trial_factory(
             i, [random.random(), random.random()], dist=cat_dist, value_fn=cat_value_fn
-        ) for i in range(16)
+        )
+        for i in range(16)
     ]
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         categorical_suggestion = sampler.sample_independent(study, trial, "param-a", cat_dist)
     assert categorical_suggestion in categories
 
@@ -258,7 +284,7 @@ def test_sample_independent_categorical_distributions() -> None:
 def test_sample_int_uniform_distributions() -> None:
     """Test sampling from int distribution returns integer."""
 
-    study = optuna.multi_objective.create_study(directions=['minimize', 'maximize'])
+    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
     random.seed(128)
 
     def int_value_fn(idx: int) -> float:
@@ -268,13 +294,15 @@ def test_sample_int_uniform_distributions() -> None:
     past_trials = [
         frozen_trial_factory(
             i, [random.random(), random.random()], dist=int_dist, value_fn=int_value_fn
-        ) for i in range(16)
+        )
+        for i in range(16)
     ]
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         int_suggestion = sampler.sample_independent(study, trial, "param-a", int_dist)
     assert 1 <= int_suggestion <= 100
     assert isinstance(int_suggestion, int)
@@ -290,39 +318,39 @@ def test_sample_int_uniform_distributions() -> None:
     ],
 )
 def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.TrialState) -> None:
-    study = optuna.multi_objective.create_study(directions=['minimize', 'maximize'])
+    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
     random.seed(128)
 
     # Prepare sampling result for later tests.
-    past_trials = [
-        frozen_trial_factory(i, [random.random(), random.random()]) for i in range(32)
-    ]
+    past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(32)]
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(32, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         all_success_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     # Test unsuccessful trials are handled differently.
     state_fn = build_state_fn(state)
     past_trials = [
-        frozen_trial_factory(i, [random.random(), random.random()], state_fn=state_fn) \
+        frozen_trial_factory(i, [random.random(), random.random()], state_fn=state_fn)
         for i in range(32)
     ]
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(32, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-         patch.object(study._storage, "set_trial_system_attr", return_value=None):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", return_value=None
+    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
         partial_unsuccessful_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
     assert partial_unsuccessful_suggestion != all_success_suggestion
 
 
 def test_sample_independent_ignored_states() -> None:
     """Tests FAIL, RUNNING, and WAITING states are equally."""
-    study = optuna.multi_objective.create_study(directions=['minimize', 'maximize'])
+    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
     suggestions = []
@@ -334,13 +362,18 @@ def test_sample_independent_ignored_states() -> None:
         random.seed(128)
         state_fn = build_state_fn(state)
         past_trials = [
-            frozen_trial_factory(i, [random.random(), random.random()], state_fn=state_fn) \
+            frozen_trial_factory(i, [random.random(), random.random()], state_fn=state_fn)
             for i in range(32)
         ]
-        trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(32, [0, 0]))
+        trial = multi_objective.trial.FrozenMultiObjectiveTrial(
+            2, frozen_trial_factory(32, [0, 0])
+        )
         sampler = MOTPEMultiObjectiveSampler(seed=0)
-        with patch.object(study._storage, "get_all_trials", return_value=past_trials), \
-             patch.object(study._storage, "set_trial_system_attr", return_value=None):
+        with patch.object(
+            study._storage, "get_all_trials", return_value=past_trials
+        ), patch.object(study._storage, "set_trial_system_attr", return_value=None), patch.object(
+            study._storage, "get_trial", return_value=PatchTrial()
+        ):
             suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
 
     assert len(set(suggestions)) == 1
@@ -349,20 +382,21 @@ def test_sample_independent_ignored_states() -> None:
 def test_get_observation_pairs() -> None:
     def objective(trial: optuna.multi_objective.trial.Trial) -> Tuple[float, float]:
         x = trial.suggest_int("x", 5, 5)
-        return 5., 5.
+        return 5.0, 5.0
 
     sampler = MOTPEMultiObjectiveSampler(seed=0)
     study = optuna.multi_objective.create_study(
-        directions=['minimize', 'maximize'], sampler=sampler)
+        directions=["minimize", "maximize"], sampler=sampler
+    )
     study.optimize(objective, n_trials=5)
 
     assert _motpe._get_observation_pairs(study, "x") == (
         [5.0, 5.0, 5.0, 5.0, 5.0],
-        [[5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0]]
+        [[5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0]],
     )
     assert _motpe._get_observation_pairs(study, "y") == (
         [None, None, None, None, None],
-        [[5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0]]
+        [[5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0]],
     )
 
 
@@ -406,7 +440,8 @@ def test_solve_hssp() -> None:
         subset_size = int(random.random() * i) + 1
         print(subset_size, flush=True)
         test_case = np.asarray(
-            [[random.random(), random.random(), random.random()] for _ in range(8)])
+            [[random.random(), random.random(), random.random()] for _ in range(8)]
+        )
         r = 1.1 * np.max(test_case, axis=0)
         truth = 0
         for subset in itertools.permutations(test_case, subset_size):
@@ -423,7 +458,9 @@ def frozen_trial_factory(
         1.0, 100.0
     ),
     value_fn: Optional[Callable[[int], Union[int, float]]] = None,
-    state_fn: Callable[[int], optuna.trial.TrialState] = lambda _: optuna.trial.TrialState.COMPLETE,
+    state_fn: Callable[
+        [int], optuna.trial.TrialState
+    ] = lambda _: optuna.trial.TrialState.COMPLETE,
 ) -> multi_objective.trial.FrozenTrial:
     if value_fn is None:
         value = random.random() * 99.0 + 1.0
@@ -437,11 +474,11 @@ def frozen_trial_factory(
         value=None,
         datetime_start=None,
         datetime_complete=None,
-        params={'param-a': value},
+        params={"param-a": value},
         distributions={"param-a": dist},
         user_attrs={},
         system_attrs={},
-        intermediate_values={i: v for i, v in enumerate(values)}
+        intermediate_values={i: v for i, v in enumerate(values)},
     )
     return trial
 

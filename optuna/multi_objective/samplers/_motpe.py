@@ -45,46 +45,26 @@ def default_gamma(x: int, _: int) -> int:
     return max(0, int(np.ceil(0.10 * x)) - 1)
 
 
-class DefaultWeights:
-    """DefaultWeights for the Parzen estimator.
+def weights_by_contributions_factory(
+    loss_vals: np.ndarray, reference_point: np.ndarray
+) -> Callable[[int], np.ndarray]:
+    if len(loss_vals) == 0:
+        return lambda _: np.asarray([])
+    elif len(loss_vals) == 1:
+        return lambda _: np.asarray([1.0])
+    else:
+        loss_vals = loss_vals.tolist()
+        hv = hypervolume(loss_vals).compute(reference_point)
+        contributions = [
+            hv - hypervolume(loss_vals[:i] + loss_vals[i + 1 :]).compute(reference_point)
+            for i in range(len(loss_vals))
+        ]
+        weights = np.clip(contributions / np.max(contributions), 0, 1)
+        return lambda _: weights
 
-       Weights for below observations are calculated based on the hypervolume contribution whereas
-       weights for above observations are set to 1.0.
-    """
 
-    def __init__(self) -> None:
-        self._weights = np.asarray([])
-        self._is_below_mode = True
-
-    def calculate_weights(self, loss_vals: np.ndarray, reference_point: np.ndarray) -> None:
-        if len(loss_vals) == 0:
-            self._weights = np.asarray([])
-        elif len(loss_vals) == 1:
-            self._weights = np.asarray([1.0])
-        else:
-            loss_vals = loss_vals.tolist()
-            hv = hypervolume(loss_vals).compute(reference_point)
-            contributions = [
-                hv - hypervolume(loss_vals[:i] + loss_vals[i + 1:]).compute(reference_point) \
-                for i in range(len(loss_vals))
-            ]
-            self._weights = np.clip(contributions / np.max(contributions), 0, 1)
-
-    def set_below_mode(self) -> None:
-        self._is_below_mode = True
-
-    def set_above_mode(self) -> None:
-        self._is_below_mode = False
-
-    def __call__(self, x: int) -> np.ndarray:
-        if x == 0:
-            return np.asarray([])
-        elif self._is_below_mode:
-            assert self._weights is not None
-            assert x == len(self._weights)
-            return self._weights
-        else:
-            return np.ones(x)
+def weights_by_ones(x: int) -> np.ndarray:
+    return np.ones(x)
 
 
 @experimental("2.0.0")
@@ -134,7 +114,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             low grains.
             See the original paper for more details.
         weights:
-            A function that takes the number of finished trials and returns a weight for them.
+            A function that takes the number of finished trials and returns a weight for them. When
+            None is set, weights are automatically calculated by a default algorithm.
         seed:
             Seed for random number generator.
 
@@ -186,19 +167,18 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         n_startup_trials: int = 10,
         n_ehvi_candidates: int = 24,
         gamma: Callable[[int, int], int] = default_gamma,
-        weights: Callable[[int], np.ndarray] = DefaultWeights(),
+        weights: Optional[Callable[[int], np.ndarray]] = None,
         seed: Optional[int] = None,
     ) -> None:
         self._prior_weight = prior_weight
         self._n_startup_trials = n_startup_trials
         self._n_ehvi_candidates = n_ehvi_candidates
         self._gamma = gamma
+        self._consider_prior = consider_prior
+        self._prior_weight = prior_weight
+        self._consider_magic_clip = consider_magic_clip
+        self._consider_endpoints = consider_endpoints
         self._weights = weights
-
-        self._parzen_estimator_parameters = _ParzenEstimatorParameters(
-            consider_prior, prior_weight, consider_magic_clip, consider_endpoints, self._weights
-        )
-
         self._rng = np.random.RandomState(seed)
         self._random_sampler = RandomMultiObjectiveSampler(seed=seed)
 
@@ -224,6 +204,11 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+        assert len(study.directions) >= 2, (
+            "Number of objectives must be >= 2. "
+            "Please use optuna.samplers.TPESampler for single-objective optimization."
+        )
+
         values, scores = _get_observation_pairs(study, param_name)
         n = len(values)
         if n < self._n_startup_trials:
@@ -235,24 +220,28 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         )
 
         if isinstance(param_distribution, distributions.UniformDistribution):
-            return self._sample_uniform(param_distribution, below_param_values, above_param_values)
+            return self._sample_uniform(
+                study, trial, param_distribution, below_param_values, above_param_values
+            )
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
             return self._sample_loguniform(
-                param_distribution, below_param_values, above_param_values
+                study, trial, param_distribution, below_param_values, above_param_values
             )
         elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
             return self._sample_discrete_uniform(
-                param_distribution, below_param_values, above_param_values
+                study, trial, param_distribution, below_param_values, above_param_values
             )
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            return self._sample_int(param_distribution, below_param_values, above_param_values)
+            return self._sample_int(
+                study, trial, param_distribution, below_param_values, above_param_values
+            )
         elif isinstance(param_distribution, distributions.IntLogUniformDistribution):
             return self._sample_int_loguniform(
-                param_distribution, below_param_values, above_param_values
+                study, trial, param_distribution, below_param_values, above_param_values
             )
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             index = self._sample_categorical_index(
-                param_distribution, below_param_values, above_param_values
+                study, trial, param_distribution, below_param_values, above_param_values
             )
             return param_distribution.choices[index]
         else:
@@ -294,76 +283,100 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         # Therefore, we cache the result of splitting.
         if _SPLITCACHE_KEY in trial.system_attrs:
             split_cache = trial.system_attrs[_SPLITCACHE_KEY]
-            below_indices = split_cache["below_indices"]
-            above_indices = split_cache["above_indices"]
+            indices_below = split_cache["indices_below"]
+            indices_above = split_cache["indices_above"]
         else:
             nondomination_ranks = _calculate_nondomination_rank(loss_vals)
             n_below = self._gamma(len(config_vals), sum(nondomination_ranks == 0))
             indices = np.array(range(len(loss_vals)))
-            below_indices = np.array([], dtype=int)
+            indices_below = np.array([], dtype=int)
 
             # Nondomination rank-based selection
             i = 0
-            while len(below_indices) + sum(nondomination_ranks == i) < n_below:
-                below_indices = np.append(below_indices, indices[nondomination_ranks == i])
+            while len(indices_below) + sum(nondomination_ranks == i) < n_below:
+                indices_below = np.append(indices_below, indices[nondomination_ranks == i])
                 i += 1
 
             # Hypervolume subset selection problem (HSSP)-based selection
-            subset_size = n_below - len(below_indices)
+            subset_size = n_below - len(indices_below)
             if subset_size > 0:
                 rank_i_loss_vals = loss_vals[nondomination_ranks == i]
                 rank_i_indices = indices[nondomination_ranks == i]
                 worst_point = np.max(rank_i_loss_vals, axis=0)
                 reference_point = np.maximum(
                     np.maximum(
-                        1.1 * worst_point,  # case: value > 0
-                        0.9 * worst_point  # case: value < 0
+                        1.1 * worst_point, 0.9 * worst_point  # case: value > 0  # case: value < 0
                     ),
                     np.full(len(worst_point), EPS),  # case: value = 0
                 )
                 selected_indices = _solve_hssp(
                     rank_i_loss_vals, rank_i_indices, subset_size, reference_point
                 )
-                below_indices = np.append(below_indices, selected_indices)
+                indices_below = np.append(indices_below, selected_indices)
 
-            assert len(below_indices) == n_below
+            assert len(indices_below) == n_below
 
-            if isinstance(self._weights, DefaultWeights):
-                self._weights.calculate_weights(loss_vals[below_indices], reference_point)
+            indices_above = np.setdiff1d(indices, indices_below)
 
-            above_indices = np.setdiff1d(indices, below_indices)
+            if self._weights is None:
+                # The Default weighting algorithm dynamically assigns weights for the below
+                # observations based on the hypervolume contributions whereas weights for the above
+                # observations are set to 1.0.
+                weights_below = weights_by_contributions_factory(
+                    loss_vals[indices_below], reference_point
+                )
+                weights_above = weights_by_ones
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    _SPLITCACHE_KEY,
+                    {
+                        "indices_below": indices_below,
+                        "weights_below": weights_below,
+                        "indices_above": indices_above,
+                        "weights_above": weights_above,
+                    },
+                )
+            else:
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    _SPLITCACHE_KEY,
+                    {"indices_below": indices_below, "indices_above": indices_above},
+                )
 
-            study._storage.set_trial_system_attr(
-                trial._trial_id,
-                _SPLITCACHE_KEY,
-                {"below_indices": below_indices, "above_indices": above_indices},
-            )
-
-        below = config_vals[below_indices]
+        below = config_vals[indices_below]
         below = np.asarray([v for v in below if v is not None], dtype=float)
-        above = config_vals[above_indices]
+        above = config_vals[indices_above]
         above = np.asarray([v for v in above if v is not None], dtype=float)
         return below, above
 
     def _sample_uniform(
-        self, distribution: distributions.UniformDistribution, below: np.ndarray, above: np.ndarray
+        self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
+        distribution: distributions.UniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
     ) -> float:
         low = distribution.low
         high = distribution.high
-        return self._sample_numerical(low, high, below, above)
+        return self._sample_numerical(study, trial, low, high, below, above)
 
     def _sample_loguniform(
         self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         distribution: distributions.LogUniformDistribution,
         below: np.ndarray,
         above: np.ndarray,
     ) -> float:
         low = distribution.low
         high = distribution.high
-        return self._sample_numerical(low, high, below, above, is_log=True)
+        return self._sample_numerical(study, trial, low, high, below, above, is_log=True)
 
     def _sample_discrete_uniform(
         self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         distribution: distributions.DiscreteUniformDistribution,
         below: np.ndarray,
         above: np.ndarray,
@@ -378,11 +391,15 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         above -= distribution.low
         below -= distribution.low
 
-        best_sample = self._sample_numerical(low, high, below, above, q=q) + distribution.low
+        best_sample = (
+            self._sample_numerical(study, trial, low, high, below, above, q=q) + distribution.low
+        )
         return min(max(best_sample, distribution.low), distribution.high)
 
     def _sample_int(
         self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         distribution: distributions.IntUniformDistribution,
         below: np.ndarray,
         above: np.ndarray,
@@ -390,10 +407,12 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         d = distributions.DiscreteUniformDistribution(
             low=distribution.low, high=distribution.high, q=distribution.step
         )
-        return int(self._sample_discrete_uniform(d, below, above))
+        return int(self._sample_discrete_uniform(study, trial, d, below, above))
 
     def _sample_int_loguniform(
         self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         distribution: distributions.IntLogUniformDistribution,
         below: np.ndarray,
         above: np.ndarray,
@@ -401,13 +420,15 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         low = distribution.low - 0.5
         high = distribution.high + 0.5
 
-        sample = self._sample_numerical(low, high, below, above, is_log=True)
+        sample = self._sample_numerical(study, trial, low, high, below, above, is_log=True)
         best_sample = np.round(sample)
 
         return int(min(max(best_sample, distribution.low), distribution.high))
 
     def _sample_numerical(
         self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         low: float,
         high: float,
         below: np.ndarray,
@@ -422,11 +443,21 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             above = np.log(above)
 
         size = (self._n_ehvi_candidates,)
-
-        if isinstance(self._weights, DefaultWeights):
-            self._weights.set_below_mode()
+        if self._weights is None:
+            weights_below = study._storage.get_trial(trial._trial_id).system_attrs[
+                _SPLITCACHE_KEY
+            ]["weights_below"]
+        else:
+            weights_below = self._weights
+        parzen_estimator_parameters_below = _ParzenEstimatorParameters(
+            self._consider_prior,
+            self._prior_weight,
+            self._consider_magic_clip,
+            self._consider_endpoints,
+            weights_below,
+        )
         parzen_estimator_below = _ParzenEstimator(
-            mus=below, low=low, high=high, parameters=self._parzen_estimator_parameters
+            mus=below, low=low, high=high, parameters=parzen_estimator_parameters_below
         )
         samples_below = self._sample_from_gmm(
             parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size,
@@ -439,10 +470,19 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             q=q,
         )
 
-        if isinstance(self._weights, DefaultWeights):
-            self._weights.set_above_mode()
+        if self._weights is None:
+            weights_above = weights_by_ones
+        else:
+            weights_above = self._weights  # type: ignore
+        parzen_estimator_parameters_above = _ParzenEstimatorParameters(
+            self._consider_prior,
+            self._prior_weight,
+            self._consider_magic_clip,
+            self._consider_endpoints,
+            weights_above,
+        )
         parzen_estimator_above = _ParzenEstimator(
-            mus=above, low=low, high=high, parameters=self._parzen_estimator_parameters
+            mus=above, low=low, high=high, parameters=parzen_estimator_parameters_above
         )
         log_likelihoods_above = self._gmm_log_pdf(
             samples=samples_below,
@@ -461,6 +501,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
     def _sample_categorical_index(
         self,
+        study: "multi_objective.study.MultiObjectiveStudy",
+        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         distribution: distributions.CategoricalDistribution,
         below: np.ndarray,
         above: np.ndarray,
@@ -471,9 +513,12 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         upper = len(choices)
         size = (self._n_ehvi_candidates,)
 
-        if isinstance(self._weights, DefaultWeights):
-            self._weights.set_below_mode()
-        weights_below = self._weights(len(below))
+        if self._weights is None:
+            weights_below = study._storage.get_trial(trial._trial_id).system_attrs[
+                _SPLITCACHE_KEY
+            ]["weights_below"](len(below))
+        else:
+            weights_below = self._weights
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
         weighted_below = counts_below + self._prior_weight
         weighted_below /= weighted_below.sum()
@@ -482,9 +527,10 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             samples_below, weighted_below
         )
 
-        if isinstance(self._weights, DefaultWeights):
-            self._weights.set_above_mode()
-        weights_above = self._weights(len(above))
+        if self._weights is None:
+            weights_above = weights_by_ones(len(above))
+        else:
+            weights_above = self._weights(len(above))
         counts_above = np.bincount(above, minlength=upper, weights=weights_above)
         weighted_above = counts_above + self._prior_weight
         weighted_above /= weighted_above.sum()
