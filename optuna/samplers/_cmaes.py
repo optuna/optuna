@@ -156,7 +156,9 @@ class CmaEsSampler(BaseSampler):
         # TODO(c-bata): Support BIPOP-CMA-ES.
         if restart_strategy not in ("ipop", None,):
             raise ValueError(
-                "restart_strategy={} is unsupported. Please specify: 'ipop' or None."
+                "restart_strategy={} is unsupported. Please specify: 'ipop' or None.".format(
+                    restart_strategy
+                )
             )
 
         if self._restart_strategy:
@@ -264,10 +266,10 @@ class CmaEsSampler(BaseSampler):
 
             optimizer.tell(solutions)
 
-            if self._restart_strategy == "ipop":
-                popsize = optimizer.population_size
+            if self._restart_strategy == "ipop" and optimizer.should_stop():
+                popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
-                    search_space, ordered_keys, popsize=popsize * self._inc_popsize
+                    search_space, ordered_keys, population_size=popsize,
                 )
 
             optimizer_str = pickle.dumps(optimizer).hex()
@@ -323,7 +325,7 @@ class CmaEsSampler(BaseSampler):
             bounds=bounds,
             seed=self._cma_rng.randint(1, 2 ** 31 - 2),
             n_max_resampling=10 * n_dimension,
-            popsize=popsize,
+            population_size=popsize,
         )
 
     def sample_independent(
