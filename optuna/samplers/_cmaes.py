@@ -109,6 +109,15 @@ class CmaEsSampler(BaseSampler):
                 to set this flag :obj:`True` when the :class:`~optuna.pruners.HyperbandPruner` is
                 used. Please see `the benchmark result
                 <https://github.com/optuna/optuna/pull/1229>`_ for the details.
+
+        restart_strategy:
+            If given `None`, CMA-ES won't restart even if converges local minimum (default).
+            If given `"ipop"`, CMA-ES will restart with increasing population size.
+            Please see also `inc_popsize` parameter.
+
+        inc_popsize:
+            Multiplier for increasing population size before each restart.
+            This argument will be used when sett `restart_mode = "ipop"`.
     """
 
     def __init__(
@@ -120,7 +129,9 @@ class CmaEsSampler(BaseSampler):
         warn_independent_sampling: bool = True,
         seed: Optional[int] = None,
         *,
-        consider_pruned_trials: bool = False
+        consider_pruned_trials: bool = False,
+        restart_strategy: Optional[str] = None,
+        inc_popsize: int = 2,
     ) -> None:
 
         self._x0 = x0
@@ -132,12 +143,25 @@ class CmaEsSampler(BaseSampler):
         self._cma_rng = np.random.RandomState(seed)
         self._search_space = optuna.samplers.IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
+        self._restart_strategy = restart_strategy
+        self._inc_popsize = inc_popsize
 
         if self._consider_pruned_trials:
             self._raise_experimental_warning_for_consider_pruned_trials()
 
+        if restart_strategy is not None and restart_strategy not in ("ipop",):
+            raise ValueError("restart_strategy={} is unsupported. "
+                             "Please specify: 'ipop' or None.")
+
+        if self._restart_strategy:
+            self._raise_experimental_warning_for_restart_strategy()
+
     @experimental("2.0.0", name="`consider_pruned_trials = True` in CmaEsSampler")
     def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
+        pass
+
+    @experimental("2.1.0", name="`restart_strategy = 'ipop'` in CmaEsSampler")
+    def _raise_experimental_warning_for_restart_strategy(self) -> None:
         pass
 
     def reseed_rng(self) -> None:
@@ -201,7 +225,9 @@ class CmaEsSampler(BaseSampler):
         ordered_keys = [key for key in search_space]
         ordered_keys.sort()
 
-        optimizer = self._restore_or_init_optimizer(completed_trials, search_space, ordered_keys)
+        optimizer = self._restore_optimizer(completed_trials)
+        if optimizer is None:
+            optimizer = self._init_optimizer(search_space, ordered_keys)
 
         if optimizer.dim != len(ordered_keys):
             self._logger.info(
@@ -232,6 +258,11 @@ class CmaEsSampler(BaseSampler):
 
             optimizer.tell(solutions)
 
+            if self._restart_strategy == "ipop":
+                popsize = optimizer.population_size
+                optimizer = self._init_optimizer(search_space, ordered_keys,
+                                                 popsize=popsize*self._inc_popsize)
+
             optimizer_str = pickle.dumps(optimizer).hex()
             study._storage.set_trial_system_attr(trial._trial_id, "cma:optimizer", optimizer_str)
 
@@ -248,12 +279,10 @@ class CmaEsSampler(BaseSampler):
         }
         return external_values
 
-    def _restore_or_init_optimizer(
+    def _restore_optimizer(
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
-        search_space: Dict[str, BaseDistribution],
-        ordered_keys: List[str],
-    ) -> CMA:
+    ) -> Optional[CMA]:
 
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
@@ -263,8 +292,14 @@ class CmaEsSampler(BaseSampler):
             if serialized_optimizer is None:
                 continue
             return pickle.loads(bytes.fromhex(serialized_optimizer))
+        return None
 
-        # Init a CMA object.
+    def _init_optimizer(
+            self,
+            search_space: Dict[str, BaseDistribution],
+            ordered_keys: List[str],
+            popsize=None,
+    ) -> CMA:
         if self._x0 is None:
             self._x0 = _initialize_x0(search_space)
 
@@ -282,6 +317,7 @@ class CmaEsSampler(BaseSampler):
             bounds=bounds,
             seed=self._cma_rng.randint(1, 2 ** 31 - 2),
             n_max_resampling=10 * n_dimension,
+            popsize=popsize,
         )
 
     def sample_independent(
