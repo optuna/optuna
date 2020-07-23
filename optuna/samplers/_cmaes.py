@@ -136,7 +136,9 @@ class CmaEsSampler(BaseSampler):
 
         self._x0 = x0
         self._sigma0 = sigma0
-        self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
+        self._independent_sampler = (
+            independent_sampler or optuna.samplers.RandomSampler(seed=seed)
+        )
         self._n_startup_trials = n_startup_trials
         self._warn_independent_sampling = warn_independent_sampling
         self._logger = optuna.logging.get_logger(__name__)
@@ -149,9 +151,10 @@ class CmaEsSampler(BaseSampler):
         if self._consider_pruned_trials:
             self._raise_experimental_warning_for_consider_pruned_trials()
 
-        if restart_strategy is not None and restart_strategy not in ("ipop",):
-            raise ValueError("restart_strategy={} is unsupported. "
-                             "Please specify: 'ipop' or None.")
+        if restart_strategy not in ("ipop", None,):
+            raise ValueError(
+                "restart_strategy={} is unsupported. " "Please specify: 'ipop' or None."
+            )
 
         if self._restart_strategy:
             self._raise_experimental_warning_for_restart_strategy()
@@ -260,11 +263,14 @@ class CmaEsSampler(BaseSampler):
 
             if self._restart_strategy == "ipop":
                 popsize = optimizer.population_size
-                optimizer = self._init_optimizer(search_space, ordered_keys,
-                                                 popsize=popsize*self._inc_popsize)
+                optimizer = self._init_optimizer(
+                    search_space, ordered_keys, popsize=popsize * self._inc_popsize
+                )
 
             optimizer_str = pickle.dumps(optimizer).hex()
-            study._storage.set_trial_system_attr(trial._trial_id, "cma:optimizer", optimizer_str)
+            study._storage.set_trial_system_attr(
+                trial._trial_id, "cma:optimizer", optimizer_str
+            )
 
         # Caution: optimizer should update its seed value
         seed = self._cma_rng.randint(1, 2 ** 16) + trial.number
@@ -275,13 +281,13 @@ class CmaEsSampler(BaseSampler):
             trial._trial_id, "cma:generation", optimizer.generation
         )
         external_values = {
-            k: _to_optuna_param(search_space[k], p) for k, p in zip(ordered_keys, params)
+            k: _to_optuna_param(search_space[k], p)
+            for k, p in zip(ordered_keys, params)
         }
         return external_values
 
     def _restore_optimizer(
-        self,
-        completed_trials: "List[optuna.trial.FrozenTrial]",
+        self, completed_trials: "List[optuna.trial.FrozenTrial]",
     ) -> Optional[CMA]:
 
         # Restore a previous CMA object.
@@ -295,10 +301,10 @@ class CmaEsSampler(BaseSampler):
         return None
 
     def _init_optimizer(
-            self,
-            search_space: Dict[str, BaseDistribution],
-            ordered_keys: List[str],
-            popsize=None,
+        self,
+        search_space: Dict[str, BaseDistribution],
+        ordered_keys: List[str],
+        popsize: int = None,
     ) -> CMA:
         if self._x0 is None:
             self._x0 = _initialize_x0(search_space)
@@ -466,7 +472,11 @@ def _get_search_space_bound(
                 optuna.distributions.IntLogUniformDistribution,
             ),
         ):
-            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high)])
+            bounds.append(
+                [_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high)]
+            )
         else:
-            raise NotImplementedError("The distribution {} is not implemented.".format(dist))
+            raise NotImplementedError(
+                "The distribution {} is not implemented.".format(dist)
+            )
     return np.array(bounds, dtype=float)
