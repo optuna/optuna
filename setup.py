@@ -36,6 +36,7 @@ def get_install_requires() -> List[str]:
         "colorlog",
         "joblib",
         "numpy",
+        "packaging",
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
