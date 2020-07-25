@@ -14,11 +14,11 @@ from sklearn.model_selection import GroupKFold
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
-from optuna.integration.lightgbm_tuner.sklearn import _VotingBooster
-from optuna.integration.lightgbm_tuner.sklearn import check_fit_params
-from optuna.integration.lightgbm_tuner.sklearn import check_X
-from optuna.integration.lightgbm_tuner.sklearn import LGBMClassifier as OGBMClassifier
-from optuna.integration.lightgbm_tuner.sklearn import LGBMRegressor as OGBMRegressor
+from optuna.integration._lightgbm_tuner.sklearn import _VotingBooster
+from optuna.integration._lightgbm_tuner.sklearn import check_fit_params
+from optuna.integration._lightgbm_tuner.sklearn import check_X
+from optuna.integration._lightgbm_tuner.sklearn import LGBMClassifier as OGBMClassifier
+from optuna.integration._lightgbm_tuner.sklearn import LGBMRegressor as OGBMRegressor
 from optuna import structs
 from optuna import study as study_module
 
