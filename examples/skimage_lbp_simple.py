@@ -14,7 +14,7 @@ We have following two ways to execute this example:
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize skimage_lbp_simple.py objective --n-trials=100 --study \
+    $ optuna study optimize skimage_lbp_simple.py objective --n-trials=100 --study-name \
       $STUDY_NAME --storage sqlite:///example.db
 
 """
@@ -36,13 +36,13 @@ def load_data():
     classes.sort()
 
     ref_index = np.argmax(target == classes[:, None], axis=1)
-    test_index = np.delete(np.arange(len(faces)), ref_index)
+    valid_index = np.delete(np.arange(len(faces)), ref_index)
 
     x_ref = faces[ref_index]
     y_ref = target[ref_index]
-    x_test = faces[test_index]
-    y_test = target[test_index]
-    return x_ref, x_test, y_ref, y_test
+    x_valid = faces[valid_index]
+    y_valid = target[valid_index]
+    return x_ref, x_valid, y_ref, y_valid
 
 
 def get_lbp_hist(img, P, R, method):
@@ -99,21 +99,21 @@ def calc_dist(p, q, metric):
 
 def objective(trial):
     # Get Olivetti faces dataset.
-    x_ref, x_test, y_ref, y_test = load_data()
+    x_ref, x_valid, y_ref, y_valid = load_data()
 
     # We optimize parameters of local_binary_pattern function in skimage
     # and the choice of distance metric classes.
     P = trial.suggest_int("P", 1, 15)
-    R = trial.suggest_uniform("R", 1, 10)
+    R = trial.suggest_float("R", 1, 10)
     method = trial.suggest_categorical("method", ["default", "uniform"])
     metric = trial.suggest_categorical("metric", ["kl", "cos", "euc"])
 
     x_ref_hist = img2hist(x_ref, P, R, method)
-    x_test_hist = img2hist(x_test, P, R, method)
-    dist = calc_dist(x_ref_hist, x_test_hist, metric)
+    x_valid_hist = img2hist(x_valid, P, R, method)
+    dist = calc_dist(x_ref_hist, x_valid_hist, metric)
 
     y_pred = np.argmin(dist, axis=1)
-    accuracy = sklearn.metrics.accuracy_score(y_test, y_pred)
+    accuracy = sklearn.metrics.accuracy_score(y_valid, y_pred)
     return accuracy
 
 

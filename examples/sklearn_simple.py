@@ -13,7 +13,7 @@ We have the following two ways to execute this example:
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize sklearn_simple.py objective --n-trials=100 --study $STUDY_NAME \
+    $ optuna study optimize sklearn_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
       --storage sqlite:///example.db
 
 """
@@ -34,10 +34,10 @@ def objective(trial):
 
     classifier_name = trial.suggest_categorical("classifier", ["SVC", "RandomForest"])
     if classifier_name == "SVC":
-        svc_c = trial.suggest_loguniform("svc_c", 1e-10, 1e10)
+        svc_c = trial.suggest_float("svc_c", 1e-10, 1e10, log=True)
         classifier_obj = sklearn.svm.SVC(C=svc_c, gamma="auto")
     else:
-        rf_max_depth = int(trial.suggest_loguniform("rf_max_depth", 2, 32))
+        rf_max_depth = trial.suggest_int("rf_max_depth", 2, 32, log=True)
         classifier_obj = sklearn.ensemble.RandomForestClassifier(
             max_depth=rf_max_depth, n_estimators=10
         )

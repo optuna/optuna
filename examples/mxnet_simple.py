@@ -14,7 +14,7 @@ We have the following two ways to execute this example:
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize mxnet_simple.py objective --n-trials=100 --study $STUDY_NAME \
+    $ optuna study optimize mxnet_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
       --storage sqlite:///example.db
 
 """
@@ -28,7 +28,7 @@ import optuna
 
 
 N_TRAIN_EXAMPLES = 3000
-N_TEST_EXAMPLES = 1000
+N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128
 EPOCH = 10
 
@@ -44,7 +44,7 @@ def create_model(trial):
     data = mx.symbol.Variable("data")
     data = mx.sym.flatten(data=data)
     for i in range(n_layers):
-        num_hidden = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
+        num_hidden = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
         data = mx.symbol.FullyConnected(data=data, num_hidden=num_hidden)
         data = mx.symbol.Activation(data=data, act_type="relu")
 
@@ -57,14 +57,14 @@ def create_model(trial):
 def create_optimizer(trial):
     # We optimize over the type of optimizer to use (Adam or SGD with momentum).
     # We also optimize over the learning rate and weight decay of the selected optimizer.
-    weight_decay = trial.suggest_loguniform("weight_decay", 1e-10, 1e-3)
+    weight_decay = trial.suggest_float("weight_decay", 1e-10, 1e-3, log=True)
     optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "MomentumSGD"])
 
     if optimizer_name == "Adam":
-        adam_lr = trial.suggest_loguniform("adam_lr", 1e-5, 1e-1)
+        adam_lr = trial.suggest_float("adam_lr", 1e-5, 1e-1, log=True)
         optimizer = mx.optimizer.Adam(learning_rate=adam_lr, wd=weight_decay)
     else:
-        momentum_sgd_lr = trial.suggest_loguniform("momentum_sgd_lr", 1e-5, 1e-1)
+        momentum_sgd_lr = trial.suggest_float("momentum_sgd_lr", 1e-5, 1e-1, log=True)
         optimizer = mx.optimizer.SGD(momentum=momentum_sgd_lr, wd=weight_decay)
 
     return optimizer
@@ -76,6 +76,7 @@ def objective(trial):
     optimizer = create_optimizer(trial)
 
     # Load the test and train MNIST dataset.
+    # Use test as a validation set.
     mnist = mx.test_utils.get_mnist()
     rng = np.random.RandomState(0)
     permute_train = rng.permutation(len(mnist["train_data"]))
@@ -85,10 +86,10 @@ def objective(trial):
         batch_size=BATCHSIZE,
         shuffle=True,
     )
-    permute_test = rng.permutation(len(mnist["test_data"]))
+    permute_valid = rng.permutation(len(mnist["test_data"]))
     val = mx.io.NDArrayIter(
-        data=mnist["test_data"][permute_test][:N_TEST_EXAMPLES],
-        label=mnist["test_label"][permute_test][:N_TEST_EXAMPLES],
+        data=mnist["test_data"][permute_valid][:N_VALID_EXAMPLES],
+        label=mnist["test_label"][permute_valid][:N_VALID_EXAMPLES],
         batch_size=BATCHSIZE,
     )
 
@@ -102,18 +103,18 @@ def objective(trial):
         num_epoch=EPOCH,
     )
 
-    # Compute the accuracy on the entire test set.
-    test = mx.io.NDArrayIter(
+    # Compute the accuracy on the entire validation set.
+    valid = mx.io.NDArrayIter(
         data=mnist["test_data"], label=mnist["test_label"], batch_size=BATCHSIZE
     )
-    accuracy = model.score(eval_data=test, eval_metric="acc")[0]
+    accuracy = model.score(eval_data=valid, eval_metric="acc")[0]
 
     return accuracy[1]
 
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=100, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
 

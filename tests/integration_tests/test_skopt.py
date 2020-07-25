@@ -1,4 +1,6 @@
+from typing import List
 from unittest.mock import call
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -15,6 +17,11 @@ if optuna.type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
 
 
+def test_consider_pruned_trials_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.integration.SkoptSampler(consider_pruned_trials=True)
+
+
 def test_conversion_from_distribution_to_dimension():
     # type: () -> None
 
@@ -28,6 +35,10 @@ def test_conversion_from_distribution_to_dimension():
             space.Real(-3.3, 5.2),
             # Original: trial.suggest_uniform('p1', 2.0, 2.0)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
+            # Original: trial.suggest_discrete_uniform('p9', 2.2, 2.2, 0.5)
+            # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
+            # Original: trial.suggest_categorical('p10', ['9', '3', '0', '8'])
+            space.Categorical(("9", "3", "0", "8")),
             # Original: trial.suggest_loguniform('p2', 0.0001, 0.3)
             space.Real(0.0001, 0.3, prior="log-uniform"),
             # Original: trial.suggest_loguniform('p3', 1.1, 1.1)
@@ -36,15 +47,14 @@ def test_conversion_from_distribution_to_dimension():
             space.Integer(0, 108),
             # Original: trial.suggest_int('p5', -20, -20)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
-            # Original: trial.suggest_discrete_uniform('p6', 10, 20, 2)
+            # Original: trial.suggest_int('p6', 1, 8, log=True)
+            space.Real(0.5, 8.5, prior="log-uniform"),
+            # Original: trial.suggest_discrete_uniform('p7', 10, 20, 2)
             space.Integer(0, 5),
-            # Original: trial.suggest_discrete_uniform('p7', 0.1, 1.0, 0.1)
+            # Original: trial.suggest_discrete_uniform('p8', 0.1, 1.0, 0.1)
             space.Integer(0, 8),
-            # Original: trial.suggest_discrete_uniform('p8', 2.2, 2.2, 0.5)
-            # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
-            # Original: trial.suggest_categorical('p9', ['9', '3', '0', '8'])
-            space.Categorical(("9", "3", "0", "8")),
         ]
+
         assert mock_object.mock_calls[0] == call(dimensions)
 
 
@@ -129,6 +139,17 @@ def test_is_compatible():
         optimizer._is_compatible(trial)
 
 
+def test_reseed_rng() -> None:
+    sampler = optuna.integration.SkoptSampler()
+    sampler._independent_sampler.reseed_rng()
+
+    with patch.object(
+        sampler._independent_sampler, "reseed_rng", wraps=sampler._independent_sampler.reseed_rng
+    ) as mock_object:
+        sampler.reseed_rng()
+        assert mock_object.call_count == 1
+
+
 def _objective(trial):
     # type: (optuna.trial.Trial) -> float
 
@@ -138,13 +159,14 @@ def _objective(trial):
     p3 = trial.suggest_loguniform("p3", 1.1, 1.1)
     p4 = trial.suggest_int("p4", -100, 8)
     p5 = trial.suggest_int("p5", -20, -20)
-    p6 = trial.suggest_discrete_uniform("p6", 10, 20, 2)
-    p7 = trial.suggest_discrete_uniform("p7", 0.1, 1.0, 0.1)
-    p8 = trial.suggest_discrete_uniform("p8", 2.2, 2.2, 0.5)
-    p9 = trial.suggest_categorical("p9", ["9", "3", "0", "8"])
-    assert isinstance(p9, str)
+    p6 = trial.suggest_int("p6", 1, 8, log=True)
+    p7 = trial.suggest_discrete_uniform("p7", 10, 20, 2)
+    p8 = trial.suggest_discrete_uniform("p8", 0.1, 1.0, 0.1)
+    p9 = trial.suggest_discrete_uniform("p9", 2.2, 2.2, 0.5)
+    p10 = trial.suggest_categorical("p10", ["9", "3", "0", "8"])
+    assert isinstance(p10, str)
 
-    return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + int(p9)
+    return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + int(p10)
 
 
 def test_sample_relative_n_startup_trials():
@@ -166,6 +188,44 @@ def test_sample_relative_n_startup_trials():
         study.optimize(lambda t: t.suggest_int("x", -1, 1) + t.suggest_int("y", -1, 1), n_trials=3)
         assert mock_independent.call_count == 4  # The objective function has two parameters.
         assert mock_relative.call_count == 3
+
+
+def test_get_trials() -> None:
+
+    with patch("optuna.Study.get_trials", new=Mock(side_effect=lambda deepcopy: _create_trials())):
+        sampler = optuna.integration.SkoptSampler(consider_pruned_trials=False)
+        study = optuna.create_study(sampler=sampler)
+        trials = sampler._get_trials(study)
+        assert len(trials) == 1
+
+        sampler = optuna.integration.SkoptSampler(consider_pruned_trials=True)
+        study = optuna.create_study(sampler=sampler)
+        trials = sampler._get_trials(study)
+        assert len(trials) == 2
+        assert trials[0].value == 1.0
+        assert trials[1].value == 2.0
+
+
+def _create_trials() -> List[FrozenTrial]:
+
+    trials = []
+    trials.append(_create_frozen_trial({}, {}))
+    trials.append(
+        FrozenTrial(
+            number=1,
+            value=None,
+            state=optuna.trial.TrialState.PRUNED,
+            user_attrs={},
+            system_attrs={},
+            params={},
+            distributions={},
+            intermediate_values={0: 2.0},
+            datetime_start=None,
+            datetime_complete=None,
+            trial_id=0,
+        )
+    )
+    return trials
 
 
 def _create_frozen_trial(params, param_distributions):

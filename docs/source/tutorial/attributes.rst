@@ -27,7 +27,7 @@ We can access annotated attributes with :attr:`~optuna.study.Study.user_attr` pr
 
     study.user_attrs  # {'contributors': ['Akiba', 'Sano'], 'dataset': 'MNIST'}
 
-:class:`~optuna.struct.StudySummary` object, which can be retrieved by
+:class:`~optuna.study.StudySummary` object, which can be retrieved by
 :func:`~optuna.study.get_all_study_summaries`, also contains user-defined attributes.
 
 .. code-block:: python

@@ -35,25 +35,25 @@ def objective(trial):
     data = fmnist.data[:n_samples]
     target = fmnist.target[:n_samples]
 
-    x_train, x_test, y_train, y_test = train_test_split(data, target)
+    x_train, x_valid, y_train, y_valid = train_test_split(data, target)
 
     clf = MLPClassifier(
         hidden_layer_sizes=tuple(
             [trial.suggest_int("n_units_l{}".format(i), 32, 64) for i in range(3)]
         ),
-        learning_rate_init=trial.suggest_loguniform("lr_init", 1e-5, 1e-1),
+        learning_rate_init=trial.suggest_float("lr_init", 1e-5, 1e-1, log=True),
     )
 
     for step in range(100):
         clf.partial_fit(x_train, y_train, classes=classes)
-        value = clf.score(x_test, y_test)
+        value = clf.score(x_valid, y_valid)
 
         # Report intermediate objective value.
         trial.report(value, step)
 
         # Handle pruning based on the intermediate value.
-        if trial.should_prune(step):
-            raise optuna.exceptions.TrialPruned()
+        if trial.should_prune():
+            raise optuna.TrialPruned()
 
     return value
 

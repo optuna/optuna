@@ -12,7 +12,7 @@ We have following two ways to execute this example:
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize lightgbm_simple.py objective --n-trials=100 --study $STUDY_NAME \
+    $ optuna study optimize lightgbm_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
       --storage sqlite:///example.db
 
 """
@@ -30,7 +30,7 @@ import optuna
 # (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     data, target = sklearn.datasets.load_breast_cancer(return_X_y=True)
-    train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.25)
+    train_x, valid_x, train_y, valid_y = train_test_split(data, target, test_size=0.25)
     dtrain = lgb.Dataset(train_x, label=train_y)
 
     param = {
@@ -38,19 +38,19 @@ def objective(trial):
         "metric": "binary_logloss",
         "verbosity": -1,
         "boosting_type": "gbdt",
-        "lambda_l1": trial.suggest_loguniform("lambda_l1", 1e-8, 10.0),
-        "lambda_l2": trial.suggest_loguniform("lambda_l2", 1e-8, 10.0),
+        "lambda_l1": trial.suggest_float("lambda_l1", 1e-8, 10.0, log=True),
+        "lambda_l2": trial.suggest_float("lambda_l2", 1e-8, 10.0, log=True),
         "num_leaves": trial.suggest_int("num_leaves", 2, 256),
-        "feature_fraction": trial.suggest_uniform("feature_fraction", 0.4, 1.0),
-        "bagging_fraction": trial.suggest_uniform("bagging_fraction", 0.4, 1.0),
+        "feature_fraction": trial.suggest_float("feature_fraction", 0.4, 1.0),
+        "bagging_fraction": trial.suggest_float("bagging_fraction", 0.4, 1.0),
         "bagging_freq": trial.suggest_int("bagging_freq", 1, 7),
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
     }
 
     gbm = lgb.train(param, dtrain)
-    preds = gbm.predict(test_x)
+    preds = gbm.predict(valid_x)
     pred_labels = np.rint(preds)
-    accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
+    accuracy = sklearn.metrics.accuracy_score(valid_y, pred_labels)
     return accuracy
 
 

@@ -2,14 +2,16 @@ API Reference
 =============
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
+    optuna
     cli
     distributions
     exceptions
     importance
     integration
     logging
+    multi_objective/index
     pruners
     samplers
     storages

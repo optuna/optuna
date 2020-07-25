@@ -1,5 +1,5 @@
-Command Line Interface
-======================
+optuna.cli
+==========
 
 .. autoprogram-cliff:: optuna.cli._OptunaApp
    :application: optuna
