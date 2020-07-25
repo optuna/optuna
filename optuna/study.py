@@ -1131,7 +1131,37 @@ def new_metric_map(
             system_attrs=trial.system_attrs,
             intermediate_values=trial.intermediate_values,
         )
-        new_trial._validate()
+        return new_trial
+
+    return converter
+
+
+def add_distributions_params_map(
+    add_distributions_params,  # type: Dict[str, List[Any]]
+):
+    # type: (...) -> Callable
+    add_parameters = add_distributions_params.keys()
+    add_distributions = {
+        parameter: add_distributions_params[parameter][0] for parameter in add_parameters
+    }
+    add_params = {
+        parameter: add_distributions_params[parameter][1] for parameter in add_parameters
+    }
+
+    def converter(trial):
+        # type: (FrozenTrial) -> Optional[FrozenTrial]
+        nonlocal add_distributions, add_params
+        trial.params.update(add_params)
+        trial.distributions.update(add_distributions)
+        new_trial = create_trial(
+            state=trial.state,
+            value=trial.value,
+            params=trial.params,
+            distributions=trial.distributions,
+            user_attrs=trial.user_attrs,
+            system_attrs=trial.system_attrs,
+            intermediate_values=trial.intermediate_values,
+        )
         return new_trial
 
     return converter
@@ -1148,9 +1178,54 @@ def _check_param(
     return True
 
 
+def modify_distributions_map(
+    modify_distributions,  # type: Dict[str, BaseDistribution]
+):
+    # type: (...) -> Callable
+    modify_parameters = modify_distributions.keys()
+    modify_distributions_done = 0
+
+    def get_modify_distributions(trial):
+        # type: (FrozenTrial) -> None
+        nonlocal modify_distributions, modify_parameters, modify_distributions_done
+        parameters = trial.params.keys()
+        distributions = trial.distributions
+        add_parameters = set(modify_parameters) - set(parameters)
+        if len(add_parameters) != 0:
+            raise ValueError(
+                "Parameter {} is increased in new distributions".format(add_parameters)
+            )
+        old_parameters = set(parameters) - set(modify_parameters)
+        old_distributions = {parameter: distributions[parameter] for parameter in old_parameters}
+        modify_distributions.update(old_distributions)
+        modify_distributions_done = 1
+
+    def converter(trial):
+        # type: (FrozenTrial) -> Optional[FrozenTrial]
+        nonlocal modify_parameters, modify_distributions, modify_distributions_done
+        if modify_distributions_done == 0:
+            get_modify_distributions(trial)
+
+        if _check_param(trial.params, modify_distributions) is False:
+            return None
+
+        new_trial = create_trial(
+            state=trial.state,
+            value=trial.value,
+            params=trial.params,
+            distributions=modify_distributions,
+            user_attrs=trial.user_attrs,
+            system_attrs=trial.system_attrs,
+            intermediate_values=trial.intermediate_values,
+        )
+        return new_trial
+
+    return converter
+
+
 def new_objective_map(
     new_objective,  # type: ObjectiveFuncType
-    add_default_values,  # type: Dict[str, Any]
+    add_default_values,  # type: Dict[str, List[Any]]
 ):
     # type: (...) -> Callable
     dummy_study = create_study()
