@@ -519,7 +519,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 _SPLITCACHE_KEY
             ]["weights_below"](len(below))
         else:
-            weights_below = self._weights
+            weights_below = self._weights(len(below))
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
         weighted_below = counts_below + self._prior_weight
         weighted_below /= weighted_below.sum()
