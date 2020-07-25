@@ -154,7 +154,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
-            "lightgbm",
+            "lightgbm>=2.2.2",
+            "matplotlib",
             "mlflow",
             "mpi4py",
             "mxnet",
