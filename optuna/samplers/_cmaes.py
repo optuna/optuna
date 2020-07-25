@@ -61,6 +61,9 @@ class CmaEsSampler(BaseSampler):
             A dictionary of an initial parameter values for CMA-ES. By default, the mean of ``low``
             and ``high`` for each distribution is used.
 
+            When you enabled restart strategy, the initial point is sampled uniformly
+            within the search space domain even if you set this argument.
+
         sigma0:
             Initial standard deviation of CMA-ES. By default, ``sigma0`` is set to
             ``min_range / 6``, where ``min_range`` denotes the minimum range of the distributions
@@ -149,6 +152,7 @@ class CmaEsSampler(BaseSampler):
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
         self._inc_popsize = inc_popsize
+        self._n_restarts = 0
 
         if self._consider_pruned_trials:
             self._raise_experimental_warning_for_consider_pruned_trials()
@@ -267,6 +271,7 @@ class CmaEsSampler(BaseSampler):
             optimizer.tell(solutions)
 
             if self._restart_strategy == "ipop" and optimizer.should_stop():
+                self._n_restarts += 1
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
                     search_space, ordered_keys, population_size=popsize,
@@ -308,8 +313,10 @@ class CmaEsSampler(BaseSampler):
         ordered_keys: List[str],
         population_size: int = None,
     ) -> CMA:
-        if self._x0 is None:
+        if self._n_restarts == 0 and self._x0 is None:
             self._x0 = _initialize_x0(search_space)
+        elif self._n_restarts > 0:
+            self._x0 = _initialize_x0_uniformly(self._cma_rng, search_space)
 
         if self._sigma0 is None:
             sigma0 = _initialize_sigma0(search_space)
@@ -408,7 +415,7 @@ def _to_optuna_param(distribution: BaseDistribution, cma_param: float) -> Any:
     return cma_param
 
 
-def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.ndarray]:
+def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, Any]:
     x0 = {}
     for name, distribution in search_space.items():
         if isinstance(distribution, optuna.distributions.UniformDistribution):
@@ -425,6 +432,30 @@ def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, np.nd
             log_high = math.log(distribution.high)
             log_low = math.log(distribution.low)
             x0[name] = np.mean([log_high, log_low])
+        else:
+            raise NotImplementedError(
+                "The distribution {} is not implemented.".format(distribution)
+            )
+    return x0
+
+
+def _initialize_x0_uniformly(rng: np.random.RandomState, search_space: Dict[str, BaseDistribution]) -> Dict[str, Any]:
+    x0 = {}
+    for name, distribution in search_space.items():
+        if isinstance(distribution, optuna.distributions.UniformDistribution):
+            x0[name] = distribution.low + rng.rand() * (distribution.high - distribution.low)
+        elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
+            x0[name] = distribution.low + rng.rand() * (distribution.high - distribution.low)
+        elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
+            x0[name] = distribution.low + rng.randint(distribution.high - distribution.low)
+        elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+            log_high = math.log(distribution.high)
+            log_low = math.log(distribution.low)
+            x0[name] = log_low + rng.rand() * (log_high - log_low)
+        elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
+            log_high = math.log(distribution.high)
+            log_low = math.log(distribution.low)
+            x0[name] = log_low + rng.rand() * (log_high - log_low)
         else:
             raise NotImplementedError(
                 "The distribution {} is not implemented.".format(distribution)
