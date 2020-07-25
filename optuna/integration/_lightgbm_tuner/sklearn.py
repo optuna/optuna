@@ -396,8 +396,8 @@ class _VotingBooster(object):
     ) -> np.ndarray:
         logger = logging.getLogger(__name__)
 
-        if predict_params:
-            logger.warning("{} are ignored when refit is set to True.".format(predict_params))
+        for key, value in predict_params.items():
+            logger.warning("{}={} will be ignored.".format(key, value))
 
         results = [b.predict(X, num_iteration=num_iteration) for b in self.boosters]
 
@@ -628,8 +628,8 @@ class LGBMModel(lgb.LGBMModel):
 
         seed = self._get_random_state()
 
-        if fit_params:
-            logger.warning("{} are ignored.".format(fit_params))
+        for key, value in fit_params.items():
+            logger.warning("{}={} will be ignored.".format(key, value))
 
         params = self.get_params()
 
