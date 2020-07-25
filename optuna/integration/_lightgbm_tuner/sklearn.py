@@ -233,15 +233,6 @@ def _is_higher_better(metric: str) -> bool:
 
 class _LightGBMExtractionCallback(object):
     @property
-    def best_iteration_(self) -> int:
-        best_iteration = self.env_.model.best_iteration
-
-        if best_iteration > 0:
-            return best_iteration
-
-        return self.env_.iteration + 1
-
-    @property
     def boosters_(self) -> List[lgb.Booster]:
         return self.env_.model.boosters
 
@@ -297,11 +288,12 @@ class _Objective(object):
             init_model=self.init_model,
             num_boost_round=self.n_estimators,
         )  # Dict[str, List[float]]
-        best_iteration = callbacks[0].best_iteration_  # type: ignore
+        values = eval_hist["{}-mean".format(self.eval_name)]  # type: List[float]
+        best_iteration = len(values)  # type: int
 
         trial.set_user_attr("best_iteration", best_iteration)
 
-        value = eval_hist["{}-mean".format(self.eval_name)][-1]  # type: float
+        value = values[-1]  # type: float
         is_best_trial = True  # type: bool
 
         try:
