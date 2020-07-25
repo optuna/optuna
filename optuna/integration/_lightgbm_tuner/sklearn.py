@@ -1,4 +1,6 @@
 import copy
+import pathlib
+import pickle
 import time
 
 from typing import Any
@@ -248,6 +250,8 @@ class _Objective(object):
         eval_name: str,
         is_higher_better: bool,
         n_samples: int,
+        train_dir: pathlib.Path,
+        weights: np.ndarray,
         callbacks: Optional[List[Callable]] = None,
         cv: Optional[CVType] = None,
         early_stopping_rounds: Optional[int] = None,
@@ -272,6 +276,8 @@ class _Objective(object):
         self.n_samples = n_samples
         self.params = params
         self.param_distributions = param_distributions
+        self.train_dir = train_dir
+        self.weights = weights
 
     def __call__(self, trial: trial_module.Trial) -> float:
         params = self._get_params(trial)  # type: Dict[str, Any]
@@ -293,25 +299,21 @@ class _Objective(object):
 
         trial.set_user_attr("best_iteration", best_iteration)
 
-        value = values[-1]  # type: float
-        is_best_trial = True  # type: bool
+        booster_path = self.train_dir / "trial_{}.pkl".format(trial.number)  # type: pathlib.Path
 
-        try:
-            is_best_trial = (value < trial.study.best_value) ^ self.is_higher_better
-        except ValueError:
-            pass
+        boosters = callbacks[0].boosters_  # type: ignore
 
-        if is_best_trial:
-            boosters = callbacks[0].boosters_  # type: ignore
-            representations = []  # type: List[str]
+        for b in boosters:
+            b.best_iteration = best_iteration
 
-            for b in boosters:
-                b.free_dataset()
-                representations.append(b.model_to_string())
+            b.free_dataset()
 
-            trial.study.set_user_attr("representations", representations)
+        booster = _VotingBooster(boosters, weights=self.weights)  # type: _VotingBooster
 
-        return value
+        with booster_path.open("wb") as f:
+            pickle.dump(booster, f)
+
+        return values[-1]
 
     def _get_callbacks(self, trial: trial_module.Trial) -> List[Callable]:
         extraction_callback = _LightGBMExtractionCallback()  # type: _LightGBMExtractionCallback
@@ -370,21 +372,6 @@ class _VotingBooster(object):
 
         self.boosters = boosters
         self.weights = weights
-
-    @classmethod
-    def from_representations(
-        cls, representations: List[str], weights: Optional[np.ndarray] = None
-    ) -> "_VotingBooster":
-        if lgb.__version__ >= "2.3":
-            boosters = [
-                lgb.Booster(model_str=model_str, silent=True) for model_str in representations
-            ]
-        else:
-            boosters = [
-                lgb.Booster(params={"model_str": model_str}) for model_str in representations
-            ]
-
-        return cls(boosters, weights=weights)
 
     def feature_importance(self, **kwargs: Any) -> np.ndarray:
         results = [b.feature_importance(**kwargs) for b in self.boosters]
@@ -457,6 +444,7 @@ class LGBMModel(lgb.LGBMModel):
         refit: bool = True,
         study: Optional[study_module.Study] = None,
         timeout: Optional[float] = None,
+        train_dir: Union[pathlib.Path, str] = "optgbm_info",
         **kwargs: Any
     ) -> None:
         super().__init__(
@@ -489,6 +477,7 @@ class LGBMModel(lgb.LGBMModel):
         self.refit = refit
         self.study = study
         self.timeout = timeout
+        self.train_dir = train_dir
 
     def _check_is_fitted(self) -> None:
         getattr(self, "n_features_")
@@ -512,13 +501,17 @@ class LGBMModel(lgb.LGBMModel):
 
         return random_state.randint(0, MAX_INT)
 
+    def _get_train_dir(self) -> pathlib.Path:
+        train_dir = str(self.train_dir)
+
+        return pathlib.Path(train_dir)
+
     def _make_booster(
         self,
         params: Dict[str, Any],
         dataset: lgb.Dataset,
-        representations: List[str],
         num_boost_round: int,
-        folds: List[Tuple],
+        booster_path: pathlib.Path,
         fobj: Optional[Callable] = None,
         feature_name: Union[List[str], str] = "auto",
         categorical_feature: Union[List[int], List[str], str] = "auto",
@@ -541,15 +534,8 @@ class LGBMModel(lgb.LGBMModel):
 
             return booster
 
-        sample_weight = dataset.get_weight()
-        weights = np.array([np.sum(sample_weight[train]) for train, _ in folds])
-
-        booster = _VotingBooster.from_representations(representations, weights=weights)
-
-        boosters = booster.boosters
-
-        for b in boosters:
-            b.best_iteration = num_boost_round
+        with booster_path.open("rb") as f:
+            booster = pickle.load(f)
 
         return booster
 
@@ -659,6 +645,7 @@ class LGBMModel(lgb.LGBMModel):
             "refit",
             "study",
             "timeout",
+            "train_dir",
         ):
             params.pop(attr, None)
 
@@ -725,12 +712,21 @@ class LGBMModel(lgb.LGBMModel):
             categorical_feature=categorical_feature,
         )
 
+        train_dir = self._get_train_dir()
+        weights = np.array(
+            [np.sum(sample_weight[train]) for train, _ in cv.split(X, y, groups=groups)]
+        )
+
+        train_dir.mkdir(exist_ok=True, parents=True)
+
         objective = _Objective(
             params,
             dataset,
             eval_name,
             is_higher_better,
             n_samples,
+            train_dir,
+            weights,
             callbacks=callbacks,
             cv=cv,
             early_stopping_rounds=early_stopping_rounds,
@@ -764,8 +760,7 @@ class LGBMModel(lgb.LGBMModel):
             "The best_iteration is {}.".format(elapsed_time, best_iteration)
         )
 
-        folds = cv.split(X, y, groups=groups)
-        representations = self.study_.user_attrs["representations"]
+        booster_path = train_dir / "trial_{}.pkl".format(self.study_.best_trial.number)
 
         logger.info("Making booster(s)...")
 
@@ -774,9 +769,8 @@ class LGBMModel(lgb.LGBMModel):
         self._Booster = self._make_booster(
             self.best_params_,
             dataset,
-            representations,
             best_iteration,
-            folds,
+            booster_path,
             fobj=fobj,
             feature_name=feature_name,
             categorical_feature=categorical_feature,
@@ -922,6 +916,9 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             trials until it receives a termination signal such as Ctrl+C or
             SIGTERM. This trades off runtime vs quality of the solution.
 
+        train_dir
+            Directory for storing the files generated during training.
+
         **kwargs:
             Other parameters for the model. See
             http:/lightgbm.readthedocs.io/en/latest/Parameters.html for more
@@ -963,7 +960,8 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
     Examples:
         >>> import optuna.integration.lightgbm as lgb
         >>> from sklearn.datasets import load_iris
-        >>> clf = lgb.LGBMClassifier(random_state=0)
+        >>> tmp_path = getfixture("tmp_path")  # noqa
+        >>> clf = lgb.LGBMClassifier(random_state=0, train_dir=tmp_path)
         >>> X, y = load_iris(return_X_y=True)
         >>> clf.fit(X, y)
         LGBMClassifier(...)
@@ -1232,6 +1230,9 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
             trials until it receives a termination signal such as Ctrl+C or
             SIGTERM. This trades off runtime vs quality of the solution.
 
+        train_dir
+        Directory for storing the files generated during training.
+
         **kwargs:
             Other parameters for the model. See
             http:/lightgbm.readthedocs.io/en/latest/Parameters.html for more
@@ -1270,7 +1271,8 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
     Examples:
         >>> import optuna.integration.lightgbm as lgb
         >>> from sklearn.datasets import load_boston
-        >>> reg = lgb.LGBMRegressor(random_state=0)
+        >>> tmp_path = getfixture("tmp_path")  # noqa
+        >>> reg = lgb.LGBMRegressor(random_state=0, train_dir=tmp_path)
         >>> X, y = load_boston(return_X_y=True)
         >>> reg.fit(X, y)
         LGBMRegressor(...)
