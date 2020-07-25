@@ -6,7 +6,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
-from unittest.mock import Mock
+from unittest.mock import Mock, PropertyMock
 from unittest.mock import patch
 
 import numpy as np
@@ -26,16 +26,12 @@ if optuna.type_checking.TYPE_CHECKING:
     from optuna.trial import Trial  # NOQA
 
 
-class PatchTrial:
-    class PatchSystemAttr:
-        def __init__(self, weights: Callable[[int], np.ndarray]) -> None:
-            self._weights = weights
+class MockSystemAttr:
+    def __init__(self) -> None:
+        self.value = {}  # type: Dict[str, dict]
 
-        def __getitem__(self, _: str) -> dict:
-            return {"weights_below": self._weights}
-
-    def __init__(self, weights: Callable[[int], np.ndarray] = lambda x: np.ones(x)) -> None:
-        self.system_attrs = self.PatchSystemAttr(weights)
+    def set_trial_system_attr(self, _: int, key: str, value: dict) -> None:
+        self.value[key] = value
 
 
 def test_sample_relative() -> None:
@@ -64,21 +60,45 @@ def test_sample_independent_seed_fix() -> None:
     # Prepare a trial and a sample for later checks.
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) == suggestion
 
     sampler = MOTPEMultiObjectiveSampler(seed=1)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
@@ -92,21 +112,45 @@ def test_sample_independent_prior() -> None:
     # Prepare a trial and a sample for later checks.
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     sampler = MOTPEMultiObjectiveSampler(consider_prior=False, seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = MOTPEMultiObjectiveSampler(prior_weight=0.5, seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
@@ -118,26 +162,44 @@ def test_sample_independent_n_startup_trial() -> None:
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(n_startup_trials=16, seed=0)
+    attrs = MockSystemAttr()
     with patch.object(
         study._storage, "get_all_trials", return_value=past_trials[:15]
-    ), patch.object(study._storage, "set_trial_system_attr", return_value=None), patch.object(
-        study._storage, "get_trial", return_value=PatchTrial()
     ), patch.object(
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(
+        study._storage, "get_trial", return_value=trial
+    ), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
         optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
         "sample_independent",
         return_value=1.0,
     ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         sampler.sample_independent(study, trial, "param-a", dist)
     assert sample_method.call_count == 1
 
     sampler = MOTPEMultiObjectiveSampler(n_startup_trials=16, seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()), patch.object(
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
         optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
         "sample_independent",
         return_value=1.0,
     ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         sampler.sample_independent(study, trial, "param-a", dist)
     assert sample_method.call_count == 0
 
@@ -151,29 +213,77 @@ def test_sample_independent_misc_arguments() -> None:
     # Prepare a trial and a sample for later checks.
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     # Test misc. parameters.
     sampler = MOTPEMultiObjectiveSampler(n_ehvi_candidates=13, seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = MOTPEMultiObjectiveSampler(gamma=lambda _1, _2: 5, seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     weights = lambda i: np.asarray([i * 0.05 for _ in range(i)])
     sampler = MOTPEMultiObjectiveSampler(weights=weights, seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
@@ -186,9 +296,21 @@ def test_sample_independent_uniform_distributions() -> None:
     uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
     assert 1.0 <= uniform_suggestion < 100.0
 
@@ -203,9 +325,21 @@ def test_sample_independent_log_uniform_distributions() -> None:
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
 
     # Test sample from log-uniform is different from uniform.
@@ -215,9 +349,21 @@ def test_sample_independent_log_uniform_distributions() -> None:
     ]
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         loguniform_suggestion = sampler.sample_independent(study, trial, "param-a", log_dist)
     assert 1.0 <= loguniform_suggestion < 100.0
     assert uniform_suggestion != loguniform_suggestion
@@ -243,9 +389,21 @@ def test_sample_independent_disrete_uniform_distributions() -> None:
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         discrete_uniform_suggestion = sampler.sample_independent(
             study, trial, "param-a", disc_dist
         )
@@ -274,9 +432,21 @@ def test_sample_independent_categorical_distributions() -> None:
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         categorical_suggestion = sampler.sample_independent(study, trial, "param-a", cat_dist)
     assert categorical_suggestion in categories
 
@@ -300,9 +470,21 @@ def test_sample_int_uniform_distributions() -> None:
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         int_suggestion = sampler.sample_independent(study, trial, "param-a", int_dist)
     assert 1 <= int_suggestion <= 100
     assert isinstance(int_suggestion, int)
@@ -327,9 +509,21 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(32, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         all_success_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     # Test unsuccessful trials are handled differently.
@@ -341,9 +535,21 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
 
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(32, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
+    attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", return_value=None
-    ), patch.object(study._storage, "get_trial", return_value=PatchTrial()):
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
         partial_unsuccessful_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
     assert partial_unsuccessful_suggestion != all_success_suggestion
 
@@ -369,12 +575,22 @@ def test_sample_independent_ignored_states() -> None:
             2, frozen_trial_factory(32, [0, 0])
         )
         sampler = MOTPEMultiObjectiveSampler(seed=0)
-        with patch.object(
-            study._storage, "get_all_trials", return_value=past_trials
-        ), patch.object(study._storage, "set_trial_system_attr", return_value=None), patch.object(
-            study._storage, "get_trial", return_value=PatchTrial()
-        ):
-            suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
+    attrs = MockSystemAttr()
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2, patch.object(
+        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
+        "sample_independent",
+        return_value=1.0,
+    ) as sample_method:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
+        suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
 
     assert len(set(suggestions)) == 1
 

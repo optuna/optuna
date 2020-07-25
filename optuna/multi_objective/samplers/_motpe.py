@@ -55,10 +55,10 @@ def weights_by_contributions_factory(
     else:
         loss_vals = loss_vals.tolist()
         hv = hypervolume(loss_vals).compute(reference_point)
-        contributions = [
+        contributions = np.asarray([
             hv - hypervolume(loss_vals[:i] + loss_vals[i + 1 :]).compute(reference_point)
             for i in range(len(loss_vals))
-        ]
+        ])
         weights = np.clip(contributions / np.max(contributions), 0, 1)
         return lambda _: weights
 
@@ -120,8 +120,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             Seed for random number generator.
 
     The original paper utilizes Latin hypercube sampling (LHS) for initialization. The following
-    code is an example of initializing MOTPE using LHS. Here we use
-    `pyDOE2 <https://pypi.org/project/pyDOE2/>`_ for LHS.
+    code is an example of initializing MOTPE using LHS. Here
+    `pyDOE2 <https://pypi.org/project/pyDOE2/>`_ is used for LHS.
 
     Example:
 
@@ -143,7 +143,6 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 sampler = optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler(
                     n_startup_trials=n_startup_trials,
                     n_ehvi_candidates=24,
-                    consider_endpoints=True,
                     seed=seed
                 )
                 # NOTE: Sampled vectors are normalized. Denormalization is needed when a search
@@ -163,7 +162,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         consider_prior: bool = True,
         prior_weight: float = 1.0,
         consider_magic_clip: bool = True,
-        consider_endpoints: bool = False,
+        consider_endpoints: bool = True,
         n_startup_trials: int = 10,
         n_ehvi_candidates: int = 24,
         gamma: Callable[[int, int], int] = default_gamma,
@@ -305,9 +304,9 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 worst_point = np.max(rank_i_loss_vals, axis=0)
                 reference_point = np.maximum(
                     np.maximum(
-                        1.1 * worst_point, 0.9 * worst_point  # case: value > 0  # case: value < 0
+                        1.1 * worst_point, 0.9 * worst_point  # case: value > 0, case: value < 0
                     ),
-                    np.full(len(worst_point), EPS),  # case: value = 0
+                    np.full(len(worst_point), EPS),  # case: value == 0
                 )
                 selected_indices = _solve_hssp(
                     rank_i_loss_vals, rank_i_indices, subset_size, reference_point
@@ -319,21 +318,23 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             indices_above = np.setdiff1d(indices, indices_below)
 
             if self._weights is None:
-                # The Default weighting algorithm dynamically assigns weights for the below
-                # observations based on the hypervolume contributions whereas weights for the above
-                # observations are set to 1.0.
+                worst_point = np.max(loss_vals[indices_below], axis=0)
+                reference_point = np.maximum(
+                    np.maximum(
+                        1.1 * worst_point, 0.9 * worst_point  # case: value > 0, case: value < 0
+                    ),
+                    np.full(len(worst_point), EPS),  # case: value == 0
+                )
                 weights_below = weights_by_contributions_factory(
                     loss_vals[indices_below], reference_point
                 )
-                weights_above = weights_by_ones
                 study._storage.set_trial_system_attr(
                     trial._trial_id,
                     _SPLITCACHE_KEY,
                     {
                         "indices_below": indices_below,
                         "weights_below": weights_below,
-                        "indices_above": indices_above,
-                        "weights_above": weights_above,
+                        "indices_above": indices_above
                     },
                 )
             else:
