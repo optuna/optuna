@@ -141,7 +141,7 @@ class CmaEsSampler(BaseSampler):
         *,
         consider_pruned_trials: bool = False,
         restart_strategy: Optional[str] = None,
-        inc_popsize: int = 2,
+        inc_popsize: int = 2
     ) -> None:
 
         self._x0 = x0
@@ -442,7 +442,9 @@ def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, Any]:
     return x0
 
 
-def _initialize_x0_uniformly(rng: np.random.RandomState, search_space: Dict[str, BaseDistribution]) -> Dict[str, Any]:
+def _initialize_x0_uniformly(
+    rng: np.random.RandomState, search_space: Dict[str, BaseDistribution]
+) -> Dict[str, Any]:
     x0 = {}
     for name, distribution in search_space.items():
         if isinstance(distribution, optuna.distributions.UniformDistribution):
