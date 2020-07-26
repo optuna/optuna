@@ -287,6 +287,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         else:
             nondomination_ranks = _calculate_nondomination_rank(loss_vals)
             n_below = self._gamma(len(config_vals), sum(nondomination_ranks == 0))
+            assert 0 <= n_below <= len(loss_vals)
+
             indices = np.array(range(len(loss_vals)))
             indices_below = np.array([], dtype=int)
 
@@ -312,22 +314,24 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                     rank_i_loss_vals, rank_i_indices, subset_size, reference_point
                 )
                 indices_below = np.append(indices_below, selected_indices)
-
             assert len(indices_below) == n_below
 
             indices_above = np.setdiff1d(indices, indices_below)
 
             if self._weights is None:
-                worst_point = np.max(loss_vals[indices_below], axis=0)
-                reference_point = np.maximum(
-                    np.maximum(
-                        1.1 * worst_point, 0.9 * worst_point  # case: value > 0, case: value < 0
-                    ),
-                    np.full(len(worst_point), EPS),  # case: value == 0
-                )
-                weights_below = weights_by_contributions_factory(
-                    loss_vals[indices_below], reference_point
-                )
+                if len(indices_below) > 0:
+                    loss_vals_below = loss_vals[indices_below]
+                    worst_point = np.max(loss_vals_below, axis=0)
+                    reference_point = np.maximum(
+                        np.maximum(
+                            1.1 * worst_point, 0.9 * worst_point  # case: value > 0, case: value < 0
+                        ),
+                        np.full(len(worst_point), EPS),  # case: value == 0
+                    )
+                else:
+                    loss_vals_below = np.asarray([])
+                    reference_point = np.asarray([])
+                weights_below = weights_by_contributions_factory(loss_vals_below, reference_point)
                 study._storage.set_trial_system_attr(
                     trial._trial_id,
                     _SPLITCACHE_KEY,
