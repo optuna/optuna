@@ -20,11 +20,7 @@ from optuna.trial import TrialState
 
 _logger = logging.get_logger(__name__)
 
-# Minimum value of sigma0 to avoid ZeroDivisionError.
-_MIN_SIGMA0 = 1e-10
-
-# Tiny value that avoids to sample upper bound of the search space.
-_UPPER_BOUND_CAP = 1e-10
+_EPS = 1e-10
 
 
 class CmaEsSampler(BaseSampler):
@@ -275,7 +271,9 @@ class CmaEsSampler(BaseSampler):
             sigma0 = _initialize_sigma0(search_space)
         else:
             sigma0 = self._sigma0
-        sigma0 = max(sigma0, _MIN_SIGMA0)
+
+        # Avoid ZeroDivisionError in cmaes.
+        sigma0 = max(sigma0, _EPS)
         mean = np.array([self._x0[k] for k in ordered_keys], dtype=float)
         bounds = _get_search_space_bound(ordered_keys, search_space)
         n_dimension = len(ordered_keys)
@@ -434,9 +432,7 @@ def _get_search_space_bound(
             ),
         ):
             # Optuna cannot accept the value which equals to upper bound.
-            bounds.append(
-                [_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high) - _UPPER_BOUND_CAP]
-            )
+            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high) - _EPS])
         else:
             raise NotImplementedError("The distribution {} is not implemented.".format(dist))
     return np.array(bounds, dtype=float)

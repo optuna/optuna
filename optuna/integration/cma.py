@@ -35,11 +35,7 @@ if type_checking.TYPE_CHECKING:
 
 _logger = logging.get_logger(__name__)
 
-# Minimum value of sigma0 to avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
-_MIN_SIGMA0 = 1e-10
-
-# Tiny value that avoids to sample upper bound of the search space.
-_UPPER_BOUND_CAP = 1e-10
+_EPS = 1e-10
 
 
 class PyCmaSampler(BaseSampler):
@@ -217,7 +213,8 @@ class PyCmaSampler(BaseSampler):
             sigma0 = self._initialize_sigma0(search_space)
         else:
             sigma0 = self._sigma0
-        sigma0 = max(sigma0, _MIN_SIGMA0)
+        # Avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
+        sigma0 = max(sigma0, _EPS)
 
         optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds, self._cma_opts)
         trials = study.trials
@@ -313,17 +310,17 @@ class _Optimizer(object):
                 highs.append(len(dist.choices) - 0.5)
             elif isinstance(dist, UniformDistribution) or isinstance(dist, LogUniformDistribution):
                 lows.append(self._to_cma_params(search_space, param_name, dist.low))
-                highs.append(self._to_cma_params(search_space, param_name, dist.high) - _UPPER_BOUND_CAP)
+                highs.append(self._to_cma_params(search_space, param_name, dist.high) - _EPS)
             elif isinstance(dist, DiscreteUniformDistribution):
                 r = dist.high - dist.low
                 lows.append(0 - 0.5 * dist.q)
-                highs.append(r + 0.5 * dist.q - _UPPER_BOUND_CAP)
+                highs.append(r + 0.5 * dist.q - _EPS)
             elif isinstance(dist, IntUniformDistribution):
                 lows.append(dist.low - 0.5 * dist.step)
-                highs.append(dist.high + 0.5 * dist.step - _UPPER_BOUND_CAP)
+                highs.append(dist.high + 0.5 * dist.step - _EPS)
             elif isinstance(dist, IntLogUniformDistribution):
                 lows.append(self._to_cma_params(search_space, param_name, dist.low - 0.5))
-                highs.append(self._to_cma_params(search_space, param_name, dist.high + 0.5 - _UPPER_BOUND_CAP))
+                highs.append(self._to_cma_params(search_space, param_name, dist.high + 0.5) - _EPS)
             else:
                 raise NotImplementedError("The distribution {} is not implemented.".format(dist))
 
