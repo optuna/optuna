@@ -294,7 +294,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
             # Nondomination rank-based selection
             i = 0
-            while len(indices_below) + sum(nondomination_ranks == i) < n_below:
+            while len(indices_below) + sum(nondomination_ranks == i) <= n_below:
                 indices_below = np.append(indices_below, indices[nondomination_ranks == i])
                 i += 1
 
