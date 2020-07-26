@@ -23,6 +23,9 @@ _logger = logging.get_logger(__name__)
 # Minimum value of sigma0 to avoid ZeroDivisionError.
 _MIN_SIGMA0 = 1e-10
 
+# Tiny value that avoids to sample upper bound of the search space.
+_UPPER_BOUND_CAP = 1e-10
+
 
 class CmaEsSampler(BaseSampler):
     """A Sampler using CMA-ES algorithm.
@@ -430,7 +433,10 @@ def _get_search_space_bound(
                 optuna.distributions.IntLogUniformDistribution,
             ),
         ):
-            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high)])
+            # Optuna cannot accept the value which equals to upper bound.
+            bounds.append(
+                [_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high) - _UPPER_BOUND_CAP]
+            )
         else:
             raise NotImplementedError("The distribution {} is not implemented.".format(dist))
     return np.array(bounds, dtype=float)
