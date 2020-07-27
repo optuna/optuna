@@ -1,24 +1,24 @@
 import datetime
+from typing import Optional
 
 from optuna import distributions
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
-from optuna.trial._util import _adjust_discrete_uniform_high
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
-    from optuna.study import Study  # NOQA
-
-    FloatingPointDistributionType = Union[
-        distributions.UniformDistribution, distributions.LogUniformDistribution
-    ]
 
 
 class FixedTrial(BaseTrial):
@@ -68,55 +68,82 @@ class FixedTrial(BaseTrial):
         self._datetime_start = datetime.datetime.now()
         self._number = number
 
-    def suggest_float(self, name, low, high, *, log=False, step=None):
-        # type: (str, float, float, bool, Optional[float]) -> float
+    def suggest_float(
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: Optional[float] = None,
+        log: bool = False
+    ) -> float:
 
         if step is not None:
             if log:
-                raise NotImplementedError(
-                    "The parameter `step` is not supported when `log` is True."
-                )
+                raise ValueError("The parameter `step` is not supported when `log` is True.")
             else:
-                return self._suggest(
-                    name, distributions.DiscreteUniformDistribution(low=low, high=high, q=step)
-                )
+                return self._suggest(name, DiscreteUniformDistribution(low=low, high=high, q=step))
         else:
             if log:
-                return self._suggest(
-                    name, distributions.LogUniformDistribution(low=low, high=high)
-                )
+                return self._suggest(name, LogUniformDistribution(low=low, high=high))
             else:
-                return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
+                return self._suggest(name, UniformDistribution(low=low, high=high))
 
     def suggest_uniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        return self._suggest(name, distributions.UniformDistribution(low=low, high=high))
+        return self._suggest(name, UniformDistribution(low=low, high=high))
 
     def suggest_loguniform(self, name, low, high):
         # type: (str, float, float) -> float
 
-        return self._suggest(name, distributions.LogUniformDistribution(low=low, high=high))
+        return self._suggest(name, LogUniformDistribution(low=low, high=high))
 
-    def suggest_discrete_uniform(self, name, low, high, q):
-        # type: (str, float, float, float) -> float
-
-        high = _adjust_discrete_uniform_high(name, low, high, q)
-        discrete = distributions.DiscreteUniformDistribution(low=low, high=high, q=q)
+    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
+        discrete = DiscreteUniformDistribution(low=low, high=high, q=q)
         return self._suggest(name, discrete)
 
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
-        sample = self._suggest(
-            name, distributions.IntUniformDistribution(low=low, high=high, step=step)
-        )
-        return int(sample)
+    def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
+        if step != 1:
+            if log:
+                raise ValueError(
+                    "The parameter `step != 1` is not supported when `log` is True."
+                    "The specified `step` is {}.".format(step)
+                )
+            else:
+                distribution = IntUniformDistribution(
+                    low=low, high=high, step=step
+                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+        else:
+            if log:
+                distribution = IntLogUniformDistribution(low=low, high=high)
+            else:
+                distribution = IntUniformDistribution(low=low, high=high, step=step)
+        return int(self._suggest(name, distribution))
 
     def suggest_categorical(self, name, choices):
         # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
 
-        choices = tuple(choices)
-        return self._suggest(name, distributions.CategoricalDistribution(choices=choices))
+        return self._suggest(name, CategoricalDistribution(choices=choices))
+
+    def report(self, value, step):
+        # type: (float, int) -> None
+
+        pass
+
+    def should_prune(self) -> bool:
+
+        return False
+
+    def set_user_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self._user_attrs[key] = value
+
+    def set_system_attr(self, key, value):
+        # type: (str, Any) -> None
+
+        self._system_attrs[key] = value
 
     def _suggest(self, name, distribution):
         # type: (str, BaseDistribution) -> Any
@@ -142,26 +169,6 @@ class FixedTrial(BaseTrial):
         self._distributions[name] = distribution
 
         return value
-
-    def report(self, value, step):
-        # type: (float, int) -> None
-
-        pass
-
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
-
-        return False
-
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._user_attrs[key] = value
-
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._system_attrs[key] = value
 
     @property
     def params(self):

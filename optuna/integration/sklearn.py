@@ -8,34 +8,10 @@ from time import time
 import numpy as np
 import scipy as sp
 
-try:
-    import sklearn
-    from sklearn.base import BaseEstimator
-    from sklearn.base import clone
-    from sklearn.base import is_classifier
-    from sklearn.metrics.scorer import check_scoring
-    from sklearn.model_selection import BaseCrossValidator  # NOQA
-    from sklearn.model_selection import check_cv
-    from sklearn.model_selection import cross_validate
-    from sklearn.utils import check_random_state
-    from sklearn.utils.metaestimators import _safe_split
-
-    if sklearn.__version__ >= "0.22":
-        from sklearn.utils import _safe_indexing as sklearn_safe_indexing
-    else:
-        from sklearn.utils import safe_indexing as sklearn_safe_indexing
-    from sklearn.utils.validation import check_is_fitted
-
-    _available = True
-
-except ImportError as e:
-    BaseEstimator = object
-
-    _import_error = e
-    _available = False
-
+from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna import distributions  # NOQA
-from optuna import exceptions  # NOQA
+from optuna import TrialPruned  # NOQA
 from optuna import logging  # NOQA
 from optuna import samplers  # NOQA
 from optuna import study as study_module  # NOQA
@@ -62,6 +38,28 @@ if type_checking.TYPE_CHECKING:
     IterableType = Union[List, pd.DataFrame, np.ndarray, pd.Series, spmatrix, None]
     IndexableType = Union[Iterable, None]
 
+with try_import() as _imports:
+    import sklearn
+    from sklearn.base import BaseEstimator
+    from sklearn.base import clone
+    from sklearn.base import is_classifier
+    from sklearn.metrics.scorer import check_scoring
+    from sklearn.model_selection import BaseCrossValidator  # NOQA
+    from sklearn.model_selection import check_cv
+    from sklearn.model_selection import cross_validate
+    from sklearn.utils import check_random_state
+    from sklearn.utils.metaestimators import _safe_split
+
+    if sklearn.__version__ >= "0.22":
+        from sklearn.utils import _safe_indexing as sklearn_safe_indexing
+    else:
+        from sklearn.utils import safe_indexing as sklearn_safe_indexing
+    from sklearn.utils.validation import check_is_fitted
+
+if not _imports.is_successful():
+    BaseEstimator = object  # NOQA
+
+
 _logger = logging.get_logger(__name__)
 
 
@@ -87,19 +85,6 @@ def _check_fit_params(
             fit_params_validated[key] = _make_indexable(value)
             fit_params_validated[key] = _safe_indexing(fit_params_validated[key], indices)
     return fit_params_validated
-
-
-def _check_sklearn_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "scikit-learn is not available. Please install scikit-learn to "
-            "use this feature. scikit-learn can be installed by executing "
-            "`$ pip install scikit-learn>=0.19.0`. For further information, "
-            "please refer to the installation guide of scikit-learn. (The "
-            "actual import error is as follows: " + str(_import_error) + ")"
-        )
 
 
 # NOTE Original implementation:
@@ -314,7 +299,7 @@ class _Objective(object):
             if trial.should_prune():
                 self._store_scores(trial, scores)
 
-                raise exceptions.TrialPruned("trial was pruned at iteration {}.".format(step))
+                raise TrialPruned("trial was pruned at iteration {}.".format(step))
 
         return scores
 
@@ -389,12 +374,9 @@ class _Objective(object):
             trial.set_user_attr("std_{}".format(name), np.nanstd(array))
 
 
+@experimental("0.17.0")
 class OptunaSearchCV(BaseEstimator):
     """Hyperparameter search with cross-validation.
-
-    .. warning::
-
-        This feature is experimental. The interface may be changed in the future.
 
     Args:
         estimator:
@@ -740,7 +722,7 @@ class OptunaSearchCV(BaseEstimator):
     ):
         # type: (...) -> None
 
-        _check_sklearn_availability()
+        _imports.check()
 
         self.cv = cv
         self.enable_pruning = enable_pruning

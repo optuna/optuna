@@ -8,7 +8,7 @@ import pytest
 import optuna
 from optuna.cli import _Studies
 from optuna.exceptions import CLIUsageError
-from optuna.storages.base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
 from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
@@ -131,7 +131,7 @@ def test_study_set_user_attr_command():
             "optuna",
             "study",
             "set-user-attr",
-            "--study",
+            "--study-name",
             study_name,
             "--storage",
             storage_url,
@@ -235,7 +235,7 @@ def test_dashboard_command():
         command = [
             "optuna",
             "dashboard",
-            "--study",
+            "--study-name",
             study_name,
             "--out",
             tf_report.name,
@@ -263,7 +263,7 @@ def test_dashboard_command_with_allow_websocket_origin(origins):
         command = [
             "optuna",
             "dashboard",
-            "--study",
+            "--study-name",
             study_name,
             "--out",
             tf_report.name,
@@ -299,7 +299,7 @@ def test_study_optimize_command():
             "optuna",
             "study",
             "optimize",
-            "--study",
+            "--study-name",
             study_name,
             "--n-trials",
             "10",
@@ -326,7 +326,7 @@ def test_study_optimize_command_inconsistent_args():
     with tempfile.NamedTemporaryFile() as tf:
         db_url = "sqlite:///{}".format(tf.name)
 
-        # --study argument is missing.
+        # --study-name argument is missing.
         with pytest.raises(subprocess.CalledProcessError):
             subprocess.check_call(
                 [

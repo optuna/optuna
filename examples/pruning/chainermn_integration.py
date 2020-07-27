@@ -36,7 +36,7 @@ def create_model(trial):
 
     layers = []
     for i in range(n_layers):
-        n_units = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
+        n_units = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
         layers.append(L.Linear(None, n_units))
         layers.append(F.relu)
     layers.append(L.Linear(None, 10))

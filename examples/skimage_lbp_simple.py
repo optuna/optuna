@@ -14,7 +14,7 @@ We have following two ways to execute this example:
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize skimage_lbp_simple.py objective --n-trials=100 --study \
+    $ optuna study optimize skimage_lbp_simple.py objective --n-trials=100 --study-name \
       $STUDY_NAME --storage sqlite:///example.db
 
 """
@@ -104,7 +104,7 @@ def objective(trial):
     # We optimize parameters of local_binary_pattern function in skimage
     # and the choice of distance metric classes.
     P = trial.suggest_int("P", 1, 15)
-    R = trial.suggest_uniform("R", 1, 10)
+    R = trial.suggest_float("R", 1, 10)
     method = trial.suggest_categorical("method", ["default", "uniform"])
     metric = trial.suggest_categorical("metric", ["kl", "cos", "euc"])
 

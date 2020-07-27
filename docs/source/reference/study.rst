@@ -1,20 +1,14 @@
-.. module:: optuna.study
+optuna.study
+============
 
-Study
-=====
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autoclass:: Study
-    :members:
-    :inherited-members:
-    :exclude-members: system_attrs, set_system_attr, storage
-
-.. autofunction:: create_study
-.. autofunction:: load_study
-.. autofunction:: delete_study
-.. autofunction:: get_all_study_summaries
-
-.. autoclass:: StudyDirection
-    :members:
-
-.. autoclass:: StudySummary
-    :members:
+   optuna.study.Study
+   optuna.study.create_study
+   optuna.study.load_study
+   optuna.study.delete_study
+   optuna.study.get_all_study_summaries
+   optuna.study.StudyDirection
+   optuna.study.StudySummary

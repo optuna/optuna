@@ -14,7 +14,7 @@ We have the following two ways to execute this example:
 
 (2) Execute through CLI.
     $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize dask_ml_simple.py objective --n-trials=100 --study $STUDY_NAME \
+    $ optuna study optimize dask_ml_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
       --storage sqlite:///example.db
 
 """
@@ -35,7 +35,7 @@ def objective(trial):
     X, y = da.from_array(X, chunks=len(X) // 5), da.from_array(y, chunks=len(y) // 5)
 
     solver = trial.suggest_categorical("solver", ["admm", "gradient_descent", "proximal_grad"])
-    C = trial.suggest_uniform("C", 0.0, 1.0)
+    C = trial.suggest_float("C", 0.0, 1.0)
 
     if solver == "admm" or solver == "proximal_grad":
         penalty = trial.suggest_categorical("penalty", ["l1", "l2", "elastic_net"])
