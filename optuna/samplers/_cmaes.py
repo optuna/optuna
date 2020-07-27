@@ -426,13 +426,19 @@ def _get_search_space_bound(
             (
                 optuna.distributions.UniformDistribution,
                 optuna.distributions.LogUniformDistribution,
+            ),
+        ):
+            # These distributions cannot accept the value which equals to the upper bound.
+            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high) - _EPS])
+        elif isinstance(
+            dist,
+            (
                 optuna.distributions.DiscreteUniformDistribution,
                 optuna.distributions.IntUniformDistribution,
                 optuna.distributions.IntLogUniformDistribution,
             ),
         ):
-            # Optuna cannot accept the value which equals to upper bound.
-            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high) - _EPS])
+            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high)])
         else:
             raise NotImplementedError("The distribution {} is not implemented.".format(dist))
     return np.array(bounds, dtype=float)
