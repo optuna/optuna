@@ -26,6 +26,7 @@ from optuna.study import StudyDirection
 
 EPS = 1e-12
 _SPLITCACHE_KEY = "multi_objective:motpe:splitcache"
+_WEIGHTS_BELOW_KEY = "multi_objective:motpe:weighted_below"
 
 
 def default_gamma(x: int, _: int) -> int:
@@ -43,24 +44,6 @@ def default_gamma(x: int, _: int) -> int:
     """
 
     return max(0, int(np.ceil(0.10 * x)) - 1)
-
-
-def weights_by_contributions_factory(
-    loss_vals: np.ndarray, reference_point: np.ndarray
-) -> Callable[[int], np.ndarray]:
-    if len(loss_vals) == 0:
-        return lambda _: np.asarray([])
-    elif len(loss_vals) == 1:
-        return lambda _: np.asarray([1.0])
-    else:
-        loss_vals = loss_vals.tolist()
-        hv = hypervolume(loss_vals).compute(reference_point)
-        contributions = np.asarray([
-            hv - hypervolume(loss_vals[:i] + loss_vals[i + 1 :]).compute(reference_point)
-            for i in range(len(loss_vals))
-        ])
-        weights = np.clip(contributions / np.max(contributions), 0, 1)
-        return lambda _: weights
 
 
 def weights_by_ones(x: int) -> np.ndarray:
@@ -267,7 +250,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         loss_vals: List[List[float]],
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Split observations into observations for l(x) and observations for g(x) with the ratio
-           of gamma:1-gamma.
+           of gamma:1-gamma. Weights for l(x) are also calculated in this method.
 
             This splitting strategy consists of the following two steps:
                 1. Nondonation rank-based selection
@@ -275,21 +258,22 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
             Please refer to the original paper for more details.
         """
-        config_vals = np.asarray(config_vals)
-        loss_vals = np.asarray(loss_vals)
+        cvals = np.asarray(config_vals)
+        lvals = np.asarray(loss_vals)
 
         # Solving HSSP the number of variables times is a waste of time.
         # Therefore, we cache the result of splitting.
         if _SPLITCACHE_KEY in trial.system_attrs:
             split_cache = trial.system_attrs[_SPLITCACHE_KEY]
             indices_below = split_cache["indices_below"]
+            weights_below = split_cache["weights_below"]
             indices_above = split_cache["indices_above"]
         else:
-            nondomination_ranks = _calculate_nondomination_rank(loss_vals)
-            n_below = self._gamma(len(config_vals), sum(nondomination_ranks == 0))
-            assert 0 <= n_below <= len(loss_vals)
+            nondomination_ranks = _calculate_nondomination_rank(lvals)
+            n_below = self._gamma(len(cvals), sum(nondomination_ranks == 0))
+            assert 0 <= n_below <= len(lvals)
 
-            indices = np.array(range(len(loss_vals)))
+            indices = np.array(range(len(lvals)))
             indices_below = np.array([], dtype=int)
 
             # Nondomination rank-based selection
@@ -301,9 +285,9 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             # Hypervolume subset selection problem (HSSP)-based selection
             subset_size = n_below - len(indices_below)
             if subset_size > 0:
-                rank_i_loss_vals = loss_vals[nondomination_ranks == i]
+                rank_i_lvals = lvals[nondomination_ranks == i]
                 rank_i_indices = indices[nondomination_ranks == i]
-                worst_point = np.max(rank_i_loss_vals, axis=0)
+                worst_point = np.max(rank_i_lvals, axis=0)
                 reference_point = np.maximum(
                     np.maximum(
                         1.1 * worst_point, 0.9 * worst_point  # case: value > 0, case: value < 0
@@ -311,7 +295,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                     np.full(len(worst_point), EPS),  # case: value == 0
                 )
                 selected_indices = _solve_hssp(
-                    rank_i_loss_vals, rank_i_indices, subset_size, reference_point
+                    rank_i_lvals, rank_i_indices, subset_size, reference_point
                 )
                 indices_below = np.append(indices_below, selected_indices)
             assert len(indices_below) == n_below
@@ -319,26 +303,39 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             indices_above = np.setdiff1d(indices, indices_below)
 
             if self._weights is None:
-                if len(indices_below) > 0:
-                    loss_vals_below = loss_vals[indices_below]
-                    worst_point = np.max(loss_vals_below, axis=0)
+                if n_below == 0:
+                    weights_below = np.asarray([])
+                elif n_below == 1:
+                    weights_below = np.asarray([1.0])
+                else:
+                    lvals_below = lvals[indices_below].tolist()
+                    worst_point = np.max(lvals_below, axis=0)
                     reference_point = np.maximum(
                         np.maximum(
-                            1.1 * worst_point, 0.9 * worst_point  # case: value > 0, case: value < 0
+                            1.1 * worst_point,  # case: value > 0
+                            0.9 * worst_point,  # case: value < 0
                         ),
                         np.full(len(worst_point), EPS),  # case: value == 0
                     )
-                else:
-                    loss_vals_below = np.asarray([])
-                    reference_point = np.asarray([])
-                weights_below = weights_by_contributions_factory(loss_vals_below, reference_point)
+                    hv = hypervolume(lvals_below).compute(reference_point)
+                    contributions = np.asarray(
+                        [
+                            hv
+                            - hypervolume(lvals_below[:i] + lvals_below[i + 1 :]).compute(
+                                reference_point
+                            )
+                            for i in range(len(lvals))
+                        ]
+                    )
+                    weights_below = np.clip(contributions / np.max(contributions), 0, 1)
+
                 study._storage.set_trial_system_attr(
                     trial._trial_id,
                     _SPLITCACHE_KEY,
                     {
                         "indices_below": indices_below,
                         "weights_below": weights_below,
-                        "indices_above": indices_above
+                        "indices_above": indices_above,
                     },
                 )
             else:
@@ -348,9 +345,16 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                     {"indices_below": indices_below, "indices_above": indices_above},
                 )
 
-        below = config_vals[indices_below]
+        below = cvals[indices_below]
+        if self._weights is None:
+            weights_below = np.asarray(
+                [w for w, v in zip(weights_below, below) if v is not None], dtype=float
+            )
+            study._storage.set_trial_system_attr(
+                trial._trial_id, _WEIGHTS_BELOW_KEY, lambda _: weights_below
+            )
         below = np.asarray([v for v in below if v is not None], dtype=float)
-        above = config_vals[indices_above]
+        above = cvals[indices_above]
         above = np.asarray([v for v in above if v is not None], dtype=float)
         return below, above
 
@@ -450,8 +454,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         size = (self._n_ehvi_candidates,)
         if self._weights is None:
             weights_below = study._storage.get_trial(trial._trial_id).system_attrs[
-                _SPLITCACHE_KEY
-            ]["weights_below"]
+                _WEIGHTS_BELOW_KEY
+            ]
         else:
             weights_below = self._weights
         parzen_estimator_parameters_below = _ParzenEstimatorParameters(
@@ -520,8 +524,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
         if self._weights is None:
             weights_below = study._storage.get_trial(trial._trial_id).system_attrs[
-                _SPLITCACHE_KEY
-            ]["weights_below"](len(below))
+                _WEIGHTS_BELOW_KEY
+            ](len(below))
         else:
             weights_below = self._weights(len(below))
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
