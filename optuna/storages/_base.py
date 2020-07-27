@@ -4,13 +4,11 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+from optuna.distributions import BaseDistribution
 from optuna import study
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from optuna import distributions  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
 
 DEFAULT_STUDY_NAME_PREFIX = "no-name-"
 
@@ -299,9 +297,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     # Basic trial manipulation
 
     @abc.abstractmethod
-    def create_new_trial(
-        self, study_id: int, template_trial: Optional["FrozenTrial"] = None
-    ) -> int:
+    def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
         """Create and add a new trial to a study.
 
         The returned trial ID is unique among all current and deleted trials.
@@ -353,7 +349,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         trial_id: int,
         param_name: str,
         param_value_internal: float,
-        distribution: "distributions.BaseDistribution",
+        distribution: BaseDistribution,
     ) -> None:
         """Set a parameter to a trial.
 
@@ -507,7 +503,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     # Basic trial access
 
     @abc.abstractmethod
-    def get_trial(self, trial_id: int) -> "FrozenTrial":
+    def get_trial(self, trial_id: int) -> FrozenTrial:
         """Read a trial.
 
         Args:
@@ -524,7 +520,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List["FrozenTrial"]:
+    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
         """Read all trials in a study.
 
         Args:
@@ -562,7 +558,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    def get_best_trial(self, study_id: int) -> "FrozenTrial":
+    def get_best_trial(self, study_id: int) -> FrozenTrial:
         """Return the trial with the best value in a study.
 
         Args:
