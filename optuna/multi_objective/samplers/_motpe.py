@@ -46,9 +46,6 @@ def default_gamma(x: int, _: int) -> int:
     return max(0, int(np.ceil(0.10 * x)) - 1)
 
 
-def weights_by_ones(x: int) -> np.ndarray:
-    return np.ones(x)
-
 
 @experimental("2.0.0")
 class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
@@ -302,56 +299,19 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
             indices_above = np.setdiff1d(indices, indices_below)
 
+            attrs = {"indices_below": indices_below, "indices_above": indices_above}
             if self._weights is None:
-                if n_below == 0:
-                    weights_below = np.asarray([])
-                elif n_below == 1:
-                    weights_below = np.asarray([1.0])
-                else:
-                    lvals_below = lvals[indices_below].tolist()
-                    worst_point = np.max(lvals_below, axis=0)
-                    reference_point = np.maximum(
-                        np.maximum(
-                            1.1 * worst_point,  # case: value > 0
-                            0.9 * worst_point,  # case: value < 0
-                        ),
-                        np.full(len(worst_point), EPS),  # case: value == 0
-                    )
-                    hv = hypervolume(lvals_below).compute(reference_point)
-                    contributions = np.asarray(
-                        [
-                            hv
-                            - hypervolume(lvals_below[:i] + lvals_below[i + 1 :]).compute(
-                                reference_point
-                            )
-                            for i in range(len(lvals))
-                        ]
-                    )
-                    weights_below = np.clip(contributions / np.max(contributions), 0, 1)
-
-                study._storage.set_trial_system_attr(
-                    trial._trial_id,
-                    _SPLITCACHE_KEY,
-                    {
-                        "indices_below": indices_below,
-                        "weights_below": weights_below,
-                        "indices_above": indices_above,
-                    },
-                )
-            else:
-                study._storage.set_trial_system_attr(
-                    trial._trial_id,
-                    _SPLITCACHE_KEY,
-                    {"indices_below": indices_below, "indices_above": indices_above},
-                )
+                weights_below = _calculate_default_weights_below(lvals, indices_below)
+                attrs["weights_below"] = weights_below
+            study._storage.set_trial_system_attr(trial._trial_id, _SPLITCACHE_KEY, attrs)
 
         below = cvals[indices_below]
         if self._weights is None:
-            weights_below = np.asarray(
+            default_weights_below = lambda _: np.asarray(
                 [w for w, v in zip(weights_below, below) if v is not None], dtype=float
             )
             study._storage.set_trial_system_attr(
-                trial._trial_id, _WEIGHTS_BELOW_KEY, lambda _: weights_below
+                trial._trial_id, _WEIGHTS_BELOW_KEY, default_weights_below
             )
         below = np.asarray([v for v in below if v is not None], dtype=float)
         above = cvals[indices_above]
@@ -480,7 +440,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         )
 
         if self._weights is None:
-            weights_above = weights_by_ones
+            weights_above = _default_weights_above
         else:
             weights_above = self._weights  # type: ignore
         parzen_estimator_parameters_above = _ParzenEstimatorParameters(
@@ -537,7 +497,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         )
 
         if self._weights is None:
-            weights_above = weights_by_ones(len(above))
+            weights_above = _default_weights_above(len(above))
         else:
             weights_above = self._weights(len(above))
         counts_above = np.bincount(above, minlength=upper, weights=weights_above)
@@ -784,6 +744,41 @@ def _solve_hssp(
         hv_selected = hypervolume(selected_vecs).compute(reference_point)
 
     return np.asarray(selected_indices, dtype=int)
+
+
+def _calculate_default_weights_below(lvals: np.ndarray, indices_below: np.ndarray) -> np.ndarray:
+    # Calculate weights based on hypervolume contributions.
+    n_below = len(indices_below)
+    if n_below == 0:
+        return np.asarray([])
+    elif n_below == 1:
+        return np.asarray([1.0])
+    else:
+        lvals_below = lvals[indices_below].tolist()
+        worst_point = np.max(lvals_below, axis=0)
+        reference_point = np.maximum(
+            np.maximum(
+                1.1 * worst_point,  # case: value > 0
+                0.9 * worst_point,  # case: value < 0
+            ),
+            np.full(len(worst_point), EPS),  # case: value == 0
+        )
+        hv = hypervolume(lvals_below).compute(reference_point)
+        contributions = np.asarray(
+            [
+                hv
+                - hypervolume(lvals_below[:i] + lvals_below[i + 1 :]).compute(
+                    reference_point
+                )
+                for i in range(len(lvals))
+            ]
+        )
+        weights_below = np.clip(contributions / np.max(contributions), 0, 1)
+        return weights_below
+
+
+def _default_weights_above(x: int) -> np.ndarray:
+    return np.ones(x)
 
 
 def _get_observation_pairs(
