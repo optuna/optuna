@@ -88,5 +88,5 @@ if __name__ == "__main__":
     # Select parameters to visualize.
     plot_slice(study, params=["n_units_l0", "n_units_l1"]).show()
 
-    # Visualize plot importance
+    # Visualize parameter importances.
     plot_param_importances(study).show()
