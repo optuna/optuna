@@ -864,6 +864,8 @@ def create_study(
         predefined_search_space:
             A search space for relative sampling. If given, you can sample parameters
             by :meth:`~optuna.samplers.BaseSampler.sample_relative` from the first trial.
+            Note that this argument is intended to be used from third-party libraries
+            (e.g. optimization benchmarking frameworks).
 
     Returns:
         A :class:`~optuna.study.Study` object.
