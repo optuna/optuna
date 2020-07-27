@@ -1,4 +1,7 @@
 from datetime import datetime
+from typing import Any
+from typing import List
+from typing import Optional
 
 from sqlalchemy import asc
 from sqlalchemy import CheckConstraint
@@ -14,10 +17,6 @@ from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
-
-from typing import Any
-from typing import List
-from typing import Optional
 
 from optuna import distributions
 from optuna.study import StudyDirection

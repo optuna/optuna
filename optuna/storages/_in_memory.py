@@ -1,13 +1,12 @@
 import copy
 from datetime import datetime
 import threading
-import uuid
-
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+import uuid
 
 from optuna import distributions  # NOQA
 from optuna.exceptions import DuplicatedStudyError
