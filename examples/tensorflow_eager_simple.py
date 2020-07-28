@@ -5,16 +5,9 @@ In this example, we optimize the validation accuracy of hand-written digit recog
 Tensorflow and MNIST. We optimize the neural network architecture as well as the optimizer
 configuration.
 
-We have the following two ways to execute this example:
+The example can be executed as follows:
 
-(1) Execute this code directly.
     $ python tensorflow_eager_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize tensorflow_eager_simple.py objective --n-trials=100 \
-      --study-name $STUDY_NAME --storage sqlite:///example.db
 
 """
 

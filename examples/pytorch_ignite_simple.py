@@ -6,16 +6,10 @@ PyTorch Ignite and MNIST. We optimize the neural network architecture as well as
 regularization. As it is too time consuming to use the whole MNIST dataset, we here use a small
 subset of it.
 
-We have the following two ways to execute this example:
+The example can be executed as follows:
 
-(1) Execute this code directly. Pruning can be turned on and off with the `--pruning` argument.
     $ python pytorch_ignite_simple.py [--pruning]
 
-
-(2) Execute through CLI. Pruning is enabled automatically.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize pytorch_ignite_simple.py objective --n-trials=100 \
-      --study-name $STUDY_NAME --storage sqlite:///example.db
 """
 
 import argparse
