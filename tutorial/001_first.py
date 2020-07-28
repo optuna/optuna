@@ -53,9 +53,10 @@ print(study.best_params)
 # We can see that Optuna found the best ``x`` value is close to the optimal value of ``2``.
 
 ###################################################################################################
-# Note: When used to search for hyper-parameters in machine learning,
-# usually the objective function would return the loss or accuracy
-# of the model.
+# .. note::
+#     When used to search for hyper-parameters in machine learning,
+#     usually the objective function would return the loss or accuracy
+#     of the model.
 
 
 ###################################################################################################
