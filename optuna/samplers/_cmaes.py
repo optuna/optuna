@@ -118,7 +118,7 @@ class CmaEsSampler(BaseSampler):
             Please see also `inc_popsize` parameter.
 
             .. note::
-                Added in v2.0.0 as an experimental feature. The interface may change in newer
+                Added in v2.1.0 as an experimental feature. The interface may change in newer
                 versions without prior notice.
 
         inc_popsize:
@@ -314,7 +314,7 @@ class CmaEsSampler(BaseSampler):
     ) -> CMA:
         if self._n_restarts == 0 and self._x0 is None:
             self._x0 = _initialize_x0(search_space)
-        elif self._n_restarts > 0:
+        else:
             self._x0 = _initialize_x0_uniformly(self._cma_rng, search_space)
 
         if self._sigma0 is None:
