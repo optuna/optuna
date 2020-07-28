@@ -3,12 +3,14 @@ from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
+from cmaes import CMA
 import numpy as np
 import pytest
 
 import optuna
 from optuna.samplers._cmaes import _initialize_sigma0
 from optuna.samplers._cmaes import _initialize_x0
+from optuna.samplers._cmaes import _initialize_x0_uniformly
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
@@ -48,6 +50,7 @@ def test_init_cmaes_opts() -> None:
         assert np.allclose(actual_kwargs["bounds"], np.array([(-1, 1), (-1, 1)]))
         assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, 2 ** 32)
         assert actual_kwargs["n_max_resampling"] == 10 * 2
+        assert actual_kwargs["population_size"] is None
 
 
 def test_infer_relative_search_space_1d() -> None:
@@ -105,6 +108,9 @@ def test_initialize_x0_with_unsupported_distribution() -> None:
 
     with pytest.raises(NotImplementedError):
         _initialize_x0({"x": UnsupportedDistribution()})
+
+    with pytest.raises(NotImplementedError):
+        _initialize_x0_uniformly(np.random.RandomState(1), {"x": UnsupportedDistribution()})
 
 
 def test_initialize_sigma0_with_unsupported_distribution() -> None:
@@ -173,3 +179,45 @@ def _create_trials() -> List[FrozenTrial]:
         )
     )
     return trials
+
+
+def test_population_size_is_multiplied_when_enable_ipop() -> None:
+
+    inc_popsize = 2
+    sampler = optuna.samplers.CmaEsSampler(
+        x0={"x": 0, "y": 0},
+        sigma0=0.1,
+        seed=1,
+        n_startup_trials=1,
+        independent_sampler=DeterministicRelativeSampler({}, {}),
+        restart_strategy="ipop",
+        inc_popsize=inc_popsize,
+    )
+    study = optuna.create_study(sampler=sampler)
+
+    def objective(trial: optuna.Trial) -> float:
+        _ = trial.suggest_uniform("x", -1, 1)
+        _ = trial.suggest_uniform("y", -1, 1)
+        return 1.0
+
+    with patch("optuna.samplers._cmaes.CMA") as cma_class_mock, patch(
+            "optuna.samplers._cmaes.pickle"
+    ) as pickle_mock:
+        pickle_mock.dump.return_value = b"serialized object"
+
+        should_stop_mock = MagicMock()
+        should_stop_mock.return_value = True
+
+        cma_obj = CMA(
+            mean=np.array([-1, -1], dtype=float),
+            sigma=1.3,
+            bounds=np.array([[-1, 1], [-1, 1]], dtype=float),
+        )
+        cma_obj.should_stop = should_stop_mock
+        cma_class_mock.return_value = cma_obj
+
+        popsize = cma_obj.population_size
+        study.optimize(objective, n_trials=2 + popsize)
+        cma_obj.should_stop.assert_called_once()
+
+        assert cma_class_mock.call_args.kwargs["population_size"] == inc_popsize * popsize

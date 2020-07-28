@@ -58,10 +58,8 @@ class CmaEsSampler(BaseSampler):
 
         x0:
             A dictionary of an initial parameter values for CMA-ES. By default, the mean of ``low``
-            and ``high`` for each distribution is used.
-
-            When you enabled restart strategy, the initial point is sampled uniformly
-            within the search space domain even if you set this argument.
+            and ``high`` for each distribution is used. Note that when you enabled restart strategy,
+            x0 is sampled uniformly within the search space domain for each restart.
 
         sigma0:
             Initial standard deviation of CMA-ES. By default, ``sigma0`` is set to
@@ -312,10 +310,12 @@ class CmaEsSampler(BaseSampler):
         ordered_keys: List[str],
         population_size: int = None,
     ) -> CMA:
-        if self._n_restarts == 0 and self._x0 is None:
-            self._x0 = _initialize_x0(search_space)
+        if self._x0 is not None and self._n_restarts == 0:
+            x0 = self._x0
+        elif self._n_restarts == 0:
+            x0 = _initialize_x0(search_space)
         else:
-            self._x0 = _initialize_x0_uniformly(self._cma_rng, search_space)
+            x0 = _initialize_x0_uniformly(self._cma_rng, search_space)
 
         if self._sigma0 is None:
             sigma0 = _initialize_sigma0(search_space)
@@ -324,7 +324,7 @@ class CmaEsSampler(BaseSampler):
 
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
-        mean = np.array([self._x0[k] for k in ordered_keys], dtype=float)
+        mean = np.array([x0[k] for k in ordered_keys], dtype=float)
         bounds = _get_search_space_bound(ordered_keys, search_space)
         n_dimension = len(ordered_keys)
         return CMA(
