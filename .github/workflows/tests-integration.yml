@@ -57,10 +57,6 @@ jobs:
         elif [ ${{ matrix.python-version }} = 3.8 ]; then
           pytest tests/integration_tests \
             --ignore tests/integration_tests/test_fastai.py \
-            --ignore tests/integration_tests/test_keras.py \
-            --ignore tests/integration_tests/test_tensorboard.py \
-            --ignore tests/integration_tests/test_tensorflow.py \
-            --ignore tests/integration_tests/test_tfkeras.py \
             --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
         else
           # pytest cannot collect allennlp tests with allennlp==1.0.0.
