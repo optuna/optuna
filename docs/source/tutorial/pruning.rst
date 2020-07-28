@@ -84,6 +84,7 @@ To implement pruning mechanism in much simpler forms, Optuna provides integratio
 - PyTorch Ignite :class:`optuna.integration.PyTorchIgnitePruningHandler`
 - PyTorch Lightning :class:`optuna.integration.PyTorchLightningPruningCallback`
 - FastAI :class:`optuna.integration.FastAIPruningCallback`
+- AllenNLP :class:`optuna.integration.AllenNLPPruningCallback`
 
 For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
 (See also `example <https://github.com/optuna/optuna/blob/master/examples/pruning/xgboost_integration.py>`_ for the entire script.)

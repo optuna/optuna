@@ -35,8 +35,7 @@ if type_checking.TYPE_CHECKING:
 
 _logger = logging.get_logger(__name__)
 
-# Minimum value of sigma0 to avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
-_MIN_SIGMA0 = 1e-10
+_EPS = 1e-10
 
 
 class PyCmaSampler(BaseSampler):
@@ -214,7 +213,8 @@ class PyCmaSampler(BaseSampler):
             sigma0 = self._initialize_sigma0(search_space)
         else:
             sigma0 = self._sigma0
-        sigma0 = max(sigma0, _MIN_SIGMA0)
+        # Avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
+        sigma0 = max(sigma0, _EPS)
 
         optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds, self._cma_opts)
         trials = study.trials
@@ -310,7 +310,7 @@ class _Optimizer(object):
                 highs.append(len(dist.choices) - 0.5)
             elif isinstance(dist, UniformDistribution) or isinstance(dist, LogUniformDistribution):
                 lows.append(self._to_cma_params(search_space, param_name, dist.low))
-                highs.append(self._to_cma_params(search_space, param_name, dist.high))
+                highs.append(self._to_cma_params(search_space, param_name, dist.high) - _EPS)
             elif isinstance(dist, DiscreteUniformDistribution):
                 r = dist.high - dist.low
                 lows.append(0 - 0.5 * dist.q)
