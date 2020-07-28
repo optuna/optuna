@@ -50,8 +50,7 @@ study.optimize(objective, n_trials=100)
 print(study.best_params)
 
 ###################################################################################################
-# We can see that Optuna found the best ``x`` value ``2.001707713205946``,
-# which is close to the optimal value of ``2``.
+# We can see that Optuna found the best ``x`` value is close to the optimal value of ``2``.
 
 ###################################################################################################
 # Note: When used to search for hyper-parameters in machine learning,
@@ -92,7 +91,6 @@ study.best_trial
 
 
 ###################################################################################################
-# To get the best trial:
 # To get all trials:
 
 study.trials
