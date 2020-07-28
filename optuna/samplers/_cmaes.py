@@ -58,8 +58,8 @@ class CmaEsSampler(BaseSampler):
 
         x0:
             A dictionary of an initial parameter values for CMA-ES. By default, the mean of ``low``
-            and ``high`` for each distribution is used. Note that when you enabled restart strategy,
-            x0 is sampled uniformly within the search space domain for each restart.
+            and ``high`` for each distribution is used. Note that x0 is sampled uniformly within
+            the search space domain for each restart if you enabled.
 
         sigma0:
             Initial standard deviation of CMA-ES. By default, ``sigma0`` is set to
@@ -111,8 +111,9 @@ class CmaEsSampler(BaseSampler):
                 <https://github.com/optuna/optuna/pull/1229>`_ for the details.
 
         restart_strategy:
-            If given `None`, CMA-ES won't restart even if converges local minimum (default).
-            If given `"ipop"`, CMA-ES will restart with increasing population size.
+            Restarting strategy when converges to local minimum.
+            If given :obj:`None`, CMA-ES will not restart (default).
+            If given 'ipop', CMA-ES will restart with increasing population size.
             Please see also `inc_popsize` parameter.
 
             .. note::
@@ -137,7 +138,6 @@ class CmaEsSampler(BaseSampler):
         restart_strategy: Optional[str] = None,
         inc_popsize: int = 2
     ) -> None:
-
         self._x0 = x0
         self._sigma0 = sigma0
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
@@ -180,7 +180,6 @@ class CmaEsSampler(BaseSampler):
     def infer_relative_search_space(
         self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial",
     ) -> Dict[str, BaseDistribution]:
-
         search_space = {}  # type: Dict[str, BaseDistribution]
         for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
@@ -211,7 +210,6 @@ class CmaEsSampler(BaseSampler):
         trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
-
         if len(search_space) == 0:
             return {}
 
@@ -293,7 +291,6 @@ class CmaEsSampler(BaseSampler):
     def _restore_optimizer(
         self, completed_trials: "List[optuna.trial.FrozenTrial]",
     ) -> Optional[CMA]:
-
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             serialized_optimizer = trial.system_attrs.get(
@@ -343,7 +340,6 @@ class CmaEsSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-
         if self._warn_independent_sampling:
             complete_trials = self._get_trials(study)
             if len(complete_trials) >= self._n_startup_trials:
@@ -354,7 +350,6 @@ class CmaEsSampler(BaseSampler):
         )
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-
         self._logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
             "by using `{}` instead of `CmaEsSampler` "
@@ -387,7 +382,6 @@ class CmaEsSampler(BaseSampler):
 
 
 def _to_cma_param(distribution: BaseDistribution, optuna_param: Any) -> float:
-
     if isinstance(distribution, optuna.distributions.LogUniformDistribution):
         return math.log(optuna_param)
     if isinstance(distribution, optuna.distributions.IntUniformDistribution):
@@ -398,7 +392,6 @@ def _to_cma_param(distribution: BaseDistribution, optuna_param: Any) -> float:
 
 
 def _to_optuna_param(distribution: BaseDistribution, cma_param: float) -> Any:
-
     if isinstance(distribution, optuna.distributions.LogUniformDistribution):
         return math.exp(cma_param)
     if isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
@@ -467,7 +460,6 @@ def _initialize_x0_uniformly(
 
 
 def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
-
     sigma0 = []
     for name, distribution in search_space.items():
         if isinstance(distribution, optuna.distributions.UniformDistribution):
@@ -494,7 +486,6 @@ def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
 def _get_search_space_bound(
     keys: List[str], search_space: Dict[str, BaseDistribution],
 ) -> np.ndarray:
-
     bounds = []
     for param_name in keys:
         dist = search_space[param_name]

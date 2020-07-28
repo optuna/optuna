@@ -218,7 +218,7 @@ def test_population_size_is_multiplied_when_enable_ipop() -> None:
 
         popsize = cma_obj.population_size
         study.optimize(objective, n_trials=2 + popsize)
-        cma_obj.should_stop.assert_called_once()
+        assert cma_obj.should_stop.call_count == 1
 
         _, actual_kwargs = cma_class_mock.call_args
         assert actual_kwargs["population_size"] == inc_popsize * popsize
