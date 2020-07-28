@@ -100,9 +100,7 @@ class _DeleteStudy(_BaseCommand):
 
         parser = super(_DeleteStudy, self).get_parser(prog_name)
         parser.add_argument(
-            "--study-name",
-            default=None,
-            help="The name of the study to delete.",
+            "--study-name", default=None, help="The name of the study to delete.",
         )
         return parser
 
@@ -126,9 +124,7 @@ class _StudySetUserAttribute(_BaseCommand):
             "--study", default=None, help="This argument is deprecated. Use --study-name instead.",
         )
         parser.add_argument(
-            "--study-name",
-            default=None,
-            help="The name of the study to set.",
+            "--study-name", default=None, help="The name of the study to set attribute to.",
         )
         parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
         parser.add_argument("--value", "-v", required=True, help="Value to be set.")
@@ -200,9 +196,7 @@ class _Dashboard(_BaseCommand):
             "--study", default=None, help="This argument is deprecated. Use --study-name instead.",
         )
         parser.add_argument(
-            "--study-name",
-            default=None,
-            help="The name of the study to show.",
+            "--study-name", default=None, help="The name of the study to show in the dashboard.",
         )
         parser.add_argument(
             "--out",
@@ -280,9 +274,7 @@ class _StudyOptimize(_BaseCommand):
             "--study", default=None, help="This argument is deprecated. Use --study-name instead.",
         )
         parser.add_argument(
-            "--study-name",
-            default=None,
-            help="A human-readable name of a study to distinguish it from others.",
+            "--study-name", default=None, help="The name of the study to start optimization on.",
         )
         parser.add_argument(
             "file", help="Python script file where the objective function resides."
