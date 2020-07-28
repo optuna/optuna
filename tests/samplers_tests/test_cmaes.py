@@ -22,7 +22,6 @@ def test_consider_pruned_trials_experimental_warning() -> None:
 
 
 def test_init_cmaes_opts() -> None:
-
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
         sigma0=0.1,
@@ -54,7 +53,6 @@ def test_init_cmaes_opts() -> None:
 
 
 def test_infer_relative_search_space_1d() -> None:
-
     sampler = optuna.samplers.CmaEsSampler()
     study = optuna.create_study(sampler=sampler)
 
@@ -64,7 +62,6 @@ def test_infer_relative_search_space_1d() -> None:
 
 
 def test_sample_relative_1d() -> None:
-
     independent_sampler = DeterministicRelativeSampler({}, {})
     sampler = optuna.samplers.CmaEsSampler(independent_sampler=independent_sampler)
     study = optuna.create_study(sampler=sampler)
@@ -78,7 +75,6 @@ def test_sample_relative_1d() -> None:
 
 
 def test_sample_relative_n_startup_trials() -> None:
-
     independent_sampler = DeterministicRelativeSampler({}, {})
     sampler = optuna.samplers.CmaEsSampler(
         n_startup_trials=2, independent_sampler=independent_sampler
@@ -105,7 +101,6 @@ def test_sample_relative_n_startup_trials() -> None:
 
 
 def test_initialize_x0_with_unsupported_distribution() -> None:
-
     with pytest.raises(NotImplementedError):
         _initialize_x0({"x": UnsupportedDistribution()})
 
@@ -114,7 +109,6 @@ def test_initialize_x0_with_unsupported_distribution() -> None:
 
 
 def test_initialize_sigma0_with_unsupported_distribution() -> None:
-
     with pytest.raises(NotImplementedError):
         _initialize_sigma0({"x": UnsupportedDistribution()})
 
@@ -130,7 +124,6 @@ def test_reseed_rng() -> None:
 
 
 def test_get_trials() -> None:
-
     with patch("optuna.Study.get_trials", new=Mock(side_effect=lambda deepcopy: _create_trials())):
         sampler = optuna.samplers.CmaEsSampler(consider_pruned_trials=False)
         study = optuna.create_study(sampler=sampler)
@@ -146,7 +139,6 @@ def test_get_trials() -> None:
 
 
 def _create_trials() -> List[FrozenTrial]:
-
     trials = []
     trials.append(
         FrozenTrial(
@@ -182,7 +174,6 @@ def _create_trials() -> List[FrozenTrial]:
 
 
 def test_population_size_is_multiplied_when_enable_ipop() -> None:
-
     inc_popsize = 2
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},

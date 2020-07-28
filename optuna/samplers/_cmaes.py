@@ -95,6 +95,16 @@ class CmaEsSampler(BaseSampler):
             Note that the parameters of the first trial in a study are always sampled
             via an independent sampler, so no warning messages are emitted in this case.
 
+        restart_strategy:
+            Strategy for restarting CMA-ES optimization when converges to a local minimum.
+            If given :obj:`None`, CMA-ES will not restart (default).
+            If given 'ipop', CMA-ES will restart with increasing population size.
+            Please see also ``inc_popsize`` parameter.
+
+        inc_popsize:
+            Multiplier for increasing population size before each restart.
+            This argument will be used when set ``restart_mode = 'ipop'``.
+
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
 
@@ -109,20 +119,6 @@ class CmaEsSampler(BaseSampler):
                 to set this flag :obj:`True` when the :class:`~optuna.pruners.HyperbandPruner` is
                 used. Please see `the benchmark result
                 <https://github.com/optuna/optuna/pull/1229>`_ for the details.
-
-        restart_strategy:
-            Strategy for restarting CMA-ES optimization when converges to a local minimum.
-            If given :obj:`None`, CMA-ES will not restart (default).
-            If given 'ipop', CMA-ES will restart with increasing population size.
-            Please see also ``inc_popsize`` parameter.
-
-            .. note::
-                Added in v2.1.0 as an experimental feature. The interface may change in newer
-                versions without prior notice.
-
-        inc_popsize:
-            Multiplier for increasing population size before each restart.
-            This argument will be used when set `restart_mode = "ipop"`.
     """
 
     def __init__(
@@ -133,10 +129,10 @@ class CmaEsSampler(BaseSampler):
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
         seed: Optional[int] = None,
-        *,
-        consider_pruned_trials: bool = False,
         restart_strategy: Optional[str] = None,
-        inc_popsize: int = 2
+        inc_popsize: int = 2,
+        *,
+        consider_pruned_trials: bool = False
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
@@ -162,15 +158,8 @@ class CmaEsSampler(BaseSampler):
                 )
             )
 
-        if self._restart_strategy:
-            self._raise_experimental_warning_for_restart_strategy()
-
     @experimental("2.0.0", name="`consider_pruned_trials = True` in CmaEsSampler")
     def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
-        pass
-
-    @experimental("2.1.0", name="`restart_strategy = 'ipop'` in CmaEsSampler")
-    def _raise_experimental_warning_for_restart_strategy(self) -> None:
         pass
 
     def reseed_rng(self) -> None:
