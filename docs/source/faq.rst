@@ -126,7 +126,7 @@ For instance, you can stop showing each trial result as follows:
 
     study = optuna.create_study()
     study.optimize(objective)
-    # Logs like '[I 2018-12-05 11:41:42,324] Finished a trial resulted in value:...' are disabled.
+    # Logs like '[I 2020-07-21 13:41:45,627] Trial 0 finished with value:...' are disabled.
 
 
 Please refer to :class:`optuna.logging` for further details.

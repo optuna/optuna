@@ -36,6 +36,7 @@ def get_install_requires() -> List[str]:
         "colorlog",
         "joblib",
         "numpy",
+        "packaging",
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
@@ -83,6 +84,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
             "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
+            "keras",
+            "tensorflow>=2.0.0",
+            "tensorflow-datasets",
         ]
         + (["stable-baselines3>=0.7.0"] if (3, 5) < sys.version_info[:2] else [])
         + (
@@ -94,17 +98,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         + (
             ["llvmlite<=0.31.0"] if (3, 5) == sys.version_info[:2] else []
         )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
-        + (
-            [
-                "dask[dataframe]",
-                "dask-ml",
-                "keras<2.4.0",
-                "tensorflow>=2.0.0",
-                "tensorflow-datasets",
-            ]
-            if sys.version_info[:2] < (3, 8)
-            else []
-        )
+        + (["dask[dataframe]", "dask-ml",] if sys.version_info[:2] < (3, 8) else [])
         + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
         "experimental": ["redis"],
         "testing": [
@@ -127,6 +121,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
             "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
+            "keras",
+            "tensorflow",
+            "tensorflow-datasets",
         ]
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
@@ -134,12 +131,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             else []
         )
         + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
-        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
-        + (
-            ["keras<2.4.0", "tensorflow", "tensorflow-datasets"]
-            if sys.version_info[:2] < (3, 8)
-            else []
-        ),
+        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -164,6 +156,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
             "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
+            "keras",
+            "tensorflow",
+            "tensorflow-datasets",
         ]
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch-lightning>=0.7.1"]
@@ -171,12 +166,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             else []
         )
         + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
-        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
-        + (
-            ["keras<2.4.0", "tensorflow", "tensorflow-datasets"]
-            if sys.version_info[:2] < (3, 8)
-            else []
-        ),
+        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
     }
 
     return requirements
