@@ -96,13 +96,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             ["llvmlite<=0.31.0"] if (3, 5) == sys.version_info[:2] else []
         )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
         + (
-            [
-                "dask[dataframe]",
-                "dask-ml",
-                "keras",
-                "tensorflow>=2.0.0",
-                "tensorflow-datasets",
-            ]
+            ["dask[dataframe]", "dask-ml", "keras", "tensorflow>=2.0.0", "tensorflow-datasets",]
             if sys.version_info[:2] < (3, 8)
             else []
         )
@@ -137,9 +131,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
         + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
         + (
-            ["keras", "tensorflow", "tensorflow-datasets"]
-            if sys.version_info[:2] < (3, 8)
-            else []
+            ["keras", "tensorflow", "tensorflow-datasets"] if sys.version_info[:2] < (3, 8) else []
         ),
         "tests": ["fakeredis", "pytest"],
         "optional": [
@@ -174,9 +166,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
         + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
         + (
-            ["keras", "tensorflow", "tensorflow-datasets"]
-            if sys.version_info[:2] < (3, 8)
-            else []
+            ["keras", "tensorflow", "tensorflow-datasets"] if sys.version_info[:2] < (3, 8) else []
         ),
     }
 
