@@ -111,10 +111,10 @@ class CmaEsSampler(BaseSampler):
                 <https://github.com/optuna/optuna/pull/1229>`_ for the details.
 
         restart_strategy:
-            Restarting strategy when converges to local minimum.
+            Strategy for restarting CMA-ES optimization when converges to a local minimum.
             If given :obj:`None`, CMA-ES will not restart (default).
             If given 'ipop', CMA-ES will restart with increasing population size.
-            Please see also `inc_popsize` parameter.
+            Please see also ``inc_popsize`` parameter.
 
             .. note::
                 Added in v2.1.0 as an experimental feature. The interface may change in newer
