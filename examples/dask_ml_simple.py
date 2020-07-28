@@ -6,16 +6,9 @@ The classifier is from dask-ml while the dataset is from sklearn.
 We optimize the choice of solver (admm, gradient descent, or proximal_grad),
 the regularization (penalty) when relevant and its strength (C).
 
-We have the following two ways to execute this example:
+The example can be executed as follows:
 
-(1) Execute this code directly.
     $ python dask_ml_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize dask_ml_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
-      --storage sqlite:///example.db
 
 """
 

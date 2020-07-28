@@ -6,16 +6,9 @@ In this example, we optimize the validation accuracy of cancer detection
 using XGBoost. We optimize both the choice of booster model and their hyper
 parameters.
 
-We have following two ways to execute this example:
+The example can be executed as follows:
 
-(1) Execute this code directly.
     $ python xgboost_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize xgboost_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
-      --storage sqlite:///example.db
 
 """
 

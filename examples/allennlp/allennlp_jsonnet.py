@@ -7,16 +7,9 @@ sentiment classification using an AllenNLP jsonnet config file.
 Since it is too time-consuming to use the training dataset,
 we here use the validation dataset instead.
 
-We have the following two ways to execute this example:
+The example can be executed as follows:
 
-(1) Execute this code directly.
     $ python allennlp_jsonnet.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize allennlp_jsonnet.py objective --n-trials=100 --study-name $STUDY_NAME \
-      --storage sqlite:///example.db
 
 """
 
