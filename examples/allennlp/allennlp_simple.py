@@ -89,7 +89,7 @@ def objective(trial):
     if DEVICE > -1:
         model.to(torch.device("cuda:{}".format(DEVICE)))
 
-    lr = trial.suggest_float("lr", 1e-2, 1e-1, log=True)
+    lr = trial.suggest_float("lr", 1e-3, 1e-1, log=True)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
     data_loader = torch.utils.data.DataLoader(
