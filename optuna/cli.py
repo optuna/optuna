@@ -124,7 +124,9 @@ class _StudySetUserAttribute(_BaseCommand):
             "--study", default=None, help="This argument is deprecated. Use --study-name instead.",
         )
         parser.add_argument(
-            "--study-name", default=None, help="The name of the study to set attribute to.",
+            "--study-name",
+            default=None,
+            help="The name of the study to set the user attribute to.",
         )
         parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
         parser.add_argument("--value", "-v", required=True, help="Value to be set.")
