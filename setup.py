@@ -99,7 +99,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             [
                 "dask[dataframe]",
                 "dask-ml",
-                "keras<2.4.0",
+                "keras",
                 "tensorflow>=2.0.0",
                 "tensorflow-datasets",
             ]
@@ -137,7 +137,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
         + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
         + (
-            ["keras<2.4.0", "tensorflow", "tensorflow-datasets"]
+            ["keras", "tensorflow", "tensorflow-datasets"]
             if sys.version_info[:2] < (3, 8)
             else []
         ),
@@ -174,7 +174,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
         + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
         + (
-            ["keras<2.4.0", "tensorflow", "tensorflow-datasets"]
+            ["keras", "tensorflow", "tensorflow-datasets"]
             if sys.version_info[:2] < (3, 8)
             else []
         ),
