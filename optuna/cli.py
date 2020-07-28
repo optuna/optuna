@@ -198,7 +198,7 @@ class _Dashboard(_BaseCommand):
             "--study", default=None, help="This argument is deprecated. Use --study-name instead.",
         )
         parser.add_argument(
-            "--study-name", default=None, help="The name of the study to show in the dashboard.",
+            "--study-name", default=None, help="The name of the study to show on the dashboard.",
         )
         parser.add_argument(
             "--out",
