@@ -59,7 +59,7 @@ class CmaEsSampler(BaseSampler):
         x0:
             A dictionary of an initial parameter values for CMA-ES. By default, the mean of ``low``
             and ``high`` for each distribution is used. Note that x0 is sampled uniformly within
-            the search space domain for each restart if you enabled.
+            the search space domain for each restart if you set ``restart_strategy`` argument.
 
         sigma0:
             Initial standard deviation of CMA-ES. By default, ``sigma0`` is set to
@@ -307,12 +307,12 @@ class CmaEsSampler(BaseSampler):
         ordered_keys: List[str],
         population_size: int = None,
     ) -> CMA:
-        if self._x0 is not None and self._n_restarts == 0:
-            x0 = self._x0
-        elif self._n_restarts == 0:
+        if self._n_restarts > 0:
+            x0 = _initialize_x0_uniformly(self._cma_rng, search_space)
+        elif self._x0 is None:
             x0 = _initialize_x0(search_space)
         else:
-            x0 = _initialize_x0_uniformly(self._cma_rng, search_space)
+            x0 = self._x0
 
         if self._sigma0 is None:
             sigma0 = _initialize_sigma0(search_space)
