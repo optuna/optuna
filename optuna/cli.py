@@ -102,7 +102,7 @@ class _DeleteStudy(_BaseCommand):
         parser.add_argument(
             "--study-name",
             default=None,
-            help="A human-readable name of a study to distinguish it from others.",
+            help="The name of the study to delete.",
         )
         return parser
 
@@ -128,7 +128,7 @@ class _StudySetUserAttribute(_BaseCommand):
         parser.add_argument(
             "--study-name",
             default=None,
-            help="A human-readable name of a study to distinguish it from others.",
+            help="The name of the study to set.",
         )
         parser.add_argument("--key", "-k", required=True, help="Key of the user attribute.")
         parser.add_argument("--value", "-v", required=True, help="Value to be set.")
@@ -202,7 +202,7 @@ class _Dashboard(_BaseCommand):
         parser.add_argument(
             "--study-name",
             default=None,
-            help="A human-readable name of a study to distinguish it from others.",
+            help="The name of the study to show.",
         )
         parser.add_argument(
             "--out",
