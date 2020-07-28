@@ -201,7 +201,7 @@ def test_population_size_is_multiplied_when_enable_ipop() -> None:
         return 1.0
 
     with patch("optuna.samplers._cmaes.CMA") as cma_class_mock, patch(
-            "optuna.samplers._cmaes.pickle"
+        "optuna.samplers._cmaes.pickle"
     ) as pickle_mock:
         pickle_mock.dump.return_value = b"serialized object"
 
