@@ -188,4 +188,4 @@ def test_log_completed_trial_skip_storage_access() -> None:
     optuna.logging.set_verbosity(optuna.logging.DEBUG)
     with patch.object(storage, "get_trial", wraps=storage.get_trial) as mock_object:
         optuna.multi_objective.study._log_completed_trial(study, trial, 1.0)
-        assert mock_object.call_count == 2
+        assert mock_object.call_count == 3
