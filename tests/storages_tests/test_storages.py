@@ -397,6 +397,7 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
 
         study_id = storage.create_new_study()
+        storage.set_study_direction(study_id, StudyDirection.MINIMIZE)
 
         n_trial_in_study = 3
         for i in range(n_trial_in_study):
@@ -409,6 +410,7 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
             storage.create_new_trial(study_id + 1)
 
         study_id2 = storage.create_new_study()
+        storage.set_study_direction(study_id2, StudyDirection.MINIMIZE)
         for i in range(n_trial_in_study):
             storage.create_new_trial(study_id2, template_trial=template_trial)
             trials = storage.get_all_trials(study_id2)
@@ -441,6 +443,7 @@ def test_set_trial_state(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
 
         study_id = storage.create_new_study()
+        storage.set_study_direction(study_id, StudyDirection.MINIMIZE)
         trial_ids = [storage.create_new_trial(study_id) for _ in ALL_STATES]
 
         for trial_id, state in zip(trial_ids, ALL_STATES):
