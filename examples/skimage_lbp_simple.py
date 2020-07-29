@@ -6,9 +6,7 @@ In this example, we optimize a classifier configuration for Olivetti faces datas
 We optimize parameters of local_binary_pattern function in skimage and the
 choice of distance metric classes.
 
-The example can be executed as follows:
-
-    $ python skimage_lbp_simple.py
+$ python skimage_lbp_simple.py
 
 """
 

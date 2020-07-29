@@ -5,9 +5,7 @@ This script is based on the example of allentune (https://github.com/allenai/all
 In this example, we optimize the validation accuracy of sentiment classification using AllenNLP.
 Since it is too time-consuming to use the entire dataset, we here use a small subset of it.
 
-The example can be executed as follows:
-
-    $ python allennlp_simple.py
+$ python allennlp_simple.py
 
 """
 

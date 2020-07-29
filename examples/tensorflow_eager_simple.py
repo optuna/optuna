@@ -5,9 +5,7 @@ In this example, we optimize the validation accuracy of hand-written digit recog
 Tensorflow and MNIST. We optimize the neural network architecture as well as the optimizer
 configuration.
 
-The example can be executed as follows:
-
-    $ python tensorflow_eager_simple.py
+$ python tensorflow_eager_simple.py
 
 """
 

@@ -4,9 +4,7 @@ Optuna example that optimizes a simple quadratic function.
 In this example, we optimize a simple quadratic function. We also demonstrate how to continue an
 optimization and to use timeouts.
 
-The example can be executed as follows:
-
-    $ python quadratic_simple.py
+$ python quadratic_simple.py
 
 """
 

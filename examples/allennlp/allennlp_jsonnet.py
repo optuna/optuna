@@ -7,9 +7,7 @@ sentiment classification using an AllenNLP jsonnet config file.
 Since it is too time-consuming to use the training dataset,
 we here use the validation dataset instead.
 
-The example can be executed as follows:
-
-    $ python allennlp_jsonnet.py
+$ python allennlp_jsonnet.py
 
 """
 

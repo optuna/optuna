@@ -6,9 +6,7 @@ In this example, we optimize the validation accuracy of cancer detection
 using XGBoost. We optimize both the choice of booster model and their hyper
 parameters.
 
-The example can be executed as follows:
-
-    $ python xgboost_simple.py
+$ python xgboost_simple.py
 
 """
 

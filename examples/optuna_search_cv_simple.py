@@ -4,8 +4,7 @@ Optuna example that optimizes a classifier configuration using OptunaSearchCV.
 In this example, we optimize a classifier configuration for Iris dataset using OptunaSearchCV.
 Classifier is from scikit-learn.
 
-You can run this example as follows:
-    $ python optuna_search_cv_simple.py
+$ python optuna_search_cv_simple.py
 
 """
 

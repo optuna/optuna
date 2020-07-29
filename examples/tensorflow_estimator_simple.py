@@ -6,9 +6,7 @@ Tensorflow and MNIST. We optimize the neural network architecture as well as the
 configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
 subset of it.
 
-The example can be executed as follows:
-
-    $ python tensorflow_estimator_simple.py
+$ python tensorflow_estimator_simple.py
 
 """
 
