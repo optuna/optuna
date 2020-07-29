@@ -46,7 +46,6 @@ def default_gamma(x: int, _: int) -> int:
     return max(0, int(np.ceil(0.10 * x)) - 1)
 
 
-
 @experimental("2.0.0")
 class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
@@ -534,17 +533,20 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
         trunc_low = (low - mus[active]) / sigmas[active]
         trunc_high = (high - mus[active]) / sigmas[active]
-        while True:
-            samples = truncnorm.rvs(
-                trunc_low,
-                trunc_high,
-                size=size,
-                loc=mus[active],
-                scale=sigmas[active],
-                random_state=self._rng,
+        samples = np.ones(size) * (high + 1.0)
+        while (samples >= high).any():
+            samples = np.where(
+                samples < high,
+                samples,
+                truncnorm.rvs(
+                    trunc_low,
+                    trunc_high,
+                    size=size,
+                    loc=mus[active],
+                    scale=sigmas[active],
+                    random_state=self._rng,
+                ),
             )
-            if (samples >= low).all() and (samples < high).all():
-                break
 
         if q is None:
             return samples
