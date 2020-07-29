@@ -543,14 +543,6 @@ class RedisStorage(BaseStorage):
         else:
             return trials
 
-    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
-
-        self._check_study_id(study_id)
-        if state is None:
-            return len(self.get_all_trials(study_id))
-
-        return len([t for t in self.get_all_trials(study_id) if t.state == state])
-
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         self._check_study_id(study_id)
 

@@ -1043,16 +1043,6 @@ class RDBStorage(BaseStorage):
 
         return self.get_trial(trial.trial_id)
 
-    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
-
-        session = self.scoped_session()
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        n_trials = models.TrialModel.count(session, study, state)
-
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
-        return n_trials
-
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         # Make sure that the given study exists.
         session = self.scoped_session()
