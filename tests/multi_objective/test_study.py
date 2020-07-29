@@ -177,8 +177,8 @@ def test_log_completed_trial_skip_storage_access() -> None:
 
     with patch.object(storage, "get_trial", wraps=storage.get_trial) as mock_object:
         optuna.multi_objective.study._log_completed_trial(study, trial, 1.0)
-        # Trial.params and MultiObjectiveTrial._get_values access storage.
-        assert mock_object.call_count == 2
+        # Tria.number, Trial.params, and MultiObjectiveTrial._get_values access storage.
+        assert mock_object.call_count == 3
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     with patch.object(storage, "get_trial", wraps=storage.get_trial) as mock_object:
