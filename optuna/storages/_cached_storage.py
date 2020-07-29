@@ -9,7 +9,7 @@ from typing import Set
 from typing import Tuple
 
 from optuna import distributions
-from optuna.storages._rdb.storage import RDBStorage
+from optuna.storages._base import _BackEnd
 from optuna.storages import BaseStorage
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
@@ -54,7 +54,7 @@ class _CachedStorage(BaseStorage):
             :class:`~optuna.storages.BaseStorage` class instance to wrap.
     """
 
-    def __init__(self, backend: RDBStorage) -> None:
+    def __init__(self, backend: _BackEnd) -> None:
         self._backend = backend
         self._studies = {}  # type: Dict[int, _StudyInfo]
         self._trial_id_to_study_id_and_number = dict()  # type: Dict[int, Tuple[int, int]]

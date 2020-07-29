@@ -26,7 +26,7 @@ from sqlalchemy.sql import functions
 
 import optuna
 from optuna import distributions
-from optuna.storages._base import BaseStorage
+from optuna.storages._base import _BackEnd
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._rdb import models
 from optuna.study import StudyDirection
@@ -39,7 +39,7 @@ from optuna import version
 _logger = optuna.logging.get_logger(__name__)
 
 
-class RDBStorage(BaseStorage):
+class RDBStorage(_BackEnd):
     """Storage class for RDB backend.
 
     Note that library users can instantiate this class, but the attributes

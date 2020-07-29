@@ -1,8 +1,10 @@
 import abc
+from datetime import datetime
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Set
 
 from optuna.distributions import BaseDistribution
 from optuna import study
@@ -297,7 +299,9 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     # Basic trial manipulation
 
     @abc.abstractmethod
-    def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
+    def create_new_trial(
+        self, study_id: int, template_trial: Optional["FrozenTrial"] = None
+    ) -> int:
         """Create and add a new trial to a study.
 
         The returned trial ID is unique among all current and deleted trials.
@@ -503,7 +507,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     # Basic trial access
 
     @abc.abstractmethod
-    def get_trial(self, trial_id: int) -> FrozenTrial:
+    def get_trial(self, trial_id: int) -> "FrozenTrial":
         """Read a trial.
 
         Args:
@@ -520,7 +524,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
+    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List["FrozenTrial"]:
         """Read all trials in a study.
 
         Args:
@@ -558,7 +562,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    def get_best_trial(self, study_id: int) -> FrozenTrial:
+    def get_best_trial(self, study_id: int) -> "FrozenTrial":
         """Return the trial with the best value in a study.
 
         Args:
@@ -672,3 +676,82 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             raise RuntimeError(
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
+
+
+class _BackEnd(BaseStorage):
+    """This class defines spec of a backend for :class:``_CachedStorage``."""
+
+    @abc.abstractmethod
+    def _create_new_trial(
+        self, study_id: int, template_trial: Optional[FrozenTrial] = None
+    ) -> FrozenTrial:
+        """Create a new trial and returns its trial_id and a :class:`~optuna.trial.FrozenTrial`.
+
+        Args:
+            study_id:
+                Study id.
+            template_trial:
+                A :class:`~optuna.trial.FrozenTrial` with default values for trial attributes.
+
+        Returns:
+            A :class:`~optuna.trial.FrozenTrial` instance.
+
+        """
+        pass
+
+    @abc.abstractmethod
+    def _update_trial(
+        self,
+        trial_id: int,
+        state: Optional[TrialState] = None,
+        value: Optional[float] = None,
+        intermediate_values: Optional[Dict[int, float]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        distributions_: Optional[Dict[str, BaseDistribution]] = None,
+        user_attrs: Optional[Dict[str, Any]] = None,
+        system_attrs: Optional[Dict[str, Any]] = None,
+        datetime_complete: Optional[datetime] = None,
+    ) -> bool:
+        """Sync latest trial updates to a database.
+
+        Args:
+            trial_id:
+                Trial id of the trial to update.
+            state:
+                New state. None when there are no changes.
+            value:
+                New value. None when there are no changes.
+            intermediate_values:
+                New intermediate values. None when there are no updates.
+            params:
+                New parameter dictionary. None when there are no updates.
+            distributions_:
+                New parameter distributions. None when there are no updates.
+            user_attrs:
+                New user_attr. None when there are no updates.
+            system_attrs:
+                New system_attr. None when there are no updates.
+            datetime_complete:
+                Completion time of the trial. Set if and only if this method
+                change the state of trial into one of the finished states.
+
+        Returns:
+            True when success.
+
+        """
+        pass
+
+    @abc.abstractmethod
+    def _check_and_set_param_distribution(
+        self,
+        study_id: int,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: BaseDistribution,
+    ) -> None:
+        pass
+
+    @abc.abstractmethod
+    def _get_trials(self, study_id: int, excluded_trial_ids: Set[int]) -> List[FrozenTrial]:
+        pass
