@@ -1,13 +1,13 @@
 import numpy as np
 
-from optuna.multi_objective._hypervolume import BaseHypervolume
 from optuna.multi_objective._hypervolume import _compute_2points_volume
+from optuna.multi_objective._hypervolume import BaseHypervolume
 
 
 class Exact2d(BaseHypervolume):
     """Hypervolume calculator in the 2-dimensional case.
 
-    This class exactly calculates the _hypervolume in the 2-dimensional case.
+    This class exactly calculates the hypervolume in the 2-dimensional case.
     """
 
     def __init__(self) -> None:

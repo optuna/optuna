@@ -1,15 +1,15 @@
 import numpy as np
 
-from optuna.multi_objective._hypervolume import BaseHypervolume
 from optuna.multi_objective._hypervolume import _compute_2points_volume
 from optuna.multi_objective._hypervolume import _dominates_or_equal
+from optuna.multi_objective._hypervolume import BaseHypervolume
 from optuna.multi_objective._hypervolume import Exact2d
 
 
 class WFG(BaseHypervolume):
     """Hypervolume calculator for any dimension.
 
-        This class exactly calculates the _hypervolume for any dimension by using the WFG algorithm.
+        This class exactly calculates the hypervolume for any dimension by using the WFG algorithm.
         For detail, see `While, Lyndon, Lucas Bradstreet, and Luigi Barone. "A fast way of
         calculating exact hypervolumes." Evolutionary Computation, IEEE Transactions on 16.1 (2012)
         : 86-95.`.
