@@ -436,19 +436,6 @@ class RDBStorage(_BackEnd):
     def _create_new_trial(
         self, study_id: int, template_trial: Optional[FrozenTrial] = None
     ) -> FrozenTrial:
-        """Create a new trial and returns its trial_id and a :class:`~optuna.trial.FrozenTrial`.
-
-        Args:
-            study_id:
-                Study id.
-            template_trial:
-                A :class:`~optuna.trial.FrozenTrial` with default values for trial attributes.
-
-        Returns:
-            A :class:`~optuna.trial.FrozenTrial` instance.
-
-        """
-
         # Retry a couple of times. Deadlocks may occur in distributed environments.
         n_retries = 0
         while True:
@@ -565,34 +552,6 @@ class RDBStorage(_BackEnd):
         system_attrs: Optional[Dict[str, Any]] = None,
         datetime_complete: Optional[datetime] = None,
     ) -> bool:
-        """Sync latest trial updates to a database.
-
-        Args:
-            trial_id:
-                Trial id of the trial to update.
-            state:
-                New state. None when there are no changes.
-            value:
-                New value. None when there are no changes.
-            intermediate_values:
-                New intermediate values. None when there are no updates.
-            params:
-                New parameter dictionary. None when there are no updates.
-            distributions_:
-                New parameter distributions. None when there are no updates.
-            user_attrs:
-                New user_attr. None when there are no updates.
-            system_attrs:
-                New system_attr. None when there are no updates.
-            datetime_complete:
-                Completion time of the trial. Set if and only if this method
-                change the state of trial into one of the finished states.
-
-        Returns:
-            True when success.
-
-        """
-
         session = self.scoped_session()
 
         trial_model = (
