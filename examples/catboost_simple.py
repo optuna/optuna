@@ -5,9 +5,7 @@ Catboost.
 In this example, we optimize the validation accuracy of cancer detection using
 Catboost. We optimize both the choice of booster model and their hyperparameters.
 
-The example can be executed as follows:
-
-    $ python catboost_simple.py
+$ python catboost_simple.py
 
 """
 

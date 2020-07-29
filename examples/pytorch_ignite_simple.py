@@ -6,8 +6,8 @@ PyTorch Ignite and MNIST. We optimize the neural network architecture as well as
 regularization. As it is too time consuming to use the whole MNIST dataset, we here use a small
 subset of it.
 
-The example can be executed as follows:
-
+You can run this example as follows, pruning can be turned on and off with the `--pruning`
+argument.
     $ python pytorch_ignite_simple.py [--pruning]
 
 """

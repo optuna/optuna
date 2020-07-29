@@ -6,9 +6,7 @@ PyTorch and MNIST. We optimize the neural network architecture as well as the op
 configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
 subset of it.
 
-The example can be executed as follows:
-
-    $ python pytorch_simple.py
+$ python pytorch_simple.py
 
 
 """
