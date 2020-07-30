@@ -22,6 +22,7 @@ from optuna.visualization import plot_contour
 from optuna.visualization import plot_intermediate_values
 from optuna.visualization import plot_optimization_history
 from optuna.visualization import plot_parallel_coordinate
+from optuna.visualization import plot_param_importances
 from optuna.visualization import plot_slice
 
 
@@ -86,3 +87,6 @@ if __name__ == "__main__":
 
     # Select parameters to visualize.
     plot_slice(study, params=["n_units_l0", "n_units_l1"]).show()
+
+    # Visualize parameter importances.
+    plot_param_importances(study).show()
