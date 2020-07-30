@@ -78,7 +78,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mxnet",
             "nbval",
             "scikit-image",
-            "scikit-learn",
+            "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
             "xgboost",
             "keras",
             "tensorflow>=2.0.0",
