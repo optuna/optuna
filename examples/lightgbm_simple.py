@@ -4,8 +4,6 @@ Optuna example that optimizes a classifier configuration for cancer dataset usin
 In this example, we optimize the validation accuracy of cancer detection using LightGBM.
 We optimize both the choice of booster model and their hyperparameters.
 
-$ python lightgbm_simple.py
-
 """
 
 import lightgbm as lgb

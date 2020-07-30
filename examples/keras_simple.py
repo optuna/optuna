@@ -5,8 +5,6 @@ MNIST dataset using Keras.
 In this example, we optimize the validation accuracy of MNIST classification using
 Keras. We optimize the filter and kernel size, kernel stride and layer activation.
 
-$ python keras_simple.py
-
 """
 
 from keras.backend import clear_session

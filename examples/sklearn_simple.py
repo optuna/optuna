@@ -5,8 +5,6 @@ In this example, we optimize a classifier configuration for Iris dataset. Classi
 scikit-learn. We optimize both the choice of classifier (among SVC and RandomForest) and their
 hyper parameters.
 
-$ python sklearn_simple.py
-
 """
 
 import sklearn.datasets

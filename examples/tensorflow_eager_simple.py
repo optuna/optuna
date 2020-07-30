@@ -5,8 +5,6 @@ In this example, we optimize the validation accuracy of hand-written digit recog
 Tensorflow and MNIST. We optimize the neural network architecture as well as the optimizer
 configuration.
 
-$ python tensorflow_eager_simple.py
-
 """
 
 import pkg_resources

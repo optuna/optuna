@@ -6,8 +6,6 @@ The classifier is from dask-ml while the dataset is from sklearn.
 We optimize the choice of solver (admm, gradient descent, or proximal_grad),
 the regularization (penalty) when relevant and its strength (C).
 
-$ python dask_ml_simple.py
-
 """
 
 import dask.array as da

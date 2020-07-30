@@ -3,8 +3,6 @@ Optuna example that optimizes a classifier configuration for cancer dataset usin
 
 In this example, we optimize the validation log loss of cancer detection.
 
-$ python lightgbm_tuner_simple.py
-
 """
 
 import numpy as np

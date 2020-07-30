@@ -6,8 +6,6 @@ implementing the objective function. It takes the Iris dataset by a constructor'
 instead of loading it in each trial execution. This will speed up the execution of each trial
 compared to `sklearn_simple.py`.
 
-$ python sklearn_additional_args.py
-
 """
 
 import sklearn.datasets
