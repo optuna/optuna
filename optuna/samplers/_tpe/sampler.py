@@ -389,7 +389,7 @@ class TPESampler(BaseSampler):
         active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
         trunc_low = (low - mus[active]) / sigmas[active]
         trunc_high = (high - mus[active]) / sigmas[active]
-        samples = np.full(size, fill_value=high + 1.0, dtype=np.float64)
+        samples = np.full((), fill_value=high + 1.0, dtype=np.float64)
         while (samples >= high).any():
             samples = np.where(
                 samples < high,
