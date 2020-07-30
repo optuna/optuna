@@ -22,12 +22,7 @@ class Exact2d(BaseHypervolume):
 
         solution_set = solution_set[solution_set[:, 1].argsort()]
 
-        widths = np.asarray(
-            [
-                reference_point[0] - np.min(solution_set[: i + 1, 0])
-                for i in range(len(solution_set))
-            ]
-        )
-        heights = np.hstack([solution_set[1:, 1], reference_point[1]]) - solution_set[:, 1]
-        v = float(np.sum(widths * heights))
-        return v
+        widths = reference_point[0] - solution_set[:, 0]
+        widths = np.asarray([widths[: i + 1].max() for i in range(widths.size)])
+        heights = np.append(solution_set[1:, 1], reference_point[1]) - solution_set[:, 1]
+        return float(np.sum(widths * heights))
