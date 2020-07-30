@@ -125,11 +125,6 @@ Any contributions to Optuna are welcome! When you send a pull request, please fo
 [contribution guide](./CONTRIBUTING.md).
 
 
-## License
-
-MIT License (see [LICENSE](./LICENSE)).
-
-
 ## Reference
 
 Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, and Masanori Koyama. 2019.
