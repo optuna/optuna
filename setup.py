@@ -83,14 +83,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "nbval",
             "scikit-image",
             "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
-            "thop",
             "xgboost",
             "keras",
             "tensorflow>=2.0.0",
             "tensorflow-datasets",
         ]
         + (
-            ["torch==1.6.0" if sys.platform == "darwin" else "torch==1.6.0+cpu"] + ["pytorch-ignite"]
+            ["torch==1.6.0" if sys.platform == "darwin" else "torch==1.6.0+cpu"]
+            + ["pytorch-ignite", "thop"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
@@ -133,7 +133,8 @@ def get_extras_require() -> Dict[str, List[str]]:
                 ["torch==1.6.0", "torchvision==0.7.0"]
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
-            ) + ["pytorch-ignite"]
+            )
+            + ["pytorch-ignite"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
@@ -174,7 +175,8 @@ def get_extras_require() -> Dict[str, List[str]]:
                 ["torch==1.6.0", "torchvision==0.7.0"]
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
-            ) + ["pytorch-ignite"]
+            )
+            + ["pytorch-ignite"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
