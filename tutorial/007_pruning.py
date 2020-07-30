@@ -65,8 +65,9 @@ study.optimize(objective, n_trials=20)
 #          [I 2020-06-12 16:54:24,625] Trial 8 finished with value: 0.1842105263157895 and parameters: {'alpha': 0.007021209286214553}. Best is trial 3 with value: 0.052631578947368474.
 #          [I 2020-06-12 16:54:24,629] Trial 9 pruned.
 #          ...
-#          ``Trial 5 pruned.``, etc. in the log messages means several trials were stopped
-#          before they finished all of the iterations.
+#
+# ``Trial 5 pruned.``, etc. in the log messages means several trials were stopped
+# before they finished all of the iterations.
 #
 
 ###################################################################################################
