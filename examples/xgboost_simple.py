@@ -38,17 +38,20 @@ def objective(trial):
 
     param = {
         "silent": 1,
+        "seed": 1,
         "objective": "binary:logistic",
-        "booster": trial.suggest_categorical("booster", ["gbtree", "gblinear", "dart"]),
+        "booster": trial.suggest_categorical("booster", ["gbtree", "dart"]),
+        "min_child_weight": trial.suggest_loguniform("min_child_weight", 1e-3, 1e3),
+        "subsample": trial.suggest_uniform("subsample", 0.5, 1.0),
+        "colsample_bytree": trial.suggest_uniform("colsample_bytree", 0.5, 1.0),
         "lambda": trial.suggest_float("lambda", 1e-8, 1.0, log=True),
         "alpha": trial.suggest_float("alpha", 1e-8, 1.0, log=True),
+        "max_depth": trial.suggest_int("max_depth", 3, 10),
+        "eta": trial.suggest_float("eta", 0.01, 0.2, log=True),
+        "gamma": trial.suggest_float("gamma", 1e-8, 1.0, log=True),
+        "grow_policy": trial.suggest_categorical("grow_policy", ["depthwise", "lossguide"]),
     }
 
-    if param["booster"] == "gbtree" or param["booster"] == "dart":
-        param["max_depth"] = trial.suggest_int("max_depth", 1, 9)
-        param["eta"] = trial.suggest_float("eta", 1e-8, 1.0, log=True)
-        param["gamma"] = trial.suggest_float("gamma", 1e-8, 1.0, log=True)
-        param["grow_policy"] = trial.suggest_categorical("grow_policy", ["depthwise", "lossguide"])
     if param["booster"] == "dart":
         param["sample_type"] = trial.suggest_categorical("sample_type", ["uniform", "weighted"])
         param["normalize_type"] = trial.suggest_categorical("normalize_type", ["tree", "forest"])
