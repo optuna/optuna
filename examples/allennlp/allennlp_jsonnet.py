@@ -4,6 +4,8 @@ This script is based on the example of allentune (https://github.com/allenai/all
 
 In this example, we optimize the validation accuracy of
 sentiment classification using an AllenNLP jsonnet config file.
+Since it is too time-consuming to use the training dataset,	
+we here use the validation dataset instead.
 
 """
 
