@@ -33,6 +33,7 @@ if type_checking.TYPE_CHECKING:
 STORAGE_MODES = [
     "inmemory",
     "sqlite",
+    "cache",
     "redis",
 ]
 
