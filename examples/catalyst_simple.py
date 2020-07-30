@@ -5,9 +5,8 @@ In this example, we optimize the validation accuracy of hand-written digit recog
 Catalyst, and MNIST. We optimize the neural network architecture.
 
 You can run this example as follows, pruning can be turned on and off with the `--pruning`
-argument.    
+argument.
     $ python catalyst_simple.py [--pruning]
-
 """
 
 import argparse
