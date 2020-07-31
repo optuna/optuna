@@ -1,5 +1,5 @@
-local DROPOUT = std.extVar('DROPOUT');
-local LEARNING_RATE = std.extVar('LEARNING_RATE');
+local DROPOUT = std.parseJson(std.extVar('DROPOUT'));
+local LEARNING_RATE = std.parseJson(std.extVar('LEARNING_RATE'));
 
 
 {
