@@ -29,10 +29,10 @@ if type_checking.TYPE_CHECKING:
 
     CallbackFuncType = Callable[[optuna.study.Study, optuna.trial.FrozenTrial], None]
 
-# TODO(ytsmiling) Add tests for multi-worker settings.
 STORAGE_MODES = [
     "inmemory",
     "sqlite",
+    "cache",
     "redis",
 ]
 
