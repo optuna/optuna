@@ -57,9 +57,9 @@ class AllenNLPExecutor(object):
     See the examples of `objective function <https://github.com/optuna/optuna/blob/
     master/examples/allennlp/allennlp_jsonnet.py>`_.
 
-    From Optuna v2.1.0, user has to cast their parameters by using methods in Jsonnet.
+    From Optuna v2.1.0, users have to cast their parameters by using methods in Jsonnet.
     Call ``std.parseInt`` for integer, or ``std.parseJson`` for floating point.
-    Please see the example of `config file <https://github.com/optuna/optuna/blob/master/
+    Please see the `example configuration <https://github.com/optuna/optuna/blob/master/
     examples/allennlp/classifier.jsonnet>`_.
 
     .. note::
