@@ -315,7 +315,10 @@ class CmaEsSampler(BaseSampler):
         elif self._x0 is None:
             x0 = _initialize_x0(search_space)
         else:
-            x0 = self._x0
+            # `self._x0` is external representation.
+            x0 = np.array(
+                [_to_cma_param(search_space[k], self._x0[k]) for k in ordered_keys], dtype=float
+            )
 
         if self._sigma0 is None:
             sigma0 = _initialize_sigma0(search_space)
@@ -412,23 +415,28 @@ def _to_optuna_param(distribution: BaseDistribution, cma_param: float) -> Any:
     return cma_param
 
 
-def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, Any]:
+def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, float]:
     x0 = {}
     for name, distribution in search_space.items():
-        if isinstance(distribution, optuna.distributions.UniformDistribution):
-            x0[name] = np.mean([distribution.high, distribution.low])
-        elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
-            x0[name] = np.mean([distribution.high, distribution.low])
-        elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
-            x0[name] = int(np.mean([distribution.high, distribution.low]))
-        elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+        if isinstance(
+            distribution,
+            (
+                optuna.distributions.UniformDistribution,
+                optuna.distributions.DiscreteUniformDistribution,
+                optuna.distributions.IntUniformDistribution,
+            ),
+        ):
+            x0[name] = distribution.low + (distribution.high - distribution.low) / 2
+        elif isinstance(
+            distribution,
+            (
+                optuna.distributions.LogUniformDistribution,
+                optuna.distributions.IntLogUniformDistribution,
+            ),
+        ):
             log_high = math.log(distribution.high)
             log_low = math.log(distribution.low)
-            x0[name] = np.mean([log_high, log_low])
-        elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
-            log_high = math.log(distribution.high)
-            log_low = math.log(distribution.low)
-            x0[name] = np.mean([log_high, log_low])
+            x0[name] = log_low + (log_high - log_low) / 2
         else:
             raise NotImplementedError(
                 "The distribution {} is not implemented.".format(distribution)
@@ -438,20 +446,25 @@ def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, Any]:
 
 def _initialize_x0_uniformly(
     rng: np.random.RandomState, search_space: Dict[str, BaseDistribution]
-) -> Dict[str, Any]:
+) -> Dict[str, float]:
     x0 = {}
     for name, distribution in search_space.items():
-        if isinstance(distribution, optuna.distributions.UniformDistribution):
+        if isinstance(
+            distribution,
+            (
+                optuna.distributions.UniformDistribution,
+                optuna.distributions.DiscreteUniformDistribution,
+                optuna.distributions.IntUniformDistribution,
+            ),
+        ):
             x0[name] = distribution.low + rng.rand() * (distribution.high - distribution.low)
-        elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
-            x0[name] = distribution.low + rng.rand() * (distribution.high - distribution.low)
-        elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
-            x0[name] = distribution.low + rng.randint(distribution.high - distribution.low)
-        elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
-            log_high = math.log(distribution.high)
-            log_low = math.log(distribution.low)
-            x0[name] = log_low + rng.rand() * (log_high - log_low)
-        elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
+        elif isinstance(
+            distribution,
+            (
+                optuna.distributions.IntLogUniformDistribution,
+                optuna.distributions.LogUniformDistribution,
+            ),
+        ):
             log_high = math.log(distribution.high)
             log_low = math.log(distribution.low)
             x0[name] = log_low + rng.rand() * (log_high - log_low)
