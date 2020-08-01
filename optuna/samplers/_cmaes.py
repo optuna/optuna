@@ -50,6 +50,16 @@ class CmaEsSampler(BaseSampler):
     optimization settings. This sampler cannot use some trials for updating
     the parameters of multivariate normal distribution.
 
+    For further information about CMA-ES algorithm and its restarting strategy
+    algorithm, please refer to the following papers:
+
+    - `N. Hansen, The CMA Evolution Strategy: A Tutorial. arXiv:1604.00772, 2016.
+      <https://arxiv.org/abs/1604.00772>`_
+    - `A. Auger and N. Hansen. A restart CMA evolution strategy with increasing population
+      size. In Proceedings of the IEEE Congress on Evolutionary Computation (CEC 2005),
+      pages 1769–1776. IEEE Press, 2005.
+      <http://www.cmap.polytechnique.fr/~nikolaus.hansen/cec2005ipopcmaes.pdf>`_
+
     .. seealso::
         You can also use :class:`optuna.integration.CmaEsSampler` which is a sampler using cma
         library as the backend.
@@ -58,8 +68,9 @@ class CmaEsSampler(BaseSampler):
 
         x0:
             A dictionary of an initial parameter values for CMA-ES. By default, the mean of ``low``
-            and ``high`` for each distribution is used. Note that x0 is sampled uniformly within
-            the search space domain for each restart if you set ``restart_strategy`` argument.
+            and ``high`` for each distribution is used. Note that ``x0`` is sampled uniformly
+            within the search space domain for each restart if you specify ``restart_strategy``
+            argument.
 
         sigma0:
             Initial standard deviation of CMA-ES. By default, ``sigma0`` is set to
