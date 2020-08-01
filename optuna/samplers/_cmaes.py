@@ -311,12 +311,16 @@ class CmaEsSampler(BaseSampler):
         n_restarts: int = 0,
     ) -> CMA:
         if n_restarts > 0:
+            # `_initialize_x0_uniformly` returns internal representations.
             x0 = _initialize_x0_uniformly(self._cma_rng, search_space)
+            mean = np.array([x0[k] for k in ordered_keys], dtype=float)
         elif self._x0 is None:
+            # `_initialize_x0` returns internal representations.
             x0 = _initialize_x0(search_space)
+            mean = np.array([x0[k] for k in ordered_keys], dtype=float)
         else:
-            # `self._x0` is external representation.
-            x0 = np.array(
+            # `self._x0` is external representations.
+            mean = np.array(
                 [_to_cma_param(search_space[k], self._x0[k]) for k in ordered_keys], dtype=float
             )
 
@@ -327,7 +331,6 @@ class CmaEsSampler(BaseSampler):
 
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
-        mean = np.array([x0[k] for k in ordered_keys], dtype=float)
         bounds = _get_search_space_bound(ordered_keys, search_space)
         n_dimension = len(ordered_keys)
         return CMA(
