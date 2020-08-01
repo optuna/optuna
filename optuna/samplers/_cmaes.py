@@ -103,7 +103,7 @@ class CmaEsSampler(BaseSampler):
 
         inc_popsize:
             Multiplier for increasing population size before each restart.
-            This argument will be used when set ``restart_mode = 'ipop'``.
+            This argument will be used when setting ``restart_strategy = 'ipop'``.
 
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
@@ -296,7 +296,7 @@ class CmaEsSampler(BaseSampler):
         self,
         search_space: Dict[str, BaseDistribution],
         ordered_keys: List[str],
-        population_size: int = None,
+        population_size: Optional[int] = None,
         n_restarts: int = 0,
     ) -> CMA:
         if n_restarts > 0:
