@@ -10,33 +10,27 @@ This example's code is based on ../../pytorch_lightning_simple.py example with t
 
 In order to run this example you have to do the following steps:
 
-1. (Optional) If run locally inside [minikube](https://github.com/kubernetes/minikube) you have to use the Docker daemon inside of it:
+First run `run.sh` which takes two arguments $IsMinikube and $IMAGE_NAME
 
-```bash
-$ eval $(minikube docker-env)
-```
+- If you want to run locally in minikube run the following command
 
-2. Build and tag the example docker image:
+ ```bash
+$ sh run.sh True optuna-kubernetes-mlflow:example
+ ```
 
-```bash
-$ docker build -t optuna-kubernetes-mlflow:example .
-```
+- If you want to run in cloud, please change the IMAGE_NAME accordingly in k8s-manifest.yaml and run as follows. Also please make sure that you kubernetes context is set correctly.
 
-3. Apply the kubernetes manifests:
+ ```bash
+$ sh run.sh False $IMAGE_NAME
+ ```
 
-```bash
-$ kubectl apply -f k8s-manifest.yaml
-```
-
-4. Track the study by checking MLflow dashboard:
-
-You can tell the IP address of MLflow dashboard as follows:
+- Track the study by checking MLflow dashboard. You can tell the IP address of MLflow dashboard as follows:
 
 ```bash
 $ minikube service mlflow --url
 ```
 
-Also, if you want to track the progress of each worker by checking their logs directly:
+- Also, if you want to track the progress of each worker by checking their logs directly:
 
 ```bash
 $ kubectl logs worker-<pod id>

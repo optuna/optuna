@@ -10,26 +10,21 @@ in order to avoid errors when the code is run from multiple workers.
 
 In order to run this example you have to do the following steps:
 
-1 - (Optional) If run locally inside [minikube](https://github.com/kubernetes/minikube) 
-you have to use the Docker daemon inside of it: 
+Run `run.sh` which takes two arguments $IsMinikube and $IMAGE_NAME
 
-```bash
-eval $(minikube docker-env)
-```
+- If you want to run locally in minikube run the following command
 
-2 - Build and tag the example docker image:
+ ```bash
+$ sh run.sh True optuna-kubernetes:example
+ ```
 
-```bash
-docker image build -t optuna-kubernetes:example .
-```
+- If you want to run in cloud, please change the IMAGE_NAME accordingly in k8s-manifest.yaml and run as follows. Also please make sure that you kubernetes context is set correctly.
 
-3 - Apply the kubernetes manifests:
+ ```bash
+$ sh run.sh False $IMAGE_NAME
+ ```
 
-```bash
-kubectl apply -f k8s-manifests.yaml
-```
-
-4 - Track the progress of each worker by checking their logs:
+- Track the progress of each worker by checking their logs:
 
 ```bash
 kubectl logs worker-<pod id>
