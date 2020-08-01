@@ -2,7 +2,7 @@
 
 It’s such an honor to have you on board!
 
-We are proud of this project and have been trying to make this project great since day one.  
+We are proud of this project and have been trying to make this project great since day one.
 We believe you will love it, however, we do know that this is not a perfect project at all.
 We have to
 - implement features that make what you want to do possible and/or easily.
@@ -10,7 +10,7 @@ We have to
 - make issues and pull requests on GitHub fruitful.
 - have more conversations and discussions on Gitter.
 
-We need your help heartily, everything about Optuna you have in your mind push this project forward.  
+We need your help heartily, everything about Optuna you have in your mind push this project forward.
 Join Us!
 
 If you feel like giving your hand to us, here are some ways
@@ -141,7 +141,6 @@ When you are ready to create a pull request, please try to keep the following in
 The title of your pull request should
 
 - briefly describe and reflect the changes
-- end with a punctuation
 - wrap any code with backticks
 
 *The title will be directly visible in the release notes.*

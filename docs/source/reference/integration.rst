@@ -1,3 +1,5 @@
+.. _integration_list:
+
 optuna.integration
 ==================
 
