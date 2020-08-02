@@ -19,12 +19,13 @@ We have following two ways to execute this example:
 """
 
 
-import optuna
 import os
 import shutil
 import sklearn.datasets
 import sklearn.metrics
 import xgboost as xgb
+
+import optuna
 
 
 # Set constants
@@ -85,6 +86,7 @@ def objective(trial):
     return best_score
 
 if __name__ == "__main__":
+
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=20)
     print("Best trial:")
