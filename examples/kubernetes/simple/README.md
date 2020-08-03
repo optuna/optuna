@@ -10,7 +10,7 @@ in order to avoid errors when the code is run from multiple workers.
 
 In order to run this example you have to do the following steps:
 
-Run `run.sh` which takes two arguments $IsMinikube and $IMAGE_NAME
+Run `run.sh` which takes two arguments `$IsMinikube` and `$IMAGE_NAME`
 
 - If you want to run locally in minikube run the following command
 
