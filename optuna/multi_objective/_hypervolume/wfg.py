@@ -24,21 +24,21 @@ class WFG(BaseHypervolume):
 
     def _compute_rec(self, solution_set: np.ndarray) -> float:
         n_points = solution_set.shape[0]
-        dim_bound = solution_set.shape[1]
+        dim = solution_set.shape[1]
 
         if n_points == 1:
-            return _compute_2points_volume(solution_set[0], self._r, dim_bound)
+            return _compute_2points_volume(solution_set[0], self._r)
         elif n_points == 2:
             v = 0.0
-            v += _compute_2points_volume(solution_set[0], self._r, dim_bound)
-            v += _compute_2points_volume(solution_set[1], self._r, dim_bound)
+            v += _compute_2points_volume(solution_set[0], self._r)
+            v += _compute_2points_volume(solution_set[1], self._r)
             l_edges_for_intersection = self._r - np.maximum(solution_set[0], solution_set[1])
-            v -= np.prod(l_edges_for_intersection[:dim_bound])
+            v -= np.prod(l_edges_for_intersection)
 
             return v
 
         # n_points >= 3
-        if dim_bound == 2:
+        if dim == 2:
             return Exact2d().compute(solution_set[:, :2], self._r[:2])
 
         solution_set = solution_set[solution_set[:, 0].argsort()]
