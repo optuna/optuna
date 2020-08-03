@@ -10,7 +10,7 @@ This example's code is based on ../../pytorch_lightning_simple.py example with t
 
 In order to run this example you have to do the following steps:
 
-First run `run.sh` which takes two arguments $IsMinikube and $IMAGE_NAME
+First run `run.sh` which takes two arguments `$IsMinikube` and `$IMAGE_NAME`
 
 - If you want to run locally in minikube run the following command
 
