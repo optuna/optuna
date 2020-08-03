@@ -1,4 +1,3 @@
-import copy
 from typing import Any
 from typing import Dict
 from typing import List
@@ -7,23 +6,22 @@ from typing import Tuple
 
 import numpy as np
 
-import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna import distributions
-from optuna import samplers
+from optuna.samplers import BaseBoController
+from optuna.samplers import BaseBoSampler
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
 
 with try_import() as _imports:
     import skopt
     from skopt.space import space
 
 
-class SkoptSampler(BaseSampler):
+class SkoptSampler(BaseBoSampler):
     """Sampler using Scikit-Optimize as the backend.
 
     Example:
@@ -105,17 +103,18 @@ class SkoptSampler(BaseSampler):
         consider_pruned_trials: bool = False
     ) -> None:
 
+        super().__init__(
+            independent_sampler=independent_sampler,
+            warn_independent_sampling=warn_independent_sampling,
+            n_startup_trials=n_startup_trials,
+            consider_pruned_trials=consider_pruned_trials,
+        )
+
         _imports.check()
 
         self._skopt_kwargs = skopt_kwargs or {}
         if "dimensions" in self._skopt_kwargs:
             del self._skopt_kwargs["dimensions"]
-
-        self._independent_sampler = independent_sampler or samplers.RandomSampler()
-        self._warn_independent_sampling = warn_independent_sampling
-        self._n_startup_trials = n_startup_trials
-        self._search_space = samplers.IntersectionSearchSpace()
-        self._consider_pruned_trials = consider_pruned_trials
 
         if self._consider_pruned_trials:
             self._raise_experimental_warning_for_consider_pruned_trials()
@@ -124,98 +123,13 @@ class SkoptSampler(BaseSampler):
     def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
         pass
 
-    def reseed_rng(self) -> None:
-
-        self._independent_sampler.reseed_rng()
-
-    def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
-    ) -> Dict[str, distributions.BaseDistribution]:
-
-        search_space = {}
-        for name, distribution in self._search_space.calculate(study).items():
-            if distribution.single():
-                if not isinstance(distribution, distributions.CategoricalDistribution):
-                    # `skopt` cannot handle non-categorical distributions that contain just
-                    # a single value, so we skip this distribution.
-                    #
-                    # Note that `Trial` takes care of this distribution during suggestion.
-                    continue
-
-            search_space[name] = distribution
-
-        return search_space
-
-    def sample_relative(
-        self,
-        study: Study,
-        trial: FrozenTrial,
-        search_space: Dict[str, distributions.BaseDistribution],
-    ) -> Dict[str, Any]:
-
-        if len(search_space) == 0:
-            return {}
-
-        complete_trials = self._get_trials(study)
-        if len(complete_trials) < self._n_startup_trials:
-            return {}
-
-        optimizer = _Optimizer(search_space, self._skopt_kwargs)
-        optimizer.tell(study, complete_trials)
-        return optimizer.ask()
-
-    def sample_independent(
-        self,
-        study: Study,
-        trial: FrozenTrial,
-        param_name: str,
-        param_distribution: distributions.BaseDistribution,
-    ) -> Any:
-
-        if self._warn_independent_sampling:
-            complete_trials = self._get_trials(study)
-            if len(complete_trials) >= self._n_startup_trials:
-                self._log_independent_sampling(trial, param_name)
-
-        return self._independent_sampler.sample_independent(
-            study, trial, param_name, param_distribution
-        )
-
-    def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-
-        logger = optuna.logging.get_logger(__name__)
-        logger.warning(
-            "The parameter '{}' in trial#{} is sampled independently "
-            "by using `{}` instead of `SkoptSampler` "
-            "(optimization performance may be degraded). "
-            "You can suppress this warning by setting `warn_independent_sampling` "
-            "to `False` in the constructor of `SkoptSampler`, "
-            "if this independent sampling is intended behavior.".format(
-                param_name, trial.number, self._independent_sampler.__class__.__name__
-            )
-        )
-
-    def _get_trials(self, study: Study) -> List[FrozenTrial]:
-        complete_trials = []
-        for t in study.get_trials(deepcopy=False):
-            if t.state == TrialState.COMPLETE:
-                complete_trials.append(t)
-            elif (
-                t.state == TrialState.PRUNED
-                and len(t.intermediate_values) > 0
-                and self._consider_pruned_trials
-            ):
-                _, value = max(t.intermediate_values.items())
-                if value is None:
-                    continue
-                # We rewrite the value of the trial `t` for sampling, so we need a deepcopy.
-                copied_t = copy.deepcopy(t)
-                copied_t.value = value
-                complete_trials.append(copied_t)
-        return complete_trials
+    def _create_controller(
+        self, search_space: Dict[str, distributions.BaseDistribution]
+    ) -> BaseBoController:
+        return _SkoptController(search_space, self._skopt_kwargs)
 
 
-class _Optimizer(object):
+class _SkoptController(BaseBoController):
     def __init__(
         self, search_space: Dict[str, distributions.BaseDistribution], skopt_kwargs: Dict[str, Any]
     ) -> None:

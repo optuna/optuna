@@ -95,7 +95,7 @@ def test_is_compatible():
     search_space = optuna.samplers.intersection_search_space(study)
     assert search_space == {"p0": distributions.UniformDistribution(low=0, high=10)}
 
-    optimizer = optuna.integration.skopt._Optimizer(search_space, {})
+    optimizer = optuna.integration.skopt._SkoptController(search_space, {})
 
     # Compatible.
     trial = _create_frozen_trial(
