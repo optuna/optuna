@@ -174,6 +174,9 @@ class TestOptimizer(object):
     @staticmethod
     def test_init(search_space: Dict[str, BaseDistribution], x0: Dict[str, Any]) -> None:
 
+        # TODO(c-bata): Avoid exact assertion checks
+        eps = 1e-10
+
         with patch("cma.CMAEvolutionStrategy") as mock_obj:
             optuna.integration.cma._Optimizer(
                 search_space, x0, 0.2, None, {"popsize": 5, "seed": 1}
@@ -184,8 +187,8 @@ class TestOptimizer(object):
                 {
                     "BoundaryHandler": cma.BoundTransform,
                     "bounds": [
-                        [-0.5, -1.0, -1.5, -2.0, math.log(1.5), math.log(0.001), -2,],
-                        [1.5, 11.0, 1.5, 4.0, math.log(16.5), math.log(0.1), 2],
+                        [-0.5, -1.0, -1.5, -2.0, math.log(1.5), math.log(0.001), -2],
+                        [1.5, 11.0, 1.5, 4.0, math.log(16.5), math.log(0.1) - eps, 2 - eps],
                     ],
                     "popsize": 5,
                     "seed": 1,

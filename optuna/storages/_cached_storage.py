@@ -209,6 +209,7 @@ class _CachedStorage(BaseStorage):
             with self._lock:
                 study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
                 self._add_trials_to_cache(study_id, [self._backend.get_trial(trial_id)])
+                self._studies[study_id].owned_or_finished_trial_ids.add(trial_id)
         return ret
 
     def set_trial_param(

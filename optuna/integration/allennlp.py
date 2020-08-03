@@ -42,7 +42,6 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
     for key, value in best_params.items():
         best_params[key] = str(value)
     best_config = json.loads(_jsonnet.evaluate_file(input_config_file, ext_vars=best_params))
-    best_config = allennlp.common.params.infer_and_cast(best_config)
 
     with open(output_config_file, "w") as f:
         json.dump(best_config, f, indent=4)
@@ -56,8 +55,11 @@ class AllenNLPExecutor(object):
     The interface may change without prior notice to correspond to the update.
 
     See the examples of `objective function <https://github.com/optuna/optuna/blob/
-    master/examples/allennlp/allennlp_jsonnet.py>`_ and
-    `config file <https://github.com/optuna/optuna/blob/master/
+    master/examples/allennlp/allennlp_jsonnet.py>`_.
+
+    From Optuna v2.1.0, users have to cast their parameters by using methods in Jsonnet.
+    Call ``std.parseInt`` for integer, or ``std.parseJson`` for floating point.
+    Please see the `example configuration <https://github.com/optuna/optuna/blob/master/
     examples/allennlp/classifier.jsonnet>`_.
 
     .. note::
@@ -112,19 +114,14 @@ class AllenNLPExecutor(object):
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.
 
-        _build_params is based on allentune's train_func.
+        _build_params is based on allentune's ``train_func``.
         For more detail, please refer to
         https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
 
         """
         params = self._environment_variables()
         params.update({key: str(value) for key, value in self._params.items()})
-
-        allennlp_params = json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=params))
-        # allennlp_params contains a list of string or string as value values.
-        # Some params couldn't be casted correctly and
-        # infer_and_cast converts them into desired values.
-        return allennlp.common.params.infer_and_cast(allennlp_params)
+        return json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=params))
 
     @staticmethod
     def _is_encodable(value: str) -> bool:

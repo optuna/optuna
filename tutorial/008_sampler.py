@@ -1,3 +1,4 @@
+"""
 .. _sampler:
 
 User-Defined Sampler
@@ -128,3 +129,4 @@ In this optimization, the values of ``x`` and ``y`` parameters are sampled by us
     Because :func:`~optuna.samplers.intersection_search_space` used in
     ``SimulatedAnnealingSampler.infer_relative_search_space`` cannot infer the search space
     if there are no complete trials.
+"""
