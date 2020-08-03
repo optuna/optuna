@@ -10,7 +10,7 @@ This example's code is based on ../../pytorch_lightning_simple.py example with t
 
 In order to run this example you have to do the following steps:
 
-First run `run.sh` which takes two arguments $IsMinikube and $IMAGE_NAME
+First run `run.sh` which takes two arguments `$IsMinikube` and `$IMAGE_NAME`
 
 - If you want to run locally in minikube run the following command
 
@@ -18,7 +18,7 @@ First run `run.sh` which takes two arguments $IsMinikube and $IMAGE_NAME
 $ sh run.sh True optuna-kubernetes-mlflow:example
  ```
 
-- If you want to run in cloud, please change the IMAGE_NAME accordingly in k8s-manifest.yaml and run as follows. Also please make sure that you kubernetes context is set correctly.
+- If you want to run in cloud, please change the `IMAGE_NAME` accordingly in k8s-manifest.yaml and run as follows. Also please make sure that your kubernetes context is set correctly.
 
  ```bash
 $ sh run.sh False $IMAGE_NAME
