@@ -34,6 +34,7 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.5.1",
         "colorlog",
+        "GPy",
         "joblib",
         "numpy",
         "packaging",
@@ -76,7 +77,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         "example": [
             "catboost",
             "chainer",
-            "GPy",
             "lightgbm",
             "mlflow",
             "mpi4py",
@@ -113,7 +113,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
-            "GPy",
             "lightgbm",
             "mlflow",
             "mpi4py",
