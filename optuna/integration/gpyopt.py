@@ -17,16 +17,16 @@ from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 
 with try_import() as _imports:
-    import skopt
-    from skopt.space import space
+    import GPyOpt
 
 
-class SkoptSampler(BaseBoSampler):
-    """Sampler using Scikit-Optimize as the backend.
+@experimental("2.1.0")
+class GpyoptSampler(BaseBoSampler):
+    """Sampler using GPyOpt as the backend.
 
     Example:
 
-        Optimize a simple quadratic function by using :class:`~optuna.integration.SkoptSampler`.
+        Optimize a simple quadratic function by using :class:`~optuna.integration.GpyoptSampler`.
 
         .. testcode::
 
@@ -37,7 +37,7 @@ class SkoptSampler(BaseBoSampler):
                     y = trial.suggest_int('y', 0, 10)
                     return x**2 + y
 
-                sampler = optuna.integration.SkoptSampler()
+                sampler = optuna.integration.GpyoptSampler()
                 study = optuna.create_study(sampler=sampler)
                 study.optimize(objective, n_trials=10)
 
@@ -46,7 +46,7 @@ class SkoptSampler(BaseBoSampler):
             A :class:`~optuna.samplers.BaseSampler` instance that is used for independent
             sampling. The parameters not contained in the relative search space are sampled
             by this sampler.
-            The search space for :class:`~optuna.integration.SkoptSampler` is determined by
+            The search space for :class:`~optuna.integration.GpyoptSampler` is determined by
             :func:`~optuna.samplers.intersection_search_space()`.
 
             If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
@@ -64,13 +64,8 @@ class SkoptSampler(BaseBoSampler):
             Note that the parameters of the first trial in a study are always sampled
             via an independent sampler, so no warning messages are emitted in this case.
 
-        skopt_kwargs:
-            Keyword arguments passed to the constructor of
-            `skopt.Optimizer <https://scikit-optimize.github.io/#skopt.Optimizer>`_
-            class.
-
-            Note that ``dimensions`` argument in ``skopt_kwargs`` will be ignored
-            because it is added by :class:`~optuna.integration.SkoptSampler` automatically.
+        gpyopt_kwargs:
+            Keyword arguments passed to the `GPyOpt`.
 
         n_startup_trials:
             The independent sampling is used until the given number of trials finish in the
@@ -78,11 +73,6 @@ class SkoptSampler(BaseBoSampler):
 
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
-
-            .. note::
-                Added in v2.0.0 as an experimental feature. The interface may change in newer
-                versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v2.0.0.
 
             .. note::
                 As the number of trials :math:`n` increases, each sampling takes longer and longer
@@ -97,7 +87,7 @@ class SkoptSampler(BaseBoSampler):
         self,
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
-        skopt_kwargs: Optional[Dict[str, Any]] = None,
+        gpyopt_kwargs: Optional[Dict[str, Any]] = None,
         n_startup_trials: int = 1,
         *,
         consider_pruned_trials: bool = False
@@ -112,16 +102,9 @@ class SkoptSampler(BaseBoSampler):
 
         _imports.check()
 
-        self._skopt_kwargs = skopt_kwargs or {}
-        if "dimensions" in self._skopt_kwargs:
-            del self._skopt_kwargs["dimensions"]
-
-        if self._consider_pruned_trials:
-            self._raise_experimental_warning_for_consider_pruned_trials()
-
-    @experimental("2.0.0", name="`consider_pruned_trials = True` in SkoptSampler")
-    def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
-        pass
+        self._gpyopt_kwargs = gpyopt_kwargs or {}
+        if "domain" in self._gpyopt_kwargs:
+            del self._gpyopt_kwargs["domain"]
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -129,14 +112,6 @@ class SkoptSampler(BaseBoSampler):
 
         search_space = {}
         for name, distribution in self._search_space.calculate(study).items():
-            if distribution.single():
-                if not isinstance(distribution, distributions.CategoricalDistribution):
-                    # `skopt` cannot handle non-categorical distributions that contain just
-                    # a single value, so we skip this distribution.
-                    #
-                    # Note that `Trial` takes care of this distribution during suggestion.
-                    continue
-
             search_space[name] = distribution
 
         return search_space
@@ -144,46 +119,56 @@ class SkoptSampler(BaseBoSampler):
     def _create_controller(
         self, search_space: Dict[str, distributions.BaseDistribution]
     ) -> BaseBoController:
-        return _SkoptController(search_space, self._skopt_kwargs)
+        return _GpyoptController(search_space, self._gpyopt_kwargs)
 
 
-class _SkoptController(BaseBoController):
+class _GpyoptController(BaseBoController):
     def __init__(
-        self, search_space: Dict[str, distributions.BaseDistribution], skopt_kwargs: Dict[str, Any]
+        self,
+        search_space: Dict[str, distributions.BaseDistribution],
+        gpyopt_kwargs: Dict[str, Any],
     ) -> None:
 
         self._search_space = search_space
+        self._gpyopt_kwargs = gpyopt_kwargs
+        self._bo = None
 
-        dimensions = []
+        self._domain = []
         for name, distribution in sorted(self._search_space.items()):
             if isinstance(distribution, distributions.UniformDistribution):
-                # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
+                # Convert the upper bound from exclusive (optuna) to inclusive (gpyopt).
                 high = np.nextafter(distribution.high, float("-inf"))
-                dimension = space.Real(distribution.low, high)
+                dimension = {
+                    "name": name,
+                    "type": "continuous",
+                    "domain": (distribution.low, high),
+                }
             elif isinstance(distribution, distributions.LogUniformDistribution):
-                # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
-                high = np.nextafter(distribution.high, float("-inf"))
-                dimension = space.Real(distribution.low, high, prior="log-uniform")
+                # Convert the upper bound from exclusive (optuna) to inclusive (gpyopt).
+                high = np.log(np.nextafter(distribution.high, float("-inf")))
+                dimension = {
+                    "name": name,
+                    "type": "continuous",
+                    "domain": (np.log(distribution.low), high),
+                }
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 count = (distribution.high - distribution.low) // distribution.step
-                dimension = space.Integer(0, count)
+                dimension = {"name": name, "type": "discrete", "domain": (0, count)}
             elif isinstance(distribution, distributions.IntLogUniformDistribution):
-                low = distribution.low - 0.5
-                high = distribution.high + 0.5
-                dimension = space.Real(low, high, prior="log-uniform")
+                low = np.log(distribution.low - 0.5)
+                high = np.log(distribution.high + 0.5)
+                dimension = {"name": name, "type": "continuous", "domain": (low, high)}
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 count = int((distribution.high - distribution.low) // distribution.q)
-                dimension = space.Integer(0, count)
+                dimension = {"name": name, "type": "discrete", "domain": (0, count)}
             elif isinstance(distribution, distributions.CategoricalDistribution):
-                dimension = space.Categorical(distribution.choices)
+                dimension = {"name": name, "type": "categorical", "domain": distribution.choices}
             else:
                 raise NotImplementedError(
                     "The distribution {} is not implemented.".format(distribution)
                 )
 
-            dimensions.append(dimension)
-
-        self._optimizer = skopt.Optimizer(dimensions, **skopt_kwargs)
+            self._domain.append(dimension)
 
     def tell(self, study: Study, complete_trials: List[FrozenTrial]) -> None:
 
@@ -194,23 +179,30 @@ class _SkoptController(BaseBoController):
             if not self._is_compatible(trial):
                 continue
 
-            x, y = self._complete_trial_to_skopt_observation(study, trial)
+            x, y = self._complete_trial_to_observation_pair(study, trial)
             xs.append(x)
             ys.append(y)
 
-        self._optimizer.tell(xs, ys)
+        xs = np.asarray(xs)
+        ys = np.asarray(ys).reshape((len(ys), 1))
+        self._bo = GPyOpt.methods.BayesianOptimization(
+            f=None, domain=self._domain, X=xs, Y=ys, **self._gpyopt_kwargs
+        )
 
     def ask(self) -> Dict[str, Any]:
+        assert self._bo is not None
 
         params = {}
-        param_values = self._optimizer.ask()
+        param_values = self._bo.suggest_next_locations()[0]
         for (name, distribution), value in zip(sorted(self._search_space.items()), param_values):
+            if isinstance(distribution, distributions.LogUniformDistribution):
+                value = np.exp(value)
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 value = value * distribution.q + distribution.low
             if isinstance(distribution, distributions.IntUniformDistribution):
                 value = value * distribution.step + distribution.low
             if isinstance(distribution, distributions.IntLogUniformDistribution):
-                value = int(np.round(value))
+                value = int(np.round(np.exp(value)))
                 value = min(max(value, distribution.low), distribution.high)
 
             params[name] = value
@@ -237,7 +229,7 @@ class _SkoptController(BaseBoController):
 
         return True
 
-    def _complete_trial_to_skopt_observation(
+    def _complete_trial_to_observation_pair(
         self, study: Study, trial: FrozenTrial
     ) -> Tuple[List[Any], float]:
 
@@ -245,6 +237,11 @@ class _SkoptController(BaseBoController):
         for name, distribution in sorted(self._search_space.items()):
             param_value = trial.params[name]
 
+            if isinstance(
+                distribution,
+                (distributions.LogUniformDistribution, distributions.IntLogUniformDistribution,),
+            ):
+                param_value = np.log(param_value)
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 param_value = (param_value - distribution.low) // distribution.q
             if isinstance(distribution, distributions.IntUniformDistribution):

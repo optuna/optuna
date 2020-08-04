@@ -112,6 +112,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
+            "GPyOpt",
             "lightgbm",
             "mlflow",
             "mpi4py",
@@ -149,6 +150,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
+            "GPyOpt",
             "lightgbm",
             "mlflow",
             "mpi4py",
