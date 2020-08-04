@@ -1,42 +1,35 @@
 from collections import namedtuple
 import math
+import typing
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import chainer
 import chainer.links as L
 from chainer.training import triggers
-from mock import Mock
-from mock import patch
 import numpy as np
 import pytest
 
 import optuna
-from optuna.exceptions import TrialPruned
 from optuna.integration.chainer import ChainerPruningExtension
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    import typing  # NOQA
 
 
 class FixedValueDataset(chainer.dataset.DatasetMixin):
 
     size = 16
 
-    def __len__(self):
-        # type: () -> int
+    def __len__(self) -> int:
 
         return self.size
 
-    def get_example(self, i):
-        # type: (int) -> typing.Tuple[np.ndarray, int]
+    def get_example(self, i: int) -> typing.Tuple[np.ndarray, int]:
 
         return np.array([1.0], np.float32), np.int32(0)
 
 
-def test_chainer_pruning_extension_trigger():
-    # type: () -> None
+def test_chainer_pruning_extension_trigger() -> None:
 
     study = optuna.create_study()
     trial = create_running_trial(study, 1.0)
@@ -54,11 +47,8 @@ def test_chainer_pruning_extension_trigger():
         ChainerPruningExtension(trial, "main/loss", triggers.TimeTrigger(1.0))
 
 
-def test_chainer_pruning_extension():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+def test_chainer_pruning_extension() -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
 
         model = L.Classifier(chainer.Sequential(L.Linear(None, 2)))
         optimizer = chainer.optimizers.Adam()
@@ -84,8 +74,7 @@ def test_chainer_pruning_extension():
     assert study.trials[0].value == 1.0
 
 
-def test_chainer_pruning_extension_observation_nan():
-    # type: () -> None
+def test_chainer_pruning_extension_observation_nan() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)
@@ -96,13 +85,12 @@ def test_chainer_pruning_extension_observation_nan():
     trainer = MockTrainer(observation={"main/loss": float("nan")}, updater=MockUpdater(1))
 
     with patch.object(extension, "_observation_exists", Mock(return_value=True)) as mock:
-        with pytest.raises(TrialPruned):
+        with pytest.raises(optuna.TrialPruned):
             extension(trainer)
         assert mock.call_count == 1
 
 
-def test_observation_exists():
-    # type: () -> None
+def test_observation_exists() -> None:
 
     study = optuna.create_study()
     trial = create_running_trial(study, 1.0)
@@ -126,8 +114,7 @@ def test_observation_exists():
         assert mock.call_count == 2
 
 
-def test_get_float_value():
-    # type: () -> None
+def test_get_float_value() -> None:
 
     assert 1.0 == ChainerPruningExtension._get_float_value(1.0)
     assert 1.0 == ChainerPruningExtension._get_float_value(chainer.Variable(np.array([1.0])))

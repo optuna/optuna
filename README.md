@@ -26,9 +26,9 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 Optuna has modern functionalities as follows:
 
-- Parallel distributed optimization
-- Pruning of unpromising trials
-- Lightweight, versatile, and platform agnostic architecture
+- [Lightweight, versatile, and platform agnostic architecture](https://optuna.readthedocs.io/en/stable/tutorial/first.html)
+- [Parallel distributed optimization](https://optuna.readthedocs.io/en/stable/tutorial/distributed.html)
+- [Pruning of unpromising trials](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html)
 
 
 ## Basic Concepts
@@ -68,7 +68,7 @@ def objective(trial):
 
     error = sklearn.metrics.mean_squared_error(y_val, y_pred)
 
-    return error  # A objective value linked with the Trial object.
+    return error  # An objective value linked with the Trial object.
 
 study = optuna.create_study()  # Create a new study.
 study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
@@ -89,7 +89,7 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 * [PyTorch Ignite](./examples/pytorch_ignite_simple.py)
 * [PyTorch Lightning](./examples/pytorch_lightning_simple.py)
 * [FastAI](./examples/fastai_simple.py)
-* [AllenNLP](./examples/allennlp_simple.py)
+* [AllenNLP](./examples/allennlp)
 
 ## Installation
 
@@ -107,6 +107,7 @@ $ conda install -c conda-forge optuna
 
 Optuna supports Python 3.5 or newer.
 
+Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
 
 ## Communication
 
@@ -123,11 +124,6 @@ Optuna supports Python 3.5 or newer.
 
 Any contributions to Optuna are welcome! When you send a pull request, please follow the
 [contribution guide](./CONTRIBUTING.md).
-
-
-## License
-
-MIT License (see [LICENSE](./LICENSE)).
 
 
 ## Reference

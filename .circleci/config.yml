@@ -11,10 +11,9 @@ workflows:
       - tests-python37
       - tests-python36
       - tests-python35
-      - codecov
+      - tests-rdbstorage
 
 jobs:
-
   # Lint and static type checking
 
   checks:
@@ -32,6 +31,7 @@ jobs:
                 git fetch -u origin ${FETCH_REFS}
                 git checkout "pr/${CIRCLE_PR_NUMBER}/merge"
             fi
+
       - run:
           name: install
           command: |
@@ -39,21 +39,25 @@ jobs:
             . venv/bin/activate
             pip install -U pip
             pip install --progress-bar off .[checking]
+
       - run:
           name: black
           command: |
             . venv/bin/activate
-            black . --line-length 99 --check --exclude="docs"
+            black . --line-length 99 --check --exclude="docs|tutorial"
+
       - run:
           name: flake8
           command: |
             . venv/bin/activate
             flake8 .
+
       - run:
           name: mypy
           command: |
             . venv/bin/activate
             mypy .
+
   document:
     docker:
       - image: readthedocs/build:latest
@@ -65,18 +69,17 @@ jobs:
       - run:
           name: install
           command: |
-            python -m venv venv || virtualenv venv --python=python3
+            python -m venv venv || virtualenv venv --python=python3.8
             . venv/bin/activate
             pip install -U pip
             pip install --progress-bar off .[document]
+
       - run:
           name: build
           command: |
             . venv/bin/activate
             cd docs
             make html
-      - store_artifacts:
-          path: ./docs/build
 
       - store_artifacts:
           path: ./docs/build
@@ -96,12 +99,14 @@ jobs:
             . venv/bin/activate
             pip install -U pip
             pip install --progress-bar off .[doctest,document]
+
       - run:
           name: build
           command: |
             . venv/bin/activate
             cd docs
             make doctest
+
   # Unit tests
 
   tests-python37:
@@ -118,30 +123,31 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get -y install openmpi-bin libopenmpi-dev
-            # Install swig which is required by pyrfr which is required by fanova.
-            wget http://prdownloads.sourceforge.net/swig/swig-3.0.12.tar.gz
-            tar -zxvf swig-3.0.12.tar.gz
-            pushd swig-3.0.12
-            ./configure
-            make
-            sudo make install
-            popd
-            swig -version
+
             python -m venv venv || virtualenv venv
             . venv/bin/activate
             pip install -U pip
             pip install --progress-bar off -U setuptools
             python setup.py sdist
+
             # Install minimal dependencies and confirm that `import optuna` is successful.
             pip install --progress-bar off $(ls dist/*.tar.gz)
             python -c 'import optuna'
+
             # Install all dependencies needed for testing.
-            pip install --progress-bar off $(ls dist/*.tar.gz)[testing]
+            pip install --progress-bar off $(ls dist/*.tar.gz)[testing] -f https://download.pytorch.org/whl/torch_stable.html
+
+      - run:
+          name: install-codecov
+          command: |
+            . venv/bin/activate
+            pip install --progress-bar off .[codecov]
+
       - run: &tests
           name: tests
           command: |
             . venv/bin/activate
-            pytest tests
+            pytest --cov=optuna tests
           environment:
             OMP_NUM_THREADS: 1
 
@@ -150,6 +156,14 @@ jobs:
           command: |
             . venv/bin/activate
             mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+          environment:
+            OMP_NUM_THREADS: 1
+
+      - run:
+          name: codecov
+          command: |
+            . venv/bin/activate
+            codecov
           environment:
             OMP_NUM_THREADS: 1
 
@@ -169,10 +183,8 @@ jobs:
           command: |
             . venv/bin/activate
             pytest tests --ignore tests/integration_tests/test_fastai.py \
-                --ignore tests/integration_tests/test_keras.py \
-                --ignore tests/integration_tests/test_pytorch_lightning.py \
-                --ignore tests/integration_tests/test_tensorflow.py \
-                --ignore tests/integration_tests/test_tfkeras.py
+                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
+
       - run: *tests-mn
 
   tests-python36:
@@ -180,7 +192,19 @@ jobs:
       - image: circleci/python:3.6
       - image: circleci/redis:5.0.7
     steps:
-      [checkout, run: *checkout-merge-master, run: *install, run: *tests, run: *tests-mn]
+      - checkout
+
+      - run: *checkout-merge-master
+
+      - run: *install
+
+      - run:
+          <<: *tests
+          command: |
+            . venv/bin/activate
+            pytest tests
+
+      - run: *tests-mn
 
   tests-python35:
     docker:
@@ -197,13 +221,26 @@ jobs:
           <<: *tests
           command: |
             . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py --ignore tests/integration_tests/test_fastai.py
+            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py \
+                --ignore tests/integration_tests/test_fastai.py \
+                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py \
+                --ignore tests/integration_tests/test_catalyst.py
+
       - run: *tests-mn
 
-  codecov:
+  tests-rdbstorage:
     docker:
       - image: circleci/python:3.7
-      - image: circleci/redis:5.0.7
+      - image: circleci/mysql:5.7
+        environment:
+          MYSQL_DATABASE: optunatest
+          MYSQL_USER: user
+          MYSQL_PASSWORD: test
+      - image: circleci/postgres:10.1-alpine
+        environment:
+          POSTGRES_USER: user
+          POSTGRES_DB: optunatest
+          POSTGRES_PASSWORD: test
     steps:
       - checkout
 
@@ -211,16 +248,26 @@ jobs:
 
       - run: *install
 
-      - run:
-          name: install-codecov
+      - run: &install-rdb-bindings
+          name: install-rdb-bindings
           command: |
             . venv/bin/activate
-            pip install --progress-bar off .[codecov]
-      - run:
-          name: codecov
+            pip install --progress-bar off PyMySQL cryptography psycopg2-binary
+
+      - run: &tests-mysql
+          name: tests-mysql
           command: |
             . venv/bin/activate
-            pytest --cov=./ tests
-            codecov
+            pytest tests/storages_tests/rdb_tests/test_with_server.py
           environment:
             OMP_NUM_THREADS: 1
+            TEST_DB_URL: mysql+pymysql://user:test@127.0.0.1/optunatest
+
+      - run: &tests-postgresql
+          name: tests-postgresql
+          command: |
+            . venv/bin/activate
+            pytest tests/storages_tests/rdb_tests/test_with_server.py
+          environment:
+            OMP_NUM_THREADS: 1
+            TEST_DB_URL: postgresql+psycopg2://user:test@127.0.0.1/optunatest

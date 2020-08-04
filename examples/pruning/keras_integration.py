@@ -9,6 +9,10 @@ results and stops unpromising trials.
 You can run this example as follows:
     $ python keras_integration.py
 
+For a similar Optuna example that demonstrates Keras without a pruner on a regression dataset,
+see the following link:
+    https://github.com/optuna/optuna/blob/master/examples/mlflow/keras_mlflow.py
+
 """
 
 import keras
@@ -21,7 +25,7 @@ import optuna
 from optuna.integration import KerasPruningCallback
 
 N_TRAIN_EXAMPLES = 3000
-N_TEST_EXAMPLES = 1000
+N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 20
@@ -35,14 +39,14 @@ def create_model(trial):
     n_layers = trial.suggest_int("n_layers", 1, 3)
     model = Sequential()
     for i in range(n_layers):
-        num_hidden = int(trial.suggest_loguniform("n_units_l{}".format(i), 4, 128))
+        num_hidden = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
         model.add(Dense(num_hidden, activation="relu"))
-        dropout = trial.suggest_uniform("dropout_l{}".format(i), 0.2, 0.5)
+        dropout = trial.suggest_float("dropout_l{}".format(i), 0.2, 0.5)
         model.add(Dropout(rate=dropout))
     model.add(Dense(CLASSES, activation="softmax"))
 
     # We compile our model with a sampled learning rate.
-    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
     model.compile(
         loss="categorical_crossentropy",
         optimizer=keras.optimizers.RMSprop(lr=lr),
@@ -56,14 +60,14 @@ def objective(trial):
     # Clear clutter from previous session graphs.
     keras.backend.clear_session()
 
-    # The data is split between train and test sets.
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    # The data is split between train and validation sets.
+    (x_train, y_train), (x_valid, y_valid) = mnist.load_data()
     x_train = x_train.reshape(60000, 784)[:N_TRAIN_EXAMPLES].astype("float32") / 255
-    x_test = x_test.reshape(10000, 784)[:N_TEST_EXAMPLES].astype("float32") / 255
+    x_valid = x_valid.reshape(10000, 784)[:N_VALID_EXAMPLES].astype("float32") / 255
 
     # Convert class vectors to binary class matrices.
     y_train = keras.utils.to_categorical(y_train[:N_TRAIN_EXAMPLES], CLASSES)
-    y_test = keras.utils.to_categorical(y_test[:N_TEST_EXAMPLES], CLASSES)
+    y_valid = keras.utils.to_categorical(y_valid[:N_VALID_EXAMPLES], CLASSES)
 
     # Generate our trial model.
     model = create_model(trial)
@@ -74,14 +78,14 @@ def objective(trial):
         x_train,
         y_train,
         batch_size=BATCHSIZE,
-        callbacks=[KerasPruningCallback(trial, "val_acc")],
+        callbacks=[KerasPruningCallback(trial, "val_accuracy")],
         epochs=EPOCHS,
-        validation_data=(x_test, y_test),
+        validation_data=(x_valid, y_valid),
         verbose=1,
     )
 
-    # Evaluate the model accuracy on the test set.
-    score = model.evaluate(x_test, y_test, verbose=0)
+    # Evaluate the model accuracy on the validation set.
+    score = model.evaluate(x_valid, y_valid, verbose=0)
     return score[1]
 
 

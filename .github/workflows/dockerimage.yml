@@ -1,0 +1,55 @@
+name: Build Docker Image
+
+on:
+  push:
+    branches:
+      - master
+  release:
+    types: [published]
+  pull_request:
+    paths:
+      - Dockerfile
+      - setup.py
+
+env:
+  DOCKER_HUB_BASE_NAME: optuna/optuna
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python_version: ['3.5', '3.6', '3.7', '3.8']
+        build_type: ['', 'dev']  # "dev" installs all the dependencies including pytest.
+
+    # This action cannot be executed in the forked repository.
+    if: github.repository == 'optuna/optuna'
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set ENV
+      run: |
+        export TAG_NAME="py${{ matrix.python_version }}"
+        if [ "${{ github.event_name }}" = 'release' ]; then
+          export TAG_NAME="${{ github.event.release.tag_name }}-${TAG_NAME}"
+        fi
+        if [ "${{matrix.build_type}}" = 'dev' ]; then
+          export TAG_NAME="${TAG_NAME}-dev"
+        fi
+        echo "::set-env name=HUB_TAG::${DOCKER_HUB_BASE_NAME}:${TAG_NAME}"
+
+
+    - name: Build the Docker image
+      run: |
+        docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
+
+    - name: Login & Push to Docker Hub
+      if: ${{ github.event_name != 'pull_request' }}
+      env:
+        DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+      run: |
+        echo "${DOCKER_HUB_TOKEN}" | docker login -u optunabot --password-stdin
+        docker push "${HUB_TAG}"

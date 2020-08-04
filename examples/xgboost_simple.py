@@ -6,17 +6,6 @@ In this example, we optimize the validation accuracy of cancer detection
 using XGBoost. We optimize both the choice of booster model and their hyper
 parameters.
 
-We have following two ways to execute this example:
-
-(1) Execute this code directly.
-    $ python xgboost_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize xgboost_simple.py objective --n-trials=100 --study $STUDY_NAME \
-      --storage sqlite:///example.db
-
 """
 
 import numpy as np
@@ -32,33 +21,33 @@ import optuna
 # (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     (data, target) = sklearn.datasets.load_breast_cancer(return_X_y=True)
-    train_x, test_x, train_y, test_y = train_test_split(data, target, test_size=0.25)
+    train_x, valid_x, train_y, valid_y = train_test_split(data, target, test_size=0.25)
     dtrain = xgb.DMatrix(train_x, label=train_y)
-    dtest = xgb.DMatrix(test_x, label=test_y)
+    dvalid = xgb.DMatrix(valid_x, label=valid_y)
 
     param = {
         "silent": 1,
         "objective": "binary:logistic",
         "booster": trial.suggest_categorical("booster", ["gbtree", "gblinear", "dart"]),
-        "lambda": trial.suggest_loguniform("lambda", 1e-8, 1.0),
-        "alpha": trial.suggest_loguniform("alpha", 1e-8, 1.0),
+        "lambda": trial.suggest_float("lambda", 1e-8, 1.0, log=True),
+        "alpha": trial.suggest_float("alpha", 1e-8, 1.0, log=True),
     }
 
     if param["booster"] == "gbtree" or param["booster"] == "dart":
         param["max_depth"] = trial.suggest_int("max_depth", 1, 9)
-        param["eta"] = trial.suggest_loguniform("eta", 1e-8, 1.0)
-        param["gamma"] = trial.suggest_loguniform("gamma", 1e-8, 1.0)
+        param["eta"] = trial.suggest_float("eta", 1e-8, 1.0, log=True)
+        param["gamma"] = trial.suggest_float("gamma", 1e-8, 1.0, log=True)
         param["grow_policy"] = trial.suggest_categorical("grow_policy", ["depthwise", "lossguide"])
     if param["booster"] == "dart":
         param["sample_type"] = trial.suggest_categorical("sample_type", ["uniform", "weighted"])
         param["normalize_type"] = trial.suggest_categorical("normalize_type", ["tree", "forest"])
-        param["rate_drop"] = trial.suggest_loguniform("rate_drop", 1e-8, 1.0)
-        param["skip_drop"] = trial.suggest_loguniform("skip_drop", 1e-8, 1.0)
+        param["rate_drop"] = trial.suggest_float("rate_drop", 1e-8, 1.0, log=True)
+        param["skip_drop"] = trial.suggest_float("skip_drop", 1e-8, 1.0, log=True)
 
     bst = xgb.train(param, dtrain)
-    preds = bst.predict(dtest)
+    preds = bst.predict(dvalid)
     pred_labels = np.rint(preds)
-    accuracy = sklearn.metrics.accuracy_score(test_y, pred_labels)
+    accuracy = sklearn.metrics.accuracy_score(valid_y, pred_labels)
     return accuracy
 
 

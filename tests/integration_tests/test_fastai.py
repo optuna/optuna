@@ -1,12 +1,15 @@
 from functools import partial
-import typing  # NOQA
+from typing import Any
+from typing import Tuple
 
+import fastai.basic_data
 from fastai.basic_data import DataBunch
 from fastai.basic_train import Learner
 from fastai.metrics import accuracy
 import numpy as np
 import pytest
 import torch.nn as nn
+import torch.utils.data
 from torch.utils.data import Dataset
 
 import optuna
@@ -18,32 +21,27 @@ from optuna.testing.integration import DeterministicPruner
 class ArrayDataset(Dataset):
     "Sample numpy array dataset"
 
-    def __init__(self, x, y):
-        # type: (typing.Any, typing.Any) -> None
+    def __init__(self, x: Any, y: Any) -> None:
 
         self.x, self.y = x, y
         self.c = 2
 
-    def __len__(self):
-        # type: () -> int
+    def __len__(self) -> int:
 
         return len(self.x)
 
-    def __getitem__(self, i):
-        # type: (int) -> typing.Tuple[typing.Any, typing.Any]
+    def __getitem__(self, i: int) -> Tuple[Any, Any]:
 
         return self.x[i], self.y[i]
 
 
 @pytest.fixture(scope="session")
-def tmpdir(tmpdir_factory):
-    # type: (typing.Any) -> typing.Any
+def tmpdir(tmpdir_factory: Any) -> Any:
 
     return tmpdir_factory.mktemp("fastai_integration_test")
 
 
-def test_fastai_pruning_callback(tmpdir):
-    # type: (typing.Any) -> None
+def test_fastai_pruning_callback(tmpdir: Any) -> None:
 
     train_x = np.zeros((16, 20), np.float32)
     train_y = np.zeros((16,), np.int64)
@@ -56,8 +54,7 @@ def test_fastai_pruning_callback(tmpdir):
         train_ds=train_ds, valid_ds=valid_ds, test_ds=None, path=tmpdir, bs=1  # batch size
     )
 
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+    def objective(trial: optuna.trial.Trial) -> float:
 
         model = nn.Sequential(nn.Linear(20, 1), nn.Sigmoid())
         learn = Learner(
@@ -79,3 +76,7 @@ def test_fastai_pruning_callback(tmpdir):
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+
+
+# https://github.com/optuna/optuna/pull/1399#issuecomment-646956305
+torch.utils.data.DataLoader.__init__ = fastai.basic_data.old_dl_init

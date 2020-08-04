@@ -14,9 +14,9 @@ Key Features
 
 Optuna has modern functionalities as follows:
 
--  Parallel distributed optimization
--  Pruning of unpromising trials
--  Lightweight, versatile, and platform agnostic architecture
+- :doc:`Lightweight, versatile, and platform agnostic architecture <tutorial/001_first>`
+- :doc:`Parallel distributed optimization <tutorial/004_distributed>`
+- :doc:`Pruning of unpromising trials <tutorial/007_pruning>`
 
 Basic Concepts
 --------------
@@ -58,7 +58,7 @@ optimization *studies*.
 
         error = sklearn.metrics.mean_squared_error(y_val, y_pred)
 
-        return error  # A objective value linked with the Trial object.
+        return error  # An objective value linked with the Trial object.
 
     study = optuna.create_study()  # Create a new study.
     study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.

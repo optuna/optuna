@@ -32,10 +32,11 @@ def get_install_requires() -> List[str]:
     return [
         "alembic",
         "cliff",
-        "cmaes>=0.3.2",
+        "cmaes>=0.5.1",
         "colorlog",
         "joblib",
         "numpy",
+        "packaging",
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
@@ -50,10 +51,28 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["black", "hacking", "mypy",],
-        "codecov": ["codecov", "pytest-cov",],
-        "doctest": ["cma", "pandas", "plotly>=4.0.0", "scikit-learn>=0.19.0", "scikit-optimize",],
-        "document": ["sphinx", "sphinx_rtd_theme",],
+        "checking": ["black", "hacking", "mypy"],
+        "codecov": ["codecov", "pytest-cov"],
+        "doctest": [
+            "cma",
+            "pandas",
+            "plotly>=4.0.0",
+            "scikit-learn>=0.19.0,<0.23.0",
+            "scikit-optimize",
+            "mlflow",
+        ],
+        "document": [
+            # TODO(hvy): Unpin `sphinx` version after:
+            # https://github.com/sphinx-doc/sphinx/issues/7807.
+            "sphinx>=3.0.0,!=3.1.0,!=3.1.1,!=3.1.2",
+            # As reported in: https://github.com/readthedocs/sphinx_rtd_theme/issues/949,
+            # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
+            "sphinx_rtd_theme<0.5.0",
+            "sphinx-gallery",
+            "pillow",
+            "matplotlib",
+            "scikit-learn",
+        ],
         "example": [
             "catboost",
             "chainer",
@@ -64,26 +83,27 @@ def get_extras_require() -> Dict[str, List[str]]:
             "nbval",
             "pytorch-ignite",
             "scikit-image",
-            "scikit-learn",
-            "torch",
-            "torchvision>=0.5.0",
+            "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
+            "thop",
+            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
+            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
+            "keras",
+            "tensorflow>=2.0.0",
+            "tensorflow-datasets",
         ]
-        + (["allennlp", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (["stable-baselines3>=0.7.0"] if (3, 5) < sys.version_info[:2] else [])
         + (
-            [
-                "dask[dataframe]",
-                "dask-ml",
-                "keras",
-                # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-                # https://github.com/optuna/optuna/issues/997.
-                "pytorch-lightning<0.7.0",
-                "tensorflow>=2.0.0",
-                "tensorflow-datasets",
-            ]
-            if sys.version_info[:2] < (3, 8)
+            ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
+            if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
-        ),
+        )
+        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
+        + (
+            ["llvmlite<=0.31.0"] if (3, 5) == sys.version_info[:2] else []
+        )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
+        + (["dask[dataframe]", "dask-ml",] if sys.version_info[:2] < (3, 8) else [])
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
         "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -92,34 +112,65 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
-            "fanova",
             "lightgbm",
-            "mock",
+            "mlflow",
             "mpi4py",
             "mxnet",
             "pandas",
             "plotly>=4.0.0",
             "pytest",
             "pytorch-ignite",
-            "scikit-learn>=0.19.0",
+            "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
-            "torch",
-            "torchvision>=0.5.0",
+            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
+            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
+            "keras",
+            "tensorflow",
+            "tensorflow-datasets",
         ]
-        + (["fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (
-            [
-                "keras",
-                # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-                # https://github.com/optuna/optuna/issues/997.
-                "pytorch-lightning<0.7.0",
-                "tensorflow",
-                "tensorflow-datasets",
-            ]
-            if sys.version_info[:2] < (3, 8)
+            ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
+            if (3, 5) < sys.version_info[:2] < (3, 8)
             else []
-        ),
+        )
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
+        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
+        "tests": ["fakeredis", "pytest"],
+        "optional": [
+            "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
+            "pandas",  # optuna/study.py
+            "plotly>=4.0.0",  # optuna/visualization.
+            "redis",  # optuna/storages/redis.py.
+            "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
+        ],
+        "integration": [
+            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
+            # https://github.com/optuna/optuna/issues/1000.
+            "chainer>=5.0.0",
+            "cma",
+            "lightgbm",
+            "mlflow",
+            "mpi4py",
+            "mxnet",
+            "pandas",
+            "pytorch-ignite",
+            "scikit-learn>=0.19.0,<0.23.0",
+            "scikit-optimize",
+            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
+            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
+            "xgboost",
+            "keras",
+            "tensorflow",
+            "tensorflow-datasets",
+        ]
+        + (
+            ["allennlp==1.0.0", "fastai<2", "pytorch-lightning>=0.7.1"]
+            if (3, 5) < sys.version_info[:2] < (3, 8)
+            else []
+        )
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
+        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
     }
 
     return requirements
@@ -135,16 +186,6 @@ def find_any_distribution(pkgs: List[str]) -> Optional[pkg_resources.Distributio
     return None
 
 
-pfnopt_pkg = find_any_distribution(["pfnopt"])
-if pfnopt_pkg is not None:
-    msg = (
-        "We detected that PFNOpt is installed in your environment.\n"
-        "PFNOpt has been renamed Optuna. Please uninstall the old\n"
-        "PFNOpt in advance (e.g. by executing `$ pip uninstall pfnopt`)."
-    )
-    print(msg)
-    exit(1)
-
 setup(
     name="optuna",
     version=get_version(),
@@ -157,11 +198,12 @@ setup(
     packages=find_packages(),
     package_data={
         "optuna": [
-            "storages/rdb/alembic.ini",
-            "storages/rdb/alembic/*.*",
-            "storages/rdb/alembic/versions/*.*",
+            "storages/_rdb/alembic.ini",
+            "storages/_rdb/alembic/*.*",
+            "storages/_rdb/alembic/versions/*.*",
         ]
     },
+    python_requires=">=3.5",
     install_requires=get_install_requires(),
     tests_require=get_tests_require(),
     extras_require=get_extras_require(),
@@ -177,4 +219,22 @@ setup(
             "storage upgrade = optuna.cli:_StorageUpgrade",
         ],
     },
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3 :: Only",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Mathematics",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Software Development",
+        "Topic :: Software Development :: Libraries",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
 )

@@ -1,8 +1,9 @@
-from mock import patch
+from unittest.mock import patch
+
 import pytest
 
 import optuna
-from optuna.integration import CmaEsSampler
+from optuna.integration import PyCmaSampler
 from optuna.integration import SkoptSampler
 from optuna.testing.sampler import FirstTrialOnlyRandomSampler
 
@@ -12,7 +13,7 @@ if optuna.type_checking.TYPE_CHECKING:
     from optuna.samplers import BaseSampler  # NOQA
 
 parametrize_sampler = pytest.mark.parametrize(
-    "sampler_class", [optuna.integration.SkoptSampler, optuna.integration.CmaEsSampler,]
+    "sampler_class", [optuna.integration.SkoptSampler, optuna.integration.PyCmaSampler,]
 )
 
 
@@ -22,7 +23,7 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: SkoptSampler(
             independent_sampler=FirstTrialOnlyRandomSampler(), skopt_kwargs={"n_initial_points": 5}
         ),
-        lambda: CmaEsSampler(independent_sampler=FirstTrialOnlyRandomSampler()),
+        lambda: PyCmaSampler(independent_sampler=FirstTrialOnlyRandomSampler()),
     ],
 )
 def test_suggested_value(sampler_class):
@@ -117,7 +118,7 @@ def test_sample_independent(sampler_class):
     "sampler_class",
     [
         lambda x: SkoptSampler(warn_independent_sampling=x),
-        lambda x: CmaEsSampler(warn_independent_sampling=x),
+        lambda x: PyCmaSampler(warn_independent_sampling=x),
     ],
 )
 def test_warn_independent_sampling(sampler_class):

@@ -1,33 +1,22 @@
 import optuna
 
-if optuna.type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
-
-try:
+with optuna._imports.try_import() as _imports:
     from pytorch_lightning.callbacks import EarlyStopping
+    from pytorch_lightning import LightningModule
+    from pytorch_lightning import Trainer
 
-    _available = True
-except (ImportError, SyntaxError) as e:
-    # SyntaxError is raised with Python versions below 3.6 since PyTorch Lightning does not
-    # support them.
-    _import_error = e
-    # PyTorchLightningPruningCallback is disabled because PyTorch Lightning is not available.
-    _available = False
-    EarlyStopping = object
+if not _imports.is_successful():
+    EarlyStopping = object  # NOQA
+    LightningModule = object  # NOQA
+    Trainer = object  # NOQA
 
 
 class PyTorchLightningPruningCallback(EarlyStopping):
     """PyTorch Lightning callback to prune unpromising trials.
 
-    Example:
-
-        Add a pruning callback which observes validation accuracy.
-
-        .. code::
-
-            trainer.pytorch_lightning.Trainer(
-                early_stop_callback=PyTorchLightningPruningCallback(trial, monitor='avg_val_acc'))
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pytorch_lightning_simple.py>`__
+    if you want to add a pruning callback which observes accuracy.
 
     Args:
         trial:
@@ -41,38 +30,29 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             how this dictionary is formatted.
     """
 
-    def __init__(self, trial, monitor):
-        # type: (optuna.trial.Trial, str) -> None
+    def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
 
-        super(PyTorchLightningPruningCallback, self).__init__()
+        _imports.check()
 
-        _check_pytorch_lightning_availability()
+        super(PyTorchLightningPruningCallback, self).__init__(monitor=monitor)
 
         self._trial = trial
-        self._monitor = monitor
 
-    def on_epoch_end(self, epoch, logs=None):
-        # type: (int, Optional[Dict[str, float]]) -> None
-
-        logs = logs or {}
-        current_score = logs.get(self._monitor)
+    def _process(self, trainer: Trainer, pl_module: LightningModule) -> None:
+        logs = trainer.callback_metrics
+        epoch = pl_module.current_epoch
+        current_score = logs.get(self.monitor)
         if current_score is None:
             return
         self._trial.report(current_score, step=epoch)
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
-            raise optuna.exceptions.TrialPruned(message)
+            raise optuna.TrialPruned(message)
 
+    # NOTE (crcrpar): This method is called <0.8.0
+    def on_epoch_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
+        return self._process(trainer, pl_module)
 
-def _check_pytorch_lightning_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "PyTorch Lightning is not available. Please install PyTorch Lightning to use this "
-            "feature. PyTorch Lightning can be installed by executing `$ pip install "
-            "pytorch-lightning`. For further information, please refer to the installation guide "
-            "of PyTorch Lightning. (The actual import error is as follows: "
-            + str(_import_error)
-            + ")"
-        )
+    # NOTE (crcrpar): This method is called >=0.8.0
+    def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
+        return self._process(trainer, pl_module)
