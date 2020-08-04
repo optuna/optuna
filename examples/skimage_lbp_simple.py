@@ -6,17 +6,6 @@ In this example, we optimize a classifier configuration for Olivetti faces datas
 We optimize parameters of local_binary_pattern function in skimage and the
 choice of distance metric classes.
 
-We have following two ways to execute this example:
-
-(1) Execute this code directly.
-    $ python skimage_lbp_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize skimage_lbp_simple.py objective --n-trials=100 --study-name \
-      $STUDY_NAME --storage sqlite:///example.db
-
 """
 
 import numpy as np
