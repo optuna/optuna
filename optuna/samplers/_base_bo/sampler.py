@@ -69,24 +69,6 @@ class BaseBoSampler(BaseSampler, metaclass=abc.ABCMeta):
 
         self._independent_sampler.reseed_rng()
 
-    def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial
-    ) -> Dict[str, distributions.BaseDistribution]:
-
-        search_space = {}
-        for name, distribution in self._search_space.calculate(study).items():
-            if distribution.single():
-                if not isinstance(distribution, distributions.CategoricalDistribution):
-                    # `skopt` cannot handle non-categorical distributions that contain just
-                    # a single value, so we skip this distribution.
-                    #
-                    # Note that `Trial` takes care of this distribution during suggestion.
-                    continue
-
-            search_space[name] = distribution
-
-        return search_space
-
     def sample_relative(
         self,
         study: Study,

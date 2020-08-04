@@ -123,6 +123,24 @@ class SkoptSampler(BaseBoSampler):
     def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
         pass
 
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, distributions.BaseDistribution]:
+
+        search_space = {}
+        for name, distribution in self._search_space.calculate(study).items():
+            if distribution.single():
+                if not isinstance(distribution, distributions.CategoricalDistribution):
+                    # `skopt` cannot handle non-categorical distributions that contain just
+                    # a single value, so we skip this distribution.
+                    #
+                    # Note that `Trial` takes care of this distribution during suggestion.
+                    continue
+
+            search_space[name] = distribution
+
+        return search_space
+
     def _create_controller(
         self, search_space: Dict[str, distributions.BaseDistribution]
     ) -> BaseBoController:
