@@ -23,7 +23,6 @@ class WFG(BaseHypervolume):
 
     def _compute_rec(self, solution_set: np.ndarray) -> float:
         n_points = solution_set.shape[0]
-        dim = solution_set.shape[1]
 
         if n_points == 1:
             return _compute_2points_volume(solution_set[0], self._r)
@@ -38,7 +37,7 @@ class WFG(BaseHypervolume):
 
         solution_set = solution_set[solution_set[:, 0].argsort()]
 
-        # n_points >= 3 and self._slice >= 3
+        # n_points >= 3
         v = 0.0
         for i in range(n_points):
             v += self._compute_exclusive_hv(solution_set[i], solution_set[i + 1 :])
