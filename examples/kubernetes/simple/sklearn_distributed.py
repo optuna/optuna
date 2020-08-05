@@ -42,15 +42,13 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    study = optuna.create_study(
-        direction="maximize",
+    study = optuna.load_study(
         study_name="kubernetes",
         storage="postgresql://{}:{}@postgres:5432/{}".format(
             os.environ["POSTGRES_USER"],
             os.environ["POSTGRES_PASSWORD"],
             os.environ["POSTGRES_DB"],
         ),
-        load_if_exists=True,
     )
     study.optimize(objective, n_trials=20)
     print(study.best_trial)
