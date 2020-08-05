@@ -27,13 +27,13 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 Optuna has modern functionalities as follows:
 
 - [Lightweight, versatile, and platform agnostic architecture](https://optuna.readthedocs.io/en/stable/tutorial/first.html)
-  - Handle a wide variety of tasks, while simple installation with few requirements. 
+  - Handle a wide variety of tasks with a simple installation that has few requirements. 
 - [Pythonic search spaces](https://optuna.readthedocs.io/en/stable/tutorial/configurations.html)
   - Define search spaces using familiar Python syntax including conditionals and loops.
-- [Easy parallelization](https://optuna.readthedocs.io/en/stable/tutorial/distributed.html)
-  - Scale studies to tens or hundreds or workers with little or no changes to the code.
 - [Efficient optimization algorithms](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html)
   - Adopt state-of-the-art algorithms for sampling hyper parameters and efficiently pruning unpromising trials.
+- [Easy parallelization](https://optuna.readthedocs.io/en/stable/tutorial/distributed.html)
+  - Scale studies to tens or hundreds or workers with little or no changes to the code.
 - [Quick visualization](https://optuna.readthedocs.io/en/stable/reference/visualization.html)
   - Inspect optimization histories from a variety of plotting functions.
 
