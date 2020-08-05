@@ -3,7 +3,6 @@ import numpy as np
 from optuna.multi_objective._hypervolume import _compute_2points_volume
 from optuna.multi_objective._hypervolume import _dominates_or_equal
 from optuna.multi_objective._hypervolume import BaseHypervolume
-from optuna.multi_objective._hypervolume import Exact2d
 
 
 class WFG(BaseHypervolume):
@@ -36,10 +35,6 @@ class WFG(BaseHypervolume):
             v -= np.prod(l_edges_for_intersection)
 
             return v
-
-        # n_points >= 3
-        if dim == 2:
-            return Exact2d().compute(solution_set[:, :2], self._r[:2])
 
         solution_set = solution_set[solution_set[:, 0].argsort()]
 
