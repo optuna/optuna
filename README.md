@@ -126,7 +126,7 @@ Any contributions to Optuna are welcome!
 
 If you are a new contributor, please check [good first issues](https://github.com/optuna/optuna/labels/good%20first%20issue). These are simple and well-defined so that they can be good starting points for you to get familiar with the contribution workflow and other developers.
 
-If you have already contributed to Optuna, please search for the other [contribution-welcome issues](https://github.com/optuna/optuna/labels/contribution-welcome).
+If you have already contributed to Optuna, I would highly recommend the other [contribution-welcome issues](https://github.com/optuna/optuna/labels/contribution-welcome).
 
 When you send a pull request, please follow the
 [contribution guide](./CONTRIBUTING.md).
