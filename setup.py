@@ -100,8 +100,9 @@ def get_extras_require() -> Dict[str, List[str]]:
         )
         + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
         + (
-            ["llvmlite<=0.31.0"] if (3, 5) == sys.version_info[:2] else []
+            ["llvmlite<=0.31.0", "fsspec<0.8.0"] if (3, 5) == sys.version_info[:2] else []
         )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
+        # Newer `fsspec` uses f-strings, which is not compatible with Python 3.5.
         + (["dask[dataframe]", "dask-ml",] if sys.version_info[:2] < (3, 8) else [])
         + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
         "experimental": ["redis"],
