@@ -3,7 +3,7 @@
 It’s such an honor to have you on board!
 
 We are proud of this project and have been trying to make this project great since day one.
-We believe you will love it, however, we do know that this is not a perfect project at all.
+We believe you will love it, however, we know there’s room for improvement.
 We have to
 - implement features that make what you want to do possible and/or easily.
 - write more examples that help you get familiar with Optuna.
