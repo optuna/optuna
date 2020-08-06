@@ -122,7 +122,7 @@ Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com
 
 ## Contribution
 
-Any contributions to Optuna are welcome!
+Any contributions to Optuna are more than welcome!
 
 If you are a new contributor, please check [good first issues](https://github.com/optuna/optuna/labels/good%20first%20issue). These are simple and well-defined so that they can be good starting points for you to get familiar with the contribution workflow and other developers.
 
