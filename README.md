@@ -128,8 +128,7 @@ If you are new to Optuna, please check [good first issues](https://github.com/op
 
 If you have already contributed to Optuna, I would highly recommend the other [contribution-welcome issues](https://github.com/optuna/optuna/labels/contribution-welcome).
 
-When you send a pull request, please follow the
-[contribution guide](./CONTRIBUTING.md).
+For general guidelines how to contribute to the project, take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 
 ## Reference
