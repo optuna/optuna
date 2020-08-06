@@ -344,13 +344,16 @@ class TPESampler(BaseSampler):
         below = list(map(int, below))
         above = list(map(int, above))
         upper = len(choices)
-        size = (self._n_ei_candidates,)
 
         weights_below = self._weights(len(below))
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
         weighted_below = counts_below + self._prior_weight
         weighted_below /= weighted_below.sum()
-        samples_below = self._sample_from_categorical_dist(weighted_below, size)
+        if self._n_ei_candidates >= upper:
+            samples_below = np.arange(upper)
+        else:
+            size = (self._n_ei_candidates,)
+            samples_below = self._sample_from_categorical_dist(weighted_below, size)
         log_likelihoods_below = TPESampler._categorical_log_pdf(samples_below, weighted_below)
 
         weights_above = self._weights(len(above))
