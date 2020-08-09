@@ -11,11 +11,6 @@ We have following two ways to execute this example:
     $ python xgboost_cv.py
 
 
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize xgboost_cv.py objective --n-trials=100 --study $STUDY_NAME \
-      --storage sqlite:///example.db
-
 """
 
 
@@ -24,7 +19,6 @@ import shutil
 import sklearn.datasets
 import sklearn.metrics
 import xgboost as xgb
-
 import optuna
 
 
@@ -33,8 +27,9 @@ SEED = 108
 N_FOLDS = 3
 CV_RESULT_DIR = "./xgboost_cv_results"
 
-if not os.path.exists(file_path):
+if not os.path.exists(CV_RESULT_DIR):
     os.mkdir(CV_RESULT_DIR)
+
 
 # FYI: Objective functions can take additional arguments
 # (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
