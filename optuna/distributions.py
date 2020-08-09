@@ -1,18 +1,14 @@
 import abc
+import copy
 import decimal
 import json
+from typing import Any
+from typing import Dict
+from typing import Sequence
+from typing import Union
 import warnings
 
-from optuna import logging
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Sequence  # NOQA
-    from typing import Union  # NOQA
-
-    CategoricalChoiceType = Union[None, bool, int, float, str]
+CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
 class BaseDistribution(object, metaclass=abc.ABCMeta):
@@ -22,8 +18,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
     They are used by :class:`~optuna.trial.Trial` and :class:`~optuna.samplers` internally.
     """
 
-    def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> Any
+    def to_external_repr(self, param_value_in_internal_repr: float) -> Any:
         """Convert internal representation of a parameter value into external representation.
 
         Args:
@@ -36,8 +31,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
 
         return param_value_in_internal_repr
 
-    def to_internal_repr(self, param_value_in_external_repr):
-        # type: (Any) -> float
+    def to_internal_repr(self, param_value_in_external_repr: Any) -> float:
         """Convert external representation of a parameter value into internal representation.
 
         Args:
@@ -51,12 +45,8 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
         return param_value_in_external_repr
 
     @abc.abstractmethod
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
         """Test whether the range of this distribution contains just a single value.
-
-        When this method returns :obj:`True`, :mod:`~optuna.samplers` always sample
-        the same value from the distribution.
 
         Returns:
             :obj:`True` if the range of this distribution contains just a single value,
@@ -66,8 +56,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
         """Test if a parameter value is contained in the range of this distribution.
 
         Args:
@@ -81,13 +70,11 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
-    def _asdict(self):
-        # type: () -> Dict
+    def _asdict(self) -> Dict:
 
         return self.__dict__
 
-    def __eq__(self, other):
-        # type: (Any) -> bool
+    def __eq__(self, other: Any) -> bool:
 
         if not isinstance(other, BaseDistribution):
             return NotImplemented
@@ -95,13 +82,11 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
             return False
         return self.__dict__ == other.__dict__
 
-    def __hash__(self):
-        # type: () -> int
+    def __hash__(self) -> int:
 
         return hash((self.__class__,) + tuple(sorted(self.__dict__.items())))
 
-    def __repr__(self):
-        # type: () -> str
+    def __repr__(self) -> str:
 
         kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self.__dict__.items()))
         return "{}({})".format(self.__class__.__name__, kwargs)
@@ -120,8 +105,7 @@ class UniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
-    def __init__(self, low, high):
-        # type: (float, float) -> None
+    def __init__(self, low: float, high: float) -> None:
 
         if low > high:
             raise ValueError(
@@ -132,19 +116,17 @@ class UniformDistribution(BaseDistribution):
         self.low = low
         self.high = high
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
 
         return self.low == self.high
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
         if self.low == self.high:
             return value == self.low
         else:
-            return self.low <= value and value < self.high
+            return self.low <= value < self.high
 
 
 class LogUniformDistribution(BaseDistribution):
@@ -160,8 +142,7 @@ class LogUniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
     """
 
-    def __init__(self, low, high):
-        # type: (float, float) -> None
+    def __init__(self, low: float, high: float) -> None:
 
         if low > high:
             raise ValueError(
@@ -177,19 +158,17 @@ class LogUniformDistribution(BaseDistribution):
         self.low = low
         self.high = high
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
 
         return self.low == self.high
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
         if self.low == self.high:
             return value == self.low
         else:
-            return self.low <= value and value < self.high
+            return self.low <= value < self.high
 
 
 class DiscreteUniformDistribution(BaseDistribution):
@@ -197,6 +176,11 @@ class DiscreteUniformDistribution(BaseDistribution):
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and passed
     to :mod:`~optuna.samplers` in general.
+
+    .. note::
+        If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by :math:`q`,
+        :math:`\\mathsf{high}` will be replaced with the maximum of :math:`k q + \\mathsf{low}
+        \\lt \\mathsf{high}`, where :math:`k` is an integer.
 
     Attributes:
         low:
@@ -207,21 +191,20 @@ class DiscreteUniformDistribution(BaseDistribution):
             A discretization step.
     """
 
-    def __init__(self, low, high, q):
-        # type: (float, float, float) -> None
-
+    def __init__(self, low: float, high: float, q: float) -> None:
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}, q={}).".format(low, high, q)
             )
 
+        high = _adjust_discrete_uniform_high(low, high, q)
+
         self.low = low
         self.high = high
         self.q = q
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
 
         if self.low == self.high:
             return True
@@ -232,15 +215,72 @@ class DiscreteUniformDistribution(BaseDistribution):
             return True
         return False
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
-        return self.low <= value and value <= self.high
+        return self.low <= value <= self.high
 
 
 class IntUniformDistribution(BaseDistribution):
     """A uniform distribution on integers.
+
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
+    :mod:`~optuna.samplers` in general.
+
+    .. note::
+        If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by
+        :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced with the maximum of
+        :math:`k \\times \\mathsf{step} + \\mathsf{low} \\lt \\mathsf{high}`, where :math:`k` is
+        an integer.
+
+    Attributes:
+        low:
+            Lower endpoint of the range of the distribution. ``low`` is included in the range.
+        high:
+            Upper endpoint of the range of the distribution. ``high`` is included in the range.
+        step:
+            A step for spacing between values.
+    """
+
+    def __init__(self, low: int, high: int, step: int = 1) -> None:
+        if low > high:
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
+        if step <= 0:
+            raise ValueError(
+                "The `step` value must be non-zero positive value, but step={}.".format(step)
+            )
+
+        high = _adjust_int_uniform_high(low, high, step)
+
+        self.low = low
+        self.high = high
+        self.step = step
+
+    def to_external_repr(self, param_value_in_internal_repr: float) -> int:
+
+        return int(param_value_in_internal_repr)
+
+    def to_internal_repr(self, param_value_in_external_repr: int) -> float:
+
+        return float(param_value_in_external_repr)
+
+    def single(self) -> bool:
+
+        if self.low == self.high:
+            return True
+        return (self.high - self.low) < self.step
+
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
+
+        value = param_value_in_internal_repr
+        return self.low <= value <= self.high
+
+
+class IntLogUniformDistribution(BaseDistribution):
+    """A uniform distribution on integers in the log domain.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
     :mod:`~optuna.samplers` in general.
@@ -252,49 +292,80 @@ class IntUniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
         step:
             A step for spacing between values.
+
+            .. warning::
+                Deprecated in v2.0.0. ``step`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v4.0.0,
+                but this schedule is subject to change.
+
+                Samplers and other components in Optuna relying on this distribution will ignore
+                this value and assume that ``step`` is always 1.
+                User-defined samplers may continue to use other values besides 1 during the
+                deprecation.
     """
 
-    def __init__(self, low, high, step=1):
-        # type: (int, int, int) -> None
-
+    def __init__(self, low: int, high: int, step: int = 1) -> None:
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}).".format(low, high)
             )
-        if step <= 0:
+
+        if low < 1.0:
             raise ValueError(
-                "The `step` value must be non-zero positive value, but step={}.".format(step)
+                "The `low` value must be equal to or greater than 1 for a log distribution "
+                "(low={}, high={}).".format(low, high)
             )
+
+        if step != 1:
+            self._warn_step()
 
         self.low = low
         self.high = high
-        self.step = step
+        self._step = step
 
-    def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> int
+    def __repr__(self) -> str:
+        # TODO(hvy): `BaseDistribution.__repr__` could rely on `_asdict` instead of `__dict__`.
+        # `IntLogUniformDistribution` would not have to override `__repr__`.
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
 
+    def _asdict(self) -> Dict:
+        d = copy.copy(self.__dict__)
+        d["step"] = d.pop("_step")
+        return d
+
+    def _warn_step(self) -> None:
+        warnings.warn(
+            "Samplers and other components in Optuna will assume that `step` is 1. "
+            "`step` argument is deprecated and will be removed in the future. "
+            "The removal of this feature is currently scheduled for v4.0.0, "
+            "but this schedule is subject to change.",
+            FutureWarning,
+        )
+
+    def to_external_repr(self, param_value_in_internal_repr: float) -> int:
         return int(param_value_in_internal_repr)
 
-    def to_internal_repr(self, param_value_in_external_repr):
-        # type: (int) -> float
-
+    def to_internal_repr(self, param_value_in_external_repr: int) -> float:
         return float(param_value_in_external_repr)
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
+        return self.low == self.high
 
-        if self.low == self.high:
-            return True
-        if (self.high - self.low) < self.step:
-            return True
-        return False
-
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
-
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
         value = param_value_in_internal_repr
         return self.low <= value <= self.high
+
+    @property
+    def step(self) -> int:
+        self._warn_step()
+        return self._step
+
+    @step.setter
+    def step(self, value: int) -> None:
+        self._warn_step()
+        self._step = value
 
 
 class CategoricalDistribution(BaseDistribution):
@@ -318,8 +389,7 @@ class CategoricalDistribution(BaseDistribution):
             Parameter value candidates.
     """
 
-    def __init__(self, choices):
-        # type: (Sequence[CategoricalChoiceType]) -> None
+    def __init__(self, choices: Sequence[CategoricalChoiceType]) -> None:
 
         if len(choices) == 0:
             raise ValueError("The `choices` must contains one or more elements.")
@@ -332,18 +402,13 @@ class CategoricalDistribution(BaseDistribution):
                 )
                 warnings.warn(message)
 
-                logger = logging._get_library_root_logger()
-                logger.warning(message)
+        self.choices = tuple(choices)
 
-        self.choices = choices
-
-    def to_external_repr(self, param_value_in_internal_repr):
-        # type: (float) -> CategoricalChoiceType
+    def to_external_repr(self, param_value_in_internal_repr: float) -> CategoricalChoiceType:
 
         return self.choices[int(param_value_in_internal_repr)]
 
-    def to_internal_repr(self, param_value_in_external_repr):
-        # type: (CategoricalChoiceType) -> float
+    def to_internal_repr(self, param_value_in_external_repr: CategoricalChoiceType) -> float:
 
         try:
             return self.choices.index(param_value_in_external_repr)
@@ -352,16 +417,14 @@ class CategoricalDistribution(BaseDistribution):
                 "'{}' not in {}.".format(param_value_in_external_repr, self.choices)
             ) from e
 
-    def single(self):
-        # type: () -> bool
+    def single(self) -> bool:
 
         return len(self.choices) == 1
 
-    def _contains(self, param_value_in_internal_repr):
-        # type: (float) -> bool
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         index = int(param_value_in_internal_repr)
-        return 0 <= index and index < len(self.choices)
+        return 0 <= index < len(self.choices)
 
 
 DISTRIBUTION_CLASSES = (
@@ -369,12 +432,12 @@ DISTRIBUTION_CLASSES = (
     LogUniformDistribution,
     DiscreteUniformDistribution,
     IntUniformDistribution,
+    IntLogUniformDistribution,
     CategoricalDistribution,
 )
 
 
-def json_to_distribution(json_str):
-    # type: (str) -> BaseDistribution
+def json_to_distribution(json_str: str) -> BaseDistribution:
     """Deserialize a distribution in JSON format.
 
     Args:
@@ -396,8 +459,7 @@ def json_to_distribution(json_str):
     raise ValueError("Unknown distribution class: {}".format(json_dict["name"]))
 
 
-def distribution_to_json(dist):
-    # type: (BaseDistribution) -> str
+def distribution_to_json(dist: BaseDistribution) -> str:
     """Serialize a distribution to JSON format.
 
     Args:
@@ -411,8 +473,9 @@ def distribution_to_json(dist):
     return json.dumps({"name": dist.__class__.__name__, "attributes": dist._asdict()})
 
 
-def check_distribution_compatibility(dist_old, dist_new):
-    # type: (BaseDistribution, BaseDistribution) -> None
+def check_distribution_compatibility(
+    dist_old: BaseDistribution, dist_new: BaseDistribution
+) -> None:
     """A function to check compatibility of two distributions.
 
     Note that this method is not supposed to be called by library users.
@@ -436,3 +499,57 @@ def check_distribution_compatibility(dist_old, dist_new):
         raise ValueError(
             CategoricalDistribution.__name__ + " does not support dynamic value space."
         )
+
+
+def _adjust_discrete_uniform_high(low: float, high: float, q: float) -> float:
+    d_high = decimal.Decimal(str(high))
+    d_low = decimal.Decimal(str(low))
+    d_q = decimal.Decimal(str(q))
+
+    d_r = d_high - d_low
+
+    if d_r % d_q != decimal.Decimal("0"):
+        old_high = high
+        high = float((d_r // d_q) * d_q + d_low)
+        warnings.warn(
+            "The distribution is specified by [{low}, {old_high}] and q={step}, but the range "
+            "is not divisible by `q`. It will be replaced by [{low}, {high}].".format(
+                low=low, old_high=old_high, high=high, step=q
+            )
+        )
+
+    return high
+
+
+def _adjust_int_uniform_high(low: int, high: int, step: int) -> int:
+    r = high - low
+    if r % step != 0:
+        old_high = high
+        high = r // step * step + low
+        warnings.warn(
+            "The distribution is specified by [{low}, {old_high}] and step={step}, but the range "
+            "is not divisible by `step`. It will be replaced by [{low}, {high}].".format(
+                low=low, old_high=old_high, high=high, step=step
+            )
+        )
+    return high
+
+
+def _get_single_value(distribution: BaseDistribution) -> Union[int, float, CategoricalChoiceType]:
+
+    assert distribution.single()
+
+    if isinstance(
+        distribution,
+        (
+            UniformDistribution,
+            LogUniformDistribution,
+            DiscreteUniformDistribution,
+            IntUniformDistribution,
+            IntLogUniformDistribution,
+        ),
+    ):
+        return distribution.low
+    elif isinstance(distribution, CategoricalDistribution):
+        return distribution.choices[0]
+    assert False

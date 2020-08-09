@@ -6,16 +6,10 @@ PyTorch Ignite and MNIST. We optimize the neural network architecture as well as
 regularization. As it is too time consuming to use the whole MNIST dataset, we here use a small
 subset of it.
 
-We have the following two ways to execute this example:
-
-(1) Execute this code directly. Pruning can be turned on and off with the `--pruning` argument.
+You can run this example as follows, pruning can be turned on and off with the `--pruning`
+argument.
     $ python pytorch_ignite_simple.py [--pruning]
 
-
-(2) Execute through CLI. Pruning is enabled automatically.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize pytorch_ignite_simple.py objective --n-trials=100 \
-      --study $STUDY_NAME --storage sqlite:///example.db
 """
 
 import argparse
@@ -37,7 +31,6 @@ from torchvision.transforms import ToTensor
 
 import optuna
 
-
 EPOCHS = 10
 TRAIN_BATCH_SIZE = 64
 VAL_BATCH_SIZE = 1000
@@ -51,7 +44,7 @@ class Net(nn.Module):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        dropout_rate = trial.suggest_uniform("dropout_rate", 0, 1)
+        dropout_rate = trial.suggest_float("dropout_rate", 0, 1)
         self.conv2_drop = nn.Dropout2d(p=dropout_rate)
         fc2_input_dim = trial.suggest_int("fc2_input_dim", 40, 80)
         self.fc1 = nn.Linear(320, fc2_input_dim)
@@ -90,6 +83,7 @@ def objective(trial):
     device = "cpu"
     if torch.cuda.is_available():
         device = "cuda"
+        model.cuda(device)
 
     optimizer = Adam(model.parameters())
     trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)

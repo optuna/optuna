@@ -1,11 +1,11 @@
-import gc
+from typing import Optional
 import warnings
 
-from optuna.exceptions import TrialPruned
-from optuna.logging import get_logger
+from optuna._imports import try_import
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.trial import BaseTrial
+from optuna import TrialPruned
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
@@ -13,7 +13,6 @@ if type_checking.TYPE_CHECKING:
     from typing import Any  # NOQA
     from typing import Callable  # NOQA
     from typing import Dict  # NOQA
-    from typing import Optional  # NOQA
     from typing import Sequence  # NOQA
     from typing import Tuple  # NOQA
     from typing import Type  # NOQA
@@ -24,13 +23,9 @@ if type_checking.TYPE_CHECKING:
     from optuna.study import Study  # NOQA
     from optuna.trial import Trial  # NOQA
 
-try:
-    from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
 
-    _available = True
-except ImportError as e:
-    _import_error = e
-    _available = False
+with try_import() as _imports:
+    from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
 
 
 class _ChainerMNObjectiveFunc(object):
@@ -87,15 +82,14 @@ class ChainerMNStudy(object):
     ):
         # type: (...) -> None
 
-        _check_chainermn_availability()
+        _imports.check()
 
         if isinstance(study._storage, InMemoryStorage):
             raise ValueError("ChainerMN integration is not available with InMemoryStorage.")
 
         if isinstance(study._storage, RDBStorage):
             if study._storage.engine.dialect.name == "sqlite":
-                logger = get_logger(__name__)
-                logger.warning(
+                warnings.warn(
                     "SQLite may cause synchronization problems when used with "
                     "ChainerMN integration. Please use other DBs like PostgreSQL."
                 )
@@ -112,7 +106,7 @@ class ChainerMNStudy(object):
         func,  # type: Callable[[ChainerMNTrial, CommunicatorBase], float]
         n_trials=None,  # type: Optional[int]
         timeout=None,  # type: Optional[float]
-        catch=(),  # type: Union[Tuple[()], Tuple[Type[Exception]]]
+        catch=(),  # type: Tuple[Type[Exception], ...]
     ):
         # type: (...) -> None
         """Optimize an objective function.
@@ -123,11 +117,13 @@ class ChainerMNStudy(object):
 
         if self.comm.rank == 0:
             func_mn = _ChainerMNObjectiveFunc(func, self.comm)
-            self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
-            self.comm.mpi_comm.bcast(False)
+            try:
+                self.delegate.optimize(func_mn, n_trials=n_trials, timeout=timeout, catch=catch)
+            finally:
+                self.comm.mpi_comm.bcast(False)
         else:
+            has_next_trial = self.comm.mpi_comm.bcast(None)
             while True:
-                has_next_trial = self.comm.mpi_comm.bcast(None)
                 if not has_next_trial:
                     break
                 try:
@@ -143,11 +139,7 @@ class ChainerMNStudy(object):
                 except catch:
                     pass
                 finally:
-                    # The following line mitigates memory problems that can be occurred in some
-                    # environments (e.g., services that use computing containers such as CircleCI).
-                    # Please refer to the following PR for further details:
-                    # https://github.com/optuna/optuna/pull/325.
-                    gc.collect()
+                    has_next_trial = self.comm.mpi_comm.bcast(None)
 
     def __getattr__(self, attr_name):
         # type: (str) -> Any
@@ -183,12 +175,16 @@ class ChainerMNTrial(BaseTrial):
         self.delegate = trial
         self.comm = comm
 
-    def suggest_float(self, name, low, high, *, log=False, step=None):
-        # type: (str, float, float, bool, Optional[float]) -> float
-
-        def func():
-            # type: () -> float
-
+    def suggest_float(
+        self,
+        name: str,
+        low: float,
+        high: float,
+        *,
+        step: Optional[float] = None,
+        log: bool = False
+    ) -> float:
+        def func() -> float:
             assert self.delegate is not None
             return self.delegate.suggest_float(name, low, high, log=log, step=step)
 
@@ -227,14 +223,14 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def suggest_int(self, name, low, high, step=1):
-        # type: (str, int, int, int) -> int
+    def suggest_int(self, name, low, high, step=1, log=False):
+        # type: (str, int, int, int, bool) -> int
 
         def func():
             # type: () -> int
 
             assert self.delegate is not None
-            return self.delegate.suggest_int(name, low, high, step)
+            return self.delegate.suggest_int(name, low, high, step=step, log=log)
 
         return self._call_with_mpi(func)
 
@@ -257,14 +253,12 @@ class ChainerMNTrial(BaseTrial):
             self.delegate.report(value, step)
         self.comm.mpi_comm.barrier()
 
-    def should_prune(self, step=None):
-        # type: (Optional[int]) -> bool
-
+    def should_prune(self) -> bool:
         def func():
             # type: () -> bool
 
             assert self.delegate is not None
-            return self.delegate.should_prune(step)
+            return self.delegate.should_prune()
 
         return self._call_with_mpi(func)
 
@@ -295,17 +289,6 @@ class ChainerMNTrial(BaseTrial):
             return self.delegate.number
 
         return self._call_with_mpi(func)
-
-    @property
-    def trial_id(self):
-        # type: () -> int
-
-        warnings.warn(
-            "The use of `ChainerMNTrial.trial_id` is deprecated. "
-            "Please use `ChainerMNTrial.number` instead.",
-            DeprecationWarning,
-        )
-        return self._trial_id
 
     @property
     def _trial_id(self):
@@ -395,15 +378,3 @@ class ChainerMNTrial(BaseTrial):
             if isinstance(result, Exception):
                 raise result
             return result
-
-
-def _check_chainermn_availability():
-    # type: () -> None
-
-    if not _available:
-        raise ImportError(
-            "ChainerMN is not available. Please install ChainerMN to use this feature. "
-            "ChainerMN can be installed by executing `$ pip install chainermn`. "
-            "For further information, please refer to the installation guide of ChainerMN. "
-            "(The actual import error is as follows: " + str(_import_error) + ")"
-        )

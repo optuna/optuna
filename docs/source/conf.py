@@ -16,11 +16,11 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import os
 import pkg_resources
 
+from sphinx_gallery.sorting import FileNameSortKey
+
 __version__ = pkg_resources.get_distribution('optuna').version
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 # -- Project information -----------------------------------------------------
 
@@ -44,6 +44,7 @@ release = __version__
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.mathjax',
@@ -51,6 +52,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'cliff.sphinxext',
+    'sphinx_gallery.gen_gallery',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -85,16 +87,19 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-if not on_rtd:
-    html_theme = 'sphinx_rtd_theme'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    'logo_only': True
+}
 
 html_favicon = '../image/favicon.ico'
+
+html_logo = '../image/optuna-logo.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -163,3 +168,20 @@ texinfo_documents = [
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 # -- Extension configuration -------------------------------------------------
+autosummary_generate = True
+autodoc_default_options = {
+    'members': True,
+    'inherited-members': True,
+}
+
+sphinx_gallery_conf = {
+    'examples_dirs': [
+        '../../tutorial',
+    ],
+    'gallery_dirs': [
+        'tutorial',
+    ],
+    'within_subsection_order': FileNameSortKey,
+    'filename_pattern': r'/*\.py',
+    'first_notebook_cell': None,
+}

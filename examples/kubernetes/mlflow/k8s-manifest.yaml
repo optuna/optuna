@@ -1,0 +1,175 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secrets
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: "superSecretPassword"
+  POSTGRES_USER: "optuna"
+  POSTGRES_DB: "optunaDatabase"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  serviceName: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: postgres-secrets
+          ports:
+            - containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+spec:
+  type: NodePort
+  selector:
+    app: mlflow
+  ports:
+    - port: 5000
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mlflow
+  labels:
+    app: mlflow
+spec:
+  selector:
+    matchLabels:
+      app: mlflow
+  serviceName: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      containers:
+        - name: mlflow
+          image: optuna-kubernetes-mlflow:example
+          imagePullPolicy: IfNotPresent
+          command:
+            - mlflow
+            - server
+            - --backend-store-uri
+            - /tmp/mlflow
+            - --host
+            - 0.0.0.0
+          ports:
+            - containerPort: 5000
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: study-creator
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-database
+          image: postgres:latest
+          imagePullPolicy: IfNotPresent
+          command:
+          - /bin/sh
+          - -c
+          - -e
+          - -x
+          - |
+            until pg_isready -U $(POSTGRES_USER) -h postgres -p 5432;
+            do echo "waiting for postgres"; sleep 2; done;
+          envFrom:
+            - secretRef:
+                name: postgres-secrets
+        - name: wait-for-mlflow
+          image: curlimages/curl:latest
+          imagePullPolicy: IfNotPresent
+          command:
+          - /bin/sh
+          - -c
+          - -e
+          - -x
+          - |
+            until curl http://mlflow:5000/;
+            do echo "waiting for mlflow"; sleep 2; done;
+      containers:
+        - name: study-creator
+          image: optuna-kubernetes-mlflow:example
+          imagePullPolicy: IfNotPresent
+          command:
+          - /bin/sh
+          - -c
+          - -e
+          - -x
+          - |
+            optuna create-study --skip-if-exists --direction maximize \
+            --study-name "k8s_mlflow" --storage \
+            "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+          envFrom:
+            - secretRef:
+                name: postgres-secrets
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: worker
+spec:
+  parallelism: 2
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-study
+          image: optuna-kubernetes-mlflow:example
+          imagePullPolicy: IfNotPresent
+          command:
+          - /bin/sh
+          - -c
+          - -e
+          - -x
+          - |
+            until [ `sh check_study.sh` -eq 0 ];
+            do echo "waiting for study"; sleep 2; done;
+          envFrom:
+            - secretRef:
+                name: postgres-secrets
+      containers:
+        - name: worker
+          image: optuna-kubernetes-mlflow:example
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - pytorch_lightning_distributed.py
+          envFrom:
+            - secretRef:
+                name: postgres-secrets
+---

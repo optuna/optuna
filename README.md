@@ -26,9 +26,9 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 Optuna has modern functionalities as follows:
 
-- Parallel distributed optimization
-- Pruning of unpromising trials
-- Lightweight, versatile, and platform agnostic architecture
+- [Lightweight, versatile, and platform agnostic architecture](https://optuna.readthedocs.io/en/stable/tutorial/first.html)
+- [Parallel distributed optimization](https://optuna.readthedocs.io/en/stable/tutorial/distributed.html)
+- [Pruning of unpromising trials](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html)
 
 
 ## Basic Concepts
@@ -107,6 +107,7 @@ $ conda install -c conda-forge optuna
 
 Optuna supports Python 3.5 or newer.
 
+Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
 
 ## Communication
 
@@ -121,13 +122,13 @@ Optuna supports Python 3.5 or newer.
 
 ## Contribution
 
-Any contributions to Optuna are welcome! When you send a pull request, please follow the
-[contribution guide](./CONTRIBUTING.md).
+Any contributions to Optuna are more than welcome!
 
+If you are new to Optuna, please check the [good first issues](https://github.com/optuna/optuna/labels/good%20first%20issue). They are relatively simple, well-defined and are often good starting points for you to get familiar with the contribution workflow and other developers.
 
-## License
+If you already have contributed to Optuna, we recommend the other [contribution-welcome issues](https://github.com/optuna/optuna/labels/contribution-welcome).
 
-MIT License (see [LICENSE](./LICENSE)).
+For general guidelines how to contribute to the project, take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 
 ## Reference

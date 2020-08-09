@@ -1,4 +1,4 @@
-local DROPOUT = std.extVar('DROPOUT');
+local DROPOUT = std.parseJson(std.extVar('DROPOUT'));
 
 
 {
@@ -49,8 +49,7 @@ local DROPOUT = std.extVar('DROPOUT');
       bidirectional: true,
     },
   },
-  iterator: {
-    type: 'basic',
+  data_loader: {
     batch_size: 32,
   },
   trainer: {

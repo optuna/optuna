@@ -6,17 +6,6 @@ Tensorflow and MNIST. We optimize the neural network architecture as well as the
 configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
 subset of it.
 
-We have the following two ways to execute this example:
-
-(1) Execute this code directly.
-    $ python tensorflow_estimator_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize tensorflow_estimator_simple.py objective --n-trials=100 \
-      --study $STUDY_NAME --storage sqlite:///example.db
-
 """
 
 import shutil
@@ -61,11 +50,11 @@ def create_optimizer(trial):
 
     optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "SGD"])
     if optimizer_name == "Adam":
-        adam_lr = trial.suggest_loguniform("adam_lr", 1e-5, 1e-1)
+        adam_lr = trial.suggest_float("adam_lr", 1e-5, 1e-1, log=True)
         return lambda: tf.keras.optimizers.Adam(learning_rate=adam_lr)
     else:
-        sgd_lr = trial.suggest_loguniform("sgd_lr", 1e-5, 1e-1)
-        sgd_momentum = trial.suggest_loguniform("sgd_momentum", 1e-5, 1e-1)
+        sgd_lr = trial.suggest_float("sgd_lr", 1e-5, 1e-1, log=True)
+        sgd_momentum = trial.suggest_float("sgd_momentum", 1e-5, 1e-1, log=True)
         return lambda: tf.keras.optimizers.SGD(learning_rate=sgd_lr, momentum=sgd_momentum)
 
 
@@ -104,7 +93,7 @@ def objective(trial):
 
 def main():
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=25)
+    study.optimize(objective, n_trials=25, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
 

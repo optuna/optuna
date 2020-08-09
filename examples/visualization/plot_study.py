@@ -22,6 +22,7 @@ from optuna.visualization import plot_contour
 from optuna.visualization import plot_intermediate_values
 from optuna.visualization import plot_optimization_history
 from optuna.visualization import plot_parallel_coordinate
+from optuna.visualization import plot_param_importances
 from optuna.visualization import plot_slice
 
 
@@ -41,7 +42,7 @@ def objective(trial):
         hidden_layer_sizes=tuple(
             [trial.suggest_int("n_units_l{}".format(i), 32, 64) for i in range(3)]
         ),
-        learning_rate_init=trial.suggest_loguniform("lr_init", 1e-5, 1e-1),
+        learning_rate_init=trial.suggest_float("lr_init", 1e-5, 1e-1, log=True),
     )
 
     for step in range(100):
@@ -52,8 +53,8 @@ def objective(trial):
         trial.report(value, step)
 
         # Handle pruning based on the intermediate value.
-        if trial.should_prune(step):
-            raise optuna.exceptions.TrialPruned()
+        if trial.should_prune():
+            raise optuna.TrialPruned()
 
     return value
 
@@ -86,3 +87,6 @@ if __name__ == "__main__":
 
     # Select parameters to visualize.
     plot_slice(study, params=["n_units_l0", "n_units_l1"]).show()
+
+    # Visualize parameter importances.
+    plot_param_importances(study).show()

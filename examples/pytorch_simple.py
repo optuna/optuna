@@ -6,17 +6,6 @@ PyTorch and MNIST. We optimize the neural network architecture as well as the op
 configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
 subset of it.
 
-We have the following two ways to execute this example:
-
-(1) Execute this code directly.
-    $ python pytorch_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize pytorch_simple.py objective --n-trials=100 --study $STUDY_NAME \
-      --storage sqlite:///example.db
-
 """
 
 import os
@@ -51,7 +40,7 @@ def define_model(trial):
         out_features = trial.suggest_int("n_units_l{}".format(i), 4, 128)
         layers.append(nn.Linear(in_features, out_features))
         layers.append(nn.ReLU())
-        p = trial.suggest_uniform("dropout_l{}".format(i), 0.2, 0.5)
+        p = trial.suggest_float("dropout_l{}".format(i), 0.2, 0.5)
         layers.append(nn.Dropout(p))
 
         in_features = out_features
@@ -84,7 +73,7 @@ def objective(trial):
 
     # Generate the optimizers.
     optimizer_name = trial.suggest_categorical("optimizer", ["Adam", "RMSprop", "SGD"])
-    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
     optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
 
     # Get the MNIST dataset.
@@ -98,41 +87,50 @@ def objective(trial):
             if batch_idx * BATCHSIZE >= N_TRAIN_EXAMPLES:
                 break
 
-            data, target = data.view(-1, 28 * 28).to(DEVICE), target.to(DEVICE)
+            data, target = data.view(data.size(0), -1).to(DEVICE), target.to(DEVICE)
 
-            # Zeroing out gradient buffers.
             optimizer.zero_grad()
-            # Performing a forward pass.
             output = model(data)
-            # Computing negative Log Likelihood loss.
             loss = F.nll_loss(output, target)
-            # Performing a backward pass.
             loss.backward()
-            # Updating the weights.
             optimizer.step()
 
-    # Validation of the model.
-    model.eval()
-    correct = 0
-    with torch.no_grad():
-        for batch_idx, (data, target) in enumerate(valid_loader):
-            # Limiting validation data.
-            if batch_idx * BATCHSIZE >= N_VALID_EXAMPLES:
-                break
-            data, target = data.view(-1, 28 * 28).to(DEVICE), target.to(DEVICE)
-            output = model(data)
-            pred = output.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability.
-            correct += pred.eq(target.view_as(pred)).sum().item()
+        # Validation of the model.
+        model.eval()
+        correct = 0
+        with torch.no_grad():
+            for batch_idx, (data, target) in enumerate(valid_loader):
+                # Limiting validation data.
+                if batch_idx * BATCHSIZE >= N_VALID_EXAMPLES:
+                    break
+                data, target = data.view(data.size(0), -1).to(DEVICE), target.to(DEVICE)
+                output = model(data)
+                # Get the index of the max log-probability.
+                pred = output.argmax(dim=1, keepdim=True)
+                correct += pred.eq(target.view_as(pred)).sum().item()
 
-    accuracy = correct / N_VALID_EXAMPLES
+        accuracy = correct / min(len(valid_loader.dataset), N_VALID_EXAMPLES)
+
+        trial.report(accuracy, epoch)
+
+        # Handle pruning based on the intermediate value.
+        if trial.should_prune():
+            raise optuna.exceptions.TrialPruned()
+
     return accuracy
 
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=100, timeout=600)
 
-    print("Number of finished trials: ", len(study.trials))
+    pruned_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]
+    complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+
+    print("Study statistics: ")
+    print("  Number of finished trials: ", len(study.trials))
+    print("  Number of pruned trials: ", len(pruned_trials))
+    print("  Number of complete trials: ", len(complete_trials))
 
     print("Best trial:")
     trial = study.best_trial

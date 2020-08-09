@@ -1,0 +1,28 @@
+{% extends "!layout.html" %}
+{%- block extrabody %}
+    <div class="navbar">
+        <div class="navbar ml-auto">
+            <ul class="navbar-nav">
+                <li>
+                    <a href="https://optuna.org/#key_features" class="header_link">Key Features</a>
+                </li>
+                <li>
+                    <a href="https://optuna.org/#code_examples" class="header_link">Code Examples</a>
+                </li>
+                <li>
+                    <a href="https://optuna.org/#installation" class="header_link">Installation</a>
+                </li>
+                <li>
+                    <a href="https://optuna.org/#blog" class="header_link">Blog</a>
+                </li>
+                <li>
+                    <a href="https://optuna.org/#video" class="header_link">Videos</a>
+                </li>
+                <li>
+                    <a href="https://optuna.org/#paper" class="header_link">Paper</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    {{ super() }}
+{% endblock %}

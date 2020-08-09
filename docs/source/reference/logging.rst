@@ -1,16 +1,13 @@
-.. module:: optuna.logging
+optuna.logging
+==============
 
-Logging
-=======
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
 
-.. autofunction:: get_verbosity
-
-.. autofunction:: set_verbosity
-
-.. autofunction:: disable_default_handler
-
-.. autofunction:: enable_default_handler
-
-.. autofunction:: disable_propagation
-
-.. autofunction:: enable_propagation
+   optuna.logging.get_verbosity
+   optuna.logging.set_verbosity
+   optuna.logging.disable_default_handler
+   optuna.logging.enable_default_handler
+   optuna.logging.disable_propagation
+   optuna.logging.enable_propagation

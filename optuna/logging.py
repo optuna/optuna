@@ -1,4 +1,3 @@
-import colorlog
 import logging
 from logging import CRITICAL  # NOQA
 from logging import DEBUG  # NOQA
@@ -8,6 +7,8 @@ from logging import INFO  # NOQA
 from logging import WARN  # NOQA
 from logging import WARNING  # NOQA
 import threading
+
+import colorlog
 
 from optuna import type_checking
 
@@ -140,8 +141,8 @@ def disable_default_handler() -> None:
             # There are logs in sys.stderr.
             optuna.logging.enable_default_handler()
             study.optimize(objective, n_trials=10)
-            # [I 2020-02-23 17:00:54,314] Finished trial#10 with value: ...
-            # [I 2020-02-23 17:00:54,356] Finished trial#11 with value: ...
+            # [I 2020-02-23 17:00:54,314] Trial 10 finished with value: ...
+            # [I 2020-02-23 17:00:54,356] Trial 11 finished with value: ...
             # ...
 
     """
@@ -211,7 +212,7 @@ def enable_propagation() -> None:
 
             with open('foo.log') as f:
                 assert f.readline() == "Start optimization.\\n"
-                assert f.readline().startswith("Finished trial#0 with value:")
+                assert f.readline().startswith("Trial 0 finished with value:")
 
     """
 

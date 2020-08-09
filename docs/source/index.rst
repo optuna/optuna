@@ -14,9 +14,9 @@ Key Features
 
 Optuna has modern functionalities as follows:
 
--  Parallel distributed optimization
--  Pruning of unpromising trials
--  Lightweight, versatile, and platform agnostic architecture
+- :doc:`Lightweight, versatile, and platform agnostic architecture <tutorial/001_first>`
+- :doc:`Parallel distributed optimization <tutorial/004_distributed>`
+- :doc:`Pruning of unpromising trials <tutorial/007_pruning>`
 
 Basic Concepts
 --------------

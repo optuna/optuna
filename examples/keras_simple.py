@@ -5,17 +5,6 @@ MNIST dataset using Keras.
 In this example, we optimize the validation accuracy of MNIST classification using
 Keras. We optimize the filter and kernel size, kernel stride and layer activation.
 
-We have following two ways to execute this example:
-
-(1) Execute this code directly.
-    $ python keras_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize keras_simple.py objective --n-trials=100 --study $STUDY_NAME \
-      --storage sqlite:///example.db
-
 """
 
 from keras.backend import clear_session
@@ -62,7 +51,7 @@ def objective(trial):
     model.add(Dense(CLASSES, activation="softmax"))
 
     # We compile our model with a sampled learning rate.
-    lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
     model.compile(
         loss="sparse_categorical_crossentropy", optimizer=RMSprop(lr=lr), metrics=["accuracy"]
     )
