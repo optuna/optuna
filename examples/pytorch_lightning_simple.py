@@ -13,7 +13,7 @@ argument.
 
 import argparse
 import os
-import pkg_resources
+from packaging import version
 import shutil
 
 import pytorch_lightning as pl
@@ -29,7 +29,7 @@ from torchvision import transforms
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 
-if pkg_resources.parse_version(pl.__version__) < pkg_resources.parse_version("0.7.1"):
+if version.parse(pl.__version__) < version.parse("0.7.1"):
     raise RuntimeError("PyTorch Lightning>=0.7.1 is required for this example.")
 
 PERCENT_VALID_EXAMPLES = 0.1

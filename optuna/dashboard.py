@@ -1,5 +1,5 @@
 import collections
-from distutils.version import StrictVersion
+from packaging import version
 import threading
 import time
 
@@ -30,7 +30,7 @@ with try_import() as _imports:
     import bokeh.themes
     import tornado.gen
 
-    if StrictVersion(bokeh_version) >= StrictVersion("2.0.0"):
+    if version.parse(bokeh_version) >= version.parse("2.0.0"):
         raise ImportError(
             "Your version of bokeh is " + bokeh_version + " . "
             "Please install bokeh version earlier than 2.0.0. "

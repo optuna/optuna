@@ -7,13 +7,13 @@ configuration.
 
 """
 
-import pkg_resources
+from packaging import version
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist
 
 import optuna
 
-if pkg_resources.parse_version(tf.__version__) < pkg_resources.parse_version("2.0.0"):
+if version.parse(tf.__version__) < version.parse("2.0.0"):
     raise RuntimeError("tensorflow>=2.0.0 is required for this example.")
 
 N_TRAIN_EXAMPLES = 3000

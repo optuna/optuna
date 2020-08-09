@@ -8,7 +8,7 @@ Since it is too time-consuming to use the entire dataset, we here use a small su
 """
 
 import os
-import pkg_resources
+from packaging import version
 import random
 import shutil
 import sys
@@ -117,7 +117,7 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    if pkg_resources.parse_version(allennlp.__version__) < pkg_resources.parse_version("1.0.0"):
+    if version.parse(allennlp.__version__) < version.parse("1.0.0"):
         raise RuntimeError("AllenNLP>=1.0.0 is required for this example.")
 
     random.seed(41)

@@ -10,7 +10,7 @@ we here use the validation dataset instead.
 """
 
 import os.path
-import pkg_resources
+from packaging import version
 import shutil
 
 import allennlp
@@ -42,7 +42,7 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    if pkg_resources.parse_version(allennlp.__version__) < pkg_resources.parse_version("1.0.0"):
+    if version.parse(allennlp.__version__) < version.parse("1.0.0"):
         raise RuntimeError("AllenNLP>=1.0.0 is required for this example.")
 
     study = optuna.create_study(direction="maximize")
