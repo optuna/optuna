@@ -5,7 +5,7 @@ In this example, we perform cross-validation to accuracy of cancer detection
 using XGBoost. We optimize both the choice of booster model and their hyper
 parameters.
 
-We have following two ways to execute this example:
+We have following way to execute this example:
 
 (1) Execute this code directly.
     $ python xgboost_cv.py
