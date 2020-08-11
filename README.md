@@ -23,7 +23,7 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## News
 
-- **2020-08-07** We are welcoming [contributions](#contribution) and are working on streamlining the experience
+- **2020-08-07** We are welcoming [contributions](#contribution) and are working on streamlining the experience. Read more about it in the [blog](https://medium.com/optuna/optuna-wants-your-pull-request-ff619572302c)
 
 ## Key Features
 
