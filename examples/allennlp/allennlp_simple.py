@@ -8,7 +8,6 @@ Since it is too time-consuming to use the entire dataset, we here use a small su
 """
 
 import os
-from packaging import version
 import random
 import shutil
 import sys
@@ -18,6 +17,7 @@ import allennlp.data
 import allennlp.models
 import allennlp.modules
 import numpy
+from packaging import version
 import torch
 
 import optuna

@@ -10,10 +10,10 @@ we here use the validation dataset instead.
 """
 
 import os.path
-from packaging import version
 import shutil
 
 import allennlp
+from packaging import version
 
 import optuna
 from optuna.integration.allennlp import dump_best_config

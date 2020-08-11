@@ -13,9 +13,9 @@ argument.
 
 import argparse
 import os
-from packaging import version
 import shutil
 
+from packaging import version
 import pytorch_lightning as pl
 from pytorch_lightning import Callback
 import torch

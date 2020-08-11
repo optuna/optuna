@@ -1,9 +1,9 @@
 import collections
-from packaging import version
 import threading
 import time
 
 import numpy as np
+from packaging import version
 
 from optuna._experimental import experimental
 from optuna._imports import try_import
