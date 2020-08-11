@@ -70,5 +70,6 @@ jobs:
     - name: Tests MPI
       run: |
         mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+        mpirun -n 2 -- pytest tests/integration_tests/test_mpi.py
       env:
         OMP_NUM_THREADS: 1
