@@ -22,7 +22,7 @@ Optuna has modern functionalities as follows:
 
   - Define search spaces using familiar Python syntax including conditionals and loops.
 
-- :doc:`Efficient optimization algorithms <tutorial/003_pruning>`
+- :doc:`Efficient optimization algorithms <tutorial/007_pruning>`
 
   - Adopt state-of-the-art algorithms for sampling hyper parameters and efficiently pruning unpromising trials.
 
