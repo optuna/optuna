@@ -1,4 +1,4 @@
-from distutils.version import StrictVersion
+from packaging import version
 
 from optuna._imports import try_import
 
@@ -11,7 +11,7 @@ with try_import() as _imports:  # NOQA
 
     from plotly import __version__ as plotly_version
 
-    if StrictVersion(plotly_version) < StrictVersion("4.0.0"):
+    if version.parse(plotly_version) < version.parse("4.0.0"):
         raise ImportError(
             "Your version of Plotly is " + plotly_version + " . "
             "Please install plotly version 4.0.0 or higher. "
