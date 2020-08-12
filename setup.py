@@ -117,7 +117,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
-            "horovod",
+            "horovod[tensorflow,keras,pytorch,mxnet]",
             "lightgbm",
             "matplotlib>=3.0.0",
             "mlflow",
@@ -157,7 +157,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
-            "horovod",
+            "horovod[tensorflow,keras,pytorch,mxnet]",
             "lightgbm",
             "mlflow",
             "mpi4py",
