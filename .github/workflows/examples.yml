@@ -16,13 +16,24 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: setup-python${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install
+    - name: Setup cache
+      uses: actions/cache@v2
+      env:
+        cache-name: daily-example
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+    - name: Install (apt)
       run: |
         sudo apt-get update
         sudo apt-get -y install openmpi-bin libopenmpi-dev
+    - name: Install (Python)
+      run: |
         python -m pip install --upgrade pip
         pip install --progress-bar off -U setuptools
         python setup.py sdist
@@ -37,9 +48,9 @@ jobs:
       run: |
         # TODO(hvy): Stop ignoring allennlp_jsonnet.py when https://github.com/optuna/optuna/issues/1526 is resolved.
         if [ ${{ matrix.python-version }} = 3.5 ]; then
-          IGNORES='chainermn_.*|pytorch_lightning.*|fastai_.*|allennlp_.*|catalyst_.*|sb3_.*|allennlp_jsonnet.py'
+          IGNORES='chainermn_.*|pytorch_lightning.*|fastai_.*|catalyst_.*|sb3_.*|allennlp'
         elif [ ${{ matrix.python-version }} = 3.8 ]; then
-          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai_.*|allennlp_.*|allennlp_jsonnet.py'
+          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai_.*|allennlp'
         else
           IGNORES='chainermn_.*|allennlp_jsonnet.py'
         fi

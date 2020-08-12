@@ -74,3 +74,12 @@ In addition, integration modules are available for the following libraries, prov
 
 * [Analyzing optimization results using Neptune](https://neptune-contrib.readthedocs.io/user_guide/monitoring/optuna.html)
 * [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)
+
+### Running with Optuna's Docker images?
+You can use our docker images with the tag ending with `-dev` to run most of the examples.
+For example, you can run [PyTorch Lightning Simple](./pytorch_ignite_simple.py) via `docker run --rm optuna/optuna:py3.7-dev python examples/pytorch_lightning_simple.py`.  
+Also, you can try our visualization example in Jupyter Notebook by opening `localhost:8888` in your browser after executing this:
+
+```bash
+docker run -p 8888:8888 --rm optuna/optuna:py3.7-dev jupyter notebook --allow-root --no-browser --port 8888 --ip 0.0.0.0 --NotebookApp.token='' --NotebookApp.password=''
+```

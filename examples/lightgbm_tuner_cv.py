@@ -3,9 +3,6 @@ Optuna example that optimizes a classifier configuration for cancer dataset usin
 
 In this example, we optimize the cross-validated log loss of cancer detection.
 
-You can execute this code directly.
-    $ python lightgbm_tuner_cv.py
-
 """
 import sklearn.datasets
 from sklearn.model_selection import KFold

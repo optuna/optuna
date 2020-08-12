@@ -6,29 +6,18 @@ Chainer and MNIST. We optimize the neural network architecture as well as the op
 configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
 subset of it.
 
-We have the following two ways to execute this example:
-
-(1) Execute this code directly.
-    $ python chainer_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize chainer_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
-      --storage sqlite:///example.db
-
 """
 
 import chainer
 import chainer.functions as F
 import chainer.links as L
 import numpy as np
-import pkg_resources
+from packaging import version
 
 import optuna
 from optuna.integration import ChainerPruningExtension
 
-if pkg_resources.parse_version(chainer.__version__) < pkg_resources.parse_version("4.0.0"):
+if version.parse(chainer.__version__) < version.parse("4.0.0"):
     raise RuntimeError("Chainer>=4.0.0 is required for this example.")
 
 N_TRAIN_EXAMPLES = 3000
