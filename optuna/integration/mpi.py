@@ -1,8 +1,4 @@
-from __future__ import absolute_import
-
 from datetime import datetime
-import warnings
-
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -11,6 +7,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Type
 from typing import Union
+import warnings
 
 from optuna._experimental import experimental
 from optuna._imports import try_import
@@ -26,7 +23,6 @@ from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType  # NOQA
-
 
 with try_import() as _imports:
     from mpi4py.MPI import Comm  # NOQA
