@@ -89,7 +89,11 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow-datasets",
         ]
         + (
-            ["torch==1.6.0" if sys.platform == "darwin" else "torch==1.6.0+cpu"]
+            (
+                ["torch==1.6.0", "torchvision==0.7.0"]
+                if sys.platform == "darwin"
+                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            )
             + ["pytorch-ignite", "thop"]
             if (3, 5) < sys.version_info[:2]
             else []
