@@ -165,7 +165,7 @@ class RDBStorage(BaseStorage):
                 "`--skip-if-exists` flag (for CLI).".format(study_name)
             )
 
-        _logger.info("A new study created with name: {}".format(study.study_name))
+        _logger.info("A new study created in RDB with name: {}".format(study.study_name))
 
         return study.study_id
 

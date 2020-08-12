@@ -6,6 +6,7 @@ from typing import Dict  # NOQA
 from typing import List  # NOQA
 from typing import Optional  # NOQA
 
+import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna import distributions
@@ -16,6 +17,9 @@ from optuna.study import StudyDirection
 from optuna.study import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+_logger = optuna.logging.get_logger(__name__)
 
 
 with try_import() as _imports:
@@ -100,6 +104,8 @@ class RedisStorage(BaseStorage):
             pipe.rpush("study_list", pickle.dumps(study_id))
             pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
             pipe.execute()
+
+        _logger.info("A new study created in Redis with name: {}".format(study_name))
 
         return study_id
 
