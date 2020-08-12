@@ -76,7 +76,7 @@ jobs:
     - name: Run multi-node examples
       run: |
         STORAGE_URL=sqlite:///example.db
-        for file in `find examples -name 'chainermn_*.py'`
+        for file in `find examples -name 'chainermn_*.py' -or -name '*_horovod.py'`
         do
           echo $file
           STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
