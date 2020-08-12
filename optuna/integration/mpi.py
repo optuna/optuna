@@ -302,6 +302,12 @@ class MPIStudy(object):
         timeout: Optional[float] = None,
         catch: Union[Tuple[()], Tuple[Type[Exception]]] = (),
     ) -> None:
+        """Optimize an objective function.
+
+        This method provides the same interface as :func:`optuna.study.Study.optimize` except
+        the absence of the following arguments: ``n_jobs``, ``callbacks``, ``gc_after_trial``,
+        and ``show_progress_bar``.
+        """
 
         if self.comm.rank == 0:
             func_mn = _MPIObjectiveFunc(func, self.comm)

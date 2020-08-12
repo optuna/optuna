@@ -72,6 +72,15 @@ MLflow
 
    optuna.integration.MLflowCallback
 
+mpi4py
+------
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   optuna.integration.MPIStudy
+
 MXNet
 -----
 
