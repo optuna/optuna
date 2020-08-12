@@ -81,17 +81,23 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "nbval",
-            "pytorch-ignite",
             "scikit-image",
             "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
-            "thop",
-            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
-            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
             "keras",
             "tensorflow>=2.0.0",
             "tensorflow-datasets",
         ]
+        + (
+            (
+                ["torch==1.6.0", "torchvision==0.7.0"]
+                if sys.platform == "darwin"
+                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            )
+            + ["pytorch-ignite", "thop"]
+            if (3, 5) < sys.version_info[:2]
+            else []
+        )
         + (["stable-baselines3>=0.7.0"] if (3, 5) < sys.version_info[:2] else [])
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
@@ -120,16 +126,23 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "plotly>=4.0.0",
             "pytest",
-            "pytorch-ignite",
             "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
-            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
-            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
             "keras",
             "tensorflow",
             "tensorflow-datasets",
         ]
+        + (
+            (
+                ["torch==1.6.0", "torchvision==0.7.0"]
+                if sys.platform == "darwin"
+                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            )
+            + ["pytorch-ignite"]
+            if (3, 5) < sys.version_info[:2]
+            else []
+        )
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
@@ -155,16 +168,23 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "pandas",
-            "pytorch-ignite",
             "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
-            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
-            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
             "keras",
             "tensorflow",
             "tensorflow-datasets",
         ]
+        + (
+            (
+                ["torch==1.6.0", "torchvision==0.7.0"]
+                if sys.platform == "darwin"
+                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            )
+            + ["pytorch-ignite"]
+            if (3, 5) < sys.version_info[:2]
+            else []
+        )
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch-lightning>=0.7.1"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
