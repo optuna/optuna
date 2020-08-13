@@ -8,6 +8,7 @@ from typing import Optional
 from typing import Tuple
 import uuid
 
+import optuna
 from optuna import distributions  # NOQA
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
@@ -16,6 +17,9 @@ from optuna.study import StudyDirection
 from optuna.study import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+_logger = optuna.logging.get_logger(__name__)
 
 
 class InMemoryStorage(BaseStorage):
@@ -57,6 +61,8 @@ class InMemoryStorage(BaseStorage):
                 study_name = DEFAULT_STUDY_NAME_PREFIX + study_uuid
             self._studies[study_id] = _StudyInfo(study_name)
             self._study_name_to_id[study_name] = study_id
+
+            _logger.info("A new study created in memory with name: {}".format(study_name))
 
             return study_id
 
