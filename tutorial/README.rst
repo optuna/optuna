@@ -13,13 +13,11 @@ The order we assume is as follows:
 * :ref:`pruning`
 * :ref:`sampler`
 
-Other Resources
-===============
+**Other Resources**:
 
-* `examples`_
+* `Examples`_: Demonstarate how to use Optuna with popular libraries for machine learning and deep learning.
 
 .. _examples: https://github.com/optuna/optuna/tree/master/examples/
-
 
 .. toctree::
    :maxdepth: 2
