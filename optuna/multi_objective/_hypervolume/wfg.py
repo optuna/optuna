@@ -61,7 +61,7 @@ class WFG(BaseHypervolume):
         limited_solution_set = []
 
         for i in range(n_points_of_s):
-            if _dominates_or_equal(point, solution_set[i]):
+            if _dominates_or_equal(solution_set[i], point):
                 return point.reshape((1, dim))
             limited_solution_set.append(np.maximum(solution_set[i], point))
         limited_solution_set = np.asarray(limited_solution_set).reshape(
@@ -78,7 +78,7 @@ class WFG(BaseHypervolume):
             right = 1
             while left < right < n_points_of_s:
                 if not _dominates_or_equal(
-                    limited_solution_set[right], limited_solution_set[left]
+                    limited_solution_set[left], limited_solution_set[right]
                 ):
                     left = right
                     returned_limited_solution_set.append(limited_solution_set[left])

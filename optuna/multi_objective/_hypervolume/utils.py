@@ -27,6 +27,6 @@ def _dominates_or_equal(point1: np.ndarray, point2: np.ndarray) -> bool:
         A boolean value representing whether the point1 dominates or equal to point2.
     """
 
-    if (point1 < point2).any():
+    if (point1 > point2).any():
         return False
     return True
