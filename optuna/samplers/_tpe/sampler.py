@@ -427,16 +427,16 @@ class TPESampler(BaseSampler):
             return np.asarray([], dtype=float)
         if weights.ndim != 1:
             raise ValueError(
-                "The 'weights' should be 2-dimension. "
+                "The 'weights' should be 1-dimension. "
                 "But weights.shape = {}".format(weights.shape)
             )
         if mus.ndim != 1:
             raise ValueError(
-                "The 'mus' should be 2-dimension. But mus.shape = {}".format(mus.shape)
+                "The 'mus' should be 1-dimension. But mus.shape = {}".format(mus.shape)
             )
         if sigmas.ndim != 1:
             raise ValueError(
-                "The 'sigmas' should be 2-dimension. But sigmas.shape = {}".format(sigmas.shape)
+                "The 'sigmas' should be 1-dimension. But sigmas.shape = {}".format(sigmas.shape)
             )
 
         p_accept = np.sum(
