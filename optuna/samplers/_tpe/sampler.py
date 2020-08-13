@@ -470,20 +470,18 @@ class TPESampler(BaseSampler):
     def _sample_from_categorical_dist(self, probabilities, size):
         # type: (np.ndarray, Tuple[int]) -> np.ndarray
 
-        if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
-            probabilities = probabilities[0]
-        probabilities = np.asarray(probabilities)
-
         if size == (0,):
             return np.asarray([], dtype=float)
         assert len(size)
+
+        if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
+            probabilities = probabilities[0]
         assert probabilities.ndim == 1
 
-        n_draws = int(np.prod(size))
-        sample = self._rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
-        assert sample.shape == size + (probabilities.size,)
-        return_val = np.dot(sample, np.arange(probabilities.size))
-        return_val.shape = size
+        n_draws = np.prod(size).item()
+        sample = self._rng.multinomial(n=1, pvals=probabilities, size=n_draws)
+        assert sample.shape == size + probabilities.shape
+        return_val = np.dot(sample, np.arange(probabilities.size)).reshape(size)
         return return_val
 
     @classmethod
