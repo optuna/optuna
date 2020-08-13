@@ -63,8 +63,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "document": [
             # TODO(hvy): Unpin `sphinx` version after:
-            # https://github.com/sphinx-doc/sphinx/issues/7807.
-            "sphinx>=3.0.0,!=3.1.0,!=3.1.1,!=3.1.2,!=3.2.0",
+            # https://github.com/sphinx-doc/sphinx/issues/8105.
+            "sphinx==3.0.4",
             # As reported in: https://github.com/readthedocs/sphinx_rtd_theme/issues/949,
             # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
             "sphinx_rtd_theme<0.5.0",
