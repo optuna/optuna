@@ -12,21 +12,3 @@ def _compute_2points_volume(point1: np.ndarray, point2: np.ndarray) -> float:
     """
 
     return float(np.abs(np.prod(point1 - point2)))
-
-
-def _dominates_or_equal(point1: np.ndarray, point2: np.ndarray) -> bool:
-    """Compare given 2 points based on domination relationship.
-
-    Args:
-        point1:
-            The first point,
-        point2:
-            The second point.
-
-    Returns:
-        A boolean value representing whether the point1 dominates or equal to point2.
-    """
-
-    if (point1 > point2).any():
-        return False
-    return True

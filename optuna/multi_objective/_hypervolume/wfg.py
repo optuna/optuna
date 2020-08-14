@@ -1,7 +1,6 @@
 import numpy as np
 
 from optuna.multi_objective._hypervolume import _compute_2points_volume
-from optuna.multi_objective._hypervolume import _dominates_or_equal
 from optuna.multi_objective._hypervolume import BaseHypervolume
 
 
@@ -56,30 +55,40 @@ class WFG(BaseHypervolume):
 
     @staticmethod
     def _limit(point: np.ndarray, solution_set: np.ndarray) -> np.ndarray:
+        """Limit the points in the solution set for the given point.
+
+        Let `S := solution set`, `p := point` and `d := dim(p)`.
+        The returned solution set `S'` is
+        `S' = Pareto({s' | for all i in [d], exists s in S, s'_i = max(s_i, p_i)})`,
+        where `Pareto(T) = the points in T which are Pareto optimal`.
+        """
         n_points_of_s = solution_set.shape[0]
         dim = point.shape[0]
         limited_solution_set = []
 
         for i in range(n_points_of_s):
-            if _dominates_or_equal(solution_set[i], point):
+            # If `point` is equal to or dominated by `solution_set[i]`,
+            # the returned solution set is `{point}`.
+            if (solution_set[i] <= point).all():
                 return point.reshape((1, dim))
             limited_solution_set.append(np.maximum(solution_set[i], point))
         limited_solution_set = np.asarray(limited_solution_set).reshape(
             (len(limited_solution_set), dim)
         )
 
-        # Return only pareto optimal points for computational efficiency.
+        # Return only Pareto optimal points for computational efficiency.
         if n_points_of_s <= 1:
             return limited_solution_set
         else:
             # Assume limited_solution_set is sorted by its 0th dimension.
+            # Therefore, we can simply scan the limited solution set from left to right.
+            # Let `S'' = limited solution set`.
+            # `S''[left] is dominated by S''[right]` is never going to happen.
             returned_limited_solution_set = [limited_solution_set[0]]
             left = 0
             right = 1
             while left < right < n_points_of_s:
-                if not _dominates_or_equal(
-                    limited_solution_set[left], limited_solution_set[right]
-                ):
+                if (limited_solution_set[left] > limited_solution_set[right]).any():
                     left = right
                     returned_limited_solution_set.append(limited_solution_set[left])
                 right += 1
