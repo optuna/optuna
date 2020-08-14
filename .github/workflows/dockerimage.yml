@@ -9,6 +9,7 @@ on:
   pull_request:
     paths:
       - Dockerfile
+      - .dockerignore
       - setup.py
 
 env:
