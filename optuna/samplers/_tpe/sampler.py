@@ -389,17 +389,20 @@ class TPESampler(BaseSampler):
         active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
         trunc_low = (low - mus[active]) / sigmas[active]
         trunc_high = (high - mus[active]) / sigmas[active]
-        while True:
-            samples = truncnorm.rvs(
-                trunc_low,
-                trunc_high,
-                size=size,
-                loc=mus[active],
-                scale=sigmas[active],
-                random_state=self._rng,
+        samples = np.full((), fill_value=high + 1.0, dtype=np.float64)
+        while (samples >= high).any():
+            samples = np.where(
+                samples < high,
+                samples,
+                truncnorm.rvs(
+                    trunc_low,
+                    trunc_high,
+                    size=size,
+                    loc=mus[active],
+                    scale=sigmas[active],
+                    random_state=self._rng,
+                ),
             )
-            if (samples < high).all():
-                break
 
         if q is None:
             return samples
@@ -424,16 +427,16 @@ class TPESampler(BaseSampler):
             return np.asarray([], dtype=float)
         if weights.ndim != 1:
             raise ValueError(
-                "The 'weights' should be 2-dimension. "
+                "The 'weights' should be 1-dimension. "
                 "But weights.shape = {}".format(weights.shape)
             )
         if mus.ndim != 1:
             raise ValueError(
-                "The 'mus' should be 2-dimension. But mus.shape = {}".format(mus.shape)
+                "The 'mus' should be 1-dimension. But mus.shape = {}".format(mus.shape)
             )
         if sigmas.ndim != 1:
             raise ValueError(
-                "The 'sigmas' should be 2-dimension. But sigmas.shape = {}".format(sigmas.shape)
+                "The 'sigmas' should be 1-dimension. But sigmas.shape = {}".format(sigmas.shape)
             )
 
         p_accept = np.sum(

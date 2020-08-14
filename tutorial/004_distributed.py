@@ -1,3 +1,4 @@
+"""
 .. _distributed:
 
 Distributed Optimization
@@ -11,6 +12,7 @@ First, create a shared study using ``optuna create-study`` command (or using :fu
 
     $ optuna create-study --study-name "distributed-example" --storage "sqlite:///example.db"
     [I 2020-07-21 13:43:39,642] A new study created with name: distributed-example
+
 
 Then, write an optimization script. Let's assume that ``foo.py`` contains the following code.
 
@@ -53,3 +55,4 @@ Process 2 (the same command as process 1):
 
 .. note::
     Please avoid putting the SQLite database on NFS when running distributed optimizations. See also: https://www.sqlite.org/faq.html#q5
+"""

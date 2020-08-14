@@ -4,17 +4,6 @@ Optuna example that optimizes a classifier configuration for cancer dataset usin
 In this example, we optimize the validation accuracy of cancer detection using LightGBM.
 We optimize both the choice of booster model and their hyperparameters.
 
-We have following two ways to execute this example:
-
-(1) Execute this code directly.
-    $ python lightgbm_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize lightgbm_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
-      --storage sqlite:///example.db
-
 """
 
 import lightgbm as lgb

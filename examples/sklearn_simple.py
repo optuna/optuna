@@ -5,17 +5,6 @@ In this example, we optimize a classifier configuration for Iris dataset. Classi
 scikit-learn. We optimize both the choice of classifier (among SVC and RandomForest) and their
 hyper parameters.
 
-We have the following two ways to execute this example:
-
-(1) Execute this code directly.
-    $ python sklearn_simple.py
-
-
-(2) Execute through CLI.
-    $ STUDY_NAME=`optuna create-study --direction maximize --storage sqlite:///example.db`
-    $ optuna study optimize sklearn_simple.py objective --n-trials=100 --study-name $STUDY_NAME \
-      --storage sqlite:///example.db
-
 """
 
 import sklearn.datasets

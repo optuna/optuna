@@ -1,4 +1,4 @@
-local DROPOUT = std.extVar('DROPOUT');
+local DROPOUT = std.parseJson(std.extVar('DROPOUT'));
 
 
 {

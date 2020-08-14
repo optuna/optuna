@@ -33,10 +33,19 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Setup Python${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Setup cache
+      uses: actions/cache@v2
+      env:
+        cache-name: test
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
     - name: Setup environment
       run: |
         sudo apt-get update

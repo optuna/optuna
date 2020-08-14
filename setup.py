@@ -36,7 +36,7 @@ def get_install_requires() -> List[str]:
         "colorlog",
         "joblib",
         "numpy",
-        "packaging",
+        "packaging>=20.0",
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
@@ -63,11 +63,15 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "document": [
             # TODO(hvy): Unpin `sphinx` version after:
-            # https://github.com/sphinx-doc/sphinx/issues/7807.
-            "sphinx>=3.0.0,!=3.1.0,!=3.1.1,!=3.1.2",
+            # https://github.com/sphinx-doc/sphinx/issues/8105.
+            "sphinx==3.0.4",
             # As reported in: https://github.com/readthedocs/sphinx_rtd_theme/issues/949,
             # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
             "sphinx_rtd_theme<0.5.0",
+            "sphinx-gallery",
+            "pillow",
+            "matplotlib",
+            "scikit-learn",
         ],
         "example": [
             "catboost",
@@ -77,17 +81,23 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "nbval",
-            "pytorch-ignite",
             "scikit-image",
-            "scikit-learn",
-            "thop",
-            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
-            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
+            "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
             "xgboost",
             "keras",
             "tensorflow>=2.0.0",
             "tensorflow-datasets",
         ]
+        + (
+            (
+                ["torch==1.6.0", "torchvision==0.7.0"]
+                if sys.platform == "darwin"
+                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            )
+            + ["pytorch-ignite", "thop"]
+            if (3, 5) < sys.version_info[:2]
+            else []
+        )
         + (["stable-baselines3>=0.7.0"] if (3, 5) < sys.version_info[:2] else [])
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
@@ -96,8 +106,9 @@ def get_extras_require() -> Dict[str, List[str]]:
         )
         + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
         + (
-            ["llvmlite<=0.31.0"] if (3, 5) == sys.version_info[:2] else []
+            ["llvmlite<=0.31.0", "fsspec<0.8.0"] if (3, 5) == sys.version_info[:2] else []
         )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
+        # Newer `fsspec` uses f-strings, which is not compatible with Python 3.5.
         + (["dask[dataframe]", "dask-ml",] if sys.version_info[:2] < (3, 8) else [])
         + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
         "experimental": ["redis"],
@@ -115,16 +126,23 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "plotly>=4.0.0",
             "pytest",
-            "pytorch-ignite",
             "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
-            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
-            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
             "keras",
             "tensorflow",
             "tensorflow-datasets",
         ]
+        + (
+            (
+                ["torch==1.6.0", "torchvision==0.7.0"]
+                if sys.platform == "darwin"
+                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            )
+            + ["pytorch-ignite"]
+            if (3, 5) < sys.version_info[:2]
+            else []
+        )
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
@@ -150,16 +168,23 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "pandas",
-            "pytorch-ignite",
             "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
-            "torch==1.5.1" if sys.platform == "darwin" else "torch==1.5.1+cpu",
-            "torchvision==0.6.1" if sys.platform == "darwin" else "torchvision==0.6.1+cpu",
             "xgboost",
             "keras",
             "tensorflow",
             "tensorflow-datasets",
         ]
+        + (
+            (
+                ["torch==1.6.0", "torchvision==0.7.0"]
+                if sys.platform == "darwin"
+                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            )
+            + ["pytorch-ignite"]
+            if (3, 5) < sys.version_info[:2]
+            else []
+        )
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch-lightning>=0.7.1"]
             if (3, 5) < sys.version_info[:2] < (3, 8)
