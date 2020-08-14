@@ -16,7 +16,7 @@ class WFG(BaseHypervolume):
     def __init__(self) -> None:
         self._reference_point = None
 
-    def compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+    def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
         self._reference_point = reference_point
         return self._compute_rec(solution_set)
 
@@ -87,7 +87,7 @@ class WFG(BaseHypervolume):
             returned_limited_solution_set = [limited_solution_set[0]]
             left = 0
             right = 1
-            while left < right < n_points_of_s:
+            while right < n_points_of_s:
                 if (limited_solution_set[left] > limited_solution_set[right]).any():
                     left = right
                     returned_limited_solution_set.append(limited_solution_set[left])
