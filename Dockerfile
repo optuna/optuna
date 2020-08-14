@@ -11,7 +11,13 @@ RUN apt-get update \
     && pip install ${PIP_OPTIONS} -U setuptools
 
 WORKDIR /workspaces
-COPY . .
+
+# Create (dummy) files required to run setup.py
+RUN mkdir optuna \
+    && touch README.md \
+    && echo '__version__ = "0.0.0"' > optuna/version.py
+
+COPY setup.py .
 
 ARG BUILD_TYPE='dev'
 
@@ -27,3 +33,5 @@ RUN if [ "${BUILD_TYPE}" = "dev" ]; then \
     && pip install ${PIP_OPTIONS} jupyter notebook
 
 ENV PIP_OPTIONS ""
+
+COPY . .
