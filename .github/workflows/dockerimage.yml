@@ -10,6 +10,7 @@ on:
     paths:
       - Dockerfile
       - setup.py
+      - dockerimage.yml
 
 env:
   DOCKER_HUB_BASE_NAME: optuna/optuna
