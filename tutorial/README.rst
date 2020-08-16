@@ -15,7 +15,7 @@ The order we assume is as follows:
 
 **Other Resources**:
 
-* `Examples`_: Demonstarate how to use Optuna with popular libraries for machine learning and deep learning.
+* `Examples`_: More examples including how to use Optuna with popular libraries for machine learning and deep learning.
 
 .. _examples: https://github.com/optuna/optuna/tree/master/examples/
 
