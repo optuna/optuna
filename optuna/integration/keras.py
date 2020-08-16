@@ -32,9 +32,7 @@ class KerasPruningCallback(Callback):
             epochs faster before applying pruning.
      """
 
-    def __init__(self, trial, monitor, interval=1):
-        # type: (optuna.trial.Trial, str, int) -> None
-
+    def __init__(self, trial: optuna.trial.Trial, monitor: str, interval: int = 1) -> None:
         super(KerasPruningCallback, self).__init__()
 
         _imports.check()
@@ -43,9 +41,7 @@ class KerasPruningCallback(Callback):
         self._monitor = monitor
         self._interval = interval
 
-    def on_epoch_end(self, epoch, logs=None):
-        # type: (int, Dict[str, float]) -> None
-
+    def on_epoch_end(self, epoch: int, logs: Dict[str, float] = None) -> None:
         if (epoch + 1) % self._interval != 0:
             return
 
