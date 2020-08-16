@@ -1,8 +1,6 @@
-import optuna
-from optuna import type_checking
+from typing import Dict
 
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
+import optuna
 
 with optuna._imports.try_import() as _imports:
     from keras.callbacks import Callback
