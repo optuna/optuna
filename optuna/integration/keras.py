@@ -1,8 +1,6 @@
-import optuna
-from optuna import type_checking
+from typing import Dict
 
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
+import optuna
 
 with optuna._imports.try_import() as _imports:
     from keras.callbacks import Callback
@@ -32,9 +30,7 @@ class KerasPruningCallback(Callback):
             epochs faster before applying pruning.
      """
 
-    def __init__(self, trial, monitor, interval=1):
-        # type: (optuna.trial.Trial, str, int) -> None
-
+    def __init__(self, trial: optuna.trial.Trial, monitor: str, interval: int = 1) -> None:
         super(KerasPruningCallback, self).__init__()
 
         _imports.check()
@@ -43,9 +39,7 @@ class KerasPruningCallback(Callback):
         self._monitor = monitor
         self._interval = interval
 
-    def on_epoch_end(self, epoch, logs=None):
-        # type: (int, Dict[str, float]) -> None
-
+    def on_epoch_end(self, epoch: int, logs: Dict[str, float] = None) -> None:
         if (epoch + 1) % self._interval != 0:
             return
 
