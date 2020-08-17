@@ -13,7 +13,7 @@ def objective(btrial):
 
     z = f(x, y)
 
-    # The return value is expected to be a list of float values.
+    # The return value is expected to be a numpy array of float values.
     return z
 
 
@@ -23,6 +23,7 @@ def callback(study, trial):
         print("best trial is Trial {}".format(trial.number))
 
 
-study = optuna.create_study(direction="maximize")
-bstudy = optuna.BatchStudy(study, batch_size=4)
-bstudy.batch_optimize(objective, n_batches=10, callbacks=[callback])
+if __name__ == "__main__":
+    study = optuna.create_study(direction="maximize")
+    bstudy = optuna.BatchStudy(study, batch_size=4)
+    bstudy.batch_optimize(objective, n_batches=10, callbacks=[callback])
