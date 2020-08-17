@@ -41,6 +41,6 @@ def test_wfg_nd() -> None:
 
 def test_invalid_input() -> None:
     r = np.ones(3)
-    s = 2 * np.ones(3)
+    s = np.atleast_2d(2 * np.ones(3))
     with pytest.raises(ValueError):
         _ = optuna.multi_objective._hypervolume.WFG().compute(s, r)
