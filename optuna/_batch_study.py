@@ -15,6 +15,7 @@ import optuna
 from optuna import exceptions
 from optuna import logging
 from optuna.multi_objective.study import MultiObjectiveStudy
+from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from optuna import trial as trial_module
 from optuna.trial._batch import BatchMultiObjectiveTrial
 from optuna.trial._batch import BatchTrial
@@ -28,6 +29,13 @@ if type_checking.TYPE_CHECKING:
 
 BatchObjectiveFuncType = Callable[[BatchTrial], np.ndarray]
 BatchMultiObjectiveFuncType = Callable[[BatchMultiObjectiveTrial], Sequence[np.ndarray]]
+MultiObjectiveCallbackFuncType = Callable[
+    [
+        "optuna.multi_objective.study.MultiObjectiveStudy",
+        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial",
+    ],
+    None,
+]
 
 _logger = logging.get_logger(__name__)
 
@@ -95,12 +103,15 @@ class BatchStudy(optuna.study.Study):
         trials = self._run_batch_trial()
         if self._callbacks is None:
             return
+
+        if isinstance(self._study, MultiObjectiveStudy):
+            study = self._study._study
+        else:
+            study = self._study
         for trial in trials:
             frozen_trial = copy.deepcopy(self._storage.get_trial(trial._trial_id))
             for callback in self._callbacks:
-                if isinstance(self._study, MultiObjectiveStudy):
-                    raise NotImplementedError
-                callback(self._study, frozen_trial)
+                callback(study, frozen_trial)
 
     def _run_batch_trial(self,) -> List[trial_module.Trial]:
 
@@ -213,7 +224,7 @@ class BatchMultiObjectiveStudy(MultiObjectiveStudy):
         n_batches: Optional[int] = None,
         n_jobs: int = 1,
         catch: Tuple[Type[Exception], ...] = (),
-        callbacks: None = None,
+        callbacks: Optional[List[MultiObjectiveCallbackFuncType]] = None,
         gc_after_trial: bool = True,
         show_progress_bar: bool = False,
     ) -> None:
@@ -226,17 +237,18 @@ class BatchMultiObjectiveStudy(MultiObjectiveStudy):
             mo_trial._report_complete_values(values)
             return np.zeros(len(trials))  # Dummy value.
 
-        # # Wraps a multi-objective callback so that we can pass it to the `Study.optimize` method.
-        # def wrap_mo_callback(callback: CallbackFuncType) -> Callable[[Study, FrozenTrial], None]:
-        #     return lambda study, trial: callback(
-        #         MultiObjectiveStudy(study),
-        #         multi_objective.trial.FrozenMultiObjectiveTrial(self.n_objectives, trial),
-        #     )
+        # Wraps a multi-objective callback so that we can pass it to the `Study.optimize` method.
+        def wrap_mo_callback(
+            callback: MultiObjectiveCallbackFuncType,
+        ) -> Callable[["optuna.Study", "optuna.trial.FrozenTrial"], None]:
+            return lambda study, trial: callback(
+                MultiObjectiveStudy(study), FrozenMultiObjectiveTrial(self.n_objectives, trial),
+            )
 
-        # if callbacks is None:
-        #     wrapped_callbacks = None
-        # else:
-        #     wrapped_callbacks = [wrap_mo_callback(callback) for callback in callbacks]
+        if callbacks is None:
+            wrapped_callbacks = None
+        else:
+            wrapped_callbacks = [wrap_mo_callback(callback) for callback in callbacks]
 
         assert isinstance(self._study, BatchStudy)
         self._study.batch_optimize(
@@ -245,6 +257,7 @@ class BatchMultiObjectiveStudy(MultiObjectiveStudy):
             n_batches=n_batches,
             n_jobs=n_jobs,
             catch=catch,
+            callbacks=wrapped_callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
         )
