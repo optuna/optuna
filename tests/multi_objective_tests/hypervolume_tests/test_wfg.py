@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 import optuna
 
@@ -36,3 +37,10 @@ def test_wfg_nd() -> None:
         np.random.shuffle(s)
         v = optuna.multi_objective._hypervolume.WFG().compute(s, r)
         assert v == 10 ** n - 1
+
+
+def test_invalid_input() -> None:
+    r = np.ones(3)
+    s = 2 * np.ones(3)
+    with pytest.raises(ValueError):
+        _ = optuna.multi_objective._hypervolume.WFG().compute(s, r)
