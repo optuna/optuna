@@ -1,5 +1,4 @@
 import optuna
-import optuna._batch_study
 
 
 def f(x, y):
@@ -25,5 +24,5 @@ def callback(study, trial):
 
 
 study = optuna.create_study(direction="maximize")
-bstudy = optuna._batch_study.BatchStudy(study, batch_size=4)
+bstudy = optuna.BatchStudy(study, batch_size=4)
 bstudy.batch_optimize(objective, n_batches=10, callbacks=[callback])
