@@ -63,18 +63,8 @@ class WFG(BaseHypervolume):
         where `Pareto(T) = the points in T which are Pareto optimal`.
         """
         n_points_of_s = solution_set.shape[0]
-        dim = point.shape[0]
-        limited_solution_set = []
 
-        for i in range(n_points_of_s):
-            # If `point` is equal to or dominated by `solution_set[i]`,
-            # the returned solution set is `{point}`.
-            if (solution_set[i] <= point).all():
-                return point.reshape((1, dim))
-            limited_solution_set.append(np.maximum(solution_set[i], point))
-        limited_solution_set = np.asarray(limited_solution_set).reshape(
-            (len(limited_solution_set), dim)
-        )
+        limited_solution_set = np.maximum(solution_set, point)
 
         # Return only Pareto optimal points for computational efficiency.
         if n_points_of_s <= 1:
