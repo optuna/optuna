@@ -10,9 +10,7 @@ We have following way to execute this example:
 (1) Execute this code directly.
     $ python xgboost_cv.py
 
-
 """
-
 
 import os
 import shutil
@@ -52,7 +50,6 @@ def objective(trial):
         param["eta"] = trial.suggest_loguniform("eta", 1e-8, 1.0)
         param["gamma"] = trial.suggest_loguniform("gamma", 1e-8, 1.0)
         param["grow_policy"] = trial.suggest_categorical("grow_policy", ["depthwise", "lossguide"])
-
     if param["booster"] == "dart":
         param["sample_type"] = trial.suggest_categorical("sample_type", ["uniform", "weighted"])
         param["normalize_type"] = trial.suggest_categorical("normalize_type", ["tree", "forest"])
