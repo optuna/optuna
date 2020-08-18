@@ -29,14 +29,6 @@ from typing import Tuple
 import optuna
 from optuna.exceptions import CLIUsageError
 from optuna.storages import RDBStorage
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
 
 
 def _check_storage_url(storage_url: Optional[str]) -> str:
