@@ -23,8 +23,6 @@ def callback(study, trial):
 if __name__ == "__main__":
     study = optuna.multi_objective.create_study(["minimize", "minimize"])
     bstudy = optuna.BatchMultiObjectiveStudy(study, batch_size=4)
-    bstudy.batch_optimize(
-        objective, n_batches=10, callbacks=[callback]
-    )
+    bstudy.batch_optimize(objective, n_batches=10, callbacks=[callback])
 
     optuna.multi_objective.visualization.plot_pareto_front(study).show()
