@@ -207,7 +207,7 @@ class _Dashboard(_BaseCommand):
         )
         return parser
 
-    def take_action(self, parsed_args: str) -> None:
+    def take_action(self, parsed_args: Namespace) -> None:
 
         storage_url = _check_storage_url(self.app_args.storage)
 
@@ -269,7 +269,7 @@ class _StudyOptimize(_BaseCommand):
         parser.add_argument("method", help="The method name of the objective function.")
         return parser
 
-    def take_action(self, parsed_args: str) -> int:
+    def take_action(self, parsed_args: Namespace) -> int:
 
         message = (
             "The use of the `study optimize` command is deprecated. Please execute your Python "
