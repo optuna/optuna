@@ -345,10 +345,11 @@ class TPESampler(BaseSampler):
         above = list(map(int, above))
         upper = len(choices)
 
-        # We can use np.arange(len(distribution.choices)) instead of sampling from l(x)
-        # when the cardinality of categorical parameter is lower than n_ei_candidates.
-        # Though it seems to be theoretically correct, it leads performance degration
-        # on NASBench. See https://github.com/optuna/optuna/pull/1603 for more details.
+        # We can use `np.arange(len(distribution.choices))` instead of sampling from `l(x)`
+        # when the cardinality of categorical parameters is lower than `n_ei_candidates`.
+        # Though it seems to be theoretically correct, it leads to performance degradation
+        # on the NAS benchmark experiment in https://arxiv.org/abs/1902.09635. 
+        # See https://github.com/optuna/optuna/pull/1603 for more details.
         size = (self._n_ei_candidates,)
 
         weights_below = self._weights(len(below))
