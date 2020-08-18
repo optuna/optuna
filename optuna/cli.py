@@ -20,6 +20,12 @@ from cliff.command import Command
 from cliff.commandmanager import CommandManager
 from cliff.lister import Lister
 
+from typing import Optional
+from typing import Dict
+from typing import Any
+from typing import List
+from typing import Tuple
+
 import optuna
 from optuna.exceptions import CLIUsageError
 from optuna.storages import RDBStorage
@@ -33,8 +39,7 @@ if type_checking.TYPE_CHECKING:
     from typing import Tuple  # NOQA
 
 
-def _check_storage_url(storage_url):
-    # type: (Optional[str]) -> str
+def _check_storage_url(storage_url: Optional[str]) -> str:
 
     if storage_url is None:
         raise CLIUsageError("Storage URL is not specified.")
@@ -42,8 +47,7 @@ def _check_storage_url(storage_url):
 
 
 class _BaseCommand(Command):
-    def __init__(self, *args, **kwargs):
-        # type: (List[Any], Dict[str, Any]) -> None
+    def __init__(self, *args: List[Any], **kwargs: Dict[str, Any]) -> None:
 
         super(_BaseCommand, self).__init__(*args, **kwargs)
         self.logger = optuna.logging.get_logger(__name__)
@@ -52,8 +56,7 @@ class _BaseCommand(Command):
 class _CreateStudy(_BaseCommand):
     """Create a new study."""
 
-    def get_parser(self, prog_name):
-        # type: (str) -> ArgumentParser
+    def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_CreateStudy, self).get_parser(prog_name)
         parser.add_argument(
@@ -78,8 +81,7 @@ class _CreateStudy(_BaseCommand):
         )
         return parser
 
-    def take_action(self, parsed_args):
-        # type: (Namespace) -> None
+    def take_action(self, parsed_args: Namespace) -> None:
 
         storage_url = _check_storage_url(self.app_args.storage)
         storage = optuna.storages.get_storage(storage_url)
@@ -95,8 +97,7 @@ class _CreateStudy(_BaseCommand):
 class _DeleteStudy(_BaseCommand):
     """Delete a specified study."""
 
-    def get_parser(self, prog_name):
-        # type: (str) -> ArgumentParser
+    def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_DeleteStudy, self).get_parser(prog_name)
         parser.add_argument(
@@ -104,8 +105,7 @@ class _DeleteStudy(_BaseCommand):
         )
         return parser
 
-    def take_action(self, parsed_args):
-        # type: (Namespace) -> None
+    def take_action(self, parsed_args: Namespace) -> None:
 
         storage_url = _check_storage_url(self.app_args.storage)
         storage = optuna.storages.get_storage(storage_url)
@@ -116,8 +116,7 @@ class _DeleteStudy(_BaseCommand):
 class _StudySetUserAttribute(_BaseCommand):
     """Set a user attribute to a study."""
 
-    def get_parser(self, prog_name):
-        # type: (str) -> ArgumentParser
+    def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_StudySetUserAttribute, self).get_parser(prog_name)
         parser.add_argument(
@@ -132,8 +131,7 @@ class _StudySetUserAttribute(_BaseCommand):
         parser.add_argument("--value", "-v", required=True, help="Value to be set.")
         return parser
 
-    def take_action(self, parsed_args):
-        # type: (Namespace) -> None
+    def take_action(self, parsed_args: Namespace) -> None:
 
         storage_url = _check_storage_url(self.app_args.storage)
 
@@ -162,14 +160,12 @@ class _Studies(Lister):
     _datetime_format = "%Y-%m-%d %H:%M:%S"
     _study_list_header = ("NAME", "DIRECTION", "N_TRIALS", "DATETIME_START")
 
-    def get_parser(self, prog_name):
-        # type: (str) -> ArgumentParser
+    def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_Studies, self).get_parser(prog_name)
         return parser
 
-    def take_action(self, parsed_args):
-        # type: (Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]
+    def take_action(self, parsed_args: Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]:
 
         storage_url = _check_storage_url(self.app_args.storage)
         summaries = optuna.get_all_study_summaries(storage=storage_url)
@@ -190,8 +186,7 @@ class _Studies(Lister):
 class _Dashboard(_BaseCommand):
     """Launch web dashboard (beta)."""
 
-    def get_parser(self, prog_name):
-        # type: (str) -> ArgumentParser
+    def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_Dashboard, self).get_parser(prog_name)
         parser.add_argument(
@@ -220,8 +215,7 @@ class _Dashboard(_BaseCommand):
         )
         return parser
 
-    def take_action(self, parsed_args):
-        # type: (Namespace) -> None
+    def take_action(self, parsed_args: str) -> None:
 
         storage_url = _check_storage_url(self.app_args.storage)
 
@@ -249,8 +243,7 @@ class _Dashboard(_BaseCommand):
 class _StudyOptimize(_BaseCommand):
     """Start optimization of a study. Deprecated since version 2.0.0."""
 
-    def get_parser(self, prog_name):
-        # type: (str) -> ArgumentParser
+    def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_StudyOptimize, self).get_parser(prog_name)
         parser.add_argument(
@@ -284,8 +277,7 @@ class _StudyOptimize(_BaseCommand):
         parser.add_argument("method", help="The method name of the objective function.")
         return parser
 
-    def take_action(self, parsed_args):
-        # type: (Namespace) -> int
+    def take_action(self, parsed_args: str) -> int:
 
         message = (
             "The use of the `study optimize` command is deprecated. Please execute your Python "
@@ -338,14 +330,12 @@ class _StudyOptimize(_BaseCommand):
 class _StorageUpgrade(_BaseCommand):
     """Upgrade the schema of a storage."""
 
-    def get_parser(self, prog_name):
-        # type: (str) -> ArgumentParser
+    def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_StorageUpgrade, self).get_parser(prog_name)
         return parser
 
-    def take_action(self, parsed_args):
-        # type: (Namespace) -> None
+    def take_action(self, parsed_args: Namespace) -> None:
 
         storage_url = _check_storage_url(self.app_args.storage)
         if storage_url.startswith("redis"):
@@ -370,8 +360,7 @@ class _StorageUpgrade(_BaseCommand):
 
 
 class _OptunaApp(App):
-    def __init__(self):
-        # type: () -> None
+    def __init__(self) -> None:
 
         super(_OptunaApp, self).__init__(
             description="",
@@ -379,15 +368,15 @@ class _OptunaApp(App):
             command_manager=CommandManager("optuna.command"),
         )
 
-    def build_option_parser(self, description, version, argparse_kwargs=None):
-        # type: (str, str, Optional[Dict]) -> ArgumentParser
+    def build_option_parser(
+        self, description: str, version: str, argparse_kwargs: Optional[Dict] = None
+    ) -> ArgumentParser:
 
         parser = super(_OptunaApp, self).build_option_parser(description, version, argparse_kwargs)
         parser.add_argument("--storage", default=None, help="DB URL. (e.g. sqlite:///example.db)")
         return parser
 
-    def configure_logging(self):
-        # type: () -> None
+    def configure_logging(self) -> None:
 
         super(_OptunaApp, self).configure_logging()
 
@@ -403,15 +392,13 @@ class _OptunaApp(App):
         stream_handler = stream_handlers[0]
         stream_handler.setFormatter(optuna.logging.create_default_formatter())
 
-    def clean_up(self, cmd, result, err):
-        # type: (Command, int, Optional[Exception]) -> None
+    def clean_up(self, cmd: Command, result: int, err: Optional[Exception]) -> None:
 
         if isinstance(err, CLIUsageError):
             self.parser.print_help()
 
 
-def main():
-    # type: () -> int
+def main() -> int:
 
     argv = sys.argv[1:] if len(sys.argv) > 1 else ["help"]
     return _OptunaApp().run(argv)
