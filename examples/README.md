@@ -72,7 +72,11 @@ In addition, integration modules are available for the following libraries, prov
 
 ### External libraries using Optuna
 
-* [Analyzing optimization results using Neptune](https://neptune-contrib.readthedocs.io/user_guide/monitoring/optuna.html)
+* [RL Baselines Zoo](https://github.com/DLR-RM/rl-baselines3-zoo)
+* [Allegro Trains](https://github.com/allegroai/trains)
+* [neptune.ai](https://neptune.ai)
+* [PyKEEN](https://github.com/pykeen/pykeen)
+* [Mozilla Voice STT](https://github.com/mozilla/DeepSpeech)
 * [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)
 
 ### Running with Optuna's Docker images?
