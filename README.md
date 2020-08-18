@@ -91,15 +91,6 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 * [FastAI](./examples/fastai_simple.py)
 * [AllenNLP](./examples/allennlp)
 
-## Projects Using Optuna
-
-Other projects which use or have Optuna integrated:
-
-* [RL Baselines Zoo](https://github.com/araffin/rl-baselines-zoo)
-* [Allegro.ai Trains](https://github.com/allegroai/trains)
-* [neptune.ai](https://neptune.ai)
-* [PyKEEN](https://github.com/pykeen/pykeen)
-
 ## Installation
 
 Optuna is available at [the Python Package Index](https://pypi.org/project/optuna/) and on [Anaconda Cloud](https://anaconda.org/conda-forge/optuna).
