@@ -20,10 +20,10 @@ from cliff.command import Command
 from cliff.commandmanager import CommandManager
 from cliff.lister import Lister
 
-from typing import Optional
-from typing import Dict
 from typing import Any
+from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 import optuna
