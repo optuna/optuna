@@ -70,9 +70,9 @@ Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked wit
 Code is formatted with [black](https://github.com/psf/black).
 You have to install it first. This can be done with
 `pip install black`. The command to format a certain file
-is `black <filename_with_path> --line-length 99 --exclude="docs"`.
+is `black <filename_with_path> --line-length 99 --exclude="docs|tutorial"`.
 To just check the file you can use
-`black <filename_with_path> --line-length 99 --check --exclude="docs"`.
+`black <filename_with_path> --line-length 99 --check --exclude="docs|tutorial"`.
 You can also apply these operations to all files by replacing
 `<filename_with_path>` with a simple `.`.
 
