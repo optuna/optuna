@@ -47,9 +47,9 @@ jobs:
       run: |
         docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
 
-    - name: Run an example using the built image
+    - name: Verify the built image
       run: |
-        docker run "${HUB_TAG}" python examples/sklearn_simple.py
+        docker run "${HUB_TAG}" python examples/quadratic_simple.py
 
     - name: Login & Push to Docker Hub
       if: ${{ github.event_name != 'pull_request' }}
