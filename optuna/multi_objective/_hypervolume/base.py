@@ -21,10 +21,10 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
 
     @staticmethod
     def _validate(solution_set: np.ndarray, reference_point: np.ndarray) -> None:
-        # Validates that all solution dominates or equal to the reference point.
+        # Validates that all points in the solution set dominate or equal the reference point.
         if not (solution_set <= reference_point).all():
             raise ValueError(
-                "All solution must dominate or equal to the reference point. "
+                "All solution must dominate or equal the reference point. "
                 "That is, for all solution in the solution_set and the coordinate `i`, "
                 "`solution[i] <= reference_point[i]`."
             )
