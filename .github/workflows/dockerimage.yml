@@ -8,6 +8,7 @@ on:
     types: [published]
   pull_request:
     paths:
+      - .github/workflows/dockerimage.yml
       - Dockerfile
       - .dockerignore
       - setup.py
@@ -42,10 +43,13 @@ jobs:
         fi
         echo "::set-env name=HUB_TAG::${DOCKER_HUB_BASE_NAME}:${TAG_NAME}"
 
+    - name: Pull the Docker image
+      run: |
+        docker pull "${HUB_TAG}"
 
     - name: Build the Docker image
       run: |
-        docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
+        docker build --cache-from "${HUB_TAG}" . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
 
     - name: Login & Push to Docker Hub
       if: ${{ github.event_name != 'pull_request' }}
