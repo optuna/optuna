@@ -66,7 +66,11 @@ class WFG(BaseHypervolume):
 
         limited_solution_set = np.maximum(solution_set, point)
 
-        # Return only Pareto optimal points for computational efficiency.
+        # Return almost Pareto optimal points for computational efficiency.
+        # If the points in the solution set are completely sorted along all coordinates,
+        # the following procedures return the complete Pareto optimal points.
+        # For the computational efficiency, we do not completely sort the points,
+        # but just sort the points according to its 0-th dimension.
         if n_points_of_s <= 1:
             return limited_solution_set
         else:
