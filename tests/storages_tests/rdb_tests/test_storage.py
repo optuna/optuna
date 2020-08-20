@@ -3,7 +3,6 @@ import sys
 import tempfile
 from typing import Any
 from typing import Dict
-from typing import List
 from typing import Optional
 from unittest.mock import patch
 
