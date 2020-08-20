@@ -19,7 +19,6 @@ from optuna.trial import TrialState
 from optuna import version
 
 
-
 def test_init() -> None:
 
     storage = create_test_storage()
@@ -84,7 +83,9 @@ def test_engine_kwargs() -> None:
         ("mysql://localhost", {"pool_size": 5}, True),
     ],
 )
-def test_set_default_engine_kwargs_for_mysql(url: str, engine_kwargs: Dict[str, Any], expected: bool) -> None:
+def test_set_default_engine_kwargs_for_mysql(
+    url: str, engine_kwargs: Dict[str, Any], expected: bool
+) -> None:
 
     RDBStorage._set_default_engine_kwargs_for_mysql(url, engine_kwargs)
     assert engine_kwargs["pool_pre_ping"] is expected
