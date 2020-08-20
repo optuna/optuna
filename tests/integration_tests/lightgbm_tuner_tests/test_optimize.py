@@ -178,7 +178,7 @@ class TestBaseTuner(object):
         booster = DummyBooster()
         dummy_dataset = lgb.Dataset(None)
 
-        tuner = _BaseTuner(lgbm_kwargs={"valid_names": "dev", "valid_sets": dummy_dataset,})
+        tuner = _BaseTuner(lgbm_kwargs={"valid_names": "dev", "valid_sets": dummy_dataset})
         val_score = tuner._get_booster_best_score(booster)
         assert val_score == expected_value
 
@@ -362,7 +362,7 @@ class TestLightGBMTuner(object):
 
     @pytest.mark.parametrize(
         "metric, study_direction, expected",
-        [("auc", "maximize", -np.inf), ("mse", "minimize", np.inf),],
+        [("auc", "maximize", -np.inf), ("mse", "minimize", np.inf)],
     )
     def test_best_score(self, metric: str, study_direction: str, expected: float) -> None:
         with turnoff_train(metric=metric):
@@ -683,7 +683,7 @@ class TestLightGBMTuner(object):
 
             assert best_booster.params == best_booster2.params
 
-    @pytest.mark.parametrize("direction, overall_best", [("minimize", 1), ("maximize", 2),])
+    @pytest.mark.parametrize("direction, overall_best", [("minimize", 1), ("maximize", 2)])
     def test_create_stepwise_study(self, direction: str, overall_best: int) -> None:
 
         tuner = LightGBMTuner({}, None, valid_sets=lgb.Dataset(np.zeros((10, 10))))

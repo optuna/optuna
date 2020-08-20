@@ -118,7 +118,7 @@ def _generate_slice_subplot(study: Study, trials: List[FrozenTrial], param: str)
         y=[t.value for t in trials if param in t.params],
         mode="markers",
         marker={
-            "line": {"width": 0.5, "color": "Grey",},
+            "line": {"width": 0.5, "color": "Grey"},
             "color": [t.number for t in trials if param in t.params],
             "colorscale": "Blues",
             "colorbar": {

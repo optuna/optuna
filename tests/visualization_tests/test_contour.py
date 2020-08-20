@@ -99,7 +99,7 @@ def test_plot_contour_log_scale():
     study.add_trial(
         create_trial(
             value=0.0,
-            params={"param_a": 1e-6, "param_b": 1e-4,},
+            params={"param_a": 1e-6, "param_b": 1e-4},
             distributions={
                 "param_a": LogUniformDistribution(1e-7, 1e-2),
                 "param_b": LogUniformDistribution(1e-5, 1e-1),
@@ -109,7 +109,7 @@ def test_plot_contour_log_scale():
     study.add_trial(
         create_trial(
             value=1.0,
-            params={"param_a": 1e-5, "param_b": 1e-3,},
+            params={"param_a": 1e-5, "param_b": 1e-3},
             distributions={
                 "param_a": LogUniformDistribution(1e-7, 1e-2),
                 "param_b": LogUniformDistribution(1e-5, 1e-1),
@@ -139,7 +139,7 @@ def test_plot_contour_log_scale():
     study.add_trial(
         create_trial(
             value=1.0,
-            params={"param_a": 1e-5, "param_b": 1e-3, "param_c": 1e-1,},
+            params={"param_a": 1e-5, "param_b": 1e-3, "param_c": 1e-1},
             distributions={
                 "param_a": LogUniformDistribution(1e-7, 1e-2),
                 "param_b": LogUniformDistribution(1e-5, 1e-1),

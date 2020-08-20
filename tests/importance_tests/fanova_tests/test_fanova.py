@@ -30,7 +30,7 @@ def test_categorical_features_one_hot_encoder() -> None:
     numpy.testing.assert_array_equal(
         search_spaces,
         numpy.array(
-            [[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [1, 4], [1, 3], [0, 4],],
+            [[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [1, 4], [1, 3], [0, 4]],
             dtype=numpy.float64,
         ),
     )
