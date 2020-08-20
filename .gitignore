@@ -103,7 +103,7 @@ ENV/
 
 # VSCode
 .vscode
-.devcontaienr
+.devcontainer
 
 # MyPy
 .mypy_cache
