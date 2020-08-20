@@ -76,8 +76,6 @@ class WFG(BaseHypervolume):
         else:
             # Assume limited_solution_set is sorted by its 0th dimension.
             # Therefore, we can simply scan the limited solution set from left to right.
-            # Let `S'' = limited solution set`.
-            # `S''[left] is dominated by S''[right]` is never going to happen.
             returned_limited_solution_set = [limited_solution_set[0]]
             left = 0
             right = 1
