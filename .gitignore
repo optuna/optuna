@@ -101,6 +101,10 @@ ENV/
 # PyCharm
 .idea
 
+# VSCode
+.vscode
+.devcontaienr
+
 # MyPy
 .mypy_cache
 
