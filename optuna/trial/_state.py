@@ -22,12 +22,10 @@ class TrialState(enum.Enum):
     FAIL = 3
     WAITING = 4
 
-    def __repr__(self):
-        # type: () -> str
+    def __repr__(self) -> str:
 
         return str(self)
 
-    def is_finished(self):
-        # type: () -> bool
+    def is_finished(self) -> bool:
 
         return self != TrialState.RUNNING and self != TrialState.WAITING
