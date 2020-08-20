@@ -22,4 +22,4 @@ help:
 # Copy from https://sphinx-gallery.github.io/stable/advanced.html#cleaning-the-gallery-files
 clean:
 	rm -rf $(BUILDDIR)/*
-	rm -rf tutorial/
+	rm -rf source/tutorial/
