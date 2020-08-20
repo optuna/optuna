@@ -44,7 +44,7 @@ class Trial(BaseTrial):
 
     """
 
-    def __init__(self, study: "optuna.study.Study", trial_id: int,) -> None:
+    def __init__(self, study: "optuna.study.Study", trial_id: int) -> None:
 
         self.study = study
         self._trial_id = trial_id
