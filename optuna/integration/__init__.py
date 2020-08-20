@@ -1,7 +1,7 @@
 import os
 import sys
 from types import ModuleType
-from typing import Any  # NOQA
+from typing import Any
 
 from optuna.type_checking import TYPE_CHECKING
 
