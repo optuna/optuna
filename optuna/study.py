@@ -817,8 +817,9 @@ def create_study(
             If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
             as the default. See also :class:`~optuna.samplers`.
         pruner:
-            A pruner object that decides early stopping of unpromising trials. See also
-            :class:`~optuna.pruners`.
+            A pruner object that decides early stopping of unpromising trials. If :obj:`None`
+            is specified, :class:`~optuna.pruners.MedianPruner` is used as the default. See
+            also :class:`~optuna.pruners`.
         study_name:
             Study's name. If this argument is set to None, a unique name is generated
             automatically.
