@@ -203,6 +203,7 @@ def test_upgrade() -> None:
     ],
 )
 def test_update_trial(fields_to_modify: Dict[str, Any], kwargs: Dict[str, Any]) -> None:
+
     storage = create_test_storage()
     study_id = storage.create_new_study()
 
@@ -219,6 +220,7 @@ def test_update_trial(fields_to_modify: Dict[str, Any], kwargs: Dict[str, Any]) 
 
 
 def test_update_trial_second_write() -> None:
+
     storage = create_test_storage()
     study_id = storage.create_new_study()
     template = FrozenTrial(
@@ -267,6 +269,7 @@ def test_update_trial_second_write() -> None:
 
 
 def test_get_trials_excluded_trial_ids() -> None:
+
     storage = create_test_storage()
     study_id = storage.create_new_study()
 
