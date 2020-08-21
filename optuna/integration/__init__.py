@@ -1,7 +1,7 @@
 import os
 import sys
 from types import ModuleType
-from typing import Any  # NOQA
+from typing import Any
 
 from optuna.type_checking import TYPE_CHECKING
 
@@ -73,8 +73,7 @@ else:
             for value in values:
                 _class_to_module[value] = key
 
-        def __getattr__(self, name):
-            # type: (str) -> Any
+        def __getattr__(self, name: str) -> Any:
 
             if name in self._modules:
                 value = self._get_module(name)
@@ -87,8 +86,7 @@ else:
             setattr(self, name, value)
             return value
 
-        def _get_module(self, module_name):
-            # type: (str) -> ModuleType
+        def _get_module(self, module_name: str) -> ModuleType:
 
             import importlib
 
