@@ -54,13 +54,11 @@ class Model(pl.LightningModule):
 
         return torch.optim.SGD(self._model.parameters(), lr=1e-2)
 
-    @pl.data_loader
     def train_dataloader(self):
         # type: () -> torch.utils.data.DataLoader
 
         return self._generate_dummy_dataset()
 
-    @pl.data_loader
     def val_dataloader(self):
         # type: () -> torch.utils.data.DataLoader
 

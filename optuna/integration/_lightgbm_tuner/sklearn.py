@@ -1,6 +1,4 @@
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
+from typing import Any
 import warnings
 
 import lightgbm as lgb
