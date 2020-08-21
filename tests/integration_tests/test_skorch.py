@@ -1,4 +1,6 @@
-from skorch import NeuralNetClassifier
+from typing import Any
+
+import skorch
 from skorch.helper import predefined_split
 import torch
 from torch import nn
@@ -13,7 +15,7 @@ class ClassifierModule(nn.Module):
         super(ClassifierModule, self).__init__()
         self.dense0 = nn.Linear(4, 8)
 
-    def forward(self, X, **kwargs):
+    def forward(self, X: torch.Tensor, **kwargs: Any) -> torch.Tensor:
         return self.dense0(X)
 
 
@@ -24,7 +26,7 @@ def test_skorch_pruning_callback() -> None:
 
     def objective(trial: optuna.trial.Trial) -> float:
 
-        net = NeuralNetClassifier(
+        net = skorch.NeuralNetClassifier(
             ClassifierModule,
             max_epochs=10,
             lr=0.02,
