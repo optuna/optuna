@@ -6,6 +6,7 @@ In this example, we optimize the validation accuracy of MNIST classification usi
 Keras. We optimize the filter and kernel size, kernel stride and layer activation.
 
 """
+import warnings
 
 from keras.backend import clear_session
 from keras.datasets import mnist
@@ -72,6 +73,11 @@ def objective(trial):
 
 
 if __name__ == "__main__":
+    warnings.warn(
+        "Multi-backend Keras has been discontinued. Keras 2.2.5 is the last release of Keras implementing the 2.2.* API. "
+        "which supports TensorFlow 1 (as well as Theano and CNTK). "
+        "REF:https://github.com/keras-team/keras/#multi-backend-keras-and-tfkeras"
+    )
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100, timeout=600)
 

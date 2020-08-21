@@ -14,6 +14,7 @@ see the following link:
     https://github.com/optuna/optuna/blob/master/examples/mlflow/keras_mlflow.py
 
 """
+import warnings
 
 import keras
 from keras.datasets import mnist
@@ -90,6 +91,11 @@ def objective(trial):
 
 
 if __name__ == "__main__":
+    warnings.warn(
+        "Multi-backend Keras has been discontinued. Keras 2.2.5 is the last release of Keras implementing the 2.2.* API. "
+        "which supports TensorFlow 1 (as well as Theano and CNTK). "
+        "REF:https://github.com/keras-team/keras/#multi-backend-keras-and-tfkeras"
+    )
     study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
     study.optimize(objective, n_trials=100)
     pruned_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]

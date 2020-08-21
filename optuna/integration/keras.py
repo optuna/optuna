@@ -1,6 +1,7 @@
 from typing import Dict
 
 import optuna
+from optuna._deprecated import deprecated
 
 with optuna._imports.try_import() as _imports:
     from keras.callbacks import Callback
@@ -9,6 +10,12 @@ if not _imports.is_successful():
     Callback = object  # NOQA
 
 
+@deprecated(
+    "2.1.0",
+    text="Multi-backend Keras has been discontinued. Keras 2.2.5 is the last release of Keras implementing the 2.2.* API. "
+    "which supports TensorFlow 1 (as well as Theano and CNTK). "
+    "REF:https://github.com/keras-team/keras/#multi-backend-keras-and-tfkeras",
+)
 class KerasPruningCallback(Callback):
     """Keras callback to prune unpromising trials.
 
