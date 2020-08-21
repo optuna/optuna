@@ -13,7 +13,7 @@ if optuna.type_checking.TYPE_CHECKING:
     from optuna.samplers import BaseSampler  # NOQA
 
 parametrize_sampler = pytest.mark.parametrize(
-    "sampler_class", [optuna.integration.SkoptSampler, optuna.integration.PyCmaSampler,]
+    "sampler_class", [optuna.integration.SkoptSampler, optuna.integration.PyCmaSampler]
 )
 
 

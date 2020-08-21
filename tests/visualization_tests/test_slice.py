@@ -59,7 +59,7 @@ def test_plot_slice_log_scale():
     study.add_trial(
         create_trial(
             value=0.0,
-            params={"x_linear": 1.0, "y_log": 1e-3,},
+            params={"x_linear": 1.0, "y_log": 1e-3},
             distributions={
                 "x_linear": UniformDistribution(0.0, 3.0),
                 "y_log": LogUniformDistribution(1e-5, 1.0),

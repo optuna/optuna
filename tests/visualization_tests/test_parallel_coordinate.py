@@ -64,7 +64,7 @@ def test_plot_parallel_coordinate():
     study_categorical_params.add_trial(
         create_trial(
             value=0.0,
-            params={"category_a": "preferred", "category_b": "net",},
+            params={"category_a": "preferred", "category_b": "net"},
             distributions={
                 "category_a": CategoricalDistribution(("preferred", "opt")),
                 "category_b": CategoricalDistribution(("net", "una")),
@@ -74,7 +74,7 @@ def test_plot_parallel_coordinate():
     study_categorical_params.add_trial(
         create_trial(
             value=2.0,
-            params={"category_a": "opt", "category_b": "una",},
+            params={"category_a": "opt", "category_b": "una"},
             distributions={
                 "category_a": CategoricalDistribution(("preferred", "opt")),
                 "category_b": CategoricalDistribution(("net", "una")),

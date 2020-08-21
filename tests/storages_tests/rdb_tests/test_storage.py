@@ -175,7 +175,7 @@ def test_upgrade() -> None:
         ({"intermediate_values": {1: 2.3, 3: 2.5}}, {"intermediate_values": {1: 2.3, 3: 2.5}}),
         (
             {
-                "params": {"paramA": 3, "paramB": "bar",},
+                "params": {"paramA": 3, "paramB": "bar"},
                 "_distributions": {
                     "paramA": UniformDistribution(0, 3),
                     "paramB": CategoricalDistribution(("foo", "bar")),

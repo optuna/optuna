@@ -42,7 +42,7 @@ def test_catalyst_pruning_callback() -> None:
             logdir=dirpath,
             num_epochs=2,
             verbose=True,
-            callbacks=[CatalystPruningCallback(trial, metric="loss"),],
+            callbacks=[CatalystPruningCallback(trial, metric="loss")],
         )
 
         shutil.rmtree(dirpath)
