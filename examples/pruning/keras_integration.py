@@ -92,10 +92,12 @@ def objective(trial):
 
 if __name__ == "__main__":
     warnings.warn(
-        "Multi-backend Keras has been discontinued. "
-        "Keras 2.2.5 is the last release of Keras implementing the 2.2.* API. "
-        "which supports TensorFlow 1 (as well as Theano and CNTK). "
-        "REF:https://github.com/keras-team/keras/#multi-backend-keras-and-tfkeras"
+        "Recent Keras release (2.4.0) simply redirects all APIs "
+        "in the standalone keras package to point to tf.keras. "
+        "There is now only one Keras: tf.keras."
+        "There may be some breaking changes for some workflows by upgrading to keras 2.4.0. "
+        "Test before upgrading."
+        "REF:https://github.com/keras-team/keras/releases/tag/2.4.0"
     )
     study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
     study.optimize(objective, n_trials=100)
