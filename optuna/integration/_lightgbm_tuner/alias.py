@@ -1,5 +1,5 @@
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
+from typing import Any
+from typing import Dict
 from typing import List  # NOQA
 
 
