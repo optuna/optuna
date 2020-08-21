@@ -92,7 +92,8 @@ def objective(trial):
 
 if __name__ == "__main__":
     warnings.warn(
-        "Multi-backend Keras has been discontinued. Keras 2.2.5 is the last release of Keras implementing the 2.2.* API. "
+        "Multi-backend Keras has been discontinued. "
+        "Keras 2.2.5 is the last release of Keras implementing the 2.2.* API. "
         "which supports TensorFlow 1 (as well as Theano and CNTK). "
         "REF:https://github.com/keras-team/keras/#multi-backend-keras-and-tfkeras"
     )

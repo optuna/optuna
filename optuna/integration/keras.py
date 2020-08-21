@@ -12,7 +12,8 @@ if not _imports.is_successful():
 
 @deprecated(
     "2.1.0",
-    text="Multi-backend Keras has been discontinued. Keras 2.2.5 is the last release of Keras implementing the 2.2.* API. "
+    text="Multi-backend Keras has been discontinued. "
+    "Keras 2.2.5 is the last release of Keras implementing the 2.2.* API."
     "which supports TensorFlow 1 (as well as Theano and CNTK). "
     "REF:https://github.com/keras-team/keras/#multi-backend-keras-and-tfkeras",
 )
