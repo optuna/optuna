@@ -1,7 +1,6 @@
 import optuna
 from optuna._imports import try_import
 
-
 with try_import() as _imports:
     import mxnet as mx
 
@@ -32,7 +31,7 @@ class MXNetPruningCallback(object):
         self._trial = trial
         self._eval_metric = eval_metric
 
-    def __call__(self, param: mx.model.BatchEndParams) -> None:
+    def __call__(self, param: mx.model.BatchEndParam) -> None:
 
         if param.eval_metric is not None:
             metric_names, metric_values = param.eval_metric.get()
