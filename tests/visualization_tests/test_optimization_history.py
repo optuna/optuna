@@ -1,11 +1,8 @@
 import pytest
 
 from optuna.study import create_study
-from optuna import type_checking
+from optuna.trial import Trial
 from optuna.visualization import plot_optimization_history
-
-if type_checking.TYPE_CHECKING:
-    from optuna.trial import Trial  # NOQA
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
