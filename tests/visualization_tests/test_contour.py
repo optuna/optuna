@@ -1,18 +1,14 @@
 import pytest
 
+from typing import List, Optional
+
 from optuna.distributions import LogUniformDistribution
 from optuna.study import create_study
 from optuna.study import StudyDirection
 from optuna.testing.visualization import prepare_study_with_trials
-from optuna.trial import create_trial
-from optuna import type_checking
+from optuna.trial import create_trial, Trial
 from optuna.visualization._contour import _generate_contour_subplot
 from optuna.visualization import plot_contour
-
-if type_checking.TYPE_CHECKING:
-    from typing import List, Optional  # NOQA
-
-    from optuna.trial import Trial  # NOQA
 
 
 @pytest.mark.parametrize(
@@ -26,8 +22,7 @@ if type_checking.TYPE_CHECKING:
         None,
     ],
 )
-def test_plot_contour(params):
-    # type: (Optional[List[str]]) -> None
+def test_plot_contour(params: Optional[List[str]]) -> None:
 
     # Test with no trial.
     study_without_trials = prepare_study_with_trials(no_trials=True)
@@ -36,8 +31,7 @@ def test_plot_contour(params):
 
     # Test whether trials with `ValueError`s are ignored.
 
-    def fail_objective(_):
-        # type: (Trial) -> float
+    def fail_objective(_: Trial) -> float:
 
         raise ValueError
 
@@ -70,8 +64,7 @@ def test_plot_contour(params):
         assert len(figure.data) == n_params ** 2 + n_params * (n_params - 1)
 
 
-def test_generate_contour_plot_for_few_observations():
-    # type: () -> None
+def test_generate_contour_plot_for_few_observations() -> None:
 
     study = prepare_study_with_trials(less_than_two=True)
     trials = study.trials
@@ -91,8 +84,7 @@ def test_generate_contour_plot_for_few_observations():
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
 
-def test_plot_contour_log_scale():
-    # type: () -> None
+def test_plot_contour_log_scale() -> None:
 
     # If the search space has two parameters, plot_contour generates a single plot.
     study = create_study()
