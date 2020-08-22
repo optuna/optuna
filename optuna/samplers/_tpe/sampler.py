@@ -151,15 +151,25 @@ class TPESampler(BaseSampler):
         self._rng = np.random.RandomState()
         self._random_sampler.reseed_rng()
 
-    def infer_relative_search_space(self, study: Study, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
 
         return {}
 
-    def sample_relative(self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]) -> Dict[str, Any]:
+    def sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
 
         return {}
 
-    def sample_independent(self, study: Study, trial: FrozenTrial, param_name: str, param_distribution: BaseDistribution) -> Any:
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: BaseDistribution,
+    ) -> Any:
 
         values, scores = _get_observation_pairs(study, param_name, trial)
 
@@ -209,9 +219,7 @@ class TPESampler(BaseSampler):
             )
 
     def _split_observation_pairs(
-        self,
-        config_vals: List[Optional[float]],
-        loss_vals: List[Tuple[float, float]],
+        self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]],
     ) -> Tuple[np.ndarray, np.ndarray]:
 
         config_vals = np.asarray(config_vals)
@@ -225,19 +233,31 @@ class TPESampler(BaseSampler):
         above = np.asarray([v for v in above if v is not None], dtype=float)
         return below, above
 
-    def _sample_uniform(self, distribution: distributions.UniformDistribution, below: np.ndarray, above: np.ndarray) -> float:
+    def _sample_uniform(
+        self, distribution: distributions.UniformDistribution, below: np.ndarray, above: np.ndarray
+    ) -> float:
 
         low = distribution.low
         high = distribution.high
         return self._sample_numerical(low, high, below, above)
 
-    def _sample_loguniform(self, distribution: distributions.LogUniformDistribution, below: np.ndarray, above: np.ndarray) -> float:
+    def _sample_loguniform(
+        self,
+        distribution: distributions.LogUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> float:
 
         low = distribution.low
         high = distribution.high
         return self._sample_numerical(low, high, below, above, is_log=True)
 
-    def _sample_discrete_uniform(self, distribution: distributions.DiscreteUniformDistribution, below: np.ndarray, above: np.ndarray) -> float:
+    def _sample_discrete_uniform(
+        self,
+        distribution: distributions.DiscreteUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> float:
 
         q = distribution.q
         r = distribution.high - distribution.low
@@ -252,14 +272,24 @@ class TPESampler(BaseSampler):
         best_sample = self._sample_numerical(low, high, below, above, q=q) + distribution.low
         return min(max(best_sample, distribution.low), distribution.high)
 
-    def _sample_int(self, distribution: distributions.IntUniformDistribution, below: np.ndarray, above: np.ndarray) -> int:
+    def _sample_int(
+        self,
+        distribution: distributions.IntUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> int:
 
         d = distributions.DiscreteUniformDistribution(
             low=distribution.low, high=distribution.high, q=distribution.step
         )
         return int(self._sample_discrete_uniform(d, below, above))
 
-    def _sample_int_loguniform(self, distribution: distributions.IntLogUniformDistribution, below: np.ndarray, above: np.ndarray) -> int:
+    def _sample_int_loguniform(
+        self,
+        distribution: distributions.IntLogUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> int:
 
         low = distribution.low - 0.5
         high = distribution.high + 0.5
@@ -320,7 +350,12 @@ class TPESampler(BaseSampler):
         )
         return math.exp(ret) if is_log else ret
 
-    def _sample_categorical_index(self, distribution: distributions.CategoricalDistribution, below: np.ndarray, above: np.ndarray) -> int:
+    def _sample_categorical_index(
+        self,
+        distribution: distributions.CategoricalDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> int:
 
         choices = distribution.choices
         below = list(map(int, below))
@@ -453,7 +488,9 @@ class TPESampler(BaseSampler):
             )
             return np.log(probabilities + EPS) - np.log(p_accept + EPS)
 
-    def _sample_from_categorical_dist(self, probabilities: np.ndarray, size: Tuple[int]) -> np.ndarray:
+    def _sample_from_categorical_dist(
+        self, probabilities: np.ndarray, size: Tuple[int]
+    ) -> np.ndarray:
 
         if size == (0,):
             return np.asarray([], dtype=float)
@@ -470,11 +507,7 @@ class TPESampler(BaseSampler):
         return return_val
 
     @classmethod
-    def _categorical_log_pdf(
-        cls,
-        sample: np.ndarray,
-        p: np.ndarray,
-    ) -> np.ndarray:
+    def _categorical_log_pdf(cls, sample: np.ndarray, p: np.ndarray,) -> np.ndarray:
 
         if sample.size:
             return np.log(np.asarray(p)[sample])
@@ -568,7 +601,9 @@ class TPESampler(BaseSampler):
         }
 
 
-def _get_observation_pairs(study: Study, param_name: str, trial: FrozenTrial) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]:
+def _get_observation_pairs(
+    study: Study, param_name: str, trial: FrozenTrial
+) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]:
     """Get observation pairs from the study.
 
        This function collects observation pairs from the complete or pruned trials of the study.
