@@ -11,15 +11,15 @@ import scipy.special
 from scipy.stats import truncnorm
 
 from optuna import distributions
+from optuna.distributions import BaseDistribution
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.samplers import BaseSampler
 from optuna.samplers import RandomSampler
-from optuna.study import StudyDirection
-from optuna.trial import TrialState
-from optuna.distributions import BaseDistribution
 from optuna.study import Study
+from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 EPS = 1e-12

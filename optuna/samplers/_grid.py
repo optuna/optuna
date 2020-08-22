@@ -8,9 +8,9 @@ from typing import Mapping
 from typing import Sequence
 from typing import Union
 
+from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
-from optuna.distributions import BaseDistribution
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 

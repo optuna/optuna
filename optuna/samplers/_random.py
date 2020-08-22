@@ -5,8 +5,8 @@ from typing import Optional
 import numpy
 
 from optuna import distributions
-from optuna.samplers import BaseSampler
 from optuna.distributions import BaseDistribution
+from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
