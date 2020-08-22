@@ -1,6 +1,7 @@
 from typing import Dict
 
 import optuna
+from optuna._deprecated import deprecated
 
 with optuna._imports.try_import() as _imports:
     from keras.callbacks import Callback
@@ -9,6 +10,15 @@ if not _imports.is_successful():
     Callback = object  # NOQA
 
 
+@deprecated(
+    "2.1.0",
+    text="Recent Keras release (2.4.0) simply redirects all APIs "
+    "in the standalone keras package to point to tf.keras. "
+    "There is now only one Keras: tf.keras. "
+    "There may be some breaking changes for some workflows by upgrading to keras 2.4.0. "
+    "Test before upgrading. "
+    "REF:https://github.com/keras-team/keras/releases/tag/2.4.0",
+)
 class KerasPruningCallback(Callback):
     """Keras callback to prune unpromising trials.
 
