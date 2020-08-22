@@ -219,7 +219,7 @@ if _imports.is_successful():
                 self.stop_event = threading.Event()
                 thread.daemon = True
                 thread.start()
-                self.doc.on_session_destroyed(lambda session_context: self.stop_event.set())
+                self.doc.on_session_destroyed(lambda _: self.stop_event.set())
 
         def thread_loop(self) -> None:
 
