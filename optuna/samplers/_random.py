@@ -1,12 +1,12 @@
-import numpy
 from typing import Any
 from typing import Dict
 from typing import Optional
 
-from optuna import distributions
-from optuna.samplers import BaseSampler
+import numpy
 
+from optuna import distributions
 from optuna.distributions import BaseDistribution
+from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
