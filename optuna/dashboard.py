@@ -216,12 +216,14 @@ if _imports.is_successful():
 
             if self.launch_update_thread:
                 thread = threading.Thread(target=self.thread_loop)
+                self.stop_event = threading.Event()
                 thread.daemon = True
                 thread.start()
+                self.doc.on_session_destroyed(lambda session_context: self.stop_event.set())
 
         def thread_loop(self) -> None:
 
-            while True:
+            while not self.stop_event.is_set():
                 time.sleep(1)
                 new_trials = self.study.trials
                 with self.lock:
