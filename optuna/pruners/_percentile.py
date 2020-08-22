@@ -6,14 +6,12 @@ from typing import List
 import numpy as np
 
 from optuna.pruners import BasePruner
-from optuna.study import Study
 from optuna.study import StudyDirection
-from optuna.trial import FrozenTrial
 from optuna.trial._state import TrialState
 
 
 def _get_best_intermediate_result_over_steps(
-    trial: FrozenTrial, direction: StudyDirection
+    trial: "optuna.trial.FrozenTrial", direction: StudyDirection
 ) -> float:
 
     values = np.array(list(trial.intermediate_values.values()), np.float)
@@ -23,7 +21,7 @@ def _get_best_intermediate_result_over_steps(
 
 
 def _get_percentile_intermediate_result_over_trials(
-    all_trials: List[FrozenTrial],
+    all_trials: List["optuna.trial.FrozenTrial"],
     direction: StudyDirection,
     step: int,
     percentile: float,
@@ -171,7 +169,7 @@ class PercentilePruner(BasePruner):
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
 
-    def prune(self, study: Study, trial: FrozenTrial) -> bool:
+    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         all_trials = study.get_trials(deepcopy=False)
         n_trials = len([t for t in all_trials if t.state == TrialState.COMPLETE])
