@@ -5,6 +5,7 @@ from typing import List
 
 import numpy as np
 
+import optuna
 from optuna.pruners import BasePruner
 from optuna.study import StudyDirection
 from optuna.trial._state import TrialState
