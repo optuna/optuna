@@ -118,7 +118,7 @@ class BaseStudy(object):
 
         return self.get_trials()
 
-    def get_trials(self, deepcopy: bool=True) -> List[FrozenTrial]:
+    def get_trials(self, deepcopy: bool = True) -> List[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
