@@ -51,10 +51,7 @@ def _get_percentile_intermediate_result_over_trials(
 
 
 def _is_first_in_interval_step(
-    step: int,
-    intermediate_steps: KeysView[int],
-    n_warmup_steps: int,
-    interval_steps: int,
+    step: int, intermediate_steps: KeysView[int], n_warmup_steps: int, interval_steps: int,
 ) -> bool:
 
     nearest_lower_pruning_step = (
@@ -64,9 +61,7 @@ def _is_first_in_interval_step(
 
     # `intermediate_steps` may not be sorted so we must go through all elements.
     second_last_step = functools.reduce(
-        lambda second_last_step, s: s
-        if s > second_last_step and s != step
-        else second_last_step,
+        lambda second_last_step, s: s if s > second_last_step and s != step else second_last_step,
         intermediate_steps,
         -1,
     )
@@ -141,27 +136,19 @@ class PercentilePruner(BasePruner):
 
         if not 0.0 <= percentile <= 100:
             raise ValueError(
-                "Percentile must be between 0 and 100 inclusive but got {}.".format(
-                    percentile
-                )
+                "Percentile must be between 0 and 100 inclusive but got {}.".format(percentile)
             )
         if n_startup_trials < 0:
             raise ValueError(
-                "Number of startup trials cannot be negative but got {}.".format(
-                    n_startup_trials
-                )
+                "Number of startup trials cannot be negative but got {}.".format(n_startup_trials)
             )
         if n_warmup_steps < 0:
             raise ValueError(
-                "Number of warmup steps cannot be negative but got {}.".format(
-                    n_warmup_steps
-                )
+                "Number of warmup steps cannot be negative but got {}.".format(n_warmup_steps)
             )
         if interval_steps < 1:
             raise ValueError(
-                "Pruning interval steps must be at least 1 but got {}.".format(
-                    interval_steps
-                )
+                "Pruning interval steps must be at least 1 but got {}.".format(interval_steps)
             )
 
         self._percentile = percentile
@@ -169,9 +156,7 @@ class PercentilePruner(BasePruner):
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
 
-    def prune(
-        self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"
-    ) -> bool:
+    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         all_trials = study.get_trials(deepcopy=False)
         n_trials = len([t for t in all_trials if t.state == TrialState.COMPLETE])
@@ -196,9 +181,7 @@ class PercentilePruner(BasePruner):
             return False
 
         direction = study.direction
-        best_intermediate_result = _get_best_intermediate_result_over_steps(
-            trial, direction
-        )
+        best_intermediate_result = _get_best_intermediate_result_over_steps(trial, direction)
         if math.isnan(best_intermediate_result):
             return True
 
