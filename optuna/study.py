@@ -4,6 +4,7 @@ import datetime
 import gc
 import math
 import threading
+from typing import List
 import warnings
 
 import joblib
@@ -117,8 +118,7 @@ class BaseStudy(object):
 
         return self.get_trials()
 
-    def get_trials(self, deepcopy=True):
-        # type: (bool) -> List[FrozenTrial]
+    def get_trials(self, deepcopy: bool=True) -> List[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
