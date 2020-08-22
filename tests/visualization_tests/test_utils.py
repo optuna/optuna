@@ -6,8 +6,7 @@ from optuna.visualization._utils import _is_log_scale
 from optuna.visualization import is_available
 
 
-def test_is_log_scale():
-    # type: () -> None
+def test_is_log_scale() -> None:
 
     study = create_study()
     study.add_trial(
