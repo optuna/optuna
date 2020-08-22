@@ -91,11 +91,15 @@ class GridSampler(BaseSampler):
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
 
-    def infer_relative_search_space(self, study: Study, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
 
         return {}
 
-    def sample_relative(self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]) -> Dict[str, Any]:
+    def sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
         # Instead of returning param values, GridSampler puts the target grid id as a system attr,
         # and the values are returned from `sample_independent`. This is because the distribution
         # object is hard to get at the beginning of trial, while we need the access to the object
@@ -134,7 +138,13 @@ class GridSampler(BaseSampler):
 
         return {}
 
-    def sample_independent(self, study: Study, trial: FrozenTrial, param_name: str, param_distribution: BaseDistribution) -> Any:
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: BaseDistribution,
+    ) -> Any:
 
         if param_name not in self._search_space:
             message = "The parameter name, {}, is not found in the given grid.".format(param_name)
@@ -171,7 +181,7 @@ class GridSampler(BaseSampler):
         )
 
     def _get_unvisited_grid_ids(self, study: Study) -> List[int]:
-        
+
         # List up unvisited grids based on already finished ones.
         visited_grids = []
         for t in study.trials:
