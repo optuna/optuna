@@ -46,7 +46,6 @@ class NopPruner(BasePruner):
             study.optimize(objective, n_trials=20)
     """
 
-    def prune(self, study, trial):
-        # type: (Study, FrozenTrial) -> bool
+    def prune(self, study: Study, trial: FrozenTrial) -> bool:
 
         return False
