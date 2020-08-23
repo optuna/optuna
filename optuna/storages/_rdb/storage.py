@@ -1094,6 +1094,15 @@ class RDBStorage(BaseStorage):
             )
             session.rollback()
             return False
+        except SQLAlchemyError as e:
+            session.rollback()
+            message = (
+                "An exception is raised during the commit. "
+                "This typically happens due to invalid data in the commit, "
+                "e.g. exceeding max length. "
+                "(The actual exception is as follows: {})".format(repr(e))
+            )
+            return True
 
         return True
 
