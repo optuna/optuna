@@ -1108,6 +1108,13 @@ class RDBStorage(BaseStorage):
 
         try:
             session.commit()
+        except IntegrityError as e:
+            _logger.debug(
+                "Ignoring {}. This happens due to a timing issue among threads/processes/nodes. "
+                "Another one might have committed a record with the same key(s).".format(repr(e))
+            )
+            session.rollback()
+            raise
         except SQLAlchemyError as e:
             session.rollback()
             message = (
