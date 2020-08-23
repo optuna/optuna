@@ -251,8 +251,8 @@ class TestChainerMNStudy(object):
     def _create_shared_study(
         storage: BaseStorage,
         comm: CommunicatorBase,
-        pruner: BasePruner = None,
-        sampler: BaseSampler = None,
+        pruner: Optional[BasePruner] = None,
+        sampler: Optional[BaseSampler] = None,
     ) -> Study:
 
         name_local = create_study(storage).study_name if comm.rank == 0 else None
