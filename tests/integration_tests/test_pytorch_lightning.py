@@ -65,7 +65,6 @@ class Model(pl.LightningModule):
 
 
 def test_pytorch_lightning_pruning_callback() -> None:
-
     def objective(trial: optuna.trial.Trial) -> float:
 
         trainer = pl.Trainer(
