@@ -1,5 +1,7 @@
+from typing import Tuple
+from typing import Union
+
 import optuna
-from optuna import type_checking
 
 with optuna._imports.try_import() as _imports:
     import chainer
@@ -7,15 +9,9 @@ with optuna._imports.try_import() as _imports:
     from chainer.training import triggers
 
 if not _imports.is_successful():
-    Extension = object
+    Extension = object  # NOQA
 
-if type_checking.TYPE_CHECKING:
-    from typing import Tuple
-    from typing import Union
-
-    TriggerType = Union[
-        Tuple[(int, str)], triggers.IntervalTrigger, triggers.ManualScheduleTrigger
-    ]
+TriggerType = Union[Tuple[(int, str)], triggers.IntervalTrigger, triggers.ManualScheduleTrigger]
 
 
 class ChainerPruningExtension(Extension):
