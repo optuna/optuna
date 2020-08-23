@@ -12,8 +12,8 @@ import pytest
 import optuna
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
-from optuna import TrialPruned
 from optuna.trial import Trial
+from optuna import TrialPruned
 
 
 @pytest.mark.parametrize("use_hyperband", [False, True])
