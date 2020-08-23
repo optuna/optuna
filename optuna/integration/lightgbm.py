@@ -62,7 +62,9 @@ class LightGBMPruningCallback(object):
             instead of train method.
     """
 
-    def __init__(self, trial: optuna.trial.Trial, metric: str, valid_name: str = "valid_0") -> None:
+    def __init__(
+        self, trial: optuna.trial.Trial, metric: str, valid_name: str = "valid_0"
+    ) -> None:
 
         _imports.check()
 

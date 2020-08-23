@@ -41,7 +41,7 @@ class CatalystPruningCallback(Callback):
         self.metric = metric
 
     def on_epoch_end(self, state: Any) -> None:
-        
+
         current_score = state.valid_metrics[self.metric]
         self._trial.report(current_score, state.epoch)
         if self._trial.should_prune():

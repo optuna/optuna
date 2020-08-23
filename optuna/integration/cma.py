@@ -154,7 +154,9 @@ class PyCmaSampler(BaseSampler):
         self._cma_opts["seed"] = random.randint(1, 2 ** 32)
         self._independent_sampler.reseed_rng()
 
-    def infer_relative_search_space(self, study: Study, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
 
         search_space = {}
         for name, distribution in self._search_space.calculate(study).items():
@@ -168,7 +170,13 @@ class PyCmaSampler(BaseSampler):
 
         return search_space
 
-    def sample_independent(self, study: Study, trial: FrozenTrial, param_name: str, param_distribution: BaseDistribution) -> float:
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: BaseDistribution,
+    ) -> float:
 
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
@@ -179,7 +187,9 @@ class PyCmaSampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def sample_relative(self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]) -> Dict[str, float]:
+    def sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, float]:
 
         if len(search_space) == 0:
             return {}
@@ -397,7 +407,12 @@ class _Optimizer(object):
 
         return True
 
-    def _collect_target_trials(self, trials: List[FrozenTrial], last_told: int = -1, target_states: Optional[Set[TrialState]] = None) -> List[FrozenTrial]:
+    def _collect_target_trials(
+        self,
+        trials: List[FrozenTrial],
+        last_told: int = -1,
+        target_states: Optional[Set[TrialState]] = None,
+    ) -> List[FrozenTrial]:
 
         target_trials = [t for t in trials if t.number > last_told]
         target_trials = [t for t in target_trials if self._is_compatible(t)]
@@ -407,7 +422,9 @@ class _Optimizer(object):
         return target_trials
 
     @staticmethod
-    def _to_cma_params(search_space: Dict[str, BaseDistribution], param_name: str, optuna_param_value: Any) -> float:
+    def _to_cma_params(
+        search_space: Dict[str, BaseDistribution], param_name: str, optuna_param_value: Any
+    ) -> float:
 
         dist = search_space[param_name]
         if isinstance(dist, (LogUniformDistribution, IntLogUniformDistribution)):
@@ -419,7 +436,9 @@ class _Optimizer(object):
         return optuna_param_value
 
     @staticmethod
-    def _to_optuna_params(search_space: Dict[str, BaseDistribution], param_name: str, cma_param_value: float) -> Any:
+    def _to_optuna_params(
+        search_space: Dict[str, BaseDistribution], param_name: str, cma_param_value: float
+    ) -> Any:
 
         dist = search_space[param_name]
         if isinstance(dist, LogUniformDistribution):
