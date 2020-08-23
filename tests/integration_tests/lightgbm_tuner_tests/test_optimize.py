@@ -957,15 +957,7 @@ class TestLightGBMTunerCV(object):
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
-        with TemporaryDirectory() as tmpdir:
-            tuner = LightGBMTunerCV(
-                params, dataset, study=study, model_dir=tmpdir, return_cvboost=True,
-            )
-            with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
-                tuner.tune_regularization_factors()
-
-            best_booster = tuner.get_best_booster()
-            assert best_booster.params["lambda_l1"] != unexpected_value
+        # test case with the argument of `return_cvboost` is omitted as it requires Lightgbm version 3.0
 
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
