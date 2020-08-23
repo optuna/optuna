@@ -660,24 +660,22 @@ class RDBStorage(BaseStorage):
 
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
 
-        session = self.scoped_session()
-
-        trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
-        if trial is None:
-            session.rollback()
-            raise KeyError(models.NOT_FOUND_MSG)
-
-        self.check_trial_is_updatable(trial_id, trial.state)
-
-        if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
-            session.rollback()
-            return False
-
-        trial.state = state
-        if state.is_finished():
-            trial.datetime_complete = datetime.now()
         try:
-            self._commit(session)
+            with self._session_scope() as session:
+                trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
+                if trial is None:
+                    session.rollback()
+                    raise KeyError(models.NOT_FOUND_MSG)
+
+                self.check_trial_is_updatable(trial_id, trial.state)
+
+                if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
+                    session.rollback()
+                    return False
+
+                trial.state = state
+                if state.is_finished():
+                    trial.datetime_complete = datetime.now()
         except IntegrityError as e:
             return False
         return True
