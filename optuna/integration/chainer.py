@@ -7,11 +7,15 @@ with optuna._imports.try_import() as _imports:
     import chainer
     from chainer.training.extension import Extension
     from chainer.training import triggers
+    from chainer.training.triggers import IntervalTrigger
+    from chainer.training.triggers import ManualScheduleTrigger
 
 if not _imports.is_successful():
     Extension = object  # NOQA
+    IntervalTrigger = object  # NOQA
+    ManualScheduleTrigger = object  # NOQA
 
-TriggerType = Union[Tuple[(int, str)], triggers.IntervalTrigger, triggers.ManualScheduleTrigger]
+TriggerType = Union[Tuple[(int, str)], IntervalTrigger, ManualScheduleTrigger]
 
 
 class ChainerPruningExtension(Extension):
@@ -53,8 +57,8 @@ class ChainerPruningExtension(Extension):
         self._observation_key = observation_key
         self._pruner_trigger = chainer.training.get_trigger(pruner_trigger)
         if not (
-            isinstance(self._pruner_trigger, triggers.IntervalTrigger)
-            or isinstance(self._pruner_trigger, triggers.ManualScheduleTrigger)
+            isinstance(self._pruner_trigger, IntervalTrigger)
+            or isinstance(self._pruner_trigger, ManualScheduleTrigger)
         ):
             pruner_type = type(self._pruner_trigger)
             raise TypeError(
