@@ -18,8 +18,8 @@ from optuna.integration._lightgbm_tuner.optimize import _OptunaObjective
 from optuna.integration._lightgbm_tuner.optimize import _OptunaObjectiveCV
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV
-from optuna.study import Study
 import optuna.integration.lightgbm as lgb
+from optuna.study import Study
 
 
 @contextlib.contextmanager

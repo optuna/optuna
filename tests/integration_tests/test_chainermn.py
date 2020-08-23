@@ -11,7 +11,7 @@ import pytest
 from optuna import create_study
 from optuna import distributions
 from optuna import integration
-from optuna.integration import ChainerMNStudy
+from optuna.integration.chainermn import ChainerMNStudy
 from optuna.integration.chainermn import ChainerMNTrial
 from optuna import pruners
 from optuna.pruners import BasePruner
