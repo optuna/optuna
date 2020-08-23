@@ -171,7 +171,7 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        values, scores = _get_observation_pairs(study, param_name, trial)
+        values, scores = _get_observation_pairs(study, param_name)
 
         n = len(values)
 
@@ -602,7 +602,7 @@ class TPESampler(BaseSampler):
 
 
 def _get_observation_pairs(
-    study: Study, param_name: str, trial: FrozenTrial
+    study: Study, param_name: str,
 ) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]:
     """Get observation pairs from the study.
 
