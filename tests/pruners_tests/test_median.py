@@ -1,7 +1,7 @@
-import pytest
-
 from typing import List
 from typing import Tuple
+
+import pytest
 
 import optuna
 from optuna.trial import TrialState
