@@ -27,7 +27,7 @@ if type_checking.TYPE_CHECKING:
 
 
 @contextlib.contextmanager
-def turnoff_train(metric: Optional[str] = "binary_logloss") -> Generator[None, None, None]:
+def turnoff_train(metric: str = "binary_logloss") -> Generator[None, None, None]:
 
     unexpected_value = 0.5
     dummy_num_iterations = 1234
@@ -52,7 +52,7 @@ def turnoff_train(metric: Optional[str] = "binary_logloss") -> Generator[None, N
 
 
 @contextlib.contextmanager
-def turnoff_cv(metric: Optional[str] = "binary_logloss") -> Generator[None, None, None]:
+def turnoff_cv(metric: str = "binary_logloss") -> Generator[None, None, None]:
 
     unexpected_value = 0.5
     dummy_results = {"{}-mean".format(metric): [unexpected_value]}
