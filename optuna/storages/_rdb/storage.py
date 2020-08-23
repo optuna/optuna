@@ -786,26 +786,20 @@ class RDBStorage(BaseStorage):
 
     def set_trial_value(self, trial_id: int, value: float) -> None:
 
-        session = self.scoped_session()
+        with self._session_scope() as session:
+            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+            self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        self.check_trial_is_updatable(trial_id, trial.state)
-
-        trial.value = value
-
-        self._commit(session)
+            trial.value = value
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
 
-        session = self.scoped_session()
-
-        self._set_trial_intermediate_value_without_commit(
-            session, trial_id, step, intermediate_value
-        )
-
-        self._commit(session)
+        with self._session_scope() as session:
+            self._set_trial_intermediate_value_without_commit(
+                session, trial_id, step, intermediate_value
+            )
 
     def _set_trial_intermediate_value_without_commit(
         self, session: orm.Session, trial_id: int, step: int, intermediate_value: float
@@ -825,11 +819,8 @@ class RDBStorage(BaseStorage):
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        session = self.scoped_session()
-
-        self._set_trial_user_attr_without_commit(session, trial_id, key, value)
-
-        self._commit(session)
+        with self._session_scope() as session:
+            self._set_trial_user_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_user_attr_without_commit(
         self, session: orm.Session, trial_id: int, key: str, value: Any
@@ -849,11 +840,8 @@ class RDBStorage(BaseStorage):
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        session = self.scoped_session()
-
-        self._set_trial_system_attr_without_commit(session, trial_id, key, value)
-
-        self._commit(session)
+        with self._session_scope() as session:
+            self._set_trial_system_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_system_attr_without_commit(
         self, session: orm.Session, trial_id: int, key: str, value: Any
@@ -878,20 +866,17 @@ class RDBStorage(BaseStorage):
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
 
-        session = self.scoped_session()
+        with self._session_scope() as session:
+            trial_model = (
+                session.query(models.TrialModel)
+                .filter(models.TrialModel.trial_id == trial_id)
+                .one_or_none()
+            )
 
-        trial_model = (
-            session.query(models.TrialModel)
-            .filter(models.TrialModel.trial_id == trial_id)
-            .one_or_none()
-        )
+            if not trial_model:
+                raise KeyError("No trial with trial-id {} found.".format(trial_id))
 
-        if not trial_model:
-            raise KeyError("No trial with trial-id {} found.".format(trial_id))
-
-        frozen_trial = self._build_frozen_trial_from_trial_model(trial_model)
-
-        self._commit(session)
+            frozen_trial = self._build_frozen_trial_from_trial_model(trial_model)
 
         return frozen_trial
 
@@ -903,59 +888,56 @@ class RDBStorage(BaseStorage):
 
     def _get_trials(self, study_id: int, excluded_trial_ids: Set[int]) -> List[FrozenTrial]:
 
-        session = self.scoped_session()
+        with self._session_scope() as session:
+            # Ensure that the study exists.
+            models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        # Ensure that the study exists.
-        models.StudyModel.find_or_raise_by_id(study_id, session)
-
-        trial_ids = (
-            session.query(models.TrialModel.trial_id)
-            .filter(models.TrialModel.study_id == study_id,)
-            .all()
-        )
-        trial_ids = set(
-            trial_id_tuple[0]
-            for trial_id_tuple in trial_ids
-            if trial_id_tuple[0] not in excluded_trial_ids
-        )
-        try:
-            trial_models = (
-                session.query(models.TrialModel)
-                .options(orm.selectinload(models.TrialModel.params))
-                .options(orm.selectinload(models.TrialModel.values))
-                .options(orm.selectinload(models.TrialModel.user_attributes))
-                .options(orm.selectinload(models.TrialModel.system_attributes))
-                .filter(
-                    models.TrialModel.trial_id.in_(trial_ids),
-                    models.TrialModel.study_id == study_id,
+            trial_ids = (
+                session.query(models.TrialModel.trial_id)
+                .filter(models.TrialModel.study_id == study_id,)
+                .all()
+            )
+            trial_ids = set(
+                trial_id_tuple[0]
+                for trial_id_tuple in trial_ids
+                if trial_id_tuple[0] not in excluded_trial_ids
+            )
+            try:
+                trial_models = (
+                    session.query(models.TrialModel)
+                    .options(orm.selectinload(models.TrialModel.params))
+                    .options(orm.selectinload(models.TrialModel.values))
+                    .options(orm.selectinload(models.TrialModel.user_attributes))
+                    .options(orm.selectinload(models.TrialModel.system_attributes))
+                    .filter(
+                        models.TrialModel.trial_id.in_(trial_ids),
+                        models.TrialModel.study_id == study_id,
+                    )
+                    .all()
                 )
-                .all()
-            )
-        except OperationalError as e:
-            # Likely exceeding the number of maximum allowed variables using IN. This number differ
-            # between database dialects. For SQLite for instance, see
-            # https://www.sqlite.org/limits.html and the section describing
-            # SQLITE_MAX_VARIABLE_NUMBER.
+            except OperationalError as e:
+                # Likely exceeding the number of maximum allowed variables using IN. This number differ
+                # between database dialects. For SQLite for instance, see
+                # https://www.sqlite.org/limits.html and the section describing
+                # SQLITE_MAX_VARIABLE_NUMBER.
 
-            _logger.warning(
-                "Caught an error from sqlalchemy: {}. Falling back to a slower alternative. "
-                "".format(str(e))
-            )
+                _logger.warning(
+                    "Caught an error from sqlalchemy: {}. Falling back to a slower alternative. "
+                    "".format(str(e))
+                )
 
-            trial_models = (
-                session.query(models.TrialModel)
-                .options(orm.selectinload(models.TrialModel.params))
-                .options(orm.selectinload(models.TrialModel.values))
-                .options(orm.selectinload(models.TrialModel.user_attributes))
-                .options(orm.selectinload(models.TrialModel.system_attributes))
-                .filter(models.TrialModel.study_id == study_id)
-                .all()
-            )
-            trial_models = [t for t in trial_models if t.trial_id in trial_ids]
+                trial_models = (
+                    session.query(models.TrialModel)
+                    .options(orm.selectinload(models.TrialModel.params))
+                    .options(orm.selectinload(models.TrialModel.values))
+                    .options(orm.selectinload(models.TrialModel.user_attributes))
+                    .options(orm.selectinload(models.TrialModel.system_attributes))
+                    .filter(models.TrialModel.study_id == study_id)
+                    .all()
+                )
+                trial_models = [t for t in trial_models if t.trial_id in trial_ids]
 
-        trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
-
-        self._commit(session)
+            trials = [self._build_frozen_trial_from_trial_model(trial) for trial in trial_models]
 
         return trials
 
