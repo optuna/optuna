@@ -13,14 +13,11 @@ import optuna
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
 from optuna import TrialPruned
-
-if optuna.type_checking.TYPE_CHECKING:
-    from optuna.trial import Trial  # NOQA
+from optuna.trial import Trial
 
 
 @pytest.mark.parametrize("use_hyperband", [False, True])
-def test_hyperopt_parameters(use_hyperband):
-    # type: (bool) -> None
+def test_hyperopt_parameters(use_hyperband: bool) -> None:
 
     sampler = TPESampler(**TPESampler.hyperopt_parameters())
     study = optuna.create_study(
@@ -304,11 +301,8 @@ def test_sample_independent_pruned_state() -> None:
     assert len(set(suggestions)) == 3
 
 
-def test_get_observation_pairs():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (Trial) -> float
+def test_get_observation_pairs() -> None:
+    def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
         if trial.number == 0:
