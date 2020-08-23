@@ -1,7 +1,6 @@
 import sys
 
 import optuna
-
 from optuna._imports import try_import
 from optuna.integration import _lightgbm_tuner as tuner
 

@@ -1,10 +1,10 @@
 import math
 import random
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
-from typing import Set  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
 
 import numpy
 
@@ -12,6 +12,7 @@ import optuna
 from optuna._deprecated import deprecated
 from optuna._imports import try_import
 from optuna import distributions
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
@@ -20,11 +21,10 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna import logging
 from optuna.samplers import BaseSampler
-from optuna.study import StudyDirection
-from optuna.trial import TrialState
-from optuna.distributions import BaseDistribution
-from optuna.trial import FrozenTrial
 from optuna.study import Study
+from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 with try_import() as _imports:
     import cma
