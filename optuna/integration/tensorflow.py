@@ -32,7 +32,7 @@ class TensorFlowPruningHook(SessionRunHook):
     def __init__(
         self,
         trial: optuna.trial.Trial,
-        estimator: tf.estimator.Estimator,
+        estimator: "tf.estimator.Estimator",
         metric: str,
         run_every_steps: int,
     ) -> None:
@@ -51,7 +51,7 @@ class TensorFlowPruningHook(SessionRunHook):
         self._global_step_tensor = tf.compat.v1.train.get_global_step()
 
     def before_run(
-        self, run_context: tf.estimator.SessionRunContext
+        self, run_context: "tf.estimator.SessionRunContext"
     ) -> tf.estimator.SessionRunArgs:
 
         del run_context
@@ -59,8 +59,8 @@ class TensorFlowPruningHook(SessionRunHook):
 
     def after_run(
         self,
-        run_context: tf.estimator.SessionRunContext,
-        run_values: tf.estimator.SessionRunValues,
+        run_context: "tf.estimator.SessionRunContext",
+        run_values: "tf.estimator.SessionRunValues",
     ) -> None:
 
         global_step = run_values.results
