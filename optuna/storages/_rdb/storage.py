@@ -1093,7 +1093,7 @@ class RDBStorage(BaseStorage):
                 "Another one might have committed a record with the same key(s).".format(repr(e))
             )
             session.rollback()
-            raise
+            return False
         except SQLAlchemyError as e:
             session.rollback()
             message = (
@@ -1102,7 +1102,7 @@ class RDBStorage(BaseStorage):
                 "e.g. exceeding max length. "
                 "(The actual exception is as follows: {})".format(repr(e))
             )
-            return True
+            raise
 
         return True
 
