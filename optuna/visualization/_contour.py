@@ -198,10 +198,7 @@ def _generate_contour_subplot(
     scatter = go.Scatter(
         x=x_values,
         y=y_values,
-        marker={
-            "line": {"width": 0.5, "color": "Grey"},
-            "color": "black",
-        },
+        marker={"line": {"width": 0.5, "color": "Grey"}, "color": "black"},
         mode="markers",
         showlegend=False,
     )
