@@ -328,8 +328,6 @@ def test_get_observation_pairs():
     # Test direction=minimize.
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
-    trial_number = study._storage.create_new_trial(study._study_id)  # Create a running trial.
-    trial = study._storage.get_trial(trial_number)
 
     assert _tpe.sampler._get_observation_pairs(study, "x") == (
         [5.0, 5.0, 5.0, 5.0],
