@@ -6,7 +6,6 @@ import optuna
 with optuna._imports.try_import() as _imports:
     import chainer
     from chainer.training.extension import Extension
-    from chainer.training import triggers
     from chainer.training.triggers import IntervalTrigger
     from chainer.training.triggers import ManualScheduleTrigger
 
