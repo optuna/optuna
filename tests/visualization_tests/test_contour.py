@@ -1,7 +1,7 @@
-import pytest
-
 from typing import List
 from typing import Optional
+
+import pytest
 
 from optuna.distributions import LogUniformDistribution
 from optuna.study import create_study
