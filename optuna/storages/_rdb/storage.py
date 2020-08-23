@@ -158,7 +158,7 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel(study_name=study_name, direction=StudyDirection.NOT_SET)
         session.add(study)
         try:
-            self._commit_with_integrity_check(session)
+            self._commit(session)
         except IntegrityError as e:
             raise optuna.exceptions.DuplicatedStudyError(
                 "Another study with name '{}' already exists. "
@@ -178,7 +178,7 @@ class RDBStorage(BaseStorage):
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
         session.delete(study)
 
-        self._commit_with_integrity_check(session)
+        self._commit(session)
 
     @staticmethod
     def _create_unique_study_name(session: orm.Session) -> str:
@@ -224,7 +224,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        self._commit_with_integrity_check(session)
+        self._commit(session)
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
 
@@ -240,7 +240,7 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
-        self._commit_with_integrity_check(session)
+        self._commit(session)
 
     def get_study_id_from_name(self, study_name: str) -> int:
 
@@ -723,7 +723,7 @@ class RDBStorage(BaseStorage):
         if state.is_finished():
             trial.datetime_complete = datetime.now()
         try:
-            self._commit_with_integrity_check(session)
+            self._commit(session)
         except IntegrityError as e:
             return False
         return True
@@ -742,7 +742,7 @@ class RDBStorage(BaseStorage):
             session, trial_id, param_name, param_value_internal, distribution
         )
 
-        self._commit_with_integrity_check(session)
+        self._commit(session)
 
     def _set_trial_param_without_commit(
         self,
@@ -855,7 +855,7 @@ class RDBStorage(BaseStorage):
             session, trial_id, step, intermediate_value
         )
 
-        self._commit_with_integrity_check(session)
+        self._commit(session)
 
     def _set_trial_intermediate_value_without_commit(
         self, session: orm.Session, trial_id: int, step: int, intermediate_value: float
@@ -879,7 +879,7 @@ class RDBStorage(BaseStorage):
 
         self._set_trial_user_attr_without_commit(session, trial_id, key, value)
 
-        self._commit_with_integrity_check(session)
+        self._commit(session)
 
     def _set_trial_user_attr_without_commit(
         self, session: orm.Session, trial_id: int, key: str, value: Any
@@ -903,7 +903,7 @@ class RDBStorage(BaseStorage):
 
         self._set_trial_system_attr_without_commit(session, trial_id, key, value)
 
-        self._commit_with_integrity_check(session)
+        self._commit(session)
 
     def _set_trial_system_attr_without_commit(
         self, session: orm.Session, trial_id: int, key: str, value: Any
@@ -1088,7 +1088,7 @@ class RDBStorage(BaseStorage):
         return template.format(SCHEMA_VERSION=models.SCHEMA_VERSION)
 
     @staticmethod
-    def _commit_with_integrity_check(session: orm.Session) -> None:
+    def _commit(session: orm.Session) -> None:
 
         try:
             session.commit()
@@ -1196,7 +1196,7 @@ class _VersionManager(object):
         )
 
         session.add(version_info)
-        RDBStorage._commit_with_integrity_check(session)
+        RDBStorage._commit(session)
 
     def _init_alembic(self) -> None:
 
