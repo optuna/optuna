@@ -194,116 +194,89 @@ class RDBStorage(BaseStorage):
     # TODO(sano): Prevent simultaneously setting different direction in distributed environments.
     def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
 
-        session = self.scoped_session()
+        with self._session_scope() as session:
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-
-        if study.direction != StudyDirection.NOT_SET and study.direction != direction:
-            raise ValueError(
-                "Cannot overwrite study direction from {} to {}.".format(
-                    study.direction, direction
+            if study.direction != StudyDirection.NOT_SET and study.direction != direction:
+                raise ValueError(
+                    "Cannot overwrite study direction from {} to {}.".format(
+                        study.direction, direction
+                    )
                 )
-            )
 
-        study.direction = direction
-
-        self._commit(session)
+            study.direction = direction
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
-        session = self.scoped_session()
-
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
-        if attribute is None:
-            attribute = models.StudyUserAttributeModel(
-                study_id=study_id, key=key, value_json=json.dumps(value)
-            )
-            session.add(attribute)
-        else:
-            attribute.value_json = json.dumps(value)
-
-        self._commit(session)
+        with self._session_scope() as session:
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
+            attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
+            if attribute is None:
+                attribute = models.StudyUserAttributeModel(
+                    study_id=study_id, key=key, value_json=json.dumps(value)
+                )
+                session.add(attribute)
+            else:
+                attribute.value_json = json.dumps(value)
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
 
-        session = self.scoped_session()
-
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
-        if attribute is None:
-            attribute = models.StudySystemAttributeModel(
-                study_id=study_id, key=key, value_json=json.dumps(value)
-            )
-            session.add(attribute)
-        else:
-            attribute.value_json = json.dumps(value)
-
-        self._commit(session)
+        with self._session_scope() as session:
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
+            attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
+            if attribute is None:
+                attribute = models.StudySystemAttributeModel(
+                    study_id=study_id, key=key, value_json=json.dumps(value)
+                )
+                session.add(attribute)
+            else:
+                attribute.value_json = json.dumps(value)
 
     def get_study_id_from_name(self, study_name: str) -> int:
 
-        session = self.scoped_session()
-
-        study = models.StudyModel.find_or_raise_by_name(study_name, session)
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
+        with self._session_scope() as session:
+            study = models.StudyModel.find_or_raise_by_name(study_name, session)
 
         return study.study_id
 
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
 
-        session = self.scoped_session()
-
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
+        with self._session_scope() as session:
+            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
 
         return trial.study_id
 
     def get_study_name_from_id(self, study_id: int) -> str:
 
-        session = self.scoped_session()
-
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
+        with self._session_scope() as session:
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         return study.study_name
 
     def get_study_direction(self, study_id: int) -> StudyDirection:
 
-        session = self.scoped_session()
-
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
+        with self._session_scope() as session:
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         return study.direction
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
-        session = self.scoped_session()
-
-        # Ensure that that study exists.
-        models.StudyModel.find_or_raise_by_id(study_id, session)
-        attributes = models.StudyUserAttributeModel.where_study_id(study_id, session)
-        user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
+        with self._session_scope() as session:
+            # Ensure that that study exists.
+            models.StudyModel.find_or_raise_by_id(study_id, session)
+            attributes = models.StudyUserAttributeModel.where_study_id(study_id, session)
+            user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
         return user_attrs
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
 
-        session = self.scoped_session()
-
-        # Ensure that that study exists.
-        models.StudyModel.find_or_raise_by_id(study_id, session)
-        attributes = models.StudySystemAttributeModel.where_study_id(study_id, session)
-        system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
+        with self._session_scope() as session:
+            # Ensure that that study exists.
+            models.StudyModel.find_or_raise_by_id(study_id, session)
+            attributes = models.StudySystemAttributeModel.where_study_id(study_id, session)
+            system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
         return system_attrs
 
