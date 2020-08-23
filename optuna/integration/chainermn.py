@@ -42,7 +42,7 @@ class _ChainerMNObjectiveFunc(object):
     """
 
     def __init__(
-        self, func: Callable[["ChainerMNTrial", CommunicatorBase], float], comm: CommunicatorBase
+        self, func: "Callable[[ChainerMNTrial, CommunicatorBase], float]", comm: CommunicatorBase
     ) -> None:
 
         self.comm = comm
@@ -98,7 +98,7 @@ class ChainerMNStudy(object):
 
     def optimize(
         self,
-        func: Callable[["ChainerMNTrial", CommunicatorBase], float],
+        func: "Callable[[ChainerMNTrial, CommunicatorBase], float]",
         n_trials: Optional[int] = None,
         timeout: Optional[float] = None,
         catch: Tuple[Type[Exception], ...] = (),
@@ -313,7 +313,7 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def _call_with_mpi(self, func: (Callable)) -> Any:
+    def _call_with_mpi(self, func: "(Callable)") -> Any:
 
         if self.comm.rank == 0:
             try:
