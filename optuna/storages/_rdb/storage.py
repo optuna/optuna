@@ -152,15 +152,13 @@ class RDBStorage(BaseStorage):
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
 
-        session = self.scoped_session()
-
-        if study_name is None:
-            study_name = self._create_unique_study_name(session)
-
-        study = models.StudyModel(study_name=study_name, direction=StudyDirection.NOT_SET)
-        session.add(study)
         try:
-            self._commit(session)
+            with self._session_scope() as session:
+                if study_name is None:
+                    study_name = self._create_unique_study_name(session)
+
+                study = models.StudyModel(study_name=study_name, direction=StudyDirection.NOT_SET)
+                session.add(study)
         except IntegrityError as e:
             raise optuna.exceptions.DuplicatedStudyError(
                 "Another study with name '{}' already exists. "
