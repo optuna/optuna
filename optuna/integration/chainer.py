@@ -66,7 +66,7 @@ class ChainerPruningExtension(Extension):
             )
 
     @staticmethod
-    def _get_float_value(observation_value: "Union[float, chainer.Variable]") -> float:
+    def _get_float_value(observation_value: Union[float, "chainer.Variable"]) -> float:
 
         _imports.check()
 
