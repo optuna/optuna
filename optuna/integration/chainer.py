@@ -14,7 +14,7 @@ if not _imports.is_successful():
     IntervalTrigger = object  # NOQA
     ManualScheduleTrigger = object  # NOQA
 
-TriggerType = Union[Tuple[(int, str)], IntervalTrigger, ManualScheduleTrigger]
+TriggerType = "Union[Tuple[(int, str)], IntervalTrigger, ManualScheduleTrigger]"
 
 
 class ChainerPruningExtension(Extension):
