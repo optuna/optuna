@@ -11,8 +11,6 @@ with optuna._imports.try_import() as _imports:
 
 if not _imports.is_successful():
     Extension = object  # NOQA
-    IntervalTrigger = object  # NOQA
-    ManualScheduleTrigger = object  # NOQA
 
 TriggerType = "Union[Tuple[(int, str)], IntervalTrigger, ManualScheduleTrigger]"
 
