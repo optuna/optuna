@@ -260,7 +260,7 @@ class TestLightGBMTuner(object):
     def _get_tuner_object(
         self,
         params: Dict[str, Any] = {},
-        train_set: lgb.Dataset = None,
+        train_set: Optional[lgb.Dataset] = None,
         kwargs_options: Dict[str, Any] = {},
         study: Optional[Study] = None,
     ) -> lgb.LightGBMTuner:
