@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 import pytest
 
+from sqlalchemy.exc import IntegrityError
+
 from optuna import version
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
@@ -148,7 +150,7 @@ def test_commit() -> None:
     # This object violates the unique constraint of version_info_id.
     v = VersionInfoModel(version_info_id=1, schema_version=1, library_version="0.0.1")
     session.add(v)
-    with pytest.raises(StorageInternalError):
+    with pytest.raises(IntegrityError):
         storage._commit(session)
 
 
