@@ -949,3 +949,36 @@ class TestLightGBMTunerCV(object):
             tuner._tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
 
         assert callback_mock.call_count == 10
+
+    def test_get_best_booster(self) -> None:
+        unexpected_value = 20  # out of scope.
+
+        params = {"verbose": -1, "lambda_l1": unexpected_value}  # type: Dict
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        study = optuna.create_study()
+        with TemporaryDirectory() as tmpdir:
+            tuner = LightGBMTunerCV(
+                params, dataset, study=study, model_dir=tmpdir, return_cvboost=True,
+            )
+            with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+                tuner.tune_regularization_factors()
+
+            best_booster = tuner.get_best_booster()
+            assert best_booster.params["lambda_l1"] != unexpected_value
+
+        tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
+
+        # Resumed study does not have the best booster.
+        with pytest.raises(ValueError):
+            tuner2.get_best_booster()
+
+        # the `model_dir` argument is None
+        with pytest.raises(ValueError) as excinfo:
+            tuner3 = LightGBMTunerCV(
+                params, dataset, study=study, model_dir=None,
+            )
+            with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+                tuner3.tune_regularization_factors()
+            tuner3.get_best_booster()
+        assert excinfo.type is ValueError

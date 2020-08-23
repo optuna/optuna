@@ -193,7 +193,7 @@ class _OptunaObjective(_BaseTuner):
         ]
         for target_param_name in self.target_param_names:
             if target_param_name not in supported_param_names:
-                raise NotImplementedError("Parameter `{}` is not supported for tunning.")
+                raise NotImplementedError("Parameter `{}` is not supported for tuning.")
 
     def _preprocess(self, trial: optuna.trial.Trial) -> None:
         if self.pbar is not None:
@@ -306,8 +306,16 @@ class _OptunaObjectiveCV(_OptunaObjective):
         elapsed_secs = time.time() - start_time
         average_iteration_time = elapsed_secs / len(val_scores)
 
+        if self.model_dir is not None and self.lgbm_params.get("return_cvboost"):
+            path = os.path.join(self.model_dir, "{}.pkl".format(trial.number))
+            with open(path, "wb") as fout:
+                pickle.dump(cv_results["cvbooster"], fout)
+            _logger.info("The booster of trial#{} was saved as {}.".format(trial.number, path))
+
         if self.compare_validation_metrics(val_score, self.best_score):
             self.best_score = val_score
+            if self.lgbm_params.get("return_cvboost"):
+                self.best_booster_with_trial_number = (cv_results["cvbooster"], trial.number)
 
         self._postprocess(trial, elapsed_secs, average_iteration_time)
 
@@ -340,6 +348,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
+        model_dir: Optional[str] = None,
     ) -> None:
 
         _imports.check()
@@ -368,6 +377,8 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._start_time = None  # type: Optional[float]
         self._optuna_callbacks = optuna_callbacks
         self._best_params = {}
+        self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
+        self._model_dir = model_dir
 
         # Set default parameters as best.
         self._best_params.update(_DEFAULT_LIGHTGBM_PARAMETERS)
@@ -423,6 +434,45 @@ class _LightGBMBaseTuner(_BaseTuner):
             # self.lgbm_params may contain parameters given by users.
             params.update(self.lgbm_params)
             return params
+
+    def get_best_booster(self) -> "lgb.Booster":
+        """Return the best booster.
+
+        If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
+        errors, please save boosters by specifying either the ``model_dir`` argument of
+        :meth:`~optuna.integration.lightgbm.LightGBMTuner.__init__`, or both of the ``model_dir`` and
+        the ``return_cvboost`` arguments of :meth: `~optuna.integration.lightgbm.LightGBMTunerCV.__init__`
+        when you resume tuning or you run tuning in parallel.
+        """
+        if self._best_booster_with_trial_number is not None:
+            if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
+                return self._best_booster_with_trial_number[0]
+        if len(self.study.trials) == 0:
+            raise ValueError("The best booster is not available because no trials completed.")
+
+        # The best booster exists, but this instance does not have it.
+        # This may be due to resuming or parallelization.
+        if self._model_dir is None:
+            raise ValueError(
+                "The best booster cannot be found. It may be found in the other processes due to "
+                "resuming or distributed computing. Please set the `model_dir` argument of "
+                "`LightGBMTuner.__init__` and make sure that boosters are shared with all "
+                "processes."
+            )
+
+        best_trial = self.study.best_trial
+        path = os.path.join(self._model_dir, "{}.pkl".format(best_trial.number))
+        if not os.path.exists(path):
+            raise ValueError(
+                "The best booster cannot be found in {}. If you execute `LightGBMTuner` in "
+                "distributed environment, please use network file system (e.g., NFS) to share "
+                "models with multiple workers.".format(self._model_dir)
+            )
+
+        with open(path, "rb") as fin:
+            booster = pickle.load(fin)
+
+        return booster
 
     def _parse_args(self, *args: Any, **kwargs: Any) -> None:
 
@@ -767,44 +817,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
 
         return self.get_best_booster()
 
-    def get_best_booster(self) -> "lgb.Booster":
-        """Return the best booster.
-
-        If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
-        errors, please save boosters by specifying the ``model_dir`` arguments of
-        :meth:`~optuna.integration.lightgbm.LightGBMTuner.__init__` when you resume tuning
-        or you run tuning in parallel.
-        """
-        if self._best_booster_with_trial_number is not None:
-            if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
-                return self._best_booster_with_trial_number[0]
-        if len(self.study.trials) == 0:
-            raise ValueError("The best booster is not available because no trials completed.")
-
-        # The best booster exists, but this instance does not have it.
-        # This may be due to resuming or parallelization.
-        if self._model_dir is None:
-            raise ValueError(
-                "The best booster cannot be found. It may be found in the other processes due to "
-                "resuming or distributed computing. Please set the `model_dir` argument of "
-                "`LightGBMTuner.__init__` and make sure that boosters are shared with all "
-                "processes."
-            )
-
-        best_trial = self.study.best_trial
-        path = os.path.join(self._model_dir, "{}.pkl".format(best_trial.number))
-        if not os.path.exists(path):
-            raise ValueError(
-                "The best booster cannot be found in {}. If you execute `LightGBMTuner` in "
-                "distributed environment, please use network file system (e.g., NFS) to share "
-                "models with multiple workers.".format(self._model_dir)
-            )
-
-        with open(path, "rb") as fin:
-            booster = pickle.load(fin)
-
-        return booster
-
     def _tune_params(
         self,
         target_param_names: List[str],
@@ -929,6 +941,8 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
+        model_dir: Optional[str] = None,
+        return_cvboost: Optional[bool] = None,
     ) -> None:
 
         super(LightGBMTunerCV, self).__init__(
@@ -948,6 +962,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
+            model_dir=model_dir,
         )
 
         self.lgbm_kwargs["folds"] = folds
@@ -957,6 +972,8 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         self.lgbm_kwargs["show_stdv"] = show_stdv
         self.lgbm_kwargs["seed"] = seed
         self.lgbm_kwargs["fpreproc"] = fpreproc
+        if return_cvboost is not None:
+            self.lgbm_kwargs["return_cvboost"] = return_cvboost
 
     def _create_objective(
         self,
