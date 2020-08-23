@@ -1,3 +1,4 @@
+from typing import Tuple
 from typing import Union
 
 import optuna
@@ -10,8 +11,6 @@ with optuna._imports.try_import() as _imports:
 
 if not _imports.is_successful():
     Extension = object  # NOQA
-
-TriggerType = "Union[Tuple[(int, str)], IntervalTrigger, ManualScheduleTrigger]"
 
 
 class ChainerPruningExtension(Extension):
@@ -44,7 +43,10 @@ class ChainerPruningExtension(Extension):
     """
 
     def __init__(
-        self, trial: optuna.trial.Trial, observation_key: str, pruner_trigger: TriggerType
+        self,
+        trial: optuna.trial.Trial,
+        observation_key: str,
+        pruner_trigger: Union[Tuple[(int, str)], "IntervalTrigger", "ManualScheduleTrigger"],
     ) -> None:
 
         _imports.check()
