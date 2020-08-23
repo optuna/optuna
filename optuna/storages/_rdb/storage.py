@@ -1108,22 +1108,17 @@ class _VersionManager(object):
 
     def _init_version_info_model(self) -> None:
 
-        session = self.scoped_session()
+        with self._session_scope() as session:
+            version_info = models.VersionInfoModel.find(session)
+            if version_info is not None:
+                return
 
-        version_info = models.VersionInfoModel.find(session)
-        if version_info is not None:
-            # Terminate transaction explicitly to avoid connection timeout during transaction.
-            RDBStorage._commit(session)
-            return
+            version_info = models.VersionInfoModel(
+                schema_version=models.SCHEMA_VERSION, library_version=version.__version__
+            )
+            session.add(version_info)
 
-        version_info = models.VersionInfoModel(
-            schema_version=models.SCHEMA_VERSION, library_version=version.__version__
-        )
-
-        session.add(version_info)
-        RDBStorage._commit(session)
-
-    def _init_alembic(self) -> None:
+    def     _init_alembic(self) -> None:
 
         logging.getLogger("alembic").setLevel(logging.WARN)
 
@@ -1150,13 +1145,10 @@ class _VersionManager(object):
 
     def check_table_schema_compatibility(self) -> None:
 
-        session = self.scoped_session()
-
-        # NOTE: After invocation of `_init_version_info_model` method,
-        #       it is ensured that a `VersionInfoModel` entry exists.
-        version_info = models.VersionInfoModel.find(session)
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        RDBStorage._commit(session)
+        with self._session_scope() as session:
+            # NOTE: After invocation of `_init_version_info_model` method,
+            #       it is ensured that a `VersionInfoModel` entry exists.
+            version_info = models.VersionInfoModel.find(session)
 
         assert version_info is not None
 
@@ -1212,11 +1204,8 @@ class _VersionManager(object):
 
     def _is_alembic_supported(self) -> bool:
 
-        session = self.scoped_session()
-
-        version_info = models.VersionInfoModel.find(session)
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        RDBStorage._commit(session)
+        with self._session_scope() as session:
+            version_info = models.VersionInfoModel.find(session)
 
         if version_info is None:
             # `None` means this storage was created just now.
@@ -1238,6 +1227,29 @@ class _VersionManager(object):
         config.set_main_option("script_location", escape_alembic_config_value(alembic_dir))
         config.set_main_option("sqlalchemy.url", escape_alembic_config_value(self.url))
         return config
+
+    @contextmanager
+    def _session_scope(self) -> Generator[orm.Session, None, None]:
+        session = self.scoped_session()
+        try:
+            yield session
+            session.commit()
+        except IntegrityError as e:
+            _logger.debug(
+                "Ignoring {}. This happens due to a timing issue among threads/processes/nodes. "
+                "Another one might have committed a record with the same key(s).".format(repr(e))
+            )
+            session.rollback()
+            raise
+        except SQLAlchemyError as e:
+            session.rollback()
+            message = (
+                "An exception is raised during the commit. "
+                "This typically happens due to invalid data in the commit, "
+                "e.g. exceeding max length. "
+                "(The actual exception is as follows: {})".format(repr(e))
+            )
+            raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
 
 
 def escape_alembic_config_value(value: str) -> str:
