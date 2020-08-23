@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import copy
 from datetime import datetime
 import json
@@ -6,6 +7,7 @@ import os
 import sys
 from typing import Any
 from typing import Dict
+from typing import Generator
 from typing import List
 from typing import Optional
 from typing import Set
@@ -173,12 +175,9 @@ class RDBStorage(BaseStorage):
 
     def delete_study(self, study_id: int) -> None:
 
-        session = self.scoped_session()
-
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        session.delete(study)
-
-        self._commit(session)
+        with self._session_scope() as session:
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
+            session.delete(study)
 
     @staticmethod
     def _create_unique_study_name(session: orm.Session) -> str:
@@ -1091,6 +1090,29 @@ class RDBStorage(BaseStorage):
     def _commit(session: orm.Session) -> None:
 
         try:
+            session.commit()
+        except IntegrityError as e:
+            _logger.debug(
+                "Ignoring {}. This happens due to a timing issue among threads/processes/nodes. "
+                "Another one might have committed a record with the same key(s).".format(repr(e))
+            )
+            session.rollback()
+            raise
+        except SQLAlchemyError as e:
+            session.rollback()
+            message = (
+                "An exception is raised during the commit. "
+                "This typically happens due to invalid data in the commit, "
+                "e.g. exceeding max length. "
+                "(The actual exception is as follows: {})".format(repr(e))
+            )
+            raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
+
+    @contextmanager
+    def _session_scope(self) -> Generator[orm.Session, None, None]:
+        session = self.scoped_session()
+        try:
+            yield session
             session.commit()
         except IntegrityError as e:
             _logger.debug(
