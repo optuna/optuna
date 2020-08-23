@@ -975,9 +975,7 @@ class TestLightGBMTunerCV(object):
 
         # the `model_dir` argument is None
         with pytest.raises(ValueError) as excinfo:
-            tuner3 = LightGBMTunerCV(
-                params, dataset, study=study, model_dir=None,
-            )
+            tuner3 = LightGBMTunerCV(params, dataset, study=study, model_dir=None,)
             with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
                 tuner3.tune_regularization_factors()
             tuner3.get_best_booster()
