@@ -75,7 +75,7 @@ class ChainerMNStudy(object):
             index.html#communicators>`_.
     """
 
-    def __init__(self, study: Study, comm: CommunicatorBase) -> None:
+    def __init__(self, study: "Study", comm: CommunicatorBase) -> None:
 
         _imports.check()
 
@@ -213,8 +213,8 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def suggest_categorical(self, name: str, choices: Sequence[CategoricalChoiceType]) -> Any:
-        def func() -> CategoricalChoiceType:
+    def suggest_categorical(self, name: str, choices: "Sequence[CategoricalChoiceType]") -> Any:
+        def func() -> "CategoricalChoiceType":
 
             assert self.delegate is not None
             return self.delegate.suggest_categorical(name, choices)
@@ -278,8 +278,8 @@ class ChainerMNTrial(BaseTrial):
         return self._call_with_mpi(func)
 
     @property
-    def distributions(self) -> Dict[str, BaseDistribution]:
-        def func() -> Dict[str, BaseDistribution]:
+    def distributions(self) -> "Dict[str, BaseDistribution]":
+        def func() -> "Dict[str, BaseDistribution]":
 
             assert self.delegate is not None
             return self.delegate.distributions
