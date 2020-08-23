@@ -157,7 +157,9 @@ class RDBStorage(BaseStorage):
 
         study = models.StudyModel(study_name=study_name, direction=StudyDirection.NOT_SET)
         session.add(study)
-        if not self._commit_with_integrity_check(session):
+        try:
+            self._commit_with_integrity_check(session)
+        except IntegrityError as e:
             raise optuna.exceptions.DuplicatedStudyError(
                 "Another study with name '{}' already exists. "
                 "Please specify a different name, or reuse the existing one "
@@ -720,8 +722,11 @@ class RDBStorage(BaseStorage):
         trial.state = state
         if state.is_finished():
             trial.datetime_complete = datetime.now()
-
-        return self._commit_with_integrity_check(session)
+        try:
+            self._commit_with_integrity_check(session)
+        except IntegrityError as e:
+            return False
+        return True
 
     def set_trial_param(
         self,
@@ -1083,7 +1088,7 @@ class RDBStorage(BaseStorage):
         return template.format(SCHEMA_VERSION=models.SCHEMA_VERSION)
 
     @staticmethod
-    def _commit_with_integrity_check(session: orm.Session) -> bool:
+    def _commit_with_integrity_check(session: orm.Session) -> None:
 
         try:
             session.commit()
@@ -1093,18 +1098,10 @@ class RDBStorage(BaseStorage):
                 "Another one might have committed a record with the same key(s).".format(repr(e))
             )
             session.rollback()
-            return False
+            raise
         except SQLAlchemyError as e:
             session.rollback()
-            message = (
-                "An exception is raised during the commit. "
-                "This typically happens due to invalid data in the commit, "
-                "e.g. exceeding max length. "
-                "(The actual exception is as follows: {})".format(repr(e))
-            )
             raise
-
-        return True
 
     @staticmethod
     def _commit(session: orm.Session) -> None:
