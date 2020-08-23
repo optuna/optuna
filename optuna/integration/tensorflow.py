@@ -52,7 +52,7 @@ class TensorFlowPruningHook(SessionRunHook):
 
     def before_run(
         self, run_context: "tf.estimator.SessionRunContext"
-    ) -> tf.estimator.SessionRunArgs:
+    ) -> "tf.estimator.SessionRunArgs":
 
         del run_context
         return tf.estimator.SessionRunArgs(self._global_step_tensor)
