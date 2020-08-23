@@ -1093,7 +1093,7 @@ class RDBStorage(BaseStorage):
                 "Another one might have committed a record with the same key(s).".format(repr(e))
             )
             session.rollback()
-            return False
+            raise
         except SQLAlchemyError as e:
             session.rollback()
             message = (
