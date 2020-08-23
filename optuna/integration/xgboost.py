@@ -40,7 +40,7 @@ class XGBoostPruningCallback(object):
             for further details.
     """
 
-    def __init__(self, trial: "optuna.trial.Trial", observation_key: str) -> None:
+    def __init__(self, trial: optuna.trial.Trial, observation_key: str) -> None:
 
         _imports.check()
 
