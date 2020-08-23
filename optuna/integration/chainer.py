@@ -1,4 +1,3 @@
-from typing import Tuple
 from typing import Union
 
 import optuna
