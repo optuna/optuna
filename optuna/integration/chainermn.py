@@ -41,7 +41,7 @@ class _ChainerMNObjectiveFunc(object):
     """
 
     def __init__(
-        self, func: "Callable[[ChainerMNTrial, CommunicatorBase], float]", comm: CommunicatorBase
+        self, func: "Callable[[ChainerMNTrial, CommunicatorBase], float]", comm: "CommunicatorBase"
     ) -> None:
 
         self.comm = comm
@@ -74,7 +74,7 @@ class ChainerMNStudy(object):
             index.html#communicators>`_.
     """
 
-    def __init__(self, study: "Study", comm: CommunicatorBase) -> None:
+    def __init__(self, study: "Study", comm: "CommunicatorBase") -> None:
 
         _imports.check()
 
@@ -160,7 +160,7 @@ class ChainerMNTrial(BaseTrial):
             index.html#communicators>`_.
     """
 
-    def __init__(self, trial: Optional[Trial], comm: CommunicatorBase) -> None:
+    def __init__(self, trial: "Optional[Trial]", comm: "CommunicatorBase") -> None:
 
         self.delegate = trial
         self.comm = comm
