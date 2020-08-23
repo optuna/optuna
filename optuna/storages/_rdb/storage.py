@@ -1036,32 +1036,26 @@ class RDBStorage(BaseStorage):
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
 
-        session = self.scoped_session()
-        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
-            trial = models.TrialModel.find_max_value_trial(study_id, session)
-        else:
-            trial = models.TrialModel.find_min_value_trial(study_id, session)
-
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
+        with self._session_scope() as session:
+            if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+                trial = models.TrialModel.find_max_value_trial(study_id, session)
+            else:
+                trial = models.TrialModel.find_min_value_trial(study_id, session)
 
         return self.get_trial(trial.trial_id)
 
     def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
 
-        session = self.scoped_session()
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        n_trials = models.TrialModel.count(session, study, state)
+        with self._session_scope() as session:
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
+            n_trials = models.TrialModel.count(session, study, state)
 
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
         return n_trials
 
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         # Make sure that the given study exists.
-        session = self.scoped_session()
-        models.StudyModel.find_or_raise_by_id(study_id, session)
-        self._commit(session)
+        with self._session_scope() as session:
+            models.StudyModel.find_or_raise_by_id(study_id, session)
 
     @staticmethod
     def _set_default_engine_kwargs_for_mysql(url: str, engine_kwargs: Dict[str, Any]) -> None:
