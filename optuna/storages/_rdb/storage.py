@@ -282,124 +282,114 @@ class RDBStorage(BaseStorage):
 
     def get_trial_user_attrs(self, trial_id: int) -> Dict[str, Any]:
 
-        session = self.scoped_session()
+        with self._session_scope() as session:
+            # Ensure trial exists.
+            models.TrialModel.find_or_raise_by_id(trial_id, session)
 
-        # Ensure trial exists.
-        models.TrialModel.find_or_raise_by_id(trial_id, session)
-
-        attributes = models.TrialUserAttributeModel.where_trial_id(trial_id, session)
-        user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
+            attributes = models.TrialUserAttributeModel.where_trial_id(trial_id, session)
+            user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
         return user_attrs
 
     def get_trial_system_attrs(self, trial_id: int) -> Dict[str, Any]:
 
-        session = self.scoped_session()
+        with self._session_scope() as session:
+            # Ensure trial exists.
+            models.TrialModel.find_or_raise_by_id(trial_id, session)
 
-        # Ensure trial exists.
-        models.TrialModel.find_or_raise_by_id(trial_id, session)
-
-        attributes = models.TrialSystemAttributeModel.where_trial_id(trial_id, session)
-        system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
+            attributes = models.TrialSystemAttributeModel.where_trial_id(trial_id, session)
+            system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
         return system_attrs
 
     def get_all_study_summaries(self) -> List[StudySummary]:
 
-        session = self.scoped_session()
-
-        summarized_trial = (
-            session.query(
-                models.TrialModel.study_id,
-                functions.min(models.TrialModel.datetime_start).label("datetime_start"),
-                functions.count(models.TrialModel.trial_id).label("n_trial"),
+        with self._session_scope() as session:
+            summarized_trial = (
+                session.query(
+                    models.TrialModel.study_id,
+                    functions.min(models.TrialModel.datetime_start).label("datetime_start"),
+                    functions.count(models.TrialModel.trial_id).label("n_trial"),
+                )
+                .group_by(models.TrialModel.study_id)
+                .with_labels()
+                .subquery()
             )
-            .group_by(models.TrialModel.study_id)
-            .with_labels()
-            .subquery()
-        )
-        study_summary_stmt = session.query(
-            models.StudyModel.study_id,
-            models.StudyModel.study_name,
-            models.StudyModel.direction,
-            summarized_trial.c.datetime_start,
-            functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
-        ).select_from(orm.outerjoin(models.StudyModel, summarized_trial))
+            study_summary_stmt = session.query(
+                models.StudyModel.study_id,
+                models.StudyModel.study_name,
+                models.StudyModel.direction,
+                summarized_trial.c.datetime_start,
+                functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
+            ).select_from(orm.outerjoin(models.StudyModel, summarized_trial))
 
-        study_summary = study_summary_stmt.all()
-        study_summaries = []
-        for study in study_summary:
-            best_trial = None  # type: Optional[models.TrialModel]
-            try:
-                if study.direction == StudyDirection.MAXIMIZE:
-                    best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
-                else:
-                    best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
-            except ValueError:
-                best_trial_frozen = None  # type: Optional[FrozenTrial]
-            if best_trial:
-                params = (
-                    session.query(
-                        models.TrialParamModel.param_name,
-                        models.TrialParamModel.param_value,
-                        models.TrialParamModel.distribution_json,
+            study_summary = study_summary_stmt.all()
+            study_summaries = []
+            for study in study_summary:
+                best_trial = None  # type: Optional[models.TrialModel]
+                try:
+                    if study.direction == StudyDirection.MAXIMIZE:
+                        best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
+                    else:
+                        best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
+                except ValueError:
+                    best_trial_frozen = None  # type: Optional[FrozenTrial]
+                if best_trial:
+                    params = (
+                        session.query(
+                            models.TrialParamModel.param_name,
+                            models.TrialParamModel.param_value,
+                            models.TrialParamModel.distribution_json,
+                        )
+                        .filter(models.TrialParamModel.trial_id == best_trial.trial_id)
+                        .all()
                     )
-                    .filter(models.TrialParamModel.trial_id == best_trial.trial_id)
-                    .all()
+                    param_dict = {}
+                    param_distributions = {}
+                    for param in params:
+                        distribution = distributions.json_to_distribution(param.distribution_json)
+                        param_dict[param.param_name] = distribution.to_external_repr(param.param_value)
+                        param_distributions[param.param_name] = distribution
+                    user_attrs = session.query(models.TrialUserAttributeModel).filter(
+                        models.TrialUserAttributeModel.trial_id == best_trial.trial_id
+                    )
+                    system_attrs = session.query(models.TrialSystemAttributeModel).filter(
+                        models.TrialSystemAttributeModel.trial_id == best_trial.trial_id
+                    )
+                    intermediate = session.query(models.TrialValueModel).filter(
+                        models.TrialValueModel.trial_id == best_trial.trial_id
+                    )
+                    best_trial_frozen = FrozenTrial(
+                        best_trial.number,
+                        TrialState.COMPLETE,
+                        best_trial.value,
+                        best_trial.datetime_start,
+                        best_trial.datetime_complete,
+                        param_dict,
+                        param_distributions,
+                        {i.key: json.loads(i.value_json) for i in user_attrs},
+                        {i.key: json.loads(i.value_json) for i in system_attrs},
+                        {value.step: value.value for value in intermediate},
+                        best_trial.trial_id,
+                    )
+                user_attrs = session.query(models.StudyUserAttributeModel).filter(
+                    models.StudyUserAttributeModel.study_id == study.study_id
                 )
-                param_dict = {}
-                param_distributions = {}
-                for param in params:
-                    distribution = distributions.json_to_distribution(param.distribution_json)
-                    param_dict[param.param_name] = distribution.to_external_repr(param.param_value)
-                    param_distributions[param.param_name] = distribution
-                user_attrs = session.query(models.TrialUserAttributeModel).filter(
-                    models.TrialUserAttributeModel.trial_id == best_trial.trial_id
+                system_attrs = session.query(models.StudySystemAttributeModel).filter(
+                    models.StudySystemAttributeModel.study_id == study.study_id
                 )
-                system_attrs = session.query(models.TrialSystemAttributeModel).filter(
-                    models.TrialSystemAttributeModel.trial_id == best_trial.trial_id
+                study_summaries.append(
+                    StudySummary(
+                        study_name=study.study_name,
+                        direction=study.direction,
+                        best_trial=best_trial_frozen,
+                        user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
+                        system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
+                        n_trials=study.n_trial,
+                        datetime_start=study.datetime_start,
+                        study_id=study.study_id,
+                    )
                 )
-                intermediate = session.query(models.TrialValueModel).filter(
-                    models.TrialValueModel.trial_id == best_trial.trial_id
-                )
-                best_trial_frozen = FrozenTrial(
-                    best_trial.number,
-                    TrialState.COMPLETE,
-                    best_trial.value,
-                    best_trial.datetime_start,
-                    best_trial.datetime_complete,
-                    param_dict,
-                    param_distributions,
-                    {i.key: json.loads(i.value_json) for i in user_attrs},
-                    {i.key: json.loads(i.value_json) for i in system_attrs},
-                    {value.step: value.value for value in intermediate},
-                    best_trial.trial_id,
-                )
-            user_attrs = session.query(models.StudyUserAttributeModel).filter(
-                models.StudyUserAttributeModel.study_id == study.study_id
-            )
-            system_attrs = session.query(models.StudySystemAttributeModel).filter(
-                models.StudySystemAttributeModel.study_id == study.study_id
-            )
-            study_summaries.append(
-                StudySummary(
-                    study_name=study.study_name,
-                    direction=study.direction,
-                    best_trial=best_trial_frozen,
-                    user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
-                    system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
-                    n_trials=study.n_trial,
-                    datetime_start=study.datetime_start,
-                    study_id=study.study_id,
-                )
-            )
-
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
 
         return study_summaries
 
@@ -567,112 +557,110 @@ class RDBStorage(BaseStorage):
 
         """
 
-        session = self.scoped_session()
+        with self._session_scope() as session:
+            trial_model = (
+                session.query(models.TrialModel)
+                .filter(models.TrialModel.trial_id == trial_id)
+                .one_or_none()
+            )
+            if trial_model is None:
+                session.rollback()
+                raise KeyError(models.NOT_FOUND_MSG)
+            if trial_model.state.is_finished():
+                session.rollback()
+                raise RuntimeError("Cannot change attributes of finished trial.")
+            if (
+                state
+                and trial_model.state != state
+                and state == TrialState.RUNNING
+                and trial_model.state != TrialState.WAITING
+            ):
+                session.rollback()
+                return False
 
-        trial_model = (
-            session.query(models.TrialModel)
-            .filter(models.TrialModel.trial_id == trial_id)
-            .one_or_none()
-        )
-        if trial_model is None:
-            session.rollback()
-            raise KeyError(models.NOT_FOUND_MSG)
-        if trial_model.state.is_finished():
-            session.rollback()
-            raise RuntimeError("Cannot change attributes of finished trial.")
-        if (
-            state
-            and trial_model.state != state
-            and state == TrialState.RUNNING
-            and trial_model.state != TrialState.WAITING
-        ):
-            session.rollback()
-            return False
+            if state:
+                trial_model.state = state
 
-        if state:
-            trial_model.state = state
+            if datetime_complete:
+                trial_model.datetime_complete = datetime_complete
 
-        if datetime_complete:
-            trial_model.datetime_complete = datetime_complete
+            if value is not None:
+                trial_model.value = value
 
-        if value is not None:
-            trial_model.value = value
-
-        if user_attrs:
-            trial_user_attrs = (
-                session.query(models.TrialUserAttributeModel)
-                .filter(models.TrialUserAttributeModel.trial_id == trial_id)
-                .all()
-            )
-            trial_user_attrs_dict = {attr.key: attr for attr in trial_user_attrs}
-            for k, v in user_attrs.items():
-                if k in trial_user_attrs_dict:
-                    trial_user_attrs_dict[k].value_json = json.dumps(v)
-                    session.add(trial_user_attrs_dict[k])
-            trial_model.user_attributes.extend(
-                models.TrialUserAttributeModel(key=k, value_json=json.dumps(v))
-                for k, v in user_attrs.items()
-                if k not in trial_user_attrs_dict
-            )
-        if system_attrs:
-            trial_system_attrs = (
-                session.query(models.TrialSystemAttributeModel)
-                .filter(models.TrialSystemAttributeModel.trial_id == trial_id)
-                .all()
-            )
-            trial_system_attrs_dict = {attr.key: attr for attr in trial_system_attrs}
-            for k, v in system_attrs.items():
-                if k in trial_system_attrs_dict:
-                    trial_system_attrs_dict[k].value_json = json.dumps(v)
-                    session.add(trial_system_attrs_dict[k])
-            trial_model.system_attributes.extend(
-                models.TrialSystemAttributeModel(key=k, value_json=json.dumps(v))
-                for k, v in system_attrs.items()
-                if k not in trial_system_attrs_dict
-            )
-        if intermediate_values:
-            value_models = (
-                session.query(models.TrialValueModel)
-                .filter(models.TrialValueModel.trial_id == trial_id)
-                .all()
-            )
-            value_dict = {value_model.step: value_model for value_model in value_models}
-            for s, v in intermediate_values.items():
-                if s in value_dict:
-                    value_dict[s].value = v
-                    session.add(value_dict[s])
-            trial_model.values.extend(
-                models.TrialValueModel(step=s, value=v)
-                for s, v in intermediate_values.items()
-                if s not in value_dict
-            )
-        if params and distributions_:
-            trial_param = (
-                session.query(models.TrialParamModel)
-                .filter(models.TrialParamModel.trial_id == trial_id)
-                .all()
-            )
-            trial_param_dict = {attr.param_name: attr for attr in trial_param}
-            for name, v in params.items():
-                if name in trial_param_dict:
-                    trial_param_dict[name].distribution_json = distributions.distribution_to_json(
-                        distributions_[name]
-                    )
-                    trial_param_dict[name].param_value = v
-                    session.add(trial_param_dict[name])
-            trial_model.params.extend(
-                models.TrialParamModel(
-                    param_name=param_name,
-                    param_value=param_value,
-                    distribution_json=distributions.distribution_to_json(
-                        distributions_[param_name]
-                    ),
+            if user_attrs:
+                trial_user_attrs = (
+                    session.query(models.TrialUserAttributeModel)
+                    .filter(models.TrialUserAttributeModel.trial_id == trial_id)
+                    .all()
                 )
-                for param_name, param_value in params.items()
-                if param_name not in trial_param_dict
-            )
-        session.add(trial_model)
-        self._commit(session)
+                trial_user_attrs_dict = {attr.key: attr for attr in trial_user_attrs}
+                for k, v in user_attrs.items():
+                    if k in trial_user_attrs_dict:
+                        trial_user_attrs_dict[k].value_json = json.dumps(v)
+                        session.add(trial_user_attrs_dict[k])
+                trial_model.user_attributes.extend(
+                    models.TrialUserAttributeModel(key=k, value_json=json.dumps(v))
+                    for k, v in user_attrs.items()
+                    if k not in trial_user_attrs_dict
+                )
+            if system_attrs:
+                trial_system_attrs = (
+                    session.query(models.TrialSystemAttributeModel)
+                    .filter(models.TrialSystemAttributeModel.trial_id == trial_id)
+                    .all()
+                )
+                trial_system_attrs_dict = {attr.key: attr for attr in trial_system_attrs}
+                for k, v in system_attrs.items():
+                    if k in trial_system_attrs_dict:
+                        trial_system_attrs_dict[k].value_json = json.dumps(v)
+                        session.add(trial_system_attrs_dict[k])
+                trial_model.system_attributes.extend(
+                    models.TrialSystemAttributeModel(key=k, value_json=json.dumps(v))
+                    for k, v in system_attrs.items()
+                    if k not in trial_system_attrs_dict
+                )
+            if intermediate_values:
+                value_models = (
+                    session.query(models.TrialValueModel)
+                    .filter(models.TrialValueModel.trial_id == trial_id)
+                    .all()
+                )
+                value_dict = {value_model.step: value_model for value_model in value_models}
+                for s, v in intermediate_values.items():
+                    if s in value_dict:
+                        value_dict[s].value = v
+                        session.add(value_dict[s])
+                trial_model.values.extend(
+                    models.TrialValueModel(step=s, value=v)
+                    for s, v in intermediate_values.items()
+                    if s not in value_dict
+                )
+            if params and distributions_:
+                trial_param = (
+                    session.query(models.TrialParamModel)
+                    .filter(models.TrialParamModel.trial_id == trial_id)
+                    .all()
+                )
+                trial_param_dict = {attr.param_name: attr for attr in trial_param}
+                for name, v in params.items():
+                    if name in trial_param_dict:
+                        trial_param_dict[name].distribution_json = distributions.distribution_to_json(
+                            distributions_[name]
+                        )
+                        trial_param_dict[name].param_value = v
+                        session.add(trial_param_dict[name])
+                trial_model.params.extend(
+                    models.TrialParamModel(
+                        param_name=param_name,
+                        param_value=param_value,
+                        distribution_json=distributions.distribution_to_json(
+                            distributions_[param_name]
+                        ),
+                    )
+                    for param_name, param_value in params.items()
+                    if param_name not in trial_param_dict
+                )
+            session.add(trial_model)
 
         return True
 
@@ -708,13 +696,10 @@ class RDBStorage(BaseStorage):
         distribution: distributions.BaseDistribution,
     ) -> None:
 
-        session = self.scoped_session()
-
-        self._set_trial_param_without_commit(
-            session, trial_id, param_name, param_value_internal, distribution
-        )
-
-        self._commit(session)
+        with self._session_scope() as session:
+            self._set_trial_param_without_commit(
+                session, trial_id, param_name, param_value_internal, distribution
+            )
 
     def _set_trial_param_without_commit(
         self,
@@ -759,50 +744,43 @@ class RDBStorage(BaseStorage):
         distribution: distributions.BaseDistribution,
     ) -> None:
 
-        session = self.scoped_session()
+        with self._session_scope() as session:
+            # Acquire lock.
+            #
+            # Assume that study exists.
+            models.StudyModel.find_by_id(study_id, session, for_update=True)
 
-        # Acquire lock.
-        #
-        # Assume that study exists.
-        models.StudyModel.find_by_id(study_id, session, for_update=True)
+            models.TrialModel.find_or_raise_by_id(trial_id, session)
 
-        models.TrialModel.find_or_raise_by_id(trial_id, session)
-
-        previous_record = (
-            session.query(models.TrialParamModel)
-            .join(models.TrialModel)
-            .filter(models.TrialModel.study_id == study_id)
-            .filter(models.TrialParamModel.param_name == param_name)
-            .first()
-        )
-        if previous_record is not None:
-            distributions.check_distribution_compatibility(
-                distributions.json_to_distribution(previous_record.distribution_json),
-                distribution,
+            previous_record = (
+                session.query(models.TrialParamModel)
+                .join(models.TrialModel)
+                .filter(models.TrialModel.study_id == study_id)
+                .filter(models.TrialParamModel.param_name == param_name)
+                .first()
             )
+            if previous_record is not None:
+                distributions.check_distribution_compatibility(
+                    distributions.json_to_distribution(previous_record.distribution_json),
+                    distribution,
+                )
 
-        session.add(
-            models.TrialParamModel(
-                trial_id=trial_id,
-                param_name=param_name,
-                param_value=param_value_internal,
-                distribution_json=distributions.distribution_to_json(distribution),
+            session.add(
+                models.TrialParamModel(
+                    trial_id=trial_id,
+                    param_name=param_name,
+                    param_value=param_value_internal,
+                    distribution_json=distributions.distribution_to_json(distribution),
+                )
             )
-        )
-
-        # Release lock.
-        session.commit()
 
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
 
-        session = self.scoped_session()
-
-        trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
-        trial_param = models.TrialParamModel.find_or_raise_by_trial_and_param_name(
-            trial, param_name, session
-        )
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
+        with self._session_scope() as session:
+            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+            trial_param = models.TrialParamModel.find_or_raise_by_trial_and_param_name(
+                trial, param_name, session
+            )
 
         return trial_param.param_value
 
