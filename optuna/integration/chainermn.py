@@ -1,3 +1,10 @@
+from datetime import datetime
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Sequence
+from typing import Tuple
+from typing import Type
 from typing import Optional
 import warnings
 
@@ -9,14 +16,6 @@ from optuna import TrialPruned
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
-    from datetime import datetime  # NOQA
-    from typing import Any  # NOQA
-    from typing import Callable  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Sequence  # NOQA
-    from typing import Tuple  # NOQA
-    from typing import Type  # NOQA
-    from typing import Union  # NOQA
 
     from optuna.distributions import BaseDistribution  # NOQA
     from optuna.distributions import CategoricalChoiceType  # NOQA
