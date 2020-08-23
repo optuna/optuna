@@ -14,10 +14,10 @@ from unittest.mock import patch
 import uuid
 
 import _pytest.capture
+from _pytest.recwarn import WarningsRecorder
 import joblib
 import pandas as pd
 import pytest
-from _pytest.recwarn import WarningsRecorder
 
 import optuna
 from optuna import create_trial
