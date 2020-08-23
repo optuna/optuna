@@ -2,10 +2,10 @@ from datetime import datetime
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Type
-from typing import Optional
 import warnings
 
 from optuna._imports import try_import
