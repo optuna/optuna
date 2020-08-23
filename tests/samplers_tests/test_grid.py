@@ -1,11 +1,11 @@
 from collections import OrderedDict
-from collections import ValuesView
 import itertools
 from typing import Dict
 from typing import List
 from typing import Mapping
 from typing import Sequence
 from typing import Union
+from typing import ValuesView
 
 import numpy as np
 import pytest
