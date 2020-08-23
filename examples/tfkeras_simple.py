@@ -1,20 +1,19 @@
 """
 Optuna example that optimizes a neural network classifier configuration for the
-MNIST dataset using Keras.
+MNIST dataset using tf.keras.
 
 In this example, we optimize the validation accuracy of MNIST classification using
-Keras. We optimize the filter and kernel size, kernel stride and layer activation.
+tf.keras. We optimize the filter and kernel size, kernel stride and layer activation.
 
 """
-import warnings
 
-from keras.backend import clear_session
-from keras.datasets import mnist
-from keras.layers import Conv2D
-from keras.layers import Dense
-from keras.layers import Flatten
-from keras.models import Sequential
-from keras.optimizers import RMSprop
+from tensorflow.keras.backend import clear_session
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import RMSprop
 
 import optuna
 
@@ -27,7 +26,7 @@ EPOCHS = 10
 
 
 def objective(trial):
-    # Clear clutter from previous Keras session graphs.
+    # Clear clutter from previous tf.keras session graphs.
     clear_session()
 
     (x_train, y_train), (x_valid, y_valid) = mnist.load_data()
@@ -73,14 +72,6 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    warnings.warn(
-        "Recent Keras release (2.4.0) simply redirects all APIs "
-        "in the standalone keras package to point to tf.keras. "
-        "There is now only one Keras: tf.keras. "
-        "There may be some breaking changes for some workflows by upgrading to keras 2.4.0. "
-        "Test before upgrading. "
-        "REF:https://github.com/keras-team/keras/releases/tag/2.4.0"
-    )
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100, timeout=600)
 

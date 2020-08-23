@@ -15,7 +15,6 @@ import sys
 import types
 from typing import Any
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import Tuple
 import warnings
@@ -38,7 +37,7 @@ def _check_storage_url(storage_url: Optional[str]) -> str:
 
 
 class _BaseCommand(Command):
-    def __init__(self, *args: List[Any], **kwargs: Dict[str, Any]) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
 
         super(_BaseCommand, self).__init__(*args, **kwargs)
         self.logger = optuna.logging.get_logger(__name__)
