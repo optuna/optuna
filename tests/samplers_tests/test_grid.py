@@ -13,7 +13,7 @@ import pytest
 import optuna
 from optuna import samplers
 from optuna.samplers._grid import GridValueType
-from optunal.trial import Trial
+from optuna.trial import Trial
 
 
 def _n_grids(search_space: Mapping[str, Sequence[Union[str, float, None]]]) -> int:
