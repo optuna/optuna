@@ -741,7 +741,7 @@ class TestLightGBMTunerCV(object):
     def _get_tunercv_object(
         self,
         params: Dict[str, Any] = {},
-        train_set: lgb.Dataset = None,
+        train_set: Optional[lgb.Dataset] = None,
         kwargs_options: Dict[str, Any] = {},
         study: Optional[optuna.study.Study] = None,
     ) -> LightGBMTunerCV:

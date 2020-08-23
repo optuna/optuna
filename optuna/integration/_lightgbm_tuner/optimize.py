@@ -60,7 +60,9 @@ _logger = optuna.logging.get_logger(__name__)
 
 class _BaseTuner(object):
     def __init__(
-        self, lgbm_params: Dict[str, Any] = None, lgbm_kwargs: Dict[str, Any] = None
+        self,
+        lgbm_params: Optional[Dict[str, Any]] = None,
+        lgbm_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
 
         # Handling alias metrics.

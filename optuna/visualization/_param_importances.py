@@ -36,7 +36,9 @@ logger = get_logger(__name__)
 
 
 def plot_param_importances(
-    study: Study, evaluator: BaseImportanceEvaluator = None, params: Optional[List[str]] = None
+    study: Study,
+    evaluator: Optional[BaseImportanceEvaluator] = None,
+    params: Optional[List[str]] = None,
 ) -> "go.Figure":
     """Plot hyperparameter importances.
 
