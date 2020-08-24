@@ -277,8 +277,8 @@ class ChainerMNTrial(BaseTrial):
         return self._call_with_mpi(func)
 
     @property
-    def distributions(self) -> "Dict[str, BaseDistribution]":
-        def func() -> "Dict[str, BaseDistribution]":
+    def distributions(self) -> Dict[str, BaseDistribution]:
+        def func() -> Dict[str, BaseDistribution]:
 
             assert self.delegate is not None
             return self.delegate.distributions
