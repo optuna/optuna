@@ -111,6 +111,11 @@ class CmaEsSampler(BaseSampler):
             If given :obj:`None`, CMA-ES will not restart (default).
             If given 'ipop', CMA-ES will restart with increasing population size.
             Please see also ``inc_popsize`` parameter.
+            
+            .. note::
+                Added in v2.1.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.1.0.
 
         inc_popsize:
             Multiplier for increasing population size before each restart.
@@ -140,10 +145,10 @@ class CmaEsSampler(BaseSampler):
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
         seed: Optional[int] = None,
-        restart_strategy: Optional[str] = None,
-        inc_popsize: int = 2,
         *,
-        consider_pruned_trials: bool = False
+        consider_pruned_trials: bool = False,
+        restart_strategy: Optional[str] = None,
+        inc_popsize: int = 2
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
@@ -157,6 +162,9 @@ class CmaEsSampler(BaseSampler):
         self._restart_strategy = restart_strategy
         self._inc_popsize = inc_popsize
 
+        if self._restart_strategy:
+            self._raise_experimental_warning_for_restart_strategy()
+
         if self._consider_pruned_trials:
             self._raise_experimental_warning_for_consider_pruned_trials()
 
@@ -167,6 +175,10 @@ class CmaEsSampler(BaseSampler):
                     restart_strategy
                 )
             )
+
+@experimental("2.1.0", name="`restart_strategy != None` in CmaEsSampler")
+    def _raise_experimental_warning_for_restart_strategy(self) -> None:
+        pass
 
     @experimental("2.0.0", name="`consider_pruned_trials = True` in CmaEsSampler")
     def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
