@@ -921,7 +921,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         categorical_feature: str = "auto",
         early_stopping_rounds: Optional[int] = None,
         fpreproc: Optional[Callable[..., Any]] = None,
-        verbose_eval: Union[bool, int] = True,
+        verbose_eval: Optional[Union[bool, int]] = True,
         show_stdv: bool = True,
         seed: int = 0,
         callbacks: Optional[List[Callable[..., Any]]] = None,
