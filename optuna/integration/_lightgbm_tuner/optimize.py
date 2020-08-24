@@ -307,7 +307,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
         elapsed_secs = time.time() - start_time
         average_iteration_time = elapsed_secs / len(val_scores)
 
-        if self.model_dir is not None and self.lgbm_params.get("return_cvbooster"):
+        if self.model_dir is not None and self.lgbm_kwargs.get("return_cvbooster"):
             path = os.path.join(self.model_dir, "{}.pkl".format(trial.number))
             with open(path, "wb") as fout:
                 pickle.dump(cv_results["cvbooster"], fout)
