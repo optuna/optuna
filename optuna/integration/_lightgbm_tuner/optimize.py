@@ -440,8 +440,9 @@ class _LightGBMBaseTuner(_BaseTuner):
 
         If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
         errors, please save boosters by specifying either the ``model_dir`` argument of
-        :meth:`~optuna.integration.lightgbm.LightGBMTuner.__init__`, or both of the ``model_dir`` and
-        the ``return_cvboost`` arguments of :meth: `~optuna.integration.lightgbm.LightGBMTunerCV.__init__`
+        :meth:`~optuna.integration.lightgbm.LightGBMTuner.__init__`,
+        or both of the ``model_dir`` and the ``return_cvboost`` arguments of
+        :meth: `~optuna.integration.lightgbm.LightGBMTunerCV.__init__`
         when you resume tuning or you run tuning in parallel.
         """
         if self._best_booster_with_trial_number is not None:
