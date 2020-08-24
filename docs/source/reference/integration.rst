@@ -3,8 +3,8 @@
 optuna.integration
 ==================
 
-Allen NLP Integration
----------------------
+AllenNLP
+--------
 
 .. autosummary::
    :toctree: generated/
@@ -14,8 +14,8 @@ Allen NLP Integration
    optuna.integration.allennlp.dump_best_config
    optuna.integration.AllenNLPPruningCallback
 
-Catalyst Integration
---------------------
+Catalyst
+--------
 
 .. autosummary::
    :toctree: generated/
@@ -23,8 +23,8 @@ Catalyst Integration
 
    optuna.integration.CatalystPruningCallback
 
-Chainer Integration
--------------------
+Chainer
+-------
 
 .. autosummary::
    :toctree: generated/
@@ -33,17 +33,8 @@ Chainer Integration
    optuna.integration.ChainerPruningExtension
    optuna.integration.ChainerMNStudy
 
-CmaEs Integration
------------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.CmaEsSampler
-
-FastAI Integration
-------------------
+fast.ai
+-------
 
 .. autosummary::
    :toctree: generated/
@@ -51,8 +42,8 @@ FastAI Integration
 
    optuna.integration.FastAIPruningCallback
 
-Keras Integration
------------------
+Keras
+-----
 
 .. autosummary::
    :toctree: generated/
@@ -60,8 +51,8 @@ Keras Integration
 
    optuna.integration.KerasPruningCallback
 
-LightGBM Integration
---------------------
+LightGBM
+--------
 
 .. autosummary::
    :toctree: generated/
@@ -72,8 +63,8 @@ LightGBM Integration
    optuna.integration.lightgbm.LightGBMTuner
    optuna.integration.lightgbm.LightGBMTunerCV
 
-ML Flow Integration
--------------------
+MLflow
+------
 
 .. autosummary::
    :toctree: generated/
@@ -81,8 +72,8 @@ ML Flow Integration
 
    optuna.integration.MLflowCallback
 
-MXNet Integration
------------------
+MXNet
+-----
 
 .. autosummary::
    :toctree: generated/
@@ -90,17 +81,18 @@ MXNet Integration
 
    optuna.integration.MXNetPruningCallback
 
-PyCma Integration
------------------
+pycma
+-----
  
 .. autosummary::
    :toctree: generated/
    :nosignatures:
 
    optuna.integration.PyCmaSampler
+   optuna.integration.CmaEsSampler
 
-PyTorch Integration
--------------------
+PyTorch
+-------
 
 .. autosummary::
    :toctree: generated/
@@ -109,8 +101,17 @@ PyTorch Integration
    optuna.integration.PyTorchIgnitePruningHandler
    optuna.integration.PyTorchLightningPruningCallback
 
-skopt Integration
--------------------
+scikit-learn
+------------
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   optuna.integration.OptunaSearchCV
+
+scikit-optimize
+---------------
 
 .. autosummary::
    :toctree: generated/
@@ -118,8 +119,8 @@ skopt Integration
 
    optuna.integration.SkoptSampler
 
-TensorFlow Integration
-----------------------
+TensorFlow
+----------
 
 .. autosummary::
    :toctree: generated/
@@ -129,20 +130,11 @@ TensorFlow Integration
    optuna.integration.TensorFlowPruningHook
    optuna.integration.TFKerasPruningCallback
 
-XGBoost Integration
--------------------
+XGBoost
+-------
 
 .. autosummary::
    :toctree: generated/
    :nosignatures:
 
    optuna.integration.XGBoostPruningCallback
-
-Optuna Search CV Integration
-----------------------------
-
-.. autosummary::
-   :toctree: generated/
-   :nosignatures:
-
-   optuna.integration.OptunaSearchCV
