@@ -160,7 +160,7 @@ class ChainerMNTrial(BaseTrial):
             index.html#communicators>`_.
     """
 
-    def __init__(self, trial: "Optional[Trial]", comm: "CommunicatorBase") -> None:
+    def __init__(self, trial: Optional[Trial], comm: "CommunicatorBase") -> None:
 
         self.delegate = trial
         self.comm = comm
