@@ -74,7 +74,7 @@ class ChainerMNStudy(object):
             index.html#communicators>`_.
     """
 
-    def __init__(self, study: "Study", comm: "CommunicatorBase") -> None:
+    def __init__(self, study: Study, comm: "CommunicatorBase") -> None:
 
         _imports.check()
 
