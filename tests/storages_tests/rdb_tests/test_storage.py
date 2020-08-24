@@ -142,16 +142,15 @@ def test_pickle_storage() -> None:
     assert storage._version_manager != restored_storage._version_manager
 
 
-def test_commit() -> None:
+def test_session_scope() -> None:
 
     storage = create_test_storage()
-    session = storage.scoped_session()
 
     # This object violates the unique constraint of version_info_id.
     v = VersionInfoModel(version_info_id=1, schema_version=1, library_version="0.0.1")
-    session.add(v)
     with pytest.raises(IntegrityError):
-        storage._commit(session)
+        with storage._session_scope() as session:
+            session.add(v)
 
 
 def test_upgrade() -> None:

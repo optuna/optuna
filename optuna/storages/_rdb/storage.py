@@ -155,7 +155,7 @@ class RDBStorage(BaseStorage):
 
                 study = models.StudyModel(study_name=study_name, direction=StudyDirection.NOT_SET)
                 session.add(study)
-        except IntegrityError as e:
+        except IntegrityError:
             raise optuna.exceptions.DuplicatedStudyError(
                 "Another study with name '{}' already exists. "
                 "Please specify a different name, or reuse the existing one "
@@ -680,7 +680,7 @@ class RDBStorage(BaseStorage):
                 trial.state = state
                 if state.is_finished():
                     trial.datetime_complete = datetime.now()
-        except IntegrityError as e:
+        except IntegrityError:
             return False
         return True
 
@@ -912,8 +912,8 @@ class RDBStorage(BaseStorage):
                     .all()
                 )
             except OperationalError as e:
-                # Likely exceeding the number of maximum allowed variables using IN. This number differ
-                # between database dialects. For SQLite for instance, see
+                # Likely exceeding the number of maximum allowed variables using IN.
+                # This number differ between database dialects. For SQLite for instance, see
                 # https://www.sqlite.org/limits.html and the section describing
                 # SQLITE_MAX_VARIABLE_NUMBER.
 
