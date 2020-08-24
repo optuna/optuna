@@ -13,14 +13,10 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.trial import BaseTrial
 from optuna import TrialPruned
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.distributions import CategoricalChoiceType  # NOQA
-    from optuna.study import Study  # NOQA
-    from optuna.trial import Trial  # NOQA
+from optuna.distributions import BaseDistribution  # NOQA
+from optuna.distributions import CategoricalChoiceType  # NOQA
+from optuna.study import Study  # NOQA
+from optuna.trial import Trial  # NOQA
 
 
 with try_import() as _imports:
@@ -41,7 +37,9 @@ class _ChainerMNObjectiveFunc(object):
     """
 
     def __init__(
-        self, func: Callable[["ChainerMNTrial", "CommunicatorBase"], float], comm: "CommunicatorBase"
+        self,
+        func: Callable[["ChainerMNTrial", "CommunicatorBase"], float],
+        comm: "CommunicatorBase",
     ) -> None:
 
         self.comm = comm
