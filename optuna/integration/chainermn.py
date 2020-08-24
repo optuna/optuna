@@ -47,7 +47,7 @@ class _ChainerMNObjectiveFunc(object):
         self.comm = comm
         self.objective = func
 
-    def __call__(self, trial: "Trial") -> float:
+    def __call__(self, trial: Trial) -> float:
 
         self.comm.mpi_comm.bcast(True)
         return self.objective(ChainerMNTrial(trial, self.comm), self.comm)
