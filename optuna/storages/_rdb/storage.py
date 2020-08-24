@@ -327,9 +327,13 @@ class RDBStorage(BaseStorage):
                 best_trial = None  # type: Optional[models.TrialModel]
                 try:
                     if study.direction == StudyDirection.MAXIMIZE:
-                        best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
+                        best_trial = models.TrialModel.find_max_value_trial(
+                            study.study_id, session
+                        )
                     else:
-                        best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
+                        best_trial = models.TrialModel.find_min_value_trial(
+                            study.study_id, session
+                        )
                 except ValueError:
                     best_trial_frozen = None  # type: Optional[FrozenTrial]
                 if best_trial:
@@ -346,7 +350,9 @@ class RDBStorage(BaseStorage):
                     param_distributions = {}
                     for param in params:
                         distribution = distributions.json_to_distribution(param.distribution_json)
-                        param_dict[param.param_name] = distribution.to_external_repr(param.param_value)
+                        param_dict[param.param_name] = distribution.to_external_repr(
+                            param.param_value
+                        )
                         param_distributions[param.param_name] = distribution
                     user_attrs = session.query(models.TrialUserAttributeModel).filter(
                         models.TrialUserAttributeModel.trial_id == best_trial.trial_id
@@ -638,7 +644,9 @@ class RDBStorage(BaseStorage):
                 trial_param_dict = {attr.param_name: attr for attr in trial_param}
                 for name, v in params.items():
                     if name in trial_param_dict:
-                        trial_param_dict[name].distribution_json = distributions.distribution_to_json(
+                        trial_param_dict[
+                            name
+                        ].distribution_json = distributions.distribution_to_json(
                             distributions_[name]
                         )
                         trial_param_dict[name].param_value = v
@@ -1005,28 +1013,6 @@ class RDBStorage(BaseStorage):
 
         return template.format(SCHEMA_VERSION=models.SCHEMA_VERSION)
 
-    @staticmethod
-    def _commit(session: orm.Session) -> None:
-
-        try:
-            session.commit()
-        except IntegrityError as e:
-            _logger.debug(
-                "Ignoring {}. This happens due to a timing issue among threads/processes/nodes. "
-                "Another one might have committed a record with the same key(s).".format(repr(e))
-            )
-            session.rollback()
-            raise
-        except SQLAlchemyError as e:
-            session.rollback()
-            message = (
-                "An exception is raised during the commit. "
-                "This typically happens due to invalid data in the commit, "
-                "e.g. exceeding max length. "
-                "(The actual exception is as follows: {})".format(repr(e))
-            )
-            raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
-
     @contextmanager
     def _session_scope(self) -> Generator[orm.Session, None, None]:
         session = self.scoped_session()
@@ -1118,7 +1104,7 @@ class _VersionManager(object):
             )
             session.add(version_info)
 
-    def     _init_alembic(self) -> None:
+    def _init_alembic(self) -> None:
 
         logging.getLogger("alembic").setLevel(logging.WARN)
 
