@@ -3,7 +3,7 @@
 It’s such an honor to have you on board!
 
 We are proud of this project and have been trying to make this project great since day one.
-We believe you will love it, however, we do know that this is not a perfect project at all.
+We believe you will love it, however, we know there’s room for improvement.
 We have to
 - implement features that make what you want to do possible and/or easily.
 - write more examples that help you get familiar with Optuna.
@@ -70,9 +70,9 @@ Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked wit
 Code is formatted with [black](https://github.com/psf/black).
 You have to install it first. This can be done with
 `pip install black`. The command to format a certain file
-is `black <filename_with_path> --line-length 99 --exclude="docs"`.
+is `black <filename_with_path>`.
 To just check the file you can use
-`black <filename_with_path> --line-length 99 --check --exclude="docs"`.
+`black <filename_with_path> --check`.
 You can also apply these operations to all files by replacing
 `<filename_with_path>` with a simple `.`.
 

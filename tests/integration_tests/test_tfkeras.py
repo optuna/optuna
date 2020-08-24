@@ -1,5 +1,5 @@
 import numpy as np
-import pkg_resources
+from packaging import version
 import pytest
 import tensorflow as tf
 
@@ -21,7 +21,7 @@ def test_tfkeras_pruning_callback():
 
         # TODO(Yanase): Unify the metric with 'accuracy' after stopping TensorFlow 1.x support.
         callback_metric_name = "accuracy"
-        if pkg_resources.parse_version(tf.__version__) < pkg_resources.parse_version("2.0.0"):
+        if version.parse(tf.__version__) < version.parse("2.0.0"):
             callback_metric_name = "acc"
 
         model.fit(

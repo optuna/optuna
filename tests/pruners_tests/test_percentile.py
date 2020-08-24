@@ -75,7 +75,7 @@ def test_percentile_pruner_with_one_trial():
 
 
 @pytest.mark.parametrize(
-    "direction_value", [("minimize", [1, 2, 3, 4, 5], 2.1), ("maximize", [1, 2, 3, 4, 5], 3.9),]
+    "direction_value", [("minimize", [1, 2, 3, 4, 5], 2.1), ("maximize", [1, 2, 3, 4, 5], 3.9)]
 )
 def test_25_percentile_pruner_intermediate_values(direction_value):
     # type: (Tuple[str, List[float], float]) -> None

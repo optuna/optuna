@@ -1,3 +1,4 @@
+from optuna.multi_objective import _hypervolume  # NOQA
 from optuna.multi_objective import samplers  # NOQA
 from optuna.multi_objective import study  # NOQA
 from optuna.multi_objective import trial  # NOQA

@@ -49,9 +49,8 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: worker
+  name: study-creator
 spec:
-  parallelism: 5
   template:
     spec:
       restartPolicy: OnFailure
@@ -67,6 +66,47 @@ spec:
           - |
             until pg_isready -U $(POSTGRES_USER) -h postgres -p 5432;
             do echo "waiting for postgres"; sleep 2; done;
+          envFrom:
+            - secretRef:
+                name: postgres-secrets
+      containers:
+        - name: study-creator
+          image: optuna-kubernetes:example
+          imagePullPolicy: IfNotPresent
+          command:
+          - /bin/sh
+          - -c
+          - -e
+          - -x
+          - |
+            optuna create-study --skip-if-exists --direction maximize \
+            --study-name "kubernetes" --storage \
+            "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+          envFrom:
+            - secretRef:
+                name: postgres-secrets
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: worker
+spec:
+  parallelism: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        - name: wait-for-study
+          image: optuna-kubernetes:example
+          imagePullPolicy: IfNotPresent
+          command:
+          - /bin/sh
+          - -c
+          - -e
+          - -x
+          - |
+            until [ `sh check_study.sh` -eq 0 ];
+            do echo "waiting for study"; sleep 2; done;
           envFrom:
             - secretRef:
                 name: postgres-secrets
