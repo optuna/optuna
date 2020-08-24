@@ -21,7 +21,7 @@ def _get_optimization_history_plot_matplotlib(study: Study) -> Figure:
         A :class:`matplotlib.figure.Figure` object.
     """
 
-    # Setup
+    # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     fig, ax = plt.subplots()
     ax.set_title("Optimization History Plot")
@@ -29,7 +29,7 @@ def _get_optimization_history_plot_matplotlib(study: Study) -> Figure:
     ax.set_ylabel("Objective Value")
     cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
-    # Prepare data for plotting
+    # Prepare data for plotting.
     trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
     if len(trials) == 0:
@@ -44,7 +44,7 @@ def _get_optimization_history_plot_matplotlib(study: Study) -> Figure:
         best_values.append(comp(best_values[-1], trial_value))
     best_values.pop(0)
 
-    # Draw graphs
+    # Draw a scatter plot and a line plot.
     ax.scatter(
         x=[t.number for t in trials],
         y=[t.value for t in trials],
