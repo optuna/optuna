@@ -111,7 +111,7 @@ class CmaEsSampler(BaseSampler):
             If given :obj:`None`, CMA-ES will not restart (default).
             If given 'ipop', CMA-ES will restart with increasing population size.
             Please see also ``inc_popsize`` parameter.
-            
+
             .. note::
                 Added in v2.1.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
@@ -176,7 +176,7 @@ class CmaEsSampler(BaseSampler):
                 )
             )
 
-@experimental("2.1.0", name="`restart_strategy != None` in CmaEsSampler")
+    @experimental("2.1.0", name="`restart_strategy is not None` in CmaEsSampler")
     def _raise_experimental_warning_for_restart_strategy(self) -> None:
         pass
 
