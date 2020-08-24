@@ -20,6 +20,7 @@ from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV
 import optuna.integration.lightgbm as lgb
 from optuna.study import Study
+from optuna import type_checking
 
 
 @contextlib.contextmanager
@@ -383,6 +384,11 @@ class TestLightGBMTuner(object):
             train_set=train_dataset, kwargs_options=dict(sample_size=sample_size)
         )
         runner.sample_train_set()
+
+        # Workaround for mypy.
+        if not type_checking.TYPE_CHECKING:
+            runner.train_subset.construct()  # Cannot get label before construct `lgb.Dataset`.
+            assert runner.train_subset.get_label().shape[0] == sample_size
 
     def test_time_budget(self) -> None:
         unexpected_value = 1.1  # out of scope.
