@@ -312,7 +312,7 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    def _call_with_mpi(self, func: "(Callable)") -> Any:
+    def _call_with_mpi(self, func: Callable) -> Any:
 
         if self.comm.rank == 0:
             try:
