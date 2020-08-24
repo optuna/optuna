@@ -41,7 +41,7 @@ class _ChainerMNObjectiveFunc(object):
     """
 
     def __init__(
-        self, func: "Callable[[ChainerMNTrial, CommunicatorBase], float]", comm: "CommunicatorBase"
+        self, func: Callable[["ChainerMNTrial", "CommunicatorBase"], float], comm: "CommunicatorBase"
     ) -> None:
 
         self.comm = comm
