@@ -957,7 +957,7 @@ class TestLightGBMTunerCV(object):
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
-        # test case with the argument of `return_cvboost` is omitted as LGBM requires ver 3.0
+        # Test with the argument of `return_cvbooster` is omitted as it requires `lightgbm>=3.0.0`.
 
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 

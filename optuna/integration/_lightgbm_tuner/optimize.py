@@ -274,6 +274,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
         lgbm_kwargs: Dict[str, Any],
         best_score: float,
         step_name: str,
+        model_dir: Optional[str],
         pbar: Optional[tqdm.tqdm] = None,
     ):
 
@@ -284,7 +285,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
             lgbm_kwargs,
             best_score,
             step_name,
-            model_dir=None,
+            model_dir,
             pbar=pbar,
         )
 
@@ -306,7 +307,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
         elapsed_secs = time.time() - start_time
         average_iteration_time = elapsed_secs / len(val_scores)
 
-        if self.model_dir is not None and self.lgbm_params.get("return_cvboost"):
+        if self.model_dir is not None and self.lgbm_params.get("return_cvbooster"):
             path = os.path.join(self.model_dir, "{}.pkl".format(trial.number))
             with open(path, "wb") as fout:
                 pickle.dump(cv_results["cvbooster"], fout)
@@ -314,7 +315,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
 
         if self.compare_validation_metrics(val_score, self.best_score):
             self.best_score = val_score
-            if self.lgbm_params.get("return_cvboost"):
+            if self.lgbm_params.get("return_cvbooster"):
                 self.best_booster_with_trial_number = (cv_results["cvbooster"], trial.number)
 
         self._postprocess(trial, elapsed_secs, average_iteration_time)
@@ -441,7 +442,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
         errors, please save boosters by specifying either the ``model_dir`` argument of
         :meth:`~optuna.integration.lightgbm.LightGBMTuner.__init__`,
-        or both of the ``model_dir`` and the ``return_cvboost`` arguments of
+        or both of the ``model_dir`` and the ``return_cvbooster`` arguments of
         :meth: `~optuna.integration.lightgbm.LightGBMTunerCV.__init__`
         when you resume tuning or you run tuning in parallel.
         """
@@ -943,7 +944,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
         model_dir: Optional[str] = None,
-        return_cvboost: Optional[bool] = None,
+        return_cvbooster: Optional[bool] = None,
     ) -> None:
 
         super(LightGBMTunerCV, self).__init__(
@@ -973,8 +974,8 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         self.lgbm_kwargs["show_stdv"] = show_stdv
         self.lgbm_kwargs["seed"] = seed
         self.lgbm_kwargs["fpreproc"] = fpreproc
-        if return_cvboost is not None:
-            self.lgbm_kwargs["return_cvboost"] = return_cvboost
+        if return_cvbooster is not None:
+            self.lgbm_kwargs["return_cvbooster"] = return_cvbooster
 
     def _create_objective(
         self,
@@ -990,5 +991,6 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             self.lgbm_kwargs,
             self.best_score,
             step_name=step_name,
+            model_dir=self._model_dir,
             pbar=pbar,
         )
