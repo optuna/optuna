@@ -1,5 +1,5 @@
-from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
+from matplotlib import pyplot as plt
 
 from optuna.logging import get_logger
 from optuna.study import Study
