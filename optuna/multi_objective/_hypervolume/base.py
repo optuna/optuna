@@ -4,36 +4,30 @@ import numpy as np
 
 
 class BaseHypervolume(object, metaclass=abc.ABCMeta):
-    """Base class for hypervolume calculators
+    """Base class for hypervolume calculators.
 
         .. note::
-            In Optuna, this class is used for computing the hypervolume of objective points.
-            In other words, the coordinate of each point represents the one of the multi-objective
-            function's values.
+            This class is used for computing the hypervolumes of points in multi-objective space.
+            Each coordinate of each point represents one value of the multi-objective function.
 
         .. note::
-            We assume that the each objective function to be minimized. If you use some objectives
-            to be maximized, please transform inputs to this class's `compute` method for the
-            minimization problem. For example,
+            We check that each objective is to be minimized. Transform objective values that are
+            to be maximized before calling this class's `compute` method. For example,
 
-            .. code::
+            .. testcode::
                 def objective(trial):
                     ...
                     return accuracy, elapsed_time
 
-                class YourSampler(BaseSampler):
-                    ...
-                    def sample_relative(study, trial, search_space):
-                        ...
-                        trials = study.get_trials()
-                        solution_sets = np.ndarray([t.values for t in trials])
-
-                        # Transform the objective to be maximized into that for minimization.
-                        solution_sets = np.ndarray([[-s[0], s[1]] for s in solution_sets])
-
-                        reference_point = 2 * np.max(solution_set, axis=0)
-                        hypervolume = WFG().compute(solution_sets, reference_point)
-                        ...
+                study = optuna.multi_objective.create_study(["maximize", "minimize"])
+                study.optimize(objective, n_trials=100)
+                trials = study.get_pareto_front_trials()
+                solution_sets = np.ndarray([t.values for t in trials])
+                # Transform the objective to be maximized into that for minimization.
+                solution_sets = np.ndarray([[-s[0], s[1]] for s in solution_sets])
+                reference_point = 2 * np.max(solution_set, axis=0)
+                hypervolume = WFG().compute(solution_sets, reference_point)
+                print("Hypervolume of the Pareto solutions is {}.".format(hypervolume))
     """
 
     def compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
