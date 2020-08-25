@@ -18,6 +18,7 @@ from optuna.integration._lightgbm_tuner.optimize import _OptunaObjective
 from optuna.integration._lightgbm_tuner.optimize import _OptunaObjectiveCV
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV
+from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 import optuna.integration.lightgbm as lgb
 from optuna.study import Study
 from optuna import type_checking
@@ -352,10 +353,15 @@ class TestLightGBMTuner(object):
         [("auc", "maximize", -np.inf), ("mse", "minimize", np.inf)],
     )
     def test_best_score(self, metric: str, study_direction: str, expected: float) -> None:
-        with turnoff_train(metric=metric):
+        lgbm_params = {}
+        lgbm_params["metric"] = metric
+        _handling_alias_metrics(lgbm_params)
+        with turnoff_train(metric=lgbm_params["metric"]):
             study = optuna.create_study(direction=study_direction)
             runner = self._get_tuner_object(
-                params=dict(lambda_l1=0.0, metric=metric), kwargs_options={}, study=study,
+                params=dict(lambda_l1=0.0, metric=lgbm_params["metric"]),
+                kwargs_options={},
+                study=study,
             )
             assert runner.best_score == expected
             runner.tune_regularization_factors()
