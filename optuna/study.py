@@ -887,7 +887,7 @@ def load_study(
             import os
 
             if os.path.exists("example.db"):
-                raise RuntimeError("a database file already exists. Please remove the file named example.db")
+                raise RuntimeError("a database file already exists. Please remove example.db")
 
         .. testcode::
 
