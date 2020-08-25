@@ -87,15 +87,26 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
         sorted_params = sorted(list(set(params)))
 
+    padding_ratio = 0.05
     param_values_range = {}
     for p_name in sorted_params:
         values = [t.params[p_name] for t in trials if p_name in t.params]
-        param_values_range[p_name] = (min(values), max(values))
+        if _is_log_scale(trials, p_name):
+            padding = (math.log10(max(values)) - math.log10(min(values))) * padding_ratio
+            min_value = math.pow(10, math.log10(min(values)) - padding)
+            max_value = math.pow(10, math.log10(max(values)) + padding)
+        else:
+            padding = (max(values) - min(values)) * padding_ratio
+            min_value = min(values) - padding
+            max_value = max(values) + padding
+        param_values_range[p_name] = (min_value, max_value)
 
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
         y_param = sorted_params[1]
-        sub_plots = _generate_contour_subplot(trials, x_param, y_param, study.direction)
+        sub_plots = _generate_contour_subplot(
+            trials, x_param, y_param, study.direction, param_values_range
+        )
         figure = go.Figure(data=sub_plots, layout=layout)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
         figure.update_yaxes(title_text=y_param, range=param_values_range[y_param])
@@ -117,7 +128,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
                     figure.add_trace(go.Scatter(), row=y_i + 1, col=x_i + 1)
                 else:
                     sub_plots = _generate_contour_subplot(
-                        trials, x_param, y_param, study.direction
+                        trials, x_param, y_param, study.direction, param_values_range
                     )
                     contour = sub_plots[0]
                     scatter = sub_plots[1]
@@ -143,7 +154,11 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
 
 
 def _generate_contour_subplot(
-    trials: List[FrozenTrial], x_param: str, y_param: str, direction: StudyDirection
+    trials: List[FrozenTrial],
+    x_param: str,
+    y_param: str,
+    direction: StudyDirection,
+    param_values_range: dict,
 ) -> Tuple["Contour", "Scatter"]:
 
     x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
@@ -154,7 +169,13 @@ def _generate_contour_subplot(
     if len(y_indices) < 2:
         _logger.warning("Param {} unique value length is less than 2.".format(y_param))
         return go.Contour(), go.Scatter()
-    z = [[float("nan") for _ in range(len(x_indices))] for _ in range(len(y_indices))]
+
+    x_range = param_values_range[x_param]
+    x_indices = [x_range[0]] + x_indices + [x_range[1]]
+    y_range = param_values_range[y_param]
+    y_indices = [y_range[0]] + y_indices + [y_range[1]]
+
+    z = [[None for _ in range(len(x_indices))] for _ in range(len(y_indices))]
 
     x_values = []
     y_values = []

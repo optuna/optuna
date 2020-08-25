@@ -54,12 +54,12 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
         if len(params) <= 1:
             assert not figure.data
         elif len(params) == 2:
-            assert figure.data[0]["x"] == (1.0, 2.5)
-            assert figure.data[0]["y"] == (0.0, 1.0, 2.0)
+            assert figure.data[0]["x"] == (0.925, 1.0, 2.5, 2.575)
+            assert figure.data[0]["y"] == (-0.1, 0.0, 1.0, 2.0, 2.1)
             assert figure.data[1]["x"] == (1.0, 2.5)
             assert figure.data[1]["y"] == (2.0, 1.0)
-            assert figure.layout["xaxis"]["range"] == (1.0, 2.5)
-            assert figure.layout["yaxis"]["range"] == (0.0, 2.0)
+            assert figure.layout["xaxis"]["range"] == (0.925, 2.575)
+            assert figure.layout["yaxis"]["range"] == (-0.1, 2.1)
     else:
         # TODO(crcrpar): Add more checks. Currently this only checks the number of data.
         n_params = len(params) if params is not None else 4
@@ -74,14 +74,14 @@ def test_generate_contour_plot_for_few_observations() -> None:
     # `x_axis` has one observation.
     params = ["param_a", "param_b"]
     contour, scatter = _generate_contour_subplot(
-        trials, params[0], params[1], StudyDirection.MINIMIZE
+        trials, params[0], params[1], StudyDirection.MINIMIZE, {}
     )
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
     # `y_axis` has one observation.
     params = ["param_b", "param_a"]
     contour, scatter = _generate_contour_subplot(
-        trials, params[0], params[1], StudyDirection.MINIMIZE
+        trials, params[0], params[1], StudyDirection.MINIMIZE, {}
     )
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
@@ -112,8 +112,8 @@ def test_plot_contour_log_scale() -> None:
     )
 
     figure = plot_contour(study)
-    assert figure.layout["xaxis"]["range"] == (-6, -5)
-    assert figure.layout["yaxis"]["range"] == (-4, -3)
+    assert figure.layout["xaxis"]["range"] == (-6.05, -4.95)
+    assert figure.layout["yaxis"]["range"] == (-4.05, -2.95)
     assert figure.layout["xaxis_type"] == "log"
     assert figure.layout["yaxis_type"] == "log"
 
@@ -143,9 +143,9 @@ def test_plot_contour_log_scale() -> None:
     )
 
     figure = plot_contour(study)
-    param_a_range = (-6, -5)
-    param_b_range = (-4, -3)
-    param_c_range = (-2, -1)
+    param_a_range = (-6.05, -4.95)
+    param_b_range = (-4.05, -2.95)
+    param_c_range = (-2.05, -0.95)
     axis_to_range = {
         "xaxis": param_a_range,
         "xaxis2": param_b_range,
