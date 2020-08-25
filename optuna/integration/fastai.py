@@ -8,8 +8,8 @@ with try_import() as _imports:
     from fastai.callbacks import TrackerCallback
 
 if not _imports.is_successful():
+    Learner = object  # NOQA
     TrackerCallback = object  # NOQA
-
 
 class FastAIPruningCallback(TrackerCallback):
     """FastAI callback to prune unpromising trials for fastai.
