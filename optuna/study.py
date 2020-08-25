@@ -802,7 +802,7 @@ def create_study(
             import optuna
 
             def objective(trial):
-                x = trial.suggest_uniform('x', 0, 10)
+                x = trial.suggest_uniform("x", 0, 10)
                 return x ** 2
 
             study = optuna.create_study()
