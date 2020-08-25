@@ -882,9 +882,13 @@ def load_study(
 
     Example:
 
-        .. testcode::
-        .. testcleanup::
         .. testsetup::
+
+        import os
+        if os.path.exists("example.db"):
+            raise RuntimeError("DB file already exists. Please remove example.db")
+
+        .. testcode::
 
             import optuna
 
@@ -898,7 +902,8 @@ def load_study(
             loaded_study = optuna.load_study(study_name="my_study", storage="sqlite:///example.db")
             assert len(loaded_study.trials) == len(study.trials)
 
-            import os
+        .. testcleanup::
+
             os.remove("example.db")
 
     Args:
