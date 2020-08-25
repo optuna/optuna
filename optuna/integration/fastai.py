@@ -4,11 +4,10 @@ import optuna
 from optuna._imports import try_import
 
 with try_import() as _imports:
-    from fastai.basic_train import Learner  # NOQA
+    from fastai.basic_train import Learner
     from fastai.callbacks import TrackerCallback
 
 if not _imports.is_successful():
-    Learner = object  # NOQA
     TrackerCallback = object  # NOQA
 
 
@@ -47,7 +46,7 @@ class FastAIPruningCallback(TrackerCallback):
             details.
     """
 
-    def __init__(self, learn: Learner, trial: optuna.trial.Trial, monitor: str) -> None:
+    def __init__(self, learn: "Learner", trial: optuna.trial.Trial, monitor: str) -> None:
 
         super(FastAIPruningCallback, self).__init__(learn, monitor)
 
