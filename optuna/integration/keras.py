@@ -1,4 +1,5 @@
 from typing import Dict
+from typing import Optional
 
 import optuna
 from optuna._deprecated import deprecated
@@ -49,7 +50,7 @@ class KerasPruningCallback(Callback):
         self._monitor = monitor
         self._interval = interval
 
-    def on_epoch_end(self, epoch: int, logs: Dict[str, float] = None) -> None:
+    def on_epoch_end(self, epoch: int, logs: Optional[Dict[str, float]] = None) -> None:
         if (epoch + 1) % self._interval != 0:
             return
 
