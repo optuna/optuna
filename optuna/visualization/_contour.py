@@ -175,7 +175,7 @@ def _generate_contour_subplot(
     y_range = param_values_range[y_param]
     y_indices = [y_range[0]] + y_indices + [y_range[1]]
 
-    z = [[None for _ in range(len(x_indices))] for _ in range(len(y_indices))]
+    z = [[float("nan") for _ in range(len(x_indices))] for _ in range(len(y_indices))]
 
     x_values = []
     y_values = []
