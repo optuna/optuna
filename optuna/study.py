@@ -883,6 +883,8 @@ def load_study(
     Example:
 
         .. testcode::
+        .. testcleanup::
+        .. testsetup::
 
             import optuna
 
@@ -894,6 +896,10 @@ def load_study(
             study.optimize(objective, n_trials=3)
 
             loaded_study = optuna.load_study(study_name="my_study", storage="sqlite:///example.db")
+            assert len(loaded_study.trials) == len(study.trials)
+
+            import os
+            os.remove("example.db")
 
     Args:
         study_name:
