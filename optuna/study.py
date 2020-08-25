@@ -884,9 +884,9 @@ def load_study(
 
         .. testsetup::
 
-        import os
-        if os.path.exists("example.db"):
-            raise RuntimeError("DB file already exists. Please remove example.db")
+            import os
+            if os.path.exists("example.db"):
+                raise RuntimeError("DB file already exists. Please remove example.db")
 
         .. testcode::
 
