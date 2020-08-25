@@ -11,6 +11,7 @@ if not _imports.is_successful():
     Learner = object  # NOQA
     TrackerCallback = object  # NOQA
 
+
 class FastAIPruningCallback(TrackerCallback):
     """FastAI callback to prune unpromising trials for fastai.
 
