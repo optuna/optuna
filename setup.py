@@ -222,6 +222,7 @@ setup(
             "storages/_rdb/alembic.ini",
             "storages/_rdb/alembic/*.*",
             "storages/_rdb/alembic/versions/*.*",
+            "py.typed",
         ]
     },
     python_requires=">=3.5",
