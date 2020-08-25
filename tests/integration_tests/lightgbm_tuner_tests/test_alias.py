@@ -2,8 +2,7 @@ from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
 
 
-def test__handling_alias_parameters():
-    # type: () -> None
+def test__handling_alias_parameters() -> None:
 
     params = {"reg_alpha": 0.1}
     _handling_alias_parameters(params)
@@ -11,8 +10,7 @@ def test__handling_alias_parameters():
     assert "lambda_l1" in params
 
 
-def test_handling_alias_parameter_with_user_supplied_param():
-    # type: () -> None
+def test_handling_alias_parameter_with_user_supplied_param() -> None:
 
     params = {
         "num_boost_round": 5,
@@ -26,8 +24,7 @@ def test_handling_alias_parameter_with_user_supplied_param():
     assert params["learning_rate"] == 0.5
 
 
-def test_handling_alias_parameter():
-    # type: () -> None
+def test_handling_alias_parameter() -> None:
 
     params = {
         "num_boost_round": 5,
@@ -40,8 +37,7 @@ def test_handling_alias_parameter():
     assert params["min_data_in_leaf"] == 0.2
 
 
-def test_handling_alias_metrics():
-    # type: () -> None
+def test_handling_alias_metrics() -> None:
 
     for alias in [
         "lambdarank",
