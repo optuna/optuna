@@ -1,13 +1,13 @@
 from collections import OrderedDict
 import pickle
-import typing
-
-import numpy as np
-import pytest
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+
+import numpy as np
+import pytest
 
 import optuna
 from optuna.distributions import BaseDistribution
@@ -61,7 +61,7 @@ def test_random_sampler_reseed_rng() -> None:
     ],
 )
 def test_uniform(
-    sampler_class: typing.Callable[[], BaseSampler], distribution: UniformDistribution
+    sampler_class: Callable[[], BaseSampler], distribution: UniformDistribution
 ) -> None:
 
     study = optuna.study.create_study(sampler=sampler_class())
@@ -82,7 +82,7 @@ def test_uniform(
 @parametrize_sampler
 @pytest.mark.parametrize("distribution", [LogUniformDistribution(1e-7, 1.0)])
 def test_log_uniform(
-    sampler_class: typing.Callable[[], BaseSampler], distribution: LogUniformDistribution
+    sampler_class: Callable[[], BaseSampler], distribution: LogUniformDistribution
 ) -> None:
 
     study = optuna.study.create_study(sampler=sampler_class())
@@ -106,7 +106,7 @@ def test_log_uniform(
     [DiscreteUniformDistribution(-10, 10, 0.1), DiscreteUniformDistribution(-10.2, 10.2, 0.1)],
 )
 def test_discrete_uniform(
-    sampler_class: typing.Callable[[], BaseSampler], distribution: DiscreteUniformDistribution
+    sampler_class: Callable[[], BaseSampler], distribution: DiscreteUniformDistribution
 ) -> None:
 
     study = optuna.study.create_study(sampler=sampler_class())
@@ -144,7 +144,7 @@ def test_discrete_uniform(
     ],
 )
 def test_int(
-    sampler_class: typing.Callable[[], BaseSampler], distribution: IntUniformDistribution
+    sampler_class: Callable[[], BaseSampler], distribution: IntUniformDistribution
 ) -> None:
 
     study = optuna.study.create_study(sampler=sampler_class())
@@ -165,7 +165,7 @@ def test_int(
 @parametrize_sampler
 @pytest.mark.parametrize("choices", [(1, 2, 3), ("a", "b", "c"), (1, "a")])
 def test_categorical(
-    sampler_class: typing.Callable[[], BaseSampler], choices: Sequence[CategoricalChoiceType]
+    sampler_class: Callable[[], BaseSampler], choices: Sequence[CategoricalChoiceType]
 ) -> None:
 
     distribution = CategoricalDistribution(choices)
@@ -334,7 +334,7 @@ def test_intersection_search_space_class_with_different_studies() -> None:
 
 
 @parametrize_sampler
-def test_nan_objective_value(sampler_class: typing.Callable[[], BaseSampler]) -> None:
+def test_nan_objective_value(sampler_class: Callable[[], BaseSampler]) -> None:
 
     study = optuna.create_study(sampler=sampler_class())
 
