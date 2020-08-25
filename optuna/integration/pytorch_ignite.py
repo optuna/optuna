@@ -4,6 +4,9 @@ from optuna.trial import Trial
 with optuna._imports.try_import() as _imports:
     from ignite.engine import Engine  # NOQA
 
+if not _imports.is_successful():
+    Engine = object  # NOQA
+
 
 class PyTorchIgnitePruningHandler(object):
     """PyTorch Ignite handler to prune unpromising trials.

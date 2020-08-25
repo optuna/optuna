@@ -6,6 +6,7 @@ from optuna.integration import _lightgbm_tuner as tuner
 
 with try_import() as _imports:
     import lightgbm as lgb  # NOQA
+    from lightgbm.callback import CallbackEnv  # NOQA
 
 # Attach lightgbm API.
 if _imports.is_successful():
@@ -30,6 +31,8 @@ else:
     setattr(sys.modules[__name__], "train", tuner.__dict__["train"])
     setattr(sys.modules[__name__], "LightGBMTuner", tuner.__dict__["LightGBMTuner"])
     setattr(sys.modules[__name__], "LightGBMTunerCV", tuner.__dict__["LightGBMTunerCV"])
+
+    CallbackEnv = object  # NOQA
 
 
 class LightGBMPruningCallback(object):
@@ -71,7 +74,7 @@ class LightGBMPruningCallback(object):
         self._valid_name = valid_name
         self._metric = metric
 
-    def __call__(self, env: lgb.callback.CallbackEnv) -> None:
+    def __call__(self, env: CallbackEnv) -> None:
 
         # If this callback has been passed to `lightgbm.cv` function,
         # the value of `is_cv` becomes `True`. See also:
