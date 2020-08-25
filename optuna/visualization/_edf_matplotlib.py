@@ -12,7 +12,7 @@ from optuna.trial import TrialState
 _logger = get_logger(__name__)
 
 
-def _get_edf_plot(studies: List[Study]) -> Figure:
+def _get_edf_plot_matplotlib(studies: List[Study]) -> Figure:
     """Plot the objective value EDF (empirical distribution function) of studies with matplotlib.
 
     Note that only the complete trials are considered when plotting the EDF.
