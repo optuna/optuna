@@ -298,7 +298,7 @@ def test_intersection_search_space() -> None:
 
     # Failed or pruned trials are not considered in the calculation of
     # an intersection search space.
-    def objective(trial: optuna.trial.Trial, exception: Exception) -> float:
+    def objective(trial: Trial, exception: Exception) -> float:
 
         trial.suggest_uniform("z", 0, 1)
         raise exception
