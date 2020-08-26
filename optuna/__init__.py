@@ -16,7 +16,6 @@ from optuna import trial  # NOQA
 from optuna import version  # NOQA
 from optuna import visualization  # NOQA
 
-from optuna._batch_study import BatchMultiObjectiveStudy  # NOQA
 from optuna._batch_study import BatchStudy  # NOQA
 from optuna.exceptions import TrialPruned  # NOQA
 from optuna.study import create_study  # NOQA
