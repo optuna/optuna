@@ -123,9 +123,7 @@ def test_batch_optimize_trivial_resume() -> None:
 
 @pytest.mark.parametrize(
     "n_batches, n_jobs, storage_mode",
-    itertools.product(
-        (0, 1, 20), (1, ), ["inmemory"],  # n_batches  # n_jobs  # storage_mode
-    ),
+    itertools.product((0, 1, 20), (1,), ["inmemory"],),  # n_batches  # n_jobs  # storage_mode
 )
 def test_optimize_parallel(n_batches: int, n_jobs: int, storage_mode: str) -> None:
     f = Func()
@@ -134,7 +132,7 @@ def test_optimize_parallel(n_batches: int, n_jobs: int, storage_mode: str) -> No
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
-        batch_study = BatchStudy(study, batch_size==batch_size)
+        batch_study = BatchStudy(study, batch_size == batch_size)
         batch_study.batch_optimize(f, n_batches=n_batches, n_jobs=n_jobs)
         assert f.n_calls == n_batches
         check_batch_study(batch_study)
