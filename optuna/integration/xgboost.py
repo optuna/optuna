@@ -1,11 +1,10 @@
 import optuna
 
 with optuna._imports.try_import() as _imports:
-    import xgboost as xgb  # NOQA
+    import xgboost as xgb
 
 
-def _get_callback_context(env):
-    # type: (xgb.core.CallbackEnv) -> str
+def _get_callback_context(env: "xgb.core.CallbackEnv") -> str:
     """Return whether the current callback context is cv or train.
 
     .. note::
@@ -41,16 +40,14 @@ class XGBoostPruningCallback(object):
             for further details.
     """
 
-    def __init__(self, trial, observation_key):
-        # type: (optuna.trial.Trial, str) -> None
+    def __init__(self, trial: optuna.trial.Trial, observation_key: str) -> None:
 
         _imports.check()
 
         self._trial = trial
         self._observation_key = observation_key
 
-    def __call__(self, env):
-        # type: (xgb.core.CallbackEnv) -> None
+    def __call__(self, env: "xgb.core.CallbackEnv") -> None:
 
         context = _get_callback_context(env)
         evaluation_result_list = env.evaluation_result_list

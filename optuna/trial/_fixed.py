@@ -1,7 +1,13 @@
 import datetime
+from typing import Any
+from typing import Dict
 from typing import Optional
+from typing import Sequence
+from typing import Union
 
 from optuna import distributions
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
@@ -9,16 +15,6 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Sequence  # NOQA
-    from typing import Union  # NOQA
-
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.distributions import CategoricalChoiceType  # NOQA
 
 
 class FixedTrial(BaseTrial):
@@ -57,8 +53,7 @@ class FixedTrial(BaseTrial):
 
     """
 
-    def __init__(self, params, number=0):
-        # type: (Dict[str, Any], int) -> None
+    def __init__(self, params: Dict[str, Any], number: int = 0) -> None:
 
         self._params = params
         self._suggested_params = {}  # type: Dict[str, Any]
@@ -89,13 +84,11 @@ class FixedTrial(BaseTrial):
             else:
                 return self._suggest(name, UniformDistribution(low=low, high=high))
 
-    def suggest_uniform(self, name, low, high):
-        # type: (str, float, float) -> float
+    def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
         return self._suggest(name, UniformDistribution(low=low, high=high))
 
-    def suggest_loguniform(self, name, low, high):
-        # type: (str, float, float) -> float
+    def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
         return self._suggest(name, LogUniformDistribution(low=low, high=high))
 
@@ -121,13 +114,29 @@ class FixedTrial(BaseTrial):
                 distribution = IntUniformDistribution(low=low, high=high, step=step)
         return int(self._suggest(name, distribution))
 
-    def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
 
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
-    def _suggest(self, name, distribution):
-        # type: (str, BaseDistribution) -> Any
+    def report(self, value: float, step: int) -> None:
+
+        pass
+
+    def should_prune(self) -> bool:
+
+        return False
+
+    def set_user_attr(self, key: str, value: Any) -> None:
+
+        self._user_attrs[key] = value
+
+    def set_system_attr(self, key: str, value: Any) -> None:
+
+        self._system_attrs[key] = value
+
+    def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
 
         if name not in self._params:
             raise ValueError(
@@ -151,52 +160,28 @@ class FixedTrial(BaseTrial):
 
         return value
 
-    def report(self, value, step):
-        # type: (float, int) -> None
-
-        pass
-
-    def should_prune(self) -> bool:
-
-        return False
-
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._user_attrs[key] = value
-
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        self._system_attrs[key] = value
-
     @property
-    def params(self):
-        # type: () -> Dict[str, Any]
+    def params(self) -> Dict[str, Any]:
 
         return self._suggested_params
 
     @property
-    def distributions(self):
-        # type: () -> Dict[str, BaseDistribution]
+    def distributions(self) -> Dict[str, BaseDistribution]:
 
         return self._distributions
 
     @property
-    def user_attrs(self):
-        # type: () -> Dict[str, Any]
+    def user_attrs(self) -> Dict[str, Any]:
 
         return self._user_attrs
 
     @property
-    def system_attrs(self):
-        # type: () -> Dict[str, Any]
+    def system_attrs(self) -> Dict[str, Any]:
 
         return self._system_attrs
 
     @property
-    def datetime_start(self):
-        # type: () -> Optional[datetime.datetime]
+    def datetime_start(self) -> Optional[datetime.datetime]:
 
         return self._datetime_start
 

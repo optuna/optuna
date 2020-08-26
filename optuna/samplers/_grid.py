@@ -1,24 +1,20 @@
 import collections
 import itertools
 import random
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Mapping
+from typing import Sequence
+from typing import Union
 
+from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
-from optuna import type_checking
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Mapping  # NOQA
-    from typing import Sequence  # NOQA
-    from typing import Union
-
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
-
-    GridValueType = Union[str, float, int, bool, None]
+GridValueType = Union[str, float, int, bool, None]
 
 
 _logger = get_logger(__name__)
@@ -81,8 +77,7 @@ class GridSampler(BaseSampler):
             of values, respectively.
     """
 
-    def __init__(self, search_space):
-        # type: (Mapping[str, Sequence[GridValueType]]) -> None
+    def __init__(self, search_space: Mapping[str, Sequence[GridValueType]]) -> None:
 
         for param_name, param_values in search_space.items():
             for value in param_values:
@@ -96,14 +91,15 @@ class GridSampler(BaseSampler):
         self._param_names = sorted(search_space.keys())
         self._n_min_trials = len(self._all_grids)
 
-    def infer_relative_search_space(self, study, trial):
-        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
 
         return {}
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
-
+    def sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
         # Instead of returning param values, GridSampler puts the target grid id as a system attr,
         # and the values are returned from `sample_independent`. This is because the distribution
         # object is hard to get at the beginning of trial, while we need the access to the object
@@ -142,8 +138,13 @@ class GridSampler(BaseSampler):
 
         return {}
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: BaseDistribution,
+    ) -> Any:
 
         if param_name not in self._search_space:
             message = "The parameter name, {}, is not found in the given grid.".format(param_name)
@@ -168,8 +169,7 @@ class GridSampler(BaseSampler):
         return param_value
 
     @staticmethod
-    def _check_value(param_name, param_value):
-        # type: (str, Any) -> None
+    def _check_value(param_name: str, param_value: Any) -> None:
 
         if param_value is None or isinstance(param_value, (str, int, float, bool)):
             return
@@ -180,8 +180,7 @@ class GridSampler(BaseSampler):
             " or `None`.".format(param_name, type(param_value))
         )
 
-    def _get_unvisited_grid_ids(self, study):
-        # type: (Study) -> List[int]
+    def _get_unvisited_grid_ids(self, study: Study) -> List[int]:
 
         # List up unvisited grids based on already finished ones.
         visited_grids = []
@@ -197,8 +196,7 @@ class GridSampler(BaseSampler):
 
         return list(unvisited_grids)
 
-    def _same_search_space(self, search_space):
-        # type: (Mapping[str, Sequence[GridValueType]]) -> bool
+    def _same_search_space(self, search_space: Mapping[str, Sequence[GridValueType]]) -> bool:
 
         if set(search_space.keys()) != set(self._search_space.keys()):
             return False

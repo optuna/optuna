@@ -113,15 +113,13 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    study = optuna.create_study(
+    study = optuna.load_study(
         study_name="k8s_mlflow",
         storage="postgresql://{}:{}@postgres:5432/{}".format(
             os.environ["POSTGRES_USER"],
             os.environ["POSTGRES_PASSWORD"],
             os.environ["POSTGRES_DB"],
         ),
-        load_if_exists=True,
-        direction="maximize",
     )
     study.optimize(
         objective,

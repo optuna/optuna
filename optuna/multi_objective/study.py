@@ -42,7 +42,7 @@ _logger = logging.get_logger(__name__)
 def create_study(
     directions: List[str],
     study_name: Optional[str] = None,
-    storage: Union[None, str, BaseStorage] = None,
+    storage: Optional[Union[str, BaseStorage]] = None,
     sampler: Optional["multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
     load_if_exists: bool = False,
 ) -> "multi_objective.study.MultiObjectiveStudy":

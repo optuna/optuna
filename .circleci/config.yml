@@ -44,7 +44,7 @@ jobs:
           name: black
           command: |
             . venv/bin/activate
-            black . --line-length 99 --check --exclude="docs"
+            black . --check
 
       - run:
           name: flake8
@@ -183,10 +183,6 @@ jobs:
           command: |
             . venv/bin/activate
             pytest tests --ignore tests/integration_tests/test_fastai.py \
-                --ignore tests/integration_tests/test_keras.py \
-                --ignore tests/integration_tests/test_tensorboard.py \
-                --ignore tests/integration_tests/test_tensorflow.py \
-                --ignore tests/integration_tests/test_tfkeras.py \
                 --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
 
       - run: *tests-mn
@@ -228,7 +224,8 @@ jobs:
             pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py \
                 --ignore tests/integration_tests/test_fastai.py \
                 --ignore tests/integration_tests/allennlp_tests/test_allennlp.py \
-                --ignore tests/integration_tests/test_catalyst.py
+                --ignore tests/integration_tests/test_catalyst.py \
+                --ignore tests/integration_tests/test_pytorch_ignite.py
 
       - run: *tests-mn
 

@@ -1,16 +1,17 @@
+"""
 .. _rdb:
 
 Saving/Resuming Study with RDB Backend
 ==========================================
 
 An RDB backend enables persistent experiments (i.e., to save and resume a study) as well as access to history of studies.
-In addition, we can run multi-node optimization tasks with this feature, which is described in :ref:`distributed`.
+In addition, we can run multi-node optimization tasks with this feature, which is described in :ref:`sphx_glr_tutorial_004_distributed.py`.
 
 In this section, let's try simple examples running on a local environment with SQLite DB.
 
 .. note::
     You can also utilize other RDB backends, e.g., PostgreSQL or MySQL, by setting the storage argument to the DB's URL.
-    Please refer to `SQLAlchemy's document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for how to set up the URL.
+    Please refer to `SQLAlchemy's document <https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls>`_ for how to set up the URL.
 
 
 New Study
@@ -75,7 +76,7 @@ Out:
          4       4  113.039223 -8.631991  COMPLETE
          5       5   57.319570  9.570969  COMPLETE
 
-A :class:`~optuna.study.Study` object also provides properties such as :attr:`~optuna.study.Study.trials`, :attr:`~optuna.study.Study.best_value`, :attr:`~optuna.study.Study.best_params` (see also :ref:`firstopt`).
+A :class:`~optuna.study.Study` object also provides properties such as :attr:`~optuna.study.Study.trials`, :attr:`~optuna.study.Study.best_value`, :attr:`~optuna.study.Study.best_params` (see also :ref:`sphx_glr_tutorial_001_first.py`).
 
 .. code-block:: python
 
@@ -83,3 +84,4 @@ A :class:`~optuna.study.Study` object also provides properties such as :attr:`~o
     study.best_value  # Get best objective value.
     study.best_trial  # Get best trial's information.
     study.trials  # Get all trials' information.
+"""

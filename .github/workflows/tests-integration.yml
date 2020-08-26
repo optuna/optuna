@@ -24,9 +24,19 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Setup Python${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+
+    - name: Setup cache
+      uses: actions/cache@v2
+      env:
+        cache-name: test-integration
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
 
     - name: Setup environment
       run: |
@@ -53,14 +63,11 @@ jobs:
             --ignore tests/integration_tests/test_pytorch_lightning.py \
             --ignore tests/integration_tests/test_fastai.py \
             --ignore tests/integration_tests/allennlp_tests/test_allennlp.py \
-            --ignore tests/integration_tests/test_catalyst.py
+            --ignore tests/integration_tests/test_catalyst.py \
+            --ignore tests/integration_tests/test_pytorch_ignite.py
         elif [ ${{ matrix.python-version }} = 3.8 ]; then
           pytest tests/integration_tests \
             --ignore tests/integration_tests/test_fastai.py \
-            --ignore tests/integration_tests/test_keras.py \
-            --ignore tests/integration_tests/test_tensorboard.py \
-            --ignore tests/integration_tests/test_tensorflow.py \
-            --ignore tests/integration_tests/test_tfkeras.py \
             --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
         else
           # pytest cannot collect allennlp tests with allennlp==1.0.0.

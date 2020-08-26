@@ -795,6 +795,19 @@ def create_study(
     # type: (...) -> Study
     """Create a new :class:`~optuna.study.Study`.
 
+    Example:
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_uniform("x", 0, 10)
+                return x ** 2
+
+            study = optuna.create_study()
+            study.optimize(objective, n_trials=3)
+
     Args:
         storage:
             Database URL. If this argument is set to None, in-memory storage is used, and the
@@ -817,8 +830,9 @@ def create_study(
             If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
             as the default. See also :class:`~optuna.samplers`.
         pruner:
-            A pruner object that decides early stopping of unpromising trials. See also
-            :class:`~optuna.pruners`.
+            A pruner object that decides early stopping of unpromising trials. If :obj:`None`
+            is specified, :class:`~optuna.pruners.MedianPruner` is used as the default. See
+            also :class:`~optuna.pruners`.
         study_name:
             Study's name. If this argument is set to None, a unique name is generated
             automatically.
@@ -878,6 +892,33 @@ def load_study(
 ):
     # type: (...) -> Study
     """Load the existing :class:`~optuna.study.Study` that has the specified name.
+
+    Example:
+
+        .. testsetup::
+
+            import os
+
+            if os.path.exists("example.db"):
+                raise RuntimeError("'example.db' already exists. Please remove it.")
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_float("x", 0, 10)
+                return x ** 2
+
+            study = optuna.create_study(storage="sqlite:///example.db", study_name="my_study")
+            study.optimize(objective, n_trials=3)
+
+            loaded_study = optuna.load_study(study_name="my_study", storage="sqlite:///example.db")
+            assert len(loaded_study.trials) == len(study.trials)
+
+        .. testcleanup::
+
+            os.remove("example.db")
 
     Args:
         study_name:
