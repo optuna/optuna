@@ -312,8 +312,8 @@ class _OptunaObjectiveCV(_OptunaObjective):
             with open(path, "wb") as fout:
                 # At version `lightgbm==3.0.0rc1`, :class:`lightgbm.CVBooster` does not
                 # have `__getstate__` which is required for pickle serialization.
-                cvboosters = cv_results["cvbooster"].boosters
-                pickle.dump(cvboosters, fout)
+                cvbooster = cv_results["cvbooster"]
+                pickle.dump((cvbooster.boosters, cvbooster.best_iteration), fout)
             _logger.info("The booster of trial#{} was saved as {}.".format(trial.number, path))
 
         if self.compare_validation_metrics(val_score, self.best_score):
@@ -443,10 +443,8 @@ class _LightGBMBaseTuner(_BaseTuner):
         """Return the best booster.
 
         If the best booster cannot be found, :class:`ValueError` will be raised. To prevent the
-        errors, please save boosters by specifying either the ``model_dir`` argument of
+        errors, please save boosters by specifying the ``model_dir`` argument of
         :meth:`~optuna.integration.lightgbm.LightGBMTuner.__init__`,
-        or both of the ``model_dir`` and the ``return_cvbooster`` arguments of
-        :meth: `~optuna.integration.lightgbm.LightGBMTunerCV.__init__`
         when you resume tuning or you run tuning in parallel.
         """
         if self._best_booster_with_trial_number is not None:
@@ -997,3 +995,47 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             model_dir=self._model_dir,
             pbar=pbar,
         )
+
+    def get_best_booster(self) -> "lgb.CVBooster":
+        """Return the best cvbooster.
+
+        If the best booster cannot be found, :class:`ValueError` will be raised.
+        To prevent the errors, please save boosters by specifying
+        both of the ``model_dir`` and the ``return_cvbooster`` arguments of
+        :meth: `~optuna.integration.lightgbm.LightGBMTunerCV.__init__`
+        when you resume tuning or you run tuning in parallel.
+        """
+        if self._best_booster_with_trial_number is not None:
+            if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
+                return self._best_booster_with_trial_number[0]
+        if len(self.study.trials) == 0:
+            raise ValueError("The best booster is not available because no trials completed.")
+
+        # The best booster exists, but this instance does not have it.
+        # This may be due to resuming or parallelization.
+        if self._model_dir is None:
+            raise ValueError(
+                "The best booster cannot be found. It may be found in the other processes due to "
+                "resuming or distributed computing. Please set the `model_dir` argument of "
+                "`LightGBMTuner.__init__` and make sure that boosters are shared with all "
+                "processes."
+            )
+
+        best_trial = self.study.best_trial
+        path = os.path.join(self._model_dir, "{}.pkl".format(best_trial.number))
+        if not os.path.exists(path):
+            raise ValueError(
+                "The best booster cannot be found in {}. If you execute `LightGBMTuner` in "
+                "distributed environment, please use network file system (e.g., NFS) to share "
+                "models with multiple workers.".format(self._model_dir)
+            )
+
+        with open(path, "rb") as fin:
+            boosters, best_iteration = pickle.load(fin)
+            # At version `lightgbm==3.0.0rc1`, :class:`lightgbm.CVBooster` does not
+            # have `__getstate__` which is required for pickle serialization.
+            cvbooster = lgb.CVBooster()
+            cvbooster.boosters = boosters
+            cvbooster.best_iteration = best_iteration
+
+        return cvbooster
