@@ -19,16 +19,12 @@ from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from optuna import trial as trial_module
 from optuna.trial._batch import BatchMultiObjectiveTrial
 from optuna.trial._batch import BatchTrial
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from optuna.study import Study
-    from optuna.trial import FrozenTrial
-
-    ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 BatchObjectiveFuncType = Callable[[BatchTrial], np.ndarray]
 BatchMultiObjectiveFuncType = Callable[[BatchMultiObjectiveTrial], Sequence[np.ndarray]]
+CallbackFuncType = Optional[
+    List[Callable[["optuna.study.Study", "optuna.trial.FrozenTrial"], None]]
+]
 MultiObjectiveCallbackFuncType = Callable[
     [
         "optuna.multi_objective.study.MultiObjectiveStudy",
@@ -36,6 +32,7 @@ MultiObjectiveCallbackFuncType = Callable[
     ],
     None,
 ]
+ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 _logger = logging.get_logger(__name__)
 
@@ -62,14 +59,14 @@ class BatchStudy(optuna.study.Study):
 
     def optimize(
         self,
-        func,  # type: ObjectiveFuncType
-        n_trials=None,  # type: Optional[int]
-        timeout=None,  # type: Optional[float]
-        n_jobs=1,  # type: int
-        catch=(),  # type: Tuple[Type[Exception], ...]
-        callbacks=None,  # type: Optional[List[Callable[[Study, FrozenTrial], None]]]
-        gc_after_trial=False,  # type: bool
-        show_progress_bar=False,  # type: bool
+        func: ObjectiveFuncType,
+        n_trials: Optional[int] = None,
+        timeout: Optional[float] = None,
+        n_jobs: int = 1,
+        catch: Tuple[Type[Exception], ...] = (),
+        callbacks: CallbackFuncType = None,
+        gc_after_trial: bool = False,
+        show_progress_bar: bool = False,
     ) -> None:
         raise NotImplementedError
 
@@ -80,7 +77,7 @@ class BatchStudy(optuna.study.Study):
         timeout: Optional[float] = None,
         n_jobs: int = 1,
         catch: Tuple[Type[Exception], ...] = (),
-        callbacks: Optional[List[Callable[["Study", "FrozenTrial"], None]]] = None,
+        callbacks: CallbackFuncType = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
     ) -> None:
