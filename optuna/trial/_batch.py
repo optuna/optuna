@@ -1,10 +1,12 @@
 import abc
-import numpy as np
 from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
+
+import numpy as np
 
 import optuna
 from optuna import type_checking
@@ -81,3 +83,7 @@ class BatchTrial(BaseBatchTrial):
 
     def should_prune(self) -> bool:
         return all((trial.should_prune() for trial in self._get_trials()))
+
+    @property
+    def params(self) -> Sequence[Dict[str, Any]]:
+        return [trial.params for trial in self._trials]
