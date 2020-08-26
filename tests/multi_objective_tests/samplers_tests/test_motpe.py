@@ -6,20 +6,18 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
-from unittest.mock import Mock, PropertyMock
+from unittest.mock import Mock
 from unittest.mock import patch
+from unittest.mock import PropertyMock
 
 import numpy as np
 import pytest
 
 import optuna
-from optuna.samplers import _tpe
-from optuna.samplers import TPESampler
-from optuna import TrialPruned
 from optuna import multi_objective
 from optuna.multi_objective.samplers import _motpe
 from optuna.multi_objective.samplers import MOTPEMultiObjectiveSampler
-from optuna.study import StudyDirection
+from optuna.samplers import TPESampler
 
 
 if optuna.type_checking.TYPE_CHECKING:
@@ -221,11 +219,7 @@ def test_sample_independent_misc_arguments() -> None:
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
@@ -240,16 +234,12 @@ def test_sample_independent_misc_arguments() -> None:
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
-    sampler = MOTPEMultiObjectiveSampler(gamma=lambda _1, _2: 5, seed=0)
+    sampler = MOTPEMultiObjectiveSampler(gamma=lambda _: 5, seed=0)
     attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
         study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
@@ -258,16 +248,14 @@ def test_sample_independent_misc_arguments() -> None:
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
-    weights = lambda i: np.asarray([i * 0.05 for _ in range(i)])
+    def weights(i: int) -> np.array:
+        return np.asarray([i * 0.05 for _ in range(i)])
+
     sampler = MOTPEMultiObjectiveSampler(weights=weights, seed=0)
     attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
@@ -277,11 +265,7 @@ def test_sample_independent_misc_arguments() -> None:
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
@@ -304,11 +288,7 @@ def test_sample_independent_uniform_distributions() -> None:
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
@@ -333,11 +313,7 @@ def test_sample_independent_log_uniform_distributions() -> None:
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
@@ -357,11 +333,7 @@ def test_sample_independent_log_uniform_distributions() -> None:
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         loguniform_suggestion = sampler.sample_independent(study, trial, "param-a", log_dist)
@@ -397,11 +369,7 @@ def test_sample_independent_disrete_uniform_distributions() -> None:
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         discrete_uniform_suggestion = sampler.sample_independent(
@@ -440,11 +408,7 @@ def test_sample_independent_categorical_distributions() -> None:
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         categorical_suggestion = sampler.sample_independent(study, trial, "param-a", cat_dist)
@@ -478,11 +442,7 @@ def test_sample_int_uniform_distributions() -> None:
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         int_suggestion = sampler.sample_independent(study, trial, "param-a", int_dist)
@@ -517,11 +477,7 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         all_success_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
@@ -543,11 +499,7 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         partial_unsuccessful_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
@@ -583,11 +535,7 @@ def test_sample_independent_ignored_states() -> None:
     ) as mock1, patch(
         "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
         new_callable=PropertyMock,
-    ) as mock2, patch.object(
-        optuna.multi_objective.samplers.RandomMultiObjectiveSampler,
-        "sample_independent",
-        return_value=1.0,
-    ) as sample_method:
+    ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
@@ -597,7 +545,7 @@ def test_sample_independent_ignored_states() -> None:
 
 def test_get_observation_pairs() -> None:
     def objective(trial: optuna.multi_objective.trial.Trial) -> Tuple[float, float]:
-        x = trial.suggest_int("x", 5, 5)
+        trial.suggest_int("x", 5, 5)
         return 5.0, 5.0
 
     sampler = MOTPEMultiObjectiveSampler(seed=0)
@@ -634,7 +582,7 @@ def test_calculate_nondomination_rank() -> None:
 
 
 def test_solve_hssp() -> None:
-    from pygmo import hypervolume
+    sampler = MOTPEMultiObjectiveSampler(seed=0)
 
     random.seed(128)
 
@@ -644,11 +592,11 @@ def test_solve_hssp() -> None:
         print(subset_size, flush=True)
         test_case = np.asarray([[random.random(), random.random()] for _ in range(8)])
         r = 1.1 * np.max(test_case, axis=0)
-        truth = 0
+        truth = 0.0
         for subset in itertools.permutations(test_case, subset_size):
-            truth = max(truth, hypervolume(subset).compute(r))
-        indices = _motpe._solve_hssp(test_case, list(range(len(test_case))), subset_size, r)
-        approx = hypervolume(test_case[indices]).compute(r)
+            truth = max(truth, sampler._compute_hypervolume(np.asarray(subset), r))
+        indices = sampler._solve_hssp(test_case, list(range(len(test_case))), subset_size, r)
+        approx = sampler._compute_hypervolume(test_case[indices], r)
         assert approx / truth > 0.6321  # 1 - 1/e
 
     # Three dimensions
@@ -661,9 +609,9 @@ def test_solve_hssp() -> None:
         r = 1.1 * np.max(test_case, axis=0)
         truth = 0
         for subset in itertools.permutations(test_case, subset_size):
-            truth = max(truth, hypervolume(subset).compute(r))
-        indices = _motpe._solve_hssp(test_case, list(range(len(test_case))), subset_size, r)
-        approx = hypervolume(test_case[indices]).compute(r)
+            truth = max(truth, sampler._compute_hypervolume(np.asarray(subset), r))
+        indices = sampler._solve_hssp(test_case, list(range(len(test_case))), subset_size, r)
+        approx = sampler._compute_hypervolume(test_case[indices], r)
         assert approx / truth > 0.6321  # 1 - 1/e
 
 

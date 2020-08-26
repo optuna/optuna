@@ -11,38 +11,31 @@ import numpy as np
 import scipy.special
 from scipy.stats import truncnorm
 
-from pygmo import hypervolume
-
 import optuna
 from optuna._experimental import experimental
 from optuna import distributions
 from optuna.distributions import BaseDistribution
 from optuna import multi_objective
+from optuna.multi_objective import _hypervolume
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 from optuna.multi_objective.samplers import RandomMultiObjectiveSampler
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.study import StudyDirection
 
+try:
+    import pygmo
+
+    _IS_PYGMO_AVAILABLE = True
+except ImportError:
+    _IS_PYGMO_AVAILABLE = False
+
 EPS = 1e-12
 _SPLITCACHE_KEY = "multi_objective:motpe:splitcache"
 _WEIGHTS_BELOW_KEY = "multi_objective:motpe:weights_below"
 
 
-def default_gamma(x: int, _: int) -> int:
-    """Default gamma function for MOTPE.
-    Args:
-        The first argument is the number of trials.
-        The second argument is the number of nondominated trials.
-
-    The second argument can be used to change gamma dynamically based on the number of nondominated
-    trials.
-
-    Example:
-        def dynamic_gamma(_, x):
-            return x
-    """
-
+def default_gamma(x: int) -> int:
     return max(0, int(np.ceil(0.10 * x)) - 1)
 
 
@@ -88,15 +81,17 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         n_ehvi_candidates:
             Number of candidate samples used to calculate the expected hypervolume improvement.
         gamma:
-            A function that takes the number of finished trials and the number of nondominated
-            trials and returns the number of trials to form a density function for samples with
-            low grains.
-            See the original paper for more details.
+            A function that takes the number of finished trials and returns the number of trials to
+            form a density function for samples with low grains. See the original paper for more
+            details.
         weights:
             A function that takes the number of finished trials and returns a weight for them. When
             None is set, weights are automatically calculated by a default algorithm.
         seed:
             Seed for random number generator.
+        use_pygmo:
+            Use pygmo to accelerate hypervolume computation. To use this option, pygmo must be
+            installed.
 
     The original paper utilizes Latin hypercube sampling (LHS) for initialization. The following
     code is an example of initializing MOTPE using LHS. Here
@@ -144,9 +139,10 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         consider_endpoints: bool = True,
         n_startup_trials: int = 10,
         n_ehvi_candidates: int = 24,
-        gamma: Callable[[int, int], int] = default_gamma,
+        gamma: Callable[[int], int] = default_gamma,
         weights: Optional[Callable[[int], np.ndarray]] = None,
         seed: Optional[int] = None,
+        use_pygmo: bool = False,
     ) -> None:
         self._prior_weight = prior_weight
         self._n_startup_trials = n_startup_trials
@@ -159,6 +155,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         self._weights = weights
         self._rng = np.random.RandomState(seed)
         self._random_sampler = RandomMultiObjectiveSampler(seed=seed)
+        self._use_pygmo = use_pygmo
 
     def infer_relative_search_space(
         self,
@@ -245,14 +242,15 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         config_vals: List[Optional[float]],
         loss_vals: List[List[float]],
     ) -> Tuple[np.ndarray, np.ndarray]:
-        """Split observations into observations for l(x) and observations for g(x) with the ratio
-           of gamma:1-gamma. Weights for l(x) are also calculated in this method.
+        """Split observations into observations for l(x) and g(x) with the ratio of gamma:1-gamma.
 
-            This splitting strategy consists of the following two steps:
-                1. Nondonation rank-based selection
-                2. Hypervolume subset selection problem (HSSP)-based selection
+        Weights for l(x) are also calculated in this method.
 
-            Please refer to the original paper for more details.
+        This splitting strategy consists of the following two steps:
+            1. Nondonation rank-based selection
+            2. Hypervolume subset selection problem (HSSP)-based selection
+
+        Please refer to the original paper for more details.
         """
         cvals = np.asarray(config_vals)
         lvals = np.asarray(loss_vals)
@@ -266,7 +264,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             indices_above = split_cache["indices_above"]
         else:
             nondomination_ranks = _calculate_nondomination_rank(lvals)
-            n_below = self._gamma(len(cvals), sum(nondomination_ranks == 0))
+            n_below = self._gamma(len(cvals))
             assert 0 <= n_below <= len(lvals)
 
             indices = np.array(range(len(lvals)))
@@ -290,7 +288,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                     ),
                     np.full(len(worst_point), EPS),  # case: value == 0
                 )
-                selected_indices = _solve_hssp(
+                selected_indices = self._solve_hssp(
                     rank_i_lvals, rank_i_indices, subset_size, reference_point
                 )
                 indices_below = np.append(indices_below, selected_indices)
@@ -300,17 +298,18 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
             attrs = {"indices_below": indices_below, "indices_above": indices_above}
             if self._weights is None:
-                weights_below = _calculate_default_weights_below(lvals, indices_below)
+                weights_below = self._calculate_default_weights_below(lvals, indices_below)
                 attrs["weights_below"] = weights_below
             study._storage.set_trial_system_attr(trial._trial_id, _SPLITCACHE_KEY, attrs)
 
         below = cvals[indices_below]
         if self._weights is None:
-            default_weights_below = lambda _: np.asarray(
-                [w for w, v in zip(weights_below, below) if v is not None], dtype=float
-            )
             study._storage.set_trial_system_attr(
-                trial._trial_id, _WEIGHTS_BELOW_KEY, default_weights_below
+                trial._trial_id,
+                _WEIGHTS_BELOW_KEY,
+                lambda _: np.asarray(
+                    [w for w, v in zip(weights_below, below) if v is not None], dtype=float
+                ),
             )
         below = np.asarray([v for v in below if v is not None], dtype=float)
         above = cvals[indices_above]
@@ -533,7 +532,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
         trunc_low = (low - mus[active]) / sigmas[active]
         trunc_high = (high - mus[active]) / sigmas[active]
-        samples = np.ones(size) * (high + 1.0)
+        samples = np.full((), fill_value=high + 1.0, dtype=np.float64)
         while (samples >= high).any():
             samples = np.where(
                 samples < high,
@@ -630,6 +629,89 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         return_val.shape = size
         return return_val
 
+    def _compute_hypervolume(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+        if self._use_pygmo:
+            assert (
+                _IS_PYGMO_AVAILABLE
+            ), "Pygmo is not available. Please install pygmo to use this option."
+            return pygmo.hypervolume(solution_set).compute(reference_point)
+        else:
+            return _hypervolume.WFG().compute(solution_set, reference_point)
+
+    def _solve_hssp(
+        self,
+        rank_i_loss_vals: np.ndarray,
+        rank_i_indices: np.ndarray,
+        subset_size: int,
+        reference_point: np.ndarray,
+    ) -> np.ndarray:
+        """Solve a hypervolume subset selection problem (HSSP) via a greedy algorithm.
+
+        This method is a 1-1/e approximation algorithm to solve HSSP.
+
+        For further information about algorithms to solve HSSP, please refer to the following
+        paper:
+
+        - `Greedy Hypervolume Subset Selection in Low Dimensions
+           <https://ieeexplore.ieee.org/document/7570501>`_
+        """
+        selected_vecs = []  # type: List[np.ndarray]
+        selected_indices = []  # type: List[int]
+        contributions = [
+            self._compute_hypervolume(np.asarray([v]), reference_point) for v in rank_i_loss_vals
+        ]
+        MARK_AS_SELECTED = -1
+        hv_selected = 0.0
+        while len(selected_indices) < subset_size:
+            max_index = np.argmax(contributions)
+            contributions[max_index] = MARK_AS_SELECTED
+            selected_index = rank_i_indices[max_index]
+            selected_vec = rank_i_loss_vals[max_index]
+            for j, v in enumerate(rank_i_loss_vals):
+                if contributions[j] == MARK_AS_SELECTED:
+                    continue
+                p = np.max([selected_vec, v], axis=0)
+                contributions[j] -= (
+                    self._compute_hypervolume(np.asarray(selected_vecs + [p]), reference_point)
+                    - hv_selected
+                )
+            selected_vecs += [selected_vec]
+            selected_indices += [selected_index]
+            hv_selected = self._compute_hypervolume(np.asarray(selected_vecs), reference_point)
+
+        return np.asarray(selected_indices, dtype=int)
+
+    def _calculate_default_weights_below(
+        self, lvals: np.ndarray, indices_below: np.ndarray,
+    ) -> np.ndarray:
+        # Calculate weights based on hypervolume contributions.
+        n_below = len(indices_below)
+        if n_below == 0:
+            return np.asarray([])
+        elif n_below == 1:
+            return np.asarray([1.0])
+        else:
+            lvals_below = lvals[indices_below].tolist()
+            worst_point = np.max(lvals_below, axis=0)
+            reference_point = np.maximum(
+                np.maximum(
+                    1.1 * worst_point, 0.9 * worst_point,  # case: value > 0  # case: value < 0
+                ),
+                np.full(len(worst_point), EPS),  # case: value == 0
+            )
+            hv = self._compute_hypervolume(np.asarray(lvals_below), reference_point)
+            contributions = np.asarray(
+                [
+                    hv
+                    - self._compute_hypervolume(
+                        np.asarray(lvals_below[:i] + lvals_below[i + 1 :]), reference_point
+                    )
+                    for i in range(len(lvals))
+                ]
+            )
+            weights_below = np.clip(contributions / np.max(contributions), 0, 1)
+            return weights_below
+
     @classmethod
     def _categorical_log_pdf(cls, sample: np.ndarray, p: np.ndarray) -> np.ndarray:
         if sample.size:
@@ -705,78 +787,6 @@ def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
         rank += 1
         num_unranked -= np.sum(counts == 0)
     return ranks
-
-
-def _solve_hssp(
-    rank_i_loss_vals: np.ndarray,
-    rank_i_indices: np.ndarray,
-    subset_size: int,
-    reference_point: np.ndarray,
-) -> np.ndarray:
-    """Solve a hypervolume subset selection problem (HSSP) via a greedy algorithm.
-
-    This method is a 1-1/e approximation algorithm to solve HSSP.
-
-    For further information about algorithms to solve HSSP, please refer to the following paper:
-
-    - `Greedy Hypervolume Subset Selection in Low Dimensions
-       <https://ieeexplore.ieee.org/document/7570501>`_
-    """
-    # TODO: Faster algorithms have been proposed for 2 and 3-dimensional case in Guerreiro et al.
-    # (2016). These algorithms could improve the performance of MOTPE.
-    selected_vecs = []  # type: List[np.ndarray]
-    selected_indices = []  # type: List[int]
-    contributions = [hypervolume([v]).compute(reference_point) for v in rank_i_loss_vals]
-    MARK_AS_SELECTED = -1
-    hv_selected = 0
-    while len(selected_indices) < subset_size:
-        max_index = np.argmax(contributions)
-        contributions[max_index] = MARK_AS_SELECTED
-        selected_index = rank_i_indices[max_index]
-        selected_vec = rank_i_loss_vals[max_index]
-        for j, v in enumerate(rank_i_loss_vals):
-            if contributions[j] == MARK_AS_SELECTED:
-                continue
-            p = np.max([selected_vec, v], axis=0)
-            contributions[j] -= (
-                hypervolume(selected_vecs + [p]).compute(reference_point) - hv_selected
-            )
-        selected_vecs += [selected_vec]
-        selected_indices += [selected_index]
-        hv_selected = hypervolume(selected_vecs).compute(reference_point)
-
-    return np.asarray(selected_indices, dtype=int)
-
-
-def _calculate_default_weights_below(lvals: np.ndarray, indices_below: np.ndarray) -> np.ndarray:
-    # Calculate weights based on hypervolume contributions.
-    n_below = len(indices_below)
-    if n_below == 0:
-        return np.asarray([])
-    elif n_below == 1:
-        return np.asarray([1.0])
-    else:
-        lvals_below = lvals[indices_below].tolist()
-        worst_point = np.max(lvals_below, axis=0)
-        reference_point = np.maximum(
-            np.maximum(
-                1.1 * worst_point,  # case: value > 0
-                0.9 * worst_point,  # case: value < 0
-            ),
-            np.full(len(worst_point), EPS),  # case: value == 0
-        )
-        hv = hypervolume(lvals_below).compute(reference_point)
-        contributions = np.asarray(
-            [
-                hv
-                - hypervolume(lvals_below[:i] + lvals_below[i + 1 :]).compute(
-                    reference_point
-                )
-                for i in range(len(lvals))
-            ]
-        )
-        weights_below = np.clip(contributions / np.max(contributions), 0, 1)
-        return weights_below
 
 
 def _default_weights_above(x: int) -> np.ndarray:
