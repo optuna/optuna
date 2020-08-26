@@ -16,42 +16,25 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
 
         .. testcode::
 
-            import time
-
             import numpy as np
-            from sklearn.datasets import load_iris
-            from sklearn.linear_model import SGDClassifier
-            from sklearn.model_selection import train_test_split
 
             import optuna
-
-            X, y = load_iris(return_X_y=True)
-            X_train, X_valid, y_train, y_valid = train_test_split(X, y)
-            classes = np.unique(y)
-            n_train_iter = 10
+            from optuna.multi_objective._hypervolume import WFG
 
             def objective(trial):
-                start = time.time()
-
-                alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
-                clf = SGDClassifier(alpha=alpha)
-
-                for step in range(n_train_iter):
-                    clf.partial_fit(X_train, y_train, classes=classes)
-
-                accuracy = clf.score(X_valid, y_valid)
-
-                elapsed_time = time.time() - start
-
-                return accuracy, elapsed_time
+                return trial.suggest_float("x", 0, 1), trial.suggest_float("y", 0, 1)
 
             study = optuna.multi_objective.create_study(["maximize", "minimize"])
             study.optimize(objective, n_trials=10)
             trials = study.get_pareto_front_trials()
             solution_sets = np.ndarray([t.values for t in trials])
-            # Transform the objective to be maximized into that for minimization.
+
+            # Normalize the solution set by negating
             solution_sets = np.ndarray([[-s[0], s[1]] for s in solution_sets])
-            reference_point = 2 * np.max(solution_set, axis=0)
+
+            # A reference point is dominated by all points.
+            reference_point = np.max(solution_set, axis=0) + 1
+
             hypervolume = WFG().compute(solution_sets, reference_point)
             print("Hypervolume of the Pareto solutions is {}.".format(hypervolume))
     """
