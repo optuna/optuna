@@ -16,13 +16,13 @@ import argparse
 import numpy as np
 import optuna
 from optuna.integration import SkorchPruningCallback
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from sklearn.datasets import fetch_openml
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import skorch
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 
 SUBSET_RATIO = 0.4
