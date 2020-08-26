@@ -26,7 +26,7 @@ from optuna.study import StudyDirection
 
 EPS = 1e-12
 _SPLITCACHE_KEY = "multi_objective:motpe:splitcache"
-_WEIGHTS_BELOW_KEY = "multi_objective:motpe:weighted_below"
+_WEIGHTS_BELOW_KEY = "multi_objective:motpe:weights_below"
 
 
 def default_gamma(x: int, _: int) -> int:
