@@ -310,12 +310,15 @@ class _OptunaObjectiveCV(_OptunaObjective):
         if self.model_dir is not None and self.lgbm_kwargs.get("return_cvbooster"):
             path = os.path.join(self.model_dir, "{}.pkl".format(trial.number))
             with open(path, "wb") as fout:
-                pickle.dump(cv_results["cvbooster"], fout)
+                # At version `lightgbm==3.0.0rc1`, :class:`lightgbm.CVBooster` does not
+                # have `__getstate__` which is required for pickle serialization.
+                cvboosters = cv_results["cvbooster"].boosters
+                pickle.dump(cvboosters, fout)
             _logger.info("The booster of trial#{} was saved as {}.".format(trial.number, path))
 
         if self.compare_validation_metrics(val_score, self.best_score):
             self.best_score = val_score
-            if self.lgbm_params.get("return_cvbooster"):
+            if self.lgbm_kwargs.get("return_cvbooster"):
                 self.best_booster_with_trial_number = (cv_results["cvbooster"], trial.number)
 
         self._postprocess(trial, elapsed_secs, average_iteration_time)
