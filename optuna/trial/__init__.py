@@ -1,4 +1,6 @@
 from optuna.trial._base import BaseTrial  # NOQA
+from optuna.trial._batch import BaseBatchTrial  # NOQA
+from optuna.trial._batch import BatchTrial  # NOQA
 from optuna.trial._fixed import FixedTrial  # NOQA
 from optuna.trial._frozen import create_trial  # NOQA
 from optuna.trial._frozen import FrozenTrial  # NOQA

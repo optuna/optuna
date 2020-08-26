@@ -9,6 +9,7 @@ from typing import Union
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna import multi_objective
+from optuna.multi_objective._batch_trial import BatchMultiObjectiveTrial  # NOQA
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
