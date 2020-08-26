@@ -145,7 +145,7 @@ class Study(BaseStudy):
         self,
         study_name: str,
         storage: Union[str, storages.BaseStorage],
-        sampler: Optional[samplers.BaseSampler] = None,
+        sampler: Optional["samplers.BaseSampler"] = None,
         pruner: Optional[pruners.BasePruner] = None,
     ) -> None:
 
@@ -755,7 +755,7 @@ class Study(BaseStudy):
 
 def create_study(
     storage: Optional[Union[str, storages.BaseStorage]] = None,
-    sampler: Optional[samplers.BaseSampler] = None,
+    sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
     study_name: Optional[str] = None,
     direction: str = "minimize",
@@ -855,7 +855,7 @@ def create_study(
 def load_study(
     study_name: str,
     storage: Union[str, storages.BaseStorage],
-    sampler: Optional[samplers.BaseSampler] = None,
+    sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
 ) -> Study:
     """Load the existing :class:`~optuna.study.Study` that has the specified name.
