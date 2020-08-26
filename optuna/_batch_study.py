@@ -17,8 +17,8 @@ from optuna import logging
 from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from optuna import trial as trial_module
-from optuna.trial._batch import BatchMultiObjectiveTrial
-from optuna.trial._batch import BatchTrial
+from optuna.multi_objective.trial import BatchMultiObjectiveTrial
+from optuna.trial import BatchTrial
 
 BatchObjectiveFuncType = Callable[[BatchTrial], np.ndarray]
 BatchMultiObjectiveFuncType = Callable[[BatchMultiObjectiveTrial], Sequence[np.ndarray]]

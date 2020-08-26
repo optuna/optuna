@@ -7,16 +7,19 @@ from typing import Sequence
 from typing import Union
 
 import optuna
-from optuna.multi_objective.trial import MultiObjectiveTrial
 from optuna import type_checking
 
 if type_checking.TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType
 
+TrialListType = Union[
+    Sequence["optuna.trial.Trial"], Sequence["optuna.multi_objective.trial.MultiObjectiveTrial"]
+]
+
 
 class BaseBatchTrial(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def _get_trials(self) -> Union[Sequence["optuna.trial.Trial"], Sequence[MultiObjectiveTrial]]:
+    def _get_trials(self) -> TrialListType:
         raise NotImplementedError
 
     def suggest_float(
@@ -78,20 +81,3 @@ class BatchTrial(BaseBatchTrial):
 
     def should_prune(self) -> bool:
         return all((trial.should_prune() for trial in self._get_trials()))
-
-
-class BatchMultiObjectiveTrial(BaseBatchTrial):
-    def __init__(self, trials: Sequence[MultiObjectiveTrial]) -> None:
-        self._trials = trials
-
-    def _get_trials(self) -> Sequence[MultiObjectiveTrial]:
-        return self._trials
-
-    def report(self, values: Sequence[Sequence[float]], step: int) -> None:
-        for value, trial in zip(values, self._trials):
-            trial.report(value, step)
-
-    def _report_complete_values(self, values: Sequence[np.ndarray]) -> None:
-        values = np.array(values).transpose()
-        for value, trial in zip(values, self._trials):
-            trial._report_complete_values(value)
