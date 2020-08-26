@@ -358,7 +358,7 @@ class Study(BaseStudy):
             "state",
         ),
         multi_index: bool = False,
-    ) -> pd.DataFrame:
+    ) -> "pd.DataFrame":
         """Export trials as a pandas DataFrame_.
 
         The DataFrame_ provides various features to analyze studies. It is also useful to draw a
