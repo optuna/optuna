@@ -893,6 +893,33 @@ def load_study(
     # type: (...) -> Study
     """Load the existing :class:`~optuna.study.Study` that has the specified name.
 
+    Example:
+
+        .. testsetup::
+
+            import os
+
+            if os.path.exists("example.db"):
+                raise RuntimeError("'example.db' already exists. Please remove it.")
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_float("x", 0, 10)
+                return x ** 2
+
+            study = optuna.create_study(storage="sqlite:///example.db", study_name="my_study")
+            study.optimize(objective, n_trials=3)
+
+            loaded_study = optuna.load_study(study_name="my_study", storage="sqlite:///example.db")
+            assert len(loaded_study.trials) == len(study.trials)
+
+        .. testcleanup::
+
+            os.remove("example.db")
+
     Args:
         study_name:
             Study's name. Each study has a unique name as an identifier.
