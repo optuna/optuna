@@ -38,9 +38,7 @@ y = y[indices][:y]
 
 X /= 255.0
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.25, random_state=42
-)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -93,9 +91,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    pruner = (
-        optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
-    )
+    pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
 
     study = optuna.create_study(direction="maximize", pruner=pruner)
     study.optimize(objective, n_trials=100, timeout=600)
