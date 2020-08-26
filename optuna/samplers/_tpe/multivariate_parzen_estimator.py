@@ -1,157 +1,34 @@
-from typing import Callable
-from typing import NamedTuple
-from typing import Optional
-
 import numpy as np
-from numpy import ndarray
 from scipy.stats import truncnorm
-from scipy.special import erf
+import scipy.special
+
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 from optuna import distributions
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Tuple  # NOQA
+from optuna.distributions import BaseDistribution
+from optuna.study import Study
+from optuna.trial import FrozenTrial
+from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 
 EPS = 1e-12
 
 
-class _ParzenEstimatorParameters(
-    NamedTuple(
-        "_ParzenEstimatorParameters",
-        [
-            ("consider_prior", bool),
-            ("prior_weight", Optional[float]),
-            ("consider_magic_clip", bool),
-            ("consider_endpoints", bool),
-            ("weights", Callable[[int], ndarray]),
-        ],
-    )
-):
-    pass
-
-
-class _ParzenEstimator(object):
-    def __init__(
-        self,
-        mus,  # type: ndarray
-        low,  # type: float
-        high,  # type: float
-        parameters,  # type: _ParzenEstimatorParameters
-    ):
-        # type: (...) -> None
-
-        self.weights, self.mus, self.sigmas = _ParzenEstimator._calculate(
-            mus,
-            low,
-            high,
-            parameters.consider_prior,
-            parameters.prior_weight,
-            parameters.consider_magic_clip,
-            parameters.consider_endpoints,
-            parameters.weights,
-        )
-
-    @classmethod
-    def _calculate(
-        cls,
-        mus,  # type: ndarray
-        low,  # type: float
-        high,  # type: float
-        consider_prior,  # type: bool
-        prior_weight,  # type: Optional[float]
-        consider_magic_clip,  # type: bool
-        consider_endpoints,  # type: bool
-        weights_func,  # type: Callable[[int], ndarray]
-    ):
-        # type: (...) -> Tuple[ndarray, ndarray, ndarray]
-        """Calculates the weights, mus and sigma for the Parzen estimator.
-
-           Note: When the number of observations is zero, the Parzen estimator ignores the
-           `consider_prior` flag and utilizes a prior. Validation of this approach is future work.
-        """
-
-        mus = np.asarray(mus)
-        sigma = np.asarray([], dtype=float)
-        prior_pos = 0
-
-        # Parzen estimator construction requires at least one observation or a priror.
-        if mus.size == 0:
-            consider_prior = True
-
-        if consider_prior:
-            prior_mu = 0.5 * (low + high)
-            prior_sigma = 1.0 * (high - low)
-            if mus.size == 0:
-                low_sorted_mus_high = np.zeros(3)
-                sorted_mus = low_sorted_mus_high[1:-1]
-                sorted_mus[0] = prior_mu
-                sigma = np.asarray([prior_sigma])
-                prior_pos = 0
-                order = []  # type: List[int]
-            else:  # When mus.size is greater than 0.
-                # We decide the place of the  prior.
-                order = np.argsort(mus).astype(int)
-                ordered_mus = mus[order]
-                prior_pos = np.searchsorted(ordered_mus, prior_mu)
-                # We decide the mus.
-                low_sorted_mus_high = np.zeros(len(mus) + 3)
-                sorted_mus = low_sorted_mus_high[1:-1]
-                sorted_mus[:prior_pos] = ordered_mus[:prior_pos]
-                sorted_mus[prior_pos] = prior_mu
-                sorted_mus[prior_pos + 1 :] = ordered_mus[prior_pos:]
-        else:
-            order = np.argsort(mus)
-            # We decide the mus.
-            low_sorted_mus_high = np.zeros(len(mus) + 2)
-            sorted_mus = low_sorted_mus_high[1:-1]
-            sorted_mus[:] = mus[order]
-
-        # We decide the sigma.
-        if mus.size > 0:
-            low_sorted_mus_high[-1] = high
-            low_sorted_mus_high[0] = low
-            sigma = np.maximum(
-                low_sorted_mus_high[1:-1] - low_sorted_mus_high[0:-2],
-                low_sorted_mus_high[2:] - low_sorted_mus_high[1:-1],
-            )
-            if not consider_endpoints and low_sorted_mus_high.size > 2:
-                sigma[0] = low_sorted_mus_high[2] - low_sorted_mus_high[1]
-                sigma[-1] = low_sorted_mus_high[-2] - low_sorted_mus_high[-3]
-
-        # We decide the weights.
-        unsorted_weights = weights_func(mus.size)
-        if consider_prior:
-            sorted_weights = np.zeros_like(sorted_mus)
-            sorted_weights[:prior_pos] = unsorted_weights[order[:prior_pos]]
-            sorted_weights[prior_pos] = prior_weight
-            sorted_weights[prior_pos + 1 :] = unsorted_weights[order[prior_pos:]]
-        else:
-            sorted_weights = unsorted_weights[order]
-        sorted_weights /= sorted_weights.sum()
-
-        # We adjust the range of the 'sigma' according to the 'consider_magic_clip' flag.
-        maxsigma = 1.0 * (high - low)
-        if consider_magic_clip:
-            minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(sorted_mus)))
-        else:
-            minsigma = EPS
-        sigma = np.clip(sigma, minsigma, maxsigma)
-        if consider_prior:
-            sigma[prior_pos] = prior_sigma
-
-        return sorted_weights, sorted_mus, sigma
+# TODO(kstoenriv3): not sure if we really need _ParzenEstimatorParameters class
+# as there are so many attributes in _MultivariateParzenEstimator class
 
 
 class _MultivariateParzenEstimator:
-    
     def __init__(
-        self, 
-        search_space, 
-        multivariate_samples,
-        parameters,
-    ):
+        self,
+        multivariate_samples: Dict[str, np.ndarray],
+        search_space: Dict[str, BaseDistribution],
+        parameters: _ParzenEstimatorParameters,
+    ) -> None:
         # weights
         # search_space: Dict[str, BaseDistribution]
         # mus: Dict[str, Optional[np.ndarray]]
@@ -161,52 +38,314 @@ class _MultivariateParzenEstimator:
         # q: Dict[str, Optional[float]]
         # categorical_weights: Dict[str, Optional[float]]
 
-
         self._search_space = search_space
         self._parameters = parameters
-        self._high = {}
-        self._q = {}
-        self._mus = {}
-        self._sigmas = {}
-        self._low = {}
-        self._categorical_weights = {}
-        
         self._weights = self._calculate_weights(multivariate_samples)
-        
-        multivariate_samples = self._transform_to_uniform(multivariate_samples)
 
+        self._low: Dict[str, Optional[float]] = {}
+        self._high: Dict[str, Optional[float]] = {}
+        self._q: Dict[str, Optional[float]] = {}
         for param_name, dist in search_space.items():
-            samples = multivariate_samples[param_name]
-            # カテゴリ分布の場合は別処理
             if isinstance(dist, distributions.CategoricalDistribution):
-                low = high = q = mus = sigmas = None
-                raise NotImplementedError
+                low = high = q = None
             else:
-                low, high, q, mus, sigmas = self._calculate_parzen_est_params(samples)
-                categorical_weights = None
+                low, high, q = self._calculate_parzen_bounds(dist)
             self._low[param_name] = low
             self._high[param_name] = high
             self._q[param_name] = q
+
+        # _low, _high, _q is needed for transformation
+        multivariate_samples = self._transform_to_uniform(multivariate_samples)
+
+        # transformed multivariate_samples are needed for following operations
+        self._sigmas0 = self._precompute_sigmas0(multivariate_samples)
+
+        self._mus: Dict[str, Optional[np.ndarray]] = {}
+        self._sigmas: Dict[str, Optional[np.ndarray]] = {}
+        self._categorical_weights: Dict[str, Optional[np.ndarray]] = {}
+        for param_name, dist in search_space.items():
+            samples = multivariate_samples[param_name]
+            if isinstance(dist, distributions.CategoricalDistribution):
+                mus = sigmas = None
+                categorical_weights = self._calculate_categorical_params(
+                    samples, param_name
+                )
+            else:
+                mus, sigmas = self._calculate_parzen_est_params(samples, param_name)
+                categorical_weights = None
             self._mus[param_name] = mus
             self._sigmas[param_name] = sigmas
             self._categorical_weights[param_name] = categorical_weights
 
-    def sample(self, rng, size):
-        # TODO(kstoneriv3): maybe divide this functions into smaller ones 
+    def _calculate_weights(
+        self, multivariate_samples: Dict[str, np.ndarray]
+    ) -> np.ndarray:
+
+        # We decide the weights.
+        consider_prior = self._parameters.consider_prior
+        prior_weight = self._parameters.prior_weight
+        weights_func = self._parameters.weights
+        sample_size = next(iter(multivariate_samples.values())).size
+        if consider_prior:
+            weights = np.zeros(sample_size + 1)
+            weights[:-1] = weights_func(sample_size)
+            weights[-1] = prior_weight
+        else:
+            weights = weights_func(sample_size)
+        weights /= weights.sum()
+        return weights
+
+    def _calculate_parzen_bounds(
+        self, distribution: BaseDistribution
+    ) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+
+        # calculate low and high
+        if isinstance(distribution, distributions.UniformDistribution):
+            low = distribution.low
+            high = distribution.high
+            q = None
+        elif isinstance(distribution, distributions.LogUniformDistribution):
+            low = np.log(distribution.low)
+            high = np.log(distribution.high)
+            q = None
+        elif isinstance(distribution, distributions.DiscreteUniformDistribution):
+            q = distribution.q
+            low = distribution.low - 0.5 * q
+            high = distribution.high + 0.5 * q
+        elif isinstance(distribution, distributions.IntUniformDistribution):
+            q = distribution.step
+            low = distribution.low - 0.5 * q
+            high = distribution.high + 0.5 * q
+        elif isinstance(distribution, distributions.IntLogUniformDistribution):
+            low = np.log(distribution.low - 0.5)
+            high = np.log(distribution.high + 0.5)
+            q = None
+        else:
+            distribution_list = [
+                distributions.UniformDistribution.__name__,
+                distributions.LogUniformDistribution.__name__,
+                distributions.DiscreteUniformDistribution.__name__,
+                distributions.IntUniformDistribution.__name__,
+                distributions.IntLogUniformDistribution.__name__,
+                distributions.CategoricalDistribution.__name__,
+            ]
+            raise NotImplementedError(
+                "The distribution {} is not implemented. "
+                "The parameter distribution should be one of the {}".format(
+                    distribution, distribution_list
+                )
+            )
+
+        assert low < high
+
+        return low, high, q
+
+    def _transform_to_uniform(
+        self, multivariate_samples: Dict[str, np.ndarray]
+    ) -> Dict[str, np.ndarray]:
+
+        transformed = {}
+        for param_name, samples in multivariate_samples.items():
+            distribution = self._search_space[param_name]
+            if isinstance(distribution, distributions.UniformDistribution):
+                transformed[param_name] = samples
+            elif isinstance(distribution, distributions.LogUniformDistribution):
+                transformed[param_name] = np.log(samples)
+            elif isinstance(distribution, distributions.DiscreteUniformDistribution):
+                transformed[param_name] = samples
+            elif isinstance(distribution, distributions.IntUniformDistribution):
+                transformed[param_name] = samples
+            elif isinstance(distribution, distributions.IntLogUniformDistribution):
+                transformed[param_name] = np.log(samples)
+            elif isinstance(distribution, distributions.CategoricalDistribution):
+                transformed[param_name] = samples
+            else:
+                distribution_list = [
+                    distributions.UniformDistribution.__name__,
+                    distributions.LogUniformDistribution.__name__,
+                    distributions.DiscreteUniformDistribution.__name__,
+                    distributions.IntUniformDistribution.__name__,
+                    distributions.IntLogUniformDistribution.__name__,
+                    distributions.CategoricalDistribution.__name__,
+                ]
+                raise NotImplementedError(
+                    "The distribution {} is not implemented. "
+                    "The parameter distribution should be one of the {}".format(
+                        distribution, distribution_list
+                    )
+                )
+        return transformed
+
+    def _transform_from_uniform(
+        self, multivariate_samples: Dict[str, np.ndarray]
+    ) -> Dict[str, np.ndarray]:
+
+        transformed = {}
+        for param_name, samples in multivariate_samples.items():
+            distribution = self._search_space[param_name]
+            if isinstance(distribution, distributions.UniformDistribution):
+                transformed[param_name] = samples
+            elif isinstance(distribution, distributions.LogUniformDistribution):
+                transformed[param_name] = np.exp(samples)
+            elif isinstance(distribution, distributions.DiscreteUniformDistribution):
+                q = self._q[param_name]
+                samples = np.round(samples / q) * q
+                transformed[param_name] = np.clip(
+                    samples, self._low[param_name], self._high[param_name]
+                )
+            elif isinstance(distribution, distributions.IntUniformDistribution):
+                q = self._q[param_name]
+                samples = np.round(samples / q) * q
+                samples = np.clip(
+                    samples, self._low[param_name], self._high[param_name]
+                )
+                transformed[param_name] = samples.astype(int)
+            elif isinstance(distribution, distributions.IntLogUniformDistribution):
+                transformed[param_name] = np.round(np.exp(samples))
+            elif isinstance(distribution, distributions.CategoricalDistribution):
+                transformed[param_name] = samples
+            else:
+                distribution_list = [
+                    distributions.UniformDistribution.__name__,
+                    distributions.LogUniformDistribution.__name__,
+                    distributions.DiscreteUniformDistribution.__name__,
+                    distributions.IntUniformDistribution.__name__,
+                    distributions.IntLogUniformDistribution.__name__,
+                    distributions.CategoricalDistribution.__name__,
+                ]
+                raise NotImplementedError(
+                    "The distribution {} is not implemented. "
+                    "The parameter distribution should be one of the {}".format(
+                        distribution, distribution_list
+                    )
+                )
+        return transformed
+
+    def _precompute_sigmas0(
+        self, multivariate_samples: Dict[str, np.ndarray]
+    ) -> np.ndarray:
+
+        # categorical parameters are not considered
+        param_names = list(multivariate_samples.keys())
+        continuous_param_types = (
+            distributions.UniformDistribution,
+            distributions.LogUniformDistribution,
+            distributions.IntUniformDistribution,
+            distributions.IntLogUniformDistribution,
+            distributions.DiscreteUniformDistribution,
+        )
+        rescaled_samples_list = []
+        for param_name in param_names:
+            if isinstance(self._search_space[param_name], continuous_param_types):
+                high = self._high[param_name]
+                low = self._low[param_name]
+                assert high is not None
+                assert low is not None
+                samples = multivariate_samples[param_name]
+                samples = (samples - low) / (high - low)
+                rescaled_samples_list.append(samples)
+            else:  # ignore categorical
+                continue
+        rescaled_samples = np.array(rescaled_samples_list).T
+
+        # compute distance matrix of samples
+        distances = np.linalg.norm(
+            rescaled_samples[:, None, :] - rescaled_samples[None, :, :], axis=2
+        )
+        distances += np.diag(np.ones(len(samples)) * np.infty)
+
+        return np.min(distances, axis=1)
+
+    def _calculate_categorical_params(
+        self, samples: np.ndarray, param_name: str
+    ) -> np.ndarray:
+
+        samples = samples.astype(int)
+        choices = self._search_space[param_name].choices
+        consider_prior = self._parameters.consider_prior
+        prior_weights = self._parameters.prior_weight
+        if consider_prior:
+            weights = (
+                prior_weights / samples.size * np.ones((samples.size + 1, len(choices)))
+            )
+            weights[np.arange(samples.size), samples] += 1
+        else:
+            weights = (
+                prior_weights / samples.size * np.ones((samples.size, len(choices)))
+            )
+            weights[np.arange(samples.size), samples] += 1
+        weights /= weights.sum(axis=1, keepdims=True)
+        return weights
+
+    def _calculate_parzen_est_params(
+        self, samples: np.ndarray, param_name: str
+    ) -> Tuple[np.ndarray, np.ndarray]:
+
+        samples_size = samples.size
+        consider_prior = self._parameters.consider_prior
+        consider_magic_clip = self._parameters.consider_magic_clip
+        sigmas0 = self._sigmas0
+        low = self._low[param_name]
+        high = self._high[param_name]
+        assert low is not None
+        assert high is not None
+
+        if samples_size == 0:
+            consider_prior = True
+
+        if consider_prior:
+
+            prior_mu = 0.5 * (low + high)
+            prior_sigma = 1.0 * (high - low)
+
+            mus = np.zeros(samples_size + 1)
+            mus[:samples_size] = samples
+            mus[samples_size] = prior_mu
+
+            sigmas = np.zeros(samples_size + 1)
+            sigmas[:samples_size] = sigmas0 * (high - low)
+            sigmas[samples_size] = prior_sigma
+
+        else:
+            mus = samples
+            sigmas = sigmas0 * (high - low)
+
+        # We adjust the range of the 'sigmas' according to the 'consider_magic_clip' flag.
+        maxsigma = 1.0 * (high - low)
+        if consider_magic_clip:
+            minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(mus)))
+        else:
+            minsigma = EPS
+        sigmas = np.clip(sigmas, minsigma, maxsigma)
+
+        return mus, sigmas
+
+    def sample(self, rng: np.random.RandomState, size: int) -> Dict[str, np.ndarray]:
+
         multivariate_samples = {}
-        # active componentの決定
-        active = rng.choice(len(self._weights), size, self._weights)
-        for param_name, dist in self._search_space.items(): 
-            # カテゴリ分布と場合分けしつつ、
+        active = rng.choice(len(self._weights), size, p=self._weights)
+
+        for param_name, dist in self._search_space.items():
+
             if isinstance(dist, distributions.CategoricalDistribution):
-                pass
+                categorical_weights = self._categorical_weights[param_name]
+                assert categorical_weights is not None
+                weights = categorical_weights[active, :]
+                samples = _MultivariateParzenEstimator._sample_from_categorical_dist(
+                    rng, weights
+                )
+
             else:
                 # restore parameters of parzen estimators
                 low = self._low[param_name]
                 high = self._high[param_name]
-                q = self._q[param_name]
                 mus = self._mus[param_name]
                 sigmas = self._sigmas[param_name]
+                assert low is not None
+                assert high is not None
+                assert mus is not None
+                assert sigmas is not None
+
                 # sample from truncnorm
                 trunc_low = (low - mus[active]) / sigmas[active]
                 trunc_high = (high - mus[active]) / sigmas[active]
@@ -224,19 +363,27 @@ class _MultivariateParzenEstimator:
                             random_state=rng,
                         ),
                     )
-                if q:
-                    samples = np.round(samples / q) * q
             multivariate_samples[param_name] = samples
-        return self._transform_from_uniform(multivariate_samples)
+        multivariate_samples = self._transform_from_uniform(multivariate_samples)
+        return multivariate_samples
 
-    def log_pdf(self, multivariate_samples):
-        _log_pdf = 0
-        for param_name, dist in self._search_space.items(): 
-            weights = self._weights
+    def log_pdf(self, multivariate_samples: Dict[str, np.ndarray]) -> np.ndarray:
+
+        multivariate_samples = self._transform_to_uniform(multivariate_samples)
+        weight_size = len(self._weights)
+        sample_size = next(iter(multivariate_samples.values())).size
+        if sample_size == 0:
+            return np.asarray([], dtype=float)
+        # compute log pdf (compoment_log_pdf)
+        # for each sample in multivariate_samples (of size sample_size)
+        # for each component of _MultivariateParzenEstimator (of size weight_size)
+        component_log_pdf = np.zeros((sample_size, weight_size))
+        for param_name, dist in self._search_space.items():
             samples = multivariate_samples[param_name]
-            # カテゴリ分布と場合分けしつつ、
             if isinstance(dist, distributions.CategoricalDistribution):
-                pass
+                categorical_weights = self._categorical_weights[param_name]
+                assert categorical_weights is not None
+                log_pdf = np.log(categorical_weights.T[samples, :])
             else:
                 # restore parameters of parzen estimators
                 low = self._low[param_name]
@@ -244,90 +391,45 @@ class _MultivariateParzenEstimator:
                 q = self._q[param_name]
                 mus = self._mus[param_name]
                 sigmas = self._sigmas[param_name]
-                if samples.size == 0:
-                    return np.asarray([], dtype=float)
-                if weights.ndim != 1:
-                    raise ValueError(
-                        "the 'weights' should be 1-dimension. "
-                        "but weights.shape = {}".format(weights.shape)
-                    )
-                if mus.ndim != 1:
-                    raise ValueError(
-                        "the 'mus' should be 1-dimension. but mus.shape = {}".format(mus.shape)
-                    )
-                if sigmas.ndim != 1:
-                    raise ValueError(
-                        "the 'sigmas' should be 1-dimension. but sigmas.shape = {}".format(
-                            sigmas.shape
-                        )
-                    )
-                p_accept = np.sum(
-                    weights
-                    * (
-                        _MultivariateParzenEstimator._normal_cdf(high, mus, sigmas)
-                        - _MultivariateParzenEstimator._normal_cdf(low, mus, sigmas)
-                    )
-                )
+                assert low is not None
+                assert high is not None
+                assert mus is not None
+                assert sigmas is not None
+
+                cdf_func = _MultivariateParzenEstimator._normal_cdf
+                p_accept = cdf_func(high, mus, sigmas) - cdf_func(low, mus, sigmas)
                 if q is None:
-                    distance = samples[..., None] - mus
-                    mahalanobis = (distance / np.maximum(sigmas, EPS)) ** 2
+                    distance = samples[:, None] - mus
+                    mahalanobis = distance / sigmas
                     z = np.sqrt(2 * np.pi) * sigmas
-                    coefficient = weights / z / p_accept
-                    return _MultivariateParzenEstimator._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
+                    coefficient = 1 / z / p_accept
+                    log_pdf = -0.5 * mahalanobis ** 2 + np.log(coefficient)
                 else:
-                    cdf_func = _MultivariateParzenEstimator._normal_cdf
                     upper_bound = np.minimum(samples + q / 2.0, high)
                     lower_bound = np.maximum(samples - q / 2.0, low)
-                    probabilities = np.sum(
-                        weights[..., None]
-                        * (
-                            cdf_func(upper_bound[None], mus[..., None], sigmas[..., None])
-                            - cdf_func(lower_bound[None], mus[..., None], sigmas[..., None])
-                        ),
-                        axis=0,
-                    )
-                    return np.log(probabilities + EPS) - np.log(p_accept + EPS)
-
-    def _transform_to_uniform(self, multivariate_samples):
-        transformed = {}
-        # 分布ごとの場合分け
-        for param_name, samples in multivariate_samples.items():
-            if isinstance(self._search_space[param_name], distributions.UniformDistribution):
-                transformed[param_name] = samples
-            else:
-                raise NotImplementedError
-        return transformed
-        
-    def _transform_from_uniform(self, multivariate_samples):
-        transformed = {}
-        # 分布ごとの場合分け
-        for param_name, samples in multivariate_samples.items():
-            if isinstance(self._search_space[param_name], distributions.UniformDistribution):
-                transformed[param_name] = samples
-            else:
-                raise NotImplementedError
-        return transformed
-
-    def _calculate_weights(self, multivariate_samples):
-        pass
-
-    def _calculate_parzen_est_params(self, samples):
-        pass
+                    cdf = cdf_func(
+                        upper_bound[:, None], mus[None], sigmas[None]
+                    ) - cdf_func(lower_bound[:, None], mus[None], sigmas[None])
+                    log_pdf = np.log(cdf) - np.log(p_accept)
+            component_log_pdf += log_pdf
+        ret = scipy.special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
+        return ret
 
     @classmethod
-    def _logsum_rows(cls, x):
-        # type: (np.ndarray) -> np.ndarray
-
-        x = np.asarray(x)
-        m = x.max(axis=1)
-        return np.log(np.exp(x - m[:, None]).sum(axis=1)) + m
-
-    @classmethod
-    def _normal_cdf(cls, x, mu, sigma):
-        # type: (float, np.ndarray, np.ndarray) -> np.ndarray
+    def _normal_cdf(cls, x: float, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
 
         mu, sigma = map(np.asarray, (mu, sigma))
         denominator = x - mu
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
         z = denominator / numerator
-        return 0.5 * (1 + erf(z))
+        return 0.5 * (1 + scipy.special.erf(z))
+
+    @classmethod
+    def _sample_from_categorical_dist(
+        cls, rng: np.random.RandomState, probabilities: np.ndarray
+    ) -> np.ndarray:
+
+        sample_size = probabilities.shape[0]
+        rnd_quantile = rng.rand(sample_size)
+        cum_probs = np.cumsum(probabilities, axis=1)
+        return np.sum(cum_probs < rnd_quantile[..., None], axis=1)
