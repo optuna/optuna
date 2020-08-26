@@ -228,6 +228,19 @@ class Study(BaseStudy):
         default choice for the sampler is TPE.
         See also :class:`~optuna.samplers.TPESampler` for more details on 'TPE'.
 
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_uniform("x", -1, 1)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
         Args:
             func:
                 A callable that implements objective function.
@@ -394,7 +407,7 @@ class Study(BaseStudy):
                 import pandas
 
                 def objective(trial):
-                    x = trial.suggest_uniform('x', -1, 1)
+                    x = trial.suggest_uniform("x", -1, 1)
                     return x ** 2
 
                 study = optuna.create_study()
@@ -519,16 +532,16 @@ class Study(BaseStudy):
                 import optuna
 
                 def objective(trial):
-                    x = trial.suggest_uniform('x', 0, 10)
+                    x = trial.suggest_uniform("x", 0, 10)
                     return x ** 2
 
                 study = optuna.create_study()
-                study.enqueue_trial({'x': 5})
-                study.enqueue_trial({'x': 0})
+                study.enqueue_trial({"x": 5})
+                study.enqueue_trial({"x": 0})
                 study.optimize(objective, n_trials=2)
 
-                assert study.trials[0].params == {'x': 5}
-                assert study.trials[1].params == {'x': 0}
+                assert study.trials[0].params == {"x": 5}
+                assert study.trials[1].params == {"x": 0}
 
         Args:
             params:
@@ -553,7 +566,7 @@ class Study(BaseStudy):
                 from optuna.distributions import UniformDistribution
 
                 def objective(trial):
-                    x = trial.suggest_uniform('x', 0, 10)
+                    x = trial.suggest_uniform("x", 0, 10)
                     return x ** 2
 
                 study = optuna.create_study()
