@@ -32,8 +32,6 @@ else:
     setattr(sys.modules[__name__], "LightGBMTuner", tuner.__dict__["LightGBMTuner"])
     setattr(sys.modules[__name__], "LightGBMTunerCV", tuner.__dict__["LightGBMTunerCV"])
 
-    CallbackEnv = object  # NOQA
-
 
 class LightGBMPruningCallback(object):
     """Callback for LightGBM to prune unpromising trials.
@@ -74,7 +72,7 @@ class LightGBMPruningCallback(object):
         self._valid_name = valid_name
         self._metric = metric
 
-    def __call__(self, env: CallbackEnv) -> None:
+    def __call__(self, env: "CallbackEnv") -> None:
 
         # If this callback has been passed to `lightgbm.cv` function,
         # the value of `is_cv` becomes `True`. See also:
