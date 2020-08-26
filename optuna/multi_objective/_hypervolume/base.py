@@ -27,13 +27,13 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
             study = optuna.multi_objective.create_study(["maximize", "minimize"])
             study.optimize(objective, n_trials=10)
             trials = study.get_pareto_front_trials()
-            solution_sets = np.ndarray([t.values for t in trials])
+            solution_sets = np.array([list(t.values) for t in trials])
 
             # Normalize the solution set by negating
-            solution_sets = np.ndarray([[-s[0], s[1]] for s in solution_sets])
+            solution_sets = np.array([[-s[0], s[1]] for s in solution_sets])
 
             # A reference point is dominated by all points.
-            reference_point = np.max(solution_set, axis=0) + 1
+            reference_point = np.max(solution_sets, axis=0) + 1
 
             hypervolume = WFG().compute(solution_sets, reference_point)
             print("Hypervolume of the Pareto solutions is {}.".format(hypervolume))
