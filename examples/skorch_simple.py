@@ -24,12 +24,13 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import skorch
 
+
 SUBSET_RATIO = 0.4
 
 mnist = fetch_openml("mnist_784", cache=False)
 
-X = mnist.data.astype('float32')
-y = mnist.target.astype('int64')
+X = mnist.data.astype("float32")
+y = mnist.target.astype("int64")
 indices = np.random.permutation(len(X))
 N = int(len(X) * SUBSET_RATIO)
 X = X[indices][:N]
@@ -37,12 +38,13 @@ y = y[indices][:y]
 
 X /= 255.0
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=42
+)
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class ClassifierModule(nn.Module):
-
     def __init__(self, trial: optuna.Trial) -> None:
         super().__init__()
 
@@ -72,7 +74,7 @@ def objective(trial: optuna.Trial) -> float:
         max_epochs=20,
         lr=0.1,
         device=device,
-        callbacks=[SkorchPruningCallback(trial, 'valid_acc')],
+        callbacks=[SkorchPruningCallback(trial, "valid_acc")],
     )
 
     net.fit(X_train, y_train)
@@ -91,9 +93,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
+    pruner = (
+        optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
+    )
 
-    study = optuna.create_study(direction='maximize', pruner=pruner)
+    study = optuna.create_study(direction="maximize", pruner=pruner)
     study.optimize(objective, n_trials=100, timeout=600)
 
     print("Number of finished trials: {}".format(len(study.trials)))
