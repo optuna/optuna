@@ -1,4 +1,5 @@
 import math
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -91,14 +92,16 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
     param_values_range = {}
     for p_name in sorted_params:
         values = [t.params[p_name] for t in trials if p_name in t.params]
+        max_value = max(values)
+        min_value = min(values)
         if _is_log_scale(trials, p_name):
-            padding = (math.log10(max(values)) - math.log10(min(values))) * padding_ratio
-            min_value = math.pow(10, math.log10(min(values)) - padding)
-            max_value = math.pow(10, math.log10(max(values)) + padding)
+            padding = (math.log10(max_value) - math.log10(min_value)) * padding_ratio
+            min_value = math.pow(10, math.log10(min_value) - padding)
+            max_value = math.pow(10, math.log10(max_value) + padding)
         else:
-            padding = (max(values) - min(values)) * padding_ratio
-            min_value = min(values) - padding
-            max_value = max(values) + padding
+            padding = (max_value - min_value) * padding_ratio
+            min_value = min_value - padding
+            max_value = max_value + padding
         param_values_range[p_name] = (min_value, max_value)
 
     if len(sorted_params) == 2:
@@ -158,8 +161,11 @@ def _generate_contour_subplot(
     x_param: str,
     y_param: str,
     direction: StudyDirection,
-    param_values_range: dict,
+    param_values_range: Optional[Dict[str, Tuple[float, float]]] = None,
 ) -> Tuple["Contour", "Scatter"]:
+
+    if param_values_range is None:
+        param_values_range = {}
 
     x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
     y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
@@ -170,6 +176,7 @@ def _generate_contour_subplot(
         _logger.warning("Param {} unique value length is less than 2.".format(y_param))
         return go.Contour(), go.Scatter()
 
+    # Padding to the plot.
     x_range = param_values_range[x_param]
     x_indices = [x_range[0]] + x_indices + [x_range[1]]
     y_range = param_values_range[y_param]

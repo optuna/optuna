@@ -74,14 +74,14 @@ def test_generate_contour_plot_for_few_observations() -> None:
     # `x_axis` has one observation.
     params = ["param_a", "param_b"]
     contour, scatter = _generate_contour_subplot(
-        trials, params[0], params[1], StudyDirection.MINIMIZE, {}
+        trials, params[0], params[1], StudyDirection.MINIMIZE
     )
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
     # `y_axis` has one observation.
     params = ["param_b", "param_a"]
     contour, scatter = _generate_contour_subplot(
-        trials, params[0], params[1], StudyDirection.MINIMIZE, {}
+        trials, params[0], params[1], StudyDirection.MINIMIZE
     )
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
