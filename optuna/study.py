@@ -33,7 +33,6 @@ from optuna import trial as trial_module
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna import type_checking
 
 ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
@@ -199,7 +198,7 @@ class Study(BaseStudy):
         timeout: Optional[float] = None,
         n_jobs: int = 1,
         catch: Tuple[Type[Exception], ...] = (),
-        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
+        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
     ) -> None:
@@ -587,7 +586,7 @@ class Study(BaseStudy):
         n_trials: Optional[int],
         timeout: Optional[float],
         catch: Tuple[Type[Exception], ...],
-        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]],
+        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]],
         gc_after_trial: bool,
         time_start: Optional[datetime.datetime],
     ) -> None:
@@ -603,7 +602,7 @@ class Study(BaseStudy):
         n_trials: Optional[int],
         timeout: Optional[float],
         catch: Tuple[Type[Exception], ...],
-        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]],
+        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]],
         gc_after_trial: bool,
         time_start: Optional[datetime.datetime],
     ) -> None:
@@ -652,7 +651,7 @@ class Study(BaseStudy):
         self,
         func: ObjectiveFuncType,
         catch: Tuple[Type[Exception], ...],
-        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]],
+        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]],
         gc_after_trial: bool,
     ) -> None:
 
@@ -755,7 +754,7 @@ class Study(BaseStudy):
 
 
 def create_study(
-    storage: Optional[str, storages.BaseStorage] = None,
+    storage: Optional[Union[str, storages.BaseStorage]] = None,
     sampler: Optional[samplers.BaseSampler] = None,
     pruner: Optional[pruners.BasePruner] = None,
     study_name: Optional[str] = None,
