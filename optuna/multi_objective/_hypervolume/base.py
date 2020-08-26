@@ -28,7 +28,7 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
                 X, y = load_iris(return_X_y=True)
                 X_train, X_valid, y_train, y_valid = train_test_split(X, y)
                 classes = np.unique(y)
-                n_train_iter = 100
+                n_train_iter = 10
 
                 def objective(trial):
                     start = time.time()
@@ -46,7 +46,7 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
                     return accuracy, elapsed_time
 
                 study = optuna.multi_objective.create_study(["maximize", "minimize"])
-                study.optimize(objective, n_trials=100)
+                study.optimize(objective, n_trials=10)
                 trials = study.get_pareto_front_trials()
                 solution_sets = np.ndarray([t.values for t in trials])
                 # Transform the objective to be maximized into that for minimization.
