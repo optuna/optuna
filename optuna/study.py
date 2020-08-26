@@ -795,6 +795,19 @@ def create_study(
     # type: (...) -> Study
     """Create a new :class:`~optuna.study.Study`.
 
+    Example:
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_uniform("x", 0, 10)
+                return x ** 2
+
+            study = optuna.create_study()
+            study.optimize(objective, n_trials=3)
+
     Args:
         storage:
             Database URL. If this argument is set to None, in-memory storage is used, and the
