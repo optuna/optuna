@@ -404,8 +404,6 @@ def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:
     values = multi_objective.trial.MultiObjectiveTrial(trial)._get_values()
     _logger.info(
         "Trial {} finished with values: {} with parameters: {}.".format(
-            trial.number,
-            values,
-            trial.params,
+            trial.number, values, trial.params
         )
     )

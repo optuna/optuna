@@ -43,10 +43,7 @@ def upgrade():
         sa.Column("study_id", sa.Integer(), nullable=True),
         sa.Column("key", sa.String(length=512), nullable=True),
         sa.Column("value_json", sa.String(length=2048), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["study_id"],
-            ["studies.study_id"],
-        ),
+        sa.ForeignKeyConstraint(["study_id"], ["studies.study_id"]),
         sa.PrimaryKeyConstraint("study_system_attribute_id"),
         sa.UniqueConstraint("study_id", "key"),
     )
@@ -56,10 +53,7 @@ def upgrade():
         sa.Column("study_id", sa.Integer(), nullable=True),
         sa.Column("key", sa.String(length=512), nullable=True),
         sa.Column("value_json", sa.String(length=2048), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["study_id"],
-            ["studies.study_id"],
-        ),
+        sa.ForeignKeyConstraint(["study_id"], ["studies.study_id"]),
         sa.PrimaryKeyConstraint("study_user_attribute_id"),
         sa.UniqueConstraint("study_id", "key"),
     )
@@ -75,10 +69,7 @@ def upgrade():
         sa.Column("value", sa.Float(), nullable=True),
         sa.Column("datetime_start", sa.DateTime(), nullable=True),
         sa.Column("datetime_complete", sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["study_id"],
-            ["studies.study_id"],
-        ),
+        sa.ForeignKeyConstraint(["study_id"], ["studies.study_id"]),
         sa.PrimaryKeyConstraint("trial_id"),
     )
     op.create_table(
@@ -88,10 +79,7 @@ def upgrade():
         sa.Column("param_name", sa.String(length=512), nullable=True),
         sa.Column("param_value", sa.Float(), nullable=True),
         sa.Column("distribution_json", sa.String(length=2048), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["trial_id"],
-            ["trials.trial_id"],
-        ),
+        sa.ForeignKeyConstraint(["trial_id"], ["trials.trial_id"]),
         sa.PrimaryKeyConstraint("param_id"),
         sa.UniqueConstraint("trial_id", "param_name"),
     )
@@ -101,10 +89,7 @@ def upgrade():
         sa.Column("trial_id", sa.Integer(), nullable=True),
         sa.Column("key", sa.String(length=512), nullable=True),
         sa.Column("value_json", sa.String(length=2048), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["trial_id"],
-            ["trials.trial_id"],
-        ),
+        sa.ForeignKeyConstraint(["trial_id"], ["trials.trial_id"]),
         sa.PrimaryKeyConstraint("trial_system_attribute_id"),
         sa.UniqueConstraint("trial_id", "key"),
     )
@@ -114,10 +99,7 @@ def upgrade():
         sa.Column("trial_id", sa.Integer(), nullable=True),
         sa.Column("key", sa.String(length=512), nullable=True),
         sa.Column("value_json", sa.String(length=2048), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["trial_id"],
-            ["trials.trial_id"],
-        ),
+        sa.ForeignKeyConstraint(["trial_id"], ["trials.trial_id"]),
         sa.PrimaryKeyConstraint("trial_user_attribute_id"),
         sa.UniqueConstraint("trial_id", "key"),
     )
@@ -127,10 +109,7 @@ def upgrade():
         sa.Column("trial_id", sa.Integer(), nullable=True),
         sa.Column("step", sa.Integer(), nullable=True),
         sa.Column("value", sa.Float(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["trial_id"],
-            ["trials.trial_id"],
-        ),
+        sa.ForeignKeyConstraint(["trial_id"], ["trials.trial_id"]),
         sa.PrimaryKeyConstraint("trial_value_id"),
         sa.UniqueConstraint("trial_id", "step"),
     )

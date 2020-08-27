@@ -144,9 +144,7 @@ class CmaEsSampler(BaseSampler):
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self,
-        study: "optuna.Study",
-        trial: "optuna.trial.FrozenTrial",
+        self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial"
     ) -> Dict[str, BaseDistribution]:
 
         search_space = {}  # type: Dict[str, BaseDistribution]
@@ -417,8 +415,7 @@ def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
 
 
 def _get_search_space_bound(
-    keys: List[str],
-    search_space: Dict[str, BaseDistribution],
+    keys: List[str], search_space: Dict[str, BaseDistribution]
 ) -> np.ndarray:
 
     bounds = []

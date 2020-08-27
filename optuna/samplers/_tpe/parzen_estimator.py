@@ -28,11 +28,7 @@ class _ParzenEstimatorParameters(
 
 class _ParzenEstimator(object):
     def __init__(
-        self,
-        mus: ndarray,
-        low: float,
-        high: float,
-        parameters: _ParzenEstimatorParameters,
+        self, mus: ndarray, low: float, high: float, parameters: _ParzenEstimatorParameters
     ) -> None:
 
         self.weights, self.mus, self.sigmas = _ParzenEstimator._calculate(

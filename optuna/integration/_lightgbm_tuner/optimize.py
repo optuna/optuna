@@ -253,10 +253,7 @@ class _OptunaObjective(_BaseTuner):
         return val_score
 
     def _postprocess(
-        self,
-        trial: optuna.trial.Trial,
-        elapsed_secs: float,
-        average_iteration_time: float,
+        self, trial: optuna.trial.Trial, elapsed_secs: float, average_iteration_time: float
     ) -> None:
         if self.pbar is not None:
             self.pbar.set_description(self.pbar_fmt.format(self.step_name, self.best_score))

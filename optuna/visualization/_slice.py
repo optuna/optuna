@@ -62,9 +62,7 @@ def plot_slice(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
 def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
-    layout = go.Layout(
-        title="Slice Plot",
-    )
+    layout = go.Layout(title="Slice Plot")
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 

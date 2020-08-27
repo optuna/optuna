@@ -219,9 +219,7 @@ class TPESampler(BaseSampler):
             )
 
     def _split_observation_pairs(
-        self,
-        config_vals: List[Optional[float]],
-        loss_vals: List[Tuple[float, float]],
+        self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]]
     ) -> Tuple[np.ndarray, np.ndarray]:
 
         config_vals = np.asarray(config_vals)
@@ -323,11 +321,7 @@ class TPESampler(BaseSampler):
             mus=below, low=low, high=high, parameters=self._parzen_estimator_parameters
         )
         samples_below = self._sample_from_gmm(
-            parzen_estimator=parzen_estimator_below,
-            low=low,
-            high=high,
-            q=q,
-            size=size,
+            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size
         )
         log_likelihoods_below = self._gmm_log_pdf(
             samples=samples_below,
@@ -513,11 +507,7 @@ class TPESampler(BaseSampler):
         return return_val
 
     @classmethod
-    def _categorical_log_pdf(
-        cls,
-        sample: np.ndarray,
-        p: np.ndarray,
-    ) -> np.ndarray:
+    def _categorical_log_pdf(cls, sample: np.ndarray, p: np.ndarray) -> np.ndarray:
 
         if sample.size:
             return np.log(np.asarray(p)[sample])
@@ -612,8 +602,7 @@ class TPESampler(BaseSampler):
 
 
 def _get_observation_pairs(
-    study: Study,
-    param_name: str,
+    study: Study, param_name: str
 ) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]:
     """Get observation pairs from the study.
 

@@ -955,9 +955,7 @@ class RDBStorage(BaseStorage):
 
         trial_ids = (
             session.query(models.TrialModel.trial_id)
-            .filter(
-                models.TrialModel.study_id == study_id,
-            )
+            .filter(models.TrialModel.study_id == study_id)
             .all()
         )
         trial_ids = set(

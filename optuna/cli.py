@@ -90,11 +90,7 @@ class _DeleteStudy(_BaseCommand):
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_DeleteStudy, self).get_parser(prog_name)
-        parser.add_argument(
-            "--study-name",
-            default=None,
-            help="The name of the study to delete.",
-        )
+        parser.add_argument("--study-name", default=None, help="The name of the study to delete.")
         return parser
 
     def take_action(self, parsed_args: Namespace) -> None:
@@ -112,9 +108,7 @@ class _StudySetUserAttribute(_BaseCommand):
 
         parser = super(_StudySetUserAttribute, self).get_parser(prog_name)
         parser.add_argument(
-            "--study",
-            default=None,
-            help="This argument is deprecated. Use --study-name instead.",
+            "--study", default=None, help="This argument is deprecated. Use --study-name instead."
         )
         parser.add_argument(
             "--study-name",
@@ -184,14 +178,10 @@ class _Dashboard(_BaseCommand):
 
         parser = super(_Dashboard, self).get_parser(prog_name)
         parser.add_argument(
-            "--study",
-            default=None,
-            help="This argument is deprecated. Use --study-name instead.",
+            "--study", default=None, help="This argument is deprecated. Use --study-name instead."
         )
         parser.add_argument(
-            "--study-name",
-            default=None,
-            help="The name of the study to show on the dashboard.",
+            "--study-name", default=None, help="The name of the study to show on the dashboard."
         )
         parser.add_argument(
             "--out",
@@ -264,14 +254,10 @@ class _StudyOptimize(_BaseCommand):
             "number is set to CPU counts.",
         )
         parser.add_argument(
-            "--study",
-            default=None,
-            help="This argument is deprecated. Use --study-name instead.",
+            "--study", default=None, help="This argument is deprecated. Use --study-name instead."
         )
         parser.add_argument(
-            "--study-name",
-            default=None,
-            help="The name of the study to start optimization on.",
+            "--study-name", default=None, help="The name of the study to start optimization on."
         )
         parser.add_argument(
             "file", help="Python script file where the objective function resides."
