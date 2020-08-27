@@ -67,7 +67,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
 
 def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
-    layout = go.Layout(title="Contour Plot",)
+    layout = go.Layout(title="Contour Plot")
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
