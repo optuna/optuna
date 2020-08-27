@@ -6,14 +6,15 @@ import numpy as np
 class BaseHypervolume(object, metaclass=abc.ABCMeta):
     """Base class for hypervolume calculators.
 
-        .. note::
-            This class is used for computing the hypervolumes of points in multi-objective space.
-            Each coordinate of each point represents one value of the multi-objective function.
+    .. note::
+        This class is used for computing the hypervolumes of points in multi-objective space.
+        Each coordinate of each point represents one value of the multi-objective function.
 
-        .. note::
-            We check that each objective is to be minimized. Transform objective values that are
-            to be maximized before calling this class's `compute` method.
+    .. note::
+        We check that each objective is to be minimized. Transform objective values that are
+        to be maximized before calling this class's `compute` method.
 
+    Example:
         .. testcode::
 
             import numpy as np
