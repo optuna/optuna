@@ -57,6 +57,11 @@ def test_handling_alias_metrics() -> None:
         _handling_alias_metrics(lgbm_params)
         assert lgbm_params["metric"] == "map"
 
+    for alias in ["regression", "regression_l2", "l2", "mean_squared_error", "mse"]:
+        lgbm_params = {"metric": alias}
+        _handling_alias_metrics(lgbm_params)
+        assert lgbm_params["metric"] == "l2"
+
     lgbm_params = {}
     _handling_alias_metrics(lgbm_params)
     assert lgbm_params == {}

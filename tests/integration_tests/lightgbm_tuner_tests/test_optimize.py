@@ -349,7 +349,7 @@ class TestLightGBMTuner(object):
 
     @pytest.mark.parametrize(
         "metric, study_direction, expected",
-        [("auc", "maximize", -np.inf), ("mse", "minimize", np.inf)],
+        [("auc", "maximize", -np.inf), ("l2", "minimize", np.inf)],
     )
     def test_best_score(self, metric: str, study_direction: str, expected: float) -> None:
         with turnoff_train(metric=metric):

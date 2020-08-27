@@ -211,8 +211,8 @@ def enable_propagation() -> None:
             study.optimize(objective, n_trials=10)
 
             with open('foo.log') as f:
+                assert f.readline().startswith("A new study created")
                 assert f.readline() == "Start optimization.\\n"
-                assert f.readline().startswith("Trial 0 finished with value:")
 
     """
 
