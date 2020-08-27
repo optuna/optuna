@@ -1,10 +1,10 @@
-import numpy as np
-from scipy.stats import truncnorm
-import scipy.special
-
 from typing import Dict
 from typing import Optional
 from typing import Tuple
+
+import numpy as np
+import scipy.special
+from scipy.stats import truncnorm
 
 from optuna import distributions
 from optuna.distributions import BaseDistribution
