@@ -2,24 +2,20 @@ import numpy as np
 from scipy.stats import truncnorm
 import scipy.special
 
-from typing import Any
-from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import Tuple
 
 from optuna import distributions
 from optuna.distributions import BaseDistribution
-from optuna.study import Study
-from optuna.trial import FrozenTrial
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 
 EPS = 1e-12
 
 
-# TODO(kstoenriv3): not sure if we really need _ParzenEstimatorParameters class
-# as there are so many attributes in _MultivariateParzenEstimator class
+# TODO(kstoenriv3): We need to consider if we really need `_ParzenEstimatorParameters` class
+# as there are alreaky so many attributes in `_MultivariateParzenEstimator` class.
+# `_ParzenEstimatorParameters` class is not greatly recuding the complexity of the code.
 
 
 class _MultivariateParzenEstimator:
@@ -29,14 +25,6 @@ class _MultivariateParzenEstimator:
         search_space: Dict[str, BaseDistribution],
         parameters: _ParzenEstimatorParameters,
     ) -> None:
-        # weights
-        # search_space: Dict[str, BaseDistribution]
-        # mus: Dict[str, Optional[np.ndarray]]
-        # sigma: Dict[str, Optional[np.ndarray]]
-        # low: Dict[str, Optional[float]]
-        # high: Dict[str, Optional[float]]
-        # q: Dict[str, Optional[float]]
-        # categorical_weights: Dict[str, Optional[float]]
 
         self._search_space = search_space
         self._parameters = parameters
@@ -54,10 +42,10 @@ class _MultivariateParzenEstimator:
             self._high[param_name] = high
             self._q[param_name] = q
 
-        # _low, _high, _q is needed for transformation
+        # `_low`, `_high`, `_q` are needed for transformation.
         multivariate_samples = self._transform_to_uniform(multivariate_samples)
 
-        # transformed multivariate_samples are needed for following operations
+        # Transformed multivariate_samples are needed for following operations.
         self._sigmas0 = self._precompute_sigmas0(multivariate_samples)
 
         self._mus: Dict[str, Optional[np.ndarray]] = {}
@@ -99,7 +87,7 @@ class _MultivariateParzenEstimator:
         self, distribution: BaseDistribution
     ) -> Tuple[Optional[float], Optional[float], Optional[float]]:
 
-        # calculate low and high
+        # We calculate low and high.
         if isinstance(distribution, distributions.UniformDistribution):
             low = distribution.low
             high = distribution.high
@@ -225,7 +213,7 @@ class _MultivariateParzenEstimator:
         self, multivariate_samples: Dict[str, np.ndarray]
     ) -> np.ndarray:
 
-        # categorical parameters are not considered
+        # Categorical parameters are not considered.
         param_names = list(multivariate_samples.keys())
         continuous_param_types = (
             distributions.UniformDistribution,
@@ -244,7 +232,7 @@ class _MultivariateParzenEstimator:
                 samples = multivariate_samples[param_name]
                 samples = (samples - low) / (high - low)
                 rescaled_samples_list.append(samples)
-            else:  # ignore categorical
+            else:  # Categorical parameters are ignored.
                 continue
         rescaled_samples = np.array(rescaled_samples_list).T
 
@@ -336,7 +324,7 @@ class _MultivariateParzenEstimator:
                 )
 
             else:
-                # restore parameters of parzen estimators
+                # We restore parameters of parzen estimators.
                 low = self._low[param_name]
                 high = self._high[param_name]
                 mus = self._mus[param_name]
@@ -346,7 +334,7 @@ class _MultivariateParzenEstimator:
                 assert mus is not None
                 assert sigmas is not None
 
-                # sample from truncnorm
+                # We sample from truncnorm.
                 trunc_low = (low - mus[active]) / sigmas[active]
                 trunc_high = (high - mus[active]) / sigmas[active]
                 samples = np.full((), fill_value=high + 1.0, dtype=np.float64)
@@ -374,9 +362,9 @@ class _MultivariateParzenEstimator:
         sample_size = next(iter(multivariate_samples.values())).size
         if sample_size == 0:
             return np.asarray([], dtype=float)
-        # compute log pdf (compoment_log_pdf)
+        # We compute log pdf (compoment_log_pdf)
         # for each sample in multivariate_samples (of size sample_size)
-        # for each component of _MultivariateParzenEstimator (of size weight_size)
+        # for each component of `_MultivariateParzenEstimator` (of size weight_size).
         component_log_pdf = np.zeros((sample_size, weight_size))
         for param_name, dist in self._search_space.items():
             samples = multivariate_samples[param_name]
@@ -385,7 +373,7 @@ class _MultivariateParzenEstimator:
                 assert categorical_weights is not None
                 log_pdf = np.log(categorical_weights.T[samples, :])
             else:
-                # restore parameters of parzen estimators
+                # We restore parameters of parzen estimators.
                 low = self._low[param_name]
                 high = self._high[param_name]
                 q = self._q[param_name]
@@ -415,8 +403,8 @@ class _MultivariateParzenEstimator:
         ret = scipy.special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
         return ret
 
-    @classmethod
-    def _normal_cdf(cls, x: float, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
+    @staticmethod
+    def _normal_cdf(x: float, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
 
         mu, sigma = map(np.asarray, (mu, sigma))
         denominator = x - mu
@@ -424,9 +412,9 @@ class _MultivariateParzenEstimator:
         z = denominator / numerator
         return 0.5 * (1 + scipy.special.erf(z))
 
-    @classmethod
+    @staticmethod
     def _sample_from_categorical_dist(
-        cls, rng: np.random.RandomState, probabilities: np.ndarray
+        rng: np.random.RandomState, probabilities: np.ndarray
     ) -> np.ndarray:
 
         sample_size = probabilities.shape[0]

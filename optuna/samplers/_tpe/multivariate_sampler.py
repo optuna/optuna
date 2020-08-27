@@ -90,7 +90,7 @@ class MultivariateTPESampler(TPESampler):
         param_names = list(search_space.keys())
         values, scores = _get_observation_pairs_multivariate(study, param_names)
 
-        # if the number of samples is insufficient, run random trial
+        # If the number of samples is insufficient, we run random trial.
         n = len(scores)
         if n < self._n_startup_trials:
             ret = {}
@@ -100,9 +100,9 @@ class MultivariateTPESampler(TPESampler):
                 )
             return ret
 
-        # divide data into below and above
+        # We divide data into below and above.
         below, above = self._split_multivariate_observation_pairs(values, scores)
-        # then sample by maximizing log likelihood ratio
+        # We then sample by maximizing log likelihood ratio.
         mpe_below = _MultivariateParzenEstimator(
             below, search_space, self._parzen_estimator_parameters
         )
@@ -130,10 +130,11 @@ class MultivariateTPESampler(TPESampler):
         config_vals = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
         loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
 
-        # TODO(kstoneriv3): change the order of exclusion of None and splitting.
-        # independent sampler in TPESampler first splits the observations and then exclude None.
+        # TODO(kstoneriv3): Change of the order of 1. exclusion of `None` and 2. splitting might
+        # be needed. Independent sampler in `TPESampler` first splits the observations and
+        # then exclude `None`.
 
-        # exclude param_vals with None
+        # We exclude param_vals with `None`.
         config_vals_matrix = np.array([v for v in config_vals.values()])
         index_none = np.any(np.equal(config_vals_matrix, None), axis=0)
         config_vals = {k: v[~index_none] for k, v in config_vals.items()}
@@ -141,7 +142,7 @@ class MultivariateTPESampler(TPESampler):
 
         n_below = self._gamma(len(loss_vals))
         index_loss_ascending = np.argsort(loss_vals)
-        # np.sort is used to keep chronological order
+        # `np.sort` is used to keep chronological order.
         index_below = np.sort(index_loss_ascending[:n_below])
         index_above = np.sort(index_loss_ascending[n_below:])
         below = {}
@@ -186,12 +187,12 @@ def _get_observation_pairs_multivariate(
         sign = -1
 
     scores = []
-    values = {
+    values: Dict[str, List[Optional[float]]] = {
         param_name: [] for param_name in param_names
-    }  # type: Dict[str, List[Optional[float]]]
+    }
     for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
 
-        # extract score from trial
+        # We extract score from trial.
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
@@ -207,7 +208,7 @@ def _get_observation_pairs_multivariate(
             continue
         scores.append(score)
 
-        # extract param_value from trial
+        # We extract param_value from trial.
         for param_name in param_names:
             param_value = None
             if param_name in trial.params:
