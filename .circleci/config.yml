@@ -105,7 +105,6 @@ jobs:
           command: |
             . venv/bin/activate
             cd docs
-            sphinx-autogen source/**/*.rst
             make doctest
 
   # Unit tests
