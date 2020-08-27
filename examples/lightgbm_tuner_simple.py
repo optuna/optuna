@@ -27,7 +27,11 @@ if __name__ == "__main__":
     }
 
     model = lgb.train(
-        params, dtrain, valid_sets=[dtrain, dval], verbose_eval=100, early_stopping_rounds=100,
+        params,
+        dtrain,
+        valid_sets=[dtrain, dval],
+        verbose_eval=100,
+        early_stopping_rounds=100,
     )
 
     prediction = np.rint(model.predict(val_x, num_iteration=model.best_iteration))

@@ -52,7 +52,10 @@ def _get_percentile_intermediate_result_over_trials(
 
 
 def _is_first_in_interval_step(
-    step: int, intermediate_steps: KeysView[int], n_warmup_steps: int, interval_steps: int,
+    step: int,
+    intermediate_steps: KeysView[int],
+    n_warmup_steps: int,
+    interval_steps: int,
 ) -> bool:
 
     nearest_lower_pruning_step = (

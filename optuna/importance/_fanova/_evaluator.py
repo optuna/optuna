@@ -127,7 +127,8 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         sorted_importances = OrderedDict(
             reversed(
                 sorted(
-                    importances.items(), key=lambda name_and_importance: name_and_importance[1],
+                    importances.items(),
+                    key=lambda name_and_importance: name_and_importance[1],
                 )
             )
         )

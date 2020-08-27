@@ -144,7 +144,9 @@ def test_optimize_with_direction() -> None:
 @pytest.mark.parametrize(
     "n_trials, n_jobs, storage_mode",
     itertools.product(
-        (0, 1, 20), (1, 2, -1), STORAGE_MODES,  # n_trials  # n_jobs  # storage_mode
+        (0, 1, 20),
+        (1, 2, -1),
+        STORAGE_MODES,  # n_trials  # n_jobs  # storage_mode
     ),
 )
 def test_optimize_parallel(n_trials: int, n_jobs: int, storage_mode: str) -> None:
@@ -161,7 +163,9 @@ def test_optimize_parallel(n_trials: int, n_jobs: int, storage_mode: str) -> Non
 @pytest.mark.parametrize(
     "n_trials, n_jobs, storage_mode",
     itertools.product(
-        (0, 1, 20, None), (1, 2, -1), STORAGE_MODES,  # n_trials  # n_jobs  # storage_mode
+        (0, 1, 20, None),
+        (1, 2, -1),
+        STORAGE_MODES,  # n_trials  # n_jobs  # storage_mode
     ),
 )
 def test_optimize_parallel_timeout(n_trials: int, n_jobs: int, storage_mode: str) -> None:
@@ -242,7 +246,11 @@ def test_optimize_parallel_storage_warning(recwarn: WarningsRecorder) -> None:
 
 
 @pytest.mark.parametrize(
-    "n_jobs, storage_mode", itertools.product((2, -1), STORAGE_MODES,),  # n_jobs  # storage_mode
+    "n_jobs, storage_mode",
+    itertools.product(
+        (2, -1),
+        STORAGE_MODES,
+    ),  # n_jobs  # storage_mode
 )
 def test_optimize_with_reseeding(n_jobs: int, storage_mode: str) -> None:
 

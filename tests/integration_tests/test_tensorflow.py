@@ -33,7 +33,10 @@ def test_tensorflow_pruning_hook() -> None:
             config=tf.estimator.RunConfig(save_summary_steps=10, save_checkpoints_steps=10),
         )
         hook = TensorFlowPruningHook(
-            trial=trial, estimator=clf, metric="accuracy", run_every_steps=5,
+            trial=trial,
+            estimator=clf,
+            metric="accuracy",
+            run_every_steps=5,
         )
         train_spec = tf.estimator.TrainSpec(
             input_fn=fixed_value_input_fn, max_steps=100, hooks=[hook]

@@ -15,9 +15,7 @@ from optuna.trial import TrialState
 
 
 class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
-    """Abstract parameter importance evaluator.
-
-    """
+    """Abstract parameter importance evaluator."""
 
     @abc.abstractmethod
     def evaluate(self, study: Study, params: Optional[List[str]] = None) -> Dict[str, float]:

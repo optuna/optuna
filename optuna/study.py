@@ -328,7 +328,13 @@ class Study(BaseStudy):
 
                     parallel(
                         delayed(self._reseed_and_optimize_sequential)(
-                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start,
+                            func,
+                            1,
+                            timeout,
+                            catch,
+                            callbacks,
+                            gc_after_trial,
+                            time_start,
                         )
                         for _ in _iter
                     )
@@ -779,7 +785,11 @@ class Study(BaseStudy):
         _logger.info(
             "Trial {} finished with value: {} and parameters: {}. "
             "Best is trial {} with value: {}.".format(
-                trial.number, result, trial.params, self.best_trial.number, self.best_value,
+                trial.number,
+                result,
+                trial.params,
+                self.best_trial.number,
+                self.best_value,
             )
         )
 
