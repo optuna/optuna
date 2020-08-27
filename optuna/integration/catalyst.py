@@ -1,7 +1,6 @@
-from typing import Any  # NOQA
+from typing import Any
 
 import optuna
-
 from optuna._experimental import experimental
 from optuna._imports import try_import
 
@@ -30,8 +29,7 @@ class CatalystPruningCallback(Callback):
             on this value.
     """
 
-    def __init__(self, trial, metric="loss"):
-        # type: (optuna.trial.Trial, str) -> None
+    def __init__(self, trial: optuna.trial.Trial, metric: str = "loss") -> None:
 
         # set order=1000 to run pruning callback after other callbacks
         # refer to `catalyst.core.CallbackOrder`
@@ -41,8 +39,8 @@ class CatalystPruningCallback(Callback):
         self._trial = trial
         self.metric = metric
 
-    def on_epoch_end(self, state):
-        # type: (Any) -> None
+    def on_epoch_end(self, state: Any) -> None:
+
         current_score = state.valid_metrics[self.metric]
         self._trial.report(current_score, state.epoch)
         if self._trial.should_prune():
