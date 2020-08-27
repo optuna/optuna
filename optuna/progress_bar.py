@@ -36,7 +36,7 @@ class _ProgressBar(object):
     """
 
     def __init__(
-        self, is_valid: bool, n_trials: Optional[int] = None, timeout: Optional[float] = None,
+        self, is_valid: bool, n_trials: Optional[int] = None, timeout: Optional[float] = None
     ) -> None:
         self._is_valid = is_valid
         self._n_trials = n_trials

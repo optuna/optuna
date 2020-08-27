@@ -27,7 +27,7 @@ class _MultiObjectiveSamplerAdapter(BaseSampler):
         return self._mo_sampler.infer_relative_search_space(mo_study, mo_trial)
 
     def sample_relative(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution],
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         mo_study = multi_objective.study.MultiObjectiveStudy(study)
         mo_trial = multi_objective.trial.FrozenMultiObjectiveTrial(mo_study.n_objectives, trial)
