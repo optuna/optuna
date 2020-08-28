@@ -2,7 +2,7 @@
 Optuna example that optimizes multi-layer perceptrons using skorch.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-skorch, and MNIST. We optimize the neural network architecture. As it is too time
+skorch and MNIST. We optimize the neural network architecture. As it is too time
 consuming to use the whole MNIST dataset, we here use a small subset of it.
 
 You can run this example as follows, pruning can be turned on and off with the `--pruning`
@@ -14,8 +14,6 @@ argument.
 import argparse
 
 import numpy as np
-import optuna
-from optuna.integration import SkorchPruningCallback
 from sklearn.datasets import fetch_openml
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
@@ -23,6 +21,9 @@ import skorch
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+import optuna
+from optuna.integration import SkorchPruningCallback
 
 
 SUBSET_RATIO = 0.4
@@ -34,7 +35,7 @@ y = mnist.target.astype("int64")
 indices = np.random.permutation(len(X))
 N = int(len(X) * SUBSET_RATIO)
 X = X[indices][:N]
-y = y[indices][:y]
+y = y[indices][:N]
 
 X /= 255.0
 
@@ -81,7 +82,7 @@ def objective(trial: optuna.Trial) -> float:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="PyTorch Lightning example.")
+    parser = argparse.ArgumentParser(description="skorch example.")
     parser.add_argument(
         "--pruning",
         "-p",

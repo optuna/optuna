@@ -8,7 +8,6 @@ with optuna._imports.try_import() as _imports:
 
 if not _imports.is_successful():
     Callback = object  # NOQA
-    NeuralNet = object  # NOQA
 
 
 class SkorchPruningCallback(Callback):
@@ -33,7 +32,7 @@ class SkorchPruningCallback(Callback):
         self._trial = trial
         self._monitor = monitor
 
-    def on_epoch_end(self, net: NeuralNet, **kwargs: Any) -> None:
+    def on_epoch_end(self, net: "NeuralNet", **kwargs: Any) -> None:
         history = net.history
         if not history:
             return
