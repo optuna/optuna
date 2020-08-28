@@ -919,6 +919,32 @@ def delete_study(
 ) -> None:
     """Delete a :class:`~optuna.study.Study` object.
 
+    Example:
+
+        .. testsetup::
+
+            import os
+
+            if os.path.exists("example.db"):
+                raise RuntimeError("'example.db' already exists. Please remove it.")
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_float("x", -10, 10)
+                return (x - 2) ** 2
+
+            study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
+            study.optimize(objective, n_trials=3)
+
+            optuna.study.delete_study(study_name="example-study", storage="sqlite:///example.db")
+
+        .. testcleanup::
+
+            os.remove("example.db")
+
     Args:
         study_name:
             Study's name.
