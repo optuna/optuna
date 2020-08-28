@@ -87,7 +87,7 @@ class StudySummary(object):
         n_trials,  # type: int
         datetime_start,  # type: Optional[datetime]
         study_id,  # type: int
-    ):
+    ) -> None:
         # type: (...) -> None
 
         self.study_name = study_name
