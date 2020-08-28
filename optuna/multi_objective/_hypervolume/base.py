@@ -12,7 +12,7 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
 
     .. note::
         We check that each objective is to be minimized. Transform objective values that are
-        to be maximized before calling this class's `compute` method.
+        to be maximized before calling this class's ``compute`` method.
 
     Example:
         .. testcode::
@@ -30,7 +30,7 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
             trials = study.get_pareto_front_trials()
             solution_sets = np.array([list(t.values) for t in trials])
 
-            # Normalize the solution set by negating
+            # Normalize the solution set by negating.
             solution_sets = np.array([[-s[0], s[1]] for s in solution_sets])
 
             # A reference point is dominated by all points.
@@ -45,8 +45,8 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
 
         .. note::
             We assume that all points in the solution set dominate or equal the reference point.
-            In other words, for all points in the solution set and the coordinate `i`,
-            `point[i] <= reference_point[i]`.
+            In other words, for all points in the solution set and the coordinate ``i``,
+            ``point[i] <= reference_point[i]``.
 
         Args:
             solution_set:
