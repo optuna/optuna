@@ -290,7 +290,7 @@ class Study(BaseStudy):
                         return (datetime.datetime.now() - time_start).total_seconds() > t
 
                     return False
-
+                    
                 if n_trials is not None:
                     _iter = iter(range(n_trials))
                 else:
@@ -955,15 +955,16 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
             def objective(trial):
                 x = trial.suggest_float("x", -10, 10)
                 return (x - 2) ** 2
-            
+
             study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
             study.optimize(objective, n_trials=3)
             study_sammary = optuna.study.get_all_study_summaries(storage="sqlite:///example.db")[0]
             print(study_sammary.best_trial)
 
         .. testcleanup::
+
             os.remove("example.db")
-    
+
     Args:
         storage:
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
