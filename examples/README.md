@@ -78,6 +78,7 @@ In addition, integration modules are available for the following libraries, prov
 * [PyKEEN](https://github.com/pykeen/pykeen)
 * [Mozilla Voice STT](https://github.com/mozilla/DeepSpeech)
 * [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)
+* [Catalyst](https://github.com/catalyst-team/catalyst)
 
 ### Running with Optuna's Docker images?
 You can use our docker images with the tag ending with `-dev` to run most of the examples.
