@@ -344,9 +344,7 @@ class _Objective(object):
 
         return ret
 
-    def _store_scores(
-        self, trial: Trial, scores: Dict[str, OneDimArrayLikeType]
-    ) -> None:
+    def _store_scores(self, trial: Trial, scores: Dict[str, OneDimArrayLikeType]) -> None:
 
         for name, array in scores.items():
             if name in ["test_score", "train_score"]:
