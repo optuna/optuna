@@ -20,7 +20,7 @@ if __name__ == "__main__":
     }
 
     optuna_search = optuna.integration.OptunaSearchCV(
-        clf, param_distributions, n_trials=100, timeout=600, verbose=2,
+        clf, param_distributions, n_trials=100, timeout=600, verbose=2
     )
 
     X, y = load_iris(return_X_y=True)

@@ -42,7 +42,7 @@ _logger = logging.get_logger(__name__)
 def create_study(
     directions: List[str],
     study_name: Optional[str] = None,
-    storage: Union[None, str, BaseStorage] = None,
+    storage: Optional[Union[str, BaseStorage]] = None,
     sampler: Optional["multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
     load_if_exists: bool = False,
 ) -> "multi_objective.study.MultiObjectiveStudy":
@@ -404,6 +404,6 @@ def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:
     values = multi_objective.trial.MultiObjectiveTrial(trial)._get_values()
     _logger.info(
         "Trial {} finished with values: {} with parameters: {}.".format(
-            trial.number, values, trial.params,
+            trial.number, values, trial.params
         )
     )

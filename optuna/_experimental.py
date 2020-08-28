@@ -3,6 +3,7 @@ import inspect
 import textwrap
 from typing import Any
 from typing import Callable
+from typing import Optional
 import warnings
 
 from optuna.exceptions import ExperimentalWarning
@@ -30,7 +31,7 @@ def _get_docstring_indent(docstring: str) -> str:
     return docstring.split("\n")[-1] if "\n" in docstring else ""
 
 
-def experimental(version: str, name: str = None) -> Any:
+def experimental(version: str, name: Optional[str] = None) -> Any:
     """Decorate class or function as experimental.
 
     Args:

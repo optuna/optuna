@@ -67,7 +67,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
 
 def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
-    layout = go.Layout(title="Contour Plot",)
+    layout = go.Layout(title="Contour Plot")
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
@@ -196,7 +196,11 @@ def _generate_contour_subplot(
     )
 
     scatter = go.Scatter(
-        x=x_values, y=y_values, marker={"color": "black"}, mode="markers", showlegend=False
+        x=x_values,
+        y=y_values,
+        marker={"line": {"width": 0.5, "color": "Grey"}, "color": "black"},
+        mode="markers",
+        showlegend=False,
     )
 
     return (contour, scatter)

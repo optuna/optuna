@@ -1,15 +1,12 @@
 from typing import Callable
+from typing import List
 from typing import NamedTuple
 from typing import Optional
+from typing import Tuple
 
 import numpy
 from numpy import ndarray
 
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Tuple  # NOQA
 
 EPS = 1e-12
 
@@ -31,13 +28,8 @@ class _ParzenEstimatorParameters(
 
 class _ParzenEstimator(object):
     def __init__(
-        self,
-        mus,  # type: ndarray
-        low,  # type: float
-        high,  # type: float
-        parameters,  # type: _ParzenEstimatorParameters
-    ):
-        # type: (...) -> None
+        self, mus: ndarray, low: float, high: float, parameters: _ParzenEstimatorParameters
+    ) -> None:
 
         self.weights, self.mus, self.sigmas = _ParzenEstimator._calculate(
             mus,
@@ -53,20 +45,19 @@ class _ParzenEstimator(object):
     @classmethod
     def _calculate(
         cls,
-        mus,  # type: ndarray
-        low,  # type: float
-        high,  # type: float
-        consider_prior,  # type: bool
-        prior_weight,  # type: Optional[float]
-        consider_magic_clip,  # type: bool
-        consider_endpoints,  # type: bool
-        weights_func,  # type: Callable[[int], ndarray]
-    ):
-        # type: (...) -> Tuple[ndarray, ndarray, ndarray]
+        mus: ndarray,
+        low: float,
+        high: float,
+        consider_prior: bool,
+        prior_weight: Optional[float],
+        consider_magic_clip: bool,
+        consider_endpoints: bool,
+        weights_func: Callable[[int], ndarray],
+    ) -> Tuple[ndarray, ndarray, ndarray]:
         """Calculates the weights, mus and sigma for the Parzen estimator.
 
-           Note: When the number of observations is zero, the Parzen estimator ignores the
-           `consider_prior` flag and utilizes a prior. Validation of this approach is future work.
+        Note: When the number of observations is zero, the Parzen estimator ignores the
+        `consider_prior` flag and utilizes a prior. Validation of this approach is future work.
         """
 
         mus = numpy.asarray(mus)

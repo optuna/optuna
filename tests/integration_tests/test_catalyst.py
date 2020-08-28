@@ -25,8 +25,7 @@ def test_catalyst_pruning_callback() -> None:
         "valid": torch.utils.data.DataLoader(dataset, batch_size=1),
     }
 
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+    def objective(trial: optuna.trial.Trial) -> float:
         model = torch.nn.Linear(4, 1)
         criterion = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(model.parameters())
@@ -42,7 +41,7 @@ def test_catalyst_pruning_callback() -> None:
             logdir=dirpath,
             num_epochs=2,
             verbose=True,
-            callbacks=[CatalystPruningCallback(trial, metric="loss"),],
+            callbacks=[CatalystPruningCallback(trial, metric="loss")],
         )
 
         shutil.rmtree(dirpath)

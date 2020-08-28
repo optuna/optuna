@@ -1,6 +1,7 @@
 import itertools
 from typing import Dict
 from typing import List
+from typing import Optional
 
 from allennlp.data.token_indexers.token_indexer import IndexedTokenList
 from allennlp.data.token_indexers.token_indexer import TokenIndexer
@@ -21,8 +22,8 @@ class SingleIdTokenIndexer(TokenIndexer):
     def __init__(
         self,
         lowercase_tokens: bool = False,
-        start_tokens: List[str] = None,
-        end_tokens: List[str] = None,
+        start_tokens: Optional[List[str]] = None,
+        end_tokens: Optional[List[str]] = None,
         token_min_padding_length: int = 0,
     ) -> None:
         super().__init__(token_min_padding_length)

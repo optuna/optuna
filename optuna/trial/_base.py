@@ -1,16 +1,12 @@
 import abc
+import datetime
+from typing import Any
+from typing import Dict
 from typing import Optional
+from typing import Sequence
 
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    import datetime  # NOQA
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import Sequence  # NOQA
-
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.distributions import CategoricalChoiceType  # NOQA
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalChoiceType
 
 
 class BaseTrial(object, metaclass=abc.ABCMeta):
@@ -33,38 +29,34 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def suggest_uniform(self, name, low, high):
-        # type: (str, float, float) -> float
+    def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
         raise NotImplementedError
 
     @abc.abstractmethod
-    def suggest_loguniform(self, name, low, high):
-        # type: (str, float, float) -> float
+    def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
         raise NotImplementedError
 
     @abc.abstractmethod
-    def suggest_discrete_uniform(self, name, low, high, q):
-        # type: (str, float, float, float) -> float
+    def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
 
         raise NotImplementedError
 
     @abc.abstractmethod
-    def suggest_int(self, name, low, high, step=1, log=False):
-        # type: (str, int, int, int, bool) -> int
+    def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
 
         raise NotImplementedError
 
     @abc.abstractmethod
-    def suggest_categorical(self, name, choices):
-        # type: (str, Sequence[CategoricalChoiceType]) -> CategoricalChoiceType
+    def suggest_categorical(
+        self, name: str, choices: Sequence[CategoricalChoiceType]
+    ) -> CategoricalChoiceType:
 
         raise NotImplementedError
 
     @abc.abstractmethod
-    def report(self, value, step):
-        # type: (float, int) -> None
+    def report(self, value: float, step: int) -> None:
 
         raise NotImplementedError
 
@@ -74,49 +66,42 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_user_attr(self, key, value):
-        # type: (str, Any) -> None
+    def set_user_attr(self, key: str, value: Any) -> None:
 
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_system_attr(self, key, value):
-        # type: (str, Any) -> None
-
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def params(self):
-        # type: () -> Dict[str, Any]
+    def set_system_attr(self, key: str, value: Any) -> None:
 
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def distributions(self):
-        # type: () -> Dict[str, BaseDistribution]
+    def params(self) -> Dict[str, Any]:
 
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def user_attrs(self):
-        # type: () -> Dict[str, Any]
+    def distributions(self) -> Dict[str, BaseDistribution]:
 
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def system_attrs(self):
-        # type: () -> Dict[str, Any]
+    def user_attrs(self) -> Dict[str, Any]:
 
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def datetime_start(self):
-        # type: () -> Optional[datetime.datetime]
+    def system_attrs(self) -> Dict[str, Any]:
+
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def datetime_start(self) -> Optional[datetime.datetime]:
 
         raise NotImplementedError
 

@@ -1,3 +1,7 @@
+from typing import Dict
+from typing import List
+from typing import Union
+
 import pytorch_lightning as pl
 import torch
 from torch import nn
@@ -6,36 +10,26 @@ import torch.nn.functional as F
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 from optuna.testing.integration import DeterministicPruner
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Union  # NOQA
 
 
 class Model(pl.LightningModule):
-    def __init__(self):
-        # type: () -> None
+    def __init__(self) -> None:
 
         super(Model, self).__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
 
-    def forward(self, data):
-        # type: (torch.Tensor) -> torch.Tensor
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
 
         return self._model(data)
 
-    def training_step(self, batch, batch_nb):
-        # type: (List[torch.Tensor], int) -> Dict[str, torch.Tensor]
+    def training_step(self, batch: List[torch.Tensor], batch_nb: int) -> Dict[str, torch.Tensor]:
 
         data, target = batch
         output = self.forward(data)
         loss = F.nll_loss(output, target)
         return {"loss": loss}
 
-    def validation_step(self, batch, batch_nb):
-        # type: (List[torch.Tensor], int) -> Dict[str, torch.Tensor]
+    def validation_step(self, batch: List[torch.Tensor], batch_nb: int) -> Dict[str, torch.Tensor]:
 
         data, target = batch
         output = self.forward(data)
@@ -43,31 +37,26 @@ class Model(pl.LightningModule):
         accuracy = pred.eq(target.view_as(pred)).double().mean()
         return {"validation_accuracy": accuracy}
 
-    def validation_end(self, outputs):
-        # type: (List[Dict[str, torch.Tensor]]) -> Dict[str, Union[torch.Tensor, float]]
+    def validation_end(
+        self, outputs: List[Dict[str, torch.Tensor]]
+    ) -> Dict[str, Union[torch.Tensor, float]]:
 
         accuracy = sum(x["validation_accuracy"] for x in outputs) / len(outputs)
         return {"accuracy": accuracy}
 
-    def configure_optimizers(self):
-        # type: () -> torch.optim.Optimizer
+    def configure_optimizers(self) -> torch.optim.Optimizer:
 
         return torch.optim.SGD(self._model.parameters(), lr=1e-2)
 
-    @pl.data_loader
-    def train_dataloader(self):
-        # type: () -> torch.utils.data.DataLoader
+    def train_dataloader(self) -> torch.utils.data.DataLoader:
 
         return self._generate_dummy_dataset()
 
-    @pl.data_loader
-    def val_dataloader(self):
-        # type: () -> torch.utils.data.DataLoader
+    def val_dataloader(self) -> torch.utils.data.DataLoader:
 
         return self._generate_dummy_dataset()
 
-    def _generate_dummy_dataset(self):
-        # type: () -> torch.utils.data.DataLoader
+    def _generate_dummy_dataset(self) -> torch.utils.data.DataLoader:
 
         data = torch.zeros(3, 4, dtype=torch.float32)
         target = torch.zeros(3, dtype=torch.int64)
@@ -75,11 +64,8 @@ class Model(pl.LightningModule):
         return torch.utils.data.DataLoader(dataset, batch_size=1)
 
 
-def test_pytorch_lightning_pruning_callback():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+def test_pytorch_lightning_pruning_callback() -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
 
         trainer = pl.Trainer(
             early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="accuracy"),

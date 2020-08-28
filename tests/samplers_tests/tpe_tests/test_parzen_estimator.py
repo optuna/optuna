@@ -1,15 +1,12 @@
 import itertools
+from typing import Dict
+from typing import List
 
 import numpy as np
 import pytest
 
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.sampler import default_weights
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
 
 
 class TestParzenEstimator(object):
@@ -23,8 +20,9 @@ class TestParzenEstimator(object):
             (True, False),  # endpoints
         ),
     )
-    def test_calculate_shape_check(mus, prior, magic_clip, endpoints):
-        # type: (List[float], bool, bool, bool) -> None
+    def test_calculate_shape_check(
+        mus: List[float], prior: bool, magic_clip: bool, endpoints: bool
+    ) -> None:
 
         s_weights, s_mus, s_sigmas = _ParzenEstimator._calculate(
             mus,
@@ -103,8 +101,9 @@ class TestParzenEstimator(object):
             ],
         ],
     )
-    def test_calculate(mus, flags, expected):
-        # type: (List[float], Dict[str, bool], Dict[str, List[float]]) -> None
+    def test_calculate(
+        mus: List[float], flags: Dict[str, bool], expected: Dict[str, List[float]]
+    ) -> None:
 
         s_weights, s_mus, s_sigmas = _ParzenEstimator._calculate(
             mus,

@@ -8,7 +8,6 @@ Since it is too time-consuming to use the entire dataset, we here use a small su
 """
 
 import os
-import pkg_resources
 import random
 import shutil
 import sys
@@ -18,6 +17,7 @@ import allennlp.data
 import allennlp.models
 import allennlp.modules
 import numpy
+from packaging import version
 import torch
 
 import optuna
@@ -64,7 +64,7 @@ def create_model(vocab, trial):
     num_filters = trial.suggest_int("num_filters", 32, 128)
 
     embedding = allennlp.modules.Embedding(
-        embedding_dim=embedding_dim, trainable=True, vocab=vocab,
+        embedding_dim=embedding_dim, trainable=True, vocab=vocab
     )
 
     encoder = allennlp.modules.seq2vec_encoders.CnnEncoder(
@@ -76,7 +76,7 @@ def create_model(vocab, trial):
 
     embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder({"tokens": embedding})
     model = allennlp.models.BasicClassifier(
-        text_field_embedder=embedder, seq2vec_encoder=encoder, dropout=dropout, vocab=vocab,
+        text_field_embedder=embedder, seq2vec_encoder=encoder, dropout=dropout, vocab=vocab
     )
 
     return model
@@ -117,7 +117,7 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    if pkg_resources.parse_version(allennlp.__version__) < pkg_resources.parse_version("1.0.0"):
+    if version.parse(allennlp.__version__) < version.parse("1.0.0"):
         raise RuntimeError("AllenNLP>=1.0.0 is required for this example.")
 
     random.seed(41)

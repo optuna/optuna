@@ -1,5 +1,5 @@
 import numpy as np
-import pkg_resources
+from packaging import version
 import pytest
 import tensorflow as tf
 
@@ -9,11 +9,8 @@ from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
-def test_tfkeras_pruning_callback():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+def test_tfkeras_pruning_callback() -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
 
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.Dense(1, activation="sigmoid", input_dim=20))
@@ -21,7 +18,7 @@ def test_tfkeras_pruning_callback():
 
         # TODO(Yanase): Unify the metric with 'accuracy' after stopping TensorFlow 1.x support.
         callback_metric_name = "accuracy"
-        if pkg_resources.parse_version(tf.__version__) < pkg_resources.parse_version("2.0.0"):
+        if version.parse(tf.__version__) < version.parse("2.0.0"):
             callback_metric_name = "acc"
 
         model.fit(
@@ -45,8 +42,7 @@ def test_tfkeras_pruning_callback():
     assert study.trials[0].value == 1.0
 
 
-def test_tfkeras_pruning_callback_observation_isnan():
-    # type: () -> None
+def test_tfkeras_pruning_callback_observation_isnan() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)

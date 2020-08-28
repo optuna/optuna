@@ -21,14 +21,24 @@ for machine learning. It features an imperative, *define-by-run* style user API.
 *define-by-run* API, the code written with Optuna enjoys high modularity, and the user of
 Optuna can dynamically construct the search spaces for the hyperparameters.
 
+## News
+
+- **2020-08-07** We are welcoming [contributions](#contribution) and are working on streamlining the experience. Read more about it in the [blog](https://medium.com/optuna/optuna-wants-your-pull-request-ff619572302c)
 
 ## Key Features
 
 Optuna has modern functionalities as follows:
 
 - [Lightweight, versatile, and platform agnostic architecture](https://optuna.readthedocs.io/en/stable/tutorial/first.html)
-- [Parallel distributed optimization](https://optuna.readthedocs.io/en/stable/tutorial/distributed.html)
-- [Pruning of unpromising trials](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html)
+  - Handle a wide variety of tasks with a simple installation that has few requirements. 
+- [Pythonic search spaces](https://optuna.readthedocs.io/en/stable/tutorial/configurations.html)
+  - Define search spaces using familiar Python syntax including conditionals and loops.
+- [Efficient optimization algorithms](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html)
+  - Adopt state-of-the-art algorithms for sampling hyper parameters and efficiently pruning unpromising trials.
+- [Easy parallelization](https://optuna.readthedocs.io/en/stable/tutorial/distributed.html)
+  - Scale studies to tens or hundreds or workers with little or no changes to the code.
+- [Quick visualization](https://optuna.readthedocs.io/en/stable/reference/visualization.html)
+  - Inspect optimization histories from a variety of plotting functions.
 
 
 ## Basic Concepts

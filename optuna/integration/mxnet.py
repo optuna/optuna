@@ -1,9 +1,8 @@
 import optuna
 from optuna._imports import try_import
 
-
 with try_import() as _imports:
-    import mxnet as mx  # NOQA
+    import mxnet as mx
 
 
 class MXNetPruningCallback(object):
@@ -25,16 +24,14 @@ class MXNetPruningCallback(object):
             <https://mxnet.apache.org/api/python/metric/metric.html>`_ for further details.
     """
 
-    def __init__(self, trial, eval_metric):
-        # type: (optuna.trial.Trial, str) -> None
+    def __init__(self, trial: optuna.trial.Trial, eval_metric: str) -> None:
 
         _imports.check()
 
         self._trial = trial
         self._eval_metric = eval_metric
 
-    def __call__(self, param):
-        # type: (mx.model.BatchEndParams,) -> None
+    def __call__(self, param: "mx.model.BatchEndParam") -> None:
 
         if param.eval_metric is not None:
             metric_names, metric_values = param.eval_metric.get()
