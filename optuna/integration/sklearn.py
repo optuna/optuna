@@ -22,12 +22,12 @@ from optuna import distributions
 from optuna import logging
 from optuna import samplers
 from optuna import study as study_module
-from optuna import trial as trial_module
 from optuna import TrialPruned
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 
 with try_import() as _imports:
     import sklearn
@@ -215,7 +215,7 @@ class _Objective(object):
         self.X = X
         self.y = y
 
-    def __call__(self, trial: trial_module.Trial) -> float:
+    def __call__(self, trial: Trial) -> float:
 
         estimator = clone(self.estimator)
         params = self._get_params(trial)
@@ -242,7 +242,7 @@ class _Objective(object):
         return trial.user_attrs["mean_test_score"]
 
     def _cross_validate_with_pruning(
-        self, trial: trial_module.Trial, estimator: BaseEstimator
+        self, trial: Trial, estimator: BaseEstimator
     ) -> Dict[str, OneDimArrayLikeType]:
 
         if is_classifier(estimator):
@@ -287,7 +287,7 @@ class _Objective(object):
 
         return scores
 
-    def _get_params(self, trial: trial_module.Trial) -> Dict[str, Any]:
+    def _get_params(self, trial: Trial) -> Dict[str, Any]:
 
         return {
             name: trial._suggest(name, distribution)
@@ -345,7 +345,7 @@ class _Objective(object):
         return ret
 
     def _store_scores(
-        self, trial: trial_module.Trial, scores: Dict[str, OneDimArrayLikeType]
+        self, trial: Trial, scores: Dict[str, OneDimArrayLikeType]
     ) -> None:
 
         for name, array in scores.items():
