@@ -36,7 +36,7 @@ _WEIGHTS_BELOW_KEY = "multi_objective:motpe:weights_below"
 
 
 def default_gamma(x: int) -> int:
-    return max(0, int(np.ceil(0.10 * x)) - 1)
+    return int(np.floor(0.1 * x))
 
 
 @experimental("2.0.0")
@@ -264,7 +264,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             indices_above = split_cache["indices_above"]
         else:
             nondomination_ranks = _calculate_nondomination_rank(lvals)
-            n_below = self._gamma(len(cvals))
+            n_below = self._gamma(len(lvals))
             assert 0 <= n_below <= len(lvals)
 
             indices = np.array(range(len(lvals)))
