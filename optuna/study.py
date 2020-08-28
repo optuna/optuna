@@ -662,7 +662,10 @@ class Study(BaseStudy):
                 callback(self, frozen_trial)
 
     def _run_trial(
-        self, func: ObjectiveFuncType, catch: Tuple[Type[Exception], ...], gc_after_trial: bool,
+        self,
+        func: ObjectiveFuncType,
+        catch: Tuple[Type[Exception], ...],
+        gc_after_trial: bool,
     ) -> trial_module.Trial:
 
         # Sync storage once at the beginning of the objective evaluation.
@@ -910,7 +913,10 @@ def load_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
-def delete_study(study_name: str, storage: Union[str, storages.BaseStorage],) -> None:
+def delete_study(
+    study_name: str,
+    storage: Union[str, storages.BaseStorage],
+) -> None:
     """Delete a :class:`~optuna.study.Study` object.
 
     Args:
@@ -952,7 +958,7 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
 
             study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
             study.optimize(objective, n_trials=3)
-            
+
             study_sammary = optuna.study.get_all_study_summaries(storage="sqlite:///example.db")[0]
 
         .. testcleanup::
