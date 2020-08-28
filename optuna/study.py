@@ -959,7 +959,7 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
             study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
             study.optimize(objective, n_trials=3)
 
-            study_sammary = optuna.study.get_all_study_summaries(storage="sqlite:///example.db")[0]
+            study_summary = optuna.study.get_all_study_summaries(storage="sqlite:///example.db")[0]
 
         .. testcleanup::
 
