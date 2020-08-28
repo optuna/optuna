@@ -290,7 +290,7 @@ class Study(BaseStudy):
                         return (datetime.datetime.now() - time_start).total_seconds() > t
 
                     return False
-                    
+
                 if n_trials is not None:
                     _iter = iter(range(n_trials))
                 else:
@@ -662,10 +662,7 @@ class Study(BaseStudy):
                 callback(self, frozen_trial)
 
     def _run_trial(
-        self,
-        func: ObjectiveFuncType,
-        catch: Tuple[Type[Exception], ...],
-        gc_after_trial: bool,
+        self, func: ObjectiveFuncType, catch: Tuple[Type[Exception], ...], gc_after_trial: bool,
     ) -> trial_module.Trial:
 
         # Sync storage once at the beginning of the objective evaluation.
@@ -913,10 +910,7 @@ def load_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
-def delete_study(
-    study_name: str,
-    storage: Union[str, storages.BaseStorage],
-) -> None:
+def delete_study(study_name: str, storage: Union[str, storages.BaseStorage],) -> None:
     """Delete a :class:`~optuna.study.Study` object.
 
     Args:
