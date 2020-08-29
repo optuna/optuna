@@ -245,7 +245,6 @@ class MultiObjectiveStudy(object):
 
                 study = optuna.multi_objective.create_study(["minimize", "minimize"])
                 study.optimize(objective, n_trials=3)
-
         """
 
         def mo_objective(trial: Trial) -> float:
