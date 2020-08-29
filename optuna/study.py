@@ -939,7 +939,7 @@ def delete_study(
             study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
             study.optimize(objective, n_trials=3)
 
-            optuna.study.delete_study(study_name="example-study", storage="sqlite:///example.db")
+            optuna.delete_study(study_name="example-study", storage="sqlite:///example.db")
 
         .. testcleanup::
 
