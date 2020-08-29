@@ -50,10 +50,10 @@ with try_import() as _imports:
 if not _imports.is_successful():
     BaseEstimator = object  # NOQA
 
-ArrayLikeType = Union[List, np.ndarray, pd.Series, spmatrix]
-OneDimArrayLikeType = Union[List[float], np.ndarray, pd.Series]
-TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, pd.DataFrame, spmatrix]
-IterableType = Union[List, pd.DataFrame, np.ndarray, pd.Series, spmatrix, None]
+ArrayLikeType = Union[List, np.ndarray, "pd.Series", spmatrix]
+OneDimArrayLikeType = Union[List[float], np.ndarray, "pd.Series"]
+TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, "pd.DataFrame", spmatrix]
+IterableType = Union[List, "pd.DataFrame", np.ndarray, "pd.Series", spmatrix, None]
 IndexableType = Union[Iterable, None]
 
 _logger = logging.get_logger(__name__)
@@ -657,7 +657,7 @@ class OptunaSearchCV(BaseEstimator):
         return self.best_estimator_.transform
 
     @property
-    def trials_dataframe(self) -> Callable[..., pd.DataFrame]:
+    def trials_dataframe(self) -> Callable[..., "pd.DataFrame"]:
         """Call ``trials_dataframe`` on the :class:`~optuna.study.Study`."""
 
         self._check_is_fitted()
