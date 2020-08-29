@@ -481,6 +481,23 @@ class Study(BaseStudy):
         spawned finishes.
         This method does not affect any behaviors of parallel or successive study processes.
 
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                study = optuna.create_study()
+
+                def objective(trial):
+                    if trial.number == 4:
+                        study.stop()
+                    x = trial.suggest_uniform("x", 0, 10)
+                    return x ** 2
+
+                study.optimize(objective, n_trials=10)
+                assert len(study.trials) == 5
+
         Raises:
             RuntimeError:
                 If this method is called outside an objective function or callback.
