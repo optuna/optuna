@@ -32,7 +32,6 @@ with try_import():
     import pandas as pd
     
 with try_import() as _imports:
-    import pandas as pd
     import sklearn
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
