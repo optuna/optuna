@@ -322,6 +322,20 @@ class Study(BaseStudy):
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
 
+        Example:
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_float("x", -10, 10)
+                return (x - 2) ** 2
+
+            study = optuna.create_study()
+            study.optimize(objective, n_trials=3)
+
+            study.set_user_attr("contributors", ["Akiba", "Sano"])
+            study.set_user_attr("dataset", "MNIST")
+
         Args:
             key: A key string of the attribute.
             value: A value of the attribute. The value should be JSON serializable.
