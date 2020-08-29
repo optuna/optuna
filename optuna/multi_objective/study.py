@@ -118,6 +118,45 @@ def load_study(
 ) -> "multi_objective.study.MultiObjectiveStudy":
     """Load the existing :class:`MultiObjectiveStudy` that has the specified name.
 
+    Example:
+
+        .. testsetup::
+
+                import os
+
+                if os.path.exists("example.db"):
+                    raise RuntimeError("'example.db' already exists. Please remove it.")
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                # Binh and Korn function.
+                x = trial.suggest_float("x", 0, 5)
+                y = trial.suggest_float("y", 0, 3)
+
+                v0 = (4 * x) ** 2 + (4 * y) ** 2
+                v1 = (x - 5) ** 2 + (y - 5) ** 2
+                return v0, v1
+
+            study = optuna.multi_objective.create_study(
+                directions=["minimize", "minimize"],
+                study_name="my_study",
+                storage="sqlite:///example.db"
+                )
+            study.optimize(objective, n_trials=3)
+
+            loaded_study = optuna.multi_objective.study.load_study(
+                study_name="my_study",
+                storage="sqlite:///example.db"
+                )
+            assert len(loaded_study.trials) == len(study.trials)
+
+        .. testcleanup::
+
+            os.remove("example.db")
+
     Args:
         study_name:
             Study's name. Each study has a unique name as an identifier.
