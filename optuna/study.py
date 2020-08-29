@@ -114,6 +114,19 @@ class BaseStudy(object):
         For library users, it's recommended to use more handy
         :attr:`~optuna.study.Study.trials` property to get the trials instead.
 
+        Example:
+            .. testcode::
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_uniform("x", -1, 1)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
+                trials = study.get_trials()
+
         Args:
             deepcopy:
                 Flag to control whether to apply ``copy.deepcopy()`` to the trials.
