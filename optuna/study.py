@@ -331,7 +331,6 @@ class Study(BaseStudy):
                 return (x - 2) ** 2
 
             study = optuna.create_study()
-            study.optimize(objective, n_trials=3)
 
             study.set_user_attr("contributors", ["Akiba", "Sano"])
             study.set_user_attr("dataset", "MNIST")
