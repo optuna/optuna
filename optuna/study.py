@@ -116,6 +116,7 @@ class BaseStudy(object):
 
         Example:
             .. testcode::
+
                 import optuna
 
                 def objective(trial):
