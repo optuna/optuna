@@ -28,6 +28,9 @@ from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna import TrialPruned
 
+with try_import():
+    import pandas as pd
+    
 with try_import() as _imports:
     import pandas as pd
     import sklearn
