@@ -324,16 +324,14 @@ class Study(BaseStudy):
 
         Example:
 
-            import optuna
+            .. testcode::
 
-            def objective(trial):
-                x = trial.suggest_float("x", -10, 10)
-                return (x - 2) ** 2
+                import optuna
 
-            study = optuna.create_study()
+                study = optuna.create_study()
 
-            study.set_user_attr("contributors", ["Akiba", "Sano"])
-            study.set_user_attr("dataset", "MNIST")
+                study.set_user_attr("contributors", ["Akiba", "Sano"])
+                study.set_user_attr("dataset", "MNIST")
 
         Args:
             key: A key string of the attribute.
