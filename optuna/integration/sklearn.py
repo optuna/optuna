@@ -703,8 +703,7 @@ class OptunaSearchCV(BaseEstimator):
         self.timeout = timeout
         self.verbose = verbose
 
-    def _check_is_fitted(self):
-        # type: () -> None
+    def _check_is_fitted(self) -> None:
 
         attributes = ["n_splits_", "sample_indices_", "scorer_", "study_"]
 
