@@ -35,10 +35,24 @@ If you choose to write some code, we have some conventions as follows.
 
 ## Guidelines
 
-### Coding Style
+### Checking the Format, Coding Style, and Type Hints
 
-Coding style is checked with [flake8](http://flake8.pycqa.org).
-Additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
+Code is formatted with [black](https://github.com/psf/black).
+Coding style is checked with [flake8](http://flake8.pycqa.org),
+and additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
+Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked with [mypy](http://mypy-lang.org/).
+
+To check the all of these, please install black, flake8 and mypy:
+
+```bash
+pip install -e ".[checking]"
+```
+
+Then you can check the format, coding style, and type hints:
+
+```bash
+sh checks.sh
+```
 
 ### Documentation
 
@@ -60,21 +74,6 @@ make html
 
 HTML files are generated under `build/html` directory. Open `index.html` with the browser and see
 if it is rendered as expected.
-
-### Type Hints
-
-Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked with [mypy](http://mypy-lang.org/).
-
-### Formatting
-
-Code is formatted with [black](https://github.com/psf/black).
-You have to install it first. This can be done with
-`pip install black`. The command to format a certain file
-is `black <filename_with_path>`.
-To just check the file you can use
-`black <filename_with_path> --check`.
-You can also apply these operations to all files by replacing
-`<filename_with_path>` with a simple `.`.
 
 ## Unit Tests
 
