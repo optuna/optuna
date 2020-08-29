@@ -44,8 +44,8 @@ class _ScopedSessionContextManager:
         self._scoped_session = scoped_session
 
     def __enter__(self) -> orm.Session:
-        self.session = self._scoped_session()
-        return self.session
+        session = self._scoped_session()
+        return session
 
     def __exit__(
         self,
@@ -54,16 +54,17 @@ class _ScopedSessionContextManager:
         traceback: Optional[TracebackType],
     ) -> None:
         try:
-            self.session.commit()
+            session = self._scoped_session()
+            session.commit()
         except IntegrityError as e:
             _logger.debug(
                 "Ignoring {}. This happens due to a timing issue among threads/processes/nodes. "
                 "Another one might have committed a record with the same key(s).".format(repr(e))
             )
-            self.session.rollback()
+            session.rollback()
             raise
         except SQLAlchemyError as e:
-            self.session.rollback()
+            session.rollback()
             message = (
                 "An exception is raised during the commit. "
                 "This typically happens due to invalid data in the commit, "
