@@ -64,7 +64,7 @@ class _ParzenEstimator(object):
         sigma = numpy.asarray([], dtype=float)
         prior_pos = 0
 
-        # Parzen estimator construction requires at least one observation or a priror.
+        # Parzen estimator construction requires at least one observation or a prior.
         if mus.size == 0:
             consider_prior = True
 
