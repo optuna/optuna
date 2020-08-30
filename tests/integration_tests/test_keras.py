@@ -52,6 +52,7 @@ def test_keras_pruning_callback_observation_isnan() -> None:
     with pytest.raises(optuna.TrialPruned):
         callback.on_epoch_end(0, {"loss": float("nan")})
 
+
 def test_keras_pruning_callback_monitor_is_invalid() -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
