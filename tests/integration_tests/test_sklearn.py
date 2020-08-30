@@ -44,8 +44,7 @@ def test_make_indexable() -> None:
 @pytest.mark.parametrize("enable_pruning", [True, False])
 @pytest.mark.parametrize("fit_params", ["", "coef_init"])
 @pytest.mark.filterwarnings("ignore::UserWarning")
-def test_optuna_search(enable_pruning, fit_params):
-    # type: (bool, str) -> None
+def test_optuna_search(enable_pruning: bool, fit_params: str) -> None:
 
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
@@ -76,8 +75,7 @@ def test_optuna_search(enable_pruning, fit_params):
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
-def test_optuna_search_properties():
-    # type: () -> None
+def test_optuna_search_properties() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = LogisticRegression(max_iter=5, tol=1e-03)
@@ -102,8 +100,7 @@ def test_optuna_search_properties():
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
-def test_optuna_search_score_samples():
-    # type: () -> None
+def test_optuna_search_score_samples() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
@@ -115,8 +112,7 @@ def test_optuna_search_score_samples():
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
-def test_optuna_search_transforms():
-    # type: () -> None
+def test_optuna_search_transforms() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = PCA()
@@ -128,8 +124,7 @@ def test_optuna_search_transforms():
     assert type(optuna_search.inverse_transform(X)) == np.ndarray
 
 
-def test_optuna_search_invalid_estimator():
-    # type: () -> None
+def test_optuna_search_invalid_estimator() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = "not an estimator"
@@ -141,8 +136,7 @@ def test_optuna_search_invalid_estimator():
         optuna_search.fit(X)
 
 
-def test_optuna_search_invalid_param_dist():
-    # type: () -> None
+def test_optuna_search_invalid_param_dist() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
@@ -160,8 +154,7 @@ def test_optuna_search_invalid_param_dist():
         optuna_search.fit(X)
 
 
-def test_optuna_search_pruning_without_partial_fit():
-    # type: () -> None
+def test_optuna_search_pruning_without_partial_fit() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
@@ -180,8 +173,7 @@ def test_optuna_search_pruning_without_partial_fit():
         optuna_search.fit(X)
 
 
-def test_optuna_search_negative_max_iter():
-    # type: () -> None
+def test_optuna_search_negative_max_iter() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
@@ -200,8 +192,7 @@ def test_optuna_search_negative_max_iter():
         optuna_search.fit(X)
 
 
-def test_optuna_search_tuple_instead_of_distribution():
-    # type: () -> None
+def test_optuna_search_tuple_instead_of_distribution() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
@@ -219,8 +210,7 @@ def test_optuna_search_tuple_instead_of_distribution():
         optuna_search.fit(X)
 
 
-def test_optuna_search_study_with_minimize():
-    # type: () -> None
+def test_optuna_search_study_with_minimize() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
@@ -234,8 +224,7 @@ def test_optuna_search_study_with_minimize():
 
 
 @pytest.mark.parametrize("verbose", [1, 2])
-def test_optuna_search_verbosity(verbose):
-    # type: (int) -> None
+def test_optuna_search_verbosity(verbose: int) -> None:
 
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
@@ -252,8 +241,7 @@ def test_optuna_search_verbosity(verbose):
     optuna_search.fit(X)
 
 
-def test_optuna_search_subsample():
-    # type: () -> None
+def test_optuna_search_subsample() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = KernelDensity()
@@ -271,8 +259,7 @@ def test_optuna_search_subsample():
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_objective_y_None():
-    # type: () -> None
+def test_objective_y_None() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
@@ -292,8 +279,7 @@ def test_objective_y_None():
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_objective_error_score_nan():
-    # type: () -> None
+def test_objective_error_score_nan() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
@@ -314,8 +300,7 @@ def test_objective_error_score_nan():
 
 
 @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-def test_objective_error_score_invalid():
-    # type: () -> None
+def test_objective_error_score_invalid() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)

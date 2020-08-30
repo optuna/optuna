@@ -53,6 +53,10 @@ _ALIAS_METRIC_LIST = [
         ],
     },
     {"metric_name": "map", "alias_names": ["mean_average_precision"]},
+    {
+        "metric_name": "l2",
+        "alias_names": ["regression", "regression_l2", "l2", "mean_squared_error", "mse"],
+    },
 ]  # type: List[Dict[str, Any]]
 
 

@@ -13,8 +13,7 @@ CV_FLAGS = [False, True]
 
 
 @pytest.mark.parametrize("cv", CV_FLAGS)
-def test_lightgbm_pruning_callback_call(cv):
-    # type: (bool) -> None
+def test_lightgbm_pruning_callback_call(cv: bool) -> None:
 
     callback_env = partial(
         lgb.callback.CallbackEnv,
@@ -45,8 +44,7 @@ def test_lightgbm_pruning_callback_call(cv):
 
 
 @pytest.mark.parametrize("cv", CV_FLAGS)
-def test_lightgbm_pruning_callback(cv):
-    # type: (bool) -> None
+def test_lightgbm_pruning_callback(cv: bool) -> None:
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
     study.optimize(partial(objective, cv=cv), n_trials=1)
@@ -76,8 +74,7 @@ def test_lightgbm_pruning_callback(cv):
 
 
 @pytest.mark.parametrize("cv", CV_FLAGS)
-def test_lightgbm_pruning_callback_errors(cv):
-    # type: (bool) -> None
+def test_lightgbm_pruning_callback_errors(cv: bool) -> None:
 
     # Unknown metric
     study = optuna.create_study(pruner=DeterministicPruner(False))
@@ -111,9 +108,12 @@ def test_lightgbm_pruning_callback_errors(cv):
 
 
 def objective(
-    trial, metric="binary_error", valid_name="valid_0", force_default_valid_names=False, cv=False
-):
-    # type: (optuna.trial.Trial, str, str, bool, bool) -> float
+    trial: optuna.trial.Trial,
+    metric: str = "binary_error",
+    valid_name: str = "valid_0",
+    force_default_valid_names: bool = False,
+    cv: bool = False,
+) -> float:
 
     dtrain = lgb.Dataset([[1.0], [2.0], [3.0]], label=[1.0, 0.0, 1.0])
     dtest = lgb.Dataset([[1.0]], label=[1.0])

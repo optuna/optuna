@@ -1,16 +1,13 @@
 import copy
 import json
+from typing import Any
+from typing import Dict
+from typing import List
 import warnings
 
 import pytest
 
 from optuna import distributions
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
 
 EXAMPLE_DISTRIBUTIONS = {
     "u": distributions.UniformDistribution(low=1.0, high=2.0),
@@ -37,8 +34,7 @@ EXAMPLE_JSONS = {
 }
 
 
-def test_json_to_distribution():
-    # type: () -> None
+def test_json_to_distribution() -> None:
 
     for key in EXAMPLE_JSONS.keys():
         distribution_actual = distributions.json_to_distribution(EXAMPLE_JSONS[key])
@@ -48,8 +44,7 @@ def test_json_to_distribution():
     pytest.raises(ValueError, lambda: distributions.json_to_distribution(unknown_json))
 
 
-def test_backward_compatibility_int_uniform_distribution():
-    # type: () -> None
+def test_backward_compatibility_int_uniform_distribution() -> None:
 
     json_str = '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 10}}'
     actual = distributions.json_to_distribution(json_str)
@@ -57,16 +52,14 @@ def test_backward_compatibility_int_uniform_distribution():
     assert actual == expected
 
 
-def test_distribution_to_json():
-    # type: () -> None
+def test_distribution_to_json() -> None:
 
     for key in EXAMPLE_JSONS.keys():
         json_actual = distributions.distribution_to_json(EXAMPLE_DISTRIBUTIONS[key])
         assert json.loads(json_actual) == json.loads(EXAMPLE_JSONS[key])
 
 
-def test_check_distribution_compatibility():
-    # type: () -> None
+def test_check_distribution_compatibility() -> None:
 
     # test the same distribution
     for key in EXAMPLE_JSONS.keys():
@@ -106,7 +99,7 @@ def test_check_distribution_compatibility():
         EXAMPLE_DISTRIBUTIONS["iu"], distributions.IntUniformDistribution(low=-1, high=1)
     )
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["ilu"], distributions.IntLogUniformDistribution(low=1, high=13),
+        EXAMPLE_DISTRIBUTIONS["ilu"], distributions.IntLogUniformDistribution(low=1, high=13)
     )
 
 
@@ -185,8 +178,7 @@ def test_contains() -> None:
     assert not iluq._contains(8)
 
 
-def test_empty_range_contains():
-    # type: () -> None
+def test_empty_range_contains() -> None:
 
     u = distributions.UniformDistribution(low=1.0, high=1.0)
     assert not u._contains(0.9)
@@ -224,8 +216,7 @@ def test_empty_range_contains():
     assert not iluq._contains(2)
 
 
-def test_single():
-    # type: () -> None
+def test_single() -> None:
 
     with warnings.catch_warnings():
         # UserWarning will be raised since the range is not divisible by step.
@@ -260,8 +251,7 @@ def test_single():
         assert not distribution.single()
 
 
-def test_empty_distribution():
-    # type: () -> None
+def test_empty_distribution() -> None:
 
     # Empty distributions cannot be instantiated.
     with pytest.raises(ValueError):
@@ -286,15 +276,13 @@ def test_empty_distribution():
         distributions.IntLogUniformDistribution(low=123, high=100)
 
 
-def test_invalid_distribution():
-    # type: () -> None
+def test_invalid_distribution() -> None:
 
     with pytest.warns(UserWarning):
         distributions.CategoricalDistribution(choices=({"foo": "bar"},))  # type: ignore
 
 
-def test_eq_ne_hash():
-    # type: () -> None
+def test_eq_ne_hash() -> None:
 
     # Two instances of a class are regarded as equivalent if the fields have the same values.
     for d in EXAMPLE_DISTRIBUTIONS.values():
@@ -323,8 +311,7 @@ def test_eq_ne_hash():
     assert not d0 == "foo"
 
 
-def test_repr():
-    # type: () -> None
+def test_repr() -> None:
 
     # The following variable is needed to apply `eval` to distribution
     # instances that contain `float('inf')` as a field value.
@@ -334,38 +321,32 @@ def test_repr():
         assert d == eval("distributions." + repr(d))
 
 
-def test_uniform_distribution_asdict():
-    # type: () -> None
+def test_uniform_distribution_asdict() -> None:
 
     assert EXAMPLE_DISTRIBUTIONS["u"]._asdict() == {"low": 1.0, "high": 2.0}
 
 
-def test_log_uniform_distribution_asdict():
-    # type: () -> None
+def test_log_uniform_distribution_asdict() -> None:
 
     assert EXAMPLE_DISTRIBUTIONS["l"]._asdict() == {"low": 0.001, "high": 100}
 
 
-def test_discrete_uniform_distribution_asdict():
-    # type: () -> None
+def test_discrete_uniform_distribution_asdict() -> None:
 
     assert EXAMPLE_DISTRIBUTIONS["du"]._asdict() == {"low": 1.0, "high": 9.0, "q": 2.0}
 
 
-def test_int_uniform_distribution_asdict():
-    # type: () -> None
+def test_int_uniform_distribution_asdict() -> None:
 
     assert EXAMPLE_DISTRIBUTIONS["iu"]._asdict() == {"low": 1, "high": 9, "step": 2}
 
 
-def test_int_log_uniform_distribution_asdict():
-    # type: () -> None
+def test_int_log_uniform_distribution_asdict() -> None:
 
     assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12, "step": 2}
 
 
-def test_int_log_uniform_distribution_deprecation():
-    # type: () -> None
+def test_int_log_uniform_distribution_deprecation() -> None:
 
     # step != 1 is deprecated
 
@@ -394,8 +375,7 @@ def test_int_log_uniform_distribution_deprecation():
         assert d.step == 2
 
 
-def test_categorical_distribution_different_sequence_types():
-    # type: () -> None
+def test_categorical_distribution_different_sequence_types() -> None:
 
     c1 = distributions.CategoricalDistribution(choices=("Roppongi", "Azabu"))
     c2 = distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"])

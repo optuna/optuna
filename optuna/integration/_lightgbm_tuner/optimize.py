@@ -60,7 +60,9 @@ _logger = optuna.logging.get_logger(__name__)
 
 class _BaseTuner(object):
     def __init__(
-        self, lgbm_params: Dict[str, Any] = None, lgbm_kwargs: Dict[str, Any] = None
+        self,
+        lgbm_params: Optional[Dict[str, Any]] = None,
+        lgbm_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
 
         # Handling alias metrics.
@@ -251,7 +253,7 @@ class _OptunaObjective(_BaseTuner):
         return val_score
 
     def _postprocess(
-        self, trial: optuna.trial.Trial, elapsed_secs: float, average_iteration_time: float,
+        self, trial: optuna.trial.Trial, elapsed_secs: float, average_iteration_time: float
     ) -> None:
         if self.pbar is not None:
             self.pbar.set_description(self.pbar_fmt.format(self.step_name, self.best_score))
@@ -709,7 +711,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         evals_result: Optional[Dict[Any, Any]] = None,
         verbose_eval: Optional[Union[bool, int]] = True,
         learning_rates: Optional[List[float]] = None,
-        keep_training_booster: Optional[bool] = False,
+        keep_training_booster: bool = False,
         callbacks: Optional[List[Callable[..., Any]]] = None,
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
