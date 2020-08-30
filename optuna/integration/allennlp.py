@@ -116,7 +116,7 @@ class AllenNLPExecutor(object):
         self._system_attrs = {
             "OPTUNA_ALLENNLP_STUDY_NAME": trial.study.study_name,
             "OPTUNA_ALLENNLP_TRIAL_ID": str(trial._trial_id),
-            "OPTUNA_ALLENNLP_STORAGE_NAME": trial.study._storage_name,
+            "OPTUNA_ALLENNLP_STORAGE_NAME": trial.study._storage._name,
         }
 
     def _build_params(self) -> Dict[str, Any]:

@@ -924,6 +924,7 @@ def create_study(
 
     _storage_name = storage if isinstance(storage, str) else None
     storage = storages.get_storage(storage)
+    storage._name = _storage_name
     try:
         study_id = storage.create_new_study(study_name)
     except exceptions.DuplicatedStudyError:
@@ -940,7 +941,6 @@ def create_study(
 
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
-    study._storage_name = _storage_name
 
     if direction == "minimize":
         _direction = StudyDirection.MINIMIZE
