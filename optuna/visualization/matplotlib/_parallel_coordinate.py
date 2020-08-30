@@ -62,8 +62,8 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
     fig, ax = plt.subplots()
     cmap = plt.get_cmap("Blues")
     ax.set_title("Parallel Coordinate Plot")
-    ax.spines['top'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["bottom"].set_visible(False)
 
     # Prepare data for plotting.
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
@@ -83,7 +83,7 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
     obj_org = [t.value for t in trials]
     obj_min = min(obj_org)
     obj_max = max(obj_org)
-    obj_w = obj_max - obj_min
+    obj_w = obj_max - obj_min  # type: ignore
     dims_obj_base = [[o] for o in obj_org]
 
     # TODO(ytknzw): Implement process for categorical values.
@@ -123,17 +123,17 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
     lc = LineCollection(segments, cmap=cmap)
     lc.set_array(np.asarray([t.value for t in trials] + [0]))
     axcb = fig.colorbar(lc, pad=0.1)
-    axcb.set_label('Objective Value')
+    axcb.set_label("Objective Value")
     plt.xticks(range(0, len(sorted_params) + 1), var_names, rotation=330)
 
     for i in range(0, len(sorted_params)):
         ax2 = ax.twinx()
         ax2.set_ylim(min(param_values[i]), max(param_values[i]))
-        ax2.spines['top'].set_visible(False)
-        ax2.spines['bottom'].set_visible(False)
+        ax2.spines["top"].set_visible(False)
+        ax2.spines["bottom"].set_visible(False)
         ax2.get_xaxis().set_visible(False)
         ax2.plot([1] * len(param_values[i]), param_values[i], visible=False)
-        ax2.spines['right'].set_position(("axes", (i + 1) / len(sorted_params)))
+        ax2.spines["right"].set_position(("axes", (i + 1) / len(sorted_params)))
 
     ax.add_collection(lc)
 
