@@ -7,6 +7,8 @@ from typing import Optional
 from typing import Union
 
 import optuna
+from optuna import load_study
+from optuna import Trial
 from optuna._experimental import experimental
 from optuna._imports import try_import
 
@@ -111,6 +113,12 @@ class AllenNLPExecutor(object):
         else:
             self._include_package = include_package
 
+        self._system_attrs = {
+            "OPTUNA_ALLENNLP_STUDY_NAME": trial.study.study_name,
+            "OPTUNA_ALLENNLP_TRIAL_ID": str(trial._trial_id),
+            "OPTUNA_ALLENNLP_STORAGE_NAME": trial.study._storage_name,
+        }
+
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.
 
@@ -121,7 +129,13 @@ class AllenNLPExecutor(object):
         """
         params = self._environment_variables()
         params.update({key: str(value) for key, value in self._params.items()})
+        params.update(self._system_attrs)
         return json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=params))
+
+    def _set_environment_variables(self):
+        for key, value in self._system_attrs.items():
+            key_with_ppid = "{}_{}".format(os.getppid(), key)
+            os.environ[key_with_ppid] = value
 
     @staticmethod
     def _is_encodable(value: str) -> bool:
@@ -141,6 +155,7 @@ class AllenNLPExecutor(object):
         for package_name in self._include_package:
             import_func(package_name)
 
+        self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
         allennlp.commands.train.train_model(params, self._serialization_dir)
 
@@ -149,6 +164,7 @@ class AllenNLPExecutor(object):
 
 
 @experimental("2.0.0")
+@EpochCallback.register("optuna_pruner")
 class AllenNLPPruningCallback(EpochCallback):
     """AllenNLP callback to prune unpromising trials.
 
@@ -157,21 +173,37 @@ class AllenNLPPruningCallback(EpochCallback):
     if you want to add a proning callback which observes a metric.
 
     Args:
-        trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
-            objective function.
         monitor:
             An evaluation metric for pruning, e.g. ``validation_loss`` or
             ``validation_accuracy``.
+        trial:
+            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            objective function.
     """
 
-    def __init__(self, trial: optuna.trial.Trial, monitor: str):
+    def __init__(
+            self,
+            monitor: str,
+            trial: Optional[optuna.trial.Trial] = None,
+    ):
         _imports.check()
 
         if allennlp.__version__ < "1.0.0":
             raise Exception("AllenNLPPruningCallback requires `allennlp`>=1.0.0.")
 
-        self._trial = trial
+        if trial is not None:
+            self._trial = trial
+        else:
+            _environment_variables = self._get_environment_variables()
+            study_name = _environment_variables["study_name"]
+            trial_id = _environment_variables["trial_id"]
+            storage = _environment_variables["storage"]
+            if study_name is not None and trial_id is not None and storage is not None:
+                _study = load_study(study_name, storage)
+                self._trial = Trial(_study, int(trial_id))
+            else:
+                raise Exception("Can't configure study.")
+
         self._monitor = monitor
 
     def __call__(
@@ -188,3 +220,10 @@ class AllenNLPPruningCallback(EpochCallback):
         self._trial.report(float(value), epoch)
         if self._trial.should_prune():
             raise optuna.TrialPruned()
+
+    def _get_environment_variables(self):
+        return {
+            "study_name": os.getenv("{}_OPTUNA_ALLENNLP_STUDY_NAME".format(os.getppid())),
+            "trial_id": os.getenv("{}_OPTUNA_ALLENNLP_TRIAL_ID".format(os.getppid())),
+            "storage": os.getenv("{}_OPTUNA_ALLENNLP_STORAGE_NAME".format(os.getppid())),
+        }
