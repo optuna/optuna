@@ -127,7 +127,7 @@ class BaseStudy(object):
                 study.optimize(objective, n_trials=3)
 
                 trials = study.get_trials()
-
+                assert len(trials) == 3
         Args:
             deepcopy:
                 Flag to control whether to apply ``copy.deepcopy()`` to the trials.
