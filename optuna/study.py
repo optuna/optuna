@@ -190,11 +190,15 @@ class Study(BaseStudy):
 
                 study = optuna.create_study()
 
-                study.set_user_attr("objective function", "quadratic fuction")
+                study.set_user_attr("objective function", "quadratic function")
                 study.set_user_attr("dimensions", 2)
                 study.set_user_attr("contributors", ["Akiba", "Sano"])
 
-                study.user_attrs
+                assert study.user_attrs == {
+                    "objective function": "quadratic function",
+                    "dimensions": 2,
+                    "contributors": ["Akiba", "Sano"]
+                }
 
         Returns:
             A dictionary containing all user attributes.
