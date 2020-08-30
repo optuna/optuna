@@ -328,10 +328,18 @@ class Study(BaseStudy):
 
                 import optuna
 
+                def objective(trial):
+                    x = trial.suggest_float("x", 0, 1)
+                    y = trial.suggest_float("y", 0, 1)
+                    return x ** 2 + y ** 2
+
                 study = optuna.create_study()
 
+                study.set_user_attr("objective function", "quadratic fuction")
+                study.set_user_attr("dimensions", 2)
                 study.set_user_attr("contributors", ["Akiba", "Sano"])
-                study.set_user_attr("dataset", "MNIST")
+
+                study.user_attrs
 
         Args:
             key: A key string of the attribute.
