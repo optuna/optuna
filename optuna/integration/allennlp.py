@@ -117,6 +117,7 @@ class AllenNLPExecutor(object):
             "OPTUNA_ALLENNLP_STUDY_NAME": trial.study.study_name,
             "OPTUNA_ALLENNLP_TRIAL_ID": str(trial._trial_id),
             "OPTUNA_ALLENNLP_STORAGE_NAME": trial.study._storage._name,
+            "OPTUNA_ALLENNLP_MONITOR": metrics,
         }
 
     def _build_params(self) -> Dict[str, Any]:
@@ -183,30 +184,31 @@ class AllenNLPPruningCallback(EpochCallback):
 
     def __init__(
             self,
-            monitor: str,
             trial: Optional[optuna.trial.Trial] = None,
+            monitor: Optional[str] = None,
     ):
         _imports.check()
 
         if allennlp.__version__ < "1.0.0":
             raise Exception("AllenNLPPruningCallback requires `allennlp`>=1.0.0.")
 
-        if trial is not None:
+        if trial is not None and monitor is not None:
             self._trial = trial
+            self._monitor = monitor
         else:
             _environment_variables = self._get_environment_variables()
             study_name = _environment_variables["study_name"]
             trial_id = _environment_variables["trial_id"]
             storage = _environment_variables["storage"]
+            monitor = _environment_variables["monitor"]
             if study_name is not None and trial_id is not None and storage is not None:
                 _study = load_study(study_name, storage)
                 self._trial = Trial(_study, int(trial_id))
+                self._monitor = monitor
             else:
                 message = "Fail to load study.\n"
                 message += "AllenNLPPruningCallback is only available with Optuna."
                 raise Exception(message)
-
-        self._monitor = monitor
 
     def __call__(
         self,
@@ -228,4 +230,5 @@ class AllenNLPPruningCallback(EpochCallback):
             "study_name": os.getenv("{}_OPTUNA_ALLENNLP_STUDY_NAME".format(os.getppid())),
             "trial_id": os.getenv("{}_OPTUNA_ALLENNLP_TRIAL_ID".format(os.getppid())),
             "storage": os.getenv("{}_OPTUNA_ALLENNLP_STORAGE_NAME".format(os.getppid())),
+            "monitor": os.getenv("{}_OPTUNA_ALLENNLP_MONITOR".format(os.getppid())),
         }
