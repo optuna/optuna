@@ -144,13 +144,13 @@ def load_study(
                 directions=["minimize", "minimize"],
                 study_name="my_study",
                 storage="sqlite:///example.db"
-                )
+            )
             study.optimize(objective, n_trials=3)
 
             loaded_study = optuna.multi_objective.study.load_study(
                 study_name="my_study",
                 storage="sqlite:///example.db"
-                )
+            )
             assert len(loaded_study.trials) == len(study.trials)
 
         .. testcleanup::
