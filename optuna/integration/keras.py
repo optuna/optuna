@@ -57,6 +57,12 @@ class KerasPruningCallback(Callback):
         logs = logs or {}
         current_score = logs.get(self._monitor)
         if current_score is None:
+            message = (
+                "Warning: there is not an evaluation metric for pruning named "
+                + self._monitor
+                + " ."
+            )
+            print(message)
             return
         self._trial.report(float(current_score), step=epoch)
         if self._trial.should_prune():
