@@ -202,7 +202,9 @@ class AllenNLPPruningCallback(EpochCallback):
                 _study = load_study(study_name, storage)
                 self._trial = Trial(_study, int(trial_id))
             else:
-                raise Exception("Can't configure study.")
+                message = "Fail to load study.\n"
+                message += "AllenNLPPruningCallback is only available with Optuna."
+                raise Exception(message)
 
         self._monitor = monitor
 
