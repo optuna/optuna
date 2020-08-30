@@ -487,14 +487,13 @@ class Study(BaseStudy):
 
                 import optuna
 
-                study = optuna.create_study()
-
                 def objective(trial):
                     if trial.number == 4:
                         study.stop()
                     x = trial.suggest_uniform("x", 0, 10)
                     return x ** 2
 
+                study = optuna.create_study()
                 study.optimize(objective, n_trials=10)
                 assert len(study.trials) == 5
 
