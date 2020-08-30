@@ -335,7 +335,7 @@ class Study(BaseStudy):
 
                 study = optuna.create_study()
 
-                study.set_user_attr("objective function", "quadratic fuction")
+                study.set_user_attr("objective function", "quadratic function")
                 study.set_user_attr("dimensions", 2)
                 study.set_user_attr("contributors", ["Akiba", "Sano"])
 
