@@ -13,20 +13,23 @@ import optuna
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
 from optuna import TrialPruned
-
-if optuna.type_checking.TYPE_CHECKING:
-    from optuna.trial import Trial  # NOQA
+from optuna.trial import Trial
 
 
 @pytest.mark.parametrize("use_hyperband", [False, True])
-def test_hyperopt_parameters(use_hyperband):
-    # type: (bool) -> None
+def test_hyperopt_parameters(use_hyperband: bool) -> None:
 
     sampler = TPESampler(**TPESampler.hyperopt_parameters())
     study = optuna.create_study(
-        sampler=sampler, pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None
+        sampler=sampler,
+        pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None,
     )
     study.optimize(lambda t: t.suggest_uniform("x", 10, 20), n_trials=50)
+
+
+def test_multivariate_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.samplers.TPESampler(multivariate=True)
 
 
 def test_sample_relative() -> None:
@@ -128,7 +131,9 @@ def test_sample_independent_misc_arguments() -> None:
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = TPESampler(
-        weights=lambda i: np.asarray([i * 0.11 for i in range(7)]), n_startup_trials=5, seed=0
+        weights=lambda i: np.asarray([i * 0.11 for i in range(7)]),
+        n_startup_trials=5,
+        seed=0,
     )
     with patch("optuna.Study.get_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
@@ -143,7 +148,9 @@ def test_sample_independent_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
+        uniform_suggestion = sampler.sample_independent(
+            study, trial, "param-a", uni_dist
+        )
     assert 1.0 <= uniform_suggestion < 100.0
 
 
@@ -156,7 +163,9 @@ def test_sample_independent_log_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
+        uniform_suggestion = sampler.sample_independent(
+            study, trial, "param-a", uni_dist
+        )
 
     # Test sample from log-uniform is different from uniform.
     log_dist = optuna.distributions.LogUniformDistribution(1.0, 100.0)
@@ -164,7 +173,9 @@ def test_sample_independent_log_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        loguniform_suggestion = sampler.sample_independent(study, trial, "param-a", log_dist)
+        loguniform_suggestion = sampler.sample_independent(
+            study, trial, "param-a", log_dist
+        )
     assert 1.0 <= loguniform_suggestion < 100.0
     assert uniform_suggestion != loguniform_suggestion
 
@@ -179,7 +190,9 @@ def test_sample_independent_disrete_uniform_distributions() -> None:
         random.seed(idx)
         return int(random.random() * 1000) * 0.1
 
-    past_trials = [frozen_trial_factory(i, dist=disc_dist, value_fn=value_fn) for i in range(1, 8)]
+    past_trials = [
+        frozen_trial_factory(i, dist=disc_dist, value_fn=value_fn) for i in range(1, 8)
+    ]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch("optuna.Study.get_trials", return_value=past_trials):
@@ -187,7 +200,10 @@ def test_sample_independent_disrete_uniform_distributions() -> None:
             study, trial, "param-a", disc_dist
         )
     assert 1.0 <= discrete_uniform_suggestion <= 100.0
-    assert abs(int(discrete_uniform_suggestion * 10) - discrete_uniform_suggestion * 10) < 1e-3
+    assert (
+        abs(int(discrete_uniform_suggestion * 10) - discrete_uniform_suggestion * 10)
+        < 1e-3
+    )
 
 
 def test_sample_independent_categorical_distributions() -> None:
@@ -202,12 +218,15 @@ def test_sample_independent_categorical_distributions() -> None:
 
     cat_dist = optuna.distributions.CategoricalDistribution(categories)
     past_trials = [
-        frozen_trial_factory(i, dist=cat_dist, value_fn=cat_value_fn) for i in range(1, 8)
+        frozen_trial_factory(i, dist=cat_dist, value_fn=cat_value_fn)
+        for i in range(1, 8)
     ]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        categorical_suggestion = sampler.sample_independent(study, trial, "param-a", cat_dist)
+        categorical_suggestion = sampler.sample_independent(
+            study, trial, "param-a", cat_dist
+        )
     assert categorical_suggestion in categories
 
 
@@ -222,7 +241,8 @@ def test_sample_int_uniform_distributions() -> None:
 
     int_dist = optuna.distributions.IntUniformDistribution(1, 100)
     past_trials = [
-        frozen_trial_factory(i, dist=int_dist, value_fn=int_value_fn) for i in range(1, 8)
+        frozen_trial_factory(i, dist=int_dist, value_fn=int_value_fn)
+        for i in range(1, 8)
     ]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
@@ -241,7 +261,9 @@ def test_sample_int_uniform_distributions() -> None:
         (optuna.trial.TrialState.WAITING,),
     ],
 )
-def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.TrialState) -> None:
+def test_sample_independent_handle_unsuccessful_states(
+    state: optuna.trial.TrialState,
+) -> None:
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
@@ -250,15 +272,21 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
     trial = frozen_trial_factory(30)
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        all_success_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+        all_success_suggestion = sampler.sample_independent(
+            study, trial, "param-a", dist
+        )
 
     # Test unsuccessful trials are handled differently.
     state_fn = build_state_fn(state)
-    past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
+    past_trials = [
+        frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)
+    ]
     trial = frozen_trial_factory(30)
     sampler = TPESampler(n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        partial_unsuccessful_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+        partial_unsuccessful_suggestion = sampler.sample_independent(
+            study, trial, "param-a", dist
+        )
     assert partial_unsuccessful_suggestion != all_success_suggestion
 
 
@@ -274,11 +302,15 @@ def test_sample_independent_ignored_states() -> None:
         optuna.trial.TrialState.WAITING,
     ]:
         state_fn = build_state_fn(state)
-        past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
+        past_trials = [
+            frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)
+        ]
         trial = frozen_trial_factory(30)
         sampler = TPESampler(n_startup_trials=5, seed=0)
         with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-            suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
+            suggestions.append(
+                sampler.sample_independent(study, trial, "param-a", dist)
+            )
 
     assert len(set(suggestions)) == 1
 
@@ -295,20 +327,21 @@ def test_sample_independent_pruned_state() -> None:
         optuna.trial.TrialState.PRUNED,
     ]:
         state_fn = build_state_fn(state)
-        past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
+        past_trials = [
+            frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)
+        ]
         trial = frozen_trial_factory(30)
         sampler = TPESampler(n_startup_trials=5, seed=0)
         with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-            suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
+            suggestions.append(
+                sampler.sample_independent(study, trial, "param-a", dist)
+            )
 
     assert len(set(suggestions)) == 3
 
 
-def test_get_observation_pairs():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (Trial) -> float
+def test_get_observation_pairs() -> None:
+    def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
         if trial.number == 0:
@@ -328,7 +361,9 @@ def test_get_observation_pairs():
     # Test direction=minimize.
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
-    trial_number = study._storage.create_new_trial(study._study_id)  # Create a running trial.
+    trial_number = study._storage.create_new_trial(
+        study._study_id
+    )  # Create a running trial.
     trial = study._storage.get_trial(trial_number)
 
     assert _tpe.sampler._get_observation_pairs(study, "x", trial) == (
@@ -336,7 +371,10 @@ def test_get_observation_pairs():
         [
             (-float("inf"), 5.0),  # COMPLETE
             (-7, 2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (
+                -3,
+                float("inf"),
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
@@ -345,7 +383,10 @@ def test_get_observation_pairs():
         [
             (-float("inf"), 5.0),  # COMPLETE
             (-7, 2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (
+                -3,
+                float("inf"),
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
@@ -360,7 +401,10 @@ def test_get_observation_pairs():
         [
             (-float("inf"), -5.0),  # COMPLETE
             (-7, -2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (
+                -3,
+                float("inf"),
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
@@ -369,7 +413,89 @@ def test_get_observation_pairs():
         [
             (-float("inf"), -5.0),  # COMPLETE
             (-7, -2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (
+                -3,
+                float("inf"),
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        ],
+    )
+
+
+def test_get_multivariate_observation_pairs() -> None:
+    def objective(trial: Trial) -> float:
+
+        x = trial.suggest_int("x", 5, 5)
+        y = trial.suggest_int("y", 6, 6)
+        if trial.number == 0:
+            return x + y
+        elif trial.number == 1:
+            trial.report(1, 4)
+            trial.report(2, 7)
+            raise TrialPruned()
+        elif trial.number == 2:
+            trial.report(float("nan"), 3)
+            raise TrialPruned()
+        elif trial.number == 3:
+            raise TrialPruned()
+        else:
+            raise RuntimeError()
+
+    # Test direction=minimize.
+    study = optuna.create_study(direction="minimize")
+    study.optimize(objective, n_trials=5, catch=(RuntimeError,))
+
+    assert _tpe.sampler._get_multivariate_observation_pairs(study, ["x", "y"]) == (
+        {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
+        [
+            (-float("inf"), 11.0),  # COMPLETE
+            (-7, 2),  # PRUNED (with intermediate values)
+            (
+                -3,
+                float("inf"),
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        ],
+    )
+    assert _tpe.sampler._get_multivariate_observation_pairs(study, ["z"]) == (
+        {"z": [None, None, None, None]},
+        [
+            (-float("inf"), 11.0),  # COMPLETE
+            (-7, 2),  # PRUNED (with intermediate values)
+            (
+                -3,
+                float("inf"),
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        ],
+    )
+
+    # Test direction=maximize.
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=4)
+    study._storage.create_new_trial(study._study_id)  # Create a running trial.
+
+    assert _tpe.sampler._get_multivariate_observation_pairs(study, ["x", "y"]) == (
+        {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
+        [
+            (-float("inf"), -11.0),  # COMPLETE
+            (-7, -2),  # PRUNED (with intermediate values)
+            (
+                -3,
+                float("inf"),
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        ],
+    )
+    assert _tpe.sampler._get_multivariate_observation_pairs(study, ["z"]) == (
+        {"z": [None, None, None, None]},
+        [
+            (-float("inf"), -11.0),  # COMPLETE
+            (-7, -2),  # PRUNED (with intermediate values)
+            (
+                -3,
+                float("inf"),
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
@@ -407,7 +533,9 @@ def frozen_trial_factory(
     )
 
 
-def build_state_fn(state: optuna.trial.TrialState) -> Callable[[int], optuna.trial.TrialState]:
+def build_state_fn(
+    state: optuna.trial.TrialState,
+) -> Callable[[int], optuna.trial.TrialState]:
     def state_fn(idx: int) -> optuna.trial.TrialState:
         return [optuna.trial.TrialState.COMPLETE, state][idx % 2]
 

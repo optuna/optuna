@@ -71,12 +71,20 @@ class TestParzenEstimator(object):
             [
                 [-0.4, 0.4],
                 {"prior": True, "magic_clip": False, "endpoints": True},
-                {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.0, 0.4], "sigmas": [0.6, 2.0, 0.6]},
+                {
+                    "weights": [1.0 / 3] * 3,
+                    "mus": [-0.4, 0.0, 0.4],
+                    "sigmas": [0.6, 2.0, 0.6],
+                },
             ],
             [
                 [-0.4, 0.4],
                 {"prior": True, "magic_clip": False, "endpoints": False},
-                {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.0, 0.4], "sigmas": [0.4, 2.0, 0.4]},
+                {
+                    "weights": [1.0 / 3] * 3,
+                    "mus": [-0.4, 0.0, 0.4],
+                    "sigmas": [0.4, 2.0, 0.4],
+                },
             ],
             [
                 [-0.4, 0.4],
