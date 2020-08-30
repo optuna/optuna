@@ -4,14 +4,14 @@ from optuna._imports import try_import
 
 
 with try_import() as _imports:  # NOQA
-    # TODO: Add specific imports.
+    # TODO(ytknzw): Add specific imports.
     import matplotlib  # NOQA
     from matplotlib import pyplot as plt  # NOQA
     from matplotlib.figure import Figure  # NOQA
 
     from matplotlib import __version__ as matplotlib_version
 
-    # TODO: Set precise version.
+    # TODO(ytknzw): Set precise version.
     if version.parse(matplotlib_version) < version.parse("3.0.0"):
         raise ImportError(
             "Your version of Matplotlib is " + matplotlib_version + " . "
