@@ -14,7 +14,7 @@ def objective(trial):
 def main():
     sampler = optuna.samplers.TPESampler(seed=10)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=10)
+    study.optimize(objective, n_trials=30)
 
     fig = optuna.visualization.plot_contour(study, params=["x", "y"])
     fig_html = plotly.offline.plot(fig, output_type="div", include_plotlyjs="cdn", auto_open=False)

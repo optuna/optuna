@@ -41,7 +41,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
                 return x ** 2 + y
 
             study = optuna.create_study()
-            study.optimize(objective, n_trials=10)
+            study.optimize(objective, n_trials=30)
 
             optuna.visualization.plot_contour(study, params=['x', 'y'])
 
