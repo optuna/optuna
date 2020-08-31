@@ -3,9 +3,7 @@ from unittest.mock import patch
 import numpy as np
 
 from optuna import distributions
-from optuna.samplers._tpe.multivariate_parzen_estimator import (
-    _MultivariateParzenEstimator,
-)
+from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 
 # We skip the test of `precomputat_sigma0`.
@@ -97,22 +95,18 @@ def test_init_MultivariateParzenEstimator(mock) -> None:
         "c": None,
         "d": None,
         "e": None,
-        "f": np.array(
-            [[0.2, 0.6, 0.2], [0.2, 0.2, 0.6], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]]
-        ),
+        "f": np.array([[0.2, 0.6, 0.2], [0.2, 0.2, 0.6], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]]),
     }
 
     for param_name, values in mpe._sigmas.items():
         assert np.all(
             np.equal(mpe._sigmas[param_name], sigmas[param_name])
         ), 'parameter "{}"'.format(param_name)
+        assert np.all(np.equal(mpe._mus[param_name], mus[param_name])), "parameter: {}".format(
+            param_name
+        )
         assert np.all(
-            np.equal(mpe._mus[param_name], mus[param_name])
-        ), "parameter: {}".format(param_name)
-        assert np.all(
-            np.equal(
-                mpe._categorical_weights[param_name], categorical_weights[param_name]
-            )
+            np.equal(mpe._categorical_weights[param_name], categorical_weights[param_name])
         ), "parameter: {}".format(param_name)
 
     # Test a case when consider prior is False
@@ -158,13 +152,11 @@ def test_init_MultivariateParzenEstimator(mock) -> None:
         assert np.all(
             np.equal(mpe._sigmas[param_name], sigmas[param_name])
         ), 'parameter "{}"'.format(param_name)
+        assert np.all(np.equal(mpe._mus[param_name], mus[param_name])), "parameter: {}".format(
+            param_name
+        )
         assert np.all(
-            np.equal(mpe._mus[param_name], mus[param_name])
-        ), "parameter: {}".format(param_name)
-        assert np.all(
-            np.equal(
-                mpe._categorical_weights[param_name], categorical_weights[param_name]
-            )
+            np.equal(mpe._categorical_weights[param_name], categorical_weights[param_name])
         ), "parameter: {}".format(param_name)
 
 
@@ -220,9 +212,9 @@ def test_sample_MultivariateParzenEstimator(mock) -> None:
         if samples.dtype == str:
             assert samples[0] == "y", "parameter {}".format(param_name)
         else:
-            assert np.allclose(
-                samples, multivariate_samples[param_name]
-            ), "parameter {}".format(param_name)
+            assert np.allclose(samples, multivariate_samples[param_name]), "parameter {}".format(
+                param_name
+            )
 
     # We test the output when the seeds are fixed.
     assert output_multivariate_samples == mpe.sample(np.random.RandomState(0), 1)

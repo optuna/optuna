@@ -55,9 +55,7 @@ class _MultivariateParzenEstimator:
             samples = multivariate_samples[param_name]
             if isinstance(dist, distributions.CategoricalDistribution):
                 mus = sigmas = None
-                categorical_weights = self._calculate_categorical_params(
-                    samples, param_name
-                )
+                categorical_weights = self._calculate_categorical_params(samples, param_name)
             else:
                 mus, sigmas = self._calculate_parzen_est_params(samples, param_name)
                 categorical_weights = None
@@ -65,9 +63,7 @@ class _MultivariateParzenEstimator:
             self._sigmas[param_name] = sigmas
             self._categorical_weights[param_name] = categorical_weights
 
-    def _calculate_weights(
-        self, multivariate_samples: Dict[str, np.ndarray]
-    ) -> np.ndarray:
+    def _calculate_weights(self, multivariate_samples: Dict[str, np.ndarray]) -> np.ndarray:
 
         # We decide the weights.
         consider_prior = self._parameters.consider_prior
@@ -184,9 +180,7 @@ class _MultivariateParzenEstimator:
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 q = self._q[param_name]
                 samples = np.round(samples / q) * q
-                samples = np.clip(
-                    samples, self._low[param_name], self._high[param_name]
-                )
+                samples = np.clip(samples, self._low[param_name], self._high[param_name])
                 transformed[param_name] = samples.astype(int)
             elif isinstance(distribution, distributions.IntLogUniformDistribution):
                 transformed[param_name] = np.round(np.exp(samples))
@@ -250,23 +244,17 @@ class _MultivariateParzenEstimator:
 
         return np.min(distances, axis=1)
 
-    def _calculate_categorical_params(
-        self, samples: np.ndarray, param_name: str
-    ) -> np.ndarray:
+    def _calculate_categorical_params(self, samples: np.ndarray, param_name: str) -> np.ndarray:
 
         samples = samples.astype(int)
         choices = self._search_space[param_name].choices
         consider_prior = self._parameters.consider_prior
         prior_weights = self._parameters.prior_weight
         if consider_prior:
-            weights = (
-                prior_weights / samples.size * np.ones((samples.size + 1, len(choices)))
-            )
+            weights = prior_weights / samples.size * np.ones((samples.size + 1, len(choices)))
             weights[np.arange(samples.size), samples] += 1
         else:
-            weights = (
-                prior_weights / samples.size * np.ones((samples.size, len(choices)))
-            )
+            weights = prior_weights / samples.size * np.ones((samples.size, len(choices)))
             weights[np.arange(samples.size), samples] += 1
         weights /= weights.sum(axis=1, keepdims=True)
         return weights
@@ -326,9 +314,7 @@ class _MultivariateParzenEstimator:
                 categorical_weights = self._categorical_weights[param_name]
                 assert categorical_weights is not None
                 weights = categorical_weights[active, :]
-                samples = _MultivariateParzenEstimator._sample_from_categorical_dist(
-                    rng, weights
-                )
+                samples = _MultivariateParzenEstimator._sample_from_categorical_dist(rng, weights)
 
             else:
                 # We restore parameters of parzen estimators.
@@ -402,9 +388,9 @@ class _MultivariateParzenEstimator:
                 else:
                     upper_bound = np.minimum(samples + q / 2.0, high)
                     lower_bound = np.maximum(samples - q / 2.0, low)
-                    cdf = cdf_func(
-                        upper_bound[:, None], mus[None], sigmas[None]
-                    ) - cdf_func(lower_bound[:, None], mus[None], sigmas[None])
+                    cdf = cdf_func(upper_bound[:, None], mus[None], sigmas[None]) - cdf_func(
+                        lower_bound[:, None], mus[None], sigmas[None]
+                    )
                     log_pdf = np.log(cdf) - np.log(p_accept)
             component_log_pdf += log_pdf
         ret = scipy.special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)

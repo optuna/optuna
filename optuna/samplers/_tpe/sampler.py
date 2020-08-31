@@ -13,9 +13,7 @@ from scipy.stats import truncnorm
 from optuna._experimental import experimental
 from optuna import distributions
 from optuna.distributions import BaseDistribution
-from optuna.samplers._tpe.multivariate_parzen_estimator import (
-    _MultivariateParzenEstimator,
-)
+from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.samplers import BaseSampler
@@ -175,7 +173,9 @@ class TPESampler(BaseSampler):
         self._random_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial,
+        self,
+        study: Study,
+        trial: FrozenTrial,
     ) -> Dict[str, BaseDistribution]:
 
         if not self._multivariate:
@@ -262,14 +262,10 @@ class TPESampler(BaseSampler):
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )
-        below_param_values, above_param_values = self._split_observation_pairs(
-            values, scores
-        )
+        below_param_values, above_param_values = self._split_observation_pairs(values, scores)
 
         if isinstance(param_distribution, distributions.UniformDistribution):
-            return self._sample_uniform(
-                param_distribution, below_param_values, above_param_values
-            )
+            return self._sample_uniform(param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.LogUniformDistribution):
             return self._sample_loguniform(
                 param_distribution, below_param_values, above_param_values
@@ -279,9 +275,7 @@ class TPESampler(BaseSampler):
                 param_distribution, below_param_values, above_param_values
             )
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            return self._sample_int(
-                param_distribution, below_param_values, above_param_values
-            )
+            return self._sample_int(param_distribution, below_param_values, above_param_values)
         elif isinstance(param_distribution, distributions.IntLogUniformDistribution):
             return self._sample_int_loguniform(
                 param_distribution, below_param_values, above_param_values
@@ -390,9 +384,7 @@ class TPESampler(BaseSampler):
         above -= distribution.low
         below -= distribution.low
 
-        best_sample = (
-            self._sample_numerical(low, high, below, above, q=q) + distribution.low
-        )
+        best_sample = self._sample_numerical(low, high, below, above, q=q) + distribution.low
         return min(max(best_sample, distribution.low), distribution.high)
 
     def _sample_int(
@@ -499,17 +491,13 @@ class TPESampler(BaseSampler):
         weighted_below = counts_below + self._prior_weight
         weighted_below /= weighted_below.sum()
         samples_below = self._sample_from_categorical_dist(weighted_below, size)
-        log_likelihoods_below = TPESampler._categorical_log_pdf(
-            samples_below, weighted_below
-        )
+        log_likelihoods_below = TPESampler._categorical_log_pdf(samples_below, weighted_below)
 
         weights_above = self._weights(len(above))
         counts_above = np.bincount(above, minlength=upper, weights=weights_above)
         weighted_above = counts_above + self._prior_weight
         weighted_above /= weighted_above.sum()
-        log_likelihoods_above = TPESampler._categorical_log_pdf(
-            samples_below, weighted_above
-        )
+        log_likelihoods_above = TPESampler._categorical_log_pdf(samples_below, weighted_above)
 
         return int(
             TPESampler._compare(
@@ -588,9 +576,7 @@ class TPESampler(BaseSampler):
             )
         if sigmas.ndim != 1:
             raise ValueError(
-                "The 'sigmas' should be 1-dimension. But sigmas.shape = {}".format(
-                    sigmas.shape
-                )
+                "The 'sigmas' should be 1-dimension. But sigmas.shape = {}".format(sigmas.shape)
             )
 
         p_accept = np.sum(
@@ -657,9 +643,7 @@ class TPESampler(BaseSampler):
                 raise ValueError(
                     "The size of the 'samples' and that of the 'score' "
                     "should be same. "
-                    "But (samples.size, score.size) = ({}, {})".format(
-                        samples.size, score.size
-                    )
+                    "But (samples.size, score.size) = ({}, {})".format(samples.size, score.size)
                 )
 
             best = np.argmax(score)
@@ -682,9 +666,7 @@ class TPESampler(BaseSampler):
                 raise ValueError(
                     "The size of the 'samples' and that of the 'score' "
                     "should be same. "
-                    "But (samples.size, score.size) = ({}, {})".format(
-                        sample_size, score.size
-                    )
+                    "But (samples.size, score.size) = ({}, {})".format(sample_size, score.size)
                 )
             best = np.argmax(score)
             return {k: v[best] for k, v in multivariate_samples.items()}
@@ -712,9 +694,7 @@ class TPESampler(BaseSampler):
 
         mu, sigma = map(np.asarray, (mu, sigma))
         if x < 0:
-            raise ValueError(
-                "Negative argument is given to _lognormal_cdf. x: {}".format(x)
-            )
+            raise ValueError("Negative argument is given to _lognormal_cdf. x: {}".format(x))
         denominator = np.log(np.maximum(x, EPS)) - mu
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
         z = denominator / numerator
@@ -823,9 +803,7 @@ def _get_multivariate_observation_pairs(
         sign = -1
 
     scores = []
-    values: Dict[str, List[Optional[float]]] = {
-        param_name: [] for param_name in param_names
-    }
+    values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
 
         # We extract score from trial.
