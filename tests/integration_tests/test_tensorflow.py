@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import math
+import typing
 from unittest.mock import patch
 
 import numpy as np
@@ -8,14 +9,9 @@ import tensorflow as tf
 import optuna
 from optuna.integration import TensorFlowPruningHook
 from optuna.testing.integration import DeterministicPruner
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    import typing  # NOQA
 
 
-def fixed_value_input_fn():
-    # type: () -> typing.Tuple[typing.Dict[str, tf.Tensor], tf.Tensor]
+def fixed_value_input_fn() -> typing.Tuple[typing.Dict[str, tf.Tensor], tf.Tensor]:
 
     x_train = np.zeros([16, 20])
     y_train = np.zeros(16)
@@ -26,11 +22,8 @@ def fixed_value_input_fn():
     return {"x": features}, labels
 
 
-def test_tensorflow_pruning_hook():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (optuna.trial.Trial) -> float
+def test_tensorflow_pruning_hook() -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
 
         clf = tf.estimator.DNNClassifier(
             hidden_units=[],
@@ -40,7 +33,7 @@ def test_tensorflow_pruning_hook():
             config=tf.estimator.RunConfig(save_summary_steps=10, save_checkpoints_steps=10),
         )
         hook = TensorFlowPruningHook(
-            trial=trial, estimator=clf, metric="accuracy", run_every_steps=5,
+            trial=trial, estimator=clf, metric="accuracy", run_every_steps=5
         )
         train_spec = tf.estimator.TrainSpec(
             input_fn=fixed_value_input_fn, max_steps=100, hooks=[hook]

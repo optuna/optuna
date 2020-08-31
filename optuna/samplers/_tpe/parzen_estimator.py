@@ -28,7 +28,7 @@ class _ParzenEstimatorParameters(
 
 class _ParzenEstimator(object):
     def __init__(
-        self, mus: ndarray, low: float, high: float, parameters: _ParzenEstimatorParameters,
+        self, mus: ndarray, low: float, high: float, parameters: _ParzenEstimatorParameters
     ) -> None:
 
         self.weights, self.mus, self.sigmas = _ParzenEstimator._calculate(
@@ -56,15 +56,15 @@ class _ParzenEstimator(object):
     ) -> Tuple[ndarray, ndarray, ndarray]:
         """Calculates the weights, mus and sigma for the Parzen estimator.
 
-           Note: When the number of observations is zero, the Parzen estimator ignores the
-           `consider_prior` flag and utilizes a prior. Validation of this approach is future work.
+        Note: When the number of observations is zero, the Parzen estimator ignores the
+        `consider_prior` flag and utilizes a prior. Validation of this approach is future work.
         """
 
         mus = numpy.asarray(mus)
         sigma = numpy.asarray([], dtype=float)
         prior_pos = 0
 
-        # Parzen estimator construction requires at least one observation or a priror.
+        # Parzen estimator construction requires at least one observation or a prior.
         if mus.size == 0:
             consider_prior = True
 

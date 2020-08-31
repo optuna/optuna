@@ -1,9 +1,8 @@
-import optuna
-from optuna import type_checking
+from typing import Any
+from typing import Dict
+from typing import Optional
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
+import optuna
 
 with optuna._imports.try_import() as _imports:
     from tensorflow.keras.callbacks import Callback
@@ -30,8 +29,7 @@ class TFKerasPruningCallback(Callback):
             An evaluation metric for pruning, e.g., ``val_loss`` or ``val_acc``.
     """
 
-    def __init__(self, trial, monitor):
-        # type: (optuna.trial.Trial, str) -> None
+    def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
 
         super(TFKerasPruningCallback, self).__init__()
 
@@ -40,8 +38,7 @@ class TFKerasPruningCallback(Callback):
         self._trial = trial
         self._monitor = monitor
 
-    def on_epoch_end(self, epoch, logs=None):
-        # type: (int, Dict[str, Any]) -> None
+    def on_epoch_end(self, epoch: int, logs: Optional[Dict[str, Any]] = None) -> None:
 
         logs = logs or {}
         current_score = logs.get(self._monitor)
