@@ -177,10 +177,10 @@ class _MultivariateParzenEstimator:
                 transformed[param_name] = np.exp(samples)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 q = self._q[param_name]
-                samples = np.round(samples / q) * q
-                transformed[param_name] = np.clip(
-                    samples, self._low[param_name], self._high[param_name]
-                )
+                low = self._low[param_name]
+                high = self._high[param_name]
+                samples = (np.round((samples - low) / q - 0.5) + 0.5) * q + low
+                transformed[param_name] = np.clip(samples, low, high)
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 q = self._q[param_name]
                 samples = np.round(samples / q) * q
@@ -211,7 +211,7 @@ class _MultivariateParzenEstimator:
 
     def _precompute_sigmas0(
         self, multivariate_samples: Dict[str, np.ndarray]
-    ) -> np.ndarray:
+    ) -> Optional[np.ndarray]:
 
         # Categorical parameters are not considered.
         param_names = list(multivariate_samples.keys())
@@ -234,6 +234,12 @@ class _MultivariateParzenEstimator:
                 rescaled_samples_list.append(samples)
             else:  # Categorical parameters are ignored.
                 continue
+
+        if len(rescaled_samples_list) == 0:
+            return None
+        elif len(rescaled_samples_list[0]) == 0:
+            return np.ones(1, dtype=float)
+
         rescaled_samples = np.array(rescaled_samples_list).T
 
         # compute distance matrix of samples
@@ -275,6 +281,7 @@ class _MultivariateParzenEstimator:
         sigmas0 = self._sigmas0
         low = self._low[param_name]
         high = self._high[param_name]
+        assert sigmas0 is not None
         assert low is not None
         assert high is not None
 

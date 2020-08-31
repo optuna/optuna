@@ -124,7 +124,7 @@ class TPESampler(BaseSampler):
             for more details.
         seed:
             Seed for random number generator.
-        use_relative_sampler:
+        multivariate:
             Use multivariate TPE when suggesting parameters.
     """
 
@@ -140,7 +140,7 @@ class TPESampler(BaseSampler):
         weights: Callable[[int], np.ndarray] = default_weights,
         seed: Optional[int] = None,
         *,
-        use_multivariate: bool = False,
+        multivariate: bool = False,
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
@@ -159,14 +159,14 @@ class TPESampler(BaseSampler):
         self._rng = np.random.RandomState(seed)
         self._random_sampler = RandomSampler(seed=seed)
 
-        self._use_multivariate = use_multivariate
+        self._multivariate = multivariate
         self._search_space = IntersectionSearchSpace()
 
-        if use_multivariate:
-            self._raise_experimental_warning_for_use_multivariate()
+        if multivariate:
+            self._raise_experimental_warning_for_multivariate()
 
-    @experimental("2.1.0", name="`use_multivariate = True` in TPESampler")
-    def _raise_experimental_warning_for_use_multivariate(self) -> None:
+    @experimental("2.1.0", name="`multivariate = True` in TPESampler")
+    def _raise_experimental_warning_for_multivariate(self) -> None:
         pass
 
     def reseed_rng(self) -> None:
@@ -178,7 +178,7 @@ class TPESampler(BaseSampler):
         self, study: Study, trial: FrozenTrial,
     ) -> Dict[str, BaseDistribution]:
 
-        if not self._use_multivariate:
+        if not self._multivariate:
             return {}
 
         search_space: Dict[str, BaseDistribution] = {}
@@ -216,7 +216,7 @@ class TPESampler(BaseSampler):
             return {}
 
         param_names = list(search_space.keys())
-        values, scores = _get_observation_pairs_multivariate(study, param_names)
+        values, scores = _get_multivariate_observation_pairs(study, param_names)
 
         # If the number of samples is insufficient, we run random trial.
         n = len(scores)
@@ -820,7 +820,7 @@ def _get_observation_pairs(
     return values, scores
 
 
-def _get_observation_pairs_multivariate(
+def _get_multivariate_observation_pairs(
     study: Study, param_names: List[str]
 ) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, float]]]:
 
