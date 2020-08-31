@@ -398,6 +398,9 @@ class InMemoryStorage(BaseStorage):
                 trial.state == state for trial in self.get_all_trials(study_id, deepcopy=False)
             )
 
+    def get_url(self) -> str:
+        raise NotImplementedError
+
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         self._check_study_id(study_id)
 
