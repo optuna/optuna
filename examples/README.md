@@ -70,7 +70,7 @@ In addition, integration modules are available for the following libraries, prov
 
 * [Optimizing on Kubernetes](./distributed/kubernetes/README.md)
 
-### External libraries using Optuna
+### External projects using Optuna
 
 * [RL Baselines Zoo](https://github.com/DLR-RM/rl-baselines3-zoo)
 * [Allegro Trains](https://github.com/allegroai/trains)
@@ -79,6 +79,8 @@ In addition, integration modules are available for the following libraries, prov
 * [Mozilla Voice STT](https://github.com/mozilla/DeepSpeech)
 * [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)
 * [Catalyst](https://github.com/catalyst-team/catalyst)
+
+PRs to add additional projects welcome!
 
 ### Running with Optuna's Docker images?
 You can use our docker images with the tag ending with `-dev` to run most of the examples.
