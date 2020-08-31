@@ -169,9 +169,7 @@ class TPESampler(BaseSampler):
         self._random_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self,
-        study: Study,
-        trial: FrozenTrial,
+        self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
 
         if not self._multivariate:
