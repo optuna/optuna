@@ -10,7 +10,7 @@ import pytest
 import optuna
 from optuna.samplers._cmaes import _initialize_sigma0
 from optuna.samplers._cmaes import _initialize_x0
-from optuna.samplers._cmaes import _initialize_x0_uniformly
+from optuna.samplers._cmaes import _initialize_x0_randomly
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
@@ -105,7 +105,7 @@ def test_initialize_x0_with_unsupported_distribution() -> None:
         _initialize_x0({"x": UnsupportedDistribution()})
 
     with pytest.raises(NotImplementedError):
-        _initialize_x0_uniformly(np.random.RandomState(1), {"x": UnsupportedDistribution()})
+        _initialize_x0_randomly(np.random.RandomState(1), {"x": UnsupportedDistribution()})
 
 
 def test_initialize_sigma0_with_unsupported_distribution() -> None:

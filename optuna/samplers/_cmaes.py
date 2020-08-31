@@ -243,9 +243,8 @@ class CmaEsSampler(BaseSampler):
         ordered_keys = [key for key in search_space]
         ordered_keys.sort()
 
-        optimizer, n_restarts = self._restore_optimizer(completed_trials)
+        optimizer = self._restore_optimizer(completed_trials)
         if optimizer is None:
-            n_restarts = 0
             optimizer = self._init_optimizer(search_space, ordered_keys)
 
         if optimizer.dim != len(ordered_keys):
@@ -278,10 +277,9 @@ class CmaEsSampler(BaseSampler):
             optimizer.tell(solutions)
 
             if self._restart_strategy == "ipop" and optimizer.should_stop():
-                n_restarts += 1
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
-                    search_space, ordered_keys, population_size=popsize, n_restarts=n_restarts
+                    search_space, ordered_keys, population_size=popsize, randomize_start_point=True
                 )
 
             optimizer_str = pickle.dumps(optimizer).hex()
@@ -295,7 +293,6 @@ class CmaEsSampler(BaseSampler):
         study._storage.set_trial_system_attr(
             trial._trial_id, "cma:generation", optimizer.generation
         )
-        study._storage.set_trial_system_attr(trial._trial_id, "cma:n_restarts", n_restarts)
         external_values = {
             k: _to_optuna_param(search_space[k], p) for k, p in zip(ordered_keys, params)
         }
@@ -303,7 +300,7 @@ class CmaEsSampler(BaseSampler):
 
     def _restore_optimizer(
         self, completed_trials: "List[optuna.trial.FrozenTrial]",
-    ) -> Tuple[Optional[CMA], int]:
+    ) -> Optional[CMA]:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             serialized_optimizer = trial.system_attrs.get(
@@ -311,20 +308,19 @@ class CmaEsSampler(BaseSampler):
             )  # type: Optional[str]
             if serialized_optimizer is None:
                 continue
-            n_restarts = trial.system_attrs.get("cma:n_restarts", 0)  # type: int
-            return pickle.loads(bytes.fromhex(serialized_optimizer)), n_restarts
-        return None, 0
+            return pickle.loads(bytes.fromhex(serialized_optimizer))
+        return None
 
     def _init_optimizer(
         self,
         search_space: Dict[str, BaseDistribution],
         ordered_keys: List[str],
         population_size: Optional[int] = None,
-        n_restarts: int = 0,
+        randomize_start_point: bool = False,
     ) -> CMA:
-        if n_restarts > 0:
+        if randomize_start_point:
             # `_initialize_x0_uniformly` returns internal representations.
-            x0 = _initialize_x0_uniformly(self._cma_rng, search_space)
+            x0 = _initialize_x0_randomly(self._cma_rng, search_space)
             mean = np.array([x0[k] for k in ordered_keys], dtype=float)
         elif self._x0 is None:
             # `_initialize_x0` returns internal representations.
@@ -459,7 +455,7 @@ def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, float
     return x0
 
 
-def _initialize_x0_uniformly(
+def _initialize_x0_randomly(
     rng: np.random.RandomState, search_space: Dict[str, BaseDistribution]
 ) -> Dict[str, float]:
     x0 = {}
