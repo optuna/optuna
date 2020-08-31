@@ -246,9 +246,15 @@ class CmaEsSampler(BaseSampler):
         ordered_keys = [key for key in search_space]
         ordered_keys.sort()
 
-        optimizer = self._restore_optimizer(completed_trials)
+        optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
+            n_restarts = 0
             optimizer = self._init_optimizer(search_space, ordered_keys)
+
+        if self._restart_strategy is None:
+            generation_attr_key = "cma:generation"  # for backward compatibility
+        else:
+            generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
 
         if optimizer.dim != len(ordered_keys):
             self._logger.info(
@@ -265,7 +271,7 @@ class CmaEsSampler(BaseSampler):
         solution_trials = [
             t
             for t in completed_trials
-            if optimizer.generation == t.system_attrs.get("cma:generation", -1)
+            if optimizer.generation == t.system_attrs.get(generation_attr_key, -1)
         ]
         if len(solution_trials) >= optimizer.population_size:
             solutions = []  # type: List[Tuple[np.ndarray, float]]
@@ -280,6 +286,7 @@ class CmaEsSampler(BaseSampler):
             optimizer.tell(solutions)
 
             if self._restart_strategy == "ipop" and optimizer.should_stop():
+                n_restarts += 1
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
                     search_space, ordered_keys, population_size=popsize, randomize_start_point=True
@@ -294,8 +301,9 @@ class CmaEsSampler(BaseSampler):
         params = optimizer.ask()
 
         study._storage.set_trial_system_attr(
-            trial._trial_id, "cma:generation", optimizer.generation
+            trial._trial_id, generation_attr_key, optimizer.generation
         )
+        study._storage.set_trial_system_attr(trial._trial_id, "cma:n_restarts", n_restarts)
         external_values = {
             k: _to_optuna_param(search_space[k], p) for k, p in zip(ordered_keys, params)
         }
@@ -304,7 +312,7 @@ class CmaEsSampler(BaseSampler):
     def _restore_optimizer(
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
-    ) -> Optional[CMA]:
+    ) -> Tuple[Optional[CMA], int]:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             serialized_optimizer = trial.system_attrs.get(
@@ -312,8 +320,9 @@ class CmaEsSampler(BaseSampler):
             )  # type: Optional[str]
             if serialized_optimizer is None:
                 continue
-            return pickle.loads(bytes.fromhex(serialized_optimizer))
-        return None
+            n_restarts = trial.system_attrs.get("cma:n_restarts", 0)  # type: int
+            return pickle.loads(bytes.fromhex(serialized_optimizer)), n_restarts
+        return None, 0
 
     def _init_optimizer(
         self,
