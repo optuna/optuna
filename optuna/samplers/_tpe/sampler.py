@@ -142,11 +142,7 @@ class TPESampler(BaseSampler):
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
-            consider_prior,
-            prior_weight,
-            consider_magic_clip,
-            consider_endpoints,
-            weights,
+            consider_prior, prior_weight, consider_magic_clip, consider_endpoints, weights
         )
         self._prior_weight = prior_weight
         self._n_startup_trials = n_startup_trials
