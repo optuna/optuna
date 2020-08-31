@@ -86,7 +86,9 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
     obj_w = obj_max - obj_min  # type: ignore
     dims_obj_base = [[o] for o in obj_org]
 
-    # TODO(ytknzw): Implement process for categorical values.
+    cat_param_names = []
+    cat_param_values = []
+    cat_param_ticks = []
     for p_name in sorted_params:
         values = []
         for t in trials:
@@ -97,6 +99,10 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
         except (TypeError, ValueError):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
             values = [vocab[v] for v in values]
+            cat_param_names.append(p_name)
+            vocab_item_sorted = sorted(vocab.items(), key=lambda x: x[1])
+            cat_param_values.append([v[0] for v in vocab_item_sorted])
+            cat_param_ticks.append([v[1] for v in vocab_item_sorted])
 
         p_min = min(values)
         p_max = max(values)
@@ -126,7 +132,7 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
     axcb.set_label("Objective Value")
     plt.xticks(range(0, len(sorted_params) + 1), var_names, rotation=330)
 
-    for i in range(0, len(sorted_params)):
+    for i, p_name in enumerate(sorted_params):
         ax2 = ax.twinx()
         ax2.set_ylim(min(param_values[i]), max(param_values[i]))
         ax2.spines["top"].set_visible(False)
@@ -134,6 +140,11 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
         ax2.get_xaxis().set_visible(False)
         ax2.plot([1] * len(param_values[i]), param_values[i], visible=False)
         ax2.spines["right"].set_position(("axes", (i + 1) / len(sorted_params)))
+        if p_name in cat_param_names:
+            idx = cat_param_names.index(p_name)
+            tick_values = cat_param_ticks[idx]
+            tick_labels = cat_param_values[idx]
+            plt.yticks(tick_values, tick_labels)
 
     ax.add_collection(lc)
 
