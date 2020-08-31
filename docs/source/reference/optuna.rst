@@ -2,7 +2,7 @@ optuna
 ======
 
 .. autosummary::
-   :toctree: alias_generated/
+   :toctree: generated/
    :nosignatures:
 
    optuna.create_study

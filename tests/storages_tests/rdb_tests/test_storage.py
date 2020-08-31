@@ -3,6 +3,7 @@ import sys
 import tempfile
 from typing import Any
 from typing import Dict
+from typing import Optional
 from unittest.mock import patch
 
 import pytest
@@ -15,16 +16,10 @@ from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages import RDBStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna import type_checking
 from optuna import version
 
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
 
-
-def test_init():
-    # type: () -> None
+def test_init() -> None:
 
     storage = create_test_storage()
     session = storage.scoped_session()
@@ -37,16 +32,14 @@ def test_init():
     assert storage.get_all_versions() == ["v1.3.0.a", "v1.2.0.a", "v0.9.0.a"]
 
 
-def test_init_url_template():
-    # type: ()-> None
+def test_init_url_template() -> None:
 
     with tempfile.NamedTemporaryFile(suffix="{SCHEMA_VERSION}") as tf:
         storage = RDBStorage("sqlite:///" + tf.name)
         assert storage.engine.url.database.endswith(str(SCHEMA_VERSION))
 
 
-def test_init_url_that_contains_percent_character():
-    # type: ()-> None
+def test_init_url_that_contains_percent_character() -> None:
 
     # Alembic's ini file regards '%' as the special character for variable expansion.
     # We checks `RDBStorage` does not raise an error even if a storage url contains the character.
@@ -60,8 +53,7 @@ def test_init_url_that_contains_percent_character():
         RDBStorage("sqlite:///" + tf.name)
 
 
-def test_init_db_module_import_error():
-    # type: () -> None
+def test_init_db_module_import_error() -> None:
 
     expected_msg = (
         "Failed to import DB access module for the specified storage URL. "
@@ -73,8 +65,7 @@ def test_init_db_module_import_error():
             RDBStorage("postgresql://user:password@host/database")
 
 
-def test_engine_kwargs():
-    # type: () -> None
+def test_engine_kwargs() -> None:
 
     create_test_storage(engine_kwargs={"pool_size": 5})
 
@@ -92,15 +83,15 @@ def test_engine_kwargs():
         ("mysql://localhost", {"pool_size": 5}, True),
     ],
 )
-def test_set_default_engine_kwargs_for_mysql(url, engine_kwargs, expected):
-    # type: (str, Dict[str, Any], bool)-> None
+def test_set_default_engine_kwargs_for_mysql(
+    url: str, engine_kwargs: Dict[str, Any], expected: bool
+) -> None:
 
     RDBStorage._set_default_engine_kwargs_for_mysql(url, engine_kwargs)
     assert engine_kwargs["pool_pre_ping"] is expected
 
 
-def test_set_default_engine_kwargs_for_mysql_with_other_rdb():
-    # type: ()-> None
+def test_set_default_engine_kwargs_for_mysql_with_other_rdb() -> None:
 
     # Do not change engine_kwargs if database is not MySQL.
     engine_kwargs = {}  # type: Dict[str, Any]
@@ -110,8 +101,7 @@ def test_set_default_engine_kwargs_for_mysql_with_other_rdb():
     assert "pool_pre_ping" not in engine_kwargs
 
 
-def test_check_table_schema_compatibility():
-    # type: () -> None
+def test_check_table_schema_compatibility() -> None:
 
     storage = create_test_storage()
     session = storage.scoped_session()
@@ -132,15 +122,13 @@ def test_check_table_schema_compatibility():
     #     storage._check_table_schema_compatibility()
 
 
-def create_test_storage(engine_kwargs=None):
-    # type: (Optional[Dict[str, Any]]) -> RDBStorage
+def create_test_storage(engine_kwargs: Optional[Dict[str, Any]] = None) -> RDBStorage:
 
     storage = RDBStorage("sqlite:///:memory:", engine_kwargs=engine_kwargs)
     return storage
 
 
-def test_pickle_storage():
-    # type: () -> None
+def test_pickle_storage() -> None:
 
     storage = create_test_storage()
     restored_storage = pickle.loads(pickle.dumps(storage))
@@ -152,8 +140,7 @@ def test_pickle_storage():
     assert storage._version_manager != restored_storage._version_manager
 
 
-def test_commit():
-    # type: () -> None
+def test_commit() -> None:
 
     storage = create_test_storage()
     session = storage.scoped_session()
@@ -165,8 +152,7 @@ def test_commit():
         storage._commit(session)
 
 
-def test_upgrade():
-    # type: () -> None
+def test_upgrade() -> None:
 
     storage = create_test_storage()
 
@@ -189,7 +175,7 @@ def test_upgrade():
         ({"intermediate_values": {1: 2.3, 3: 2.5}}, {"intermediate_values": {1: 2.3, 3: 2.5}}),
         (
             {
-                "params": {"paramA": 3, "paramB": "bar",},
+                "params": {"paramA": 3, "paramB": "bar"},
                 "_distributions": {
                     "paramA": UniformDistribution(0, 3),
                     "paramB": CategoricalDistribution(("foo", "bar")),
@@ -217,6 +203,7 @@ def test_upgrade():
     ],
 )
 def test_update_trial(fields_to_modify: Dict[str, Any], kwargs: Dict[str, Any]) -> None:
+
     storage = create_test_storage()
     study_id = storage.create_new_study()
 
@@ -233,6 +220,7 @@ def test_update_trial(fields_to_modify: Dict[str, Any], kwargs: Dict[str, Any]) 
 
 
 def test_update_trial_second_write() -> None:
+
     storage = create_test_storage()
     study_id = storage.create_new_study()
     template = FrozenTrial(
@@ -281,6 +269,7 @@ def test_update_trial_second_write() -> None:
 
 
 def test_get_trials_excluded_trial_ids() -> None:
+
     storage = create_test_storage()
     study_id = storage.create_new_study()
 

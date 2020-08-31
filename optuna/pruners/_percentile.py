@@ -1,23 +1,19 @@
 import functools
 import math
+from typing import KeysView
+from typing import List
 
 import numpy as np
 
+import optuna
 from optuna.pruners import BasePruner
 from optuna.study import StudyDirection
 from optuna.trial._state import TrialState
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import KeysView  # NOQA
-    from typing import List  # NOQA
-
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
 
 
-def _get_best_intermediate_result_over_steps(trial, direction):
-    # type: (FrozenTrial, StudyDirection) -> float
+def _get_best_intermediate_result_over_steps(
+    trial: "optuna.trial.FrozenTrial", direction: StudyDirection
+) -> float:
 
     values = np.array(list(trial.intermediate_values.values()), np.float)
     if direction == StudyDirection.MAXIMIZE:
@@ -25,8 +21,12 @@ def _get_best_intermediate_result_over_steps(trial, direction):
     return np.nanmin(values)
 
 
-def _get_percentile_intermediate_result_over_trials(all_trials, direction, step, percentile):
-    # type: (List[FrozenTrial], StudyDirection, int, float) -> float
+def _get_percentile_intermediate_result_over_trials(
+    all_trials: List["optuna.trial.FrozenTrial"],
+    direction: StudyDirection,
+    step: int,
+    percentile: float,
+) -> float:
 
     completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
 
@@ -51,8 +51,9 @@ def _get_percentile_intermediate_result_over_trials(all_trials, direction, step,
     )
 
 
-def _is_first_in_interval_step(step, intermediate_steps, n_warmup_steps, interval_steps):
-    # type: (int, KeysView[int], int, int) -> bool
+def _is_first_in_interval_step(
+    step: int, intermediate_steps: KeysView[int], n_warmup_steps: int, interval_steps: int
+) -> bool:
 
     nearest_lower_pruning_step = (
         step - n_warmup_steps
@@ -126,8 +127,13 @@ class PercentilePruner(BasePruner):
             will be postponed until a value is reported. Value must be at least 1.
     """
 
-    def __init__(self, percentile, n_startup_trials=5, n_warmup_steps=0, interval_steps=1):
-        # type: (float, int, int, int) -> None
+    def __init__(
+        self,
+        percentile: float,
+        n_startup_trials: int = 5,
+        n_warmup_steps: int = 0,
+        interval_steps: int = 1,
+    ) -> None:
 
         if not 0.0 <= percentile <= 100:
             raise ValueError(
@@ -151,8 +157,7 @@ class PercentilePruner(BasePruner):
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
 
-    def prune(self, study, trial):
-        # type: (Study, FrozenTrial) -> bool
+    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         all_trials = study.get_trials(deepcopy=False)
         n_trials = len([t for t in all_trials if t.state == TrialState.COMPLETE])

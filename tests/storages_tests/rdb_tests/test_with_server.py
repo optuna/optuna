@@ -29,7 +29,7 @@ def run_optimize(args: Tuple[str, str]) -> None:
     study_name = args[0]
     storage_url = args[1]
     # Create a study
-    study = optuna.create_study(study_name=study_name, storage=storage_url, load_if_exists=True,)
+    study = optuna.create_study(study_name=study_name, storage=storage_url, load_if_exists=True)
     # Run optimization
     study.optimize(objective, n_trials=20)
 
@@ -87,7 +87,7 @@ def test_loaded_trials(storage_url: str) -> None:
     # Please create the tables by placing this function before the multi-process tests.
 
     N_TRIALS = 20
-    study = optuna.create_study(study_name=_STUDY_NAME, storage=storage_url,)
+    study = optuna.create_study(study_name=_STUDY_NAME, storage=storage_url)
     # Run optimization
     study.optimize(objective, n_trials=N_TRIALS)
 
@@ -97,7 +97,7 @@ def test_loaded_trials(storage_url: str) -> None:
     _check_trials(trials)
 
     # Create a new study to confirm the study can load trial properly.
-    loaded_study = optuna.load_study(study_name=_STUDY_NAME, storage=storage_url,)
+    loaded_study = optuna.load_study(study_name=_STUDY_NAME, storage=storage_url)
     _check_trials(loaded_study.trials)
 
 

@@ -21,10 +21,10 @@ from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.samplers import BaseSampler
 from optuna.samplers import IntersectionSearchSpace
 from optuna.samplers import RandomSampler
-from optuna.study import StudyDirection
 from optuna.study import Study
-from optuna.trial import TrialState
+from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 EPS = 1e-12
@@ -206,10 +206,7 @@ class TPESampler(BaseSampler):
         return search_space
 
     def sample_relative(
-        self,
-        study: Study,
-        trial: FrozenTrial,
-        search_space: Dict[str, BaseDistribution],
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
 
         if search_space == {}:
@@ -257,7 +254,7 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        values, scores = _get_observation_pairs(study, param_name, trial)
+        values, scores = _get_observation_pairs(study, param_name)
 
         n = len(values)
 
@@ -311,7 +308,7 @@ class TPESampler(BaseSampler):
             )
 
     def _split_observation_pairs(
-        self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]],
+        self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]]
     ) -> Tuple[np.ndarray, np.ndarray]:
 
         config_vals = np.asarray(config_vals)
@@ -358,10 +355,7 @@ class TPESampler(BaseSampler):
         return below, above
 
     def _sample_uniform(
-        self,
-        distribution: distributions.UniformDistribution,
-        below: np.ndarray,
-        above: np.ndarray,
+        self, distribution: distributions.UniformDistribution, below: np.ndarray, above: np.ndarray
     ) -> float:
 
         low = distribution.low
@@ -450,7 +444,7 @@ class TPESampler(BaseSampler):
             mus=below, low=low, high=high, parameters=self._parzen_estimator_parameters
         )
         samples_below = self._sample_from_gmm(
-            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size,
+            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size
         )
         log_likelihoods_below = self._gmm_log_pdf(
             samples=samples_below,
@@ -492,6 +486,12 @@ class TPESampler(BaseSampler):
         below = list(map(int, below))
         above = list(map(int, above))
         upper = len(choices)
+
+        # We can use `np.arange(len(distribution.choices))` instead of sampling from `l(x)`
+        # when the cardinality of categorical parameters is lower than `n_ei_candidates`.
+        # Though it seems to be theoretically correct, it leads to performance degradation
+        # on the NAS benchmark experiment in https://arxiv.org/abs/1902.09635.
+        # See https://github.com/optuna/optuna/pull/1603 for more details.
         size = (self._n_ei_candidates,)
 
         weights_below = self._weights(len(below))
@@ -625,24 +625,22 @@ class TPESampler(BaseSampler):
         self, probabilities: np.ndarray, size: Tuple[int]
     ) -> np.ndarray:
 
-        if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
-            probabilities = probabilities[0]
-        probabilities = np.asarray(probabilities)
-
         if size == (0,):
             return np.asarray([], dtype=float)
         assert len(size)
+
+        if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
+            probabilities = probabilities[0]
         assert probabilities.ndim == 1
 
-        n_draws = int(np.prod(size))
-        sample = self._rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
-        assert sample.shape == size + (probabilities.size,)
-        return_val = np.dot(sample, np.arange(probabilities.size))
-        return_val.shape = size
+        n_draws = np.prod(size).item()
+        sample = self._rng.multinomial(n=1, pvals=probabilities, size=n_draws)
+        assert sample.shape == size + probabilities.shape
+        return_val = np.dot(sample, np.arange(probabilities.size)).reshape(size)
         return return_val
 
     @classmethod
-    def _categorical_log_pdf(cls, sample: np.ndarray, p: np.ndarray,) -> np.ndarray:
+    def _categorical_log_pdf(cls, sample: np.ndarray, p: np.ndarray) -> np.ndarray:
 
         if sample.size:
             return np.log(np.asarray(p)[sample])
@@ -650,9 +648,7 @@ class TPESampler(BaseSampler):
             return np.asarray([])
 
     @classmethod
-    def _compare(
-        cls, samples: np.ndarray, log_l: np.ndarray, log_g: np.ndarray
-    ) -> np.ndarray:
+    def _compare(cls, samples: np.ndarray, log_l: np.ndarray, log_g: np.ndarray) -> np.ndarray:
 
         samples, log_l, log_g = map(np.asarray, (samples, log_l, log_g))
         if samples.size:
@@ -726,7 +722,6 @@ class TPESampler(BaseSampler):
 
     @staticmethod
     def hyperopt_parameters() -> Dict[str, Any]:
-
         """Return the the default parameters of hyperopt (v0.1.2).
 
         :class:`~optuna.samplers.TPESampler` can be instantiated with the parameters returned
@@ -768,24 +763,23 @@ class TPESampler(BaseSampler):
 
 
 def _get_observation_pairs(
-    study: Study, param_name: str, trial: FrozenTrial
+    study: Study, param_name: str
 ) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]:
-
     """Get observation pairs from the study.
 
-       This function collects observation pairs from the complete or pruned trials of the study.
-       The values for trials that don't contain the parameter named ``param_name`` are set to None.
+    This function collects observation pairs from the complete or pruned trials of the study.
+    The values for trials that don't contain the parameter named ``param_name`` are set to None.
 
-       An observation pair fundamentally consists of a parameter value and an objective value.
-       However, due to the pruning mechanism of Optuna, final objective values are not always
-       available. Therefore, this function uses intermediate values in addition to the final
-       ones, and reports the value with its step count as ``(-step, value)``.
-       Consequently, the structure of the observation pair is as follows:
-       ``(param_value, (-step, value))``.
+    An observation pair fundamentally consists of a parameter value and an objective value.
+    However, due to the pruning mechanism of Optuna, final objective values are not always
+    available. Therefore, this function uses intermediate values in addition to the final
+    ones, and reports the value with its step count as ``(-step, value)``.
+    Consequently, the structure of the observation pair is as follows:
+    ``(param_value, (-step, value))``.
 
-       The second element of an observation pair is used to rank observations in
-       ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
-       ``(-step, value)``).
+    The second element of an observation pair is used to rank observations in
+    ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
+    ``(-step, value)``).
     """
 
     sign = 1

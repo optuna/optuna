@@ -2,6 +2,7 @@ import re
 import subprocess
 from subprocess import CalledProcessError
 import tempfile
+from typing import List
 
 import pytest
 
@@ -12,16 +13,10 @@ from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import RDBStorage
 from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-
-    from optuna.trial import Trial  # NOQA
+from optuna.trial import Trial
 
 
-def test_create_study_command():
-    # type: () -> None
+def test_create_study_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -41,8 +36,7 @@ def test_create_study_command():
         assert study_id == 2
 
 
-def test_create_study_command_with_study_name():
-    # type: () -> None
+def test_create_study_command_with_study_name() -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -58,8 +52,7 @@ def test_create_study_command_with_study_name():
         assert storage.get_study_name_from_id(study_id) == study_name
 
 
-def test_create_study_command_without_storage_url():
-    # type: () -> None
+def test_create_study_command_without_storage_url() -> None:
 
     with pytest.raises(subprocess.CalledProcessError) as err:
         subprocess.check_output(["optuna", "create-study"])
@@ -67,8 +60,7 @@ def test_create_study_command_without_storage_url():
     assert usage.startswith("usage:")
 
 
-def test_create_study_command_with_direction():
-    # type: () -> None
+def test_create_study_command_with_direction() -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -91,8 +83,7 @@ def test_create_study_command_with_direction():
             subprocess.check_call(command)
 
 
-def test_delete_study_command():
-    # type: () -> None
+def test_delete_study_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -110,15 +101,13 @@ def test_delete_study_command():
         assert study_name not in {s.study_name: s for s in storage.get_all_study_summaries()}
 
 
-def test_delete_study_command_without_storage_url():
-    # type: () -> None
+def test_delete_study_command_without_storage_url() -> None:
 
     with pytest.raises(subprocess.CalledProcessError):
         subprocess.check_output(["optuna", "delete-study", "--study-name", "dummy_study"])
 
 
-def test_study_set_user_attr_command():
-    # type: () -> None
+def test_study_set_user_attr_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -148,8 +137,7 @@ def test_study_set_user_attr_command():
         assert all([study_user_attrs[k] == v for k, v in example_attrs.items()])
 
 
-def test_studies_command():
-    # type: () -> None
+def test_studies_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -168,8 +156,7 @@ def test_studies_command():
         output = str(subprocess.check_output(command).decode().strip())
         rows = output.split("\n")
 
-        def get_row_elements(row_index):
-            # type: (int) -> List[str]
+        def get_row_elements(row_index: int) -> List[str]:
 
             return [r.strip() for r in rows[row_index].split("|")[1:-1]]
 
@@ -187,8 +174,7 @@ def test_studies_command():
         assert elms[2] == "10"
 
 
-def test_create_study_command_with_skip_if_exists():
-    # type: () -> None
+def test_create_study_command_with_skip_if_exists() -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -223,8 +209,7 @@ def test_create_study_command_with_skip_if_exists():
         assert study_id == new_study_id  # The existing study instance is reused.
 
 
-def test_dashboard_command():
-    # type: () -> None
+def test_dashboard_command() -> None:
 
     with StorageSupplier("sqlite") as storage, tempfile.NamedTemporaryFile("r") as tf_report:
         assert isinstance(storage, RDBStorage)
@@ -252,8 +237,7 @@ def test_dashboard_command():
 @pytest.mark.parametrize(
     "origins", [["192.168.111.1:5006"], ["192.168.111.1:5006", "192.168.111.2:5006"]]
 )
-def test_dashboard_command_with_allow_websocket_origin(origins):
-    # type: (List[str]) -> None
+def test_dashboard_command_with_allow_websocket_origin(origins: List[str]) -> None:
 
     with StorageSupplier("sqlite") as storage, tempfile.NamedTemporaryFile("r") as tf_report:
         assert isinstance(storage, RDBStorage)
@@ -280,15 +264,13 @@ def test_dashboard_command_with_allow_websocket_origin(origins):
 
 
 # An example of objective functions for testing study optimize command
-def objective_func(trial):
-    # type: (Trial) -> float
+def objective_func(trial: Trial) -> float:
 
     x = trial.suggest_uniform("x", -10, 10)
     return (x + 5) ** 2
 
 
-def test_study_optimize_command():
-    # type: () -> None
+def test_study_optimize_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -320,8 +302,7 @@ def test_study_optimize_command():
         )
 
 
-def test_study_optimize_command_inconsistent_args():
-    # type: () -> None
+def test_study_optimize_command_inconsistent_args() -> None:
 
     with tempfile.NamedTemporaryFile() as tf:
         db_url = "sqlite:///{}".format(tf.name)
@@ -343,8 +324,7 @@ def test_study_optimize_command_inconsistent_args():
             )
 
 
-def test_empty_argv():
-    # type: () -> None
+def test_empty_argv() -> None:
 
     command_empty = ["optuna"]
     command_empty_output = str(subprocess.check_output(command_empty))
@@ -355,8 +335,7 @@ def test_empty_argv():
     assert command_empty_output == command_help_output
 
 
-def test_check_storage_url():
-    # type: () -> None
+def test_check_storage_url() -> None:
 
     storage_in_args = "sqlite:///args.db"
     assert storage_in_args == optuna.cli._check_storage_url(storage_in_args)
@@ -365,8 +344,7 @@ def test_check_storage_url():
         optuna.cli._check_storage_url(None)
 
 
-def test_storage_upgrade_command():
-    # type: () -> None
+def test_storage_upgrade_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)

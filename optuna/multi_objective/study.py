@@ -42,11 +42,29 @@ _logger = logging.get_logger(__name__)
 def create_study(
     directions: List[str],
     study_name: Optional[str] = None,
-    storage: Union[None, str, BaseStorage] = None,
+    storage: Optional[Union[str, BaseStorage]] = None,
     sampler: Optional["multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
     load_if_exists: bool = False,
 ) -> "multi_objective.study.MultiObjectiveStudy":
     """Create a new :class:`~optuna.multi_objective.study.MultiObjectiveStudy`.
+
+    Example:
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                # Binh and Korn function.
+                x = trial.suggest_float("x", 0, 5)
+                y = trial.suggest_float("y", 0, 3)
+
+                v0 = 4 * x ** 2 + 4 * y ** 2
+                v1 = (x - 5) ** 2 + (y - 5) ** 2
+                return v0, v1
+
+            study = optuna.multi_objective.create_study(["minimize", "minimize"])
+            study.optimize(objective, n_trials=3)
 
     Args:
         directions:
@@ -117,6 +135,45 @@ def load_study(
     sampler: Optional["multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
 ) -> "multi_objective.study.MultiObjectiveStudy":
     """Load the existing :class:`MultiObjectiveStudy` that has the specified name.
+
+    Example:
+
+        .. testsetup::
+
+            import os
+
+            if os.path.exists("example.db"):
+                raise RuntimeError("'example.db' already exists. Please remove it.")
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                # Binh and Korn function.
+                x = trial.suggest_float("x", 0, 5)
+                y = trial.suggest_float("y", 0, 3)
+
+                v0 = 4 * x ** 2 + 4 * y ** 2
+                v1 = (x - 5) ** 2 + (y - 5) ** 2
+                return v0, v1
+
+            study = optuna.multi_objective.create_study(
+                directions=["minimize", "minimize"],
+                study_name="my_study",
+                storage="sqlite:///example.db"
+            )
+            study.optimize(objective, n_trials=3)
+
+            loaded_study = optuna.multi_objective.study.load_study(
+                study_name="my_study",
+                storage="sqlite:///example.db"
+            )
+            assert len(loaded_study.trials) == len(study.trials)
+
+        .. testcleanup::
+
+            os.remove("example.db")
 
     Args:
         study_name:
@@ -227,6 +284,24 @@ class MultiObjectiveStudy(object):
 
         Please refer to the documentation of :func:`optuna.study.Study.optimize`
         for further details.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    # Binh and Korn function.
+                    x = trial.suggest_float("x", 0, 5)
+                    y = trial.suggest_float("y", 0, 3)
+
+                    v0 = 4 * x ** 2 + 4 * y ** 2
+                    v1 = (x - 5) ** 2 + (y - 5) ** 2
+                    return v0, v1
+
+                study = optuna.multi_objective.create_study(["minimize", "minimize"])
+                study.optimize(objective, n_trials=3)
         """
 
         def mo_objective(trial: Trial) -> float:
@@ -404,6 +479,6 @@ def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:
     values = multi_objective.trial.MultiObjectiveTrial(trial)._get_values()
     _logger.info(
         "Trial {} finished with values: {} with parameters: {}.".format(
-            trial.number, values, trial.params,
+            trial.number, values, trial.params
         )
     )

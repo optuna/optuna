@@ -1,17 +1,12 @@
 import math
+from typing import List
+from typing import Optional
+from typing import Union
 
+import optuna
 from optuna.pruners._base import BasePruner
 from optuna.study import StudyDirection
 from optuna.trial._state import TrialState
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Union  # NOQA
-
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
 
 
 class SuccessiveHalvingPruner(BasePruner):
@@ -108,8 +103,12 @@ class SuccessiveHalvingPruner(BasePruner):
             referred to as :math:`s`).
     """
 
-    def __init__(self, min_resource="auto", reduction_factor=4, min_early_stopping_rate=0):
-        # type: (Union[str, int], int, int) -> None
+    def __init__(
+        self,
+        min_resource: Union[str, int] = "auto",
+        reduction_factor: int = 4,
+        min_early_stopping_rate: int = 0,
+    ) -> None:
 
         if isinstance(min_resource, str) and min_resource != "auto":
             raise ValueError(
@@ -141,8 +140,7 @@ class SuccessiveHalvingPruner(BasePruner):
         self._reduction_factor = reduction_factor
         self._min_early_stopping_rate = min_early_stopping_rate
 
-    def prune(self, study, trial):
-        # type: (Study, FrozenTrial) -> bool
+    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         step = trial.last_step
         if step is None:
@@ -150,7 +148,7 @@ class SuccessiveHalvingPruner(BasePruner):
 
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
-        trials = None  # type: Optional[List[FrozenTrial]]
+        trials = None  # type: Optional[List["optuna.trial.FrozenTrial"]]
 
         while True:
             if self._min_resource is None:
@@ -188,8 +186,7 @@ class SuccessiveHalvingPruner(BasePruner):
             rung += 1
 
 
-def _estimate_min_resource(trials):
-    # type: (List[FrozenTrial]) -> Optional[int]
+def _estimate_min_resource(trials: List["optuna.trial.FrozenTrial"]) -> Optional[int]:
 
     n_steps = [
         t.last_step for t in trials if t.state == TrialState.COMPLETE and t.last_step is not None
@@ -203,8 +200,7 @@ def _estimate_min_resource(trials):
     return max(last_step // 100, 1)
 
 
-def _get_current_rung(trial):
-    # type: (FrozenTrial) -> int
+def _get_current_rung(trial: "optuna.trial.FrozenTrial") -> int:
 
     # The following loop takes `O(log step)` iterations.
     rung = 0
@@ -213,22 +209,26 @@ def _get_current_rung(trial):
     return rung
 
 
-def _completed_rung_key(rung):
-    # type: (int) -> str
+def _completed_rung_key(rung: int) -> str:
 
     return "completed_rung_{}".format(rung)
 
 
-def _get_competing_values(trials, value, rung_key):
-    # type: (List[FrozenTrial], float, str) -> List[float]
+def _get_competing_values(
+    trials: List["optuna.trial.FrozenTrial"], value: float, rung_key: str
+) -> List[float]:
 
     competing_values = [t.system_attrs[rung_key] for t in trials if rung_key in t.system_attrs]
     competing_values.append(value)
     return competing_values
 
 
-def _is_trial_promotable_to_next_rung(value, competing_values, reduction_factor, study_direction):
-    # type: (float, List[float], int, StudyDirection) -> bool
+def _is_trial_promotable_to_next_rung(
+    value: float,
+    competing_values: List[float],
+    reduction_factor: int,
+    study_direction: StudyDirection,
+) -> bool:
 
     promotable_idx = (len(competing_values) // reduction_factor) - 1
 
