@@ -142,9 +142,10 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
         ax2.spines["right"].set_position(("axes", (i + 1) / len(sorted_params)))
         if p_name in cat_param_names:
             idx = cat_param_names.index(p_name)
-            tick_values = cat_param_ticks[idx]
+            tick_pos = cat_param_ticks[idx]
             tick_labels = cat_param_values[idx]
-            plt.yticks(tick_values, tick_labels)
+            ax2.set_yticks(tick_pos)
+            ax2.set_yticklabels(tick_labels)
 
     ax.add_collection(lc)
 
