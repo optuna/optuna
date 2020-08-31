@@ -427,9 +427,7 @@ def test_sample_independent_misc_arguments() -> None:
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = TPESampler(
-        weights=lambda i: np.asarray([i * 0.11 for i in range(7)]),
-        n_startup_trials=5,
-        seed=0,
+        weights=lambda i: np.asarray([i * 0.11 for i in range(7)]), n_startup_trials=5, seed=0
     )
     with patch("optuna.Study.get_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
@@ -542,9 +540,7 @@ def test_sample_int_uniform_distributions() -> None:
         (optuna.trial.TrialState.WAITING,),
     ],
 )
-def test_sample_independent_handle_unsuccessful_states(
-    state: optuna.trial.TrialState,
-) -> None:
+def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.TrialState) -> None:
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
@@ -634,10 +630,7 @@ def test_get_observation_pairs() -> None:
         [
             (-float("inf"), 5.0),  # COMPLETE
             (-7, 2),  # PRUNED (with intermediate values)
-            (
-                -3,
-                float("inf"),
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
@@ -646,10 +639,7 @@ def test_get_observation_pairs() -> None:
         [
             (-float("inf"), 5.0),  # COMPLETE
             (-7, 2),  # PRUNED (with intermediate values)
-            (
-                -3,
-                float("inf"),
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
@@ -664,10 +654,7 @@ def test_get_observation_pairs() -> None:
         [
             (-float("inf"), -5.0),  # COMPLETE
             (-7, -2),  # PRUNED (with intermediate values)
-            (
-                -3,
-                float("inf"),
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
@@ -676,10 +663,7 @@ def test_get_observation_pairs() -> None:
         [
             (-float("inf"), -5.0),  # COMPLETE
             (-7, -2),  # PRUNED (with intermediate values)
-            (
-                -3,
-                float("inf"),
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
@@ -796,9 +780,7 @@ def frozen_trial_factory(
     )
 
 
-def build_state_fn(
-    state: optuna.trial.TrialState,
-) -> Callable[[int], optuna.trial.TrialState]:
+def build_state_fn(state: optuna.trial.TrialState) -> Callable[[int], optuna.trial.TrialState]:
     def state_fn(idx: int) -> optuna.trial.TrialState:
         return [optuna.trial.TrialState.COMPLETE, state][idx % 2]
 

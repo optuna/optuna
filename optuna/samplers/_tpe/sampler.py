@@ -460,9 +460,7 @@ class TPESampler(BaseSampler):
 
         ret = float(
             TPESampler._compare(
-                samples=samples_below,
-                log_l=log_likelihoods_below,
-                log_g=log_likelihoods_above,
+                samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above
             )[0]
         )
         return math.exp(ret) if is_log else ret
@@ -501,9 +499,7 @@ class TPESampler(BaseSampler):
 
         return int(
             TPESampler._compare(
-                samples=samples_below,
-                log_l=log_likelihoods_below,
-                log_g=log_likelihoods_above,
+                samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above
             )[0]
         )
 
