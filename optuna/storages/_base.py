@@ -559,7 +559,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractclassmethod
-    def get_url(self) -> str:
+    def get_url(self) -> Optional[str]:
         """Get a path to a storage.
 
         Returns:

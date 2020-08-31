@@ -248,7 +248,7 @@ class RedisStorage(BaseStorage):
         study_summary = self._get_study_summary(study_id)
         return copy.deepcopy(study_summary.system_attrs)
 
-    def get_url(self) -> str:
+    def get_url(self) -> Optional[str]:
 
         return self._url
 

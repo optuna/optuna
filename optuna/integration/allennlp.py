@@ -116,7 +116,7 @@ class AllenNLPExecutor(object):
         self._system_attrs = {
             "OPTUNA_ALLENNLP_STUDY_NAME": trial.study.study_name,
             "OPTUNA_ALLENNLP_TRIAL_ID": str(trial._trial_id),
-            "OPTUNA_ALLENNLP_STORAGE_NAME": trial.study._storage._backend.get_url(),
+            "OPTUNA_ALLENNLP_STORAGE_NAME": trial.study._storage.get_url() or "",
             "OPTUNA_ALLENNLP_MONITOR": metrics,
         }
 
@@ -199,8 +199,9 @@ class AllenNLPPruningCallback(EpochCallback):
             _environment_variables = self._get_environment_variables()
             study_name = _environment_variables["study_name"]
             trial_id = _environment_variables["trial_id"]
-            storage = _environment_variables["storage"]
             monitor = _environment_variables["monitor"]
+            storage = _environment_variables["storage"] or None
+
             if study_name is not None and trial_id is not None and storage is not None:
                 _study = load_study(study_name, storage)
                 self._trial = Trial(_study, int(trial_id))
