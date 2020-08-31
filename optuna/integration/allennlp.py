@@ -7,10 +7,10 @@ from typing import Optional
 from typing import Union
 
 import optuna
-from optuna import load_study
-from optuna import Trial
 from optuna._experimental import experimental
 from optuna._imports import try_import
+from optuna import load_study
+from optuna import Trial
 
 with try_import() as _imports:
     import allennlp
@@ -133,7 +133,7 @@ class AllenNLPExecutor(object):
         params.update(self._system_attrs)
         return json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=params))
 
-    def _set_environment_variables(self):
+    def _set_environment_variables(self) -> None:
         for key, value in self._system_attrs.items():
             key_with_ppid = "{}_{}".format(os.getppid(), key)
             os.environ[key_with_ppid] = value
@@ -202,7 +202,12 @@ class AllenNLPPruningCallback(EpochCallback):
             monitor = _environment_variables["monitor"]
             storage = _environment_variables["storage"] or None
 
-            if study_name is not None and trial_id is not None and storage is not None:
+            if (
+                study_name is not None
+                and trial_id is not None
+                and monitor is not None
+                and storage is not None
+            ):
                 _study = load_study(study_name, storage)
                 self._trial = Trial(_study, int(trial_id))
                 self._monitor = monitor
@@ -226,7 +231,7 @@ class AllenNLPPruningCallback(EpochCallback):
         if self._trial.should_prune():
             raise optuna.TrialPruned()
 
-    def _get_environment_variables(self):
+    def _get_environment_variables(self) -> Dict[str, Optional[str]]:
         return {
             "study_name": os.getenv("{}_OPTUNA_ALLENNLP_STUDY_NAME".format(os.getppid())),
             "trial_id": os.getenv("{}_OPTUNA_ALLENNLP_TRIAL_ID".format(os.getppid())),
