@@ -323,7 +323,7 @@ class CmaEsSampler(BaseSampler):
         randomize_start_point: bool = False,
     ) -> CMA:
         if randomize_start_point:
-            # `_initialize_x0_uniformly` returns internal representations.
+            # `_initialize_x0_randomly ` returns internal representations.
             x0 = _initialize_x0_randomly(self._cma_rng, search_space)
             mean = np.array([x0[k] for k in ordered_keys], dtype=float)
         elif self._x0 is None:
