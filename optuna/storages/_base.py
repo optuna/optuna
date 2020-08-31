@@ -558,6 +558,15 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
+    @abc.abstractclassmethod
+    def get_url(self) -> str:
+        """Get a path to a storage.
+
+        Returns:
+            A physical path to a storage.
+        """
+        raise NotImplementedError
+
     def get_best_trial(self, study_id: int) -> FrozenTrial:
         """Return the trial with the best value in a study.
 

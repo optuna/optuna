@@ -116,7 +116,7 @@ class AllenNLPExecutor(object):
         self._system_attrs = {
             "OPTUNA_ALLENNLP_STUDY_NAME": trial.study.study_name,
             "OPTUNA_ALLENNLP_TRIAL_ID": str(trial._trial_id),
-            "OPTUNA_ALLENNLP_STORAGE_NAME": trial.study._storage._name,
+            "OPTUNA_ALLENNLP_STORAGE_NAME": trial.study._storage._backend.get_url(),
             "OPTUNA_ALLENNLP_MONITOR": metrics,
         }
 

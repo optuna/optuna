@@ -922,9 +922,7 @@ def create_study(
 
     """
 
-    _storage_name = storage if isinstance(storage, str) else None
     storage = storages.get_storage(storage)
-    storage._name = _storage_name
     try:
         study_id = storage.create_new_study(study_name)
     except exceptions.DuplicatedStudyError:

@@ -65,6 +65,7 @@ class RedisStorage(BaseStorage):
 
         _imports.check()
 
+        self._url = url
         self._redis = redis.Redis.from_url(url)
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
@@ -246,6 +247,10 @@ class RedisStorage(BaseStorage):
 
         study_summary = self._get_study_summary(study_id)
         return copy.deepcopy(study_summary.system_attrs)
+
+    def get_url(self) -> str:
+
+        return self._url
 
     @staticmethod
     def _key_study_param_distribution(study_id: int) -> str:
