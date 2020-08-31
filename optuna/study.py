@@ -114,6 +114,20 @@ class BaseStudy(object):
         For library users, it's recommended to use more handy
         :attr:`~optuna.study.Study.trials` property to get the trials instead.
 
+        Example:
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_uniform("x", -1, 1)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
+                trials = study.get_trials()
+                assert len(trials) == 3
         Args:
             deepcopy:
                 Flag to control whether to apply ``copy.deepcopy()`` to the trials.
@@ -209,6 +223,19 @@ class Study(BaseStudy):
         distribution. The sampler is specified in :func:`~optuna.study.create_study` and the
         default choice for the sampler is TPE.
         See also :class:`~optuna.samplers.TPESampler` for more details on 'TPE'.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_uniform("x", -1, 1)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
 
         Args:
             func:
@@ -373,7 +400,7 @@ class Study(BaseStudy):
                 import pandas
 
                 def objective(trial):
-                    x = trial.suggest_uniform('x', -1, 1)
+                    x = trial.suggest_uniform("x", -1, 1)
                     return x ** 2
 
                 study = optuna.create_study()
@@ -468,6 +495,22 @@ class Study(BaseStudy):
         spawned finishes.
         This method does not affect any behaviors of parallel or successive study processes.
 
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    if trial.number == 4:
+                        study.stop()
+                    x = trial.suggest_uniform("x", 0, 10)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=10)
+                assert len(study.trials) == 5
+
         Raises:
             RuntimeError:
                 If this method is called outside an objective function or callback.
@@ -496,16 +539,16 @@ class Study(BaseStudy):
                 import optuna
 
                 def objective(trial):
-                    x = trial.suggest_uniform('x', 0, 10)
+                    x = trial.suggest_uniform("x", 0, 10)
                     return x ** 2
 
                 study = optuna.create_study()
-                study.enqueue_trial({'x': 5})
-                study.enqueue_trial({'x': 0})
+                study.enqueue_trial({"x": 5})
+                study.enqueue_trial({"x": 0})
                 study.optimize(objective, n_trials=2)
 
-                assert study.trials[0].params == {'x': 5}
-                assert study.trials[1].params == {'x': 0}
+                assert study.trials[0].params == {"x": 5}
+                assert study.trials[1].params == {"x": 0}
 
         Args:
             params:
@@ -530,7 +573,7 @@ class Study(BaseStudy):
                 from optuna.distributions import UniformDistribution
 
                 def objective(trial):
-                    x = trial.suggest_uniform('x', 0, 10)
+                    x = trial.suggest_uniform("x", 0, 10)
                     return x ** 2
 
                 study = optuna.create_study()
@@ -919,6 +962,32 @@ def delete_study(
 ) -> None:
     """Delete a :class:`~optuna.study.Study` object.
 
+    Example:
+
+        .. testsetup::
+
+            import os
+
+            if os.path.exists("example.db"):
+                raise RuntimeError("'example.db' already exists. Please remove it.")
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_float("x", -10, 10)
+                return (x - 2) ** 2
+
+            study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
+            study.optimize(objective, n_trials=3)
+
+            optuna.delete_study(study_name="example-study", storage="sqlite:///example.db")
+
+        .. testcleanup::
+
+            os.remove("example.db")
+
     Args:
         study_name:
             Study's name.
@@ -938,6 +1007,36 @@ def delete_study(
 
 def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[StudySummary]:
     """Get all history of studies stored in a specified storage.
+
+    Example:
+
+        .. testsetup::
+
+            import os
+
+            if os.path.exists("example.db"):
+                raise RuntimeError("'example.db' already exists. Please remove it.")
+
+        .. testcode::
+
+            import optuna
+
+            def objective(trial):
+                x = trial.suggest_float("x", -10, 10)
+                return (x - 2) ** 2
+
+            study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
+            study.optimize(objective, n_trials=3)
+
+            study_summaries = optuna.study.get_all_study_summaries(storage="sqlite:///example.db")
+            assert len(study_summaries) == 1
+
+            study_summary = study_summaries[0]
+            assert study_summary.study_name == "example-study"
+
+        .. testcleanup::
+
+            os.remove("example.db")
 
     Args:
         storage:
