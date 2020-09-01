@@ -12,8 +12,8 @@ from cmaes import CMA
 import numpy as np
 
 import optuna
-from optuna.exceptions import ExperimentalWarning
 from optuna.distributions import BaseDistribution
+from optuna.exceptions import ExperimentalWarning
 from optuna import logging
 from optuna.samplers import BaseSampler
 from optuna.trial import FrozenTrial
