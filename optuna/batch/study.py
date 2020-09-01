@@ -1,4 +1,5 @@
 import math
+import types
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -41,7 +42,7 @@ class _ObjectiveCallbackWrapper(object):
         try:
             results = self._objective(batch_trial)
         except optuna.exceptions.TrialPruned as e:
-            for trial in trials[1:]:
+            for trial in trials:
                 trial_id = trial._trial_id
                 message = "Trial {} pruned. {}".format(trial.number, str(e))
                 _logger.info(message)
@@ -58,17 +59,17 @@ class _ObjectiveCallbackWrapper(object):
                 self._study._storage.set_trial_state(trial_id, optuna.trial.TrialState.PRUNED)
             raise
         except Exception as e:
-            for trial in trials[1:]:
+            for trial in trials:
                 message = "Trial {} failed because of the following error: {}".format(
                     trial.number, repr(e)
                 )
                 _logger.warning(message, exc_info=True)
                 trial_id = trial._trial_id
-                self._study._storage.set_trial_system_attr(trial_id, "fail_reason", "")
+                self._study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
                 self._study._storage.set_trial_state(trial_id, optuna.trial.TrialState.FAIL)
             raise
 
-        for trial, result in zip(trials[1:], results[1:]):
+        for trial, result in zip(trials, results):
             trial_id = trial._trial_id
             trial_number = trial.number
             try:
@@ -137,15 +138,21 @@ class BatchStudy(object):
 
         n_trials = math.ceil(n_batches / n_jobs) if n_batches is not None else None
 
-        self._study.optimize(
-            wrapper.batch_objective,
-            timeout=timeout,
-            n_trials=n_trials,
-            catch=catch,
-            callbacks=wrapped_callbacks,
-            gc_after_trial=gc_after_trial,
-            show_progress_bar=show_progress_bar,
-        )
+        try:
+            self._study._org_run_trial = self._study._run_trial  # type: ignore
+            self._study._run_trial = types.MethodType(_run_trial, self._study)  # type: ignore
+            self._study.optimize(
+                wrapper.batch_objective,
+                timeout=timeout,
+                n_trials=n_trials,
+                catch=catch,
+                callbacks=wrapped_callbacks,
+                gc_after_trial=gc_after_trial,
+                show_progress_bar=show_progress_bar,
+            )
+        finally:
+            self._study._run_trial = self._study._org_run_trial  # type: ignore
+            pass
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
@@ -291,6 +298,24 @@ class BatchStudy(object):
     @property
     def _study_id(self) -> int:
         return self._study._study_id
+
+
+def _run_trial(
+    self: "optuna.study.Study",
+    func: "optuna.study.ObjectiveFuncType",
+    catch: Tuple[Type[Exception], ...],
+    gc_after_trial: bool,
+) -> "optuna.trial.Trial":
+
+    # Sync storage once at the beginning of the objective evaluation.
+    self._storage.read_trials_from_remote_storage(self._study_id)
+
+    trial_id = self._pop_waiting_trial_id()
+    if trial_id is None:
+        trial_id = self._storage.create_new_trial(self._study_id)
+    trial = optuna.trial.Trial(self, trial_id)
+    func(trial)
+    return trial
 
 
 @experimental("2.1.0")
