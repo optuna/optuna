@@ -3,7 +3,7 @@ from typing import Sequence
 import numpy as np
 
 import optuna
-from optuna.trial._batch import BaseBatchTrial
+from optuna.batch.trial import BaseBatchTrial
 
 
 class BatchMultiObjectiveTrial(BaseBatchTrial):

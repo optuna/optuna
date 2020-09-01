@@ -16,7 +16,7 @@ from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 import optuna.logging
 
 ObjectiveFuncType = Callable[
-    ["optuna.multi_objective.trial.BatchMultiObjectiveTrial"], Sequence[np.ndarray]
+    ["optuna.batch.multi_objective.trial.BatchMultiObjectiveTrial"], Sequence[np.ndarray]
 ]
 CallbackFuncType = Callable[
     [
@@ -54,7 +54,7 @@ class _ObjectiveCallbackWrapper(object):
             self._members[trial._trial._trial_id].append(trial_id)
             new_trial = optuna.trial.Trial(self._study._study, trial_id)
             trials.append(optuna.multi_objective.trial.MultiObjectiveTrial(new_trial))
-        batch_trial = optuna.multi_objective.trial.BatchMultiObjectiveTrial(trials)
+        batch_trial = optuna.batch.multi_objective.trial.BatchMultiObjectiveTrial(trials)
         try:
             results = self._objective(batch_trial)
             transposed_results = np.array(results).transpose()
@@ -195,7 +195,7 @@ class BatchMultiObjectiveStudy(object):
 
 
 @experimental("2.1.0")
-def create_batch_study(
+def create_study(
     directions: List[str],
     study_name: Optional[str] = None,
     storage: Optional[Union[str, "optuna.storages.BaseStorage"]] = None,
@@ -211,7 +211,7 @@ def create_batch_study(
 
 
 @experimental("2.1.0")
-def load_batch_study(
+def load_study(
     study_name: str,
     storage: Optional[Union[str, "optuna.storages.BaseStorage"]] = None,
     sampler: Optional["optuna.multi_objective.samplers.BaseMultiObjectiveSampler"] = None,

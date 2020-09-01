@@ -14,7 +14,7 @@ import optuna
 from optuna._experimental import experimental
 import optuna.logging
 
-ObjectiveFuncType = Callable[["optuna.trial.BatchTrial"], np.ndarray]
+ObjectiveFuncType = Callable[["optuna.batch.trial.BatchTrial"], np.ndarray]
 CallbackFuncType = Callable[
     ["optuna.study.Study", "optuna.trial.FrozenTrial"], None,
 ]
@@ -39,7 +39,7 @@ class _ObjectiveCallbackWrapper(object):
                 trial_id = self._study._storage.create_new_trial(self._study._study_id)
             self._members[trial._trial_id].append(trial_id)
             trials.append(optuna.trial.Trial(self._study, trial_id))
-        batch_trial = optuna.trial.BatchTrial(trials)
+        batch_trial = optuna.batch.trial.BatchTrial(trials)
         try:
             results = self._objective(batch_trial)
         except optuna.exceptions.TrialPruned as e:
@@ -296,7 +296,7 @@ class BatchStudy(object):
 
 
 @experimental("2.1.0")
-def create_batch_study(
+def create_study(
     storage: Optional[Union[str, "optuna.storages.BaseStorage"]] = None,
     sampler: Optional["optuna.samplers.BaseSampler"] = None,
     pruner: Optional["optuna.pruners.BasePruner"] = None,
@@ -311,7 +311,7 @@ def create_batch_study(
 
 
 @experimental("2.1.0")
-def load_batch_study(
+def load_study(
     study_name: str,
     storage: Union[str, "optuna.storages.BaseStorage"],
     sampler: Optional["optuna.samplers.BaseSampler"] = None,

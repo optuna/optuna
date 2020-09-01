@@ -2,6 +2,7 @@ import importlib
 import types
 from typing import Any
 
+from optuna import batch  # NOQA
 from optuna import distributions  # NOQA
 from optuna import exceptions  # NOQA
 from optuna import importance  # NOQA
@@ -17,7 +18,6 @@ from optuna import version  # NOQA
 from optuna import visualization  # NOQA
 
 from optuna.exceptions import TrialPruned  # NOQA
-from optuna.study import create_batch_study  # NOQA
 from optuna.study import create_study  # NOQA
 from optuna.study import delete_study  # NOQA
 from optuna.study import get_all_study_summaries  # NOQA
