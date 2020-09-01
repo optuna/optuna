@@ -10,8 +10,8 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.testing.storage import StorageSupplier
 from optuna.batch.trial import BatchTrial
+from optuna.testing.storage import StorageSupplier
 
 STORAGE_MODES = [
     "inmemory",
