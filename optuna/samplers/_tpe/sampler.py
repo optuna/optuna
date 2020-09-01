@@ -234,8 +234,8 @@ class TPESampler(BaseSampler):
             above, search_space, self._parzen_estimator_parameters
         )
         samples_below = mpe_below.sample(self._rng, self._n_ei_candidates)
-        log_likelihood_below = mpe_below.log_pdf(samples_below)
-        log_likelihood_above = mpe_above.log_pdf(samples_below)
+        log_likelihoods_below = mpe_below.log_pdf(samples_below)
+        log_likelihoods_above = mpe_above.log_pdf(samples_below)
         ret = TPESampler._compare_multivariate(
             samples_below, log_likelihood_below, log_likelihood_above
         )
