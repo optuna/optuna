@@ -124,7 +124,7 @@ class TPESampler(BaseSampler):
             Seed for random number generator.
         multivariate:
             If this is :obj:`True`, the multivariate TPE is used when suggesting parameters.
-            
+
             .. note::
                 Added in v2.1.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
@@ -237,7 +237,7 @@ class TPESampler(BaseSampler):
         log_likelihoods_below = mpe_below.log_pdf(samples_below)
         log_likelihoods_above = mpe_above.log_pdf(samples_below)
         ret = TPESampler._compare_multivariate(
-            samples_below, log_likelihood_below, log_likelihood_above
+            samples_below, log_likelihoods_below, log_likelihoods_above
         )
 
         for param_name, dist in search_space.items():
