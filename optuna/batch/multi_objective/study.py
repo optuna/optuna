@@ -12,8 +12,8 @@ import numpy as np
 
 import optuna
 from optuna._experimental import experimental
-from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 import optuna.logging
+from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 
 ObjectiveFuncType = Callable[
     ["optuna.batch.multi_objective.trial.BatchMultiObjectiveTrial"], Sequence[np.ndarray]
