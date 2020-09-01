@@ -138,7 +138,7 @@ class TPESampler(BaseSampler):
         weights: Callable[[int], np.ndarray] = default_weights,
         seed: Optional[int] = None,
         *,
-        multivariate: bool = False,
+        multivariate: bool = False
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
