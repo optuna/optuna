@@ -123,7 +123,12 @@ class TPESampler(BaseSampler):
         seed:
             Seed for random number generator.
         multivariate:
-            Use multivariate TPE when suggesting parameters.
+            If this is :obj:`True`, the multivariate TPE is used when suggesting parameters.
+            
+            .. note::
+                Added in v2.1.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.1.0.
     """
 
     def __init__(
