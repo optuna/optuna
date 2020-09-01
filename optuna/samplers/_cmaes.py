@@ -287,6 +287,7 @@ class CmaEsSampler(BaseSampler):
 
             if self._restart_strategy == "ipop" and optimizer.should_stop():
                 n_restarts += 1
+                generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
                     search_space, ordered_keys, population_size=popsize, randomize_start_point=True
