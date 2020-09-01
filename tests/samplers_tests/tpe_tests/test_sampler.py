@@ -22,8 +22,7 @@ def test_hyperopt_parameters(use_hyperband: bool) -> None:
 
     sampler = TPESampler(**TPESampler.hyperopt_parameters())
     study = optuna.create_study(
-        sampler=sampler,
-        pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None,
+        sampler=sampler, pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None
     )
     study.optimize(lambda t: t.suggest_uniform("x", 10, 20), n_trials=50)
 
@@ -56,7 +55,7 @@ def test_infer_relative_search_space() -> None:
         t.suggest_uniform("single", 1.0, 1.0)
         return 0.0
 
-    # We test on the empty input
+    # We test on the empty input.
     # Study and frozen-trial are not supposed to be accessed.
     study1 = Mock(spec=[])
     frozen_trial = Mock(spec=[])
