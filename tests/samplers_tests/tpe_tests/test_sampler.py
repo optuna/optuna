@@ -55,7 +55,7 @@ def test_infer_relative_search_space() -> None:
         t.suggest_uniform("single", 1.0, 1.0)
         return 0.0
 
-    # We test on the empty input.
+    # We test on the empty input
     # Study and frozen-trial are not supposed to be accessed.
     study1 = Mock(spec=[])
     frozen_trial = Mock(spec=[])
@@ -272,6 +272,27 @@ def test_sample_relative_int_uniform_distributions() -> None:
         int_suggestion = sampler.sample_relative(study, trial, {"param-a": int_dist})
     assert 1 <= int_suggestion["param-a"] <= 100
     assert isinstance(int_suggestion["param-a"], int)
+
+
+def test_sample_relative_int_loguniform_distributions() -> None:
+    """Test sampling from int distribution returns integer."""
+
+    study = optuna.create_study()
+
+    def int_value_fn(idx: int) -> float:
+        random.seed(idx)
+        return random.randint(0, 100)
+
+    intlog_dist = optuna.distributions.IntLogUniformDistribution(1, 100)
+    past_trials = [
+        frozen_trial_factory(i, dist=intlog_dist, value_fn=int_value_fn) for i in range(1, 8)
+    ]
+    trial = frozen_trial_factory(8)
+    sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
+        intlog_suggestion = sampler.sample_relative(study, trial, {"param-a": intlog_dist})
+    assert 1 <= intlog_suggestion["param-a"] <= 100
+    assert isinstance(intlog_suggestion["param-a"], int)
 
 
 @pytest.mark.parametrize(
@@ -533,6 +554,27 @@ def test_sample_independent_int_uniform_distributions() -> None:
         int_suggestion = sampler.sample_independent(study, trial, "param-a", int_dist)
     assert 1 <= int_suggestion <= 100
     assert isinstance(int_suggestion, int)
+
+
+def test_sample_independent_int_loguniform_distributions() -> None:
+    """Test sampling from int distribution returns integer."""
+
+    study = optuna.create_study()
+
+    def int_value_fn(idx: int) -> float:
+        random.seed(idx)
+        return random.randint(0, 100)
+
+    intlog_dist = optuna.distributions.IntLogUniformDistribution(1, 100)
+    past_trials = [
+        frozen_trial_factory(i, dist=intlog_dist, value_fn=int_value_fn) for i in range(1, 8)
+    ]
+    trial = frozen_trial_factory(8)
+    sampler = TPESampler(n_startup_trials=5, seed=0)
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
+        intlog_suggestion = sampler.sample_independent(study, trial, "param-a", intlog_dist)
+    assert 1 <= intlog_suggestion <= 100
+    assert isinstance(intlog_suggestion, int)
 
 
 @pytest.mark.parametrize(
