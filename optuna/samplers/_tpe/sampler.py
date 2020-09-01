@@ -175,7 +175,7 @@ class TPESampler(BaseSampler):
         if not self._multivariate:
             return {}
 
-        search_space: Dict[str, BaseDistribution] = {}
+        search_space = {}  # type: Dict[str, BaseDistribution]
         for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
                 # `TPESampler` cannot handle distributions that contain
@@ -773,7 +773,7 @@ def _get_observation_pairs(
         else:
             continue
 
-        param_value: Optional[float] = None
+        param_value = None  # type: Optional[float]
         if param_name in trial.params:
             distribution = trial.distributions[param_name]
             param_value = distribution.to_internal_repr(trial.params[param_name])
@@ -793,7 +793,9 @@ def _get_multivariate_observation_pairs(
         sign = -1
 
     scores = []
-    values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
+    values = {
+        param_name: [] for param_name in param_names
+    }  # type: Dict[str, List[Optional[float]]]
     for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
 
         # We extract score from trial.
