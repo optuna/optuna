@@ -1,7 +1,6 @@
 import random
 from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import Union
 from unittest.mock import Mock
@@ -46,7 +45,7 @@ def test_infer_relative_search_space() -> None:
         "f": distributions.CategoricalDistribution(["x", "y", "z"]),
     }
 
-    def obj(t):
+    def obj(t: Trial) -> float:
         t.suggest_uniform("a", 1.0, 100.0)
         t.suggest_loguniform("b", 1.0, 100.0)
         t.suggest_discrete_uniform("c", 1.0, 100.0, 3.0)
@@ -59,19 +58,19 @@ def test_infer_relative_search_space() -> None:
 
     # We test on the empty input
     # Study and frozen-trial are not supposed to be accessed.
-    study = Mock(spec=[])
+    study1 = Mock(spec=[])
     frozen_trial = Mock(spec=[])
-    assert sampler.infer_relative_search_space(study, frozen_trial) == {}
+    assert sampler.infer_relative_search_space(study1, frozen_trial) == {}
 
-    study = optuna.create_study(sampler=sampler)
-    study.optimize(obj, n_trials=1)
-    assert sampler.infer_relative_search_space(study, study.best_trial) == {}
+    study2 = optuna.create_study(sampler=sampler)
+    study2.optimize(obj, n_trials=1)
+    assert sampler.infer_relative_search_space(study2, study2.best_trial) == {}
 
     # infer_relative_search_space returns non-empty output only when multivariate TPE is used.
     sampler = TPESampler(multivariate=True)
-    study = optuna.create_study(sampler=sampler)
-    study.optimize(obj, n_trials=1)
-    assert sampler.infer_relative_search_space(study, study.best_trial) == search_space
+    study3 = optuna.create_study(sampler=sampler)
+    study3.optimize(obj, n_trials=1)
+    assert sampler.infer_relative_search_space(study3, study3.best_trial) == search_space
 
 
 def test_sample_relative_empty_input() -> None:
@@ -117,7 +116,7 @@ def test_sample_relative_prior() -> None:
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
 
-    sampler = TPESampler(prior_weight=0.5, n_startup_trials=5, seed=0, multivariate=True)
+    sampler = TPESampler(prior_weight=0.2, n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
 
@@ -183,7 +182,9 @@ def test_sample_relative_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})
+        uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})[
+            "param-a"
+        ]
     assert 1.0 <= uniform_suggestion < 100.0
 
 
@@ -196,7 +197,9 @@ def test_sample_relative_log_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})
+        uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})[
+            "param-a"
+        ]
 
     # Test sample from log-uniform is different from uniform.
     log_dist = optuna.distributions.LogUniformDistribution(1.0, 100.0)
@@ -204,7 +207,9 @@ def test_sample_relative_log_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        loguniform_suggestion = sampler.sample_relative(study, trial, {"param-a": log_dist})
+        loguniform_suggestion = sampler.sample_relative(study, trial, {"param-a": log_dist})[
+            "param-a"
+        ]
     assert 1.0 <= loguniform_suggestion < 100.0
     assert uniform_suggestion != loguniform_suggestion
 
@@ -223,7 +228,9 @@ def test_sample_relative_disrete_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch("optuna.Study.get_trials", return_value=past_trials):
-        discrete_uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": disc_dist})
+        discrete_uniform_suggestion = sampler.sample_relative(
+            study, trial, {"param-a": disc_dist}
+        )["param-a"]
     assert 1.0 <= discrete_uniform_suggestion <= 100.0
     assert abs(int(discrete_uniform_suggestion * 10) - discrete_uniform_suggestion * 10) < 1e-3
 
@@ -245,11 +252,13 @@ def test_sample_relative_categorical_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        categorical_suggestion = sampler.sample_relative(study, trial, {"param-a": cat_dist})
+        categorical_suggestion = sampler.sample_relative(study, trial, {"param-a": cat_dist})[
+            "param-a"
+        ]
     assert categorical_suggestion in categories
 
 
-def test_sample_int_uniform_distributions() -> None:
+def test_sample_relative_int_uniform_distributions() -> None:
     """Test sampling from int distribution returns integer."""
 
     study = optuna.create_study()
@@ -265,7 +274,7 @@ def test_sample_int_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        int_suggestion = sampler.sample_relative(study, trial, {"param-a": int_dist})
+        int_suggestion = sampler.sample_relative(study, trial, {"param-a": int_dist})["param-a"]
     assert 1 <= int_suggestion <= 100
     assert isinstance(int_suggestion, int)
 
@@ -290,7 +299,9 @@ def test_sample_relative_handle_unsuccessful_states(
     trial = frozen_trial_factory(30)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        all_success_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
+        all_success_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})[
+            "param-a"
+        ]
 
     # Test unsuccessful trials are handled differently.
     state_fn = build_state_fn(state)
@@ -298,7 +309,9 @@ def test_sample_relative_handle_unsuccessful_states(
     trial = frozen_trial_factory(30)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        partial_unsuccessful_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
+        partial_unsuccessful_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})[
+            "param-a"
+        ]
     assert partial_unsuccessful_suggestion != all_success_suggestion
 
 
@@ -318,7 +331,7 @@ def test_sample_relative_ignored_states() -> None:
         trial = frozen_trial_factory(30)
         sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
         with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-            suggestions.append(sampler.sample_relative(study, trial, {"param-a": dist}))
+            suggestions.append(sampler.sample_relative(study, trial, {"param-a": dist})["param-a"])
 
     assert len(set(suggestions)) == 1
 
@@ -335,11 +348,11 @@ def test_sample_relative_pruned_state() -> None:
         optuna.trial.TrialState.PRUNED,
     ]:
         state_fn = build_state_fn(state)
-        past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
-        trial = frozen_trial_factory(30)
+        past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 40)]
+        trial = frozen_trial_factory(40)
         sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
         with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-            suggestions.append(sampler.sample_relative(study, trial, {"param-a": dist}))
+            suggestions.append(sampler.sample_relative(study, trial, {"param-a": dist})["param-a"])
 
     assert len(set(suggestions)) == 3
 
@@ -510,7 +523,7 @@ def test_sample_independent_categorical_distributions() -> None:
     assert categorical_suggestion in categories
 
 
-def test_sample_int_uniform_distributions() -> None:
+def test_sample_independent_int_uniform_distributions() -> None:
     """Test sampling from int distribution returns integer."""
 
     study = optuna.create_study()
@@ -697,10 +710,7 @@ def test_get_multivariate_observation_pairs() -> None:
         [
             (-float("inf"), 11.0),  # COMPLETE
             (-7, 2),  # PRUNED (with intermediate values)
-            (
-                -3,
-                float("inf"),
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
@@ -709,10 +719,7 @@ def test_get_multivariate_observation_pairs() -> None:
         [
             (-float("inf"), 11.0),  # COMPLETE
             (-7, 2),  # PRUNED (with intermediate values)
-            (
-                -3,
-                float("inf"),
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
@@ -727,10 +734,7 @@ def test_get_multivariate_observation_pairs() -> None:
         [
             (-float("inf"), -11.0),  # COMPLETE
             (-7, -2),  # PRUNED (with intermediate values)
-            (
-                -3,
-                float("inf"),
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
@@ -739,10 +743,7 @@ def test_get_multivariate_observation_pairs() -> None:
         [
             (-float("inf"), -11.0),  # COMPLETE
             (-7, -2),  # PRUNED (with intermediate values)
-            (
-                -3,
-                float("inf"),
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )

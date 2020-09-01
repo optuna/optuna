@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import patch
 
 import numpy as np
@@ -14,7 +15,7 @@ target = (
 
 
 @patch(target, return_value=1.0)
-def test_init_MultivariateParzenEstimator(mock) -> None:
+def test_init_MultivariateParzenEstimator(mock: Any) -> None:
 
     search_space = {
         "a": distributions.UniformDistribution(1.0, 100.0),
@@ -168,7 +169,7 @@ target = (
 
 
 @patch(target, return_value=np.array([1e-8]))
-def test_sample_MultivariateParzenEstimator(mock) -> None:
+def test_sample_MultivariateParzenEstimator(mock: Any) -> None:
 
     search_space = {
         "a": distributions.UniformDistribution(1.0, 100.0),
@@ -228,7 +229,7 @@ target = (
 
 
 @patch(target, return_value=np.array([1]))
-def test_log_pdf_MultivariateParzenEstimator(mock) -> None:
+def test_log_pdf_MultivariateParzenEstimator(mock: Any) -> None:
 
     search_space = {
         "a": distributions.UniformDistribution(1.0, 100.0),

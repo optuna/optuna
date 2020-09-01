@@ -247,7 +247,9 @@ class _MultivariateParzenEstimator:
     def _calculate_categorical_params(self, samples: np.ndarray, param_name: str) -> np.ndarray:
 
         samples = samples.astype(int)
-        choices = self._search_space[param_name].choices
+        distribution = self._search_space[param_name]
+        assert isinstance(distribution, distributions.CategoricalDistribution)
+        choices = distribution.choices
         consider_prior = self._parameters.consider_prior
         prior_weights = self._parameters.prior_weight
         if consider_prior:
