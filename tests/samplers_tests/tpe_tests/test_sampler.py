@@ -182,10 +182,8 @@ def test_sample_relative_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})[
-            "param-a"
-        ]
-    assert 1.0 <= uniform_suggestion < 100.0
+        uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})
+    assert 1.0 <= uniform_suggestion["param-a"] < 100.0
 
 
 def test_sample_relative_log_uniform_distributions() -> None:
@@ -197,9 +195,7 @@ def test_sample_relative_log_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})[
-            "param-a"
-        ]
+        uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})
 
     # Test sample from log-uniform is different from uniform.
     log_dist = optuna.distributions.LogUniformDistribution(1.0, 100.0)
@@ -207,11 +203,9 @@ def test_sample_relative_log_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        loguniform_suggestion = sampler.sample_relative(study, trial, {"param-a": log_dist})[
-            "param-a"
-        ]
-    assert 1.0 <= loguniform_suggestion < 100.0
-    assert uniform_suggestion != loguniform_suggestion
+        loguniform_suggestion = sampler.sample_relative(study, trial, {"param-a": log_dist})
+    assert 1.0 <= loguniform_suggestion["param-a"] < 100.0
+    assert uniform_suggestion["param-a"] != loguniform_suggestion["param-a"]
 
 
 def test_sample_relative_disrete_uniform_distributions() -> None:
@@ -228,11 +222,15 @@ def test_sample_relative_disrete_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch("optuna.Study.get_trials", return_value=past_trials):
-        discrete_uniform_suggestion = sampler.sample_relative(
-            study, trial, {"param-a": disc_dist}
-        )["param-a"]
-    assert 1.0 <= discrete_uniform_suggestion <= 100.0
-    assert abs(int(discrete_uniform_suggestion * 10) - discrete_uniform_suggestion * 10) < 1e-3
+        discrete_uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": disc_dist})
+    assert 1.0 <= discrete_uniform_suggestion["param-a"] <= 100.0
+    assert (
+        abs(
+            int(discrete_uniform_suggestion["param-a"] * 10)
+            - discrete_uniform_suggestion["param-a"] * 10
+        )
+        < 1e-3
+    )
 
 
 def test_sample_relative_categorical_distributions() -> None:
@@ -252,10 +250,8 @@ def test_sample_relative_categorical_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        categorical_suggestion = sampler.sample_relative(study, trial, {"param-a": cat_dist})[
-            "param-a"
-        ]
-    assert categorical_suggestion in categories
+        categorical_suggestion = sampler.sample_relative(study, trial, {"param-a": cat_dist})
+    assert categorical_suggestion["param-a"] in categories
 
 
 def test_sample_relative_int_uniform_distributions() -> None:
@@ -274,9 +270,9 @@ def test_sample_relative_int_uniform_distributions() -> None:
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        int_suggestion = sampler.sample_relative(study, trial, {"param-a": int_dist})["param-a"]
-    assert 1 <= int_suggestion <= 100
-    assert isinstance(int_suggestion, int)
+        int_suggestion = sampler.sample_relative(study, trial, {"param-a": int_dist})
+    assert 1 <= int_suggestion["param-a"] <= 100
+    assert isinstance(int_suggestion["param-a"], int)
 
 
 @pytest.mark.parametrize(
@@ -299,9 +295,7 @@ def test_sample_relative_handle_unsuccessful_states(
     trial = frozen_trial_factory(30)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        all_success_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})[
-            "param-a"
-        ]
+        all_success_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
 
     # Test unsuccessful trials are handled differently.
     state_fn = build_state_fn(state)
@@ -309,9 +303,7 @@ def test_sample_relative_handle_unsuccessful_states(
     trial = frozen_trial_factory(30)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        partial_unsuccessful_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})[
-            "param-a"
-        ]
+        partial_unsuccessful_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
     assert partial_unsuccessful_suggestion != all_success_suggestion
 
 
