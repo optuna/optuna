@@ -121,6 +121,11 @@ class CmaEsSampler(BaseSampler):
             Multiplier for increasing population size before each restart.
             This argument will be used when setting ``restart_strategy = 'ipop'``.
 
+        shared_optimizer:
+            Share CMA object at each workers if this is :obj:`True` (default: False).
+            Please note that CmaEsSampler raises an exception when using Optuna storage
+            which limited the length of ``value`` field on ``trial.system_attrs``.
+
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
 
@@ -145,6 +150,7 @@ class CmaEsSampler(BaseSampler):
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
         seed: Optional[int] = None,
+        share_optimizer: bool = True,
         *,
         consider_pruned_trials: bool = False,
         restart_strategy: Optional[str] = None,
@@ -161,6 +167,11 @@ class CmaEsSampler(BaseSampler):
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
         self._inc_popsize = inc_popsize
+
+        # fields for non-sharing optimizer mode
+        self._share_optimizer = share_optimizer
+        self._optimizer = None  # type: Optional[CMA]
+        self._solution_trial_ids = []  # type: List[int]
 
         if self._restart_strategy:
             self._raise_experimental_warning_for_restart_strategy()
@@ -246,6 +257,68 @@ class CmaEsSampler(BaseSampler):
         ordered_keys = [key for key in search_space]
         ordered_keys.sort()
 
+        if not self._share_optimizer:
+            return self._sample_from_inmemory_cached_optimizer(
+                search_space, completed_trials, ordered_keys
+            )
+        return self._sample_from_storage_cached_optimizer(
+            study, trial, search_space, completed_trials, ordered_keys
+        )
+
+    def _sample_from_inmemory_cached_optimizer(
+        self,
+        search_space: Dict[str, BaseDistribution],
+        completed_trials: List[FrozenTrial],
+        ordered_keys: List[str],
+    ) -> Dict[str, Any]:
+        if self._optimizer is None:
+            self._optimizer = self._init_optimizer(search_space, ordered_keys)
+
+        if self._optimizer.dim != len(ordered_keys):
+            self._logger.info(
+                "`CmaEsSampler` does not support dynamic search space. "
+                "`{}` is used instead of `CmaEsSampler`.".format(
+                    self._independent_sampler.__class__.__name__
+                )
+            )
+            self._warn_independent_sampling = False
+            return {}
+
+        solution_trials = [t for t in completed_trials if t._trial_id in self._solution_trial_ids]
+
+        if len(solution_trials) >= self._optimizer.population_size:
+            solutions = []  # type: List[Tuple[np.ndarray, float]]
+            for t in solution_trials[: self._optimizer.population_size]:
+                assert t.value is not None, "completed trials must have a value"
+                x = np.array(
+                    [_to_cma_param(search_space[k], t.params[k]) for k in ordered_keys],
+                    dtype=float,
+                )
+                solutions.append((x, t.value))
+
+            self._optimizer.tell(solutions)
+            self._solution_trial_ids = []
+
+            if self._restart_strategy == "ipop" and self._optimizer.should_stop():
+                popsize = self._optimizer.population_size * self._inc_popsize
+                self._optimizer = self._init_optimizer(
+                    search_space, ordered_keys, population_size=popsize, randomize_start_point=True
+                )
+
+        params = self._optimizer.ask()
+        external_values = {
+            k: _to_optuna_param(search_space[k], p) for k, p in zip(ordered_keys, params)
+        }
+        return external_values
+
+    def _sample_from_storage_cached_optimizer(
+        self,
+        study: "optuna.Study",
+        trial: "optuna.trial.FrozenTrial",
+        search_space: Dict[str, BaseDistribution],
+        completed_trials: List[FrozenTrial],
+        ordered_keys: List[str],
+    ) -> Dict[str, Any]:
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
             n_restarts = 0
