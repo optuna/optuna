@@ -5,6 +5,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 import numpy as np
 import scipy.special
@@ -124,6 +125,11 @@ class TPESampler(BaseSampler):
             Seed for random number generator.
         multivariate:
             If this is :obj:`True`, the multivariate TPE is used when suggesting parameters.
+            The following paper reports that multivariate TPE outperforms independent TPE
+            in their experiment.
+
+            - `BOHB: Robust and Efficient Hyperparameter Optimization at Scale
+            <http://proceedings.mlr.press/v80/falkner18a.html>`_
 
             .. note::
                 Added in v2.1.0 as an experimental feature. The interface may change in newer
@@ -182,12 +188,6 @@ class TPESampler(BaseSampler):
 
         search_space = {}  # type: Dict[str, BaseDistribution]
         for name, distribution in self._search_space.calculate(study).items():
-            if distribution.single():
-                # `TPESampler` cannot handle distributions that contain
-                # just a single value, so we skip them. Note that the parameter values
-                # for such distributions are sampled in `Trial`.
-                continue
-
             if not isinstance(
                 distribution,
                 (
@@ -328,7 +328,9 @@ class TPESampler(BaseSampler):
         # be needed. Independent sampler in `TPESampler` first splits the observations and
         # then exclude `None`.
 
-        # We exclude param_vals with `None`.
+        # We exclude param_vals with `None`
+        # We exclude trials with None values among any parameters.
+        # This means that we transfer the search space into the instance of `InterSectionSpace`.
         config_vals_matrix = np.array([v for v in config_vals.values()])
         index_none = np.any(np.equal(config_vals_matrix, None), axis=0)
         config_vals = {k: v[~index_none] for k, v in config_vals.items()}
@@ -652,7 +654,7 @@ class TPESampler(BaseSampler):
         multivariate_samples: Dict[str, np.ndarray],
         log_l: np.ndarray,
         log_g: np.ndarray,
-    ) -> np.ndarray:
+    ) -> Dict[str, Union[float, int]]:
 
         sample_size = next(iter(multivariate_samples.values())).size
         if sample_size:
@@ -666,7 +668,10 @@ class TPESampler(BaseSampler):
             best = np.argmax(score)
             return {k: v[best] for k, v in multivariate_samples.items()}
         else:
-            return {k: np.asarray([]) for k in multivariate_samples.keys()}
+            raise ValueError(
+                "The size of 'samples' should be more than 0."
+                "But samples.size = {}".format(sample_size)
+            )
 
     @classmethod
     def _logsum_rows(cls, x: np.ndarray) -> np.ndarray:

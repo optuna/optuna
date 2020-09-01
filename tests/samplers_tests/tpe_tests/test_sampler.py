@@ -51,8 +51,6 @@ def test_infer_relative_search_space() -> None:
         t.suggest_int("d", 1, 100)
         t.suggest_int("e", 1, 100, log=True)
         t.suggest_categorical("f", ["x", "y", "z"])
-        # distribution.single = True if high == low.
-        t.suggest_uniform("single", 1.0, 1.0)
         return 0.0
 
     # We test on the empty input
@@ -65,7 +63,6 @@ def test_infer_relative_search_space() -> None:
     study2.optimize(obj, n_trials=1)
     assert sampler.infer_relative_search_space(study2, study2.best_trial) == {}
 
-    # infer_relative_search_space returns non-empty output only when multivariate TPE is used.
     sampler = TPESampler(multivariate=True)
     study3 = optuna.create_study(sampler=sampler)
     study3.optimize(obj, n_trials=1)
