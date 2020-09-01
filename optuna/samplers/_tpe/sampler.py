@@ -125,11 +125,9 @@ class TPESampler(BaseSampler):
             Seed for random number generator.
         multivariate:
             If this is :obj:`True`, the multivariate TPE is used when suggesting parameters.
-            The following paper reports that multivariate TPE outperforms independent TPE
-            in their experiment.
-
-            - `BOHB: Robust and Efficient Hyperparameter Optimization at Scale
-            <http://proceedings.mlr.press/v80/falkner18a.html>`_
+            The multivariate TPE is reported to outperform the independent TPE. See `BOHB: Robust
+            and Efficient Hyperparameter Optimization at Scale
+            <http://proceedings.mlr.press/v80/falkner18a.html>`_ for more details.
 
             .. note::
                 Added in v2.1.0 as an experimental feature. The interface may change in newer
