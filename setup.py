@@ -76,7 +76,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "example": [
             "catboost",
             "chainer",
-            "lightgbm",
+            "lightgbm<3.0.0",
             "mlflow",
             "mpi4py",
             "mxnet",
@@ -119,7 +119,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
-            "lightgbm",
+            "lightgbm<3.0.0",
             "mlflow",
             "mpi4py",
             "mxnet",
@@ -163,7 +163,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
-            "lightgbm",
+            "lightgbm<3.0.0",
             "mlflow",
             "mpi4py",
             "mxnet",
@@ -222,6 +222,7 @@ setup(
             "storages/_rdb/alembic.ini",
             "storages/_rdb/alembic/*.*",
             "storages/_rdb/alembic/versions/*.*",
+            "py.typed",
         ]
     },
     python_requires=">=3.5",

@@ -114,6 +114,20 @@ class BaseStudy(object):
         For library users, it's recommended to use more handy
         :attr:`~optuna.study.Study.trials` property to get the trials instead.
 
+        Example:
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_uniform("x", -1, 1)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
+                trials = study.get_trials()
+                assert len(trials) == 3
         Args:
             deepcopy:
                 Flag to control whether to apply ``copy.deepcopy()`` to the trials.
@@ -480,6 +494,22 @@ class Study(BaseStudy):
         immediately after all trials which the :meth:`~optuna.study.Study.optimize` method
         spawned finishes.
         This method does not affect any behaviors of parallel or successive study processes.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    if trial.number == 4:
+                        study.stop()
+                    x = trial.suggest_uniform("x", 0, 10)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=10)
+                assert len(study.trials) == 5
 
         Raises:
             RuntimeError:
