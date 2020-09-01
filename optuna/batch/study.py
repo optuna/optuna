@@ -15,9 +15,7 @@ from optuna._experimental import experimental
 import optuna.logging
 
 ObjectiveFuncType = Callable[["optuna.batch.trial.BatchTrial"], np.ndarray]
-CallbackFuncType = Callable[
-    ["optuna.study.Study", "optuna.trial.FrozenTrial"], None,
-]
+CallbackFuncType = Callable[["optuna.study.Study", "optuna.trial.FrozenTrial"], None]
 
 _logger = optuna.logging.get_logger(__name__)
 

@@ -91,7 +91,7 @@ class _ObjectiveCallbackWrapper(object):
             trial._report_complete_values(result)
             _logger.info(
                 "Trial {} finished with values: {} with parameters: {}.".format(
-                    trial._trial.number, result, trial._trial.params,
+                    trial._trial.number, result, trial._trial.params
                 )
             )
             # Set dummy objective value.
@@ -180,7 +180,9 @@ class BatchMultiObjectiveStudy(object):
             show_progress_bar=show_progress_bar,
         )
 
-    def get_pareto_front_trials(self) -> List["optuna.multi_objective.trial.FrozenMultiObjectiveTrial"]:
+    def get_pareto_front_trials(
+        self,
+    ) -> List["optuna.multi_objective.trial.FrozenMultiObjectiveTrial"]:
         """Return trials located at the pareto front in the study.
 
         A trial is located at the pareto front if there are no trials that dominate the trial.
