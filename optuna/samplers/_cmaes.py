@@ -6,12 +6,13 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+import warnings
 
 from cmaes import CMA
 import numpy as np
 
 import optuna
-from optuna._experimental import experimental
+from optuna.exceptions import ExperimentalWarning
 from optuna.distributions import BaseDistribution
 from optuna import logging
 from optuna.samplers import BaseSampler
@@ -112,8 +113,8 @@ class CmaEsSampler(BaseSampler):
             If given 'ipop', CMA-ES will restart with increasing population size.
             Please see also ``inc_popsize`` parameter.
 
-            .. note::
-                Added in v2.1.0 as an experimental feature. The interface may change in newer
+            .. versionadded:: 2.1.0
+                This option an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.1.0.
 
@@ -124,8 +125,8 @@ class CmaEsSampler(BaseSampler):
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
 
-            .. note::
-                Added in v2.0.0 as an experimental feature. The interface may change in newer
+            .. versionadded:: v2.0.0
+                This option is an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.0.0.
 
@@ -163,10 +164,18 @@ class CmaEsSampler(BaseSampler):
         self._inc_popsize = inc_popsize
 
         if self._restart_strategy:
-            self._raise_experimental_warning_for_restart_strategy()
+            warnings.warn(
+                "`restart_strategy` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
         if self._consider_pruned_trials:
-            self._raise_experimental_warning_for_consider_pruned_trials()
+            warnings.warn(
+                "`consider_pruned_trials` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
         # TODO(c-bata): Support BIPOP-CMA-ES.
         if restart_strategy not in (
@@ -178,14 +187,6 @@ class CmaEsSampler(BaseSampler):
                     restart_strategy
                 )
             )
-
-    @experimental("2.1.0", name="`restart_strategy is not None` in CmaEsSampler")
-    def _raise_experimental_warning_for_restart_strategy(self) -> None:
-        pass
-
-    @experimental("2.0.0", name="`consider_pruned_trials = True` in CmaEsSampler")
-    def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
-        pass
 
     def reseed_rng(self) -> None:
         # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
