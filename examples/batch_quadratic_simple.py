@@ -1,16 +1,12 @@
 import optuna
 
 
-def f(x, y):
-    return (1 - x) ** 2 + y
-
-
 def objective(batch_trial):
     # batch_trial suggests multiple values at once.
     x = batch_trial.suggest_float("x", -1, 1)
     y = batch_trial.suggest_float("y", -1, 1)
 
-    z = f(x, y)
+    z = (1 - x) ** 2 + y
 
     # The return value is expected to be a numpy array of float values.
     return z
