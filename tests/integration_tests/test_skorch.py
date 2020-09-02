@@ -21,8 +21,7 @@ class ClassifierModule(nn.Module):
 
 def test_skorch_pruning_callback() -> None:
 
-    X, y = torch.zeros(3, 4), torch.zeros(3, dtype=torch.long)
-    valid_ds = torch.utils.data.TensorDataset(torch.zeros(3, 4), torch.zeros(3, dtype=torch.long))
+    X, y = torch.zeros(5, 4), torch.zeros(5, dtype=torch.long)
 
     def objective(trial: optuna.trial.Trial) -> float:
 
@@ -31,7 +30,6 @@ def test_skorch_pruning_callback() -> None:
             max_epochs=10,
             lr=0.02,
             callbacks=[SkorchPruningCallback(trial, "valid_acc")],
-            train_split=predefined_split(valid_ds),
         )
 
         net.fit(X, y)
