@@ -1,4 +1,5 @@
 import abc
+import datetime
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -84,6 +85,46 @@ class BaseBatchTrial(metaclass=abc.ABCMeta):
 
         return [t.system_attrs for t in self._get_trials()]
 
+    @property
+    def datetime_start(self) -> Sequence[Optional[datetime.datetime]]:
+        """Return start datetime.
+
+        Returns:
+            Datetime where the :class:`~optuna.trial.Trial` started.
+        """
+
+        return [t.datetime_start for t in self._get_trials()]
+
+    @property
+    def number(self) -> Sequence[int]:
+        """Return trial's number which is consecutive and unique in a study.
+
+        Returns:
+            A trial number.
+        """
+
+        return [t.number for t in self._get_trials()]
+
+    @property
+    def params(self) -> Sequence[Dict[str, Any]]:
+        """Return parameters to be optimized.
+
+        Returns:
+            A dictionary containing all parameters.
+        """
+
+        return [trial.params for trial in self._get_trials()]
+
+    @property
+    def distributions(self) -> Sequence[Dict[str, optuna.distributions.BaseDistribution]]:
+        """Return distributions of parameters to be optimized.
+
+        Returns:
+            A dictionary containing all distributions.
+        """
+
+        return [trial.distributions for trial in self._get_trials()]
+
 
 class BatchTrial(BaseBatchTrial):
     def __init__(self, trials: Sequence["optuna.trial.Trial"]) -> None:
@@ -98,7 +139,3 @@ class BatchTrial(BaseBatchTrial):
 
     def should_prune(self) -> bool:
         return all((trial.should_prune() for trial in self._get_trials()))
-
-    @property
-    def params(self) -> Sequence[Dict[str, Any]]:
-        return [trial.params for trial in self._trials]
