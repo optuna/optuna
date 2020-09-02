@@ -29,7 +29,7 @@ def _compute_2d(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
 
     hypervolume = 0.0
     for (xi, yi) in sorted_solution_set:
-        if ry - yi < 0:
+        if ry < yi:
             continue
 
         hypervolume += (rx - xi) * (ry - yi)
