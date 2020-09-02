@@ -71,7 +71,7 @@ class _MultivariateParzenEstimator:
         weights_func = self._parameters.weights
         sample_size = next(iter(multivariate_samples.values())).size
         if consider_prior:
-            weights = np.zeros(sample_size + 1)
+            weights = np.empty(sample_size + 1)
             weights[:-1] = weights_func(sample_size)
             weights[-1] = prior_weight
         else:
