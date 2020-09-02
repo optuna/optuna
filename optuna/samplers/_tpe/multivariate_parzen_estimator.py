@@ -214,7 +214,7 @@ class _MultivariateParzenEstimator:
 
     def _precompute_sigmas0(
         self, multivariate_samples: Dict[str, np.ndarray]
-    ) -> Union[np.ndarray, float]:
+    ) -> Optional[Union[np.ndarray, float]]:
 
         # Categorical parameters are not considered.
         param_names = list(multivariate_samples.keys())
@@ -232,11 +232,9 @@ class _MultivariateParzenEstimator:
                 continue
 
         # When the number of parameters is zero, we cannot determine sigma0.
+        # If there are only categorical parameters, this case happens.
         if len(rescaled_samples_list) == 0:
-            raise ValueError(
-                "multivariate_samples must contain at least one parameters."
-                "But multivariate_samples = {}.".format(multivariate_samples)
-            )
+            return None
         # When the number of samples is zero, we return 1.0.
         elif len(rescaled_samples_list[0]) == 0:
             return 1.0
@@ -278,6 +276,7 @@ class _MultivariateParzenEstimator:
         sigmas0 = self._sigmas0
         low = self._low[param_name]
         high = self._high[param_name]
+        assert sigmas0 is not None
         assert low is not None
         assert high is not None
 
