@@ -322,7 +322,7 @@ class Study(BaseStudy):
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
 
-        .. seealso
+        .. seealso::
 
             See :attr:`~optuna.study.Study.user_attrs` for related attribute.
 
