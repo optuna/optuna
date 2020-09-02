@@ -80,7 +80,7 @@ class _MultivariateParzenEstimator:
         weights_func = self._parameters.weights
         sample_size = next(iter(multivariate_samples.values())).size
         if consider_prior:
-            weights = np.zeros(sample_size + 1)
+            weights = np.empty(sample_size + 1)
             weights[:-1] = weights_func(sample_size)
             weights[-1] = prior_weight
         else:
@@ -247,7 +247,7 @@ class _MultivariateParzenEstimator:
         distances = np.linalg.norm(
             rescaled_samples[:, None, :] - rescaled_samples[None, :, :], axis=2
         )
-        distances += np.diag(np.ones(len(samples)) * np.infty)
+        distances[np.diag_indices_from(distances)] += np.inf
 
         return np.min(distances, axis=1)
 
@@ -260,11 +260,11 @@ class _MultivariateParzenEstimator:
         consider_prior = self._parameters.consider_prior
         prior_weights = self._parameters.prior_weight
         if consider_prior:
-            weights = prior_weights / samples.size * np.ones((samples.size + 1, len(choices)))
-            weights[np.arange(samples.size), samples] += 1
+            shape = (samples.size + 1, len(choices))
         else:
-            weights = prior_weights / samples.size * np.ones((samples.size, len(choices)))
-            weights[np.arange(samples.size), samples] += 1
+            shape = (samples.size, len(choices))
+        weights = np.full(shape, fill_value=prior_weights / samples.size)
+        weights[np.arange(samples.size), samples] += 1
         weights /= weights.sum(axis=1, keepdims=True)
         return weights
 
@@ -289,11 +289,11 @@ class _MultivariateParzenEstimator:
             prior_mu = 0.5 * (low + high)
             prior_sigma = 1.0 * (high - low)
 
-            mus = np.zeros(samples_size + 1)
+            mus = np.empty(samples_size + 1)
             mus[:samples_size] = samples
             mus[samples_size] = prior_mu
 
-            sigmas = np.zeros(samples_size + 1)
+            sigmas = np.empty(samples_size + 1)
             sigmas[:samples_size] = sigmas0 * (high - low)
             sigmas[samples_size] = prior_sigma
 
