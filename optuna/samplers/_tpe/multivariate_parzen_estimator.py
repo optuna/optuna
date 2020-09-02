@@ -240,7 +240,7 @@ class _MultivariateParzenEstimator:
         distances = np.linalg.norm(
             rescaled_samples[:, None, :] - rescaled_samples[None, :, :], axis=2
         )
-        distances += np.diag(np.ones(len(samples)) * np.infty)
+        distances[np.diag_indices_from(distances)] += np.inf
 
         return np.min(distances, axis=1)
 
