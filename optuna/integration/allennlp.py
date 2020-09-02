@@ -18,10 +18,10 @@ with try_import() as _imports:
     import allennlp
     import allennlp.commands
     import allennlp.common.util
-    from allennlp.training import EpochCallback
 
 if _imports.is_successful():
     import _jsonnet
+    from allennlp.training import EpochCallback
 else:
 
     class EpochCallback:  # type: ignore
