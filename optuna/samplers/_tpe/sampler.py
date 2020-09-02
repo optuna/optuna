@@ -824,10 +824,9 @@ def _get_multivariate_observation_pairs(
 
         # We extract param_value from trial.
         for param_name in param_names:
-            param_value = None
-            if param_name in trial.params:
-                distribution = trial.distributions[param_name]
-                param_value = distribution.to_internal_repr(trial.params[param_name])
+            assert param_name in trial.params
+            distribution = trial.distributions[param_name]
+            param_value = distribution.to_internal_repr(trial.params[param_name])
             values[param_name].append(param_value)
 
     return values, scores
