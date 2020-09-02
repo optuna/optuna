@@ -5,6 +5,7 @@ from typing import Dict
 from typing import Optional
 from typing import Sequence
 from typing import Union
+import warnings
 
 import numpy as np
 
@@ -125,6 +126,19 @@ class BaseBatchTrial(metaclass=abc.ABCMeta):
 
         return [trial.distributions for trial in self._get_trials()]
 
+    def should_prune(self) -> bool:
+        """Suggest whether the trial should be pruned or not.
+
+        Currently, the batch optimization does not support the pruning feature, and this method
+        simply returns :obj:`False`.
+
+        Returns:
+            A boolean value. Always :obj:`False`.
+        """
+
+        warnings.warn("BatchTrial does not support the pruning feature. It never prunes any trials.")
+        return False
+
 
 class BatchTrial(BaseBatchTrial):
     def __init__(self, trials: Sequence["optuna.trial.Trial"]) -> None:
@@ -136,6 +150,3 @@ class BatchTrial(BaseBatchTrial):
     def report(self, values: np.ndarray, step: int) -> None:
         for value, trial in zip(values, self._trials):
             trial.report(value, step=step)
-
-    def should_prune(self) -> bool:
-        return all((trial.should_prune() for trial in self._get_trials()))

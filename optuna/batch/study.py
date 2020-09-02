@@ -41,23 +41,6 @@ class _ObjectiveCallbackWrapper(object):
         batch_trial = optuna.batch.trial.BatchTrial(trials)
         try:
             results = self._objective(batch_trial)
-        except optuna.exceptions.TrialPruned as e:
-            for trial in trials:
-                trial_id = trial._trial_id
-                message = "Trial {} pruned. {}".format(trial.number, str(e))
-                _logger.info(message)
-
-                # Register the last intermediate value if present as the value of the trial.
-                # TODO(hvy): Whether a pruned trials should have an actual value can be
-                # discussed.
-                frozen_trial = self._study._storage.get_trial(trial_id)
-                last_step = frozen_trial.last_step
-                if last_step is not None:
-                    self._study._storage.set_trial_value(
-                        trial_id, frozen_trial.intermediate_values[last_step]
-                    )
-                self._study._storage.set_trial_state(trial_id, optuna.trial.TrialState.PRUNED)
-            raise
         except Exception as e:
             for trial in trials:
                 message = "Trial {} failed because of the following error: {}".format(

@@ -1,6 +1,7 @@
 import datetime
 
 import numpy as np
+import pytest
 
 import optuna
 
@@ -128,3 +129,14 @@ def test_datetime() -> None:
     study.optimize(objective, n_batches=1)
     assert all(isinstance(trial.datetime_start, datetime.datetime) for trial in study.trials)
     assert all(isinstance(trial.datetime_complete, datetime.datetime) for trial in study.trials)
+
+
+def test_should_prune() -> None:
+    def objective(trial: optuna.batch.trial.BatchTrial) -> np.ndarray:
+        x = trial.suggest_float("x", -10, 10)
+        with pytest.warns(UserWarning):
+            assert not trial.should_prune()
+        return x
+
+    study = optuna.batch.create_study(batch_size=4)
+    study.optimize(objective, n_batches=1)
