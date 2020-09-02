@@ -20,6 +20,7 @@ if type_checking.TYPE_CHECKING:
 Title  : Speeding up Hyper-parameter Optimization by Extrapolation of Learning Curves using Previous Builds
 Authors: Akshay Chandrashekaran, Ian R. Lane
 http://akshayc.com/publications/ecml2017_gelc_submitted.pdf
+
 [Source Code]
 https://github.com/akshayc11/Spearmint/blob/elc/spearmint/pylrpredictor/gradient_descent.py
 https://github.com/akshayc11/Spearmint/blob/elc/spearmint/pylrpredictor/prevonlyterminationcriterion.py
@@ -32,6 +33,7 @@ def recency_weights(num):
     ----------
     num: int
         The number of epoch obtained up to the current iteration.
+
     Returns
     -------
     weights: np.ndarray (shape=(num,))
@@ -83,48 +85,63 @@ class EnsembleLearningCurvesPruner(BasePruner):
     ----------
     max_epoch: int
         The number of epoch for training of task of interest.
+
     maximize: bool
         If True, the goal of the optimization is to maximize the objective function.
+
     yrange: tuple (shape=(2,))
         The range of the objective function.
         It is used for the termination criterion using standard deviation.
         If None is given, termination using standard deviation is not considered.
+
     n_startup_trials: int
         Early stopping will be implemented after evaluating this number of the objective function.
         The small number leads to less reliable early stopping.
         The large number leads to less efficiency.
+
     n_warmup_steps: int
         The evalution will be done up to at least this number of epoch.
+
     interval_steps: int
         The judgement of the cutting off will be implemented every this number step.
+
     n_estimators: int
         The number of estimator used in the ensemble model.
         The larger number leads to more computational time, but can lead to the stability.
+
     threshold: float
         If P(y_{curr, max_epoch} is better than y_{best, max_epoch}) < threshold,
         Current evaluation will be cut off.
+
     maximum_possible_std: float
         If standard deviation of y_{curr, max_epoch} is larger than
         (yrange[1] - yrange[0]) * maximum_possible_std, the cutting off will not be implemented.
         If np.inf is given, the cutting off by standard deviation will not be implemented.
+
     recency_weighting: bool
         If true, the predicted value fits fresher values more than older ones.
+
     monotonicity_condition: bool
         if true, the predicted accuracy of the estimator cannot be lesser than the best observed value so far.
         In other words, it prevents the wrong early stopping.
+
     seed: int
         Random Seed.
+
     alpha: float
         The coefficient of this gradient descent.
         In general, lower value leads to slower convergence, but reliable solutions
         Higher value leads to faster convergence, but unreliable solutions.
+
     n_iteration: int
         The number of iteration for the gradient descent.
+
     param1, param2, param3: float
         Hyperparameter of this method.
         param1: the regularization term.
         param2: the regularization term. This term variates depending on the number of epoch we refer to.
         param3: the parameter for monotonicity condition.
+
     n_prev: int
         The number of learning curves we refer to.
         This method picks up the specified number of learning curves from completed tasks
@@ -211,14 +228,17 @@ class EnsembleLearningCurvesPruner(BasePruner):
         f_curr: np.ndarray (shape=(n_epoch,))
             The target of the current prediction.
             The observation is available until n_epoch epoch.
+
         f_prev: np.ndarray (shape=(n_epoch,))
             One of the previous builds for training.
             The observation is used until n_epoch epoch (We do not use after this epoch for training).
+
         Returns
         -------
         a, b: float
             The coefficient of affine transformation.
             This variable will be obtained as a result of gradient descent.
+
         residual: float
             The residual between the evaluation at each epoch of the current task
             and that of the affine-transformed previous task.
@@ -270,7 +290,7 @@ class EnsembleLearningCurvesPruner(BasePruner):
             if len(A) == n_startpoints:
                 break
 
-        A, B, Ls = map(np.ndarray, (A, B, Ls))
+        A, B, Ls = map(np.asarray, (A, B, Ls))
         return A, B, Ls
 
     def fit(self):
