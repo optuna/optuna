@@ -176,7 +176,7 @@ class Study(BaseStudy):
         """Return user attributes.
 
         .. seealso
-        
+
             See :func:`~optuna.study.Study.set_user_attr` for related method.
 
         Example:
