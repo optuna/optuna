@@ -65,24 +65,24 @@ class BaseBatchTrial(metaclass=abc.ABCMeta):
             trial.set_system_attr(key, value)
 
     @property
-    def user_attrs(self) -> Dict[str, Any]:
+    def user_attrs(self) -> Sequence[Dict[str, Any]]:
         """Return user attributes.
 
         Returns:
             A dictionary containing all user attributes.
         """
 
-        return self._get_trials()[0].user_attrs
+        return [t.user_attrs for t in self._get_trials()]
 
     @property
-    def system_attrs(self) -> Dict[str, Any]:
+    def system_attrs(self) -> Sequence[Dict[str, Any]]:
         """Return system attributes.
 
         Returns:
             A dictionary containing all system attributes.
         """
 
-        return self._get_trials()[0].system_attrs
+        return [t.system_attrs for t in self._get_trials()]
 
 
 class BatchTrial(BaseBatchTrial):

@@ -54,21 +54,20 @@ def test_user_attrs() -> None:
 
     def objective(trial: optuna.batch.trial.BatchTrial) -> np.ndarray:
         trial.set_user_attr("foo", "bar")
-        assert trial.user_attrs == {"foo": "bar"}
+        assert all(attr == {"foo": "bar"} for attr in trial.user_attrs)
 
         trial.set_user_attr("baz", "qux")
-        assert trial.user_attrs == {"foo": "bar", "baz": "qux"}
+        assert all(attr == {"foo": "bar", "baz": "qux"} for attr in trial.user_attrs)
 
         trial.set_user_attr("foo", "quux")
-        assert trial.user_attrs == {"foo": "quux", "baz": "qux"}
+        assert all(attr == {"foo": "quux", "baz": "qux"} for attr in trial.user_attrs)
 
         return np.ones(batch_size)
 
     study = optuna.batch.create_study(batch_size=batch_size)
     study.optimize(objective, n_batches=1)
 
-    for i in range(batch_size):
-        assert study.trials[i].user_attrs == {"foo": "quux", "baz": "qux"}
+    assert all(t.user_attrs == {"foo": "quux", "baz": "qux"} for t in study.trials)
 
 
 def test_system_attrs() -> None:
@@ -76,18 +75,17 @@ def test_system_attrs() -> None:
 
     def objective(trial: optuna.batch.trial.BatchTrial) -> np.ndarray:
         trial.set_system_attr("foo", "bar")
-        assert trial.system_attrs == {"foo": "bar"}
+        assert all(attr == {"foo": "bar"} for attr in trial.system_attrs)
 
         trial.set_system_attr("baz", "qux")
-        assert trial.system_attrs == {"foo": "bar", "baz": "qux"}
+        assert all(attr == {"foo": "bar", "baz": "qux"} for attr in trial.system_attrs)
 
         trial.set_system_attr("foo", "quux")
-        assert trial.system_attrs == {"foo": "quux", "baz": "qux"}
+        assert all(attr == {"foo": "quux", "baz": "qux"} for attr in trial.system_attrs)
 
         return np.ones(batch_size)
 
     study = optuna.batch.create_study(batch_size=batch_size)
     study.optimize(objective, n_batches=1)
 
-    for i in range(batch_size):
-        assert study.trials[i].system_attrs == {"foo": "quux", "baz": "qux"}
+    assert all(t.system_attrs == {"foo": "quux", "baz": "qux"} for t in study.trials)
