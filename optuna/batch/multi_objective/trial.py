@@ -15,7 +15,8 @@ class BatchMultiObjectiveTrial(BaseBatchTrial):
     def _get_trials(self) -> Sequence["optuna.multi_objective.trial.MultiObjectiveTrial"]:
         return self._trials
 
-    def report(self, values: Sequence[Sequence[float]], step: int) -> None:
+    def report(self, values: Sequence[np.ndarray], step: int) -> None:
+        values = np.array(values).transpose()
         for value, trial in zip(values, self._trials):
             trial.report(value, step)
 
