@@ -128,7 +128,7 @@ def test_load_study() -> None:
         loaded_study = optuna.batch.study.load_study(
             study_name=study_name, storage=storage, batch_size=batch_size
         )
-        assert created_study._study._study_id == loaded_study._study._study_id
+        assert created_study._study_id == loaded_study._study_id
 
 
 @pytest.mark.parametrize("batch_size", [1, 2, 3])
