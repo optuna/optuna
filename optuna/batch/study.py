@@ -117,6 +117,16 @@ class BatchStudy(object):
         self._study = study
         self._batch_size = batch_size
 
+    @property
+    def batch_size(self) -> int:
+        """Return the size of batches.
+
+        Returns:
+            Size of batches.
+        """
+
+        return self._batch_size
+
     def optimize(
         self,
         objective: ObjectiveFuncType,
