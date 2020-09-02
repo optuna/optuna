@@ -13,6 +13,8 @@ if not _imports.is_successful():
 class SkorchPruningCallback(Callback):
     """Skorch callback to prune unpromising trials.
 
+    .. versionadded:: 2.1.0
+
     Args:
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
@@ -20,7 +22,7 @@ class SkorchPruningCallback(Callback):
         monitor:
             An evaluation metric for pruning, e.g. ``val_loss`` or
             ``val_acc``. The metrics are obtained from the returned dictionaries,
-            i.e., ``net.histroy``. The names are thus depend on how this dictionary
+            i.e., ``net.histroy``. The names thus depend on how this dictionary
             is formatted.
     """
 
@@ -40,5 +42,5 @@ class SkorchPruningCallback(Callback):
         current_score = history[-1, self._monitor]
         self._trial.report(current_score, epoch)
         if self._trial.should_prune():
-            message = "Trial was pruned at epoch {}".format(epoch)
+            message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
