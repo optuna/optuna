@@ -744,15 +744,6 @@ def test_get_multivariate_observation_pairs() -> None:
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
-    assert _tpe.sampler._get_multivariate_observation_pairs(study, ["z"]) == (
-        {"z": [None, None, None, None]},
-        [
-            (-float("inf"), 11.0),  # COMPLETE
-            (-7, 2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), 0.0),  # PRUNED (without intermediate values)
-        ],
-    )
 
     # Test direction=maximize.
     study = optuna.create_study(direction="maximize")
@@ -761,15 +752,6 @@ def test_get_multivariate_observation_pairs() -> None:
 
     assert _tpe.sampler._get_multivariate_observation_pairs(study, ["x", "y"]) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
-        [
-            (-float("inf"), -11.0),  # COMPLETE
-            (-7, -2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), 0.0),  # PRUNED (without intermediate values)
-        ],
-    )
-    assert _tpe.sampler._get_multivariate_observation_pairs(study, ["z"]) == (
-        {"z": [None, None, None, None]},
         [
             (-float("inf"), -11.0),  # COMPLETE
             (-7, -2),  # PRUNED (with intermediate values)

@@ -1,6 +1,7 @@
 from typing import Dict
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 import numpy as np
 import scipy.special
@@ -11,6 +12,14 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 
 EPS = 1e-12
+
+_NUMERICAL_DISTRIBUTION_CLASSES = (
+    distributions.UniformDistribution,
+    distributions.LogUniformDistribution,
+    distributions.IntUniformDistribution,
+    distributions.IntLogUniformDistribution,
+    distributions.DiscreteUniformDistribution,
+)
 
 
 # TODO(kstoenriv3): We need to consider if we really need `_ParzenEstimatorParameters` class
@@ -205,20 +214,13 @@ class _MultivariateParzenEstimator:
 
     def _precompute_sigmas0(
         self, multivariate_samples: Dict[str, np.ndarray]
-    ) -> Optional[np.ndarray]:
+    ) -> Union[np.ndarray, float]:
 
         # Categorical parameters are not considered.
         param_names = list(multivariate_samples.keys())
-        continuous_param_types = (
-            distributions.UniformDistribution,
-            distributions.LogUniformDistribution,
-            distributions.IntUniformDistribution,
-            distributions.IntLogUniformDistribution,
-            distributions.DiscreteUniformDistribution,
-        )
         rescaled_samples_list = []
         for param_name in param_names:
-            if isinstance(self._search_space[param_name], continuous_param_types):
+            if isinstance(self._search_space[param_name], _NUMERICAL_DISTRIBUTION_CLASSES):
                 high = self._high[param_name]
                 low = self._low[param_name]
                 assert high is not None
@@ -229,10 +231,15 @@ class _MultivariateParzenEstimator:
             else:  # Categorical parameters are ignored.
                 continue
 
+        # When the number of parameters is zero, we cannot determine sigma0.
         if len(rescaled_samples_list) == 0:
-            return None
+            raise ValueError(
+                "multivariate_samples must contain at least one parameters."
+                "But multivariate_samples = {}.".format(multivariate_samples)
+            )
+        # When the number of samples is zero, we return 1.0.
         elif len(rescaled_samples_list[0]) == 0:
-            return np.ones(1, dtype=float)
+            return 1.0
 
         rescaled_samples = np.array(rescaled_samples_list).T
 
@@ -271,7 +278,6 @@ class _MultivariateParzenEstimator:
         sigmas0 = self._sigmas0
         low = self._low[param_name]
         high = self._high[param_name]
-        assert sigmas0 is not None
         assert low is not None
         assert high is not None
 
