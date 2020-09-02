@@ -287,7 +287,7 @@ class _MultivariateParzenEstimator:
             mus[:samples_size] = samples
             mus[samples_size] = prior_mu
 
-            sigmas = np.zeros(samples_size + 1)
+            sigmas = np.empty(samples_size + 1)
             sigmas[:samples_size] = sigmas0 * (high - low)
             sigmas[samples_size] = prior_sigma
 
