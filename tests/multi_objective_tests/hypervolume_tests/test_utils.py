@@ -14,7 +14,7 @@ def test_compute_2points_volume() -> None:
     assert 1 == optuna.multi_objective._hypervolume._compute_2points_volume(p1, p2)
 
 
-def test_wfg_2d() -> None:
+def test_compute_2d() -> None:
     for n in range(2, 30):
         r = n * np.ones(2)
         s = np.asarray([[n - 1 - i, i] for i in range(n)])
