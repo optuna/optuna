@@ -17,8 +17,8 @@ def _compute_2points_volume(point1: np.ndarray, point2: np.ndarray) -> float:
 def _compute_2d(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
     """Compute the hypervolume for the two-dimensional space.
 
-    This algorithm divides a hypervolume area into smaller rectangles
-    and sum these areas.
+    This algorithm divides a hypervolume into
+    smaller rectangles and sum these areas.
 
     Args:
         solution_set:
@@ -30,16 +30,16 @@ def _compute_2d(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
     sorted_solution_set = solution_set[np.lexsort((-solution_set[:, 1], solution_set[:, 0]))]
 
     hypervolume = 0.0
-    for point1 in sorted_solution_set:
-        if reference_point[1] < point1[1]:
+    for solution in sorted_solution_set:
+        if reference_point[1] < solution[1]:
             continue
 
         # Compute an area of a rectangle with reference_point
         # and one point in solution_sets as diagonals.
-        hypervolume += _compute_2points_volume(reference_point, point1)
+        hypervolume += _compute_2points_volume(reference_point, solution)
 
-        # Update ry such that the above rectangle and
-        # a next rectangle don't overlap
-        reference_point[1] = point1[1]
+        # Update a reference_point to create a new hypervolume that
+        # exclude a rectangle from the current hypervolume
+        reference_point[1] = solution[1]
 
     return hypervolume
