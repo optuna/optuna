@@ -1,7 +1,6 @@
 from typing import Any
 
 import skorch
-from skorch.helper import predefined_split
 import torch
 from torch import nn
 
