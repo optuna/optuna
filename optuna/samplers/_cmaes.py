@@ -125,7 +125,7 @@ class CmaEsSampler(BaseSampler):
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
 
-            .. versionadded:: v2.0.0
+            .. versionadded:: 2.0.0
                 This option is an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.0.0.

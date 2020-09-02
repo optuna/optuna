@@ -4,14 +4,15 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+import warnings
 
 import numpy as np
 
 import optuna
-from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna import distributions
 from optuna import samplers
+from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.study import StudyDirection
@@ -81,8 +82,8 @@ class SkoptSampler(BaseSampler):
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
 
-            .. note::
-                Added in v2.0.0 as an experimental feature. The interface may change in newer
+            .. versionadded:: 2.0.0
+                This option is an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.0.0.
 
@@ -118,11 +119,11 @@ class SkoptSampler(BaseSampler):
         self._consider_pruned_trials = consider_pruned_trials
 
         if self._consider_pruned_trials:
-            self._raise_experimental_warning_for_consider_pruned_trials()
-
-    @experimental("2.0.0", name="`consider_pruned_trials = True` in SkoptSampler")
-    def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
-        pass
+            warnings.warn(
+                "`consider_pruned_trials` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
     def reseed_rng(self) -> None:
 
