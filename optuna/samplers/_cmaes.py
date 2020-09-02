@@ -114,7 +114,7 @@ class CmaEsSampler(BaseSampler):
             Please see also ``inc_popsize`` parameter.
 
             .. versionadded:: 2.1.0
-                This option an experimental feature. The interface may change in newer
+                This option is an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.1.0.
 
