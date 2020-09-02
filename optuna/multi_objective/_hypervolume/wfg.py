@@ -24,13 +24,13 @@ class WFG(BaseHypervolume):
     def _compute_rec(self, solution_set: np.ndarray) -> float:
         assert self._reference_point is not None
         n_points = solution_set.shape[0]
-        _shape = self._reference_point.shape
+        shape = self._reference_point.shape
 
-        if len(_shape) == 1 and _shape[0] == 2:
+        if len(shape) == 1 and shape[0] == 2:
             return _compute_2d(solution_set, self._reference_point)
 
-        if len(_shape) == 2:
-            if (_shape[0] == 2 and _shape[1] == 1) or (_shape[0] == 1 and _shape[1] == 2):
+        if len(shape) == 2:
+            if (shape[0] == 2 and shape[1] == 1) or (shape[0] == 1 and shape[1] == 2):
                 return _compute_2d(solution_set, self._reference_point)
 
         if n_points == 1:

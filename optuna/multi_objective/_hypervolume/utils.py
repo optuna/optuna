@@ -25,10 +25,10 @@ def _compute_2d(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
     """
 
     rx, ry = reference_point
-    _solution_set = solution_set[np.lexsort((-solution_set[:, 1], solution_set[:, 0]))]
+    sorted_solution_set = solution_set[np.lexsort((-solution_set[:, 1], solution_set[:, 0]))]
 
     hypervolume = 0.0
-    for (xi, yi) in _solution_set:
+    for (xi, yi) in sorted_solution_set:
         if ry - yi < 0:
             continue
 
