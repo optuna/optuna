@@ -1,5 +1,4 @@
 import datetime
-from typing import cast
 
 import numpy as np
 
@@ -13,13 +12,10 @@ def test_suggest() -> None:
         p2 = trial.suggest_loguniform("p2", 0.00001, 0.1)
         p3 = trial.suggest_discrete_uniform("p3", 100, 200, q=5)
         p4 = trial.suggest_int("p4", -20, -15)
-        p5 = cast(int, trial.suggest_categorical("p5", [7, 1, 100]))
+        p5 = trial.suggest_categorical("p5", [7, 1, 100]).astype(np.int64)
         p6 = trial.suggest_float("p6", -10, 10, step=1.0)
         p7 = trial.suggest_int("p7", 1, 7, log=True)
-        return (
-            p0 + p1 + p2,
-            p3 + p4 + p5 + p6 + p7,
-        )
+        return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7
 
     study = optuna.batch.create_study(batch_size=4)
     study.optimize(objective, n_batches=10)
@@ -37,7 +33,7 @@ def test_report() -> None:
     study = optuna.batch.create_study(batch_size=batch_size)
     study.optimize(objective, n_batches=2)
 
-    for i in range(0, batch_size):
+    for i in range(batch_size):
         trial = study.trials[i]
         assert trial.intermediate_values == {1: 1, 2: 10}
         assert trial.value == 100
