@@ -16,6 +16,7 @@ on:
 
 env:
   DOCKER_HUB_BASE_NAME: optuna/optuna
+  GHCR_BASE_NAME: ghcr.io/optuna/optuna
 
 jobs:
 
@@ -43,6 +44,7 @@ jobs:
           export TAG_NAME="${TAG_NAME}-dev"
         fi
         echo "::set-env name=HUB_TAG::${DOCKER_HUB_BASE_NAME}:${TAG_NAME}"
+        echo "::set-env name=GHCR_TAG::${GHCR_BASE_NAME}:${TAG_NAME}"
 
     - name: Pull the Docker image
       run: |
@@ -63,3 +65,9 @@ jobs:
       run: |
         echo "${DOCKER_HUB_TOKEN}" | docker login -u optunabot --password-stdin
         docker push "${HUB_TAG}"
+
+    - name: Login to GitHub Container Registry
+      run: |
+        echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+        # new container registry urls added
+        docker tag ${HUB_TAG} ${GHCR_TAG}
