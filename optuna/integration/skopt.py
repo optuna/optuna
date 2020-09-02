@@ -11,8 +11,8 @@ import numpy as np
 import optuna
 from optuna._imports import try_import
 from optuna import distributions
-from optuna import samplers
 from optuna.exceptions import ExperimentalWarning
+from optuna import samplers
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.study import StudyDirection
