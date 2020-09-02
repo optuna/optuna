@@ -274,6 +274,16 @@ class BatchMultiObjectiveStudy(object):
 
         self._study.set_system_attr(key, value)
 
+    @property
+    def batch_size(self) -> int:
+        """Return the size of batches.
+
+        Returns:
+            Size of batches.
+        """
+
+        return self._batch_size
+
     def enqueue_trial(self, params: Dict[str, Any]) -> None:
         """Enqueue a trial with given parameter values.
 
