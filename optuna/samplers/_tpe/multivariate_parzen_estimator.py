@@ -253,11 +253,11 @@ class _MultivariateParzenEstimator:
         consider_prior = self._parameters.consider_prior
         prior_weights = self._parameters.prior_weight
         if consider_prior:
-            weights = prior_weights / samples.size * np.ones((samples.size + 1, len(choices)))
-            weights[np.arange(samples.size), samples] += 1
+            shape = (samples.size + 1, len(choices))
         else:
-            weights = prior_weights / samples.size * np.ones((samples.size, len(choices)))
-            weights[np.arange(samples.size), samples] += 1
+            shape = (samples.size, len(choices))
+        weights = np.full(shape, fill_value=prior_weights / samples.size)
+        weights[np.arange(samples.size), samples] += 1
         weights /= weights.sum(axis=1, keepdims=True)
         return weights
 
