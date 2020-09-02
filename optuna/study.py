@@ -175,7 +175,9 @@ class Study(BaseStudy):
     def user_attrs(self) -> Dict[str, Any]:
         """Return user attributes.
 
-        Please see the example code of the :func:`~optuna.study.Study.set_user_attr` method.
+        .. seealso
+        
+            See :func:`~optuna.study.Study.set_user_attr` for related method.
 
         Example:
 
