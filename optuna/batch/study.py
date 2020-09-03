@@ -1,8 +1,10 @@
+import copy
+from functools import partial
+import gc
 import math
 import types
 from typing import Any
 from typing import Callable
-from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -19,89 +21,6 @@ ObjectiveFuncType = Callable[["optuna.batch.trial.BatchTrial"], np.ndarray]
 CallbackFuncType = Callable[["optuna.study.Study", "optuna.trial.FrozenTrial"], None]
 
 _logger = optuna.logging.get_logger(__name__)
-
-
-class _BaseObjectiveCallbackWrapper(object):
-    def _create_trials(
-        self, study: "optuna.study.Study", trial: "optuna.trial.Trial", batch_size: int
-    ) -> List["optuna.trial.Trial"]:
-        trials = []
-        # Assume storage has already been synchronized.
-        for _ in range(batch_size - 1):
-            trial_id = study._pop_waiting_trial_id()
-            if trial_id is None:
-                trial_id = study._storage.create_new_trial(study._study_id)
-            trials.append(optuna.trial.Trial(study, trial_id))
-        return trials
-
-
-class _ObjectiveCallbackWrapper(_BaseObjectiveCallbackWrapper):
-    def __init__(self, study: "optuna.study.Study", objective: ObjectiveFuncType, batch_size: int):
-        self._study = study
-        self._batch_size = batch_size
-        self._objective = objective
-        self._members = {}  # type: Dict[int, List[int]]
-
-    def batch_objective(self, trial: "optuna.trial.Trial") -> float:
-        # Assume storage has already been synchronized.
-        new_trials = self._create_trials(self._study, trial, self._batch_size)
-        self._members[trial._trial_id] = [t._trial_id for t in new_trials]
-        trials = [trial] + new_trials
-        batch_trial = optuna.batch.trial.BatchTrial(trials)
-        try:
-            results = self._objective(batch_trial)
-        except Exception as e:
-            for trial in trials:
-                message = "Trial {} failed because of the following error: {}".format(
-                    trial.number, repr(e)
-                )
-                _logger.warning(message, exc_info=True)
-                trial_id = trial._trial_id
-                self._study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-                self._study._storage.set_trial_state(trial_id, optuna.trial.TrialState.FAIL)
-            raise
-
-        for trial, result in zip(trials, results):
-            trial_id = trial._trial_id
-            trial_number = trial.number
-            try:
-                result = float(result)
-            except (
-                ValueError,
-                TypeError,
-            ):
-                message = (
-                    "Trial {} failed, because the returned value from the "
-                    "objective function cannot be cast to float. Returned value is: "
-                    "{}".format(trial_number, repr(result))
-                )
-                _logger.warning(message)
-                self._study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-                self._study._storage.set_trial_state(trial_id, optuna.trial.TrialState.FAIL)
-                continue
-
-            if math.isnan(result):
-                message = "Trial {} failed because the objective function returned {}.".format(
-                    trial_number, result
-                )
-                _logger.warning(message)
-                self._study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-                self._study._storage.set_trial_state(trial_id, optuna.trial.TrialState.FAIL)
-                continue
-
-            self._study._storage.set_trial_value(trial_id, result)
-            self._study._storage.set_trial_state(trial_id, optuna.trial.TrialState.COMPLETE)
-            self._study._log_completed_trial(trial, result)
-        return results[0]
-
-    def wrap_callback(self, callback: CallbackFuncType) -> CallbackFuncType:
-        def _callback(study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> None:
-            callback(study, trial)
-            for member_id in self._members[trial._trial_id]:
-                _trial = study._storage.get_trial(member_id)
-                callback(study, _trial)
-
-        return _callback
 
 
 class BatchStudy(object):
@@ -134,43 +53,120 @@ class BatchStudy(object):
         show_progress_bar: bool = False,
     ) -> None:
 
-        wrapper = _ObjectiveCallbackWrapper(self._study, objective, self._batch_size)
-
-        if callbacks is None:
-            wrapped_callbacks = None
-        else:
-            wrapped_callbacks = [wrapper.wrap_callback(callback) for callback in callbacks]
-
         n_trials = math.ceil(n_batches / n_jobs) if n_batches is not None else None
 
-        self._study._run_trial = types.MethodType(_run_trial, self._study)  # type: ignore
+        self._study._run_trial_and_callbacks = types.MethodType(  # type: ignore
+            partial(_run_trial_and_callbacks, batch_func=objective, batch_size=self._batch_size),
+            self._study,
+        )
         self._study.optimize(
-            wrapper.batch_objective,
+            lambda _: 0,
             timeout=timeout,
             n_trials=n_trials,
             catch=catch,
-            callbacks=wrapped_callbacks,
+            callbacks=callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
         )
 
 
-def _run_trial(
+def _run_trial_and_callbacks(
     self: "optuna.study.Study",
     func: "optuna.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
+    callbacks: Optional[List[Callable[["optuna.study.Study", "optuna.trial.FrozenTrial"], None]]],
     gc_after_trial: bool,
-) -> "optuna.trial.Trial":
+    batch_func: ObjectiveFuncType,
+    batch_size: int,
+) -> None:
+
+    trials = _run_trial(self, batch_func, catch, gc_after_trial, batch_size)
+    if callbacks is None:
+        return
+
+    for trial in trials:
+        frozen_trial = copy.deepcopy(self._storage.get_trial(trial._trial_id))
+        for callback in callbacks:
+            callback(self, frozen_trial)
+
+
+def _run_trial(
+    self: "optuna.study.Study",
+    func: ObjectiveFuncType,
+    catch: Tuple[Type[Exception], ...],
+    gc_after_trial: bool,
+    batch_size: int,
+) -> List["optuna.trial.Trial"]:
 
     # Sync storage once at the beginning of the objective evaluation.
     self._storage.read_trials_from_remote_storage(self._study_id)
 
-    trial_id = self._pop_waiting_trial_id()
-    if trial_id is None:
-        trial_id = self._storage.create_new_trial(self._study_id)
-    trial = optuna.trial.Trial(self, trial_id)
-    func(trial)
-    return trial
+    trials = []
+    for _ in range(batch_size):
+        trial_id = self._pop_waiting_trial_id()
+        if trial_id is None:
+            trial_id = self._storage.create_new_trial(self._study_id)
+        trial = optuna.trial.Trial(self, trial_id)
+        trial_number = trial.number
+        trials.append(trial)
+    batch_trial = optuna.batch.trial.BatchTrial(trials)
+
+    try:
+        # Evaluate the batched objective function.
+        results = func(batch_trial)
+    except Exception as e:
+        message = "Trial {} to {} failed because of the following error: {}".format(
+            trials[0].number, trials[-1].number, repr(e)
+        )
+        _logger.warning(message, exc_info=True)
+        for trial in trials:
+            trial_id = trial._trial_id
+            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
+            self._storage.set_trial_state(trial_id, optuna.trial.TrialState.FAIL)
+
+        if isinstance(e, catch):
+            return trials
+        raise
+    finally:
+        # The following line mitigates memory problems that can be occurred in some
+        # environments (e.g., services that use computing containers such as CircleCI).
+        # Please refer to the following PR for further details:
+        # https://github.com/optuna/optuna/pull/325.
+        if gc_after_trial:
+            gc.collect()
+
+    for trial, result in zip(trials, results):
+        trial_id = trial._trial_id
+        trial_number = trial.number
+        try:
+            result = float(result)
+        except (
+            ValueError,
+            TypeError,
+        ):
+            message = (
+                "Trial {} failed, because the returned value from the "
+                "objective function cannot be cast to float. Returned value is: "
+                "{}".format(trial_number, repr(result))
+            )
+            _logger.warning(message)
+            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
+            self._storage.set_trial_state(trial_id, optuna.trial.TrialState.FAIL)
+            continue
+
+        if math.isnan(result):
+            message = "Trial {} failed, because the objective function returned {}.".format(
+                trial_number, result
+            )
+            _logger.warning(message)
+            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
+            self._storage.set_trial_state(trial_id, optuna.trial.TrialState.FAIL)
+            continue
+
+        self._storage.set_trial_value(trial_id, result)
+        self._storage.set_trial_state(trial_id, optuna.trial.TrialState.COMPLETE)
+        self._log_completed_trial(trial, result)
+    return trials
 
 
 @experimental("2.1.0")
