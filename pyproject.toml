@@ -1,0 +1,19 @@
+[tool.black]
+line-length = 99
+target-version = ['py37', 'py35']
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | docs  # Optuna specific
+  | tutorial  # Optuna specific
+)/
+'''

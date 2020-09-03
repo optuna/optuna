@@ -60,7 +60,9 @@ _logger = optuna.logging.get_logger(__name__)
 
 class _BaseTuner(object):
     def __init__(
-        self, lgbm_params: Dict[str, Any] = None, lgbm_kwargs: Dict[str, Any] = None
+        self,
+        lgbm_params: Optional[Dict[str, Any]] = None,
+        lgbm_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
 
         # Handling alias metrics.
@@ -251,7 +253,7 @@ class _OptunaObjective(_BaseTuner):
         return val_score
 
     def _postprocess(
-        self, trial: optuna.trial.Trial, elapsed_secs: float, average_iteration_time: float,
+        self, trial: optuna.trial.Trial, elapsed_secs: float, average_iteration_time: float
     ) -> None:
         if self.pbar is not None:
             self.pbar.set_description(self.pbar_fmt.format(self.step_name, self.best_score))
@@ -383,6 +385,15 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._best_params = {}
         self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
         self._model_dir = model_dir
+
+        # Should not alter data since `min_data_in_leaf` is tuned.
+        # https://lightgbm.readthedocs.io/en/latest/Parameters.html#feature_pre_filter
+        if self.lgbm_params.get("feature_pre_filter", False):
+            warnings.warn(
+                "feature_pre_filter is given as True but will be set to False. This is required "
+                "for the tuner to tune min_data_in_leaf."
+            )
+        self.lgbm_params["feature_pre_filter"] = False
 
         # Set default parameters as best.
         self._best_params.update(_DEFAULT_LIGHTGBM_PARAMETERS)
@@ -762,7 +773,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         evals_result: Optional[Dict[Any, Any]] = None,
         verbose_eval: Optional[Union[bool, int]] = True,
         learning_rates: Optional[List[float]] = None,
-        keep_training_booster: Optional[bool] = False,
+        keep_training_booster: bool = False,
         callbacks: Optional[List[Callable[..., Any]]] = None,
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,

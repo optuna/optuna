@@ -32,7 +32,7 @@ def get_install_requires() -> List[str]:
     return [
         "alembic",
         "cliff",
-        "cmaes>=0.5.1",
+        "cmaes>=0.6.0",
         "colorlog",
         "joblib",
         "numpy",
@@ -222,6 +222,7 @@ setup(
             "storages/_rdb/alembic.ini",
             "storages/_rdb/alembic/*.*",
             "storages/_rdb/alembic/versions/*.*",
+            "py.typed",
         ]
     },
     python_requires=">=3.5",

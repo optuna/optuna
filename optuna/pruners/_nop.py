@@ -1,9 +1,5 @@
+import optuna
 from optuna.pruners import BasePruner
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
 
 
 class NopPruner(BasePruner):
@@ -46,7 +42,6 @@ class NopPruner(BasePruner):
             study.optimize(objective, n_trials=20)
     """
 
-    def prune(self, study, trial):
-        # type: (Study, FrozenTrial) -> bool
+    def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         return False

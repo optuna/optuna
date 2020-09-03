@@ -1,21 +1,16 @@
+from typing import Tuple
+from typing import Union
+
 import optuna
-from optuna import type_checking
 
 with optuna._imports.try_import() as _imports:
     import chainer
     from chainer.training.extension import Extension
-    from chainer.training import triggers
+    from chainer.training.triggers import IntervalTrigger
+    from chainer.training.triggers import ManualScheduleTrigger
 
 if not _imports.is_successful():
     Extension = object  # NOQA
-
-if type_checking.TYPE_CHECKING:
-    from typing import Tuple
-    from typing import Union
-
-    TriggerType = Union[
-        Tuple[(int, str)], triggers.IntervalTrigger, triggers.ManualScheduleTrigger
-    ]
 
 
 class ChainerPruningExtension(Extension):
@@ -47,8 +42,12 @@ class ChainerPruningExtension(Extension):
             unit like ``(1, 'epoch')``.
     """
 
-    def __init__(self, trial, observation_key, pruner_trigger):
-        # type: (optuna.trial.Trial, str, TriggerType) -> None
+    def __init__(
+        self,
+        trial: optuna.trial.Trial,
+        observation_key: str,
+        pruner_trigger: Union[Tuple[(int, str)], "IntervalTrigger", "ManualScheduleTrigger"],
+    ) -> None:
 
         _imports.check()
 
@@ -56,8 +55,8 @@ class ChainerPruningExtension(Extension):
         self._observation_key = observation_key
         self._pruner_trigger = chainer.training.get_trigger(pruner_trigger)
         if not (
-            isinstance(self._pruner_trigger, triggers.IntervalTrigger)
-            or isinstance(self._pruner_trigger, triggers.ManualScheduleTrigger)
+            isinstance(self._pruner_trigger, IntervalTrigger)
+            or isinstance(self._pruner_trigger, ManualScheduleTrigger)
         ):
             pruner_type = type(self._pruner_trigger)
             raise TypeError(
@@ -67,8 +66,7 @@ class ChainerPruningExtension(Extension):
             )
 
     @staticmethod
-    def _get_float_value(observation_value):
-        # type: (Union[float, chainer.Variable]) -> float
+    def _get_float_value(observation_value: Union[float, "chainer.Variable"]) -> float:
 
         _imports.check()
 
@@ -85,13 +83,11 @@ class ChainerPruningExtension(Extension):
 
         return observation_value
 
-    def _observation_exists(self, trainer):
-        # type: (chainer.training.Trainer) -> bool
+    def _observation_exists(self, trainer: "chainer.training.Trainer") -> bool:
 
         return self._pruner_trigger(trainer) and self._observation_key in trainer.observation
 
-    def __call__(self, trainer):
-        # type: (chainer.training.Trainer) -> None
+    def __call__(self, trainer: "chainer.training.Trainer") -> None:
 
         if not self._observation_exists(trainer):
             return

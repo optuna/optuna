@@ -226,9 +226,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 # will be used.
                 if len(generation_to_runnings[generation]) == 0:
                     population_numbers = [t.number for t in population]
-                    study.set_system_attr(
-                        cache_key, (generation, population_numbers),
-                    )
+                    study.set_system_attr(cache_key, (generation, population_numbers))
 
             parent_generation = generation
             parent_population = population

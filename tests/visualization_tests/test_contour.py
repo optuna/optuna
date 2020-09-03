@@ -1,3 +1,6 @@
+from typing import List
+from typing import Optional
+
 import pytest
 
 from optuna.distributions import LogUniformDistribution
@@ -5,14 +8,9 @@ from optuna.study import create_study
 from optuna.study import StudyDirection
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
-from optuna import type_checking
+from optuna.trial import Trial
 from optuna.visualization._contour import _generate_contour_subplot
 from optuna.visualization import plot_contour
-
-if type_checking.TYPE_CHECKING:
-    from typing import List, Optional  # NOQA
-
-    from optuna.trial import Trial  # NOQA
 
 
 @pytest.mark.parametrize(
@@ -26,8 +24,7 @@ if type_checking.TYPE_CHECKING:
         None,
     ],
 )
-def test_plot_contour(params):
-    # type: (Optional[List[str]]) -> None
+def test_plot_contour(params: Optional[List[str]]) -> None:
 
     # Test with no trial.
     study_without_trials = prepare_study_with_trials(no_trials=True)
@@ -36,8 +33,7 @@ def test_plot_contour(params):
 
     # Test whether trials with `ValueError`s are ignored.
 
-    def fail_objective(_):
-        # type: (Trial) -> float
+    def fail_objective(_: Trial) -> float:
 
         raise ValueError
 
@@ -58,20 +54,19 @@ def test_plot_contour(params):
         if len(params) <= 1:
             assert not figure.data
         elif len(params) == 2:
-            assert figure.data[0]["x"] == (1.0, 2.5)
-            assert figure.data[0]["y"] == (0.0, 1.0, 2.0)
+            assert figure.data[0]["x"] == (0.925, 1.0, 2.5, 2.575)
+            assert figure.data[0]["y"] == (-0.1, 0.0, 1.0, 2.0, 2.1)
             assert figure.data[1]["x"] == (1.0, 2.5)
             assert figure.data[1]["y"] == (2.0, 1.0)
-            assert figure.layout["xaxis"]["range"] == (1.0, 2.5)
-            assert figure.layout["yaxis"]["range"] == (0.0, 2.0)
+            assert figure.layout["xaxis"]["range"] == (0.925, 2.575)
+            assert figure.layout["yaxis"]["range"] == (-0.1, 2.1)
     else:
         # TODO(crcrpar): Add more checks. Currently this only checks the number of data.
         n_params = len(params) if params is not None else 4
         assert len(figure.data) == n_params ** 2 + n_params * (n_params - 1)
 
 
-def test_generate_contour_plot_for_few_observations():
-    # type: () -> None
+def test_generate_contour_plot_for_few_observations() -> None:
 
     study = prepare_study_with_trials(less_than_two=True)
     trials = study.trials
@@ -91,8 +86,7 @@ def test_generate_contour_plot_for_few_observations():
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
 
-def test_plot_contour_log_scale():
-    # type: () -> None
+def test_plot_contour_log_scale() -> None:
 
     # If the search space has two parameters, plot_contour generates a single plot.
     study = create_study()
@@ -118,8 +112,8 @@ def test_plot_contour_log_scale():
     )
 
     figure = plot_contour(study)
-    assert figure.layout["xaxis"]["range"] == (-6, -5)
-    assert figure.layout["yaxis"]["range"] == (-4, -3)
+    assert figure.layout["xaxis"]["range"] == (-6.05, -4.95)
+    assert figure.layout["yaxis"]["range"] == (-4.05, -2.95)
     assert figure.layout["xaxis_type"] == "log"
     assert figure.layout["yaxis_type"] == "log"
 
@@ -149,9 +143,9 @@ def test_plot_contour_log_scale():
     )
 
     figure = plot_contour(study)
-    param_a_range = (-6, -5)
-    param_b_range = (-4, -3)
-    param_c_range = (-2, -1)
+    param_a_range = (-6.05, -4.95)
+    param_b_range = (-4.05, -2.95)
+    param_c_range = (-2.05, -0.95)
     axis_to_range = {
         "xaxis": param_a_range,
         "xaxis2": param_b_range,
