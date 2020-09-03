@@ -6,14 +6,15 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
+import warnings
 
 import numpy as np
 import scipy.special
 from scipy.stats import truncnorm
 
-from optuna._experimental import experimental
 from optuna import distributions
 from optuna.distributions import BaseDistribution
+from optuna.exceptions import ExperimentalWarning
 from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
@@ -129,8 +130,8 @@ class TPESampler(BaseSampler):
             and Efficient Hyperparameter Optimization at Scale
             <http://proceedings.mlr.press/v80/falkner18a.html>`_ for more details.
 
-            .. note::
-                Added in v2.1.0 as an experimental feature. The interface may change in newer
+            .. versionadded:: 2.1.0
+                This option is an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.1.0.
     """
@@ -166,11 +167,11 @@ class TPESampler(BaseSampler):
         self._search_space = IntersectionSearchSpace()
 
         if multivariate:
-            self._raise_experimental_warning_for_multivariate()
-
-    @experimental("2.1.0", name="`multivariate = True` in TPESampler")
-    def _raise_experimental_warning_for_multivariate(self) -> None:
-        pass
+            warnings.warn(
+                "`multivariate` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
     def reseed_rng(self) -> None:
 
@@ -215,6 +216,7 @@ class TPESampler(BaseSampler):
         # If the number of samples is insufficient, we run random trial.
         n = len(scores)
         if n < self._n_startup_trials:
+            return {}  ## for test
             ret = {}
             for param_name, param_distribution in search_space.items():
                 ret[param_name] = self._random_sampler.sample_independent(
@@ -322,9 +324,8 @@ class TPESampler(BaseSampler):
         config_vals = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
         loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
 
-        # TODO(kstoneriv3): Change of the order of 1. exclusion of `None` and 2. splitting might
-        # be needed. Independent sampler in `TPESampler` first splits the observations and
-        # then exclude `None`.
+        # We firstly exclude None and then split observations. 
+        # This order is the opposite of the `sample_independent`.
 
         # We exclude param_vals with `None`
         # We exclude trials with None values among any parameters.
