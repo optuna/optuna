@@ -324,7 +324,7 @@ class TPESampler(BaseSampler):
         config_vals = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
         loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
 
-        # We firstly exclude None and then split observations. 
+        # We firstly exclude None and then split observations.
         # This order is the opposite of the `sample_independent`.
 
         # We exclude trials with None values among any parameters.

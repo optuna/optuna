@@ -123,29 +123,22 @@ def test_sample_relative_n_startup_trial() -> None:
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     trial = frozen_trial_factory(8)
+    # sample_relative returns {} for only 3 observations.
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials[:4]):
-        with patch.object(
-            optuna.samplers.RandomSampler, "sample_independent", return_value=1.0
-        ) as sample_method:
-            sampler.sample_relative(study, trial, {"param-a": dist})
-    assert sample_method.call_count == 1
-    sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
+        assert sampler.sample_relative(study, trial, {"param-a": dist}) == {}
+    # sample_relative returns some value for only 7 observations.
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
-        with patch.object(
-            optuna.samplers.RandomSampler, "sample_independent", return_value=1.0
-        ) as sample_method:
-            sampler.sample_relative(study, trial, {"param-a": dist})
-    assert sample_method.call_count == 0
+        assert "param-a" in sampler.sample_relative(study, trial, {"param-a": dist}).keys()
 
 
 def test_sample_relative_misc_arguments() -> None:
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
-    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
+    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 40)]
 
     # Prepare a trial and a sample for later checks.
-    trial = frozen_trial_factory(8)
+    trial = frozen_trial_factory(40)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
@@ -160,12 +153,12 @@ def test_sample_relative_misc_arguments() -> None:
         assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
 
     sampler = TPESampler(
-        weights=lambda i: np.asarray([i * 0.11 for i in range(7)]),
+        weights=lambda n: np.asarray([i ** 2 + 1 for i in range(n)]),
         n_startup_trials=5,
         seed=0,
         multivariate=True,
     )
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_relative(study, trial, {"param-a": dist}) != suggestion
 
 
@@ -217,8 +210,9 @@ def test_sample_relative_disrete_uniform_distributions() -> None:
     past_trials = [frozen_trial_factory(i, dist=disc_dist, value_fn=value_fn) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
-    with patch("optuna.Study.get_trials", return_value=past_trials):
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         discrete_uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": disc_dist})
+        print(discrete_uniform_suggestion)  ## test
     assert 1.0 <= discrete_uniform_suggestion["param-a"] <= 100.0
     assert (
         abs(

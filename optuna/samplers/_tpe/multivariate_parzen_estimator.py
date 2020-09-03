@@ -217,10 +217,9 @@ class _MultivariateParzenEstimator:
     ) -> Optional[Union[np.ndarray, float]]:
 
         # Categorical parameters are not considered.
-        param_names = list(multivariate_samples.keys())
         rescaled_samples_list = []
-        for param_name in param_names:
-            if isinstance(self._search_space[param_name], _NUMERICAL_DISTRIBUTION_CLASSES):
+        for param_name, param_dist in self._search_space.items():
+            if isinstance(param_dist, _NUMERICAL_DISTRIBUTION_CLASSES):
                 high = self._high[param_name]
                 low = self._low[param_name]
                 assert high is not None
