@@ -312,7 +312,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
         if self.model_dir is not None and self.lgbm_kwargs.get("return_cvbooster"):
             path = os.path.join(self.model_dir, "{}.pkl".format(trial.number))
             with open(path, "wb") as fout:
-                # At version `lightgbm==3.0.0rc1`, :class:`lightgbm.CVBooster` does not
+                # At version `lightgbm==3.0.0`, :class:`lightgbm.CVBooster` does not
                 # have `__getstate__` which is required for pickle serialization.
                 cvbooster = cv_results["cvbooster"]
                 pickle.dump((cvbooster.boosters, cvbooster.best_iteration), fout)
@@ -1043,7 +1043,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
 
         with open(path, "rb") as fin:
             boosters, best_iteration = pickle.load(fin)
-            # At version `lightgbm==3.0.0rc1`, :class:`lightgbm.CVBooster` does not
+            # At version `lightgbm==3.0.0`, :class:`lightgbm.CVBooster` does not
             # have `__getstate__` which is required for pickle serialization.
             cvbooster = lgb.CVBooster()
             cvbooster.boosters = boosters
