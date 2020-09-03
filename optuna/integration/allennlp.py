@@ -44,6 +44,96 @@ else:
             return wrapper
 
 
+PPID = os.getppid()
+
+
+def _create_pruner() -> optuna.pruners.BasePruner:
+    pruner_class = os.getenv("{}_OPTUNA_ALLENNLP_PRUNER_CLASS".format(PPID))
+    if pruner_class is None:
+        return None
+
+    pruner_params = _get_environment_variables_for_pruner()
+
+    if pruner_class == "HyperbandPruner":
+        pruner = optuna.pruners.HyperbandPruner
+    elif pruner_class == "MedianPruner":
+        pruner = optuna.pruners.MedianPruner
+    elif pruner_class == "PercentilePruner":
+        pruner = optuna.pruners.PercentilePruner
+    elif pruner_class == "ThresholdPruner":
+        pruner = optuna.pruners.ThresholdPruner
+    elif pruner_class == "SuccessiveHalvingPruner":
+        pruner = optuna.pruners.SuccessiveHalvingPruner
+    elif pruner_class == "NopPruner":
+        pruner = optuna.pruners.NopPruner
+    else:
+        pruner = None
+
+    if pruner is None:
+        return None
+
+    return pruner(**pruner_params)
+
+
+def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
+    return {
+        "study_name": os.getenv("{}_OPTUNA_ALLENNLP_STUDY_NAME".format(PPID)),
+        "trial_id": os.getenv("{}_OPTUNA_ALLENNLP_TRIAL_ID".format(PPID)),
+        "storage": os.getenv("{}_OPTUNA_ALLENNLP_STORAGE_NAME".format(PPID)),
+        "monitor": os.getenv("{}_OPTUNA_ALLENNLP_MONITOR".format(PPID)),
+    }
+
+
+def _get_environment_variables_for_pruner() -> Dict[str, Optional[str]]:
+    keys = os.getenv("{}_OPTUNA_ALLENNLP_PRUNER_KEYS".format(PPID))
+    if keys is None:
+        return {}
+
+    kwargs = {}
+    for key in keys.split(","):
+        value = os.getenv("{}_OPTUNA_ALLENNLP_{}".format(PPID, key))
+
+        try:
+            value = int(value)
+        except ValueError:
+            try:
+                value = float(value)
+            except ValueError:
+                pass
+
+        kwargs[key] = value
+
+    return kwargs
+
+
+def _export_pruner_config(trial: optuna.Trial) -> None:
+    pruner = trial.study.pruner
+    kwargs = {}
+
+    if isinstance(pruner, optuna.pruners.HyperbandPruner):
+        kwargs["min_resource"] = pruner._min_resource
+        kwargs["max_resource"] = pruner._max_resource
+        kwargs["reduction_factor"] = pruner._reduction_factor
+    elif isinstance(pruner, optuna.pruners.MedianPruner) or isinstance(
+        pruner, optuna.pruners.PercentilePruner
+    ):
+        kwargs["percentile"] = pruner._percentile
+        kwargs["n_startup_tirals"] = pruner._n_startup_trials
+        kwargs["n_warmup_steps"] = pruner._n_warmup_steps
+        kwargs["interval_steps"] = pruner._interval_steps
+    elif isinstance(pruner, optuna.pruners.ThresholdPruner):
+        kwargs["lower"] = pruner._lower
+        kwargs["upper"] = pruner._upper
+        kwargs["n_warmup_steps"] = pruner._n_warmup_steps
+        kwargs["interval_steps"] = pruner._interval_steps
+    elif isinstance(pruner, optuna.pruners.SuccessiveHalvingPruner):
+        kwargs["min_resource"] = pruner._min_resource
+        kwargs["reduction_factor"] = pruner._reduction_factor
+        kwargs["min_early_stopping_rate"] = pruner._min_early_stopping_rate
+
+    return kwargs
+
+
 def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
     """Save JSON config file after updating with parameters from the best trial in the study.
 
@@ -133,12 +223,25 @@ class AllenNLPExecutor(object):
         else:
             self._include_package = include_package
 
-        self._system_attrs = {
+        system_attrs = {
             "OPTUNA_ALLENNLP_STUDY_NAME": trial.study.study_name,
             "OPTUNA_ALLENNLP_TRIAL_ID": str(trial._trial_id),
             "OPTUNA_ALLENNLP_STORAGE_NAME": trial.study._storage.get_url() or "",
             "OPTUNA_ALLENNLP_MONITOR": metrics,
         }
+
+        pruner_params = _export_pruner_config(trial)
+        system_attrs["OPTUNA_ALLENNLP_PRUNER_KEYS"] = ",".join(pruner_params.keys())
+
+        pruner_params = {
+            "OPTUNA_ALLENNLP_{}".format(key): str(value) for key, value in pruner_params.items()
+        }
+        system_attrs.update(pruner_params)
+
+        if trial.study.pruner is not None:
+            system_attrs["OPTUNA_ALLENNLP_PRUNER_CLASS"] = type(trial.study.pruner).__name__
+
+        self._system_attrs = system_attrs
 
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.
@@ -155,7 +258,7 @@ class AllenNLPExecutor(object):
 
     def _set_environment_variables(self) -> None:
         for key, value in self._system_attrs.items():
-            key_with_ppid = "{}_{}".format(os.getppid(), key)
+            key_with_ppid = "{}_{}".format(PPID, key)
             os.environ[key_with_ppid] = value
 
     @staticmethod
@@ -216,7 +319,7 @@ class AllenNLPPruningCallback(EpochCallback):
             self._trial = trial
             self._monitor = monitor
         else:
-            _environment_variables = self._get_environment_variables()
+            _environment_variables = _get_environment_variables_for_trial()
             study_name = _environment_variables["study_name"]
             trial_id = _environment_variables["trial_id"]
             monitor = _environment_variables["monitor"]
@@ -228,8 +331,9 @@ class AllenNLPPruningCallback(EpochCallback):
                 and monitor is not None
                 and storage is not None
             ):
-                _study = load_study(study_name, storage)
-                self._trial = Trial(_study, int(trial_id))
+                study = load_study(study_name, storage)
+                self._trial = Trial(study, int(trial_id))
+                self._trial.study.pruner = _create_pruner()
                 self._monitor = monitor
             else:
                 message = "Fail to load study.\n"
@@ -250,11 +354,3 @@ class AllenNLPPruningCallback(EpochCallback):
         self._trial.report(float(value), epoch)
         if self._trial.should_prune():
             raise optuna.TrialPruned()
-
-    def _get_environment_variables(self) -> Dict[str, Optional[str]]:
-        return {
-            "study_name": os.getenv("{}_OPTUNA_ALLENNLP_STUDY_NAME".format(os.getppid())),
-            "trial_id": os.getenv("{}_OPTUNA_ALLENNLP_TRIAL_ID".format(os.getppid())),
-            "storage": os.getenv("{}_OPTUNA_ALLENNLP_STORAGE_NAME".format(os.getppid())),
-            "monitor": os.getenv("{}_OPTUNA_ALLENNLP_MONITOR".format(os.getppid())),
-        }
