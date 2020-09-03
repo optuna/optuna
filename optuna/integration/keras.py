@@ -60,8 +60,7 @@ class KerasPruningCallback(Callback):
         if current_score is None:
             message = (
                 "The metric '{}' is not in the evaluation logs for pruning. "
-                "'{}' may not exist as evaluation metric for pruning. "
-                "Or '{}' may be a typo.".format(self._monitor, self._monitor, self._monitor)
+                "Please make sure you set the correct metric name.".format(self._monitor)
             )
             warnings.warn(message)
             return
