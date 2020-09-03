@@ -15,6 +15,7 @@ from scipy.stats import truncnorm
 from optuna import distributions
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
+from optuna.logging import get_logger
 from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
@@ -148,7 +149,8 @@ class TPESampler(BaseSampler):
         weights: Callable[[int], np.ndarray] = default_weights,
         seed: Optional[int] = None,
         *,
-        multivariate: bool = False
+        multivariate: bool = False,
+        warn_independent_sampling: bool = True
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
@@ -160,6 +162,8 @@ class TPESampler(BaseSampler):
         self._gamma = gamma
         self._weights = weights
 
+        self._logger = get_logger(__name__)
+        self._warn_independent_sampling = warn_independent_sampling
         self._rng = np.random.RandomState(seed)
         self._random_sampler = RandomSampler(seed=seed)
 
@@ -188,10 +192,26 @@ class TPESampler(BaseSampler):
         search_space = {}  # type: Dict[str, BaseDistribution]
         for name, distribution in self._search_space.calculate(study).items():
             if not isinstance(distribution, distributions.DISTRIBUTION_CLASSES):
+                if self._warn_independent_sampling:
+                    complete_trials = study._storage.get_all_trials(
+                        study._study_id, deepcopy=False
+                    )
+                    if len(complete_trials) >= self._n_startup_trials:
+                        self._log_independent_sampling(trial, name)
                 continue
             search_space[name] = distribution
 
         return search_space
+
+    def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
+        self._logger.warning(
+            "The parameter '{}' in trial#{} is sampled independently "
+            "instead of being sampled by multivariate TPE sampler. "
+            "(optimization performance may be degraded). "
+            "You can suppress this warning by setting `warn_independent_sampling` "
+            "to `False` in the constructor of `TPESampler`, "
+            "if this independent sampling is intended behavior.".format(param_name, trial.number)
+        )
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
