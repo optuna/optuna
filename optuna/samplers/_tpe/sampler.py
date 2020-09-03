@@ -327,7 +327,6 @@ class TPESampler(BaseSampler):
         # We firstly exclude None and then split observations. 
         # This order is the opposite of the `sample_independent`.
 
-        # We exclude param_vals with `None`
         # We exclude trials with None values among any parameters.
         # This means that we transfer the search space into the instance of `InterSectionSpace`.
         config_vals_matrix = np.array([v for v in config_vals.values()])
@@ -807,7 +806,7 @@ def _get_multivariate_observation_pairs(
     }  # type: Dict[str, List[Optional[float]]]
     for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
 
-        # We extract score from trial.
+        # We extract score from the trial.
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
@@ -823,7 +822,7 @@ def _get_multivariate_observation_pairs(
             continue
         scores.append(score)
 
-        # We extract param_value from trial.
+        # We extract param_value from the trial.
         for param_name in param_names:
             assert param_name in trial.params
             distribution = trial.distributions[param_name]
