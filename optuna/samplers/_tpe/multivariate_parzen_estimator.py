@@ -22,11 +22,6 @@ _NUMERICAL_DISTRIBUTION_CLASSES = (
 )
 
 
-# TODO(kstoenriv3): We need to consider if we really need `_ParzenEstimatorParameters` class
-# as there are alreaky so many attributes in `_MultivariateParzenEstimator` class.
-# `_ParzenEstimatorParameters` class is not greatly recuding the complexity of the code.
-
-
 class _MultivariateParzenEstimator:
     def __init__(
         self,
