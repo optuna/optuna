@@ -187,17 +187,7 @@ class TPESampler(BaseSampler):
 
         search_space = {}  # type: Dict[str, BaseDistribution]
         for name, distribution in self._search_space.calculate(study).items():
-            if not isinstance(
-                distribution,
-                (
-                    distributions.UniformDistribution,
-                    distributions.LogUniformDistribution,
-                    distributions.DiscreteUniformDistribution,
-                    distributions.IntUniformDistribution,
-                    distributions.IntLogUniformDistribution,
-                    distributions.CategoricalDistribution,
-                ),
-            ):
+            if not isinstance(distribution, distributions.DISTRIBUTION_CLASSES):
                 continue
             search_space[name] = distribution
 
@@ -325,9 +315,9 @@ class TPESampler(BaseSampler):
         index_above = np.sort(index_loss_ascending[n_below:])
         below = {}
         above = {}
-        for param_name in config_vals.keys():
-            below[param_name] = config_vals[param_name][index_below]
-            above[param_name] = config_vals[param_name][index_above]
+        for param_name, param_val in config_vals.items():
+            below[param_name] = param_val[index_below]
+            above[param_name] = param_val[index_above]
 
         return below, above
 
