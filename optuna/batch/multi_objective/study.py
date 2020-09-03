@@ -124,25 +124,20 @@ class BatchMultiObjectiveStudy(object):
 
         n_trials = math.ceil(n_batches / n_jobs) if n_batches is not None else None
 
-        try:
-            self._study._study._org_run_trial = self._study._study._run_trial  # type: ignore
-            self._study._study._run_trial = types.MethodType(  # type: ignore
-                _run_trial,
-                self._study._study,
-            )
-            self._study.optimize(
-                wrapper.batch_objective,
-                timeout=timeout,
-                n_trials=n_trials,
-                n_jobs=n_jobs,
-                catch=catch,
-                callbacks=wrapped_callbacks,
-                gc_after_trial=gc_after_trial,
-                show_progress_bar=show_progress_bar,
-            )
-        finally:
-            self._study._study._run_trial = self._study._study._org_run_trial  # type: ignore
-            pass
+        self._study._study._run_trial = types.MethodType(  # type: ignore
+            _run_trial,
+            self._study._study,
+        )
+        self._study.optimize(
+            wrapper.batch_objective,
+            timeout=timeout,
+            n_trials=n_trials,
+            n_jobs=n_jobs,
+            catch=catch,
+            callbacks=wrapped_callbacks,
+            gc_after_trial=gc_after_trial,
+            show_progress_bar=show_progress_bar,
+        )
 
     @property
     def batch_size(self) -> int:
