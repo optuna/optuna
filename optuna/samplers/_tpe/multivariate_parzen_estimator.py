@@ -177,18 +177,19 @@ class _MultivariateParzenEstimator:
                 transformed[param_name] = np.exp(samples)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 q = self._q[param_name]
-                low = self._low[param_name]
-                high = self._high[param_name]
-                samples = (np.round((samples - low) / q - 0.5) + 0.5) * q + low
+                samples = np.round((samples - distribution.low) / q) * q + distribution.low
                 transformed[param_name] = np.clip(samples, distribution.low, distribution.high)
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 q = self._q[param_name]
                 samples = np.round(samples / q) * q
-                samples = np.clip(samples, distribution.low, distribution.high)
-                transformed[param_name] = samples.astype(int)
+                transformed[param_name] = np.clip(
+                    samples, distribution.low, distribution.high
+                ).astype(int)
             elif isinstance(distribution, distributions.IntLogUniformDistribution):
                 samples = np.round(np.exp(samples))
-                transformed[param_name] = np.clip(samples, distribution.low, distribution.high).astype(int)
+                transformed[param_name] = np.clip(
+                    samples, distribution.low, distribution.high
+                ).astype(int)
             elif isinstance(distribution, distributions.CategoricalDistribution):
                 transformed[param_name] = samples
             else:
