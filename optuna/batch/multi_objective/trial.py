@@ -3,9 +3,10 @@ from typing import Sequence
 import numpy as np
 
 import optuna
+from optuna.batch.trial import BaseBatchTrial
 
 
-class BatchMultiObjectiveTrial(optuna.batch.trial.BaseBatchTrial):
+class BatchMultiObjectiveTrial(BaseBatchTrial):
     def __init__(
         self, trials: Sequence["optuna.multi_objective.trial.MultiObjectiveTrial"]
     ) -> None:
