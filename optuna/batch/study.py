@@ -100,6 +100,9 @@ class BatchStudy(object):
         self._study = study
         self._batch_size = batch_size
 
+    def __getattr__(self, attr_name: str) -> Any:
+        return getattr(self._study, attr_name)
+
     @property
     def batch_size(self) -> int:
         """Return the size of batches.
@@ -146,151 +149,6 @@ class BatchStudy(object):
         finally:
             self._study._run_trial = self._study._org_run_trial  # type: ignore
             pass
-
-    @property
-    def user_attrs(self) -> Dict[str, Any]:
-        """Return user attributes.
-
-        Returns:
-            A dictionary containing all user attributes.
-        """
-
-        return self._study.user_attrs
-
-    @property
-    def system_attrs(self) -> Dict[str, Any]:
-        """Return system attributes.
-
-        Returns:
-            A dictionary containing all system attributes.
-        """
-
-        return self._study.system_attrs
-
-    def set_user_attr(self, key: str, value: Any) -> None:
-        """Set a user attribute to the study.
-
-        Args:
-            key: A key string of the attribute.
-            value: A value of the attribute. The value should be JSON serializable.
-        """
-
-        self._study.set_user_attr(key, value)
-
-    def set_system_attr(self, key: str, value: Any) -> None:
-        """Set a system attribute to the study.
-
-        Note that Optuna internally uses this method to save system messages. Please use
-        :func:`~optuna.multi_objective.study.MultiObjectiveStudy.set_user_attr`
-        to set users' attributes.
-
-        Args:
-            key: A key string of the attribute.
-            value: A value of the attribute. The value should be JSON serializable.
-
-        """
-
-        self._study.set_system_attr(key, value)
-
-    def enqueue_trial(self, params: Dict[str, Any]) -> None:
-        """Enqueue a trial with given parameter values.
-
-        You can fix the next sampling parameters which will be evaluated in your
-        objective function.
-
-        Please refer to the documentation of :func:`optuna.study.Study.enqueue_trial`
-        for further details.
-
-        Args:
-            params:
-                Parameter values to pass your objective function.
-        """
-
-        self._study.enqueue_trial(params)
-
-    @property
-    def trials(self) -> List["optuna.trial.FrozenTrial"]:
-        """Return all trials in the study.
-
-        The returned trials are ordered by trial number.
-
-        This is a short form of ``self.get_trials(deepcopy=True)``.
-
-        Returns:
-            A list of :class:`~optuna.FrozenTrial` objects.
-        """
-
-        return self.get_trials(deepcopy=True)
-
-    def get_trials(self, deepcopy: bool = True) -> List["optuna.trial.FrozenTrial"]:
-        """Return all trials in the study.
-
-        The returned trials are ordered by trial number.
-
-        For library users, it's recommended to use more handy
-        :attr:`~optuna.study.Study.trials` property to get the trials instead.
-
-        Args:
-            deepcopy:
-                Flag to control whether to apply ``copy.deepcopy()`` to the trials.
-                Note that if you set the flag to :obj:`False`, you shouldn't mutate
-                any fields of the returned trial. Otherwise the internal state of
-                the study may corrupt and unexpected behavior may happen.
-
-        Returns:
-            A list of :class:`~optuna.FrozenTrial` objects.
-        """
-
-        return self._study.get_trials(deepcopy)
-
-    @property
-    def best_params(self):
-        # type: () -> Dict[str, Any]
-        """Return parameters of the best trial in the study.
-
-        Returns:
-            A dictionary containing parameters of the best trial.
-        """
-
-        return self._study.best_params
-
-    @property
-    def best_value(self) -> float:
-        """Return the best objective value in the study.
-
-        Returns:
-            A float representing the best objective value.
-        """
-
-        return self._study.best_value
-
-    @property
-    def best_trial(self) -> "optuna.trial.FrozenTrial":
-        """Return the best trial in the study.
-
-        Returns:
-            A :class:`~optuna.FrozenTrial` object of the best trial.
-        """
-
-        return self._study.best_trial
-
-    @property
-    def direction(self) -> "optuna.study.StudyDirection":
-        """Return the direction of the study.
-
-        Returns:
-            A :class:`~optuna.study.StudyDirection` object.
-        """
-
-        return self._study.direction
-
-    @property
-    def _storage(self) -> "optuna.storages.BaseStorage":
-        return self._study._storage
-
-    @property
-    def _study_id(self) -> int:
-        return self._study._study_id
 
 
 def _run_trial(
