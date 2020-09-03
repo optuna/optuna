@@ -19,11 +19,16 @@ with try_import() as _imports:
     import allennlp.commands
     import allennlp.common.util
 
+# EpochCallback is conditionally imported for CI because allennlp is not available on
+# the eivironment that builds documentation.
 if _imports.is_successful():
     import _jsonnet
     from allennlp.training import EpochCallback
 else:
-
+    # `allennlp.training.EpochCallback` is a subclass of `Registerable`
+    # https://docs.allennlp.org/master/api/training/trainer/#epochcallback
+    # On the other hand, `EpochCallback` defined here is not `Registerable`,
+    # which causes a mypy checking feailure.
     class EpochCallback:  # type: ignore
         """Stub for EpochCallback.
 
