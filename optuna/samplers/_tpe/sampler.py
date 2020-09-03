@@ -216,13 +216,7 @@ class TPESampler(BaseSampler):
         # If the number of samples is insufficient, we run random trial.
         n = len(scores)
         if n < self._n_startup_trials:
-            return {}  ## for test
-            ret = {}
-            for param_name, param_distribution in search_space.items():
-                ret[param_name] = self._random_sampler.sample_independent(
-                    study, trial, param_name, param_distribution
-                )
-            return ret
+            return {}
 
         # We divide data into below and above.
         below, above = self._split_multivariate_observation_pairs(values, scores)
@@ -323,16 +317,6 @@ class TPESampler(BaseSampler):
 
         config_vals = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
         loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
-
-        # We firstly exclude None and then split observations.
-        # This order is the opposite of the `sample_independent`.
-
-        # We exclude trials with None values among any parameters.
-        # This means that we transfer the search space into the instance of `InterSectionSpace`.
-        config_vals_matrix = np.array([v for v in config_vals.values()])
-        index_none = np.any(np.equal(config_vals_matrix, None), axis=0)
-        config_vals = {k: v[~index_none] for k, v in config_vals.items()}
-        loss_vals = loss_vals[~index_none]
 
         n_below = self._gamma(len(loss_vals))
         index_loss_ascending = np.argsort(loss_vals)

@@ -212,7 +212,6 @@ def test_sample_relative_disrete_uniform_distributions() -> None:
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         discrete_uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": disc_dist})
-        print(discrete_uniform_suggestion)  ## test
     assert 1.0 <= discrete_uniform_suggestion["param-a"] <= 100.0
     assert (
         abs(
