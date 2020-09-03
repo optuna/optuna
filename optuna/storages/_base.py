@@ -555,7 +555,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        self.read_trials_from_remote_storage(study_id)
         if state is None:
             return len(self.get_all_trials(study_id, deepcopy=False))
 
@@ -639,7 +638,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         return self.get_trial(trial_id).system_attrs
 
-    @abc.abstractmethod
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         """Make an internal cache of trials up-to-date.
 

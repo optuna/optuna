@@ -835,6 +835,35 @@ def test_get_n_trials(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_n_trials_state_option(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+        storage.set_study_direction(study_id, StudyDirection.MAXIMIZE)
+        generator = random.Random(51)
+
+        states = [
+            TrialState.COMPLETE,
+            TrialState.COMPLETE,
+            TrialState.PRUNED,
+        ]
+
+        for s in states:
+            t = _generate_trial(generator)
+            t.state = s
+            storage.create_new_trial(study_id, template_trial=t)
+
+        assert storage.get_n_trials(study_id, TrialState.COMPLETE) == 2
+        assert storage.get_n_trials(study_id, TrialState.PRUNED) == 1
+
+        other_states = [
+            s for s in ALL_STATES if s != TrialState.COMPLETE and s != TrialState.PRUNED
+        ]
+        for s in other_states:
+            assert storage.get_n_trials(study_id, s) == 0
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_best_trial(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
