@@ -136,7 +136,9 @@ class BaseBatchTrial(metaclass=abc.ABCMeta):
             A boolean value. Always :obj:`False`.
         """
 
-        warnings.warn("BatchTrial does not support the pruning feature. It never prunes any trials.")
+        warnings.warn(
+            "BatchTrial does not support the pruning feature. It never prunes any trials."
+        )
         return False
 
 
