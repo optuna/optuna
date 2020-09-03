@@ -45,7 +45,7 @@ class _ObjectiveCallbackWrapper(_BaseObjectiveCallbackWrapper):
     def batch_objective(self, trial: "optuna.trial.Trial") -> float:
         # Assume storage has already been synchronized.
         new_trials = self._create_trials(self._study, trial, self._batch_size)
-        self._members[trial._trial_id] = [t._trial_id for t in new_trials[1:]]
+        self._members[trial._trial_id] = [t._trial_id for t in new_trials]
         trials = [trial] + new_trials
         batch_trial = optuna.batch.trial.BatchTrial(trials)
         try:
