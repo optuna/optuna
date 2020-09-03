@@ -21,7 +21,21 @@ CallbackFuncType = Callable[["optuna.study.Study", "optuna.trial.FrozenTrial"], 
 _logger = optuna.logging.get_logger(__name__)
 
 
-class _ObjectiveCallbackWrapper(object):
+class _BaseObjectiveCallbackWrapper(object):
+    def _create_trials(
+        self, study: "optuna.study.Study", trial: "optuna.trial.Trial", batch_size: int
+    ) -> List["optuna.trial.Trial"]:
+        trials = []
+        # Assume storage has already been synchronized.
+        for _ in range(batch_size - 1):
+            trial_id = study._pop_waiting_trial_id()
+            if trial_id is None:
+                trial_id = study._storage.create_new_trial(study._study_id)
+            trials.append(optuna.trial.Trial(study, trial_id))
+        return trials
+
+
+class _ObjectiveCallbackWrapper(_BaseObjectiveCallbackWrapper):
     def __init__(self, study: "optuna.study.Study", objective: ObjectiveFuncType, batch_size: int):
         self._study = study
         self._batch_size = batch_size
@@ -29,15 +43,10 @@ class _ObjectiveCallbackWrapper(object):
         self._members = {}  # type: Dict[int, List[int]]
 
     def batch_objective(self, trial: "optuna.trial.Trial") -> float:
-        trials = [trial]
         # Assume storage has already been synchronized.
-        self._members[trial._trial_id] = []
-        for _ in range(self._batch_size - 1):
-            trial_id = self._study._pop_waiting_trial_id()
-            if trial_id is None:
-                trial_id = self._study._storage.create_new_trial(self._study._study_id)
-            self._members[trial._trial_id].append(trial_id)
-            trials.append(optuna.trial.Trial(self._study, trial_id))
+        new_trials = self._create_trials(self._study, trial, self._batch_size)
+        self._members[trial._trial_id] = [t._trial_id for t in new_trials[1:]]
+        trials = [trial] + new_trials
         batch_trial = optuna.batch.trial.BatchTrial(trials)
         try:
             results = self._objective(batch_trial)

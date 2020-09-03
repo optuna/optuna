@@ -14,6 +14,7 @@ import numpy as np
 
 import optuna
 from optuna._experimental import experimental
+from optuna.batch.study import _BaseObjectiveCallbackWrapper
 import optuna.logging
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 
@@ -31,7 +32,7 @@ CallbackFuncType = Callable[
 _logger = optuna.logging.get_logger(__name__)
 
 
-class _ObjectiveCallbackWrapper(object):
+class _ObjectiveCallbackWrapper(_BaseObjectiveCallbackWrapper):
     def __init__(
         self,
         study: "optuna.multi_objective.study.MultiObjectiveStudy",
@@ -46,16 +47,12 @@ class _ObjectiveCallbackWrapper(object):
     def batch_objective(
         self, trial: "optuna.multi_objective.trial.MultiObjectiveTrial"
     ) -> Sequence[float]:
-        trials = [trial]
         # Assume storage has already been synchronized.
-        self._members[trial._trial._trial_id] = []
-        for _ in range(self._batch_size - 1):
-            trial_id = self._study._study._pop_waiting_trial_id()
-            if trial_id is None:
-                trial_id = self._study._storage.create_new_trial(self._study._study_id)
-            self._members[trial._trial._trial_id].append(trial_id)
-            new_trial = optuna.trial.Trial(self._study._study, trial_id)
-            trials.append(optuna.multi_objective.trial.MultiObjectiveTrial(new_trial))
+        _new_so_trials = self._create_trials(self._study._study, trial._trial, self._batch_size)
+        self._members[trial._trial._trial_id] = [t._trial_id for t in _new_so_trials]
+        trials = [trial] + [
+            optuna.multi_objective.trial.MultiObjectiveTrial(t) for t in _new_so_trials
+        ]
         batch_trial = optuna.batch.multi_objective.trial.BatchMultiObjectiveTrial(trials)
         try:
             results = self._objective(batch_trial)
