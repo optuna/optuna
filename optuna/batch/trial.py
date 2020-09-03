@@ -117,7 +117,7 @@ class BaseBatchTrial(metaclass=abc.ABCMeta):
         return [trial.params for trial in self._get_trials()]
 
     @property
-    def distributions(self) -> Sequence[Dict[str, optuna.distributions.BaseDistribution]]:
+    def distributions(self) -> Sequence[Dict[str, "optuna.distributions.BaseDistribution"]]:
         """Return distributions of parameters to be optimized.
 
         Returns:
@@ -136,9 +136,7 @@ class BaseBatchTrial(metaclass=abc.ABCMeta):
             A boolean value. Always :obj:`False`.
         """
 
-        warnings.warn(
-            "BatchTrial does not support the pruning feature. It never prunes any trials."
-        )
+        warnings.warn("BatchTrial does not support the pruning feature. It never prunes any trials.")
         return False
 
 
