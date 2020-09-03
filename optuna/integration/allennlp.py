@@ -47,13 +47,14 @@ else:
 PPID = os.getppid()
 
 
-def _create_pruner() -> optuna.pruners.BasePruner:
+def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     pruner_class = os.getenv("{}_OPTUNA_ALLENNLP_PRUNER_CLASS".format(PPID))
     if pruner_class is None:
         return None
 
     pruner_params = _get_environment_variables_for_pruner()
 
+    pruner = None  # type: Any
     if pruner_class == "HyperbandPruner":
         pruner = optuna.pruners.HyperbandPruner
     elif pruner_class == "MedianPruner":
@@ -66,8 +67,6 @@ def _create_pruner() -> optuna.pruners.BasePruner:
         pruner = optuna.pruners.SuccessiveHalvingPruner
     elif pruner_class == "NopPruner":
         pruner = optuna.pruners.NopPruner
-    else:
-        pruner = None
 
     if pruner is None:
         return None
@@ -91,7 +90,7 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[str]]:
 
     kwargs = {}
     for key in keys.split(","):
-        value = os.getenv("{}_OPTUNA_ALLENNLP_{}".format(PPID, key))
+        value = os.getenv("{}_OPTUNA_ALLENNLP_{}".format(PPID, key))  # type: Any
 
         try:
             value = int(value)
@@ -106,9 +105,9 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[str]]:
     return kwargs
 
 
-def _export_pruner_config(trial: optuna.Trial) -> None:
+def _export_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
     pruner = trial.study.pruner
-    kwargs = {}
+    kwargs = {}  # type: Dict[str, Any]
 
     if isinstance(pruner, optuna.pruners.HyperbandPruner):
         kwargs["min_resource"] = pruner._min_resource
@@ -331,9 +330,8 @@ class AllenNLPPruningCallback(EpochCallback):
                 and monitor is not None
                 and storage is not None
             ):
-                study = load_study(study_name, storage)
+                study = load_study(study_name, storage, pruner=_create_pruner())
                 self._trial = Trial(study, int(trial_id))
-                self._trial.study.pruner = _create_pruner()
                 self._monitor = monitor
             else:
                 message = "Fail to load study.\n"
