@@ -17,7 +17,6 @@ import numpy as np
 import pandas as pd
 import sklearn
 
-from lightgbm.engine import _CVBooster
 from scipy.sparse import spmatrix
 from sklearn.base import BaseEstimator
 from sklearn.base import ClassifierMixin
@@ -37,10 +36,17 @@ from sklearn.utils.validation import column_or_1d
 
 from optuna import distributions
 from optuna import integration
+from optuna.integration._lightgbm_tuner import alias
 from optuna import logging
 from optuna import samplers
 from optuna import study as study_module
 from optuna import trial as trial_module
+
+
+if lgb.__version__ >= "3.0.0":
+    from lightgbm.engine import CVBooster as _CVBooster
+else:
+    from lightgbm.engine import _CVBooster
 
 if lgb.__version__ >= "2.3":
     from lightgbm.sklearn import _EvalFunctionWrapper
@@ -644,6 +650,8 @@ class LGBMModel(lgb.LGBMModel):
 
         n_samples, self._n_features = X.shape
 
+        self._n_features_in = self._n_features
+
         is_classifier = self._estimator_type == "classifier"
         cv = check_cv(self.cv, y, is_classifier)
 
@@ -653,6 +661,8 @@ class LGBMModel(lgb.LGBMModel):
             logger.warning("{}={} will be ignored.".format(key, value))
 
         params = self.get_params()
+
+        alias._handling_alias_parameters(params)
 
         for attr in (
             "class_weight",
