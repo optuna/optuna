@@ -473,7 +473,7 @@ class LGBMModel(lgb.LGBMModel):
             subsample=subsample,
             subsample_for_bin=subsample_for_bin,
             subsample_freq=subsample_freq,
-            **kwargs
+            **kwargs,
         )
 
         self.cv = cv
@@ -1033,7 +1033,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             callbacks=callbacks,
             init_model=init_model,
             groups=groups,
-            **fit_params
+            **fit_params,
         )
 
     fit.__doc__ = LGBMModel.fit.__doc__
@@ -1054,7 +1054,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             num_iteration=num_iteration,
             pred_leaf=pred_leaf,
             pred_contrib=pred_contrib,
-            **predict_params
+            **predict_params,
         )
 
         if raw_score or pred_leaf or pred_contrib:
@@ -1109,7 +1109,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             num_iteration=num_iteration,
             pred_leaf=pred_leaf,
             pred_contrib=pred_contrib,
-            **predict_params
+            **predict_params,
         )
 
         if self._n_classes > 2 or raw_score or pred_leaf or pred_contrib:
