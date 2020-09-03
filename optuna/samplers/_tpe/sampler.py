@@ -805,7 +805,7 @@ def _get_multivariate_observation_pairs(
     }  # type: Dict[str, List[Optional[float]]]
     for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
 
-        # We extract score from trial.
+        # We extract score from the trial.
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
