@@ -23,7 +23,6 @@ _NUMERICAL_DISTRIBUTION_CLASSES = (
 
 
 class _MultivariateParzenEstimator:
-
     def __init__(
         self,
         multivariate_observations: Dict[str, np.ndarray],
