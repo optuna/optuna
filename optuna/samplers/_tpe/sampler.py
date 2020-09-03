@@ -326,7 +326,6 @@ class TPESampler(BaseSampler):
         # be needed. Independent sampler in `TPESampler` first splits the observations and
         # then exclude `None`.
 
-        # We exclude param_vals with `None`
         # We exclude trials with None values among any parameters.
         # This means that we transfer the search space into the instance of `InterSectionSpace`.
         config_vals_matrix = np.array([v for v in config_vals.values()])
