@@ -821,7 +821,7 @@ def _get_multivariate_observation_pairs(
             continue
         scores.append(score)
 
-        # We extract param_value from trial.
+        # We extract param_value from the trial.
         for param_name in param_names:
             assert param_name in trial.params
             distribution = trial.distributions[param_name]
