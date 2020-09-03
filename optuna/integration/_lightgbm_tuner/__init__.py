@@ -3,15 +3,11 @@ from typing import Any
 from optuna.integration._lightgbm_tuner.optimize import _imports as _imports
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
-from optuna import type_checking
 
 if _imports.is_successful():
     from optuna.integration._lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
     from optuna.integration._lightgbm_tuner.sklearn import LGBMModel  # NOQA
     from optuna.integration._lightgbm_tuner.sklearn import LGBMRegressor  # NOQA
-
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
 
 
 def train(*args: Any, **kwargs: Any) -> Any:

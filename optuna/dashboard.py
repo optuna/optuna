@@ -1,9 +1,13 @@
 import collections
-from distutils.version import StrictVersion
 import threading
 import time
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import numpy as np
+from packaging import version
 
 from optuna._experimental import experimental
 from optuna._imports import try_import
@@ -11,13 +15,7 @@ import optuna.logging
 import optuna.study
 from optuna.study import StudyDirection
 import optuna.trial
-from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
 
 with try_import() as _imports:
     from bokeh import __version__ as bokeh_version
@@ -30,7 +28,7 @@ with try_import() as _imports:
     import bokeh.themes
     import tornado.gen
 
-    if StrictVersion(bokeh_version) >= StrictVersion("2.0.0"):
+    if version.parse(bokeh_version) >= version.parse("2.0.0"):
         raise ImportError(
             "Your version of bokeh is " + bokeh_version + " . "
             "Please install bokeh version earlier than 2.0.0. "
@@ -64,8 +62,9 @@ _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 if _imports.is_successful():
 
     class _CompleteTrialsWidget(object):
-        def __init__(self, trials, direction):
-            # type: (List[optuna.trial.FrozenTrial], StudyDirection) -> None
+        def __init__(
+            self, trials: List[optuna.trial.FrozenTrial], direction: StudyDirection
+        ) -> None:
 
             complete_trials = [
                 trial for trial in trials if trial.state == optuna.trial.TrialState.COMPLETE
@@ -89,8 +88,7 @@ if _imports.is_successful():
 
             self.best_value = best_values[-1] if complete_trials else np.inf
 
-        def create_figure(self):
-            # type: () -> bokeh.plotting.Figure
+        def create_figure(self) -> bokeh.plotting.Figure:
 
             figure = bokeh.plotting.figure(height=150)
             figure.circle(x="#", y="value", source=self.cds, alpha=0.3, color="navy")
@@ -99,8 +97,7 @@ if _imports.is_successful():
             figure.yaxis[0].axis_label = "Objective Value"
             return figure
 
-        def update(self, new_trials):
-            # type: (List[optuna.trial.FrozenTrial]) -> None
+        def update(self, new_trials: List[optuna.trial.FrozenTrial]) -> None:
 
             stream_dict = collections.defaultdict(list)  # type: Dict[str, List[Any]]
 
@@ -122,13 +119,11 @@ if _imports.is_successful():
                 self.cds.stream(stream_dict)
 
     class _AllTrialsWidget(object):
-        def __init__(self, trials):
-            # type: (List[optuna.trial.FrozenTrial]) -> None
+        def __init__(self, trials: List[optuna.trial.FrozenTrial]) -> None:
 
             self.cds = bokeh.models.ColumnDataSource(self.trials_to_dict(trials))
 
-        def create_table(self):
-            # type: () -> bokeh.models.widgets.DataTable
+        def create_table(self) -> bokeh.models.widgets.DataTable:
 
             return bokeh.models.widgets.DataTable(
                 source=self.cds,
@@ -147,10 +142,9 @@ if _imports.is_successful():
 
         def update(
             self,
-            old_trials,  # type: List[optuna.trial.FrozenTrial]
-            new_trials,  # type: List[optuna.trial.FrozenTrial]
-        ):
-            # type: (...) -> None
+            old_trials: List[optuna.trial.FrozenTrial],
+            new_trials: List[optuna.trial.FrozenTrial],
+        ) -> None:
 
             modified_indices = []
             modified_trials = []
@@ -167,8 +161,7 @@ if _imports.is_successful():
             self.cds.stream(self.trials_to_dict(new_trials[len(old_trials) :]))
 
         @staticmethod
-        def trials_to_dict(trials):
-            # type: (List[optuna.trial.FrozenTrial]) -> Dict[str, List[Any]]
+        def trials_to_dict(trials: List[optuna.trial.FrozenTrial]) -> Dict[str, List[Any]]:
 
             return {
                 "number": [trial.number for trial in trials],
@@ -190,15 +183,13 @@ if _imports.is_successful():
             }
 
     class _DashboardApp(object):
-        def __init__(self, study, launch_update_thread):
-            # type: (optuna.study.Study, bool) -> None
+        def __init__(self, study: optuna.study.Study, launch_update_thread: bool) -> None:
 
             self.study = study
             self.launch_update_thread = launch_update_thread
             self.lock = threading.Lock()
 
-        def __call__(self, doc):
-            # type: (bokeh.document.Document) -> None
+        def __call__(self, doc: bokeh.document.Document) -> None:
 
             self.doc = doc
             self.current_trials = (
@@ -225,13 +216,14 @@ if _imports.is_successful():
 
             if self.launch_update_thread:
                 thread = threading.Thread(target=self.thread_loop)
+                self.stop_event = threading.Event()
                 thread.daemon = True
                 thread.start()
+                self.doc.on_session_destroyed(lambda _: self.stop_event.set())
 
-        def thread_loop(self):
-            # type: () -> None
+        def thread_loop(self) -> None:
 
-            while True:
+            while not self.stop_event.is_set():
                 time.sleep(1)
                 new_trials = self.study.trials
                 with self.lock:
@@ -241,8 +233,7 @@ if _imports.is_successful():
                         self.doc.add_next_tick_callback(self.update_callback)
 
         @tornado.gen.coroutine
-        def update_callback(self):
-            # type: () -> None
+        def update_callback(self) -> None:
 
             with self.lock:
                 current_trials = self.current_trials
@@ -257,14 +248,12 @@ if _imports.is_successful():
 
 
 @experimental("0.1.0", name="Optuna dashboard")
-def _show_experimental_warning():
-    # type: () -> None
+def _show_experimental_warning() -> None:
 
     pass
 
 
-def _get_this_source_path():
-    # type: () -> str
+def _get_this_source_path() -> str:
 
     path = __file__
 
@@ -274,8 +263,7 @@ def _get_this_source_path():
     return path
 
 
-def _serve(study, bokeh_allow_websocket_origins):
-    # type: (optuna.study.Study, List[str]) -> None
+def _serve(study: optuna.study.Study, bokeh_allow_websocket_origins: List[str]) -> None:
 
     global _mode, _study
 
@@ -303,8 +291,7 @@ def _serve(study, bokeh_allow_websocket_origins):
     bokeh.command.bootstrap.main(command)
 
 
-def _write(study, out_path):
-    # type: (optuna.study.Study, str) -> None
+def _write(study: optuna.study.Study, out_path: str) -> None:
 
     global _mode, _study
 
@@ -316,8 +303,7 @@ def _write(study, out_path):
     bokeh.command.bootstrap.main(["bokeh", "html", _get_this_source_path(), "-o", out_path])
 
 
-def _run():
-    # type: () -> None
+def _run() -> None:
 
     # Please note that `_study` and `optuna.dashboard._study` are different here. Here, this module
     # is loaded inside Bokeh, and thus it is not `optuna.dashboard`, but `bk_script_????`.

@@ -141,10 +141,14 @@ def check_cv(
     return sklearn_check_cv(cv, y, classifier)
 
 
+<<<<<<< HEAD
 def check_X(
     X: TwoDimArrayLikeType, estimator: Optional[BaseEstimator] = None, **kwargs: Any
 ) -> TwoDimArrayLikeType:
     """Check ``X``.
+=======
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+>>>>>>> master
 
     Args:
         X:

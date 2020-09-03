@@ -1,47 +1,41 @@
 import math
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import scipy.special
 from scipy.stats import truncnorm
 
 from optuna import distributions
+from optuna.distributions import BaseDistribution
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.samplers import BaseSampler
 from optuna.samplers import RandomSampler
+from optuna.study import Study
 from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna import type_checking
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Callable  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Tuple  # NOQA
-
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
 
 EPS = 1e-12
 
 
-def default_gamma(x):
-    # type: (int) -> int
+def default_gamma(x: int) -> int:
 
     return min(int(np.ceil(0.1 * x)), 25)
 
 
-def hyperopt_default_gamma(x):
-    # type: (int) -> int
+def hyperopt_default_gamma(x: int) -> int:
 
     return min(int(np.ceil(0.25 * np.sqrt(x))), 25)
 
 
-def default_weights(x):
-    # type: (int) -> np.ndarray
+def default_weights(x: int) -> np.ndarray:
 
     if x == 0:
         return np.asarray([])
@@ -129,17 +123,16 @@ class TPESampler(BaseSampler):
 
     def __init__(
         self,
-        consider_prior=True,  # type: bool
-        prior_weight=1.0,  # type: float
-        consider_magic_clip=True,  # type: bool
-        consider_endpoints=False,  # type: bool
-        n_startup_trials=10,  # type: int
-        n_ei_candidates=24,  # type: int
-        gamma=default_gamma,  # type: Callable[[int], int]
-        weights=default_weights,  # type: Callable[[int], np.ndarray]
-        seed=None,  # type: Optional[int]
-    ):
-        # type: (...) -> None
+        consider_prior: bool = True,
+        prior_weight: float = 1.0,
+        consider_magic_clip: bool = True,
+        consider_endpoints: bool = False,
+        n_startup_trials: int = 10,
+        n_ei_candidates: int = 24,
+        gamma: Callable[[int], int] = default_gamma,
+        weights: Callable[[int], np.ndarray] = default_weights,
+        seed: Optional[int] = None,
+    ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
             consider_prior, prior_weight, consider_magic_clip, consider_endpoints, weights
@@ -158,20 +151,27 @@ class TPESampler(BaseSampler):
         self._rng = np.random.RandomState()
         self._random_sampler.reseed_rng()
 
-    def infer_relative_search_space(self, study, trial):
-        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
 
         return {}
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
 
         return {}
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: BaseDistribution,
+    ) -> Any:
 
-        values, scores = _get_observation_pairs(study, param_name, trial)
+        values, scores = _get_observation_pairs(study, param_name)
 
         n = len(values)
 
@@ -219,11 +219,8 @@ class TPESampler(BaseSampler):
             )
 
     def _split_observation_pairs(
-        self,
-        config_vals,  # type: List[Optional[float]]
-        loss_vals,  # type: List[Tuple[float, float]]
-    ):
-        # type: (...) -> Tuple[np.ndarray, np.ndarray]
+        self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]]
+    ) -> Tuple[np.ndarray, np.ndarray]:
 
         config_vals = np.asarray(config_vals)
         loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
@@ -236,22 +233,31 @@ class TPESampler(BaseSampler):
         above = np.asarray([v for v in above if v is not None], dtype=float)
         return below, above
 
-    def _sample_uniform(self, distribution, below, above):
-        # type: (distributions.UniformDistribution, np.ndarray, np.ndarray) -> float
+    def _sample_uniform(
+        self, distribution: distributions.UniformDistribution, below: np.ndarray, above: np.ndarray
+    ) -> float:
 
         low = distribution.low
         high = distribution.high
         return self._sample_numerical(low, high, below, above)
 
-    def _sample_loguniform(self, distribution, below, above):
-        # type: (distributions.LogUniformDistribution, np.ndarray, np.ndarray) -> float
+    def _sample_loguniform(
+        self,
+        distribution: distributions.LogUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> float:
 
         low = distribution.low
         high = distribution.high
         return self._sample_numerical(low, high, below, above, is_log=True)
 
-    def _sample_discrete_uniform(self, distribution, below, above):
-        # type:(distributions.DiscreteUniformDistribution, np.ndarray, np.ndarray) -> float
+    def _sample_discrete_uniform(
+        self,
+        distribution: distributions.DiscreteUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> float:
 
         q = distribution.q
         r = distribution.high - distribution.low
@@ -266,16 +272,24 @@ class TPESampler(BaseSampler):
         best_sample = self._sample_numerical(low, high, below, above, q=q) + distribution.low
         return min(max(best_sample, distribution.low), distribution.high)
 
-    def _sample_int(self, distribution, below, above):
-        # type: (distributions.IntUniformDistribution, np.ndarray, np.ndarray) -> int
+    def _sample_int(
+        self,
+        distribution: distributions.IntUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> int:
 
         d = distributions.DiscreteUniformDistribution(
             low=distribution.low, high=distribution.high, q=distribution.step
         )
         return int(self._sample_discrete_uniform(d, below, above))
 
-    def _sample_int_loguniform(self, distribution, below, above):
-        # type: (distributions.IntLogUniformDistribution, np.ndarray, np.ndarray) -> int
+    def _sample_int_loguniform(
+        self,
+        distribution: distributions.IntLogUniformDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> int:
 
         low = distribution.low - 0.5
         high = distribution.high + 0.5
@@ -287,14 +301,13 @@ class TPESampler(BaseSampler):
 
     def _sample_numerical(
         self,
-        low,  # type: float
-        high,  # type: float
-        below,  # type: np.ndarray
-        above,  # type: np.ndarray
-        q=None,  # type: Optional[float]
-        is_log=False,  # type: bool
-    ):
-        # type: (...) -> float
+        low: float,
+        high: float,
+        below: np.ndarray,
+        above: np.ndarray,
+        q: Optional[float] = None,
+        is_log: bool = False,
+    ) -> float:
 
         if is_log:
             low = np.log(low)
@@ -308,7 +321,7 @@ class TPESampler(BaseSampler):
             mus=below, low=low, high=high, parameters=self._parzen_estimator_parameters
         )
         samples_below = self._sample_from_gmm(
-            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size,
+            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size
         )
         log_likelihoods_below = self._gmm_log_pdf(
             samples=samples_below,
@@ -337,13 +350,23 @@ class TPESampler(BaseSampler):
         )
         return math.exp(ret) if is_log else ret
 
-    def _sample_categorical_index(self, distribution, below, above):
-        # type: (distributions.CategoricalDistribution, np.ndarray, np.ndarray) -> int
+    def _sample_categorical_index(
+        self,
+        distribution: distributions.CategoricalDistribution,
+        below: np.ndarray,
+        above: np.ndarray,
+    ) -> int:
 
         choices = distribution.choices
         below = list(map(int, below))
         above = list(map(int, above))
         upper = len(choices)
+
+        # We can use `np.arange(len(distribution.choices))` instead of sampling from `l(x)`
+        # when the cardinality of categorical parameters is lower than `n_ei_candidates`.
+        # Though it seems to be theoretically correct, it leads to performance degradation
+        # on the NAS benchmark experiment in https://arxiv.org/abs/1902.09635.
+        # See https://github.com/optuna/optuna/pull/1603 for more details.
         size = (self._n_ei_candidates,)
 
         weights_below = self._weights(len(below))
@@ -367,13 +390,12 @@ class TPESampler(BaseSampler):
 
     def _sample_from_gmm(
         self,
-        parzen_estimator,  # type: _ParzenEstimator
-        low,  # type: float
-        high,  # type: float
-        q=None,  # type: Optional[float]
-        size=(),  # type: Tuple
-    ):
-        # type: (...) -> np.ndarray
+        parzen_estimator: _ParzenEstimator,
+        low: float,
+        high: float,
+        q: Optional[float] = None,
+        size: Tuple = (),
+    ) -> np.ndarray:
 
         weights = parzen_estimator.weights
         mus = parzen_estimator.mus
@@ -389,17 +411,20 @@ class TPESampler(BaseSampler):
         active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
         trunc_low = (low - mus[active]) / sigmas[active]
         trunc_high = (high - mus[active]) / sigmas[active]
-        while True:
-            samples = truncnorm.rvs(
-                trunc_low,
-                trunc_high,
-                size=size,
-                loc=mus[active],
-                scale=sigmas[active],
-                random_state=self._rng,
+        samples = np.full((), fill_value=high + 1.0, dtype=np.float64)
+        while (samples >= high).any():
+            samples = np.where(
+                samples < high,
+                samples,
+                truncnorm.rvs(
+                    trunc_low,
+                    trunc_high,
+                    size=size,
+                    loc=mus[active],
+                    scale=sigmas[active],
+                    random_state=self._rng,
+                ),
             )
-            if (samples < high).all():
-                break
 
         if q is None:
             return samples
@@ -408,13 +433,12 @@ class TPESampler(BaseSampler):
 
     def _gmm_log_pdf(
         self,
-        samples,  # type: np.ndarray
-        parzen_estimator,  # type: _ParzenEstimator
-        low,  # type: float
-        high,  # type: float
-        q=None,  # type: Optional[float]
-    ):
-        # type: (...) -> np.ndarray
+        samples: np.ndarray,
+        parzen_estimator: _ParzenEstimator,
+        low: float,
+        high: float,
+        q: Optional[float] = None,
+    ) -> np.ndarray:
 
         weights = parzen_estimator.weights
         mus = parzen_estimator.mus
@@ -424,16 +448,16 @@ class TPESampler(BaseSampler):
             return np.asarray([], dtype=float)
         if weights.ndim != 1:
             raise ValueError(
-                "The 'weights' should be 2-dimension. "
+                "The 'weights' should be 1-dimension. "
                 "But weights.shape = {}".format(weights.shape)
             )
         if mus.ndim != 1:
             raise ValueError(
-                "The 'mus' should be 2-dimension. But mus.shape = {}".format(mus.shape)
+                "The 'mus' should be 1-dimension. But mus.shape = {}".format(mus.shape)
             )
         if sigmas.ndim != 1:
             raise ValueError(
-                "The 'sigmas' should be 2-dimension. But sigmas.shape = {}".format(sigmas.shape)
+                "The 'sigmas' should be 1-dimension. But sigmas.shape = {}".format(sigmas.shape)
             )
 
         p_accept = np.sum(
@@ -464,32 +488,26 @@ class TPESampler(BaseSampler):
             )
             return np.log(probabilities + EPS) - np.log(p_accept + EPS)
 
-    def _sample_from_categorical_dist(self, probabilities, size):
-        # type: (np.ndarray, Tuple[int]) -> np.ndarray
-
-        if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
-            probabilities = probabilities[0]
-        probabilities = np.asarray(probabilities)
+    def _sample_from_categorical_dist(
+        self, probabilities: np.ndarray, size: Tuple[int]
+    ) -> np.ndarray:
 
         if size == (0,):
             return np.asarray([], dtype=float)
         assert len(size)
+
+        if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
+            probabilities = probabilities[0]
         assert probabilities.ndim == 1
 
-        n_draws = int(np.prod(size))
-        sample = self._rng.multinomial(n=1, pvals=probabilities, size=int(n_draws))
-        assert sample.shape == size + (probabilities.size,)
-        return_val = np.dot(sample, np.arange(probabilities.size))
-        return_val.shape = size
+        n_draws = np.prod(size).item()
+        sample = self._rng.multinomial(n=1, pvals=probabilities, size=n_draws)
+        assert sample.shape == size + probabilities.shape
+        return_val = np.dot(sample, np.arange(probabilities.size)).reshape(size)
         return return_val
 
     @classmethod
-    def _categorical_log_pdf(
-        cls,
-        sample,  # type: np.ndarray
-        p,  # type: np.ndarray
-    ):
-        # type: (...) -> np.ndarray
+    def _categorical_log_pdf(cls, sample: np.ndarray, p: np.ndarray) -> np.ndarray:
 
         if sample.size:
             return np.log(np.asarray(p)[sample])
@@ -497,8 +515,7 @@ class TPESampler(BaseSampler):
             return np.asarray([])
 
     @classmethod
-    def _compare(cls, samples, log_l, log_g):
-        # type: (np.ndarray, np.ndarray, np.ndarray) -> np.ndarray
+    def _compare(cls, samples: np.ndarray, log_l: np.ndarray, log_g: np.ndarray) -> np.ndarray:
 
         samples, log_l, log_g = map(np.asarray, (samples, log_l, log_g))
         if samples.size:
@@ -516,16 +533,14 @@ class TPESampler(BaseSampler):
             return np.asarray([])
 
     @classmethod
-    def _logsum_rows(cls, x):
-        # type: (np.ndarray) -> np.ndarray
+    def _logsum_rows(cls, x: np.ndarray) -> np.ndarray:
 
         x = np.asarray(x)
         m = x.max(axis=1)
         return np.log(np.exp(x - m[:, None]).sum(axis=1)) + m
 
     @classmethod
-    def _normal_cdf(cls, x, mu, sigma):
-        # type: (float, np.ndarray, np.ndarray) -> np.ndarray
+    def _normal_cdf(cls, x: float, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
 
         mu, sigma = map(np.asarray, (mu, sigma))
         denominator = x - mu
@@ -534,8 +549,7 @@ class TPESampler(BaseSampler):
         return 0.5 * (1 + scipy.special.erf(z))
 
     @classmethod
-    def _log_normal_cdf(cls, x, mu, sigma):
-        # type: (float, np.ndarray, np.ndarray) -> np.ndarray
+    def _log_normal_cdf(cls, x: float, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
 
         mu, sigma = map(np.asarray, (mu, sigma))
         if x < 0:
@@ -546,8 +560,7 @@ class TPESampler(BaseSampler):
         return 0.5 + 0.5 * scipy.special.erf(z)
 
     @staticmethod
-    def hyperopt_parameters():
-        # type: () -> Dict[str, Any]
+    def hyperopt_parameters() -> Dict[str, Any]:
         """Return the the default parameters of hyperopt (v0.1.2).
 
         :class:`~optuna.samplers.TPESampler` can be instantiated with the parameters returned
@@ -588,23 +601,24 @@ class TPESampler(BaseSampler):
         }
 
 
-def _get_observation_pairs(study, param_name, trial):
-    # type: (Study, str, FrozenTrial) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]
+def _get_observation_pairs(
+    study: Study, param_name: str
+) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]:
     """Get observation pairs from the study.
 
-       This function collects observation pairs from the complete or pruned trials of the study.
-       The values for trials that don't contain the parameter named ``param_name`` are set to None.
+    This function collects observation pairs from the complete or pruned trials of the study.
+    The values for trials that don't contain the parameter named ``param_name`` are set to None.
 
-       An observation pair fundamentally consists of a parameter value and an objective value.
-       However, due to the pruning mechanism of Optuna, final objective values are not always
-       available. Therefore, this function uses intermediate values in addition to the final
-       ones, and reports the value with its step count as ``(-step, value)``.
-       Consequently, the structure of the observation pair is as follows:
-       ``(param_value, (-step, value))``.
+    An observation pair fundamentally consists of a parameter value and an objective value.
+    However, due to the pruning mechanism of Optuna, final objective values are not always
+    available. Therefore, this function uses intermediate values in addition to the final
+    ones, and reports the value with its step count as ``(-step, value)``.
+    Consequently, the structure of the observation pair is as follows:
+    ``(param_value, (-step, value))``.
 
-       The second element of an observation pair is used to rank observations in
-       ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
-       ``(-step, value)``).
+    The second element of an observation pair is used to rank observations in
+    ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
+    ``(-step, value)``).
     """
 
     sign = 1

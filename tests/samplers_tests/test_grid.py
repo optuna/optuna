@@ -1,35 +1,28 @@
 from collections import OrderedDict
 import itertools
+from typing import Dict
+from typing import List
+from typing import Mapping
+from typing import Sequence
+from typing import Union
+from typing import ValuesView
 
 import numpy as np
 import pytest
 
 import optuna
 from optuna import samplers
-
-if optuna.type_checking.TYPE_CHECKING:
-    from collections import ValuesView  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Mapping  # NOQA
-    from typing import Sequence  # NOQA
-    from typing import Union  # NOQA
-
-    from optuna.samplers._grid import GridValueType  # NOQA
-    from optuna.trial import Trial  # NOQA
+from optuna.samplers._grid import GridValueType
+from optuna.trial import Trial
 
 
-def _n_grids(search_space):
-    # type: (Mapping[str, Sequence[Union[str, float, None]]]) -> int
+def _n_grids(search_space: Mapping[str, Sequence[Union[str, float, None]]]) -> int:
 
     return int(np.prod([len(v) for v in search_space.values()]))
 
 
-def test_study_optimize_with_single_search_space():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (Trial) -> float
+def test_study_optimize_with_single_search_space() -> None:
+    def objective(trial: Trial) -> float:
 
         a = trial.suggest_int("a", 0, 100)
         b = trial.suggest_uniform("b", -0.1, 0.1)
@@ -54,8 +47,9 @@ def test_study_optimize_with_single_search_space():
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
     study.optimize(objective, n_trials=n_grids)
 
-    def sorted_values(d):
-        # type: (Mapping[str, Sequence[GridValueType]]) -> ValuesView[Sequence[GridValueType]]
+    def sorted_values(
+        d: Mapping[str, Sequence[GridValueType]]
+    ) -> ValuesView[Sequence[GridValueType]]:
 
         return OrderedDict(sorted(d.items())).values()
 
@@ -85,11 +79,8 @@ def test_study_optimize_with_single_search_space():
         study.optimize(objective)
 
 
-def test_study_optimize_with_exceeding_number_of_trials():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (Trial) -> float
+def test_study_optimize_with_exceeding_number_of_trials() -> None:
+    def objective(trial: Trial) -> float:
 
         return trial.suggest_int("a", 0, 100)
 
@@ -104,11 +95,8 @@ def test_study_optimize_with_exceeding_number_of_trials():
     assert len(study.trials) == 3
 
 
-def test_study_optimize_with_multiple_search_spaces():
-    # type: () -> None
-
-    def objective(trial):
-        # type: (Trial) -> float
+def test_study_optimize_with_multiple_search_spaces() -> None:
+    def objective(trial: Trial) -> float:
 
         a = trial.suggest_int("a", 0, 100)
         b = trial.suggest_uniform("b", -100, 100)
@@ -151,8 +139,7 @@ def test_study_optimize_with_multiple_search_spaces():
         assert sampler_0._same_search_space(t.system_attrs["search_space"])
 
 
-def test_cast_value():
-    # type: () -> None
+def test_cast_value() -> None:
 
     samplers.GridSampler._check_value("x", None)
     samplers.GridSampler._check_value("x", True)
@@ -167,8 +154,7 @@ def test_cast_value():
         samplers.GridSampler._check_value("x", [1])
 
 
-def test_has_same_search_space():
-    # type: () -> None
+def test_has_same_search_space() -> None:
 
     search_space = {"x": [3, 2, 1], "y": ["a", "b", "c"]}  # type: Dict[str, List[Union[int, str]]]
     sampler = samplers.GridSampler(search_space)

@@ -59,7 +59,7 @@ def sample_a2c_params(trial: optuna.Trial) -> Dict[str, Any]:
         {"pi": [64], "vf": [64]} if net_arch == "tiny" else {"pi": [64, 64], "vf": [64, 64]}
     ]
 
-    activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU,}[activation_fn]
+    activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU}[activation_fn]
 
     return {
         "n_steps": n_steps,

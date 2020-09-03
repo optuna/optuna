@@ -18,3 +18,14 @@ help:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+doctest:
+	sphinx-autogen source/**/*.rst
+	@$(SPHINXBUILD) -M doctest "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+# Copy from https://sphinx-gallery.github.io/stable/advanced.html#cleaning-the-gallery-files
+clean:
+	rm -rf $(BUILDDIR)/*
+	rm -rf source/reference/generated/
+	rm -rf source/reference/multi_objective/generated/
+	rm -rf source/tutorial/

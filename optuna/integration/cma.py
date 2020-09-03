@@ -1,5 +1,10 @@
 import math
 import random
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Set
 
 import numpy
 
@@ -7,6 +12,7 @@ import optuna
 from optuna._deprecated import deprecated
 from optuna._imports import try_import
 from optuna import distributions
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
@@ -15,28 +21,17 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna import logging
 from optuna.samplers import BaseSampler
+from optuna.study import Study
 from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna import type_checking
 
 with try_import() as _imports:
     import cma
 
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-    from typing import List  # NOQA
-    from typing import Optional  # NOQA
-    from typing import Set  # NOQA
-
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
-    from optuna.study import Study  # NOQA
-
 _logger = logging.get_logger(__name__)
 
-# Minimum value of sigma0 to avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
-_MIN_SIGMA0 = 1e-10
+_EPS = 1e-10
 
 
 class PyCmaSampler(BaseSampler):
@@ -128,16 +123,15 @@ class PyCmaSampler(BaseSampler):
 
     def __init__(
         self,
-        x0=None,  # type: Optional[Dict[str, Any]]
-        sigma0=None,  # type: Optional[float]
-        cma_stds=None,  # type: Optional[Dict[str, float]]
-        seed=None,  # type: Optional[int]
-        cma_opts=None,  # type: Optional[Dict[str, Any]]
-        n_startup_trials=1,  # type: int
-        independent_sampler=None,  # type: Optional[BaseSampler]
-        warn_independent_sampling=True,  # type: bool
-    ):
-        # type: (...) -> None
+        x0: Optional[Dict[str, Any]] = None,
+        sigma0: Optional[float] = None,
+        cma_stds: Optional[Dict[str, float]] = None,
+        seed: Optional[int] = None,
+        cma_opts: Optional[Dict[str, Any]] = None,
+        n_startup_trials: int = 1,
+        independent_sampler: Optional[BaseSampler] = None,
+        warn_independent_sampling: bool = True,
+    ) -> None:
 
         _imports.check()
 
@@ -160,8 +154,9 @@ class PyCmaSampler(BaseSampler):
         self._cma_opts["seed"] = random.randint(1, 2 ** 32)
         self._independent_sampler.reseed_rng()
 
-    def infer_relative_search_space(self, study, trial):
-        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
 
         search_space = {}
         for name, distribution in self._search_space.calculate(study).items():
@@ -175,8 +170,13 @@ class PyCmaSampler(BaseSampler):
 
         return search_space
 
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> float
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: BaseDistribution,
+    ) -> float:
 
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
@@ -187,8 +187,9 @@ class PyCmaSampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, float]
+    def sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, float]:
 
         if len(search_space) == 0:
             return {}
@@ -214,7 +215,8 @@ class PyCmaSampler(BaseSampler):
             sigma0 = self._initialize_sigma0(search_space)
         else:
             sigma0 = self._sigma0
-        sigma0 = max(sigma0, _MIN_SIGMA0)
+        # Avoid ZeroDivisionError in cma.CMAEvolutionStrategy.
+        sigma0 = max(sigma0, _EPS)
 
         optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds, self._cma_opts)
         trials = study.trials
@@ -222,8 +224,7 @@ class PyCmaSampler(BaseSampler):
         return optimizer.ask(trials, last_told_trial_number)
 
     @staticmethod
-    def _initialize_x0(search_space):
-        # type: (Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, Any]:
 
         x0 = {}
         for name, distribution in search_space.items():
@@ -247,8 +248,7 @@ class PyCmaSampler(BaseSampler):
         return x0
 
     @staticmethod
-    def _initialize_sigma0(search_space):
-        # type: (Dict[str, BaseDistribution]) -> float
+    def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
 
         sigma0s = []
         for name, distribution in search_space.items():
@@ -270,8 +270,7 @@ class PyCmaSampler(BaseSampler):
                 )
         return min(sigma0s)
 
-    def _log_independent_sampling(self, trial, param_name):
-        # type: (FrozenTrial, str) -> None
+    def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
 
         self._logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
@@ -288,13 +287,12 @@ class PyCmaSampler(BaseSampler):
 class _Optimizer(object):
     def __init__(
         self,
-        search_space,  # type: Dict[str, BaseDistribution]
-        x0,  # type: Dict[str, Any]
-        sigma0,  # type: float
-        cma_stds,  # type: Optional[Dict[str, float]]
-        cma_opts,  # type: Dict[str, Any]
-    ):
-        # type: (...) -> None
+        search_space: Dict[str, BaseDistribution],
+        x0: Dict[str, Any],
+        sigma0: float,
+        cma_stds: Optional[Dict[str, float]],
+        cma_opts: Dict[str, Any],
+    ) -> None:
 
         self._search_space = search_space
         self._param_names = list(sorted(self._search_space.keys()))
@@ -310,7 +308,7 @@ class _Optimizer(object):
                 highs.append(len(dist.choices) - 0.5)
             elif isinstance(dist, UniformDistribution) or isinstance(dist, LogUniformDistribution):
                 lows.append(self._to_cma_params(search_space, param_name, dist.low))
-                highs.append(self._to_cma_params(search_space, param_name, dist.high))
+                highs.append(self._to_cma_params(search_space, param_name, dist.high) - _EPS)
             elif isinstance(dist, DiscreteUniformDistribution):
                 r = dist.high - dist.low
                 lows.append(0 - 0.5 * dist.q)
@@ -342,8 +340,7 @@ class _Optimizer(object):
 
         self._es = cma.CMAEvolutionStrategy(initial_cma_params, sigma0, cma_opts)
 
-    def tell(self, trials, study_direction):
-        # type: (List[FrozenTrial], StudyDirection) -> int
+    def tell(self, trials: List[FrozenTrial], study_direction: StudyDirection) -> int:
 
         complete_trials = self._collect_target_trials(trials, target_states={TrialState.COMPLETE})
 
@@ -370,8 +367,7 @@ class _Optimizer(object):
             self._es.tell(xs, ys)
         return last_told_trial_number
 
-    def ask(self, trials, last_told_trial_number):
-        # type: (List[FrozenTrial], int) -> Dict[str, Any]
+    def ask(self, trials: List[FrozenTrial], last_told_trial_number: int) -> Dict[str, Any]:
 
         individual_index = len(self._collect_target_trials(trials, last_told_trial_number))
         popsize = self._es.popsize
@@ -391,8 +387,7 @@ class _Optimizer(object):
             ret_val[param_name] = self._to_optuna_params(self._search_space, param_name, value)
         return ret_val
 
-    def _is_compatible(self, trial):
-        # type: (FrozenTrial) -> bool
+    def _is_compatible(self, trial: FrozenTrial) -> bool:
 
         # Thanks to `intersection_search_space()` function, in sequential optimization,
         # the parameters of complete trials are always compatible with the search space.
@@ -412,8 +407,12 @@ class _Optimizer(object):
 
         return True
 
-    def _collect_target_trials(self, trials, last_told=-1, target_states=None):
-        # type: (List[FrozenTrial], int, Optional[Set[TrialState]]) -> List[FrozenTrial]
+    def _collect_target_trials(
+        self,
+        trials: List[FrozenTrial],
+        last_told: int = -1,
+        target_states: Optional[Set[TrialState]] = None,
+    ) -> List[FrozenTrial]:
 
         target_trials = [t for t in trials if t.number > last_told]
         target_trials = [t for t in target_trials if self._is_compatible(t)]
@@ -423,8 +422,9 @@ class _Optimizer(object):
         return target_trials
 
     @staticmethod
-    def _to_cma_params(search_space, param_name, optuna_param_value):
-        # type: (Dict[str, BaseDistribution], str, Any) -> float
+    def _to_cma_params(
+        search_space: Dict[str, BaseDistribution], param_name: str, optuna_param_value: Any
+    ) -> float:
 
         dist = search_space[param_name]
         if isinstance(dist, (LogUniformDistribution, IntLogUniformDistribution)):
@@ -436,8 +436,9 @@ class _Optimizer(object):
         return optuna_param_value
 
     @staticmethod
-    def _to_optuna_params(search_space, param_name, cma_param_value):
-        # type: (Dict[str, BaseDistribution], str, float) -> Any
+    def _to_optuna_params(
+        search_space: Dict[str, BaseDistribution], param_name: str, cma_param_value: float
+    ) -> Any:
 
         dist = search_space[param_name]
         if isinstance(dist, LogUniformDistribution):
@@ -467,16 +468,15 @@ class CmaEsSampler(PyCmaSampler):
 
     def __init__(
         self,
-        x0=None,  # type: Optional[Dict[str, Any]]
-        sigma0=None,  # type: Optional[float]
-        cma_stds=None,  # type: Optional[Dict[str, float]]
-        seed=None,  # type: Optional[int]
-        cma_opts=None,  # type: Optional[Dict[str, Any]]
-        n_startup_trials=1,  # type: int
-        independent_sampler=None,  # type: Optional[BaseSampler]
-        warn_independent_sampling=True,  # type: bool
-    ):
-        # type: (...) -> None
+        x0: Optional[Dict[str, Any]] = None,
+        sigma0: Optional[float] = None,
+        cma_stds: Optional[Dict[str, float]] = None,
+        seed: Optional[int] = None,
+        cma_opts: Optional[Dict[str, Any]] = None,
+        n_startup_trials: int = 1,
+        independent_sampler: Optional[BaseSampler] = None,
+        warn_independent_sampling: bool = True,
+    ) -> None:
 
         super(CmaEsSampler, self).__init__(
             x0=x0,

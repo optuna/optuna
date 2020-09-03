@@ -1,11 +1,12 @@
 import functools
 import inspect
-from packaging import version
 import textwrap
 from typing import Any
 from typing import Callable
 from typing import Optional
 import warnings
+
+from packaging import version
 
 from optuna._experimental import _get_docstring_indent
 from optuna._experimental import _validate_version

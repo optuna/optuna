@@ -1,3 +1,4 @@
+"""
 .. _configurations:
 
 Advanced Configurations
@@ -78,3 +79,4 @@ For details, please refer to the API reference for :func:`~optuna.study.Study.op
 
 **FYI**: If you give neither ``n_trials`` nor ``timeout`` options, the optimization continues until it receives a termination signal such as Ctrl+C or SIGTERM.
 This is useful for use cases such as when it is hard to estimate the computational costs required to optimize your objective function.
+"""
