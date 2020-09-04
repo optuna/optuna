@@ -349,6 +349,33 @@ class Study(BaseStudy):
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
 
+        .. seealso::
+
+            See :attr:`~optuna.study.Study.user_attrs` for related attribute.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_float("x", 0, 1)
+                    y = trial.suggest_float("y", 0, 1)
+                    return x ** 2 + y ** 2
+
+                study = optuna.create_study()
+
+                study.set_user_attr("objective function", "quadratic function")
+                study.set_user_attr("dimensions", 2)
+                study.set_user_attr("contributors", ["Akiba", "Sano"])
+
+                assert study.user_attrs == {
+                    "objective function": "quadratic function",
+                    "dimensions": 2,
+                    "contributors": ["Akiba", "Sano"]
+                }
+
         Args:
             key: A key string of the attribute.
             value: A value of the attribute. The value should be JSON serializable.
