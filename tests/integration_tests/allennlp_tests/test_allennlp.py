@@ -238,3 +238,27 @@ def test_allennlp_pruning_callback() -> None:
         study.optimize(objective, n_trials=1)
         assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
         assert study.trials[0].value == 1.0
+
+
+def test_allennlp_pruning_callback_with_executor() -> None:
+    input_config_file = (
+        "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
+    )
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        storage = "sqlite:///" + os.path.join(tmp_dir, "result.db")
+        serialization_dir = os.path.join(tmp_dir, "allennlp")
+
+        origin_pruner = optuna.pruners.HyperbandPruner(min_resource=3)
+        study = optuna.create_study(
+            direction="maximize",
+            pruner=origin_pruner,
+            storage=storage,
+        )
+        trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+        trial.suggest_float("DROPOUT", 0.0, 0.5)
+        executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, serialization_dir)
+        executor.run()
+        target_pruner = optuna.integration.allennlp._create_pruner()
+        assert origin_pruner._min_resource == target_pruner._min_resource
+        assert origin_pruner._max_resource == target_pruner._max_resource
+        assert origin_pruner._reduction_factor == target_pruner._reduction_factor
