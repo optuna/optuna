@@ -371,6 +371,15 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._optuna_callbacks = optuna_callbacks
         self._best_params = {}
 
+        # Should not alter data since `min_data_in_leaf` is tuned.
+        # https://lightgbm.readthedocs.io/en/latest/Parameters.html#feature_pre_filter
+        if self.lgbm_params.get("feature_pre_filter", False):
+            warnings.warn(
+                "feature_pre_filter is given as True but will be set to False. This is required "
+                "for the tuner to tune min_data_in_leaf."
+            )
+        self.lgbm_params["feature_pre_filter"] = False
+
         # Set default parameters as best.
         self._best_params.update(_DEFAULT_LIGHTGBM_PARAMETERS)
 
