@@ -7,6 +7,7 @@ from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import (  # NOQA
     MeanDecreaseImpurityImportanceEvaluator,  # NOQA
 )
+from optuna.importance._mutual_information import MutualInformationImportanceEvaluator  # NOQA
 from optuna.study import Study
 
 
