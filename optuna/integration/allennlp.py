@@ -54,19 +54,7 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
 
     pruner_params = _get_environment_variables_for_pruner()
 
-    pruner = None  # type: Any
-    if pruner_class == "HyperbandPruner":
-        pruner = optuna.pruners.HyperbandPruner
-    elif pruner_class == "MedianPruner":
-        pruner = optuna.pruners.MedianPruner
-    elif pruner_class == "PercentilePruner":
-        pruner = optuna.pruners.PercentilePruner
-    elif pruner_class == "ThresholdPruner":
-        pruner = optuna.pruners.ThresholdPruner
-    elif pruner_class == "SuccessiveHalvingPruner":
-        pruner = optuna.pruners.SuccessiveHalvingPruner
-    elif pruner_class == "NopPruner":
-        pruner = optuna.pruners.NopPruner
+    pruner = getattr(optuna.pruners, pruner_class, None)
 
     if pruner is None:
         return None
