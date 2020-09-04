@@ -113,9 +113,7 @@ def _export_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
         kwargs["min_resource"] = pruner._min_resource
         kwargs["max_resource"] = pruner._max_resource
         kwargs["reduction_factor"] = pruner._reduction_factor
-    elif isinstance(pruner, optuna.pruners.MedianPruner) or isinstance(
-        pruner, optuna.pruners.PercentilePruner
-    ):
+    elif isinstance(pruner, optuna.pruners.PercentilePruner):
         kwargs["percentile"] = pruner._percentile
         kwargs["n_startup_tirals"] = pruner._n_startup_trials
         kwargs["n_warmup_steps"] = pruner._n_warmup_steps
