@@ -30,6 +30,8 @@ from optuna.trial import TrialState
 
 EPS = 1e-12
 
+_logger = get_logger(__name__)
+
 
 def default_gamma(x: int) -> int:
 
@@ -162,7 +164,6 @@ class TPESampler(BaseSampler):
         self._gamma = gamma
         self._weights = weights
 
-        self._logger = get_logger(__name__)
         self._warn_independent_sampling = warn_independent_sampling
         self._rng = np.random.RandomState(seed)
         self._random_sampler = RandomSampler(seed=seed)
@@ -204,7 +205,7 @@ class TPESampler(BaseSampler):
         return search_space
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-        self._logger.warning(
+        _logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
             "instead of being sampled by multivariate TPE sampler. "
             "(optimization performance may be degraded). "
