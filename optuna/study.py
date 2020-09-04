@@ -189,6 +189,33 @@ class Study(BaseStudy):
     def user_attrs(self) -> Dict[str, Any]:
         """Return user attributes.
 
+        .. seealso::
+
+            See :func:`~optuna.study.Study.set_user_attr` for related method.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_float("x", 0, 1)
+                    y = trial.suggest_float("y", 0, 1)
+                    return x ** 2 + y ** 2
+
+                study = optuna.create_study()
+
+                study.set_user_attr("objective function", "quadratic function")
+                study.set_user_attr("dimensions", 2)
+                study.set_user_attr("contributors", ["Akiba", "Sano"])
+
+                assert study.user_attrs == {
+                    "objective function": "quadratic function",
+                    "dimensions": 2,
+                    "contributors": ["Akiba", "Sano"]
+                }
+
         Returns:
             A dictionary containing all user attributes.
         """
