@@ -301,16 +301,16 @@ def test_sample_relative_handle_unsuccessful_states(
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
     # Prepare sampling result for later tests.
-    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 30)]
-    trial = frozen_trial_factory(30)
+    past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 100)]
+    trial = frozen_trial_factory(100)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         all_success_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})
 
     # Test unsuccessful trials are handled differently.
     state_fn = build_state_fn(state)
-    past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 30)]
-    trial = frozen_trial_factory(30)
+    past_trials = [frozen_trial_factory(i, dist=dist, state_fn=state_fn) for i in range(1, 100)]
+    trial = frozen_trial_factory(100)
     sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         partial_unsuccessful_suggestion = sampler.sample_relative(study, trial, {"param-a": dist})

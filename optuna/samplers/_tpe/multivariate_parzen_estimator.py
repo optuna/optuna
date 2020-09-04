@@ -1,7 +1,6 @@
 from typing import Dict
 from typing import Optional
 from typing import Tuple
-from typing import Union
 
 import numpy as np
 import scipy.special
@@ -12,7 +11,14 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 
 EPS = 1e-12
-
+_DISTRIBUTION_CLASSES = (
+    distributions.UniformDistribution,
+    distributions.LogUniformDistribution,
+    distributions.DiscreteUniformDistribution,
+    distributions.IntUniformDistribution,
+    distributions.IntLogUniformDistribution,
+    distributions.CategoricalDistribution,
+)
 _NUMERICAL_DISTRIBUTION_CLASSES = (
     distributions.UniformDistribution,
     distributions.LogUniformDistribution,
@@ -230,7 +236,7 @@ class _MultivariateParzenEstimator:
         for param_name, samples in multivariate_samples.items():
             distribution = self._search_space[param_name]
 
-            assert isinstance(distribution, distributions.DISTRIBUTION_CLASSES)
+            assert isinstance(distribution, _DISTRIBUTION_CLASSES)
             if isinstance(
                 distribution,
                 (distributions.LogUniformDistribution, distributions.IntLogUniformDistribution),
@@ -248,7 +254,7 @@ class _MultivariateParzenEstimator:
         for param_name, samples in multivariate_samples.items():
             distribution = self._search_space[param_name]
 
-            assert isinstance(distribution, distributions.DISTRIBUTION_CLASSES)
+            assert isinstance(distribution, _DISTRIBUTION_CLASSES)
             if isinstance(distribution, distributions.UniformDistribution):
                 transformed[param_name] = samples
             elif isinstance(distribution, distributions.LogUniformDistribution):
@@ -273,41 +279,14 @@ class _MultivariateParzenEstimator:
 
         return transformed
 
-    def _precompute_sigmas0(
-        self, multivariate_observations: Dict[str, np.ndarray]
-    ) -> Optional[Union[np.ndarray, float]]:
-
-        # Categorical parameters are not considered.
-        rescaled_observations_list = []
-        for param_name, param_dist in self._search_space.items():
-            if isinstance(param_dist, _NUMERICAL_DISTRIBUTION_CLASSES):
-                high = self._high[param_name]
-                low = self._low[param_name]
-                assert high is not None
-                assert low is not None
-                observations = multivariate_observations[param_name]
-                observations = (observations - low) / (high - low)
-                rescaled_observations_list.append(observations)
-            else:  # Categorical parameters are ignored.
-                continue
-
-        # When the number of parameters is zero, we cannot determine sigma0.
-        # If there are only categorical parameters, this case happens.
-        if len(rescaled_observations_list) == 0:
-            return None
-        # When the number of observations is zero, we return 1.0.
-        elif len(rescaled_observations_list[0]) == 0:
-            return 1.0
-
-        rescaled_observations = np.array(rescaled_observations_list).T
-
-        # compute distance matrix of observations
-        distances = np.linalg.norm(
-            rescaled_observations[:, None, :] - rescaled_observations[None, :, :], axis=2
-        )
-        distances[np.diag_indices_from(distances)] += np.inf
-
-        return np.min(distances, axis=1)
+    def _precompute_sigmas0(self, multivariate_samples: Dict[str, np.ndarray]) -> np.ndarray:
+        # We use Scott's rule for bandwidth selection.
+        # This rule was used in the BOHB paper.
+        n_samples = next(iter(multivariate_samples.values())).size
+        n_samples = max(n_samples, 1)
+        n_params = len(multivariate_samples)
+        # TODO(kstoneriv3): The constant factor 0.2 might not be optimal.
+        return 0.2 * n_samples ** (-1.0 / (n_params + 4)) * np.ones(n_samples)
 
     def _calculate_categorical_params(
         self, observations: np.ndarray, param_name: str
@@ -339,7 +318,6 @@ class _MultivariateParzenEstimator:
         sigmas0 = self._sigmas0
         low = self._low[param_name]
         high = self._high[param_name]
-        assert sigmas0 is not None
         assert low is not None
         assert high is not None
 
@@ -387,7 +365,7 @@ class _MultivariateParzenEstimator:
         rng: np.random.RandomState, probabilities: np.ndarray
     ) -> np.ndarray:
 
-        sample_size = probabilities.shape[0]
-        rnd_quantile = rng.rand(sample_size)
+        n_samples = probabilities.shape[0]
+        rnd_quantile = rng.rand(n_samples)
         cum_probs = np.cumsum(probabilities, axis=1)
         return np.sum(cum_probs < rnd_quantile[..., None], axis=1)

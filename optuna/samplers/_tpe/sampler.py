@@ -29,7 +29,14 @@ from optuna.trial import TrialState
 
 
 EPS = 1e-12
-
+_DISTRIBUTION_CLASSES = (
+    distributions.UniformDistribution,
+    distributions.LogUniformDistribution,
+    distributions.DiscreteUniformDistribution,
+    distributions.IntUniformDistribution,
+    distributions.IntLogUniformDistribution,
+    distributions.CategoricalDistribution,
+)
 _logger = get_logger(__name__)
 
 
@@ -192,7 +199,7 @@ class TPESampler(BaseSampler):
 
         search_space = {}  # type: Dict[str, BaseDistribution]
         for name, distribution in self._search_space.calculate(study).items():
-            if not isinstance(distribution, distributions.DISTRIBUTION_CLASSES):
+            if not isinstance(distribution, _DISTRIBUTION_CLASSES):
                 if self._warn_independent_sampling:
                     complete_trials = study._storage.get_all_trials(
                         study._study_id, deepcopy=False
