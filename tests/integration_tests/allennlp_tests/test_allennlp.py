@@ -259,6 +259,13 @@ def test_allennlp_pruning_callback_with_executor() -> None:
         executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, serialization_dir)
         executor.run()
         target_pruner = optuna.integration.allennlp._create_pruner()
-        assert origin_pruner._min_resource == target_pruner._min_resource
-        assert origin_pruner._max_resource == target_pruner._max_resource
-        assert origin_pruner._reduction_factor == target_pruner._reduction_factor
+
+        # It checks a type of target_pruner since mypy fail to check here.
+        # This is why `_create_pruner` returns `BasePruner`, which doesn't have
+        # _min_resource, _max_resource, and _reduction_factor that belongs to `HyperbandPruner`.
+        if isinstance(target_pruner, optuna.pruners.HyperbandPruner):
+            assert origin_pruner._min_resource == target_pruner._min_resource
+            assert origin_pruner._max_resource == target_pruner._max_resource
+            assert origin_pruner._reduction_factor == target_pruner._reduction_factor
+        else:
+            assert False  # Always fail
