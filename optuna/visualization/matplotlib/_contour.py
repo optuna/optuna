@@ -86,6 +86,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
         sorted_params = sorted(list(set(params)))
     n_params = len(sorted_params)
 
+    plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     if n_params == 2:
         # Set up the graph style.
         fig, axs = plt.subplots()
