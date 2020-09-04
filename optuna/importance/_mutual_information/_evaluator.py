@@ -16,11 +16,12 @@ from optuna.trial import TrialState
 
 
 class MutualInformationImportanceEvaluator(BaseImportanceEvaluator):
-
-    def __init__(self, n_MC: Optional[int]=None) -> None:
+    def __init__(self, n_MC: Optional[int] = None) -> None:
         self._n_MC = n_MC
 
-    def evaluate(self, study: Study, params: Optional[List[str]] = None, n_MC=None) -> Dict[str, float]:
+    def evaluate(
+        self, study: Study, params: Optional[List[str]] = None, n_MC: Optional[int] = None
+    ) -> Dict[str, float]:
 
         search_space = study.best_trial.distributions
         if params is None:
@@ -78,7 +79,6 @@ class MutualInformationImportanceEvaluator(BaseImportanceEvaluator):
                 joint_log_prob = mpe_joint.log_pdf(mc_samples)
 
                 mi[param_name] = np.mean(joint_log_prob - score_log_prob - param_log_prob)
-
 
         mi = {k: v for k, v in sorted(mi.items(), key=lambda item: item[1], reverse=True)}
         return mi
