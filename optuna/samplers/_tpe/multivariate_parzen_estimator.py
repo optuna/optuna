@@ -38,7 +38,7 @@ class _MultivariateParzenEstimator:
 
         self._search_space = search_space
         self._parameters = parameters
-        self._n_observations = next(iter(multivariate_observations.values())).size
+        self._n_weights = next(iter(multivariate_observations.values())).size
         self._weights = self._calculate_weights(multivariate_observations)
 
         self._low = {}  # type: Dict[str, Optional[float]]
@@ -126,7 +126,7 @@ class _MultivariateParzenEstimator:
         n_samples = next(iter(multivariate_samples.values())).size
         if n_samples == 0:
             return np.asarray([], dtype=float)
-        # We compute log pdf (compoment_log_pdf)
+        # We compute log pdf (component_log_pdf)
         # for each sample in multivariate_samples (of size n_samples)
         # for each component of `_MultivariateParzenEstimator` (of size n_weights).
         component_log_pdf = np.zeros((n_samples, n_weights))
@@ -173,13 +173,13 @@ class _MultivariateParzenEstimator:
         consider_prior = self._parameters.consider_prior
         prior_weight = self._parameters.prior_weight
         weights_func = self._parameters.weights
-        n_observations = self._n_observations
+        n_weights = self._n_weights
         if consider_prior:
-            weights = np.empty(n_observations + 1)
-            weights[:-1] = weights_func(n_observations)
+            weights = np.empty(n_weights + 1)
+            weights[:-1] = weights_func(n_weights)
             weights[-1] = prior_weight
         else:
-            weights = weights_func(n_observations)
+            weights = weights_func(n_weights)
         weights /= weights.sum()
         return weights
 
@@ -279,32 +279,34 @@ class _MultivariateParzenEstimator:
 
         return transformed
 
-    def _precompute_sigmas0(self, multivariate_samples: Dict[str, np.ndarray]) -> np.ndarray:
+    def _precompute_sigmas0(
+        self, multivariate_samples: Dict[str, np.ndarray], sigma0_magnitude: float = 0.2
+    ) -> np.ndarray:
         # We use Scott's rule for bandwidth selection.
         # This rule was used in the BOHB paper.
+        # TODO(kstoneriv3): The constant factor sigma0_magnitude=0.2 might not be optimal.
         n_samples = next(iter(multivariate_samples.values())).size
         n_samples = max(n_samples, 1)
         n_params = len(multivariate_samples)
-        # TODO(kstoneriv3): The constant factor 0.2 might not be optimal.
-        return 0.2 * n_samples ** (-1.0 / (n_params + 4)) * np.ones(n_samples)
+        return sigma0_magnitude * n_samples ** (-1.0 / (n_params + 4)) * np.ones(n_samples)
 
     def _calculate_categorical_params(
         self, observations: np.ndarray, param_name: str
     ) -> np.ndarray:
 
         observations = observations.astype(int)
-        n_observations = self._n_observations
+        n_weights = self._n_weights
         distribution = self._search_space[param_name]
         assert isinstance(distribution, distributions.CategoricalDistribution)
         choices = distribution.choices
         consider_prior = self._parameters.consider_prior
         prior_weights = self._parameters.prior_weight
         if consider_prior:
-            shape = (n_observations + 1, len(choices))
+            shape = (n_weights + 1, len(choices))
         else:
-            shape = (n_observations, len(choices))
-        weights = np.full(shape, fill_value=prior_weights / n_observations)
-        weights[np.arange(n_observations), observations] += 1
+            shape = (n_weights, len(choices))
+        weights = np.full(shape, fill_value=prior_weights / n_weights)
+        weights[np.arange(n_weights), observations] += 1
         weights /= weights.sum(axis=1, keepdims=True)
         return weights
 
@@ -312,7 +314,7 @@ class _MultivariateParzenEstimator:
         self, observations: np.ndarray, param_name: str
     ) -> Tuple[np.ndarray, np.ndarray]:
 
-        n_observations = self._n_observations
+        n_weights = self._n_weights
         consider_prior = self._parameters.consider_prior
         consider_magic_clip = self._parameters.consider_magic_clip
         sigmas0 = self._sigmas0
@@ -321,7 +323,7 @@ class _MultivariateParzenEstimator:
         assert low is not None
         assert high is not None
 
-        if n_observations == 0:
+        if n_weights == 0:
             consider_prior = True
 
         if consider_prior:
@@ -329,13 +331,13 @@ class _MultivariateParzenEstimator:
             prior_mu = 0.5 * (low + high)
             prior_sigma = 1.0 * (high - low)
 
-            mus = np.empty(n_observations + 1)
-            mus[:n_observations] = observations
-            mus[n_observations] = prior_mu
+            mus = np.empty(n_weights + 1)
+            mus[:n_weights] = observations
+            mus[n_weights] = prior_mu
 
-            sigmas = np.empty(n_observations + 1)
-            sigmas[:n_observations] = sigmas0 * (high - low)
-            sigmas[n_observations] = prior_sigma
+            sigmas = np.empty(n_weights + 1)
+            sigmas[:n_weights] = sigmas0 * (high - low)
+            sigmas[n_weights] = prior_sigma
 
         else:
             mus = observations
