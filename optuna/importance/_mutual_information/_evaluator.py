@@ -17,10 +17,10 @@ from optuna.trial import TrialState
 
 class MutualInformationImportanceEvaluator(BaseImportanceEvaluator):
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, n_MC: Optional[int]=None) -> None:
+        self._n_MC = n_MC
 
-    def evaluate(self, study: Study, params: Optional[List[str]] = None) -> Dict[str, float]:
+    def evaluate(self, study: Study, params: Optional[List[str]] = None, n_MC=None) -> Dict[str, float]:
 
         search_space = study.best_trial.distributions
         if params is None:
@@ -35,24 +35,50 @@ class MutualInformationImportanceEvaluator(BaseImportanceEvaluator):
             np.min(scores) - 0.3 * score_range, np.max(scores) + 0.3 * score_range
         )  # type: BaseDistribution
         score_space = {"score": score_distribution}
-        mpe_score = _MultivariateParzenEstimator({"score": scores}, score_space)
-        score_log_prob = mpe_score.log_pdf({"score": scores})
 
-        mi = {}
-        for param_name, param_values in parameters.items():
+        if self._n_MC is None:
+            mpe_score = _MultivariateParzenEstimator({"score": scores}, score_space)
+            score_log_prob = mpe_score.log_pdf({"score": scores})
 
-            param_space = {param_name: search_space[param_name]}
-            joint_space = deepcopy(param_space)
-            joint_space.update(score_space)
+            mi = {}
+            for param_name, param_values in parameters.items():
+                # We construct parameter space.
+                param_space = {param_name: search_space[param_name]}
+                joint_space = deepcopy(param_space)
+                joint_space.update(score_space)
+                # We construct Parzen estimators.
+                mpe_param = _MultivariateParzenEstimator({param_name: param_values}, param_space)
+                mpe_joint = _MultivariateParzenEstimator(
+                    {param_name: param_values, "score": scores}, joint_space
+                )
+                # We calculate log_probs.
+                param_log_prob = mpe_param.log_pdf({param_name: param_values})
+                joint_log_prob = mpe_joint.log_pdf({param_name: param_values, "score": scores})
 
-            mpe_param = _MultivariateParzenEstimator({param_name: param_values}, param_space)
-            mpe_joint = _MultivariateParzenEstimator(
-                {param_name: param_values, "score": scores}, joint_space
-            )
-            param_log_prob = mpe_param.log_pdf({param_name: param_values})
-            joint_log_prob = mpe_joint.log_pdf({param_name: param_values, "score": scores})
+                mi[param_name] = np.mean(joint_log_prob - score_log_prob - param_log_prob)
+        else:
+            mi = {}
+            for param_name, param_values in parameters.items():
+                # We construct parameter space.
+                param_space = {param_name: search_space[param_name]}
+                joint_space = deepcopy(param_space)
+                joint_space.update(score_space)
+                # We construct Parzen estimators.
+                mpe_score = _MultivariateParzenEstimator({"score": scores}, score_space)
+                mpe_param = _MultivariateParzenEstimator({param_name: param_values}, param_space)
+                mpe_joint = _MultivariateParzenEstimator(
+                    {param_name: param_values, "score": scores}, joint_space
+                )
+                # We get Monte Carlo samples.
+                rng = np.random.RandomState()
+                mc_samples = mpe_joint.sample(rng, self._n_MC)
+                # We calculate log_probs.
+                score_log_prob = mpe_score.log_pdf({"score": mc_samples["score"]})
+                param_log_prob = mpe_param.log_pdf({param_name: mc_samples[param_name]})
+                joint_log_prob = mpe_joint.log_pdf(mc_samples)
 
-            mi[param_name] = np.mean(joint_log_prob - score_log_prob - param_log_prob)
+                mi[param_name] = np.mean(joint_log_prob - score_log_prob - param_log_prob)
+
 
         mi = {k: v for k, v in sorted(mi.items(), key=lambda item: item[1], reverse=True)}
         return mi
