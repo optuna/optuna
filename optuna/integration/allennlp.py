@@ -72,7 +72,7 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     return pruner(**pruner_params)
 
 
-def _infer_and_cast(value: str) -> Any:
+def _infer_and_cast(value: Optional[str]) -> Any:
     """Infer and cast a string to desired types.
 
     We are only able to set strings as environment variables.
@@ -81,6 +81,9 @@ def _infer_and_cast(value: str) -> Any:
     to desired types.
 
     """
+    if value is None:
+        return None
+
     result = value  # type: Any
 
     try:
@@ -113,10 +116,8 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[str]]:
 
     kwargs = {}
     for key in keys.split(","):
-        value = os.getenv("{}_OPTUNA_ALLENNLP_{}".format(PPID, key))  # type: Any
-        value = _infer_and_cast(value)
-
-        kwargs[key] = value
+        value = os.getenv("{}_OPTUNA_ALLENNLP_{}".format(PPID, key))
+        kwargs[key] = _infer_and_cast(value)
 
     return kwargs
 
