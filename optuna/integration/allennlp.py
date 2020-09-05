@@ -48,6 +48,16 @@ PPID = os.getppid()
 
 
 def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
+    """Restore a pruner which is defined in `create_study`.
+
+    AllenNLPPruningCallback is launched as a sub-process of
+    a main script that defines search spaces.
+    An instance cannot be passed directly from the parent process
+    to its sub-process. For this reason, we set information about
+    pruner as environment variables and load them and
+    re-create the same pruner in `AllenNLPPruningCallback`.
+
+    """
     pruner_class = os.getenv("{}_OPTUNA_ALLENNLP_PRUNER_CLASS".format(PPID))
     if pruner_class is None:
         return None
@@ -60,6 +70,31 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
         return None
 
     return pruner(**pruner_params)
+
+
+def _infer_and_cast(value: str) -> Any:
+    """Infer and cast a string to desired types.
+
+    We are only able to set strings as environment variables.
+    However, parameters of a pruner could be integer, float,
+    boolean, or else. We infer and cast environment variables
+    to desired types.
+
+    """
+    result = value  # type: Any
+
+    try:
+        result = int(value)
+    except ValueError:
+        try:
+            result = float(value)
+        except ValueError:
+            if result == "True":
+                result = True
+            elif value == "False":
+                result = False
+
+    return result
 
 
 def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
@@ -79,14 +114,7 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[str]]:
     kwargs = {}
     for key in keys.split(","):
         value = os.getenv("{}_OPTUNA_ALLENNLP_{}".format(PPID, key))  # type: Any
-
-        try:
-            value = int(value)
-        except ValueError:
-            try:
-                value = float(value)
-            except ValueError:
-                pass
+        value = _infer_and_cast(value)
 
         kwargs[key] = value
 

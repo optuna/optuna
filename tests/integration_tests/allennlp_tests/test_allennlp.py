@@ -269,3 +269,11 @@ def test_allennlp_pruning_callback_with_executor() -> None:
             assert origin_pruner._reduction_factor == target_pruner._reduction_factor
         else:
             assert False  # Always fail
+
+
+def test_infer_and_cast() -> None:
+    assert optuna.integration.allennlp._infer_and_cast("True") is True
+    assert optuna.integration.allennlp._infer_and_cast("False") is False
+    assert optuna.integration.allennlp._infer_and_cast("3.14") == 3.14
+    assert optuna.integration.allennlp._infer_and_cast("42") == 42
+    assert optuna.integration.allennlp._infer_and_cast("auto") == "auto"
