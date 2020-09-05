@@ -933,13 +933,18 @@ class TestLightGBMTunerCV(object):
         study = optuna.create_study()
         with TemporaryDirectory() as tmpdir:
             tuner = LightGBMTunerCV(
-                params, dataset, study=study, model_dir=tmpdir, return_cvbooster=True,
+                params,
+                dataset,
+                study=study,
+                model_dir=tmpdir,
+                return_cvbooster=True,
             )
             with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
                 tuner.tune_regularization_factors()
 
             best_booster = tuner.get_best_booster()
-            assert best_booster.params["lambda_l1"] != unexpected_value
+            for booster in best_booster.boosters:
+                assert booster.params["lambda_l1"] != unexpected_value
 
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
@@ -949,7 +954,12 @@ class TestLightGBMTunerCV(object):
 
         # the `model_dir` argument is None
         with pytest.raises(ValueError) as excinfo:
-            tuner3 = LightGBMTunerCV(params, dataset, study=study, model_dir=None,)
+            tuner3 = LightGBMTunerCV(
+                params,
+                dataset,
+                study=study,
+                model_dir=None,
+            )
             with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
                 tuner3.tune_regularization_factors()
             tuner3.get_best_booster()
