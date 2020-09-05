@@ -19,9 +19,7 @@ class MutualInformationImportanceEvaluator(BaseImportanceEvaluator):
     def __init__(self, n_MC: Optional[int] = None) -> None:
         self._n_MC = n_MC
 
-    def evaluate(
-        self, study: Study, params: Optional[List[str]] = None, n_MC: Optional[int] = None
-    ) -> Dict[str, float]:
+    def evaluate(self, study: Study, params: Optional[List[str]] = None) -> Dict[str, float]:
 
         search_space = study.best_trial.distributions
         if params is None:
