@@ -155,7 +155,6 @@ class CmaEsSampler(BaseSampler):
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._n_startup_trials = n_startup_trials
         self._warn_independent_sampling = warn_independent_sampling
-        self._logger = optuna.logging.get_logger(__name__)
         self._cma_rng = np.random.RandomState(seed)
         self._search_space = optuna.samplers.IntersectionSearchSpace()
         self._consider_pruned_trials = consider_pruned_trials
@@ -232,7 +231,7 @@ class CmaEsSampler(BaseSampler):
             return {}
 
         if len(search_space) == 1:
-            self._logger.info(
+            _logger.info(
                 "`CmaEsSampler` only supports two or more dimensional continuous "
                 "search space. `{}` is used instead of `CmaEsSampler`.".format(
                     self._independent_sampler.__class__.__name__
@@ -257,7 +256,7 @@ class CmaEsSampler(BaseSampler):
             generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
 
         if optimizer.dim != len(ordered_keys):
-            self._logger.info(
+            _logger.info(
                 "`CmaEsSampler` does not support dynamic search space. "
                 "`{}` is used instead of `CmaEsSampler`.".format(
                     self._independent_sampler.__class__.__name__
@@ -381,7 +380,7 @@ class CmaEsSampler(BaseSampler):
         )
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-        self._logger.warning(
+        _logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
             "by using `{}` instead of `CmaEsSampler` "
             "(optimization performance may be degraded). "
