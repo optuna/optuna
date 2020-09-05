@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from copy import deepcopy
 import math
 from typing import Dict
@@ -78,8 +79,8 @@ class MutualInformationImportanceEvaluator(BaseImportanceEvaluator):
 
                 mi[param_name] = np.mean(joint_log_prob - score_log_prob - param_log_prob)
 
-        mi = {k: v for k, v in sorted(mi.items(), key=lambda item: item[1], reverse=True)}
-        return mi
+        mi_sorted = sorted(mi.items(), key=lambda item: item[1], reverse=True)
+        return OrderedDict(mi_sorted)
 
 
 def _get_multivariate_observation_pairs(
