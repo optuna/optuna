@@ -169,6 +169,23 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
         best_params[key] = str(value)
     best_config = json.loads(_jsonnet.evaluate_file(input_config_file, ext_vars=best_params))
 
+    # `optuner_pruner` only works with Optuna.
+    # It removes when dumping configuration since
+    # the result of `dump_best_config` can be passed to
+    # `allennlp train`.
+    if "epoch_callbacks" in best_config["trainer"]:
+        new_epoch_callbacks = []
+        epoch_callbacks = best_config["trainer"]["epoch_callbacks"]
+        for callback in epoch_callbacks:
+            if callback["type"] == "optuna_pruner":
+                continue
+            new_epoch_callbacks.append(callback)
+
+        if len(new_epoch_callbacks) == 0:
+            best_config["trainer"].pop("epoch_callbacks")
+        else:
+            best_config["trainer"]["epoch_callbacks"] = new_epoch_callbacks
+
     with open(output_config_file, "w") as f:
         json.dump(best_config, f, indent=4)
 
@@ -350,7 +367,7 @@ class AllenNLPPruningCallback(EpochCallback):
                 self._monitor = monitor
             else:
                 message = "Fail to load study.\n"
-                message += "AllenNLPPruningCallback is only available with Optuna."
+                message += "AllenNLPPruningCallback works only with Optuna with RDB or Redis."
                 raise Exception(message)
 
     def __call__(
