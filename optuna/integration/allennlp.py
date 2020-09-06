@@ -122,7 +122,7 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[str]]:
     return kwargs
 
 
-def _export_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
+def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
     pruner = trial.study.pruner
     kwargs = {}  # type: Dict[str, Any]
 
@@ -244,7 +244,7 @@ class AllenNLPExecutor(object):
             "OPTUNA_ALLENNLP_MONITOR": metrics,
         }
 
-        pruner_params = _export_pruner_config(trial)
+        pruner_params = _fetch_pruner_config(trial)
         system_attrs["OPTUNA_ALLENNLP_PRUNER_KEYS"] = ",".join(pruner_params.keys())
 
         pruner_params = {
