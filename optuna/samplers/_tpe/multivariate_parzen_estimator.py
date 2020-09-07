@@ -293,8 +293,8 @@ class _MultivariateParzenEstimator:
     def _calculate_categorical_params(
         self, observations: np.ndarray, param_name: str
     ) -> np.ndarray:
-        
-        # TODO(kstoneriv3): This the bandwidth selection rule might not be opmimal.
+
+        # TODO(kstoneriv3): This the bandwidth selection rule might not be optimal.
         observations = observations.astype(int)
         n_weights = self._n_weights
         distribution = self._search_space[param_name]
