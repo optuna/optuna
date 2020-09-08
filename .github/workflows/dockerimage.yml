@@ -46,12 +46,11 @@ jobs:
 
     - name: Build the Docker image
       run: |
-        if [ "${{ github.event_name }}" = 'release' ]; then
-          docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
-        else
+        if [ "${{ github.event_name }}" != 'release' ]; then
           docker pull "${HUB_TAG}"
-          docker build --cache-from "${HUB_TAG}" . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
+          CACHE_FROM="--cache-from=${HUB_TAG}"
         fi
+        docker build ${CACHE_FROM} . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
 
     - name: Verify the built image
       run: |
