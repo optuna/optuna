@@ -328,12 +328,13 @@ class AllenNLPPruningCallback(EpochCallback):
     if you want to add a proning callback which observes a metric.
 
     Args:
-        monitor:
-            An evaluation metric for pruning, e.g. ``validation_loss`` or
-            ``validation_accuracy``.
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
             objective function.
+        monitor:
+            An evaluation metric for pruning, e.g. ``validation_loss`` or
+            ``validation_accuracy``.
+
     """
 
     def __init__(
