@@ -11,6 +11,8 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 
 EPS = 1e-12
+SIGMA0_MAGNITUDE = 0.2
+
 _DISTRIBUTION_CLASSES = (
     distributions.UniformDistribution,
     distributions.LogUniformDistribution,
@@ -279,16 +281,14 @@ class _MultivariateParzenEstimator:
 
         return transformed
 
-    def _precompute_sigmas0(
-        self, multivariate_samples: Dict[str, np.ndarray], sigma0_magnitude: float = 0.2
-    ) -> np.ndarray:
+    def _precompute_sigmas0(self, multivariate_samples: Dict[str, np.ndarray]) -> np.ndarray:
         # We use Scott's rule for bandwidth selection.
         # This rule was used in the BOHB paper.
-        # TODO(kstoneriv3): The constant factor sigma0_magnitude=0.2 might not be optimal.
+        # TODO(kstoneriv3): The constant factor SIGMA0_MAGNITUDE=0.2 might not be optimal.
         n_samples = next(iter(multivariate_samples.values())).size
         n_samples = max(n_samples, 1)
         n_params = len(multivariate_samples)
-        return sigma0_magnitude * n_samples ** (-1.0 / (n_params + 4)) * np.ones(n_samples)
+        return SIGMA0_MAGNITUDE * n_samples ** (-1.0 / (n_params + 4)) * np.ones(n_samples)
 
     def _calculate_categorical_params(
         self, observations: np.ndarray, param_name: str
