@@ -7,7 +7,6 @@ from typing import Tuple
 import numpy
 from numpy import ndarray
 
-
 EPS = 1e-12
 
 

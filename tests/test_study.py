@@ -4,6 +4,7 @@ import multiprocessing
 import pickle
 import threading
 import time
+import uuid
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -11,13 +12,12 @@ from typing import Optional
 from typing import Tuple
 from unittest.mock import Mock  # NOQA
 from unittest.mock import patch
-import uuid
 
 import _pytest.capture
-from _pytest.recwarn import WarningsRecorder
 import joblib
 import pandas as pd
 import pytest
+from _pytest.recwarn import WarningsRecorder
 
 import optuna
 from optuna import create_trial

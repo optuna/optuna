@@ -1,17 +1,17 @@
-from collections import OrderedDict
 import math
+from collections import OrderedDict
 from typing import Callable
 from typing import List
 
 import pytest
 
 import optuna
-from optuna.importance import BaseImportanceEvaluator
-from optuna.importance import FanovaImportanceEvaluator
-from optuna.importance import get_param_importances
-from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna import samplers
 from optuna import storages
+from optuna.importance import BaseImportanceEvaluator
+from optuna.importance import FanovaImportanceEvaluator
+from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
+from optuna.importance import get_param_importances
 from optuna.study import create_study
 from optuna.trial import Trial
 

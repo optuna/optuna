@@ -3,10 +3,9 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 
-from optuna._study_direction import StudyDirection
 from optuna import logging
 from optuna import trial
-
+from optuna._study_direction import StudyDirection
 
 _logger = logging.get_logger(__name__)
 

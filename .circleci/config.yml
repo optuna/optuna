@@ -53,6 +53,12 @@ jobs:
             flake8 .
 
       - run:
+          name: isort
+          command: |
+            . venv/bin/activate
+            isort . --check --diff
+
+      - run:
           name: mypy
           command: |
             . venv/bin/activate

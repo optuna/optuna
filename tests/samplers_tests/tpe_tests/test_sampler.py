@@ -10,10 +10,10 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.samplers import _tpe
-from optuna.samplers import TPESampler
-from optuna.trial import Trial
 from optuna import TrialPruned
+from optuna.samplers import TPESampler
+from optuna.samplers import _tpe
+from optuna.trial import Trial
 
 
 @pytest.mark.parametrize("use_hyperband", [False, True])

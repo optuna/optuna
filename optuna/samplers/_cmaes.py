@@ -7,13 +7,13 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
-from cmaes import CMA
 import numpy as np
+from cmaes import CMA
 
 import optuna
+from optuna import logging
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
-from optuna import logging
 from optuna.samplers import BaseSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState

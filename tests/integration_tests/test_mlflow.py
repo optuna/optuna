@@ -1,5 +1,5 @@
-from mlflow.tracking import MlflowClient
 import py
+from mlflow.tracking import MlflowClient
 
 import optuna
 from optuna.integration.mlflow import MLflowCallback

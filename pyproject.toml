@@ -17,3 +17,10 @@ exclude = '''
   | tutorial  # Optuna specific
 )/
 '''
+
+[tool.isort]
+profile = 'black'
+src_paths = ['optuna', 'tests', 'docs']
+skip_glob = ['docs/source/conf.py', '**/alembic/versions/*.py']
+line_length = 99
+force_single_line = 'True'

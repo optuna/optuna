@@ -1,6 +1,6 @@
-from collections import OrderedDict
 import math
 import typing
+from collections import OrderedDict
 from unittest.mock import patch
 
 import numpy as np

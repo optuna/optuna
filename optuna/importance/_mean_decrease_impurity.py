@@ -10,9 +10,9 @@ import numpy
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
+from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._base import _get_distributions
 from optuna.importance._base import _get_study_data
-from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
 
 with try_import() as _imports:

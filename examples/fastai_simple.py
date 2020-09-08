@@ -22,7 +22,6 @@ from fastai import vision
 import optuna
 from optuna.integration import FastAIPruningCallback
 
-
 BATCHSIZE = 128
 EPOCHS = 10
 

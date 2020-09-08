@@ -1,12 +1,12 @@
 from typing import Iterable
 from unittest.mock import patch
 
-from ignite.engine import Engine
 import pytest
+from ignite.engine import Engine
 
 import optuna
-from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
+from optuna.testing.integration import create_running_trial
 
 
 def test_pytorch_ignite_pruning_handler() -> None:

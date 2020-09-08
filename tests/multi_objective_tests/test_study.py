@@ -1,13 +1,13 @@
+import uuid
 from typing import List
 from typing import Tuple
 from unittest.mock import patch
-import uuid
 
 import _pytest.capture
 import pytest
 
 import optuna
-from optuna.study import StudyDirection
+from optuna._study_direction import StudyDirection
 from optuna.testing.storage import StorageSupplier
 
 

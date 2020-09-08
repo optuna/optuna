@@ -5,7 +5,6 @@ from typing import Any
 
 from optuna.type_checking import TYPE_CHECKING
 
-
 _import_structure = {
     "allennlp": ["AllenNLPExecutor", "AllenNLPPruningCallback"],
     "catalyst": ["CatalystPruningCallback"],

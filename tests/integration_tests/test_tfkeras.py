@@ -1,12 +1,12 @@
 import numpy as np
-from packaging import version
 import pytest
 import tensorflow as tf
+from packaging import version
 
 import optuna
 from optuna.integration import TFKerasPruningCallback
-from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
+from optuna.testing.integration import create_running_trial
 
 
 def test_tfkeras_pruning_callback() -> None:

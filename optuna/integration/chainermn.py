@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime
 from typing import Any
 from typing import Callable
@@ -6,8 +7,8 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Type
-import warnings
 
+from optuna import TrialPruned
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
@@ -16,7 +17,6 @@ from optuna.storages import RDBStorage
 from optuna.study import Study
 from optuna.trial import BaseTrial
 from optuna.trial import Trial
-from optuna import TrialPruned
 
 with try_import() as _imports:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA

@@ -5,8 +5,9 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
-from optuna._experimental import experimental
 from optuna import distributions
+from optuna import logging
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -14,7 +15,6 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna import logging
 from optuna.trial._base import BaseTrial
 from optuna.trial._state import TrialState
 

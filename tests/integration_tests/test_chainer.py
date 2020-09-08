@@ -1,19 +1,19 @@
-from collections import namedtuple
 import math
 import typing
+from collections import namedtuple
 from unittest.mock import Mock
 from unittest.mock import patch
 
 import chainer
 import chainer.links as L
-from chainer.training import triggers
 import numpy as np
 import pytest
+from chainer.training import triggers
 
 import optuna
 from optuna.integration.chainer import ChainerPruningExtension
-from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
+from optuna.testing.integration import create_running_trial
 
 
 class FixedValueDataset(chainer.dataset.DatasetMixin):

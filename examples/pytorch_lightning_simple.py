@@ -15,14 +15,14 @@ import argparse
 import os
 import shutil
 
-from packaging import version
 import pytorch_lightning as pl
-from pytorch_lightning import Callback
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.optim import Adam
 import torch.utils.data
+from packaging import version
+from pytorch_lightning import Callback
+from torch.optim import Adam
 from torchvision import datasets
 from torchvision import transforms
 

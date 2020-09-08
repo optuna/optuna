@@ -6,10 +6,10 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
-from optuna._experimental import experimental
-from optuna.distributions import BaseDistribution
 from optuna import multi_objective
-from optuna.study import StudyDirection
+from optuna._experimental import experimental
+from optuna._study_direction import StudyDirection
+from optuna.distributions import BaseDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState

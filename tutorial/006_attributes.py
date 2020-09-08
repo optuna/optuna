@@ -16,9 +16,11 @@ This feature is to annotate experiments with user-defined attributes.
 # A key is supposed to be a ``str``, and a value be any object serializable with ``json.dumps``.
 
 import sklearn.datasets
-import sklearn.svm
 import sklearn.model_selection
+import sklearn.svm
+
 import optuna
+
 study = optuna.create_study(storage='sqlite:///example.db')
 study.set_user_attr('contributors', ['Akiba', 'Sano'])
 study.set_user_attr('dataset', 'MNIST')

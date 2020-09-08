@@ -11,12 +11,12 @@ from typing import Type
 from typing import Union
 
 import optuna
-from optuna._experimental import experimental
 from optuna import logging
 from optuna import multi_objective
+from optuna._experimental import experimental
+from optuna._study_direction import StudyDirection
 from optuna.storages import BaseStorage
 from optuna.study import Study
-from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState

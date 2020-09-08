@@ -3,9 +3,9 @@ from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
-from cmaes import CMA
 import numpy as np
 import pytest
+from cmaes import CMA
 
 import optuna
 from optuna.samplers._cmaes import _initialize_sigma0

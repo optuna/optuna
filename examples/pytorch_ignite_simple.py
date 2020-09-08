@@ -14,13 +14,13 @@ argument.
 
 import argparse
 
+import torch
+import torch.nn.functional as F
+from ignite.engine import Events
 from ignite.engine import create_supervised_evaluator
 from ignite.engine import create_supervised_trainer
-from ignite.engine import Events
 from ignite.metrics import Accuracy
-import torch
 from torch import nn
-import torch.nn.functional as F
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset

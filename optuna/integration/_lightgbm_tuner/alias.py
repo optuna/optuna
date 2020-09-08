@@ -2,7 +2,6 @@ from typing import Any
 from typing import Dict
 from typing import List  # NOQA
 
-
 _ALIAS_GROUP_LIST = [
     {"param_name": "bagging_fraction", "alias_names": ["sub_row", "subsample", "bagging"]},
     {"param_name": "learning_rate", "alias_names": ["shrinkage_rate", "eta"]},

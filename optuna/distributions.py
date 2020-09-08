@@ -2,11 +2,11 @@ import abc
 import copy
 import decimal
 import json
+import warnings
 from typing import Any
 from typing import Dict
 from typing import Sequence
 from typing import Union
-import warnings
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
 

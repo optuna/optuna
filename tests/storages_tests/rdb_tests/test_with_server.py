@@ -1,5 +1,5 @@
-from multiprocessing import Pool
 import os
+from multiprocessing import Pool
 from typing import Sequence
 from typing import Tuple
 

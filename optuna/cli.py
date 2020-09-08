@@ -7,17 +7,17 @@ If you want to add a new command, you also need to update `entry_points` in `set
 c.f. https://docs.openstack.org/cliff/latest/user/demoapp.html#setup-py
 """
 
-from argparse import ArgumentParser  # NOQA
-from argparse import Namespace  # NOQA
-from importlib.machinery import SourceFileLoader
 import logging
 import sys
 import types
+import warnings
+from argparse import ArgumentParser  # NOQA
+from argparse import Namespace  # NOQA
+from importlib.machinery import SourceFileLoader
 from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Tuple
-import warnings
 
 from cliff.app import App
 from cliff.command import Command

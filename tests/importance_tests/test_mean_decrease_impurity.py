@@ -1,7 +1,7 @@
+from optuna import Trial
 from optuna import create_study
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.samplers import RandomSampler
-from optuna import Trial
 
 
 def objective(trial: Trial) -> float:

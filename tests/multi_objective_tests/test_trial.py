@@ -1,13 +1,13 @@
 import datetime
-from typing import cast
 from typing import List
 from typing import Tuple
+from typing import cast
 
 import pytest
 
 import optuna
+from optuna._study_direction import StudyDirection
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
-from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
 

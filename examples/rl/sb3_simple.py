@@ -12,15 +12,14 @@ from typing import Any
 from typing import Dict
 
 import gym
-from stable_baselines3 import A2C
-from stable_baselines3.common.callbacks import EvalCallback
 import torch
 import torch.nn as nn
+from stable_baselines3 import A2C
+from stable_baselines3.common.callbacks import EvalCallback
 
 import optuna
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
-
 
 N_TRIALS = 100
 N_JOBS = 2

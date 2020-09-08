@@ -8,24 +8,24 @@ from typing import Type
 
 import pytest
 
+from optuna import Study
+from optuna import TrialPruned
 from optuna import create_study
 from optuna import distributions
 from optuna import integration
+from optuna import pruners
 from optuna.integration.chainermn import ChainerMNStudy
 from optuna.integration.chainermn import ChainerMNTrial
-from optuna import pruners
 from optuna.pruners import BasePruner
 from optuna.samplers import BaseSampler
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna import Study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
-from optuna import TrialPruned
 
 try:
     import chainermn

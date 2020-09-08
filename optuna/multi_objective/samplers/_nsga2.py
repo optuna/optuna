@@ -1,6 +1,6 @@
-from collections import defaultdict
 import hashlib
 import itertools
+from collections import defaultdict
 from typing import Any
 from typing import DefaultDict
 from typing import Dict
@@ -11,11 +11,10 @@ from typing import Tuple
 import numpy as np
 
 import optuna
+from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
-from optuna import multi_objective
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
-
 
 # Define key names of `Trial.system_attrs`.
 _GENERATION_KEY = "multi_objective:nsga2:generation"

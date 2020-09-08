@@ -2,14 +2,13 @@ from packaging import version
 
 from optuna._imports import try_import
 
-
 with try_import() as _imports:  # NOQA
     import plotly  # NOQA
     import plotly.graph_objs as go  # NOQA
-    from plotly.graph_objs import Contour, Scatter  # NOQA
-    from plotly.subplots import make_subplots  # NOQA
-
     from plotly import __version__ as plotly_version
+    from plotly.graph_objs import Contour  # NOQA
+    from plotly.graph_objs import Scatter
+    from plotly.subplots import make_subplots  # NOQA
 
     if version.parse(plotly_version) < version.parse("4.0.0"):
         raise ImportError(

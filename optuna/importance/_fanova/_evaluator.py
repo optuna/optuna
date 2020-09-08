@@ -11,9 +11,9 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._base import _get_distributions
 from optuna.importance._base import _get_study_data
-from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
 from optuna.study import Study
 

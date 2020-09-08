@@ -1,18 +1,17 @@
 import os
 
 import pytorch_lightning as pl
-from pytorch_lightning import Callback
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.optim import Adam
 import torch.utils.data
+from pytorch_lightning import Callback
+from torch.optim import Adam
 from torchvision import datasets
 from torchvision import transforms
 
 import optuna
 from optuna.integration.mlflow import MLflowCallback
-
 
 PERCENT_VALID_EXAMPLES = 0.1
 BATCHSIZE = 128

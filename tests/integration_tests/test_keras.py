@@ -1,12 +1,12 @@
-from keras.layers import Dense
-from keras import Sequential
 import numpy as np
 import pytest
+from keras import Sequential
+from keras.layers import Dense
 
 import optuna
 from optuna.integration import KerasPruningCallback
-from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
+from optuna.testing.integration import create_running_trial
 
 
 @pytest.mark.parametrize("interval, epochs", [(1, 1), (2, 1), (2, 2)])

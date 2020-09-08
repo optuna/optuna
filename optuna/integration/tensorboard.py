@@ -6,8 +6,8 @@ from optuna._experimental import experimental
 from optuna._imports import try_import
 
 with try_import() as _imports:
-    from tensorboard.plugins.hparams import api as hp
     import tensorflow as tf
+    from tensorboard.plugins.hparams import api as hp
 
 
 @experimental("2.0.0")

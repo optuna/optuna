@@ -17,16 +17,16 @@ import numpy as np
 import scipy as sp
 from scipy.sparse import spmatrix
 
-from optuna._experimental import experimental
-from optuna._imports import try_import
+from optuna import TrialPruned
 from optuna import distributions
 from optuna import logging
 from optuna import samplers
 from optuna import study as study_module
+from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
-from optuna import TrialPruned
 
 with try_import() as _imports:
     import pandas as pd

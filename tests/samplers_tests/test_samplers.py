@@ -1,5 +1,5 @@
-from collections import OrderedDict
 import pickle
+from collections import OrderedDict
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -22,7 +22,6 @@ from optuna.study import Study
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
-
 
 parametrize_sampler = pytest.mark.parametrize(
     "sampler_class",

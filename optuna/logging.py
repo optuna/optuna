@@ -1,4 +1,5 @@
 import logging
+import threading
 from logging import CRITICAL  # NOQA
 from logging import DEBUG  # NOQA
 from logging import ERROR  # NOQA
@@ -6,7 +7,6 @@ from logging import FATAL  # NOQA
 from logging import INFO  # NOQA
 from logging import WARN  # NOQA
 from logging import WARNING  # NOQA
-import threading
 
 import colorlog
 
