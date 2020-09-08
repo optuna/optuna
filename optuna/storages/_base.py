@@ -4,7 +4,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from optuna import study
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
 from optuna.distributions import BaseDistribution
