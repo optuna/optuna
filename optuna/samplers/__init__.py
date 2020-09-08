@@ -5,3 +5,4 @@ from optuna.samplers._cmaes import CmaEsSampler  # NOQA
 from optuna.samplers._grid import GridSampler  # NOQA
 from optuna.samplers._random import RandomSampler  # NOQA
 from optuna.samplers._tpe.sampler import TPESampler  # NOQA
+from optuna.samplers._sobol.sampler import SobolSampler  # NOQA
