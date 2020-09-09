@@ -254,10 +254,21 @@ class AllenNLPExecutor(object):
         else:
             self._include_package = include_package
 
+        storage = trial.study._storage
+
+        if isinstance(storage, optuna.storages.RDBStorage) or \
+                isinstance(storage, optuna.storages.RedisStorage):
+            url = storage.url
+        elif isinstance(storage, optuna.storages._CachedStorage):
+            assert isinstance(storage._backend, optuna.storages.RDBStorage)
+            url = storage._backend.url
+        else:
+            url = ""
+
         system_attrs = {
             "OPTUNA_ALLENNLP_STUDY_NAME": trial.study.study_name,
             "OPTUNA_ALLENNLP_TRIAL_ID": str(trial._trial_id),
-            "OPTUNA_ALLENNLP_STORAGE_NAME": trial.study._storage.get_url() or "",
+            "OPTUNA_ALLENNLP_STORAGE_NAME": url,
             "OPTUNA_ALLENNLP_MONITOR": metrics,
         }
 
