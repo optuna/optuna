@@ -1157,11 +1157,6 @@ class RDBStorage(BaseStorage):
 
         return self._version_manager.get_all_versions()
 
-    def get_url(self) -> str:
-        """Return the path to database."""
-
-        return self.url
-
 
 class _VersionManager(object):
     def __init__(self, url: str, engine: Engine, scoped_session: orm.scoped_session) -> None:

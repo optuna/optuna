@@ -165,12 +165,6 @@ class _CachedStorage(BaseStorage):
 
         return self._backend.get_all_study_summaries()
 
-    def get_url(self) -> Optional[str]:
-
-        if hasattr(self, "_backend"):
-            return self._backend.get_url()
-        return None
-
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 
         frozen_trial = self._backend._create_new_trial(study_id, template_trial)
