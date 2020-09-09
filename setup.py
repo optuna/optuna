@@ -32,7 +32,7 @@ def get_install_requires() -> List[str]:
     return [
         "alembic",
         "cliff",
-        "cmaes>=0.5.1",
+        "cmaes>=0.6.0",
         "colorlog",
         "joblib",
         "numpy",
@@ -94,7 +94,7 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite", "thop"]
+            + ["pytorch-ignite", "thop", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
@@ -139,7 +139,7 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite"]
+            + ["pytorch-ignite", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
@@ -181,7 +181,7 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite"]
+            + ["pytorch-ignite", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
@@ -222,6 +222,7 @@ setup(
             "storages/_rdb/alembic.ini",
             "storages/_rdb/alembic/*.*",
             "storages/_rdb/alembic/versions/*.*",
+            "py.typed",
         ]
     },
     python_requires=">=3.5",

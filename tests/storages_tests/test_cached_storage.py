@@ -32,7 +32,7 @@ def test_cached_set() -> None:
 
     """Test CachedStorage does not flush to persistent storages.
 
-     The CachedStorage does not flush when it modifies trial updates of params or value.
+    The CachedStorage does not flush when it modifies trial updates of params or value.
 
     """
 
@@ -63,8 +63,8 @@ def test_uncached_set() -> None:
 
     """Test CachedStorage does flush to persistent storages.
 
-     The CachedStorage flushes modifications of trials to a persistent storage when
-     it modifies either intermediate_values, state, user_attrs, or system_attrs.
+    The CachedStorage flushes modifications of trials to a persistent storage when
+    it modifies either intermediate_values, state, user_attrs, or system_attrs.
 
     """
 

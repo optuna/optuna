@@ -77,7 +77,7 @@ def downgrade():
         for trial in trials:
             number_attrs.append(
                 TrialSystemAttributeModel(
-                    trial_id=trial.trial_id, key="_number", value_json=json.dumps(trial.number),
+                    trial_id=trial.trial_id, key="_number", value_json=json.dumps(trial.number)
                 )
             )
         session.bulk_save_objects(number_attrs)

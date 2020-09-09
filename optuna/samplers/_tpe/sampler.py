@@ -219,7 +219,7 @@ class TPESampler(BaseSampler):
             )
 
     def _split_observation_pairs(
-        self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]],
+        self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]]
     ) -> Tuple[np.ndarray, np.ndarray]:
 
         config_vals = np.asarray(config_vals)
@@ -321,7 +321,7 @@ class TPESampler(BaseSampler):
             mus=below, low=low, high=high, parameters=self._parzen_estimator_parameters
         )
         samples_below = self._sample_from_gmm(
-            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size,
+            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size
         )
         log_likelihoods_below = self._gmm_log_pdf(
             samples=samples_below,
@@ -507,7 +507,7 @@ class TPESampler(BaseSampler):
         return return_val
 
     @classmethod
-    def _categorical_log_pdf(cls, sample: np.ndarray, p: np.ndarray,) -> np.ndarray:
+    def _categorical_log_pdf(cls, sample: np.ndarray, p: np.ndarray) -> np.ndarray:
 
         if sample.size:
             return np.log(np.asarray(p)[sample])
@@ -602,23 +602,23 @@ class TPESampler(BaseSampler):
 
 
 def _get_observation_pairs(
-    study: Study, param_name: str,
+    study: Study, param_name: str
 ) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]:
     """Get observation pairs from the study.
 
-       This function collects observation pairs from the complete or pruned trials of the study.
-       The values for trials that don't contain the parameter named ``param_name`` are set to None.
+    This function collects observation pairs from the complete or pruned trials of the study.
+    The values for trials that don't contain the parameter named ``param_name`` are set to None.
 
-       An observation pair fundamentally consists of a parameter value and an objective value.
-       However, due to the pruning mechanism of Optuna, final objective values are not always
-       available. Therefore, this function uses intermediate values in addition to the final
-       ones, and reports the value with its step count as ``(-step, value)``.
-       Consequently, the structure of the observation pair is as follows:
-       ``(param_value, (-step, value))``.
+    An observation pair fundamentally consists of a parameter value and an objective value.
+    However, due to the pruning mechanism of Optuna, final objective values are not always
+    available. Therefore, this function uses intermediate values in addition to the final
+    ones, and reports the value with its step count as ``(-step, value)``.
+    Consequently, the structure of the observation pair is as follows:
+    ``(param_value, (-step, value))``.
 
-       The second element of an observation pair is used to rank observations in
-       ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
-       ``(-step, value)``).
+    The second element of an observation pair is used to rank observations in
+    ``_split_observation_pairs`` method (i.e., observations are sorted lexicographically by
+    ``(-step, value)``).
     """
 
     sign = 1
