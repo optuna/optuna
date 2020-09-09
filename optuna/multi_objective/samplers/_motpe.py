@@ -636,7 +636,6 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             ), "Pygmo is not available. Please install pygmo to use this option."
             return pygmo.hypervolume(solution_set).compute(reference_point)
         else:
-            print(solution_set, reference_point)
             return _hypervolume.WFG().compute(solution_set, reference_point)
 
     def _solve_hssp(
@@ -658,11 +657,9 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         """
         selected_vecs = []  # type: List[np.ndarray]
         selected_indices = []  # type: List[int]
-        print('here1')
         contributions = [
             self._compute_hypervolume(np.asarray([v]), reference_point) for v in rank_i_loss_vals
         ]
-        print('here2')
         MARK_AS_SELECTED = -1
         hv_selected = 0.0
         while len(selected_indices) < subset_size:
