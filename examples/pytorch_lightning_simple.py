@@ -146,7 +146,7 @@ def objective(trial):
     metrics_callback = MetricsCallback()
     trainer = pl.Trainer(
         logger=False,
-        val_percent_check=PERCENT_VALID_EXAMPLES,
+        limit_val_batches=PERCENT_VALID_EXAMPLES,
         checkpoint_callback=checkpoint_callback,
         max_epochs=EPOCHS,
         gpus=1 if torch.cuda.is_available() else None,
