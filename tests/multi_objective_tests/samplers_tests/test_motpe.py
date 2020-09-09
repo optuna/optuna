@@ -54,7 +54,6 @@ def test_sample_independent_seed_fix() -> None:
 
     random.seed(128)
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
-
     # Prepare a trial and a sample for later checks.
     trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
     sampler = MOTPEMultiObjectiveSampler(seed=0)
@@ -589,7 +588,6 @@ def test_solve_hssp() -> None:
     # Two dimensions
     for i in range(8):
         subset_size = int(random.random() * i) + 1
-        print(subset_size, flush=True)
         test_case = np.asarray([[random.random(), random.random()] for _ in range(8)])
         r = 1.1 * np.max(test_case, axis=0)
         truth = 0.0
@@ -602,7 +600,6 @@ def test_solve_hssp() -> None:
     # Three dimensions
     for i in range(8):
         subset_size = int(random.random() * i) + 1
-        print(subset_size, flush=True)
         test_case = np.asarray(
             [[random.random(), random.random(), random.random()] for _ in range(8)]
         )

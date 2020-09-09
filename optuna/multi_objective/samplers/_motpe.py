@@ -282,12 +282,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 rank_i_lvals = lvals[nondomination_ranks == i]
                 rank_i_indices = indices[nondomination_ranks == i]
                 worst_point = np.max(rank_i_lvals, axis=0)
-                reference_point = np.maximum(
-                    np.maximum(
-                        1.1 * worst_point, 0.9 * worst_point  # case: value > 0, case: value < 0
-                    ),
-                    np.full(len(worst_point), EPS),  # case: value == 0
-                )
+                reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+                reference_point[reference_point == 0] = EPS
                 selected_indices = self._solve_hssp(
                     rank_i_lvals, rank_i_indices, subset_size, reference_point
                 )
@@ -427,7 +423,11 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             mus=below, low=low, high=high, parameters=parzen_estimator_parameters_below
         )
         samples_below = self._sample_from_gmm(
-            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size,
+            parzen_estimator=parzen_estimator_below,
+            low=low,
+            high=high,
+            q=q,
+            size=size,
         )
         log_likelihoods_below = self._gmm_log_pdf(
             samples=samples_below,
@@ -636,6 +636,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             ), "Pygmo is not available. Please install pygmo to use this option."
             return pygmo.hypervolume(solution_set).compute(reference_point)
         else:
+            print(solution_set, reference_point)
             return _hypervolume.WFG().compute(solution_set, reference_point)
 
     def _solve_hssp(
@@ -657,9 +658,11 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         """
         selected_vecs = []  # type: List[np.ndarray]
         selected_indices = []  # type: List[int]
+        print('here1')
         contributions = [
             self._compute_hypervolume(np.asarray([v]), reference_point) for v in rank_i_loss_vals
         ]
+        print('here2')
         MARK_AS_SELECTED = -1
         hv_selected = 0.0
         while len(selected_indices) < subset_size:
@@ -682,7 +685,9 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         return np.asarray(selected_indices, dtype=int)
 
     def _calculate_default_weights_below(
-        self, lvals: np.ndarray, indices_below: np.ndarray,
+        self,
+        lvals: np.ndarray,
+        indices_below: np.ndarray,
     ) -> np.ndarray:
         # Calculate weights based on hypervolume contributions.
         n_below = len(indices_below)
@@ -693,12 +698,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         else:
             lvals_below = lvals[indices_below].tolist()
             worst_point = np.max(lvals_below, axis=0)
-            reference_point = np.maximum(
-                np.maximum(
-                    1.1 * worst_point, 0.9 * worst_point,  # case: value > 0  # case: value < 0
-                ),
-                np.full(len(worst_point), EPS),  # case: value == 0
-            )
+            reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+            reference_point[reference_point == 0] = EPS
             hv = self._compute_hypervolume(np.asarray(lvals_below), reference_point)
             contributions = np.asarray(
                 [
@@ -794,16 +795,17 @@ def _default_weights_above(x: int) -> np.ndarray:
 
 
 def _get_observation_pairs(
-    study: "multi_objective.study.MultiObjectiveStudy", param_name: str,
+    study: "multi_objective.study.MultiObjectiveStudy",
+    param_name: str,
 ) -> Tuple[List[Optional[float]], List[List[float]]]:
     """Get observation pairs from the study.
 
-       This function collects observation pairs from the complete trials of the study.
-       Pruning is currently not supported.
-       The values for trials that don't contain the parameter named ``param_name`` are set to None.
+    This function collects observation pairs from the complete trials of the study.
+    Pruning is currently not supported.
+    The values for trials that don't contain the parameter named ``param_name`` are set to None.
 
-       Objective values are negated if their directions are maximization and all objectives are
-       treated as minimization in the MOTPE algorithm.
+    Objective values are negated if their directions are maximization and all objectives are
+    treated as minimization in the MOTPE algorithm.
     """
 
     trials = [
