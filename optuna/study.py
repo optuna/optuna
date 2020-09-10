@@ -114,6 +114,20 @@ class BaseStudy(object):
         For library users, it's recommended to use more handy
         :attr:`~optuna.study.Study.trials` property to get the trials instead.
 
+        Example:
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_uniform("x", -1, 1)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+
+                trials = study.get_trials()
+                assert len(trials) == 3
         Args:
             deepcopy:
                 Flag to control whether to apply ``copy.deepcopy()`` to the trials.
@@ -174,6 +188,33 @@ class Study(BaseStudy):
     @property
     def user_attrs(self) -> Dict[str, Any]:
         """Return user attributes.
+
+        .. seealso::
+
+            See :func:`~optuna.study.Study.set_user_attr` for related method.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_float("x", 0, 1)
+                    y = trial.suggest_float("y", 0, 1)
+                    return x ** 2 + y ** 2
+
+                study = optuna.create_study()
+
+                study.set_user_attr("objective function", "quadratic function")
+                study.set_user_attr("dimensions", 2)
+                study.set_user_attr("contributors", ["Akiba", "Sano"])
+
+                assert study.user_attrs == {
+                    "objective function": "quadratic function",
+                    "dimensions": 2,
+                    "contributors": ["Akiba", "Sano"]
+                }
 
         Returns:
             A dictionary containing all user attributes.
@@ -335,6 +376,33 @@ class Study(BaseStudy):
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
 
+        .. seealso::
+
+            See :attr:`~optuna.study.Study.user_attrs` for related attribute.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    x = trial.suggest_float("x", 0, 1)
+                    y = trial.suggest_float("y", 0, 1)
+                    return x ** 2 + y ** 2
+
+                study = optuna.create_study()
+
+                study.set_user_attr("objective function", "quadratic function")
+                study.set_user_attr("dimensions", 2)
+                study.set_user_attr("contributors", ["Akiba", "Sano"])
+
+                assert study.user_attrs == {
+                    "objective function": "quadratic function",
+                    "dimensions": 2,
+                    "contributors": ["Akiba", "Sano"]
+                }
+
         Args:
             key: A key string of the attribute.
             value: A value of the attribute. The value should be JSON serializable.
@@ -480,6 +548,22 @@ class Study(BaseStudy):
         immediately after all trials which the :meth:`~optuna.study.Study.optimize` method
         spawned finishes.
         This method does not affect any behaviors of parallel or successive study processes.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+                def objective(trial):
+                    if trial.number == 4:
+                        study.stop()
+                    x = trial.suggest_uniform("x", 0, 10)
+                    return x ** 2
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=10)
+                assert len(study.trials) == 5
 
         Raises:
             RuntimeError:
