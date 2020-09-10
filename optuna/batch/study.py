@@ -24,28 +24,18 @@ _logger = optuna.logging.get_logger(__name__)
 
 
 class BatchStudy(object):
-    def __init__(self, study: "optuna.study.Study", batch_size: int):
+    def __init__(self, study: "optuna.study.Study"):
         self._study = study
-        self._batch_size = batch_size
 
     def __getattr__(self, attr_name: str) -> Any:
         return getattr(self._study, attr_name)
-
-    @property
-    def batch_size(self) -> int:
-        """Return the size of batches.
-
-        Returns:
-            Size of batches.
-        """
-
-        return self._batch_size
 
     def optimize(
         self,
         objective: ObjectiveFuncType,
         timeout: Optional[int] = None,
         n_batches: Optional[int] = None,
+        batch_size: int = 1,
         n_jobs: int = 1,
         catch: Tuple[Type[Exception], ...] = (),
         callbacks: Optional[List[CallbackFuncType]] = None,
@@ -56,7 +46,7 @@ class BatchStudy(object):
         n_trials = math.ceil(n_batches / n_jobs) if n_batches is not None else None
 
         self._study._run_trial_and_callbacks = types.MethodType(  # type: ignore
-            partial(_run_trial_and_callbacks, batch_func=objective, batch_size=self._batch_size),
+            partial(_run_trial_and_callbacks, batch_func=objective, batch_size=batch_size),
             self._study,
         )
         self._study.optimize(
@@ -176,11 +166,10 @@ def create_study(
     study_name: Optional[str] = None,
     direction: str = "minimize",
     load_if_exists: bool = False,
-    batch_size: int = 1,
 ) -> BatchStudy:
 
     study = optuna.create_study(storage, sampler, None, study_name, direction, load_if_exists)
-    return BatchStudy(study, batch_size)
+    return BatchStudy(study)
 
 
 @experimental("2.1.0")
@@ -188,8 +177,7 @@ def load_study(
     study_name: str,
     storage: Union[str, "optuna.storages.BaseStorage"],
     sampler: Optional["optuna.samplers.BaseSampler"] = None,
-    batch_size: int = 1,
 ) -> BatchStudy:
 
     study = optuna.load_study(study_name, storage, sampler, None)
-    return BatchStudy(study, batch_size)
+    return BatchStudy(study)

@@ -101,14 +101,11 @@ def check_batch_study(study: optuna.batch.study.BatchStudy) -> None:
     ],
 )
 def test_create_study(direction_str: str, direction: optuna.study.StudyDirection) -> None:
-    batch_size = 4
-    study = optuna.batch.create_study(direction=direction_str, batch_size=batch_size)
-    assert study.batch_size == batch_size
+    study = optuna.batch.create_study(direction=direction_str)
     assert study.direction == direction
 
 
 def test_load_study() -> None:
-    batch_size = 4
 
     with StorageSupplier("sqlite") as storage:
         study_name = str(uuid.uuid4())
@@ -116,34 +113,34 @@ def test_load_study() -> None:
         with pytest.raises(KeyError):
             # Test loading an unexisting study.
             optuna.batch.study.load_study(
-                study_name=study_name, storage=storage, batch_size=batch_size
+                study_name=study_name, storage=storage
             )
 
         # Create a new study.
         created_study = optuna.batch.study.create_study(
-            study_name=study_name, storage=storage, batch_size=4
+            study_name=study_name, storage=storage
         )
 
         # Test loading an existing study.
         loaded_study = optuna.batch.study.load_study(
-            study_name=study_name, storage=storage, batch_size=batch_size
+            study_name=study_name, storage=storage
         )
         assert created_study._study_id == loaded_study._study_id
 
 
 @pytest.mark.parametrize("batch_size", [1, 2, 3])
 def test_optimize_trivial(batch_size: int) -> None:
-    study = optuna.batch.create_study(batch_size=batch_size)
-    study.optimize(func, n_batches=2)
+    study = optuna.batch.create_study()
+    study.optimize(func, n_batches=2, batch_size=batch_size)
     check_batch_study(study)
     assert len(study.trials) == batch_size * 2
 
 
 @pytest.mark.parametrize("batch_size", [1, 2, 3])
 def test_batch_optimize_trivial_resume(batch_size: int) -> None:
-    study = optuna.batch.create_study(batch_size=batch_size)
-    study.optimize(func, n_batches=2)
-    study.optimize(func, n_batches=2)
+    study = optuna.batch.create_study()
+    study.optimize(func, n_batches=2, batch_size=batch_size)
+    study.optimize(func, n_batches=2, batch_size=batch_size)
     check_batch_study(study)
     assert len(study.trials) == batch_size * 4
 
@@ -162,14 +159,14 @@ def test_optimize_parallel(n_batches: int, n_jobs: int, storage_mode: str) -> No
     batch_size = 4
 
     with StorageSupplier(storage_mode) as storage:
-        study = optuna.batch.create_study(storage=storage, batch_size=batch_size)
-        study.optimize(f, n_batches=n_batches, n_jobs=n_jobs)
+        study = optuna.batch.create_study(storage=storage)
+        study.optimize(f, n_batches=n_batches, batch_size=batch_size, n_jobs=n_jobs)
         assert f.n_calls == n_batches
         check_batch_study(study)
 
 
 def test_study_user_attrs() -> None:
-    study = optuna.batch.create_study(batch_size=4)
+    study = optuna.batch.create_study()
 
     study.set_user_attr("foo", "bar")
     assert study.user_attrs == {"foo": "bar"}
@@ -182,7 +179,7 @@ def test_study_user_attrs() -> None:
 
 
 def test_study_system_attrs() -> None:
-    study = optuna.batch.create_study(batch_size=4)
+    study = optuna.batch.create_study()
 
     study.set_system_attr("foo", "bar")
     assert study.system_attrs == {"foo": "bar"}
@@ -196,7 +193,7 @@ def test_study_system_attrs() -> None:
 
 def test_enqueue_trial() -> None:
     batch_size = 4
-    study = optuna.batch.create_study(batch_size=batch_size)
+    study = optuna.batch.create_study()
     for i in range(batch_size):
         study.enqueue_trial({"x": i})
 
@@ -205,12 +202,12 @@ def test_enqueue_trial() -> None:
         assert all(x == np.array(range(batch_size)))
         return np.zeros(batch_size)
 
-    study.optimize(objective, n_batches=1)
+    study.optimize(objective, n_batches=1, batch_size=batch_size)
 
 
 def test_callbacks() -> None:
     batch_size = 2
-    study = optuna.batch.create_study(batch_size=batch_size)
+    study = optuna.batch.create_study()
 
     def objective(trial: optuna.batch.trial.BatchTrial) -> np.ndarray:
         return trial.suggest_float("x", 0, 10)
@@ -221,7 +218,7 @@ def test_callbacks() -> None:
         lambda _, trial: list0.append(trial.number),
         lambda _, trial: list1.append(trial.number),
     ]
-    study.optimize(objective, n_batches=1, callbacks=callbacks)
+    study.optimize(objective, n_batches=1, batch_size=batch_size, callbacks=callbacks)
 
     assert list0 == [0, 1]
     assert list1 == [0, 1]

@@ -11,22 +11,19 @@ from optuna.testing.storage import StorageSupplier
 
 
 def test_create_study() -> None:
-    batch_size = 2
-    study = optuna.batch.multi_objective.create_study(["maximize"], batch_size=batch_size)
+    study = optuna.batch.multi_objective.create_study(["maximize"])
     assert study.n_objectives == 1
     assert study.directions == [StudyDirection.MAXIMIZE]
-    assert study.batch_size == batch_size
 
     study = optuna.batch.multi_objective.create_study(
-        ["maximize", "minimize"], batch_size=batch_size
+        ["maximize", "minimize"]
     )
     assert study.n_objectives == 2
     assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
-    assert study.batch_size == batch_size
 
     with pytest.raises(ValueError):
         # Empty `directions` is not allowed.
-        study = optuna.batch.multi_objective.create_study([], batch_size=batch_size)
+        study = optuna.batch.multi_objective.create_study([])
 
 
 def test_load_study() -> None:
@@ -51,12 +48,12 @@ def test_load_study() -> None:
 @pytest.mark.parametrize("n_objectives", [1, 2, 3])
 def test_optimize(n_objectives: int) -> None:
     directions = ["minimize" for _ in range(n_objectives)]
-    study = optuna.batch.multi_objective.create_study(directions, batch_size=2)
+    study = optuna.batch.multi_objective.create_study(directions)
 
     def objective(trial: BatchMultiObjectiveTrial) -> List[np.ndarray]:
         return [trial.suggest_float("v{}".format(i), 0, 5) for i in range(n_objectives)]
 
-    study.optimize(objective, n_batches=3)
+    study.optimize(objective, n_batches=3, batch_size=2)
 
     assert len(study.trials) == 6
 
@@ -65,16 +62,16 @@ def test_optimize(n_objectives: int) -> None:
 
 
 def test_pareto_front() -> None:
-    study = optuna.batch.multi_objective.create_study(["minimize", "maximize"], batch_size=2)
+    study = optuna.batch.multi_objective.create_study(["minimize", "maximize"])
 
-    study.optimize(lambda t: [np.array([2, 1]), np.array([2, 1])], n_batches=1)
+    study.optimize(lambda t: [np.array([2, 1]), np.array([2, 1])], n_batches=1, batch_size=2)
     assert {tuple(t.values) for t in study.get_pareto_front_trials()} == {(1, 1), (2, 2)}
 
-    study.optimize(lambda t: [np.array([3, 1]), np.array([1, 3])], n_batches=1)
+    study.optimize(lambda t: [np.array([3, 1]), np.array([1, 3])], n_batches=1, batch_size=2)
     assert {tuple(t.values) for t in study.get_pareto_front_trials()} == {(1, 3)}
     assert len(study.get_pareto_front_trials()) == 1
 
     # Add the same trial results as the above ones.
-    study.optimize(lambda t: [np.array([3, 1]), np.array([1, 3])], n_batches=1)
+    study.optimize(lambda t: [np.array([3, 1]), np.array([1, 3])], n_batches=1, batch_size=2)
     assert {tuple(t.values) for t in study.get_pareto_front_trials()} == {(1, 3)}
     assert len(study.get_pareto_front_trials()) == 2

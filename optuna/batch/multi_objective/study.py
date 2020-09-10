@@ -29,9 +29,8 @@ CallbackFuncType = Callable[
 
 
 class BatchMultiObjectiveStudy(object):
-    def __init__(self, study: "optuna.multi_objective.study.MultiObjectiveStudy", batch_size: int):
+    def __init__(self, study: "optuna.multi_objective.study.MultiObjectiveStudy"):
         self._study = study
-        self._batch_size = batch_size
 
     def __getattr__(self, attr_name: str) -> Any:
         return getattr(self._study, attr_name)
@@ -41,6 +40,7 @@ class BatchMultiObjectiveStudy(object):
         objective: ObjectiveFuncType,
         timeout: Optional[int] = None,
         n_batches: Optional[int] = None,
+        batch_size: int = 1,
         n_jobs: int = 1,
         catch: Tuple[Type[Exception], ...] = (),
         callbacks: Optional[List[CallbackFuncType]] = None,
@@ -60,7 +60,7 @@ class BatchMultiObjectiveStudy(object):
 
         self._study._study._run_trial_and_callbacks = types.MethodType(  # type: ignore
             partial(
-                _run_trial_and_callbacks, batch_func=mo_objective, batch_size=self._batch_size
+                _run_trial_and_callbacks, batch_func=mo_objective, batch_size=batch_size
             ),
             self._study._study,
         )
@@ -76,16 +76,6 @@ class BatchMultiObjectiveStudy(object):
             show_progress_bar=show_progress_bar,
         )
 
-    @property
-    def batch_size(self) -> int:
-        """Return the size of batches.
-
-        Returns:
-            Size of batches.
-        """
-
-        return self._batch_size
-
 
 @experimental("2.1.0")
 def create_study(
@@ -94,13 +84,12 @@ def create_study(
     storage: Optional[Union[str, "optuna.storages.BaseStorage"]] = None,
     sampler: Optional["optuna.multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
     load_if_exists: bool = False,
-    batch_size: int = 1,
 ) -> BatchMultiObjectiveStudy:
 
     study = optuna.multi_objective.create_study(
         directions, study_name, storage, sampler, load_if_exists
     )
-    return BatchMultiObjectiveStudy(study, batch_size)
+    return BatchMultiObjectiveStudy(study)
 
 
 @experimental("2.1.0")
@@ -108,8 +97,7 @@ def load_study(
     study_name: str,
     storage: Optional[Union[str, "optuna.storages.BaseStorage"]] = None,
     sampler: Optional["optuna.multi_objective.samplers.BaseMultiObjectiveSampler"] = None,
-    batch_size: int = 1,
 ) -> BatchMultiObjectiveStudy:
 
     study = optuna.multi_objective.load_study(study_name, storage, sampler)
-    return BatchMultiObjectiveStudy(study, batch_size)
+    return BatchMultiObjectiveStudy(study)

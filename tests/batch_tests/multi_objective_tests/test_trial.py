@@ -18,8 +18,8 @@ def test_suggest() -> None:
         p7 = trial.suggest_int("p7", 1, 7, log=True)
         return (p0 + p1 + p2, p3 + p4 + p5 + p6 + p7)
 
-    study = optuna.batch.multi_objective.create_study(["maximize", "maximize"], batch_size=2)
-    study.optimize(objective, n_batches=3)
+    study = optuna.batch.multi_objective.create_study(["maximize", "maximize"])
+    study.optimize(objective, n_batches=3, batch_size=2)
 
 
 def test_report() -> None:
@@ -32,9 +32,9 @@ def test_report() -> None:
         return 100 * np.ones(batch_size), 200 * np.ones(batch_size)
 
     study = optuna.batch.multi_objective.create_study(
-        ["minimize", "minimize"], batch_size=batch_size
+        ["minimize", "minimize"]
     )
-    study.optimize(objective, n_batches=2)
+    study.optimize(objective, n_batches=2, batch_size=batch_size)
 
     for i in range(batch_size):
         trial = study.trials[i]
