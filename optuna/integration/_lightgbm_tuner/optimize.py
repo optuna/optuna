@@ -233,7 +233,10 @@ class _OptunaObjective(_BaseTuner):
         self._preprocess(trial)
 
         start_time = time.time()
-        booster = lgb.train(self.lgbm_params, self.train_set, **self.lgbm_kwargs)
+        train_set = copy.copy(self.train_set)
+        kwargs = copy.copy(self.lgbm_kwargs)
+        kwargs["valid_sets"] = [copy.copy(d) for d in kwargs["valid_sets"]]
+        booster = lgb.train(self.lgbm_params, train_set, **kwargs)
 
         val_score = self._get_booster_best_score(booster)
         elapsed_secs = time.time() - start_time
@@ -302,7 +305,8 @@ class _OptunaObjectiveCV(_OptunaObjective):
         self._preprocess(trial)
 
         start_time = time.time()
-        cv_results = lgb.cv(self.lgbm_params, self.train_set, **self.lgbm_kwargs)
+        train_set = copy.copy(self.train_set)
+        cv_results = lgb.cv(self.lgbm_params, train_set, **self.lgbm_kwargs)
 
         val_scores = self._get_cv_scores(cv_results)
         val_score = val_scores[-1]
