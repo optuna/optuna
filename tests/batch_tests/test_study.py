@@ -125,7 +125,7 @@ def test_load_study() -> None:
 @pytest.mark.parametrize("batch_size", [1, 2, 3])
 def test_optimize_trivial(batch_size: int) -> None:
     study = optuna.batch.create_study()
-    study.optimize(func, n_batches=2, batch_size=batch_size)
+    study.optimize(func, n_trials=batch_size * 2, batch_size=batch_size)
     check_batch_study(study)
     assert len(study.trials) == batch_size * 2
 
@@ -133,29 +133,29 @@ def test_optimize_trivial(batch_size: int) -> None:
 @pytest.mark.parametrize("batch_size", [1, 2, 3])
 def test_batch_optimize_trivial_resume(batch_size: int) -> None:
     study = optuna.batch.create_study()
-    study.optimize(func, n_batches=2, batch_size=batch_size)
-    study.optimize(func, n_batches=2, batch_size=batch_size)
+    study.optimize(func, n_trials=batch_size * 2, batch_size=batch_size)
+    study.optimize(func, n_trials=batch_size * 2, batch_size=batch_size)
     check_batch_study(study)
     assert len(study.trials) == batch_size * 4
 
 
 @pytest.mark.parametrize(
-    "n_batches, n_jobs, storage_mode",
+    "n_trials, n_jobs, storage_mode",
     itertools.product(
-        (0, 1, 20),
+        (0, 4, 80),
         (1,),
         ["inmemory"],
-    ),  # n_batches  # n_jobs  # storage_mode
+    ),  # n_trials  # n_jobs  # storage_mode
 )
-def test_optimize_parallel(n_batches: int, n_jobs: int, storage_mode: str) -> None:
+def test_optimize_parallel(n_trials: int, n_jobs: int, storage_mode: str) -> None:
     f = Func()
 
     batch_size = 4
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.batch.create_study(storage=storage)
-        study.optimize(f, n_batches=n_batches, batch_size=batch_size, n_jobs=n_jobs)
-        assert f.n_calls == n_batches
+        study.optimize(f, n_trials=n_trials, batch_size=batch_size, n_jobs=n_jobs)
+        assert f.n_calls == n_trials / batch_size
         check_batch_study(study)
 
 
@@ -196,7 +196,7 @@ def test_enqueue_trial() -> None:
         assert all(x == np.array(range(batch_size)))
         return np.zeros(batch_size)
 
-    study.optimize(objective, n_batches=1, batch_size=batch_size)
+    study.optimize(objective, n_trials=batch_size, batch_size=batch_size)
 
 
 def test_callbacks() -> None:
@@ -212,7 +212,7 @@ def test_callbacks() -> None:
         lambda _, trial: list0.append(trial.number),
         lambda _, trial: list1.append(trial.number),
     ]
-    study.optimize(objective, n_batches=1, batch_size=batch_size, callbacks=callbacks)
+    study.optimize(objective, n_trials=batch_size, batch_size=batch_size, callbacks=callbacks)
 
     assert list0 == [0, 1]
     assert list1 == [0, 1]

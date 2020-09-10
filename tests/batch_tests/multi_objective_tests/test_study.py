@@ -51,7 +51,7 @@ def test_optimize(n_objectives: int) -> None:
     def objective(trial: BatchMultiObjectiveTrial) -> List[np.ndarray]:
         return [trial.suggest_float("v{}".format(i), 0, 5) for i in range(n_objectives)]
 
-    study.optimize(objective, n_batches=3, batch_size=2)
+    study.optimize(objective, n_trials=6, batch_size=2)
 
     assert len(study.trials) == 6
 
@@ -62,14 +62,14 @@ def test_optimize(n_objectives: int) -> None:
 def test_pareto_front() -> None:
     study = optuna.batch.multi_objective.create_study(["minimize", "maximize"])
 
-    study.optimize(lambda t: [np.array([2, 1]), np.array([2, 1])], n_batches=1, batch_size=2)
+    study.optimize(lambda t: [np.array([2, 1]), np.array([2, 1])], n_trials=2, batch_size=2)
     assert {tuple(t.values) for t in study.get_pareto_front_trials()} == {(1, 1), (2, 2)}
 
-    study.optimize(lambda t: [np.array([3, 1]), np.array([1, 3])], n_batches=1, batch_size=2)
+    study.optimize(lambda t: [np.array([3, 1]), np.array([1, 3])], n_trials=2, batch_size=2)
     assert {tuple(t.values) for t in study.get_pareto_front_trials()} == {(1, 3)}
     assert len(study.get_pareto_front_trials()) == 1
 
     # Add the same trial results as the above ones.
-    study.optimize(lambda t: [np.array([3, 1]), np.array([1, 3])], n_batches=1, batch_size=2)
+    study.optimize(lambda t: [np.array([3, 1]), np.array([1, 3])], n_trials=2, batch_size=2)
     assert {tuple(t.values) for t in study.get_pareto_front_trials()} == {(1, 3)}
     assert len(study.get_pareto_front_trials()) == 2

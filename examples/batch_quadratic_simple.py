@@ -20,4 +20,4 @@ def callback(study, trial):
 
 if __name__ == "__main__":
     study = optuna.batch.create_study(direction="maximize")
-    study.optimize(objective, n_batches=10, batch_size=4, callbacks=[callback])
+    study.optimize(objective, n_trials=40, batch_size=4, callbacks=[callback])

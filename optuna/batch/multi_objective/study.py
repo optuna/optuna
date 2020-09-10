@@ -39,7 +39,7 @@ class BatchMultiObjectiveStudy(object):
         self,
         objective: ObjectiveFuncType,
         timeout: Optional[int] = None,
-        n_batches: Optional[int] = None,
+        n_trials: Optional[int] = None,
         batch_size: int = 1,
         n_jobs: int = 1,
         catch: Tuple[Type[Exception], ...] = (),
@@ -56,12 +56,12 @@ class BatchMultiObjectiveStudy(object):
             mo_trial._report_complete_values(values)
             return np.zeros(len(trials))  # Dummy value.
 
-        n_trials = math.ceil(n_batches / n_jobs) if n_batches is not None else None
-
         self._study._study._run_trial_and_callbacks = types.MethodType(  # type: ignore
             partial(_run_trial_and_callbacks, batch_func=mo_objective, batch_size=batch_size),
             self._study._study,
         )
+
+        n_trials = math.ceil(n_trials / batch_size) if n_trials is not None else None
 
         self._study.optimize(
             lambda _: [0] * self._study.n_objectives,

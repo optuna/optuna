@@ -34,7 +34,7 @@ class BatchStudy(object):
         self,
         objective: ObjectiveFuncType,
         timeout: Optional[int] = None,
-        n_batches: Optional[int] = None,
+        n_trials: Optional[int] = None,
         batch_size: int = 1,
         n_jobs: int = 1,
         catch: Tuple[Type[Exception], ...] = (),
@@ -43,7 +43,7 @@ class BatchStudy(object):
         show_progress_bar: bool = False,
     ) -> None:
 
-        n_trials = math.ceil(n_batches / n_jobs) if n_batches is not None else None
+        n_trials = math.ceil(n_trials / batch_size) if n_trials is not None else None
 
         self._study._run_trial_and_callbacks = types.MethodType(  # type: ignore
             partial(_run_trial_and_callbacks, batch_func=objective, batch_size=batch_size),

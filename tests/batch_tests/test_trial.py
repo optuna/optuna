@@ -19,7 +19,7 @@ def test_suggest() -> None:
         return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7
 
     study = optuna.batch.create_study()
-    study.optimize(objective, n_batches=10, batch_size=4)
+    study.optimize(objective, n_trials=40, batch_size=4)
 
 
 def test_report() -> None:
@@ -32,7 +32,7 @@ def test_report() -> None:
         return 100 * np.ones(batch_size)
 
     study = optuna.batch.create_study()
-    study.optimize(objective, n_batches=2, batch_size=batch_size)
+    study.optimize(objective, n_trials=2 * batch_size, batch_size=batch_size)
 
     for i in range(batch_size):
         trial = study.trials[i]
@@ -55,7 +55,7 @@ def test_number() -> None:
         return np.zeros(batch_size)
 
     study = optuna.batch.create_study()
-    study.optimize(objective, n_batches=1, batch_size=batch_size)
+    study.optimize(objective, n_trials=batch_size, batch_size=batch_size)
     for i, trial in enumerate(study.trials):
         assert trial.number == i
 
@@ -76,7 +76,7 @@ def test_user_attrs() -> None:
         return np.ones(batch_size)
 
     study = optuna.batch.create_study()
-    study.optimize(objective, n_batches=1, batch_size=batch_size)
+    study.optimize(objective, n_trials=batch_size, batch_size=batch_size)
 
     assert all(t.user_attrs == {"foo": "quux", "baz": "qux"} for t in study.trials)
 
@@ -97,7 +97,7 @@ def test_system_attrs() -> None:
         return np.ones(batch_size)
 
     study = optuna.batch.create_study()
-    study.optimize(objective, n_batches=1, batch_size=batch_size)
+    study.optimize(objective, n_trials=batch_size, batch_size=batch_size)
 
     assert all(t.system_attrs == {"foo": "quux", "baz": "qux"} for t in study.trials)
 
@@ -110,7 +110,7 @@ def test_params_and_distributions() -> None:
         return x
 
     study = optuna.batch.create_study()
-    study.optimize(objective, n_batches=1, batch_size=4)
+    study.optimize(objective, n_trials=4, batch_size=4)
     assert all(set(trial.params.keys()) == {"x"} for trial in study.trials)
     assert all(set(trial.distributions.keys()) == {"x"} for trial in study.trials)
     assert all(
@@ -126,7 +126,7 @@ def test_datetime() -> None:
         return x
 
     study = optuna.batch.create_study()
-    study.optimize(objective, n_batches=1, batch_size=4)
+    study.optimize(objective, n_trials=4, batch_size=4)
     assert all(isinstance(trial.datetime_start, datetime.datetime) for trial in study.trials)
     assert all(isinstance(trial.datetime_complete, datetime.datetime) for trial in study.trials)
 
@@ -139,4 +139,4 @@ def test_should_prune() -> None:
         return x
 
     study = optuna.batch.create_study()
-    study.optimize(objective, n_batches=1, batch_size=4)
+    study.optimize(objective, n_trials=4, batch_size=4)
