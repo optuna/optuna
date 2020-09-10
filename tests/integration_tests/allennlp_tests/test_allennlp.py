@@ -278,3 +278,18 @@ def test_infer_and_cast() -> None:
     assert optuna.integration.allennlp._infer_and_cast("3.14") == 3.14
     assert optuna.integration.allennlp._infer_and_cast("42") == 42
     assert optuna.integration.allennlp._infer_and_cast("auto") == "auto"
+
+
+def test_fetch_pruner_config() -> None:
+    class SomeNewPruner(optuna.pruners.BasePruner):
+        def __init__(self):
+            pass
+
+        def prune(self):
+            return False
+
+    study = optuna.create_study(pruner=SomeNewPruner())
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+
+    with pytest.raises(ValueError):
+        optuna.integration.allennlp._fetch_pruner_config(trial)

@@ -158,6 +158,8 @@ def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
         kwargs["min_resource"] = pruner._min_resource
         kwargs["reduction_factor"] = pruner._reduction_factor
         kwargs["min_early_stopping_rate"] = pruner._min_early_stopping_rate
+    else:
+        raise ValueError("Unsupported pruner is specified: {}".format(type(pruner)))
 
     return kwargs
 
