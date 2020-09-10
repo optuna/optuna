@@ -35,7 +35,6 @@ else
   echo "Success in black."
 fi
 
-
 res_flake8=$(flake8 .)
 if [[ $res_flake8 ]] ; then
   echo "Failed with flake8."
