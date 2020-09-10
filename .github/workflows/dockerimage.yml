@@ -46,6 +46,7 @@ jobs:
 
     - name: Build the Docker image
       run: |
+        # If the event is release, cache is not available because the image tag includes the Optuna version.
         if [ "${{ github.event_name }}" != 'release' ]; then
           docker pull "${HUB_TAG}"
           CACHE_FROM="--cache-from=${HUB_TAG}"
