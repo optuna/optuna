@@ -173,14 +173,13 @@ def _run_trial(
 def create_study(
     storage: Optional[Union[str, "optuna.storages.BaseStorage"]] = None,
     sampler: Optional["optuna.samplers.BaseSampler"] = None,
-    pruner: Optional["optuna.pruners.BasePruner"] = None,
     study_name: Optional[str] = None,
     direction: str = "minimize",
     load_if_exists: bool = False,
     batch_size: int = 1,
 ) -> BatchStudy:
 
-    study = optuna.create_study(storage, sampler, pruner, study_name, direction, load_if_exists)
+    study = optuna.create_study(storage, sampler, None, study_name, direction, load_if_exists)
     return BatchStudy(study, batch_size)
 
 
@@ -189,9 +188,8 @@ def load_study(
     study_name: str,
     storage: Union[str, "optuna.storages.BaseStorage"],
     sampler: Optional["optuna.samplers.BaseSampler"] = None,
-    pruner: Optional["optuna.pruners.BasePruner"] = None,
     batch_size: int = 1,
 ) -> BatchStudy:
 
-    study = optuna.load_study(study_name, storage, sampler, pruner)
+    study = optuna.load_study(study_name, storage, sampler, None)
     return BatchStudy(study, batch_size)
