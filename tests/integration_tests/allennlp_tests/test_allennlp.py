@@ -282,10 +282,10 @@ def test_infer_and_cast() -> None:
 
 def test_fetch_pruner_config() -> None:
     class SomeNewPruner(optuna.pruners.BasePruner):
-        def __init__(self):
+        def __init__(self) -> None:
             pass
 
-        def prune(self):
+        def prune(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> bool:
             return False
 
     study = optuna.create_study(pruner=SomeNewPruner())
