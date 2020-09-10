@@ -112,19 +112,13 @@ def test_load_study() -> None:
 
         with pytest.raises(KeyError):
             # Test loading an unexisting study.
-            optuna.batch.study.load_study(
-                study_name=study_name, storage=storage
-            )
+            optuna.batch.study.load_study(study_name=study_name, storage=storage)
 
         # Create a new study.
-        created_study = optuna.batch.study.create_study(
-            study_name=study_name, storage=storage
-        )
+        created_study = optuna.batch.study.create_study(study_name=study_name, storage=storage)
 
         # Test loading an existing study.
-        loaded_study = optuna.batch.study.load_study(
-            study_name=study_name, storage=storage
-        )
+        loaded_study = optuna.batch.study.load_study(study_name=study_name, storage=storage)
         assert created_study._study_id == loaded_study._study_id
 
 

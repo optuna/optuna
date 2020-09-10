@@ -31,9 +31,7 @@ def test_report() -> None:
             trial.report([10 * np.ones(batch_size), 20 * np.ones(batch_size)], 2)
         return 100 * np.ones(batch_size), 200 * np.ones(batch_size)
 
-    study = optuna.batch.multi_objective.create_study(
-        ["minimize", "minimize"]
-    )
+    study = optuna.batch.multi_objective.create_study(["minimize", "minimize"])
     study.optimize(objective, n_batches=2, batch_size=batch_size)
 
     for i in range(batch_size):

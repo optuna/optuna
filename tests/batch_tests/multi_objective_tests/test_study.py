@@ -15,9 +15,7 @@ def test_create_study() -> None:
     assert study.n_objectives == 1
     assert study.directions == [StudyDirection.MAXIMIZE]
 
-    study = optuna.batch.multi_objective.create_study(
-        ["maximize", "minimize"]
-    )
+    study = optuna.batch.multi_objective.create_study(["maximize", "minimize"])
     assert study.n_objectives == 2
     assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
 
