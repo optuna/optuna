@@ -380,7 +380,7 @@ class AllenNLPPruningCallback(EpochCallback):
                 self._monitor = monitor
             else:
                 message = "Fail to load study.\n"
-                message += "AllenNLPPruningCallback works only with Optuna with RDB or Redis storages."
+                message += "AllenNLPPruningCallback works only with Optuna and RDB or Redis storages."  # NOQA
                 raise Exception(message)
 
     def __call__(
