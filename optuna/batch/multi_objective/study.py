@@ -57,6 +57,7 @@ class BatchMultiObjectiveStudy(object):
             mo_trial._report_complete_values(values)
             return np.zeros(len(trials))  # Dummy value.
 
+        # Executor of objective functions and callbacks is replaced with the batched one.
         self._study._study._run_trial_and_callbacks = types.MethodType(  # type: ignore
             partial(_run_trial_and_callbacks, batch_func=mo_objective, batch_size=batch_size),
             self._study._study,
@@ -65,7 +66,7 @@ class BatchMultiObjectiveStudy(object):
         n_trials = math.ceil(n_trials / batch_size) if n_trials is not None else None
 
         self._study.optimize(
-            lambda _: [0] * self._study.n_objectives,
+            lambda _: [0] * self._study.n_objectives,  # A dummy objective function.
             timeout=timeout,
             n_trials=n_trials,
             n_jobs=n_jobs,

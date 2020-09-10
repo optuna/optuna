@@ -46,12 +46,13 @@ class BatchStudy(object):
 
         n_trials = math.ceil(n_trials / batch_size) if n_trials is not None else None
 
+        # Executor of objective functions and callbacks is replaced with the batched one.
         self._study._run_trial_and_callbacks = types.MethodType(  # type: ignore
             partial(_run_trial_and_callbacks, batch_func=objective, batch_size=batch_size),
             self._study,
         )
         self._study.optimize(
-            lambda _: 0,
+            lambda _: 0,  # A dummy objective function.
             timeout=timeout,
             n_trials=n_trials,
             catch=catch,
