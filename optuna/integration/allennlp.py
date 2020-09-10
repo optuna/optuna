@@ -64,7 +64,7 @@ def _add_ppid(key: str) -> str:
 def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     """Restore a pruner which is defined in `create_study`.
 
-    AllenNLPPruningCallback is launched as a sub-process of
+    `AllenNLPPruningCallback` is launched as a sub-process of
     a main script that defines search spaces.
     An instance cannot be passed directly from the parent process
     to its sub-process. For this reason, we set information about
