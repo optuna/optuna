@@ -94,7 +94,7 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite", "thop"]
+            + ["pytorch-ignite", "thop", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
@@ -140,7 +140,7 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite"]
+            + ["pytorch-ignite", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
@@ -183,7 +183,7 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite"]
+            + ["pytorch-ignite", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
