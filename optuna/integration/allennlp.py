@@ -44,7 +44,21 @@ else:
             return wrapper
 
 
-PPID = os.getppid()
+def _add_ppid(key: str) -> str:
+    """Add the ID of parent process to given string.
+
+    User might want to launch multiple studies that uses `AllenNLPExecutor`.
+    Because `AllenNLPExecutor` uses environment variables for communicating
+    between a parent process and a child process. A parent process creates a study,
+    defines a search space, and a child process trains a AllenNLP model by
+    `allennlp.commands.train.train_model`. If multiple processes use `AllenNLPExecutor`,
+    the one's configuration could be loaded in the another's configuration.
+    To avoid this hazard, we add ID of a parent process to each key of
+    environment variables.
+
+    """
+    ppid = os.getppid()
+    return "{}_{}".format(ppid, key)
 
 
 def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
@@ -58,12 +72,11 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     re-create the same pruner in `AllenNLPPruningCallback`.
 
     """
-    pruner_class = os.getenv("{}_OPTUNA_ALLENNLP_PRUNER_CLASS".format(PPID))
+    pruner_class = os.getenv(_add_ppid("OPTUNA_ALLENNLP_PRUNER_CLASS"))
     if pruner_class is None:
         return None
 
     pruner_params = _get_environment_variables_for_pruner()
-
     pruner = getattr(optuna.pruners, pruner_class, None)
 
     if pruner is None:
@@ -102,21 +115,22 @@ def _infer_and_cast(value: Optional[str]) -> Any:
 
 def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
     return {
-        "study_name": os.getenv("{}_OPTUNA_ALLENNLP_STUDY_NAME".format(PPID)),
-        "trial_id": os.getenv("{}_OPTUNA_ALLENNLP_TRIAL_ID".format(PPID)),
-        "storage": os.getenv("{}_OPTUNA_ALLENNLP_STORAGE_NAME".format(PPID)),
-        "monitor": os.getenv("{}_OPTUNA_ALLENNLP_MONITOR".format(PPID)),
+        "study_name": os.getenv(_add_ppid("OPTUNA_ALLENNLP_STUDY_NAME")),
+        "trial_id": os.getenv(_add_ppid("OPTUNA_ALLENNLP_TRIAL_ID")),
+        "storage": os.getenv(_add_ppid("OPTUNA_ALLENNLP_STORAGE_NAME")),
+        "monitor": os.getenv(_add_ppid("OPTUNA_ALLENNLP_MONITOR")),
     }
 
 
 def _get_environment_variables_for_pruner() -> Dict[str, Optional[str]]:
-    keys = os.getenv("{}_OPTUNA_ALLENNLP_PRUNER_KEYS".format(PPID))
+    keys = os.getenv(_add_ppid("OPTUNA_ALLENNLP_PRUNER_KEYS"))
     if keys is None:
         return {}
 
     kwargs = {}
     for key in keys.split(","):
-        value = os.getenv("{}_OPTUNA_ALLENNLP_{}".format(PPID, key))
+        parameter_key = "OPTUNA_ALLENNLP_{}".format(key)
+        value = os.getenv(_add_ppid(parameter_key))
         kwargs[key] = _infer_and_cast(value)
 
     return kwargs
@@ -301,7 +315,7 @@ class AllenNLPExecutor(object):
 
     def _set_environment_variables(self) -> None:
         for key, value in self._system_attrs.items():
-            key_with_ppid = "{}_{}".format(PPID, key)
+            key_with_ppid = _add_ppid(key)
             os.environ[key_with_ppid] = value
 
     @staticmethod
