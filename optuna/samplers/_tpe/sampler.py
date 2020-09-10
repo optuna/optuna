@@ -140,10 +140,10 @@ class TPESampler(BaseSampler):
             and Efficient Hyperparameter Optimization at Scale
             <http://proceedings.mlr.press/v80/falkner18a.html>`_ for more details.
 
-            .. versionadded:: 2.1.0
+            .. versionadded:: 2.2.0
                 This option is an experimental feature. The interface may change in newer
                 versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v2.1.0.
+                https://github.com/optuna/optuna/releases/tag/v2.2.0.
     """
 
     def __init__(
