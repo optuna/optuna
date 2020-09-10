@@ -85,7 +85,7 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     return pruner(**pruner_params)
 
 
-def _infer_and_cast(value: Optional[str]) -> Any:
+def _infer_and_cast(value: Optional[str]) -> Optional[Union[str, int, float, bool]]:
     """Infer and cast a string to desired types.
 
     We are only able to set strings as environment variables.
@@ -97,20 +97,18 @@ def _infer_and_cast(value: Optional[str]) -> Any:
     if value is None:
         return None
 
-    result = value  # type: Any
-
     try:
-        result = int(value)
+        return int(value)
     except ValueError:
         try:
-            result = float(value)
+            return float(value)
         except ValueError:
-            if result == "True":
-                result = True
+            if value == "True":
+                return True
             elif value == "False":
-                result = False
+                return False
 
-    return result
+    return value
 
 
 def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
@@ -122,7 +120,7 @@ def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
     }
 
 
-def _get_environment_variables_for_pruner() -> Dict[str, Optional[str]]:
+def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int, float, bool]]]:
     keys = os.getenv(_add_ppid("OPTUNA_ALLENNLP_PRUNER_KEYS"))
     if keys is None:
         return {}
@@ -185,7 +183,7 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
         best_params[key] = str(value)
     best_config = json.loads(_jsonnet.evaluate_file(input_config_file, ext_vars=best_params))
 
-    # `optuner_pruner` only works with Optuna.
+    # `optuna_pruner` only works with Optuna.
     # It removes when dumping configuration since
     # the result of `dump_best_config` can be passed to
     # `allennlp train`.
@@ -395,8 +393,10 @@ class AllenNLPPruningCallback(EpochCallback):
                 self._trial = Trial(study, int(trial_id))
                 self._monitor = monitor
             else:
-                message = "Fail to load study.\n"
-                message += "AllenNLPPruningCallback works only with Optuna and RDB or Redis storages."  # NOQA
+                message = (
+                    "Fail to load study.\n"
+                    "AllenNLPPruningCallback works only with Optuna and RDB or Redis storages."
+                )
                 raise Exception(message)
 
     def __call__(
