@@ -115,7 +115,9 @@ OBJECTIVE2METRIC = {
 
 
 def check_cv(
-    cv: CVType = 5, y: Optional[OneDimArrayLikeType] = None, classifier: bool = False,
+    cv: CVType = 5,
+    y: Optional[OneDimArrayLikeType] = None,
+    classifier: bool = False,
 ) -> BaseCrossValidator:
     """Check ``cv``.
 
@@ -348,7 +350,9 @@ class _Objective(object):
             params["num_leaves"] = trial.suggest_int("num_leaves", 2, 2 ** params["max_depth"])
             # See https://github.com/Microsoft/LightGBM/issues/907
             params["min_data_in_leaf"] = trial.suggest_int(
-                "min_data_in_leaf", 1, max(1, int(self.n_samples / params["num_leaves"])),
+                "min_data_in_leaf",
+                1,
+                max(1, int(self.n_samples / params["num_leaves"])),
             )
             params["lambda_l1"] = trial.suggest_loguniform("lambda_l1", 1e-09, 10.0)
             params["lambda_l2"] = trial.suggest_loguniform("lambda_l2", 1e-09, 10.0)
