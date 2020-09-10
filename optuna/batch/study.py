@@ -23,6 +23,7 @@ CallbackFuncType = Callable[["optuna.study.Study", "optuna.trial.FrozenTrial"], 
 _logger = optuna.logging.get_logger(__name__)
 
 
+@experimental("2.2.0")
 class BatchStudy(object):
     def __init__(self, study: "optuna.study.Study"):
         self._study = study
@@ -159,7 +160,7 @@ def _run_trial(
     return trials
 
 
-@experimental("2.1.0")
+@experimental("2.2.0")
 def create_study(
     storage: Optional[Union[str, "optuna.storages.BaseStorage"]] = None,
     sampler: Optional["optuna.samplers.BaseSampler"] = None,
@@ -172,7 +173,7 @@ def create_study(
     return BatchStudy(study)
 
 
-@experimental("2.1.0")
+@experimental("2.2.0")
 def load_study(
     study_name: str,
     storage: Union[str, "optuna.storages.BaseStorage"],

@@ -28,6 +28,7 @@ CallbackFuncType = Callable[
 ]
 
 
+@experimental("2.2.0")
 class BatchMultiObjectiveStudy(object):
     def __init__(self, study: "optuna.multi_objective.study.MultiObjectiveStudy"):
         self._study = study
@@ -75,7 +76,7 @@ class BatchMultiObjectiveStudy(object):
         )
 
 
-@experimental("2.1.0")
+@experimental("2.2.0")
 def create_study(
     directions: List[str],
     study_name: Optional[str] = None,
@@ -90,7 +91,7 @@ def create_study(
     return BatchMultiObjectiveStudy(study)
 
 
-@experimental("2.1.0")
+@experimental("2.2.0")
 def load_study(
     study_name: str,
     storage: Optional[Union[str, "optuna.storages.BaseStorage"]] = None,
