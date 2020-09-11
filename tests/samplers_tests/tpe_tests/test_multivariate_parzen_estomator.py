@@ -62,8 +62,7 @@ def test_init_multivariate_parzen_estimator(consider_prior: bool) -> None:
         "b": [np.log(100.0)] + consider_prior * [np.log(100)],
         "c": [102.0] + consider_prior * [102.0],
         "d": [100.0] + consider_prior * [100.0],
-        "e": [np.log(100.5) - np.log(0.5)]
-        + consider_prior * [np.log(100.5) - np.log(0.5)],
+        "e": [np.log(100.5) - np.log(0.5)] + consider_prior * [np.log(100.5) - np.log(0.5)],
         "f": None,
     }
     mus = {
