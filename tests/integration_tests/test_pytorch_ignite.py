@@ -1,8 +1,8 @@
 from typing import Iterable
 from unittest.mock import patch
 
-import pytest
 from ignite.engine import Engine
+import pytest
 
 import optuna
 from optuna.testing.integration import DeterministicPruner

@@ -11,8 +11,8 @@ parameters.
 import numpy as np
 import sklearn.datasets
 import sklearn.metrics
-import xgboost as xgb
 from sklearn.model_selection import train_test_split
+import xgboost as xgb
 
 import optuna
 

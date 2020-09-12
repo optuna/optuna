@@ -3,13 +3,13 @@ from typing import Any
 from typing import Tuple
 
 import fastai.basic_data
+from fastai.basic_data import DataBunch
+from fastai.basic_train import Learner
+from fastai.metrics import accuracy
 import numpy as np
 import pytest
 import torch.nn as nn
 import torch.utils.data
-from fastai.basic_data import DataBunch
-from fastai.basic_train import Learner
-from fastai.metrics import accuracy
 from torch.utils.data import Dataset
 
 import optuna

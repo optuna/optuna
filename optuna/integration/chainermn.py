@@ -1,4 +1,3 @@
-import warnings
 from datetime import datetime
 from typing import Any
 from typing import Callable
@@ -7,6 +6,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Type
+import warnings
 
 from optuna import TrialPruned
 from optuna._imports import try_import

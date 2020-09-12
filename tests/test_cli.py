@@ -1,7 +1,7 @@
 import re
 import subprocess
-import tempfile
 from subprocess import CalledProcessError
+import tempfile
 from typing import List
 
 import pytest

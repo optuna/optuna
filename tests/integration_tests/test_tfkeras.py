@@ -1,7 +1,7 @@
 import numpy as np
+from packaging import version
 import pytest
 import tensorflow as tf
-from packaging import version
 
 import optuna
 from optuna.integration import TFKerasPruningCallback

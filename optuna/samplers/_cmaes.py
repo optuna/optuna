@@ -7,8 +7,8 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
-import numpy as np
 from cmaes import CMA
+import numpy as np
 
 import optuna
 from optuna import logging

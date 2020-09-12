@@ -1,5 +1,5 @@
-import math
 from collections import OrderedDict
+import math
 from typing import Callable
 from typing import List
 

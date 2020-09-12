@@ -1,10 +1,10 @@
 import functools
 import inspect
 import textwrap
-import warnings
 from typing import Any
 from typing import Callable
 from typing import Optional
+import warnings
 
 from optuna.exceptions import ExperimentalWarning
 

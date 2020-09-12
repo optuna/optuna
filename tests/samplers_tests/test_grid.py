@@ -1,5 +1,5 @@
-import itertools
 from collections import OrderedDict
+import itertools
 from typing import Dict
 from typing import List
 from typing import Mapping

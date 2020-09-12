@@ -9,14 +9,15 @@ from typing import Optional
 import numpy as np
 from packaging import version
 
-import optuna.logging
-import optuna.study
-import optuna.trial
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna._study_direction import StudyDirection
+import optuna.logging
+import optuna.study
+import optuna.trial
 
 with try_import() as _imports:
+    from bokeh import __version__ as bokeh_version
     import bokeh.command.bootstrap
     import bokeh.document  # NOQA
     import bokeh.layouts
@@ -25,7 +26,6 @@ with try_import() as _imports:
     import bokeh.plotting
     import bokeh.themes
     import tornado.gen
-    from bokeh import __version__ as bokeh_version
 
     if version.parse(bokeh_version) >= version.parse("2.0.0"):
         raise ImportError(

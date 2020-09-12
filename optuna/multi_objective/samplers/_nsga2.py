@@ -1,6 +1,6 @@
+from collections import defaultdict
 import hashlib
 import itertools
-from collections import defaultdict
 from typing import Any
 from typing import DefaultDict
 from typing import Dict

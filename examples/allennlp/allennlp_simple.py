@@ -17,8 +17,8 @@ import allennlp.data
 import allennlp.models
 import allennlp.modules
 import numpy
-import torch
 from packaging import version
+import torch
 
 import optuna
 from optuna.integration import AllenNLPPruningCallback

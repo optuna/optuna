@@ -12,9 +12,9 @@ argument.
 import argparse
 import os
 
-import torch
 from catalyst.dl import AccuracyCallback
 from catalyst.dl import SupervisedRunner
+import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader

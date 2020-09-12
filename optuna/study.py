@@ -4,7 +4,6 @@ import datetime
 import gc
 import math
 import threading
-import warnings
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -14,6 +13,7 @@ from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import Union
+import warnings
 
 import joblib
 from joblib import Parallel
