@@ -38,7 +38,8 @@ class PyTorchLightningPruningCallback(EarlyStopping):
 
         self._trial = trial
 
-    def _process(self, trainer: Trainer, pl_module: LightningModule) -> None:
+    def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
+
         logs = trainer.callback_metrics
         epoch = pl_module.current_epoch
         current_score = logs.get(self.monitor)
@@ -48,6 +49,3 @@ class PyTorchLightningPruningCallback(EarlyStopping):
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
-
-    def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
-        return self._process(trainer, pl_module)
