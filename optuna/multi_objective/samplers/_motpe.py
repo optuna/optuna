@@ -33,6 +33,10 @@ def default_gamma(x: int) -> int:
     return int(np.floor(0.1 * x))
 
 
+def _default_weights_above(x: int) -> np.ndarray:
+    return np.ones(x)
+
+
 @experimental("2.2.0")
 class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
@@ -79,8 +83,8 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             form a density function for samples with low grains. See the original paper for more
             details.
         weights:
-            A function that takes the number of finished trials and returns a weight for them. When
-            None is set, weights are automatically calculated by a default algorithm.
+            A function that takes the number of finished trials and returns a weight for them. As
+            default, weights are automatically calculated by the MOTPE's default strategy.
         seed:
             Seed for random number generator.
 
@@ -131,7 +135,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         n_startup_trials: int = 10,
         n_ehvi_candidates: int = 24,
         gamma: Callable[[int], int] = default_gamma,
-        weights: Optional[Callable[[int], np.ndarray]] = None,
+        weights: Callable[[int], np.ndarray] = _default_weights_above,
         seed: Optional[int] = None,
     ) -> None:
         self._prior_weight = prior_weight
@@ -282,13 +286,13 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             indices_above = np.setdiff1d(indices, indices_below)
 
             attrs = {"indices_below": indices_below, "indices_above": indices_above}
-            if self._weights is None:
+            if self._weights is _default_weights_above:
                 weights_below = self._calculate_default_weights_below(lvals, indices_below)
                 attrs["weights_below"] = weights_below
             study._storage.set_trial_system_attr(trial._trial_id, _SPLITCACHE_KEY, attrs)
 
         below = cvals[indices_below]
-        if self._weights is None:
+        if self._weights is _default_weights_above:
             study._storage.set_trial_system_attr(
                 trial._trial_id,
                 _WEIGHTS_BELOW_KEY,
@@ -395,7 +399,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             above = np.log(above)
 
         size = (self._n_ehvi_candidates,)
-        if self._weights is None:
+        if self._weights is _default_weights_above:
             weights_below = study._storage.get_trial(trial._trial_id).system_attrs[
                 _WEIGHTS_BELOW_KEY
             ]
@@ -426,10 +430,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             q=q,
         )
 
-        if self._weights is None:
-            weights_above = _default_weights_above
-        else:
-            weights_above = self._weights  # type: ignore
+        weights_above = self._weights
         parzen_estimator_parameters_above = _ParzenEstimatorParameters(
             self._consider_prior,
             self._prior_weight,
@@ -469,7 +470,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         upper = len(choices)
         size = (self._n_ehvi_candidates,)
 
-        if self._weights is None:
+        if self._weights is _default_weights_above:
             weights_below = study._storage.get_trial(trial._trial_id).system_attrs[
                 _WEIGHTS_BELOW_KEY
             ](len(below))
@@ -483,10 +484,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             samples_below, weighted_below
         )
 
-        if self._weights is None:
-            weights_above = _default_weights_above(len(above))
-        else:
-            weights_above = self._weights(len(above))
+        weights_above = self._weights(len(above))
         counts_above = np.bincount(above, minlength=upper, weights=weights_above)
         weighted_above = counts_above + self._prior_weight
         weighted_above /= weighted_above.sum()
@@ -768,10 +766,6 @@ def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
         rank += 1
         num_unranked -= np.sum(counts == 0)
     return ranks
-
-
-def _default_weights_above(x: int) -> np.ndarray:
-    return np.ones(x)
 
 
 def _get_observation_pairs(
