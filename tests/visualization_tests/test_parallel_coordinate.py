@@ -3,8 +3,8 @@ import pytest
 from optuna.distributions import CategoricalDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
-from optuna.trial import Trial
 from optuna.trial import create_trial
+from optuna.trial import Trial
 from optuna.visualization import plot_parallel_coordinate
 
 

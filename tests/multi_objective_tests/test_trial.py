@@ -1,7 +1,7 @@
 import datetime
+from typing import cast
 from typing import List
 from typing import Tuple
-from typing import cast
 
 import pytest
 

@@ -12,8 +12,8 @@ import pytest
 
 import optuna
 from optuna.integration.chainer import ChainerPruningExtension
-from optuna.testing.integration import DeterministicPruner
 from optuna.testing.integration import create_running_trial
+from optuna.testing.integration import DeterministicPruner
 
 
 class FixedValueDataset(chainer.dataset.DatasetMixin):

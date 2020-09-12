@@ -14,9 +14,9 @@ argument.
 
 import argparse
 
-from ignite.engine import Events
 from ignite.engine import create_supervised_evaluator
 from ignite.engine import create_supervised_trainer
+from ignite.engine import Events
 from ignite.metrics import Accuracy
 import torch
 from torch import nn

@@ -17,8 +17,8 @@ import alembic.config
 import alembic.migration
 import alembic.script
 from sqlalchemy import orm
-from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.engine import create_engine
+from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import SQLAlchemyError

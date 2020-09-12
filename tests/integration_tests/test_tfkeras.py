@@ -5,8 +5,8 @@ import tensorflow as tf
 
 import optuna
 from optuna.integration import TFKerasPruningCallback
-from optuna.testing.integration import DeterministicPruner
 from optuna.testing.integration import create_running_trial
+from optuna.testing.integration import DeterministicPruner
 
 
 def test_tfkeras_pruning_callback() -> None:

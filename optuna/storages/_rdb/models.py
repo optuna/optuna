@@ -3,19 +3,19 @@ from typing import Any
 from typing import List
 from typing import Optional
 
+from sqlalchemy import asc
 from sqlalchemy import CheckConstraint
 from sqlalchemy import Column
 from sqlalchemy import DateTime
+from sqlalchemy import desc
 from sqlalchemy import Enum
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
+from sqlalchemy import func
 from sqlalchemy import Integer
+from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
-from sqlalchemy import asc
-from sqlalchemy import desc
-from sqlalchemy import func
-from sqlalchemy import orm
 from sqlalchemy.ext.declarative import declarative_base
 
 from optuna import distributions

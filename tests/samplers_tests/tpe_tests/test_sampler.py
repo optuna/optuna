@@ -11,8 +11,8 @@ import pytest
 
 import optuna
 from optuna import TrialPruned
-from optuna.samplers import TPESampler
 from optuna.samplers import _tpe
+from optuna.samplers import TPESampler
 from optuna.trial import Trial
 
 

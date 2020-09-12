@@ -1,5 +1,5 @@
-from optuna import Trial
 from optuna import create_study
+from optuna import Trial
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.samplers import RandomSampler
 

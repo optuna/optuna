@@ -8,12 +8,12 @@ from typing import Type
 
 import pytest
 
-from optuna import Study
-from optuna import TrialPruned
 from optuna import create_study
 from optuna import distributions
 from optuna import integration
 from optuna import pruners
+from optuna import Study
+from optuna import TrialPruned
 from optuna.integration.chainermn import ChainerMNStudy
 from optuna.integration.chainermn import ChainerMNTrial
 from optuna.pruners import BasePruner

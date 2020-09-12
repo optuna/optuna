@@ -1,8 +1,8 @@
 from unittest.mock import patch
 
 import optuna
-from optuna.storages._cached_storage import RDBStorage
 from optuna.storages._cached_storage import _CachedStorage
+from optuna.storages._cached_storage import RDBStorage
 from optuna.trial import TrialState
 
 

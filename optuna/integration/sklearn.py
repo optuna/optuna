@@ -17,11 +17,11 @@ import numpy as np
 import scipy as sp
 from scipy.sparse import spmatrix
 
-from optuna import TrialPruned
 from optuna import distributions
 from optuna import logging
 from optuna import samplers
 from optuna import study as study_module
+from optuna import TrialPruned
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.study import StudyDirection

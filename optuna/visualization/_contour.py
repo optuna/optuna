@@ -15,10 +15,10 @@ from optuna.visualization._utils import _is_log_scale
 
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import Contour
-    from optuna.visualization._plotly_imports import Scatter
     from optuna.visualization._plotly_imports import go
     from optuna.visualization._plotly_imports import make_subplots
     from optuna.visualization._plotly_imports import plotly
+    from optuna.visualization._plotly_imports import Scatter
 
 _logger = get_logger(__name__)
 

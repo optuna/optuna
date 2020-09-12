@@ -16,8 +16,8 @@ from typing import Union
 import warnings
 
 import joblib
-from joblib import Parallel
 from joblib import delayed
+from joblib import Parallel
 
 from optuna import exceptions
 from optuna import logging
@@ -30,9 +30,9 @@ from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
+from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.trial import create_trial
 
 
 ObjectiveFuncType = Callable[[trial_module.Trial], float]

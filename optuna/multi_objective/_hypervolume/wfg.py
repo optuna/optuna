@@ -1,8 +1,8 @@
 import numpy as np
 
-from optuna.multi_objective._hypervolume import BaseHypervolume
 from optuna.multi_objective._hypervolume import _compute_2d
 from optuna.multi_objective._hypervolume import _compute_2points_volume
+from optuna.multi_objective._hypervolume import BaseHypervolume
 
 
 class WFG(BaseHypervolume):
