@@ -49,7 +49,7 @@ class TensorBoardCallback(object):
         run_name = "trial-%d" % trial.number
         run_dir = os.path.join(self._dirname, run_name)
         with tf.summary.create_file_writer(run_dir).as_default():
-            hp.hparams(hparams)  # record the values used in this trial
+            hp.hparams(hparams, trial_id=run_name)  # record the values used in this trial
             tf.summary.scalar(self._metric_name, trial_value, step=1)
 
     def _add_distributions(
