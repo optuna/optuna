@@ -94,15 +94,10 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite", "thop", "skorch"]
+            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "thop", "skorch"]
         )
-        + (["stable-baselines3>=0.7.0"])
-        + (
-            ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
-            if sys.version_info[:2] < (3, 8)
-            else []
-        )
-        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
+        + ["stable-baselines3>=0.7.0"]
+        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else [])
         + (["dask[dataframe]", "dask-ml"] if sys.version_info[:2] < (3, 8) else [])
         + ["catalyst"],
         "experimental": ["redis"],
@@ -133,15 +128,10 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite", "skorch"]
+            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "skorch"]
         )
-        + (
-            ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
-            if sys.version_info[:2] < (3, 8)
-            else []
-        )
-        + (["catalyst"])
-        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
+        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else [])
+        + (["catalyst"]),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -173,15 +163,10 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite", "skorch"]
+            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "skorch"]
         )
-        + (
-            ["allennlp==1.0.0", "fastai<2", "pytorch-lightning>=0.7.1"]
-            if sys.version_info[:2] < (3, 8)
-            else []
-        )
-        + ["catalyst"]
-        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
+        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else [])
+        + (["catalyst"] if sys.version_info[:2] else []),
     }
 
     return requirements
@@ -215,7 +200,7 @@ setup(
             "py.typed",
         ]
     },
-    python_requires=">=3.6",
+    python_requires=">=3.5",
     install_requires=get_install_requires(),
     tests_require=get_tests_require(),
     extras_require=get_extras_require(),
@@ -237,6 +222,7 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
