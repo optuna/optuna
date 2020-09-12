@@ -49,17 +49,6 @@ class TensorBoardCallback(object):
         run_name = "trial-%d" % trial.number
         run_dir = os.path.join(self._dirname, run_name)
         with tf.summary.create_file_writer(run_dir).as_default():
-            hp.hparams_config(
-                hparams=list(hparams.keys()),
-                # Control metric values displayed on HPARAMS tab of TensorBoard.
-                metrics=[
-                    hp.Metric(
-                        tag=self._metric_name,
-                        display_name=self._metric_name,
-                        description="Trial value optimized with Optuna.",
-                    )
-                ],
-            )
             hp.hparams(hparams, trial_id=run_name)  # record the values used in this trial
             tf.summary.scalar(self._metric_name, trial_value, step=trial.number)
 
