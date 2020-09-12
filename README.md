@@ -2,7 +2,7 @@
 
 # Optuna: A hyperparameter optimization framework
 
-[![Python](https://img.shields.io/pypi/pyversions/optuna)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
 [![conda](https://img.shields.io/conda/vn/conda-forge/optuna.svg)](https://anaconda.org/conda-forge/optuna)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/optuna/optuna)
@@ -30,7 +30,7 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 Optuna has modern functionalities as follows:
 
 - [Lightweight, versatile, and platform agnostic architecture](https://optuna.readthedocs.io/en/stable/tutorial/first.html)
-  - Handle a wide variety of tasks with a simple installation that has few requirements. 
+  - Handle a wide variety of tasks with a simple installation that has few requirements.
 - [Pythonic search spaces](https://optuna.readthedocs.io/en/stable/tutorial/configurations.html)
   - Define search spaces using familiar Python syntax including conditionals and loops.
 - [Efficient optimization algorithms](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html)
