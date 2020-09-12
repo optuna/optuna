@@ -18,7 +18,7 @@ class WFG(BaseHypervolume):
         self._reference_point = None
 
     def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
-        self._reference_point = reference_point
+        self._reference_point = reference_point.copy()
         return self._compute_rec(solution_set)
 
     def _compute_rec(self, solution_set: np.ndarray) -> float:
