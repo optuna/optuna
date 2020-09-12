@@ -8,7 +8,7 @@ __all__ = ["is_available"]
 
 
 def is_available() -> bool:
-    """Returns whether visualization with `matplotlib` is available or not.
+    """Returns whether visualization with ``matplotlib`` is available or not.
 
     .. note::
 
