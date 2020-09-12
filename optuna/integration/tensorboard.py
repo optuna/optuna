@@ -51,7 +51,7 @@ class TensorBoardCallback(object):
         with tf.summary.create_file_writer(run_dir).as_default():
             hp.hparams_config(
                 hparams=list(hparams.keys()),
-                # Control metric valued displayed on HPARAMS tab of TensorBoard.
+                # Control metric values displayed on HPARAMS tab of TensorBoard.
                 metrics=[
                     hp.Metric(
                         tag=self._metric_name,
