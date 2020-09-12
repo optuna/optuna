@@ -123,9 +123,10 @@ class CmaEsSampler(BaseSampler):
             This argument will be used when setting ``restart_strategy = 'ipop'``.
 
         share_optimizer:
-            Share CMA object at each workers if this is :obj:`True` (default: False).
-            Please note that CmaEsSampler raises an exception when using Optuna storage
-            which limited the length of ``value`` field on ``trial.system_attrs``.
+            If this is :obj:`True`, CMA optimizer object is stored in trial_system_attrs
+            and shared with each workers. Please note that CmaEsSampler raises an exception
+            when using Optuna RDB storage because it limits the ``value`` column to 2048
+            characters on ``trial_system_attrs`` table.
 
         randomize_x0:
             If this is :obj:`True`, an initial starting point is sampled randomly within the
@@ -162,7 +163,7 @@ class CmaEsSampler(BaseSampler):
         inc_popsize: int = 2,
         # TODO(c-bata): Add experimental warning.
         randomize_x0: bool = False,
-        share_optimizer: bool = False,
+        share_optimizer: bool = False
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
