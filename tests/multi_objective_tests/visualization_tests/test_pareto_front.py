@@ -4,11 +4,11 @@ import optuna
 from optuna.multi_objective.visualization import plot_pareto_front
 
 
-@pytest.mark.parametrize("enable_include_dominated_trials", [False, True])
-def test_plot_pareto_front_2d(enable_include_dominated_trials: bool) -> None:
+@pytest.mark.parametrize("include_dominated_trials", [False, True])
+def test_plot_pareto_front_2d(include_dominated_trials: bool) -> None:
     # Test with no trial.
     study = optuna.multi_objective.create_study(["minimize", "minimize"])
-    figure = plot_pareto_front(study, include_dominated_trials=enable_include_dominated_trials)
+    figure = plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
     assert len(figure.data) == 1
     assert figure.data[0]["x"] == ()
     assert figure.data[0]["y"] == ()
@@ -19,9 +19,9 @@ def test_plot_pareto_front_2d(enable_include_dominated_trials: bool) -> None:
     study.enqueue_trial({"x": 0, "y": 1})
     study.optimize(lambda t: [t.suggest_int("x", 0, 1), t.suggest_int("y", 0, 1)], n_trials=3)
 
-    figure = plot_pareto_front(study, include_dominated_trials=enable_include_dominated_trials)
+    figure = plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
     assert len(figure.data) == 1
-    if enable_include_dominated_trials:
+    if include_dominated_trials:
         # The last elements come from dominated trial that is enqueued firstly.
         assert figure.data[0]["x"] == (1, 0, 1)
         assert figure.data[0]["y"] == (0, 1, 1)
@@ -34,36 +34,32 @@ def test_plot_pareto_front_2d(enable_include_dominated_trials: bool) -> None:
 
     # Test with `names` argument.
     with pytest.raises(ValueError):
-        plot_pareto_front(
-            study, names=[], include_dominated_trials=enable_include_dominated_trials
-        )
+        plot_pareto_front(study, names=[], include_dominated_trials=include_dominated_trials)
 
     with pytest.raises(ValueError):
-        plot_pareto_front(
-            study, names=["Foo"], include_dominated_trials=enable_include_dominated_trials
-        )
+        plot_pareto_front(study, names=["Foo"], include_dominated_trials=include_dominated_trials)
 
     with pytest.raises(ValueError):
         plot_pareto_front(
             study,
             names=["Foo", "Bar", "Baz"],
-            include_dominated_trials=enable_include_dominated_trials,
+            include_dominated_trials=include_dominated_trials,
         )
 
     figure = plot_pareto_front(
         study,
         names=["Foo", "Bar"],
-        include_dominated_trials=enable_include_dominated_trials,
+        include_dominated_trials=include_dominated_trials,
     )
     assert figure.layout.xaxis.title.text == "Foo"
     assert figure.layout.yaxis.title.text == "Bar"
 
 
-@pytest.mark.parametrize("enable_include_dominated_trials", [False, True])
-def test_plot_pareto_front_3d(enable_include_dominated_trials: bool) -> None:
+@pytest.mark.parametrize("include_dominated_trials", [False, True])
+def test_plot_pareto_front_3d(include_dominated_trials: bool) -> None:
     # Test with no trial.
     study = optuna.multi_objective.create_study(["minimize", "minimize", "minimize"])
-    figure = plot_pareto_front(study, include_dominated_trials=enable_include_dominated_trials)
+    figure = plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
     assert len(figure.data) == 1
     assert figure.data[0]["x"] == ()
     assert figure.data[0]["y"] == ()
@@ -78,9 +74,9 @@ def test_plot_pareto_front_3d(enable_include_dominated_trials: bool) -> None:
         n_trials=3,
     )
 
-    figure = plot_pareto_front(study, include_dominated_trials=enable_include_dominated_trials)
+    figure = plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
     assert len(figure.data) == 1
-    if enable_include_dominated_trials:
+    if include_dominated_trials:
         # The last elements come from dominated trial that is enqueued firstly.
         assert figure.data[0]["x"] == (1, 1, 1)
         assert figure.data[0]["y"] == (0, 1, 1)
@@ -96,27 +92,23 @@ def test_plot_pareto_front_3d(enable_include_dominated_trials: bool) -> None:
 
     # Test with `names` argument.
     with pytest.raises(ValueError):
-        plot_pareto_front(
-            study, names=[], include_dominated_trials=enable_include_dominated_trials
-        )
+        plot_pareto_front(study, names=[], include_dominated_trials=include_dominated_trials)
 
     with pytest.raises(ValueError):
-        plot_pareto_front(
-            study, names=["Foo"], include_dominated_trials=enable_include_dominated_trials
-        )
+        plot_pareto_front(study, names=["Foo"], include_dominated_trials=include_dominated_trials)
 
     with pytest.raises(ValueError):
         plot_pareto_front(
             study,
             names=["Foo", "Bar"],
-            include_dominated_trials=enable_include_dominated_trials,
+            include_dominated_trials=include_dominated_trials,
         )
 
     with pytest.raises(ValueError):
         plot_pareto_front(
             study,
             names=["Foo", "Bar", "Baz", "Qux"],
-            include_dominated_trials=enable_include_dominated_trials,
+            include_dominated_trials=include_dominated_trials,
         )
 
     figure = plot_pareto_front(study, names=["Foo", "Bar", "Baz"])
@@ -125,23 +117,23 @@ def test_plot_pareto_front_3d(enable_include_dominated_trials: bool) -> None:
     assert figure.layout.scene.zaxis.title.text == "Baz"
 
 
-@pytest.mark.parametrize("enable_include_dominated_trials", [False, True])
-def test_plot_pareto_front_unsupported_dimensions(enable_include_dominated_trials: bool) -> None:
+@pytest.mark.parametrize("include_dominated_trials", [False, True])
+def test_plot_pareto_front_unsupported_dimensions(include_dominated_trials: bool) -> None:
     # Unsupported: n_objectives == 1.
     with pytest.raises(ValueError):
         study = optuna.multi_objective.create_study(["minimize"])
         study.optimize(lambda t: [0], n_trials=1)
-        plot_pareto_front(study, include_dominated_trials=enable_include_dominated_trials)
+        plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
 
     # Supported: n_objectives == 2.
     study = optuna.multi_objective.create_study(["minimize", "minimize"])
     study.optimize(lambda t: [0, 0], n_trials=1)
-    plot_pareto_front(study, include_dominated_trials=enable_include_dominated_trials)
+    plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
 
     # Supported: n_objectives == 3.
     study = optuna.multi_objective.create_study(["minimize", "minimize", "minimize"])
     study.optimize(lambda t: [0, 0, 0], n_trials=1)
-    plot_pareto_front(study, include_dominated_trials=enable_include_dominated_trials)
+    plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
 
     # Unsupported: n_objectives == 4.
     with pytest.raises(ValueError):
@@ -149,4 +141,4 @@ def test_plot_pareto_front_unsupported_dimensions(enable_include_dominated_trial
             ["minimize", "minimize", "minimize", "minimize"]
         )
         study.optimize(lambda t: [0, 0, 0, 0], n_trials=1)
-        plot_pareto_front(study, include_dominated_trials=enable_include_dominated_trials)
+        plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
