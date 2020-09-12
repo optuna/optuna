@@ -1,26 +1,33 @@
 """
 .. _first:
 
-First Optimization
-==================
+Lightweight, versatile, and platform agnostic architecture
+==========================================================
+
+Optuna is entirely written in Python and has few dependencies.
+This means that we can quickly move to the real example once you get interested in Optuna.
+
 
 Quadratic Function Example
 --------------------------
 
-Usually, Optuna is used to optimize hyper-parameters, but as an example,
-let us directly optimize a quadratic function in an IPython shell.
+Usually, Optuna is used to optimize hyperparameters, but as an example,
+let's optimize a simple quadratic function: :math:`(x - 2)^2`.
 """
 
+
+###################################################################################################
+# First of all, import :mod:`optuna`.
 
 import optuna
 
 
 ###################################################################################################
-# The objective function is what will be optimized.
+# In optuna, conventionally functions to be optimized are named `objective`.
 
 
 def objective(trial):
-    x = trial.suggest_uniform('x', -10, 10)
+    x = trial.suggest_float("x", -10, 10)
     return (x - 2) ** 2
 
 
@@ -48,14 +55,16 @@ study.optimize(objective, n_trials=100)
 ###################################################################################################
 # You can get the best parameter as follows.
 
-print(study.best_params)
+best_params = study.best_params
+found_x = best_params["x"]
+print("Found x: {}, (x - 2)^2: {}".format(found_x, (found_x - 2) ** 2))
 
 ###################################################################################################
 # We can see that the ``x`` value found by Optuna is close to the optimal value of ``2``.
 
 ###################################################################################################
 # .. note::
-#     When used to search for hyper-parameters in machine learning,
+#     When used to search for hyperparameters in machine learning,
 #     usually the objective function would return the loss or accuracy
 #     of the model.
 
@@ -75,13 +84,13 @@ print(study.best_params)
 # A study object has useful properties for analyzing the optimization outcome.
 
 ###################################################################################################
-# To get the best parameter:
+# To get the dictionary of parameter name and parameter values:
 
 
 study.best_params
 
 ###################################################################################################
-# To get the best value:
+# To get the best observed value of the objective function:
 
 study.best_value
 
@@ -114,3 +123,11 @@ study.optimize(objective, n_trials=100)
 # To get the updated number of trials:
 
 len(study.trials)
+
+
+###################################################################################################
+# As the objective function is so easy that the last 100 trials don't improve the result.
+# However, we can check the result again:
+best_params = study.best_params
+found_x = best_params["x"]
+print("Found x: {}, (x - 2)^2: {}".format(found_x, (found_x - 2) ** 2))

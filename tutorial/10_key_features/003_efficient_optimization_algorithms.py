@@ -1,0 +1,146 @@
+"""
+.. _pruning:
+
+Efficient Optimization Algorithms
+=================================
+
+Optuna enables efficient hyperparameter optimization by
+adopting state-of-the-art algorithms for sampling hyperparameters and
+pruning efficiently unpromising trials.
+
+Sampling Algorithms
+-------------------
+
+Samplers basically continually narrow down the search space using the records of suggested parameter values and evaluated objective values,
+leading to an optimal search space which giving off parameters leading to better objective values.
+More detailed explanation of how samplers suggest parameters is in :class:`optuna.samplers.BaseSampler`.
+
+Optuna provides the following sampling algorithms:
+
+- Tree-structured Parzen Estimator algorithm implemented in :class:`optuna.samplers.TPESampler`
+
+- CMA-ES based algorithm implemented in :class:`optuna.samplers.CmaEsSampler`
+
+- Grid Search implemented in :class:`optuna.samplers.GridSampler`
+
+- Random Search implemented in :class:`optuna.samplers.RandomSampler`
+
+The default sampler is :class:`optuna.samplers.TPESampler`.
+
+
+Pruning Algorithms
+------------------
+
+``Pruners`` automatically stop unpromising trials at the early stages of the training (a.k.a., automated early-stopping).
+
+Optuna provides the following pruning algorithms:
+
+- Asynchronous Successive Halving algorithm implemted in :class:`optuna.pruners.SuccessiveHalvingPruner`
+
+- Hyperband algorithm implemented in :class:`optuna.pruners.HyperbandPruner`
+
+- Median pruning algorithm implemented in :class:`optuna.pruners.MedianPruner`
+
+- Threshold pruning algorithm implemented in :class:`optuna.pruners.ThresholdPruner`
+
+We use :class:`optuna.pruners.MedianPruner` in most examples,
+though basically it is outperformed by :class:`optuna.pruners.SuccessiveHalvingPruner` and
+:class:`optuna.pruners.HyperbandPruner` as in `this benchmark result <https://github.com/optuna/optuna/wiki/%5BUnder-Construction%5D-Benchmarks-with-Kurobako>`_.
+
+
+Activating Pruners
+------------------
+To turn on the pruning feature, you need to call :func:`~optuna.trial.Trial.report` and :func:`~optuna.trial.Trial.should_prune` after each step of the iterative training.
+:func:`~optuna.trial.Trial.report` periodically monitors the intermediate objective values.
+:func:`~optuna.trial.Trial.should_prune` decides termination of the trial that does not meet a predefined condition.
+
+We would recommend using integration modules for major machine learning frameworks.
+Exclusive list is :ref:`integration_list` and usecases are available in  `optuna/examples <https://github.com/optuna/optuna/tree/master/examples/>`_.
+"""
+
+import sklearn.datasets
+import sklearn.linear_model
+import sklearn.model_selection
+
+import optuna
+
+
+def objective(trial):
+    iris = sklearn.datasets.load_iris()
+    classes = list(set(iris.target))
+    train_x, valid_x, train_y, valid_y = sklearn.model_selection.train_test_split(
+        iris.data, iris.target, test_size=0.25, random_state=0
+    )
+
+    alpha = trial.suggest_loguniform("alpha", 1e-5, 1e-1)
+    clf = sklearn.linear_model.SGDClassifier(alpha=alpha)
+
+    for step in range(100):
+        clf.partial_fit(train_x, train_y, classes=classes)
+
+        # Report intermediate objective value.
+        intermediate_value = 1.0 - clf.score(valid_x, valid_y)
+        trial.report(intermediate_value, step)
+
+        # Handle pruning based on the intermediate value.
+        if trial.should_prune():
+            raise optuna.TrialPruned()
+
+    return 1.0 - clf.score(valid_x, valid_y)
+
+
+###################################################################################################
+# Set up the median stopping rule as the pruning condition.
+
+import logging
+import sys
+
+# Add stream handler of stdout to show the messages
+optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
+study = optuna.create_study(pruner=optuna.pruners.MedianPruner())
+study.optimize(objective, n_trials=20)
+
+###################################################################################################
+# As you can see, several trials were pruned (stopped) before they finished all of the iterations.
+# The format of message is ``"Trial <Trial Number> pruned."``.
+
+###################################################################################################
+# Which Sampler and Pruner Should be Used?
+# ----------------------------------------
+#
+# From the benchmark results which are available at `optuna/optuna - wiki "Benchmarks with Kurobako" <https://github.com/optuna/optuna/wiki/%5BUnder-Construction%5D-Benchmarks>`_, at least for not deep learning tasks, we would say that
+#
+# * For :class:`optuna.samplers.RandomSampler`, :class:`optuna.pruners.MedianPruner` is the best.
+# * For :class:`optuna.samplers.TPESampler`, :class:`optuna.pruners.Hyperband` is the best.
+#
+# However, note that the benchmark is not deep learning.
+# For deep learning tasks,
+# consult the below table from `Ozaki et al, Hyperparameter Optimization Methods: Overview and Characteristics, in IEICE Trans, Vol.J103-D No.9 pp.615-631, 2020 <https://doi.org/10.14923/transinfj.2019JDR0003>`_,
+#
+# +---------------------------+-----------------------------------------+---------------------------------------------------------------+
+# | Parallel Compute Resource | Categorical/Conditional Hyperparameters | Recommended Algorithms                                        |
+# +===========================+=========================================+===============================================================+
+# | Limited                   | No                                      | TPE. GP-EI if search space is low-dimensional and continuous. |
+# +                           +-----------------------------------------+---------------------------------------------------------------+
+# |                           | Yes                                     | TPE. GP-EI if search space is low-dimensional and continuous  |
+# +---------------------------+-----------------------------------------+---------------------------------------------------------------+
+# | Sufficient                | No                                      | CMA-ES, Random Search                                         |
+# +                           +-----------------------------------------+---------------------------------------------------------------+
+# |                           | Yes                                     | Random Search or Genetic Algorithm                            |
+# +---------------------------+-----------------------------------------+---------------------------------------------------------------+
+#
+
+###################################################################################################
+# Integration Modules for Pruning
+# -------------------------------
+# To implement pruning mechanism in much simpler forms, Optuna provides integration modules for the following libraries.
+#
+# For the complete list of Optuna's integration modules, see :ref:`integration_list`.
+#
+# For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
+# (See also `example <https://github.com/optuna/optuna/blob/master/examples/pruning/xgboost_integration.py>`_ for the entire script.)
+#
+# .. code-block:: python
+#
+#         pruning_callback = optuna.integration.XGBoostPruningCallback(trial, 'validation-error')
+#         bst = xgb.train(param, dtrain, evals=[(dvalid, 'validation')], callbacks=[pruning_callback])

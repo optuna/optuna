@@ -1,3 +1,5 @@
+.. _pruners:
+
 optuna.pruners
 ==============
 

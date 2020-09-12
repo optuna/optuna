@@ -1,3 +1,5 @@
+.. _samplers:
+
 optuna.samplers
 ===============
 

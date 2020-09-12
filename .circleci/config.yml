@@ -55,7 +55,7 @@ jobs:
           name: isort
           command: |
             . venv/bin/activate
-            isort . --check --diff
+            isort . --check --diff --skip=tutorial
 
       - run:
           name: mypy
@@ -77,7 +77,7 @@ jobs:
             python -m venv venv || virtualenv venv --python=python3.8
             . venv/bin/activate
             pip install -U pip
-            pip install --progress-bar off .[document]
+            pip install --progress-bar off .[document] -f https://download.pytorch.org/whl/torch_stable.html
 
       - run:
           name: build
@@ -103,7 +103,7 @@ jobs:
             python -m venv venv || virtualenv venv --python=python3
             . venv/bin/activate
             pip install -U pip
-            pip install --progress-bar off .[doctest,document]
+            pip install --progress-bar off .[doctest,document] -f https://download.pytorch.org/whl/torch_stable.html
 
       - run:
           name: build

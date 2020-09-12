@@ -1,12 +1,30 @@
 """
 .. _distributed:
 
-Distributed Optimization
-========================
+Easy Parallelization
+====================
 
-There is no complicated setup but just sharing the same study name among nodes/processes.
+It's straightforward to parallelize ``optuna.optimize()``.
 
-First, create a shared study using ``optuna create-study`` command (or using :func:`optuna.create_study` in a Python script).
+If you want to manually execute Optuna optimization:
+
+    1. create a study
+    2. share the study among multiple nodes and processes
+
+Of course, you can use Kubernetes as in `the kubernetes examples <https://github.com/optuna/optuna/tree/master/examples/kubernetes>`_.
+
+To just see how parallel optimization works in Optuna, check the below video.
+
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/J_aymk4YXhg?start=427" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+
+Create a Study
+--------------
+
+You can create a study using ``optuna create-study`` command.
+Alternatively, in Python script you can use :func:`optuna.create_study`.
 
 .. code-block:: bash
 
@@ -27,6 +45,10 @@ Then, write an optimization script. Let's assume that ``foo.py`` contains the fo
     if __name__ == '__main__':
         study = optuna.load_study(study_name='distributed-example', storage='sqlite:///example.db')
         study.optimize(objective, n_trials=100)
+
+
+Share the Study among Multiple Nodes and Processes
+--------------------------------------------------
 
 Finally, run the shared study from multiple processes.
 For example, run ``Process 1`` in a terminal, and do ``Process 2`` in another one.
@@ -55,4 +77,5 @@ Process 2 (the same command as process 1):
 
 .. note::
     Please avoid putting the SQLite database on NFS when running distributed optimizations. See also: https://www.sqlite.org/faq.html#q5
+
 """

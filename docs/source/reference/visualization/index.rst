@@ -1,3 +1,5 @@
+.. _visualization_module:
+
 optuna.visualization
 ====================
 

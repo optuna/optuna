@@ -27,6 +27,6 @@ jobs:
     - name: flake8
       run: flake8 .
     - name: isort
-      run: isort . --check --diff
-    - name: mypy 
+      run: isort . --check --diff --skip=tutorial
+    - name: mypy
       run: mypy .

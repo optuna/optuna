@@ -18,6 +18,7 @@
 
 import pkg_resources
 
+import plotly.io as pio
 from sphinx_gallery.sorting import FileNameSortKey
 
 __version__ = pkg_resources.get_distribution('optuna').version
@@ -174,6 +175,9 @@ autodoc_default_options = {
     'inherited-members': True,
     'exclude-members': 'with_traceback',
 }
+
+# Sphinx Gallery
+pio.renderers.default = 'sphinx_gallery'
 
 sphinx_gallery_conf = {
     'examples_dirs': [
