@@ -526,15 +526,14 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         contributions = [
             self._compute_hypervolume(np.asarray([v]), reference_point) for v in rank_i_loss_vals
         ]
-        MARK_AS_SELECTED = -1
         hv_selected = 0.0
         while len(selected_indices) < subset_size:
             max_index = np.argmax(contributions)
-            contributions[max_index] = MARK_AS_SELECTED
+            contributions[max_index] = -1  # mark as selected
             selected_index = rank_i_indices[max_index]
             selected_vec = rank_i_loss_vals[max_index]
             for j, v in enumerate(rank_i_loss_vals):
-                if contributions[j] == MARK_AS_SELECTED:
+                if contributions[j] == -1:
                     continue
                 p = np.max([selected_vec, v], axis=0)
                 contributions[j] -= (
@@ -588,7 +587,6 @@ def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
     ranks = np.zeros(len(vecs))
     num_unranked = len(vecs)
     rank = 0
-    MARK_AS_RANKED = 1.1
     while num_unranked > 0:
         extended = np.tile(vecs, (vecs.shape[0], 1, 1))
         counts = np.sum(
@@ -598,7 +596,7 @@ def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
             ),
             axis=1,
         )
-        vecs[counts == 0] = MARK_AS_RANKED
+        vecs[counts == 0] = 1.1  # mark as ranked
         ranks[counts == 0] = rank
         rank += 1
         num_unranked -= np.sum(counts == 0)
