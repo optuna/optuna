@@ -10,6 +10,7 @@ from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
+from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
 
 if _imports.is_successful():
@@ -90,14 +91,21 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
 
     padding_ratio = 0.05
     param_values_range = {}
+    update_category_axes = {}
     for p_name in sorted_params:
         values = [t.params[p_name] for t in trials if p_name in t.params]
-        max_value = max(values)
+
         min_value = min(values)
+        max_value = max(values)
+
         if _is_log_scale(trials, p_name):
             padding = (math.log10(max_value) - math.log10(min_value)) * padding_ratio
             min_value = math.pow(10, math.log10(min_value) - padding)
             max_value = math.pow(10, math.log10(max_value) + padding)
+
+        elif _is_categorical(trials, p_name):
+            update_category_axes[p_name] = any([str(v).isnumeric() for v in set(values)])
+
         else:
             padding = (max_value - min_value) * padding_ratio
             min_value = min_value - padding
@@ -113,6 +121,12 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
         figure = go.Figure(data=sub_plots, layout=layout)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
         figure.update_yaxes(title_text=y_param, range=param_values_range[y_param])
+
+        if _is_categorical(trials, x_param) and update_category_axes[x_param]:
+            figure.update_xaxes(type="category")
+        if _is_categorical(trials, y_param) and update_category_axes[y_param]:
+            figure.update_yaxes(type="category")
+
         if _is_log_scale(trials, x_param):
             log_range = [math.log10(p) for p in param_values_range[x_param]]
             figure.update_xaxes(range=log_range, type="log")
@@ -140,14 +154,22 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
                         showscale = False
                     figure.add_trace(contour, row=y_i + 1, col=x_i + 1)
                     figure.add_trace(scatter, row=y_i + 1, col=x_i + 1)
+
                 figure.update_xaxes(range=param_values_range[x_param], row=y_i + 1, col=x_i + 1)
                 figure.update_yaxes(range=param_values_range[y_param], row=y_i + 1, col=x_i + 1)
+
+                if _is_categorical(trials, x_param) and update_category_axes[x_param]:
+                    figure.update_xaxes(type="category", row=y_i + 1, col=x_i + 1)
+                if _is_categorical(trials, y_param) and update_category_axes[y_param]:
+                    figure.update_yaxes(type="category", row=y_i + 1, col=x_i + 1)
+
                 if _is_log_scale(trials, x_param):
                     log_range = [math.log10(p) for p in param_values_range[x_param]]
                     figure.update_xaxes(range=log_range, type="log", row=y_i + 1, col=x_i + 1)
                 if _is_log_scale(trials, y_param):
                     log_range = [math.log10(p) for p in param_values_range[y_param]]
                     figure.update_yaxes(range=log_range, type="log", row=y_i + 1, col=x_i + 1)
+
                 if x_i == 0:
                     figure.update_yaxes(title_text=y_param, row=y_i + 1, col=x_i + 1)
                 if y_i == len(sorted_params) - 1:
@@ -176,11 +198,14 @@ def _generate_contour_subplot(
         _logger.warning("Param {} unique value length is less than 2.".format(y_param))
         return go.Contour(), go.Scatter()
 
-    # Padding to the plot.
+    # Padding to the plot for non-categorical params.
     x_range = param_values_range[x_param]
-    x_indices = [x_range[0]] + x_indices + [x_range[1]]
+    if not _is_categorical(trials, x_param):
+        x_indices = [x_range[0]] + x_indices + [x_range[1]]
+
     y_range = param_values_range[y_param]
-    y_indices = [y_range[0]] + y_indices + [y_range[1]]
+    if not _is_categorical(trials, y_param):
+        y_indices = [y_range[0]] + y_indices + [y_range[1]]
 
     z = [[float("nan") for _ in range(len(x_indices))] for _ in range(len(y_indices))]
 
