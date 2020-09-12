@@ -18,6 +18,7 @@ _import_structure = {
     "pytorch_ignite": ["PyTorchIgnitePruningHandler"],
     "pytorch_lightning": ["PyTorchLightningPruningCallback"],
     "sklearn": ["OptunaSearchCV"],
+    "skorch": ["SkorchPruningCallback"],
     "mxnet": ["MXNetPruningCallback"],
     "skopt": ["SkoptSampler"],
     "tensorboard": ["TensorBoardCallback"],
@@ -50,6 +51,7 @@ if TYPE_CHECKING:
     from optuna.integration.pytorch_lightning import PyTorchLightningPruningCallback  # NOQA
     from optuna.integration.sklearn import OptunaSearchCV  # NOQA
     from optuna.integration.skopt import SkoptSampler  # NOQA
+    from optuna.integration.skorch import SkorchPruningCallback  # NOQA
     from optuna.integration.tensorboard import TensorBoardCallback  # NOQA
     from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA
     from optuna.integration.tfkeras import TFKerasPruningCallback  # NOQA
