@@ -57,6 +57,50 @@ _ALIAS_METRIC_LIST = [
         "metric_name": "l2",
         "alias_names": ["regression", "regression_l2", "l2", "mean_squared_error", "mse"],
     },
+    {
+        "metric_name": "l1",
+        "alias_names": ["regression_l1", "l1", "mean_absolute_error", "mae"],
+    },
+    {
+        "metric_name": "binary_logloss",
+        "alias_names": ["binary_logloss", "binary"],
+    },
+    {
+        "metric_name": "multi_logloss",
+        "alias_names": [
+            "multi_logloss",
+            "multiclass",
+            "softmax",
+            "multiclassova",
+            "multiclass_ova",
+            "ova",
+            "ovr",
+        ],
+    },
+    {
+        "metric_name": "cross_entropy",
+        "alias_names": ["cross_entropy", "xentropy"],
+    },
+    {
+        "metric_name": "cross_entropy_lambda",
+        "alias_names": ["cross_entropy_lambda", "xentlambda"],
+    },
+    {
+        "metric_name": "kullback_leibler",
+        "alias_names": ["kullback_leibler", "kldiv"],
+    },
+    {
+        "metric_name": "mape",
+        "alias_names": ["mape", "mean_absolute_percentage_error"],
+    },
+    {
+        "metric_name": "auc_mu",
+        "alias_names": ["auc_mu"],
+    },
+    {
+        "metric_name": "custom",
+        "alias_names": ["none", "null", "custom", "na"],
+    },
 ]  # type: List[Dict[str, Any]]
 
 

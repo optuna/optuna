@@ -73,3 +73,56 @@ def test_handling_alias_metrics() -> None:
     lgbm_params = {"metric": "rmse"}
     _handling_alias_metrics(lgbm_params)
     assert lgbm_params["metric"] == "rmse"
+
+    for alias in ["regression_l1", "l1", "mean_absolute_error", "mae"]:
+        lgbm_params = {"metric": alias}
+        _handling_alias_metrics(lgbm_params)
+        assert lgbm_params["metric"] == "l1"
+
+    for alias in ["binary_logloss", "binary"]:
+        lgbm_params = {"metric": alias}
+        _handling_alias_metrics(lgbm_params)
+        assert lgbm_params["metric"] == "binary_logloss"
+
+    for alias in [
+        "multi_logloss",
+        "multiclass",
+        "softmax",
+        "multiclassova",
+        "multiclass_ova",
+        "ova",
+        "ovr",
+    ]:
+        lgbm_params = {"metric": alias}
+        _handling_alias_metrics(lgbm_params)
+        assert lgbm_params["metric"] == "multi_logloss"
+
+    for alias in ["cross_entropy", "xentropy"]:
+        lgbm_params = {"metric": alias}
+        _handling_alias_metrics(lgbm_params)
+        assert lgbm_params["metric"] == "cross_entropy"
+
+    for alias in ["cross_entropy_lambda", "xentlambda"]:
+        lgbm_params = {"metric": alias}
+        _handling_alias_metrics(lgbm_params)
+        assert lgbm_params["metric"] == "cross_entropy_lambda"
+
+    for alias in ["kullback_leibler", "kldiv"]:
+        lgbm_params = {"metric": alias}
+        _handling_alias_metrics(lgbm_params)
+        assert lgbm_params["metric"] == "kullback_leibler"
+
+    for alias in ["mape", "mean_absolute_percentage_error"]:
+        lgbm_params = {"metric": alias}
+        _handling_alias_metrics(lgbm_params)
+        assert lgbm_params["metric"] == "mape"
+
+    for alias in ["auc_mu"]:
+        lgbm_params = {"metric": alias}
+        _handling_alias_metrics(lgbm_params)
+        assert lgbm_params["metric"] == "auc_mu"
+
+    for alias in ["none", "null", "custom", "na"]:
+        lgbm_params = {"metric": alias}
+        _handling_alias_metrics(lgbm_params)
+        assert lgbm_params["metric"] == "custom"
