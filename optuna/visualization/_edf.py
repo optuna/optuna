@@ -45,9 +45,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
 
             def ackley(x, y):
                 a = 20 * math.exp(-0.2 * math.sqrt(0.5 * (x ** 2 + y ** 2)))
-                b = math.exp(
-                    0.5 * (math.cos(2 * math.pi * x) + math.cos(2 * math.pi * y))
-                )
+                b = math.exp(0.5 * (math.cos(2 * math.pi * x) + math.cos(2 * math.pi * y)))
                 return -a - b + math.e + 20
 
 

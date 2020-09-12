@@ -103,9 +103,7 @@ class Trial(BaseTrial):
                 import optuna
 
                 X, y = load_iris(return_X_y=True)
-                X_train, X_valid, y_train, y_valid = train_test_split(
-                    X, y, random_state=0
-                )
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
 
                 def objective(trial):
@@ -318,12 +316,8 @@ class Trial(BaseTrial):
 
 
                 def objective(trial):
-                    subsample = trial.suggest_discrete_uniform(
-                        "subsample", 0.1, 1.0, 0.1
-                    )
-                    clf = GradientBoostingClassifier(
-                        subsample=subsample, random_state=0
-                    )
+                    subsample = trial.suggest_discrete_uniform("subsample", 0.1, 1.0, 0.1)
+                    clf = GradientBoostingClassifier(subsample=subsample, random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_valid, y_valid)
 
@@ -376,9 +370,7 @@ class Trial(BaseTrial):
 
                 def objective(trial):
                     n_estimators = trial.suggest_int("n_estimators", 50, 400)
-                    clf = RandomForestClassifier(
-                        n_estimators=n_estimators, random_state=0
-                    )
+                    clf = RandomForestClassifier(n_estimators=n_estimators, random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_valid, y_valid)
 
@@ -479,9 +471,7 @@ class Trial(BaseTrial):
 
 
                 def objective(trial):
-                    kernel = trial.suggest_categorical(
-                        "kernel", ["linear", "poly", "rbf"]
-                    )
+                    kernel = trial.suggest_categorical("kernel", ["linear", "poly", "rbf"])
                     clf = SVC(kernel=kernel, gamma="scale", random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_valid, y_valid)
@@ -630,9 +620,7 @@ class Trial(BaseTrial):
                 import optuna
 
                 X, y = load_iris(return_X_y=True)
-                X_train, X_valid, y_train, y_valid = train_test_split(
-                    X, y, random_state=0
-                )
+                X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
 
                 def objective(trial):

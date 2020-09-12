@@ -27,9 +27,7 @@ class FastAIPruningCallback(TrackerCallback):
 
         .. code::
 
-            learn.fit(
-                n_epochs, callbacks=[FastAIPruningCallback(learn, trial, "valid_loss")]
-            )
+            learn.fit(n_epochs, callbacks=[FastAIPruningCallback(learn, trial, "valid_loss")])
             learn.fit_one_cycle(
                 n_epochs,
                 cyc_len,

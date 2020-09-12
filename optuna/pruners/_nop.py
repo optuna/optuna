@@ -33,17 +33,13 @@ class NopPruner(BasePruner):
                     trial.report(intermediate_value, step)
 
                     if trial.should_prune():
-                        assert (
-                            False
-                        ), "should_prune() should always return False with this pruner."
+                        assert False, "should_prune() should always return False with this pruner."
                         raise optuna.TrialPruned()
 
                 return clf.score(X_valid, y_valid)
 
 
-            study = optuna.create_study(
-                direction="maximize", pruner=optuna.pruners.NopPruner()
-            )
+            study = optuna.create_study(direction="maximize", pruner=optuna.pruners.NopPruner())
             study.optimize(objective, n_trials=20)
     """
 

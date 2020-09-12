@@ -40,9 +40,7 @@ class GridSampler(BaseSampler):
 
 
             search_space = {"x": [-50, 0, 50], "y": [-99, 0, 99]}
-            study = optuna.create_study(
-                sampler=optuna.samplers.GridSampler(search_space)
-            )
+            study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space))
             study.optimize(objective, n_trials=3 * 3)
 
     Note:
@@ -71,9 +69,7 @@ class GridSampler(BaseSampler):
 
             # Non-int points are specified in the grid.
             search_space = {"x": [-0.5, 0.5]}
-            study = optuna.create_study(
-                sampler=optuna.samplers.GridSampler(search_space)
-            )
+            study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space))
             study.optimize(objective, n_trials=2)
 
     Args:

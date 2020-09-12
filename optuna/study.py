@@ -997,14 +997,10 @@ def load_study(
                 return x ** 2
 
 
-            study = optuna.create_study(
-                storage="sqlite:///example.db", study_name="my_study"
-            )
+            study = optuna.create_study(storage="sqlite:///example.db", study_name="my_study")
             study.optimize(objective, n_trials=3)
 
-            loaded_study = optuna.load_study(
-                study_name="my_study", storage="sqlite:///example.db"
-            )
+            loaded_study = optuna.load_study(study_name="my_study", storage="sqlite:///example.db")
             assert len(loaded_study.trials) == len(study.trials)
 
         .. testcleanup::
@@ -1059,14 +1055,10 @@ def delete_study(
                 return (x - 2) ** 2
 
 
-            study = optuna.create_study(
-                study_name="example-study", storage="sqlite:///example.db"
-            )
+            study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
             study.optimize(objective, n_trials=3)
 
-            optuna.delete_study(
-                study_name="example-study", storage="sqlite:///example.db"
-            )
+            optuna.delete_study(study_name="example-study", storage="sqlite:///example.db")
 
         .. testcleanup::
 
@@ -1111,14 +1103,10 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
                 return (x - 2) ** 2
 
 
-            study = optuna.create_study(
-                study_name="example-study", storage="sqlite:///example.db"
-            )
+            study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
             study.optimize(objective, n_trials=3)
 
-            study_summaries = optuna.study.get_all_study_summaries(
-                storage="sqlite:///example.db"
-            )
+            study_summaries = optuna.study.get_all_study_summaries(storage="sqlite:///example.db")
             assert len(study_summaries) == 1
 
             study_summary = study_summaries[0]
