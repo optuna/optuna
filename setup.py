@@ -87,19 +87,30 @@ def get_extras_require() -> Dict[str, List[str]]:
             "keras",
             "tensorflow>=2.0.0",
             "tensorflow-datasets",
+            "pytorch-ignite",
+            "pytorch-lightning>=0.8.1",
+            "thop",
+            "skorch",
+            "stable-baselines3>=0.7.0",
+            "catalyst",
         ]
         + (
-            (
-                ["torch==1.6.0", "torchvision==0.7.0"]
-                if sys.platform == "darwin"
-                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
-            )
-            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "thop", "skorch"]
+            ["torch==1.6.0", "torchvision==0.7.0"]
+            if sys.platform == "darwin"
+            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
         )
-        + ["stable-baselines3>=0.7.0"]
-        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else [])
-        + (["dask[dataframe]", "dask-ml"] if sys.version_info[:2] < (3, 8) else [])
-        + ["catalyst"],
+        + (
+            [
+                "allennlp==1.0.0",
+                "fastai<2",
+                "dask[dataframe]",
+                "dask-ml",
+                "allennlp==1.0.0",
+                "fastai<2",
+            ]
+            if sys.version_info[:2] < (3, 8)
+            else []
+        ),
         "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -121,17 +132,16 @@ def get_extras_require() -> Dict[str, List[str]]:
             "keras",
             "tensorflow",
             "tensorflow-datasets",
+            "pytorch-ignite",
+            "pytorch-lightning>=0.8.1",
+            "skorch",
+            "catalyst",
         ]
         + (
-            (
-                ["torch==1.6.0", "torchvision==0.7.0"]
-                if sys.platform == "darwin"
-                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
-            )
-            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "skorch"]
-        )
-        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else [])
-        + (["catalyst"]),
+            ["torch==1.6.0", "torchvision==0.7.0"]
+            if sys.platform == "darwin"
+            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+        ),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -156,17 +166,17 @@ def get_extras_require() -> Dict[str, List[str]]:
             "keras",
             "tensorflow",
             "tensorflow-datasets",
+            "pytorch-ignite",
+            "pytorch-lightning>=0.8.1",
+            "skorch",
+            "catalyst",
         ]
         + (
-            (
-                ["torch==1.6.0", "torchvision==0.7.0"]
-                if sys.platform == "darwin"
-                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
-            )
-            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "skorch"]
+            ["torch==1.6.0", "torchvision==0.7.0"]
+            if sys.platform == "darwin"
+            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
         )
-        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else [])
-        + (["catalyst"] if sys.version_info[:2] else []),
+        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
     }
 
     return requirements
