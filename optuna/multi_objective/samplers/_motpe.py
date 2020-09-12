@@ -248,7 +248,8 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
             1. Nondonation rank-based selection
             2. Hypervolume subset selection problem (HSSP)-based selection
 
-        Please refer to the `original paper <https://dl.acm.org/doi/abs/10.1145/3377930.3389817>`_ for more details.
+        Please refer to the `original paper <https://dl.acm.org/doi/abs/10.1145/3377930.3389817>`_
+        for more details.
         """
         cvals = np.asarray(config_vals)
         lvals = np.asarray(loss_vals)
