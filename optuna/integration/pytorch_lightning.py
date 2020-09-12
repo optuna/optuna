@@ -26,7 +26,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             An evaluation metric for pruning, e.g., ``val_loss`` or
             ``val_acc``. The metrics are obtained from the returned dictionaries from e.g.
             ``pytorch_lightning.LightningModule.training_step`` or
-            ``pytorch_lightning.LightningModule.validation_end`` and the names thus depend on
+            ``pytorch_lightning.LightningModule.validation_epoch_end`` and the names thus depend on
             how this dictionary is formatted.
     """
 
@@ -49,10 +49,5 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
 
-    # NOTE (crcrpar): This method is called <0.8.0
-    def on_epoch_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
-        return self._process(trainer, pl_module)
-
-    # NOTE (crcrpar): This method is called >=0.8.0
     def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         return self._process(trainer, pl_module)
