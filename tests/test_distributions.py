@@ -99,7 +99,7 @@ def test_check_distribution_compatibility() -> None:
         EXAMPLE_DISTRIBUTIONS["iu"], distributions.IntUniformDistribution(low=-1, high=1)
     )
     distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["ilu"], distributions.IntLogUniformDistribution(low=1, high=13),
+        EXAMPLE_DISTRIBUTIONS["ilu"], distributions.IntLogUniformDistribution(low=1, high=13)
     )
 
 

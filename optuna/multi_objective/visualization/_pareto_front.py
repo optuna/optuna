@@ -32,7 +32,7 @@ def plot_pareto_front(
                x = trial.suggest_float("x", 0, 5)
                y = trial.suggest_float("y", 0, 3)
 
-               v0 = (4 * x) ** 2 + (4 * y) ** 2
+               v0 = 4 * x ** 2 + 4 * y ** 2
                v1 = (x - 5) ** 2 + (y - 5) ** 2
                return v0, v1
 
@@ -43,7 +43,7 @@ def plot_pareto_front(
 
         .. raw:: html
 
-            <iframe src="../../_static/plot_pareto_front.html" width="100%" height="500px"
+            <iframe src="../../../_static/plot_pareto_front.html" width="100%" height="500px"
             frameborder="0"></iframe>
 
     Args:

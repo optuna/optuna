@@ -44,13 +44,16 @@ jobs:
         fi
         echo "::set-env name=HUB_TAG::${DOCKER_HUB_BASE_NAME}:${TAG_NAME}"
 
-    - name: Pull the Docker image
-      run: |
-        docker pull "${HUB_TAG}"
-
     - name: Build the Docker image
       run: |
-        docker build --cache-from "${HUB_TAG}" . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
+        if [ "${{ github.event_name }}" = 'release' ]; then
+          # Cache is not available because the image tag includes the Optuna version.
+          CACHE_FROM=""
+        else
+          docker pull "${HUB_TAG}"
+          CACHE_FROM="--cache-from=${HUB_TAG}"
+        fi
+        docker build ${CACHE_FROM} . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
 
     - name: Verify the built image
       run: |
