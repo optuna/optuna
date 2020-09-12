@@ -23,12 +23,6 @@ from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.study import StudyDirection
 
-try:
-    import pygmo
-
-    _IS_PYGMO_AVAILABLE = True
-except ImportError:
-    _IS_PYGMO_AVAILABLE = False
 
 EPS = 1e-12
 _SPLITCACHE_KEY = "multi_objective:motpe:splitcache"
@@ -39,7 +33,7 @@ def default_gamma(x: int) -> int:
     return int(np.floor(0.1 * x))
 
 
-@experimental("2.0.0")
+@experimental("2.2.0")
 class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
@@ -89,9 +83,6 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
             None is set, weights are automatically calculated by a default algorithm.
         seed:
             Seed for random number generator.
-        use_pygmo:
-            Use pygmo to accelerate hypervolume computation. To use this option, pygmo must be
-            installed.
 
     The original paper utilizes Latin hypercube sampling (LHS) for initialization. The following
     code is an example of initializing MOTPE using LHS. Here
@@ -142,7 +133,6 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         gamma: Callable[[int], int] = default_gamma,
         weights: Optional[Callable[[int], np.ndarray]] = None,
         seed: Optional[int] = None,
-        use_pygmo: bool = False,
     ) -> None:
         self._prior_weight = prior_weight
         self._n_startup_trials = n_startup_trials
@@ -155,7 +145,6 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         self._weights = weights
         self._rng = np.random.RandomState(seed)
         self._random_sampler = RandomMultiObjectiveSampler(seed=seed)
-        self._use_pygmo = use_pygmo
 
     def infer_relative_search_space(
         self,
@@ -630,13 +619,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         return return_val
 
     def _compute_hypervolume(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
-        if self._use_pygmo:
-            assert (
-                _IS_PYGMO_AVAILABLE
-            ), "Pygmo is not available. Please install pygmo to use this option."
-            return pygmo.hypervolume(solution_set).compute(reference_point)
-        else:
-            return _hypervolume.WFG().compute(solution_set, reference_point)
+        return _hypervolume.WFG().compute(solution_set, reference_point)
 
     def _solve_hssp(
         self,
