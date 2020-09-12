@@ -1,13 +1,11 @@
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import TrialState
-from optuna.visualization._plotly_imports import _imports
+from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import plt
-
-_logger = get_logger(__name__)
 
 
 def plot_intermediate_values(study: Study) -> Axes:
