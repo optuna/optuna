@@ -206,7 +206,7 @@ def test_hyperband_no_call_of_filter_study_in_should_prune(
 
     sampler = sampler_init_func()
     pruner = optuna.pruners.HyperbandPruner(
-        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR,
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
     )
     study = optuna.study.create_study(sampler=sampler, pruner=pruner)
     study.optimize(objective, n_trials=10)

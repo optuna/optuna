@@ -1,5 +1,6 @@
 import numpy as np
 
+from optuna.multi_objective._hypervolume import _compute_2d
 from optuna.multi_objective._hypervolume import _compute_2points_volume
 from optuna.multi_objective._hypervolume import BaseHypervolume
 
@@ -17,12 +18,15 @@ class WFG(BaseHypervolume):
         self._reference_point = None
 
     def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
-        self._reference_point = reference_point
+        self._reference_point = reference_point.copy()
         return self._compute_rec(solution_set)
 
     def _compute_rec(self, solution_set: np.ndarray) -> float:
         assert self._reference_point is not None
         n_points = solution_set.shape[0]
+
+        if self._reference_point.shape[0] == 2:
+            return _compute_2d(solution_set, self._reference_point)
 
         if n_points == 1:
             return _compute_2points_volume(solution_set[0], self._reference_point)
