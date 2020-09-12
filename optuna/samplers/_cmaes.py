@@ -113,8 +113,8 @@ class CmaEsSampler(BaseSampler):
             If given 'ipop', CMA-ES will restart with increasing population size.
             Please see also ``inc_popsize`` parameter.
 
-            .. versionadded:: 2.1.0
-                This option is an experimental feature. The interface may change in newer
+            .. note::
+                Added in v2.1.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.1.0.
 
@@ -125,8 +125,8 @@ class CmaEsSampler(BaseSampler):
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
 
-            .. versionadded:: 2.0.0
-                This option is an experimental feature. The interface may change in newer
+            .. note::
+                Added in v2.0.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.0.0.
 
