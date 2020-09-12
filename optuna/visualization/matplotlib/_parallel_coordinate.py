@@ -15,8 +15,6 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import LineCollection
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
-_logger = get_logger(__name__)
-
 
 def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -> Axes:
     """Plot the high-dimentional parameter relationships in a study with Matplotlib.
