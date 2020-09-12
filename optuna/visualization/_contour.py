@@ -104,6 +104,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
             max_value = math.pow(10, math.log10(max_value) + padding)
 
         elif _is_categorical(trials, p_name):
+            # For numeric values, plotly does not automatically plot as "category" type.
             update_category_axes[p_name] = any([str(v).isnumeric() for v in set(values)])
 
         else:
@@ -122,9 +123,9 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
         figure.update_yaxes(title_text=y_param, range=param_values_range[y_param])
 
-        if _is_categorical(trials, x_param) and update_category_axes[x_param]:
+        if update_category_axes.get(x_param, False):
             figure.update_xaxes(type="category")
-        if _is_categorical(trials, y_param) and update_category_axes[y_param]:
+        if update_category_axes.get(y_param, False):
             figure.update_yaxes(type="category")
 
         if _is_log_scale(trials, x_param):
@@ -158,9 +159,9 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
                 figure.update_xaxes(range=param_values_range[x_param], row=y_i + 1, col=x_i + 1)
                 figure.update_yaxes(range=param_values_range[y_param], row=y_i + 1, col=x_i + 1)
 
-                if _is_categorical(trials, x_param) and update_category_axes[x_param]:
+                if update_category_axes.get(x_param, False):
                     figure.update_xaxes(type="category", row=y_i + 1, col=x_i + 1)
-                if _is_categorical(trials, y_param) and update_category_axes[y_param]:
+                if update_category_axes.get(y_param, False):
                     figure.update_yaxes(type="category", row=y_i + 1, col=x_i + 1)
 
                 if _is_log_scale(trials, x_param):
