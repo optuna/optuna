@@ -1,3 +1,5 @@
+import pytest
+
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
 
@@ -37,92 +39,56 @@ def test_handling_alias_parameter() -> None:
     assert params["min_data_in_leaf"] == 0.2
 
 
-def test_handling_alias_metrics() -> None:
-
-    for alias in [
-        "lambdarank",
-        "rank_xendcg",
-        "xendcg",
-        "xe_ndcg",
-        "xe_ndcg_mart",
-        "xendcg_mart",
-        "ndcg",
-    ]:
-        lgbm_params = {"metric": alias}
+@pytest.mark.parametrize(
+    "aliases, expect",
+    [
+        (
+            [
+                "ndcg",
+                "lambdarank",
+                "rank_xendcg",
+                "xendcg",
+                "xe_ndcg",
+                "xe_ndcg_mart",
+                "xendcg_mart",
+            ],
+            "ndcg",
+        ),
+        (["mean_average_precision", "map"], "map"),
+        (["rmse", "l2_root", "root_mean_squared_error"], "rmse"),
+        (["l1", "regression_l1", "mean_absolute_error", "mae"], "l1"),
+        (["l2", "regression", "regression_l2", "mean_squared_error", "mse"], "l2"),
+        (["auc"], "auc"),
+        (["binary_logloss", "binary"], "binary_logloss"),
+        (
+            [
+                "multi_logloss",
+                "multiclass",
+                "softmax",
+                "multiclassova",
+                "multiclass_ova",
+                "ova",
+                "ovr",
+            ],
+            "multi_logloss",
+        ),
+        (["cross_entropy", "xentropy"], "cross_entropy"),
+        (["cross_entropy_lambda", "xentlambda"], "cross_entropy_lambda"),
+        (["kullback_leibler", "kldiv"], "kullback_leibler"),
+        (["mape", "mean_absolute_percentage_error"], "mape"),
+        (["auc_mu"], "auc_mu"),
+        (["custom", "none", "null", "na"], "custom"),
+        ([], None),  # if "metric" not in lgbm_params.keys(): return None
+    ],
+)
+def test_handling_alias_metrics(aliases, expect) -> None:
+    if len(aliases) > 0:
+        for alias in aliases:
+            lgbm_params = {"metric": alias}
+            _handling_alias_metrics(lgbm_params)
+            assert lgbm_params["metric"] == expect
+    else:
+        lgbm_params = {}
         _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "ndcg"
-
-    for alias in ["mean_average_precision", "map"]:
-        lgbm_params = {"metric": alias}
-        _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "map"
-
-    for alias in ["regression", "regression_l2", "l2", "mean_squared_error", "mse"]:
-        lgbm_params = {"metric": alias}
-        _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "l2"
-
-    lgbm_params = {}
-    _handling_alias_metrics(lgbm_params)
-    assert lgbm_params == {}
-
-    lgbm_params = {"metric": "auc"}
-    _handling_alias_metrics(lgbm_params)
-    assert lgbm_params["metric"] == "auc"
-
-    lgbm_params = {"metric": "rmse"}
-    _handling_alias_metrics(lgbm_params)
-    assert lgbm_params["metric"] == "rmse"
-
-    for alias in ["regression_l1", "l1", "mean_absolute_error", "mae"]:
-        lgbm_params = {"metric": alias}
-        _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "l1"
-
-    for alias in ["binary_logloss", "binary"]:
-        lgbm_params = {"metric": alias}
-        _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "binary_logloss"
-
-    for alias in [
-        "multi_logloss",
-        "multiclass",
-        "softmax",
-        "multiclassova",
-        "multiclass_ova",
-        "ova",
-        "ovr",
-    ]:
-        lgbm_params = {"metric": alias}
-        _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "multi_logloss"
-
-    for alias in ["cross_entropy", "xentropy"]:
-        lgbm_params = {"metric": alias}
-        _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "cross_entropy"
-
-    for alias in ["cross_entropy_lambda", "xentlambda"]:
-        lgbm_params = {"metric": alias}
-        _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "cross_entropy_lambda"
-
-    for alias in ["kullback_leibler", "kldiv"]:
-        lgbm_params = {"metric": alias}
-        _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "kullback_leibler"
-
-    for alias in ["mape", "mean_absolute_percentage_error"]:
-        lgbm_params = {"metric": alias}
-        _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "mape"
-
-    for alias in ["auc_mu"]:
-        lgbm_params = {"metric": alias}
-        _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "auc_mu"
-
-    for alias in ["none", "null", "custom", "na"]:
-        lgbm_params = {"metric": alias}
-        _handling_alias_metrics(lgbm_params)
-        assert lgbm_params["metric"] == "custom"
+        print("null case")
+        assert lgbm_params == {}

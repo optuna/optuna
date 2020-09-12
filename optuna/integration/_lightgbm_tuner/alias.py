@@ -101,6 +101,10 @@ _ALIAS_METRIC_LIST = [
         "metric_name": "custom",
         "alias_names": ["none", "null", "custom", "na"],
     },
+    {
+        "metric_name": "rmse",
+        "alias_names": ["l2_root", "root_mean_squared_error"],
+    },
 ]  # type: List[Dict[str, Any]]
 
 

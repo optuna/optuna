@@ -116,7 +116,7 @@ def _num_samples(x: ArrayLikeType) -> int:
     try:
         return len(x)
     except TypeError:
-        raise TypeError("Expected sequence or array-like, got %s." % type(x))
+        raise TypeError("Expected sequence or array-like, got %s." % type(x)) from None
 
 
 def _safe_indexing(
@@ -323,7 +323,7 @@ class _Objective(object):
                     train_score = self.error_score
 
             else:
-                raise ValueError("error_score must be 'raise' or numeric.")
+                raise ValueError("error_score must be 'raise' or numeric.") from e
 
         else:
             fit_time = time() - start_time

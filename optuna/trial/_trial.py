@@ -539,7 +539,7 @@ class Trial(BaseTrial):
             message = "The `value` argument is of type '{}' but supposed to be a float.".format(
                 type(value).__name__
             )
-            raise TypeError(message)
+            raise TypeError(message) from None
 
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
