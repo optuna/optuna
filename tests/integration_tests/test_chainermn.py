@@ -27,6 +27,7 @@ from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
+
 try:
     import chainermn
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA

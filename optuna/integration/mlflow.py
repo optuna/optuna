@@ -8,6 +8,7 @@ from optuna._imports import try_import
 from optuna._study_direction import StudyDirection
 from optuna.trial import TrialState
 
+
 if type_checking.TYPE_CHECKING:
     from typing import Dict  # NOQA
 

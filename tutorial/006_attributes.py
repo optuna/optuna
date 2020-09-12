@@ -21,6 +21,7 @@ import sklearn.svm
 
 import optuna
 
+
 study = optuna.create_study(storage='sqlite:///example.db')
 study.set_user_attr('contributors', ['Akiba', 'Sano'])
 study.set_user_attr('dataset', 'MNIST')

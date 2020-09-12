@@ -34,6 +34,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.trial import create_trial
 
+
 ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
 with try_import() as _pandas_imports:

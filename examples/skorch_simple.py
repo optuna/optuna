@@ -25,6 +25,7 @@ import torch.nn.functional as F
 import optuna
 from optuna.integration import SkorchPruningCallback
 
+
 SUBSET_RATIO = 0.4
 
 mnist = fetch_openml("mnist_784", cache=False)

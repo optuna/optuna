@@ -16,6 +16,7 @@ from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
+
 # Define key names of `Trial.system_attrs`.
 _GENERATION_KEY = "multi_objective:nsga2:generation"
 _PARENTS_KEY = "multi_objective:nsga2:parents"

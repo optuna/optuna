@@ -21,6 +21,7 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
 
+
 _logger = logging.get_logger(__name__)
 
 

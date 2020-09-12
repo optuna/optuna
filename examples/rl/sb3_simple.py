@@ -21,6 +21,7 @@ import optuna
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
 
+
 N_TRIALS = 100
 N_JOBS = 2
 N_STARTUP_TRIALS = 5

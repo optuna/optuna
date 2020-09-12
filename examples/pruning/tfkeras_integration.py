@@ -18,6 +18,7 @@ import tensorflow_datasets as tfds
 import optuna
 from optuna.integration import TFKerasPruningCallback
 
+
 BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 20

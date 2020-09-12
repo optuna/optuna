@@ -15,6 +15,7 @@ from optuna.importance._base import _get_distributions
 from optuna.importance._base import _get_study_data
 from optuna.study import Study
 
+
 with try_import() as _imports:
     from sklearn.compose import ColumnTransformer
     from sklearn.ensemble import RandomForestRegressor

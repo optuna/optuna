@@ -9,6 +9,7 @@ from optuna import exceptions
 from optuna import trial
 from optuna._deprecated import deprecated
 
+
 _message = (
     "`structs` is deprecated. Classes have moved to the following modules. "
     "`structs.StudyDirection`->`study.StudyDirection`, "

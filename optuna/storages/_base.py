@@ -10,6 +10,7 @@ from optuna.distributions import BaseDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
 DEFAULT_STUDY_NAME_PREFIX = "no-name-"
 
 

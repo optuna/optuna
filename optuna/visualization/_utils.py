@@ -4,6 +4,7 @@ from optuna.distributions import LogUniformDistribution
 from optuna.trial import FrozenTrial
 from optuna.visualization import _plotly_imports
 
+
 __all__ = ["is_available"]
 
 

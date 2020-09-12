@@ -8,6 +8,7 @@ from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from optuna.visualization._plotly_imports import _imports
 
+
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
 

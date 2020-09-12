@@ -18,6 +18,7 @@ from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
 from optuna.trial._state import TrialState
 
+
 _logger = logging.get_logger(__name__)
 
 CategoricalChoiceType = Union[None, bool, int, float, str]

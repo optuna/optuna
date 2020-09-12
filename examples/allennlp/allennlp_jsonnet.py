@@ -19,6 +19,7 @@ import optuna
 from optuna.integration import AllenNLPExecutor
 from optuna.integration.allennlp import dump_best_config
 
+
 # This path trick is used since this example is also
 # run from the root of this repository by CI.
 EXAMPLE_DIR = os.path.dirname(os.path.abspath(__file__))

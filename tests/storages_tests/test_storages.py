@@ -26,6 +26,7 @@ from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
 ALL_STATES = list(TrialState)
 
 EXAMPLE_ATTRS = {

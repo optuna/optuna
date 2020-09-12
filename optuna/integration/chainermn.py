@@ -18,6 +18,7 @@ from optuna.study import Study
 from optuna.trial import BaseTrial
 from optuna.trial import Trial
 
+
 with try_import() as _imports:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
 

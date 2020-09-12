@@ -2,6 +2,7 @@ from packaging import version
 
 from optuna._imports import try_import
 
+
 with try_import() as _imports:  # NOQA
     import plotly  # NOQA
     from plotly import __version__ as plotly_version

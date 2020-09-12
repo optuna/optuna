@@ -11,6 +11,7 @@ from packaging import version
 from optuna._experimental import _get_docstring_indent
 from optuna._experimental import _validate_version
 
+
 _DEPRECATION_NOTE_TEMPLATE = """
 
 .. warning::

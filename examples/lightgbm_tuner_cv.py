@@ -9,6 +9,7 @@ from sklearn.model_selection import KFold
 
 import optuna.integration.lightgbm as lgb
 
+
 if __name__ == "__main__":
     data, target = sklearn.datasets.load_breast_cancer(return_X_y=True)
     dtrain = lgb.Dataset(data, label=target)

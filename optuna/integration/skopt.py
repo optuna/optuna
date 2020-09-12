@@ -18,6 +18,7 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
 with try_import() as _imports:
     import skopt
     from skopt.space import space

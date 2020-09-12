@@ -13,6 +13,7 @@ from torchvision import transforms
 import optuna
 from optuna.integration.mlflow import MLflowCallback
 
+
 PERCENT_VALID_EXAMPLES = 0.1
 BATCHSIZE = 128
 CLASSES = 10

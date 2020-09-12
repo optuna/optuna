@@ -28,6 +28,7 @@ from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 
+
 with try_import() as _imports:
     import pandas as pd
     import sklearn

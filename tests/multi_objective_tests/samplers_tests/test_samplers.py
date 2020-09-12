@@ -12,6 +12,7 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
+
 parametrize_sampler = pytest.mark.parametrize(
     "sampler_class",
     [

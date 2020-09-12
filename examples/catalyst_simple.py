@@ -24,6 +24,7 @@ from torchvision import transforms
 import optuna
 from optuna.integration import CatalystPruningCallback
 
+
 CLASSES = 10
 
 

@@ -31,6 +31,7 @@ from torchvision.transforms import ToTensor
 
 import optuna
 
+
 EPOCHS = 10
 TRAIN_BATCH_SIZE = 64
 VAL_BATCH_SIZE = 1000

@@ -19,6 +19,7 @@ import numpy as np
 import optuna
 from optuna.integration import MXNetPruningCallback
 
+
 N_TRAIN_EXAMPLES = 3000
 N_TEST_EXAMPLES = 1000
 BATCHSIZE = 128

@@ -23,6 +23,7 @@ from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 
+
 parametrize_sampler = pytest.mark.parametrize(
     "sampler_class",
     [

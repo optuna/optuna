@@ -16,6 +16,7 @@ import optuna.logging
 import optuna.study
 import optuna.trial
 
+
 with try_import() as _imports:
     from bokeh import __version__ as bokeh_version
     import bokeh.command.bootstrap

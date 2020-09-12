@@ -15,6 +15,7 @@ from optuna.importance import get_param_importances
 from optuna.study import create_study
 from optuna.trial import Trial
 
+
 parametrize_storage = pytest.mark.parametrize(
     "storage_init_func",
     [storages.InMemoryStorage, lambda: storages.RDBStorage("sqlite:///:memory:")],

@@ -18,6 +18,7 @@ from keras.optimizers import RMSprop
 
 import optuna
 
+
 N_TRAIN_EXAMPLES = 3000
 N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128

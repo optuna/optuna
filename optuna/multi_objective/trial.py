@@ -14,6 +14,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
+
 CategoricalChoiceType = Union[None, bool, int, float, str]
 
 

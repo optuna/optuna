@@ -3,6 +3,7 @@ import tensorflow as tf
 import optuna
 from optuna.integration.tensorboard import TensorBoardCallback
 
+
 fashion_mnist = tf.keras.datasets.fashion_mnist
 
 (x_train, y_train), (x_test, y_test) = fashion_mnist.load_data()

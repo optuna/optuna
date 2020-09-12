@@ -34,6 +34,7 @@ from optuna.trial import Trial
 from optuna.trial import TrialState
 from optuna.trial._frozen import create_trial
 
+
 parametrize_storage = pytest.mark.parametrize(
     "storage_init_func",
     [storages.InMemoryStorage, lambda: storages.RDBStorage("sqlite:///:memory:")],

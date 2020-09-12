@@ -21,6 +21,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
+
 ObjectiveFuncType = Callable[["multi_objective.trial.MultiObjectiveTrial"], Sequence[float]]
 CallbackFuncType = Callable[
     [

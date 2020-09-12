@@ -19,6 +19,7 @@ from packaging import version
 
 import optuna
 
+
 if version.parse(chainer.__version__) < version.parse("4.0.0"):
     raise RuntimeError("Chainer>=4.0.0 is required for this example.")
 

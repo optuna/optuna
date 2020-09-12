@@ -4,6 +4,7 @@ from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
 from optuna.integration._lightgbm_tuner.optimize import _imports as _imports
 
+
 if _imports.is_successful():
     from optuna.integration._lightgbm_tuner.sklearn import LGBMClassifier  # NOQA
     from optuna.integration._lightgbm_tuner.sklearn import LGBMModel  # NOQA

@@ -4,6 +4,7 @@ import optuna
 from optuna._imports import try_import
 from optuna.integration import _lightgbm_tuner as tuner
 
+
 with try_import() as _imports:
     import lightgbm as lgb  # NOQA
     from lightgbm.callback import CallbackEnv  # NOQA

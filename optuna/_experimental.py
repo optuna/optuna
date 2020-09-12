@@ -8,6 +8,7 @@ import warnings
 
 from optuna.exceptions import ExperimentalWarning
 
+
 _EXPERIMENTAL_NOTE_TEMPLATE = """
 
 .. note::
