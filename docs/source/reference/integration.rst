@@ -83,7 +83,7 @@ MXNet
 
 pycma
 -----
- 
+
 .. autosummary::
    :toctree: generated/
    :nosignatures:
@@ -118,6 +118,15 @@ scikit-optimize
    :nosignatures:
 
    optuna.integration.SkoptSampler
+
+skorch
+------
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+    optuna.integration.SkorchPruningCallback
 
 TensorFlow
 ----------

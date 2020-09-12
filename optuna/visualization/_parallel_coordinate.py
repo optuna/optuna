@@ -63,7 +63,7 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
 
 def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
-    layout = go.Layout(title="Parallel Coordinate Plot",)
+    layout = go.Layout(title="Parallel Coordinate Plot")
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
