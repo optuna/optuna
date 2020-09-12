@@ -183,6 +183,7 @@ def test_population_size_is_multiplied_when_enable_ipop() -> None:
         independent_sampler=DeterministicRelativeSampler({}, {}),
         restart_strategy="ipop",
         inc_popsize=inc_popsize,
+        share_optimizer=True,
     )
     study = optuna.create_study(sampler=sampler)
 

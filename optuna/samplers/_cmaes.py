@@ -67,10 +67,11 @@ class CmaEsSampler(BaseSampler):
     Args:
 
         x0:
-            A dictionary of an initial parameter values for CMA-ES. By default, the mean of ``low``
-            and ``high`` for each distribution is used. Note that ``x0`` is sampled uniformly
-            within the search space domain for each restart if you specify ``restart_strategy``
-            argument.
+            A dictionary of an initial starting point for CMA-ES. By default, the mean of ``low``
+            and ``high`` for each distribution is used. If you want to sample an initial starting
+            point randomly, please use ``randomize_x0`` argument. Note that ``x0`` is sampled
+            randomly within the search space domain for each restart if you specify
+            ``restart_strategy`` argument.
 
         sigma0:
             Initial standard deviation of CMA-ES. By default, ``sigma0`` is set to
@@ -121,10 +122,15 @@ class CmaEsSampler(BaseSampler):
             Multiplier for increasing population size before each restart.
             This argument will be used when setting ``restart_strategy = 'ipop'``.
 
-        shared_optimizer:
+        share_optimizer:
             Share CMA object at each workers if this is :obj:`True` (default: False).
             Please note that CmaEsSampler raises an exception when using Optuna storage
             which limited the length of ``value`` field on ``trial.system_attrs``.
+
+        randomize_x0:
+            If this is :obj:`True`, an initial starting point is sampled randomly within the
+            search space. Please note that you cannot enable ``x0`` argument if this option
+            is :obj:`True`.
 
         consider_pruned_trials:
             If this is :obj:`True`, the PRUNED trials are considered for sampling.
@@ -150,11 +156,13 @@ class CmaEsSampler(BaseSampler):
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
         seed: Optional[int] = None,
-        share_optimizer: bool = True,
         *,
         consider_pruned_trials: bool = False,
         restart_strategy: Optional[str] = None,
-        inc_popsize: int = 2
+        inc_popsize: int = 2,
+        # TODO(c-bata): Add experimental warning.
+        randomize_x0: bool = False,
+        share_optimizer: bool = False,
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
@@ -167,6 +175,7 @@ class CmaEsSampler(BaseSampler):
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
         self._inc_popsize = inc_popsize
+        self._randomize_x0 = randomize_x0
 
         # fields for non-sharing optimizer mode
         self._share_optimizer = share_optimizer
@@ -190,6 +199,9 @@ class CmaEsSampler(BaseSampler):
                 )
             )
 
+        if randomize_x0 and x0 is not None:
+            raise ValueError("It cannot to enable both of parameters, `randomize_x0` and `x0`.")
+
     @experimental("2.1.0", name="`restart_strategy is not None` in CmaEsSampler")
     def _raise_experimental_warning_for_restart_strategy(self) -> None:
         pass
@@ -199,7 +211,10 @@ class CmaEsSampler(BaseSampler):
         pass
 
     def reseed_rng(self) -> None:
-        # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
+        # storage cached optimizer doesn't require reseeding
+        # because the relative sampling reseeds in each trial.
+        if self._optimizer is not None:
+            self._optimizer._rng = np.random.RandomState()
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
@@ -257,12 +272,12 @@ class CmaEsSampler(BaseSampler):
         ordered_keys = [key for key in search_space]
         ordered_keys.sort()
 
-        if not self._share_optimizer:
-            return self._sample_from_inmemory_cached_optimizer(
-                search_space, completed_trials, ordered_keys
+        if self._share_optimizer:
+            return self._sample_from_storage_cached_optimizer(
+                study, trial, search_space, completed_trials, ordered_keys
             )
-        return self._sample_from_storage_cached_optimizer(
-            study, trial, search_space, completed_trials, ordered_keys
+        return self._sample_from_inmemory_cached_optimizer(
+            search_space, completed_trials, ordered_keys
         )
 
     def _sample_from_inmemory_cached_optimizer(
@@ -272,7 +287,9 @@ class CmaEsSampler(BaseSampler):
         ordered_keys: List[str],
     ) -> Dict[str, Any]:
         if self._optimizer is None:
-            self._optimizer = self._init_optimizer(search_space, ordered_keys)
+            self._optimizer = self._init_optimizer(
+                search_space, ordered_keys, randomize_start_point=self._randomize_x0
+            )
 
         if self._optimizer.dim != len(ordered_keys):
             self._logger.info(
@@ -322,7 +339,9 @@ class CmaEsSampler(BaseSampler):
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
             n_restarts = 0
-            optimizer = self._init_optimizer(search_space, ordered_keys)
+            optimizer = self._init_optimizer(
+                search_space, ordered_keys, randomize_start_point=self._randomize_x0
+            )
 
         if self._restart_strategy is None:
             generation_attr_key = "cma:generation"  # for backward compatibility
