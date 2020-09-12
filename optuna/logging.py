@@ -124,8 +124,8 @@ def disable_default_handler() -> None:
         .. testsetup::
 
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_categorical('y', [-1, 0, 1])
+                x = trial.suggest_uniform("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
 
         .. testcode::
@@ -188,8 +188,8 @@ def enable_propagation() -> None:
         .. testsetup::
 
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_categorical('y', [-1, 0, 1])
+                x = trial.suggest_uniform("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
 
         .. testcode::
@@ -210,7 +210,7 @@ def enable_propagation() -> None:
             logger.info("Start optimization.")
             study.optimize(objective, n_trials=10)
 
-            with open('foo.log') as f:
+            with open("foo.log") as f:
                 assert f.readline().startswith("A new study created")
                 assert f.readline() == "Start optimization.\\n"
 

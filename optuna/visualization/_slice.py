@@ -29,15 +29,17 @@ def plot_slice(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_categorical('y', [-1, 0, 1])
+                x = trial.suggest_uniform("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
+
 
             study = optuna.create_study()
             study.optimize(objective, n_trials=10)
 
-            optuna.visualization.plot_slice(study, params=['x', 'y'])
+            optuna.visualization.plot_slice(study, params=["x", "y"])
 
         .. raw:: html
 

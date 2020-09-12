@@ -72,9 +72,11 @@ class TPESampler(BaseSampler):
             import optuna
             from optuna.samplers import TPESampler
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -10, 10)
-                return x**2
+                x = trial.suggest_uniform("x", -10, 10)
+                return x ** 2
+
 
             study = optuna.create_study(sampler=TPESampler())
             study.optimize(objective, n_trials=10)
@@ -573,16 +575,18 @@ class TPESampler(BaseSampler):
 
             .. testcode::
 
-                    import optuna
-                    from optuna.samplers import TPESampler
+                import optuna
+                from optuna.samplers import TPESampler
 
-                    def objective(trial):
-                        x = trial.suggest_uniform('x', -10, 10)
-                        return x**2
 
-                    sampler = TPESampler(**TPESampler.hyperopt_parameters())
-                    study = optuna.create_study(sampler=sampler)
-                    study.optimize(objective, n_trials=10)
+                def objective(trial):
+                    x = trial.suggest_uniform("x", -10, 10)
+                    return x ** 2
+
+
+                sampler = TPESampler(**TPESampler.hyperopt_parameters())
+                study = optuna.create_study(sampler=sampler)
+                study.optimize(objective, n_trials=10)
 
         Returns:
             A dictionary containing the default parameters of hyperopt.

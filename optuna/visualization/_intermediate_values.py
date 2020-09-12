@@ -20,11 +20,14 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
 
             import optuna
 
+
             def f(x):
                 return (x - 2) ** 2
 
+
             def df(x):
                 return 2 * x - 4
+
 
             def objective(trial):
                 lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
@@ -41,6 +44,7 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
                     x -= gy * lr
 
                 return y
+
 
             study = optuna.create_study()
             study.optimize(objective, n_trials=16)

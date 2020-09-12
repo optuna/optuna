@@ -45,10 +45,12 @@ class PyCmaSampler(BaseSampler):
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -1, 1)
-                y = trial.suggest_int('y', -1, 1)
-                return x**2 + y
+                x = trial.suggest_uniform("x", -1, 1)
+                y = trial.suggest_int("y", -1, 1)
+                return x ** 2 + y
+
 
             sampler = optuna.integration.PyCmaSampler()
             study = optuna.create_study(sampler=sampler)

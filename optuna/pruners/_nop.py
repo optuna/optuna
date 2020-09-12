@@ -20,8 +20,9 @@ class NopPruner(BasePruner):
             X_train, X_valid, y_train, y_valid = train_test_split(X, y)
             classes = np.unique(y)
 
+
             def objective(trial):
-                alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
+                alpha = trial.suggest_uniform("alpha", 0.0, 1.0)
                 clf = SGDClassifier(alpha=alpha)
                 n_train_iter = 100
 
@@ -32,13 +33,17 @@ class NopPruner(BasePruner):
                     trial.report(intermediate_value, step)
 
                     if trial.should_prune():
-                        assert False, "should_prune() should always return False with this pruner."
+                        assert (
+                            False
+                        ), "should_prune() should always return False with this pruner."
                         raise optuna.TrialPruned()
 
                 return clf.score(X_valid, y_valid)
 
-            study = optuna.create_study(direction='maximize',
-                                        pruner=optuna.pruners.NopPruner())
+
+            study = optuna.create_study(
+                direction="maximize", pruner=optuna.pruners.NopPruner()
+            )
             study.optimize(objective, n_trials=20)
     """
 

@@ -32,16 +32,18 @@ class SkoptSampler(BaseSampler):
 
         .. testcode::
 
-                import optuna
+            import optuna
 
-                def objective(trial):
-                    x = trial.suggest_uniform('x', -10, 10)
-                    y = trial.suggest_int('y', 0, 10)
-                    return x**2 + y
 
-                sampler = optuna.integration.SkoptSampler()
-                study = optuna.create_study(sampler=sampler)
-                study.optimize(objective, n_trials=10)
+            def objective(trial):
+                x = trial.suggest_uniform("x", -10, 10)
+                y = trial.suggest_int("y", 0, 10)
+                return x ** 2 + y
+
+
+            sampler = optuna.integration.SkoptSampler()
+            study = optuna.create_study(sampler=sampler)
+            study.optimize(objective, n_trials=10)
 
     Args:
         independent_sampler:

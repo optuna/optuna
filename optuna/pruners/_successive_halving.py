@@ -44,8 +44,9 @@ class SuccessiveHalvingPruner(BasePruner):
             X_train, X_valid, y_train, y_valid = train_test_split(X, y)
             classes = np.unique(y)
 
+
             def objective(trial):
-                alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
+                alpha = trial.suggest_uniform("alpha", 0.0, 1.0)
                 clf = SGDClassifier(alpha=alpha)
                 n_train_iter = 100
 
@@ -60,8 +61,10 @@ class SuccessiveHalvingPruner(BasePruner):
 
                 return clf.score(X_valid, y_valid)
 
-            study = optuna.create_study(direction='maximize',
-                                        pruner=optuna.pruners.SuccessiveHalvingPruner())
+
+            study = optuna.create_study(
+                direction="maximize", pruner=optuna.pruners.SuccessiveHalvingPruner()
+            )
             study.optimize(objective, n_trials=20)
 
     Args:

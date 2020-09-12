@@ -77,8 +77,9 @@ class HyperbandPruner(BasePruner):
             classes = np.unique(y)
             n_train_iter = 100
 
+
             def objective(trial):
-                alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
+                alpha = trial.suggest_uniform("alpha", 0.0, 1.0)
                 clf = SGDClassifier(alpha=alpha)
 
                 for step in range(n_train_iter):
@@ -92,13 +93,12 @@ class HyperbandPruner(BasePruner):
 
                 return clf.score(X_valid, y_valid)
 
+
             study = optuna.create_study(
-                direction='maximize',
+                direction="maximize",
                 pruner=optuna.pruners.HyperbandPruner(
-                    min_resource=1,
-                    max_resource=n_train_iter,
-                    reduction_factor=3
-                )
+                    min_resource=1, max_resource=n_train_iter, reduction_factor=3
+                ),
             )
             study.optimize(objective, n_trials=20)
 
