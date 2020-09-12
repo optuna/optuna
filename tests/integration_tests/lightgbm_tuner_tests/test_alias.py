@@ -70,6 +70,7 @@ def test_handling_alias_metrics() -> None:
     _handling_alias_metrics(lgbm_params)
     assert lgbm_params["metric"] == "auc"
 
-    lgbm_params = {"metric": "rmse"}
-    _handling_alias_metrics(lgbm_params)
-    assert lgbm_params["metric"] == "rmse"
+    for alias in ["l2_root", "root_mean_squared_error", "rmse"]:
+        lgbm_params = {"metric": alias}
+        _handling_alias_metrics(lgbm_params)
+        assert lgbm_params["metric"] == "rmse"

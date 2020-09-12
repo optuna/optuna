@@ -76,7 +76,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "example": [
             "catboost",
             "chainer",
-            "lightgbm<3.0.0",
+            "lightgbm",
             "mlflow",
             "mpi4py",
             "mxnet",
@@ -94,17 +94,12 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite", "thop"]
+            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "thop", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
         + (["stable-baselines3>=0.7.0"] if (3, 5) < sys.version_info[:2] else [])
-        + (
-            ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
-            if (3, 5) < sys.version_info[:2] < (3, 8)
-            else []
-        )
-        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
+        + (["allennlp==1.0.0", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (
             ["llvmlite<=0.31.0", "fsspec<0.8.0"] if (3, 5) == sys.version_info[:2] else []
         )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
@@ -119,7 +114,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
-            "lightgbm<3.0.0",
+            "lightgbm",
             "mlflow",
             "mpi4py",
             "mxnet",
@@ -139,17 +134,12 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite"]
+            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
-        + (
-            ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
-            if (3, 5) < sys.version_info[:2] < (3, 8)
-            else []
-        )
-        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
-        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
+        + (["allennlp==1.0.0", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -163,7 +153,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
-            "lightgbm<3.0.0",
+            "lightgbm",
             "mlflow",
             "mpi4py",
             "mxnet",
@@ -181,17 +171,12 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite"]
+            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
-        + (
-            ["allennlp==1.0.0", "fastai<2", "pytorch-lightning>=0.7.1"]
-            if (3, 5) < sys.version_info[:2] < (3, 8)
-            else []
-        )
-        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
-        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
+        + (["allennlp==1.0.0", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
     }
 
     return requirements
