@@ -43,7 +43,7 @@ def plot_pareto_front(
 
         .. raw:: html
 
-            <iframe src="../../_static/plot_pareto_front.html" width="100%" height="500px"
+            <iframe src="../../../_static/plot_pareto_front.html" width="100%" height="500px"
             frameborder="0"></iframe>
 
     Args:
