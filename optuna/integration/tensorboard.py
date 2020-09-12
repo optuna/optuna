@@ -56,9 +56,9 @@ class TensorBoardCallback(object):
                     hp.Metric(
                         tag=self._metric_name,
                         display_name=self._metric_name,
-                        description="Trial value optimized with Optuna."
+                        description="Trial value optimized with Optuna.",
                     )
-                ]
+                ],
             )
             hp.hparams(hparams, trial_id=run_name)  # record the values used in this trial
             tf.summary.scalar(self._metric_name, trial_value, step=trial.number)
