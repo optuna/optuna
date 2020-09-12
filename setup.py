@@ -95,22 +95,16 @@ def get_extras_require() -> Dict[str, List[str]]:
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
             + ["pytorch-ignite", "thop", "skorch"]
-            if (3, 5) < sys.version_info[:2]
-            else []
         )
-        + (["stable-baselines3>=0.7.0"] if (3, 5) < sys.version_info[:2] else [])
+        + (["stable-baselines3>=0.7.0"])
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
-            if (3, 5) < sys.version_info[:2] < (3, 8)
+            if sys.version_info[:2] < (3, 8)
             else []
         )
         + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
-        + (
-            ["llvmlite<=0.31.0", "fsspec<0.8.0"] if (3, 5) == sys.version_info[:2] else []
-        )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
-        # Newer `fsspec` uses f-strings, which is not compatible with Python 3.5.
         + (["dask[dataframe]", "dask-ml"] if sys.version_info[:2] < (3, 8) else [])
-        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
+        + ["catalyst"],
         "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -140,15 +134,13 @@ def get_extras_require() -> Dict[str, List[str]]:
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
             + ["pytorch-ignite", "skorch"]
-            if (3, 5) < sys.version_info[:2]
-            else []
         )
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
-            if (3, 5) < sys.version_info[:2] < (3, 8)
+            if sys.version_info[:2] < (3, 8)
             else []
         )
-        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
+        + (["catalyst"])
         + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
         "tests": ["fakeredis", "pytest"],
         "optional": [
@@ -182,15 +174,13 @@ def get_extras_require() -> Dict[str, List[str]]:
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
             + ["pytorch-ignite", "skorch"]
-            if (3, 5) < sys.version_info[:2]
-            else []
         )
         + (
             ["allennlp==1.0.0", "fastai<2", "pytorch-lightning>=0.7.1"]
-            if (3, 5) < sys.version_info[:2] < (3, 8)
+            if sys.version_info[:2] < (3, 8)
             else []
         )
-        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
+        + ["catalyst"]
         + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
     }
 
@@ -225,7 +215,7 @@ setup(
             "py.typed",
         ]
     },
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     install_requires=get_install_requires(),
     tests_require=get_tests_require(),
     extras_require=get_extras_require(),
@@ -247,7 +237,6 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
