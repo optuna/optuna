@@ -10,7 +10,6 @@ workflows:
       - tests-python38
       - tests-python37
       - tests-python36
-      - tests-python35
       - tests-rdbstorage
 
 jobs:
@@ -203,30 +202,6 @@ jobs:
           command: |
             . venv/bin/activate
             pytest tests
-
-      - run: *tests-mn
-
-  tests-python35:
-    docker:
-      - image: circleci/python:3.5
-      - image: circleci/redis:5.0.7
-    steps:
-      - checkout
-
-      - run: *checkout-merge-master
-
-      - run: *install
-
-      - run:
-          <<: *tests
-          command: |
-            . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_pytorch_lightning.py \
-                --ignore tests/integration_tests/test_fastai.py \
-                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py \
-                --ignore tests/integration_tests/test_catalyst.py \
-                --ignore tests/integration_tests/test_pytorch_ignite.py \
-                --ignore tests/integration_tests/test_skorch.py
 
       - run: *tests-mn
 

@@ -25,7 +25,7 @@ jobs:
 
     strategy:
       matrix:
-        python_version: ['3.5', '3.6', '3.7', '3.8']
+        python_version: ['3.6', '3.7', '3.8']
         build_type: ['', 'dev']  # "dev" installs all the dependencies including pytest.
 
     # This action cannot be executed in the forked repository.
