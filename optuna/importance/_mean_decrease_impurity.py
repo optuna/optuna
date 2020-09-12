@@ -79,7 +79,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
 
 
 def _encode_categorical(
-    params_data: numpy.ndarray, distributions: ValuesView[BaseDistribution],
+    params_data: numpy.ndarray, distributions: ValuesView[BaseDistribution]
 ) -> Tuple[numpy.ndarray, numpy.ndarray]:
     # Transform the `params_data` matrix by expanding categorical integer-valued columns to one-hot
     # encoding matrices. Note that the resulting matrix can be sparse and potentially very big.

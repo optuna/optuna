@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.5, 3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8]
 
     if: github.repository == 'optuna/optuna'
     steps:
@@ -47,9 +47,7 @@ jobs:
     - name: Run examples
       run: |
         # TODO(hvy): Stop ignoring allennlp_jsonnet.py when https://github.com/optuna/optuna/issues/1526 is resolved.
-        if [ ${{ matrix.python-version }} = 3.5 ]; then
-          IGNORES='chainermn_.*|pytorch_lightning.*|fastai_.*|catalyst_.*|sb3_.*|allennlp|pytorch_simple|pytorch_ignite_simple'
-        elif [ ${{ matrix.python-version }} = 3.8 ]; then
+        if [ ${{ matrix.python-version }} = 3.8 ]; then
           IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai_.*|allennlp'
         else
           IGNORES='chainermn_.*|allennlp_jsonnet.py'

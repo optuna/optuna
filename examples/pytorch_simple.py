@@ -80,8 +80,8 @@ def objective(trial):
     train_loader, valid_loader = get_mnist()
 
     # Training of the model.
-    model.train()
     for epoch in range(EPOCHS):
+        model.train()
         for batch_idx, (data, target) in enumerate(train_loader):
             # Limiting training data for faster epochs.
             if batch_idx * BATCHSIZE >= N_TRAIN_EXAMPLES:
