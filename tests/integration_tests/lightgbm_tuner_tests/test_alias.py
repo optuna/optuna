@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
@@ -78,10 +80,10 @@ def test_handling_alias_parameter() -> None:
         (["mape", "mean_absolute_percentage_error"], "mape"),
         (["auc_mu"], "auc_mu"),
         (["custom", "none", "null", "na"], "custom"),
-        ([], None),  # if "metric" not in lgbm_params.keys(): return None
+        ([], None),  # If "metric" not in lgbm_params.keys(): return None.
     ],
 )
-def test_handling_alias_metrics(aliases, expect) -> None:
+def test_handling_alias_metrics(aliases: List[str], expect: str) -> None:
     if len(aliases) > 0:
         for alias in aliases:
             lgbm_params = {"metric": alias}
