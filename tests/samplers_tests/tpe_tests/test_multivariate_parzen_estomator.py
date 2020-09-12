@@ -137,7 +137,7 @@ def test_log_pdf_multivariate_parzen_estimator() -> None:
         consider_endpoints=True,
         weights=lambda x: np.arange(x) + 1.0,
     )
-
+    # Parzen estimator almost becomes mixture of Dirac measures.
     with patch(_precompute_sigmas0, return_value=1e-8 * np.ones(1)):
         mpe = _MultivariateParzenEstimator(multivariate_samples, search_space, parameters)
 
