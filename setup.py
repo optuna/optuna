@@ -50,7 +50,7 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["black", "flake8", "isort", "mypy"],
+        "checking": ["black", "hacking", "isort", "mypy"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
