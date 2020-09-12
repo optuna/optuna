@@ -1,4 +1,3 @@
-<<<<<<<<< Temporary merge branch 1
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -19,15 +18,9 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import matplotlib
     from optuna.visualization.matplotlib._matplotlib_imports import PathCollection
     from optuna.visualization.matplotlib._matplotlib_imports import plt
-=========
-from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
-if _imports.is_successful():
-    from optuna.visualization.matplotlib._matplotlib_imports import Axes
->>>>>>>>> Temporary merge branch 2
+_logger = get_logger(__name__)
 
-
-<<<<<<<<< Temporary merge branch 1
 
 def plot_slice(study: Study, params: Optional[List[str]] = None) -> Axes:
     """Plot the parameter relationship as slice plot in a study with Matplotlib.
@@ -179,7 +172,3 @@ def _calc_lim_with_padding(
     else:
         padding = (value_max - value_min) * padding_ratio
         return value_min - padding, value_max + padding
-=========
-def plot_slice() -> Axes:
-    raise NotImplementedError("To be implemented soon.")
->>>>>>>>> Temporary merge branch 2
