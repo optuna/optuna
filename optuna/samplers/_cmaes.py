@@ -292,7 +292,7 @@ class CmaEsSampler(BaseSampler):
             )
 
         if self._optimizer.dim != len(ordered_keys):
-            self._logger.info(
+            _logger.info(
                 "`CmaEsSampler` does not support dynamic search space. "
                 "`{}` is used instead of `CmaEsSampler`.".format(
                     self._independent_sampler.__class__.__name__
