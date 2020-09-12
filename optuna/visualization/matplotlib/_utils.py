@@ -18,7 +18,7 @@ def is_available() -> bool:
         to install Matplotlib.
 
     Returns:
-        :obj:`True` if visualization with `matplotlib` is available, :obj:`False` otherwise.
+        :obj:`True` if visualization with ``matplotlib`` is available, :obj:`False` otherwise.
     """
 
     return _matplotlib_imports._imports.is_successful()
