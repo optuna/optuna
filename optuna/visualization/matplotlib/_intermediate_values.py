@@ -7,6 +7,8 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
+_logger = get_logger(__name__)
+
 
 def plot_intermediate_values(study: Study) -> Axes:
     """Plot intermediate values of all trials in a study with Matplotlib.
