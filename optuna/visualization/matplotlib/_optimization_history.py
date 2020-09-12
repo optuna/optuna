@@ -8,8 +8,6 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
-_logger = get_logger(__name__)
-
 
 def plot_optimization_history(study: Study) -> Axes:
     """Plot optimization history of all trials in a study with Matplotlib.

@@ -39,7 +39,7 @@ class KerasPruningCallback(Callback):
             Check if trial should be pruned every n-th epoch. By default ``interval=1`` and
             pruning is performed after every epoch. Increase ``interval`` to run several
             epochs faster before applying pruning.
-     """
+    """
 
     def __init__(self, trial: optuna.trial.Trial, monitor: str, interval: int = 1) -> None:
         super(KerasPruningCallback, self).__init__()

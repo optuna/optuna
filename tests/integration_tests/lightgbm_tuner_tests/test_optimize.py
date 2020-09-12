@@ -349,13 +349,13 @@ class TestLightGBMTuner(object):
 
     @pytest.mark.parametrize(
         "metric, study_direction, expected",
-        [("auc", "maximize", -np.inf), ("mse", "minimize", np.inf)],
+        [("auc", "maximize", -np.inf), ("l2", "minimize", np.inf)],
     )
     def test_best_score(self, metric: str, study_direction: str, expected: float) -> None:
         with turnoff_train(metric=metric):
             study = optuna.create_study(direction=study_direction)
             runner = self._get_tuner_object(
-                params=dict(lambda_l1=0.0, metric=metric), kwargs_options={}, study=study,
+                params=dict(lambda_l1=0.0, metric=metric), kwargs_options={}, study=study
             )
             assert runner.best_score == expected
             runner.tune_regularization_factors()
@@ -367,7 +367,7 @@ class TestLightGBMTuner(object):
         with turnoff_train():
             study = optuna.create_study()
             runner = self._get_tuner_object(
-                params=dict(lambda_l1=unexpected_value,), kwargs_options={}, study=study,
+                params=dict(lambda_l1=unexpected_value), kwargs_options={}, study=study
             )
             assert runner.best_params["lambda_l1"] == unexpected_value
             runner.tune_regularization_factors()
@@ -398,7 +398,7 @@ class TestLightGBMTuner(object):
                 params=dict(
                     feature_fraction=unexpected_value,  # set default as unexpected value.
                 ),
-                kwargs_options=dict(time_budget=0,),
+                kwargs_options=dict(time_budget=0),
             )
             assert len(runner.study.trials) == 0
             # No trials run because `time_budget` is set to zero.
@@ -485,7 +485,7 @@ class TestLightGBMTuner(object):
 
         with turnoff_train():
             runner = self._get_tuner_object(
-                params=dict(lambda_l1=unexpected_value,),  # set default as unexpected value.
+                params=dict(lambda_l1=unexpected_value)  # set default as unexpected value.
             )
             assert len(runner.study.trials) == 0
             runner.tune_regularization_factors()
@@ -587,9 +587,7 @@ class TestLightGBMTuner(object):
         assert optuna.logging.get_verbosity() == level
         assert tuner.lgbm_params["verbose"] == -1
 
-    @pytest.mark.parametrize(
-        "show_progress_bar, expected", [(True, 6), (False, 0)],
-    )
+    @pytest.mark.parametrize("show_progress_bar, expected", [(True, 6), (False, 0)])
     def test_run_show_progress_bar(self, show_progress_bar: bool, expected: int) -> None:
         params = {"verbose": -1}  # type: Dict
         dataset = lgb.Dataset(np.zeros((10, 10)))
@@ -706,7 +704,7 @@ class TestLightGBMTuner(object):
 
         study = optuna.create_study()
         tuner = LightGBMTuner(
-            params, dataset, valid_sets=dataset, study=study, optuna_callbacks=[callback_mock],
+            params, dataset, valid_sets=dataset, study=study, optuna_callbacks=[callback_mock]
         )
 
         with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=1.0):
@@ -756,7 +754,7 @@ class TestLightGBMTunerCV(object):
         study = optuna.create_study(direction=study_direction)
         with pytest.raises(ValueError) as excinfo:
             LightGBMTunerCV(
-                params, train_set, num_boost_round=5, early_stopping_rounds=2, study=study,
+                params, train_set, num_boost_round=5, early_stopping_rounds=2, study=study
             )
 
         assert excinfo.type == ValueError
@@ -822,7 +820,7 @@ class TestLightGBMTunerCV(object):
 
         with turnoff_cv():
             runner = self._get_tunercv_object(
-                params=dict(lambda_l1=unexpected_value,),  # set default as unexpected value.
+                params=dict(lambda_l1=unexpected_value)  # set default as unexpected value.
             )
             assert len(runner.study.trials) == 0
             runner.tune_regularization_factors()
@@ -895,9 +893,7 @@ class TestLightGBMTunerCV(object):
         assert optuna.logging.get_verbosity() == level
         assert tuner.lgbm_params["verbose"] == -1
 
-    @pytest.mark.parametrize(
-        "show_progress_bar, expected", [(True, 6), (False, 0)],
-    )
+    @pytest.mark.parametrize("show_progress_bar, expected", [(True, 6), (False, 0)])
     def test_run_show_progress_bar(self, show_progress_bar: bool, expected: int) -> None:
         params = {"verbose": -1}  # type: Dict
         dataset = lgb.Dataset(np.zeros((10, 10)))
@@ -921,7 +917,7 @@ class TestLightGBMTunerCV(object):
         callback_mock = mock.MagicMock()
 
         study = optuna.create_study()
-        tuner = LightGBMTunerCV(params, dataset, study=study, optuna_callbacks=[callback_mock],)
+        tuner = LightGBMTunerCV(params, dataset, study=study, optuna_callbacks=[callback_mock])
 
         with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
             tuner._tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
