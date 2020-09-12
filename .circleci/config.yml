@@ -225,7 +225,8 @@ jobs:
                 --ignore tests/integration_tests/test_fastai.py \
                 --ignore tests/integration_tests/allennlp_tests/test_allennlp.py \
                 --ignore tests/integration_tests/test_catalyst.py \
-                --ignore tests/integration_tests/test_pytorch_ignite.py
+                --ignore tests/integration_tests/test_pytorch_ignite.py \
+                --ignore tests/integration_tests/test_skorch.py
 
       - run: *tests-mn
 
