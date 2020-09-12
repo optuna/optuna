@@ -253,8 +253,8 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         cvals = np.asarray(config_vals)
         lvals = np.asarray(loss_vals)
 
-        # Solving HSSP the number of variables times is a waste of time.
-        # Therefore, we cache the result of splitting.
+        # Solving HSSP for variables number of times is a waste of time.
+        # We cache the result of splitting.
         if _SPLITCACHE_KEY in trial.system_attrs:
             split_cache = trial.system_attrs[_SPLITCACHE_KEY]
             indices_below = split_cache["indices_below"]
