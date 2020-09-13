@@ -6,8 +6,10 @@ from optuna._imports import try_import
 with try_import() as _imports:  # NOQA
     # TODO(ytknzw): Add specific imports.
     import matplotlib  # NOQA
+    from matplotlib import cm  # NOQA
     from matplotlib import pyplot as plt  # NOQA
     from matplotlib.axes._axes import Axes  # NOQA
+    from matplotlib.patches import Rectangle  # NOQA
 
     from matplotlib import __version__ as matplotlib_version
 
