@@ -142,20 +142,28 @@ def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
         kwargs["min_resource"] = pruner._min_resource
         kwargs["max_resource"] = pruner._max_resource
         kwargs["reduction_factor"] = pruner._reduction_factor
-    elif isinstance(pruner, optuna.pruners.PercentilePruner):
-        kwargs["percentile"] = pruner._percentile
-        kwargs["n_startup_tirals"] = pruner._n_startup_trials
+
+    elif isinstance(pruner, optuna.pruners.MedianPruner):
+        kwargs["n_startup_trials"] = pruner._n_startup_trials
         kwargs["n_warmup_steps"] = pruner._n_warmup_steps
         kwargs["interval_steps"] = pruner._interval_steps
+
+    elif isinstance(pruner, optuna.pruners.PercentilePruner):
+        kwargs["percentile"] = pruner._percentile
+        kwargs["n_startup_trials"] = pruner._n_startup_trials
+        kwargs["n_warmup_steps"] = pruner._n_warmup_steps
+        kwargs["interval_steps"] = pruner._interval_steps
+
+    elif isinstance(pruner, optuna.pruners.SuccessiveHalvingPruner):
+        kwargs["min_resource"] = pruner._min_resource
+        kwargs["reduction_factor"] = pruner._reduction_factor
+        kwargs["min_early_stopping_rate"] = pruner._min_early_stopping_rate
+
     elif isinstance(pruner, optuna.pruners.ThresholdPruner):
         kwargs["lower"] = pruner._lower
         kwargs["upper"] = pruner._upper
         kwargs["n_warmup_steps"] = pruner._n_warmup_steps
         kwargs["interval_steps"] = pruner._interval_steps
-    elif isinstance(pruner, optuna.pruners.SuccessiveHalvingPruner):
-        kwargs["min_resource"] = pruner._min_resource
-        kwargs["reduction_factor"] = pruner._reduction_factor
-        kwargs["min_early_stopping_rate"] = pruner._min_early_stopping_rate
     elif isinstance(pruner, optuna.pruners.NopPruner):
         pass
     else:
