@@ -104,8 +104,6 @@ def get_extras_require() -> Dict[str, List[str]]:
                 "fastai<2",
                 "dask[dataframe]",
                 "dask-ml",
-                "allennlp==1.0.0",
-                "fastai<2",
             ]
             if sys.version_info[:2] < (3, 8)
             else []
