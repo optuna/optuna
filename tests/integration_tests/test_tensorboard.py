@@ -1,8 +1,8 @@
 import os
-import pytest
 import shutil
 import tempfile
 
+import pytest
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 import optuna

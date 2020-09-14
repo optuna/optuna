@@ -1,6 +1,5 @@
 import numpy
 
-
 from optuna.importance._fanova._fanova import _CategoricalFeaturesOneHotEncoder
 
 
