@@ -397,17 +397,24 @@ class AllenNLPPruningCallback(EpochCallback):
                 study_name is not None
                 and trial_id is not None
                 and monitor is not None
-                and storage is not None
             ):
+                if storage is None:
+                    message = (
+                        "If you want to use AllenNLPExecutor and AllenNLPPruningCallback,"
+                        " you have to use RDB or Redis storage."
+                    )
+                    raise RuntimeError(message)
+
                 study = load_study(study_name, storage, pruner=_create_pruner())
                 self._trial = Trial(study, int(trial_id))
                 self._monitor = monitor
+
             else:
                 message = (
                     "Fail to load study.\n"
-                    "AllenNLPPruningCallback works only with Optuna and RDB or Redis storages."
+                    "AllenNLPPruningCallback works only with Optuna."
                 )
-                raise RuntimeException(message)
+                raise RuntimeError(message)
 
     def __call__(
         self,
