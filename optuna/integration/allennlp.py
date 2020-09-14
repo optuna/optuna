@@ -386,9 +386,15 @@ class AllenNLPPruningCallback(EpochCallback):
         if allennlp.__version__ < "1.0.0":
             raise Exception("AllenNLPPruningCallback requires `allennlp`>=1.0.0.")
 
+        # When `AllenNLPPruningCallback` is instantiated in Python script,
+        # trial and monitor should not be `None`.
         if trial is not None and monitor is not None:
             self._trial = trial
             self._monitor = monitor
+
+        # When `AllenNLPPruningCallback` is used with `AllenNLPExecutor`,
+        # `trial` and `monitor` would be None. `AllenNLPExecutor` sets information
+        # for a study name, trial id, monitor, and storage in environment variables.
         else:
             environment_variables = _get_environment_variables_for_trial()
             study_name = environment_variables["study_name"]
@@ -397,6 +403,11 @@ class AllenNLPPruningCallback(EpochCallback):
             storage = environment_variables["storage"]
 
             if study_name is not None and trial_id is not None and monitor is not None:
+
+                # If `stoage` is `None` despite `study_name`, `trial_id`,
+                # and `monitor` are not `None`, users attempt to use `AllenNLPPruningCallback`
+                # with `AllenNLPExecutor` and in-memory storage.
+                # `AllenNLPruningCallback` needs RDB or Redis storages to work.
                 if storage is None:
                     message = (
                         "If you want to use AllenNLPExecutor and AllenNLPPruningCallback,"
