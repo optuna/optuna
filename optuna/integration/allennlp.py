@@ -402,8 +402,17 @@ class AllenNLPPruningCallback(EpochCallback):
             monitor = environment_variables["monitor"]
             storage = environment_variables["storage"]
 
-            if study_name is not None and trial_id is not None and monitor is not None:
+            if study_name is None or trial_id is None or monitor is None:
+                message = (
+                    "Fail to load study. Perhaps you attempt to use `AllenNLPPruningCallback`"
+                    " without `AllenNLPExecutor`. If you want to use a callback"
+                    " without an executor, you have to instantiate a callback with"
+                    "`trial` and `monitor. Please see the Optuna example: https://github.com/"
+                    "optuna/optuna/blob/master/examples/allennlp/allennlp_simple.py."
+                )
+                raise RuntimeError(message)
 
+            else:
                 # If `stoage` is `None` despite `study_name`, `trial_id`,
                 # and `monitor` are not `None`, users attempt to use `AllenNLPPruningCallback`
                 # with `AllenNLPExecutor` and in-memory storage.
@@ -418,10 +427,6 @@ class AllenNLPPruningCallback(EpochCallback):
                 study = load_study(study_name, storage, pruner=_create_pruner())
                 self._trial = Trial(study, int(trial_id))
                 self._monitor = monitor
-
-            else:
-                message = "Fail to load study.\n" "AllenNLPPruningCallback works only with Optuna."
-                raise RuntimeError(message)
 
     def __call__(
         self,
