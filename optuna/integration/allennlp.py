@@ -396,11 +396,7 @@ class AllenNLPPruningCallback(EpochCallback):
             monitor = environment_variables["monitor"]
             storage = environment_variables["storage"]
 
-            if (
-                study_name is not None
-                and trial_id is not None
-                and monitor is not None
-            ):
+            if study_name is not None and trial_id is not None and monitor is not None:
                 if storage is None:
                     message = (
                         "If you want to use AllenNLPExecutor and AllenNLPPruningCallback,"
@@ -413,10 +409,7 @@ class AllenNLPPruningCallback(EpochCallback):
                 self._monitor = monitor
 
             else:
-                message = (
-                    "Fail to load study.\n"
-                    "AllenNLPPruningCallback works only with Optuna."
-                )
+                message = "Fail to load study.\n" "AllenNLPPruningCallback works only with Optuna."
                 raise RuntimeError(message)
 
     def __call__(

@@ -248,14 +248,19 @@ def test_allennlp_pruning_callback() -> None:
         ("hyperband", {"min_resource": 3, "max_resource": 10, "reduction_factor": 5}),
         ("median", {"n_startup_trials": 8, "n_warmup_steps": 1, "interval_steps": 3}),
         ("noop", {}),
-        ("percentile", {"percentile": 50.0, "n_startup_trials": 10, "n_warmup_steps": 1, "interval_steps": 3}),  # NOQA
-        ("successive_halving", {"min_resource": 3, "reduction_factor": 5, "min_early_stopping_rate": 1}),  # NOQA
-        ("threshold", {"lower": 0.0, "upper": 1.0, "n_warmup_steps": 3, "interval_steps": 2})
-    ]
+        (
+            "percentile",
+            {"percentile": 50.0, "n_startup_trials": 10, "n_warmup_steps": 1, "interval_steps": 3},
+        ),
+        (
+            "successive_halving",
+            {"min_resource": 3, "reduction_factor": 5, "min_early_stopping_rate": 1},
+        ),
+        ("threshold", {"lower": 0.0, "upper": 1.0, "n_warmup_steps": 3, "interval_steps": 2}),
+    ],
 )
 def test_allennlp_pruning_callback_with_executor(
-        pruner_name: str,
-        pruner_kwargs: Dict[str, Union[int, float]]
+    pruner_name: str, pruner_kwargs: Dict[str, Union[int, float]]
 ) -> None:
     input_config_file = (
         "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
@@ -269,11 +274,7 @@ def test_allennlp_pruning_callback_with_executor(
         )
         trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
         trial.suggest_float("DROPOUT", 0.0, 0.5)
-        executor = optuna.integration.AllenNLPExecutor(
-            trial,
-            input_config_file,
-            serialization_dir
-        )
+        executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, serialization_dir)
         executor.run()
 
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -389,11 +390,7 @@ def test_allennlp_pruning_callback_with_invalid_executor() -> None:
         trial.suggest_float("DROPOUT", 0.0, 0.5)
 
         with pytest.raises(ValueError):
-            optuna.integration.AllenNLPExecutor(
-                trial,
-                input_config_file,
-                serialization_dir
-            )
+            optuna.integration.AllenNLPExecutor(trial, input_config_file, serialization_dir)
 
 
 def test_infer_and_cast() -> None:
