@@ -1,6 +1,8 @@
 import json
 import os
 import tempfile
+from typing import Dict
+from typing import Union
 
 import _jsonnet
 import allennlp.data
@@ -240,35 +242,158 @@ def test_allennlp_pruning_callback() -> None:
         assert study.trials[0].value == 1.0
 
 
-def test_allennlp_pruning_callback_with_executor() -> None:
+@pytest.mark.parametrize(
+    "pruner_name,pruner_kwargs",
+    [
+        ("hyperband", {"min_resource": 3, "max_resource": 10, "reduction_factor": 5}),
+        ("median", {"n_startup_trials": 8, "n_warmup_steps": 1, "interval_steps": 3}),
+        ("noop", {}),
+        ("percentile", {"percentile": 50.0, "n_startup_trials": 10, "n_warmup_steps": 1, "interval_steps": 3}),  # NOQA
+        ("successive_halving", {"min_resource": 3, "reduction_factor": 5, "min_early_stopping_rate": 1}),  # NOQA
+        ("threshold", {"lower": 0.0, "upper": 1.0, "n_warmup_steps": 3, "interval_steps": 2})
+    ]
+)
+def test_allennlp_pruning_callback_with_executor(
+        pruner_name: str,
+        pruner_kwargs: Dict[str, Union[int, float]]
+) -> None:
     input_config_file = (
         "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
     )
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        storage = "sqlite:///" + os.path.join(tmp_dir, "result.db")
-        serialization_dir = os.path.join(tmp_dir, "allennlp")
 
-        origin_pruner = optuna.pruners.HyperbandPruner(min_resource=3)
+    def run_allennlp_executor(pruner: optuna.pruners.BasePruner) -> None:
         study = optuna.create_study(
             direction="maximize",
-            pruner=origin_pruner,
+            pruner=pruner,
             storage=storage,
         )
         trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
         trial.suggest_float("DROPOUT", 0.0, 0.5)
-        executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, serialization_dir)
+        executor = optuna.integration.AllenNLPExecutor(
+            trial,
+            input_config_file,
+            serialization_dir
+        )
         executor.run()
-        target_pruner = optuna.integration.allennlp._create_pruner()
 
-        # It checks a type of target_pruner since mypy fail to check here.
-        # This is why `_create_pruner` returns `BasePruner`, which doesn't have
-        # _min_resource, _max_resource, and _reduction_factor that belongs to `HyperbandPruner`.
-        if isinstance(target_pruner, optuna.pruners.HyperbandPruner):
-            assert origin_pruner._min_resource == target_pruner._min_resource
-            assert origin_pruner._max_resource == target_pruner._max_resource
-            assert origin_pruner._reduction_factor == target_pruner._reduction_factor
-        else:
-            assert False  # Always fail
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        os.mkdir(os.path.join(tmp_dir, pruner_name))
+        storage = "sqlite:///" + os.path.join(tmp_dir, pruner_name, "result.db")
+        serialization_dir = os.path.join(tmp_dir, pruner_name, "allennlp")
+
+        if pruner_name == "hyperband":
+            hyperband_pruner = optuna.pruners.HyperbandPruner(
+                min_resource=int(pruner_kwargs["min_resource"]),
+                max_resource=int(pruner_kwargs["max_resource"]),
+                reduction_factor=int(pruner_kwargs["reduction_factor"]),
+            )
+            run_allennlp_executor(hyperband_pruner)
+            pruner = optuna.integration.allennlp._create_pruner()
+
+            assert isinstance(pruner, optuna.pruners.HyperbandPruner)
+            assert pruner._min_resource == pruner_kwargs["min_resource"]
+            assert pruner._max_resource == pruner_kwargs["max_resource"]
+            assert pruner._reduction_factor == pruner_kwargs["reduction_factor"]
+
+        elif pruner_name == "median":
+            median_pruner = optuna.pruners.MedianPruner(
+                n_startup_trials=int(pruner_kwargs["n_startup_trials"]),
+                n_warmup_steps=int(pruner_kwargs["n_warmup_steps"]),
+                interval_steps=int(pruner_kwargs["interval_steps"]),
+            )
+            run_allennlp_executor(median_pruner)
+            pruner = optuna.integration.allennlp._create_pruner()
+
+            assert isinstance(pruner, optuna.pruners.MedianPruner)
+            assert pruner._n_startup_trials == pruner_kwargs["n_startup_trials"]
+            assert pruner._n_warmup_steps == pruner_kwargs["n_warmup_steps"]
+            assert pruner._interval_steps == pruner_kwargs["interval_steps"]
+
+        elif pruner_name == "noop":
+            noop_pruner = optuna.pruners.NopPruner()
+            run_allennlp_executor(noop_pruner)
+            pruner = optuna.integration.allennlp._create_pruner()
+
+            assert isinstance(pruner, optuna.pruners.NopPruner)
+
+        elif pruner_name == "percentile":
+            percentile_pruner = optuna.pruners.PercentilePruner(
+                percentile=float(pruner_kwargs["percentile"]),
+                n_startup_trials=int(pruner_kwargs["n_startup_trials"]),
+                n_warmup_steps=int(pruner_kwargs["n_warmup_steps"]),
+                interval_steps=int(pruner_kwargs["interval_steps"]),
+            )
+            run_allennlp_executor(percentile_pruner)
+            pruner = optuna.integration.allennlp._create_pruner()
+
+            assert isinstance(pruner, optuna.pruners.PercentilePruner)
+            assert pruner._percentile == pruner_kwargs["percentile"]
+            assert pruner._n_startup_trials == pruner_kwargs["n_startup_trials"]
+            assert pruner._n_warmup_steps == pruner_kwargs["n_warmup_steps"]
+            assert pruner._interval_steps == pruner_kwargs["interval_steps"]
+
+        elif pruner_name == "successive_halving":
+            successive_halving_pruner = optuna.pruners.SuccessiveHalvingPruner(
+                min_resource=int(pruner_kwargs["min_resource"]),
+                reduction_factor=int(pruner_kwargs["reduction_factor"]),
+                min_early_stopping_rate=int(pruner_kwargs["min_early_stopping_rate"]),
+            )
+            run_allennlp_executor(successive_halving_pruner)
+            pruner = optuna.integration.allennlp._create_pruner()
+
+            assert isinstance(pruner, optuna.pruners.SuccessiveHalvingPruner)
+            assert pruner._min_resource == pruner_kwargs["min_resource"]
+            assert pruner._reduction_factor == pruner_kwargs["reduction_factor"]
+            assert pruner._min_early_stopping_rate == pruner_kwargs["min_early_stopping_rate"]
+
+        elif pruner_name == "threshold":
+            threshold_pruner = optuna.pruners.ThresholdPruner(
+                lower=float(pruner_kwargs["lower"]),
+                upper=float(pruner_kwargs["upper"]),
+                n_warmup_steps=int(pruner_kwargs["n_warmup_steps"]),
+                interval_steps=int(pruner_kwargs["interval_steps"]),
+            )
+            run_allennlp_executor(threshold_pruner)
+            pruner = optuna.integration.allennlp._create_pruner()
+
+            assert isinstance(pruner, optuna.pruners.ThresholdPruner)
+            assert pruner._lower == pruner_kwargs["lower"]
+            assert pruner._upper == pruner_kwargs["upper"]
+            assert pruner._n_warmup_steps == pruner_kwargs["n_warmup_steps"]
+            assert pruner._interval_steps == pruner_kwargs["interval_steps"]
+
+
+def test_allennlp_pruning_callback_with_invalid_executor() -> None:
+    class SomeNewPruner(optuna.pruners.BasePruner):
+        def __init__(self) -> None:
+            pass
+
+        def prune(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> bool:
+            return False
+
+    input_config_file = (
+        "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
+    )
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        storage = "sqlite:///" + os.path.join(tmp_dir, "result.db")
+        serialization_dir = os.path.join(tmp_dir, "allennlp")
+        pruner = SomeNewPruner()
+
+        study = optuna.create_study(
+            direction="maximize",
+            pruner=pruner,
+            storage=storage,
+        )
+        trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+        trial.suggest_float("DROPOUT", 0.0, 0.5)
+
+        with pytest.raises(ValueError):
+            optuna.integration.AllenNLPExecutor(
+                trial,
+                input_config_file,
+                serialization_dir
+            )
 
 
 def test_infer_and_cast() -> None:
@@ -278,18 +403,3 @@ def test_infer_and_cast() -> None:
     assert optuna.integration.allennlp._infer_and_cast("3.14") == 3.14
     assert optuna.integration.allennlp._infer_and_cast("42") == 42
     assert optuna.integration.allennlp._infer_and_cast("auto") == "auto"
-
-
-def test_fetch_pruner_config() -> None:
-    class SomeNewPruner(optuna.pruners.BasePruner):
-        def __init__(self) -> None:
-            pass
-
-        def prune(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> bool:
-            return False
-
-    study = optuna.create_study(pruner=SomeNewPruner())
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-
-    with pytest.raises(ValueError):
-        optuna.integration.allennlp._fetch_pruner_config(trial)
