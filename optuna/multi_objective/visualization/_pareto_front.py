@@ -10,6 +10,7 @@ from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 
+
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
 

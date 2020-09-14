@@ -23,6 +23,7 @@ import optuna
 from optuna import create_trial
 from optuna.testing.storage import StorageSupplier
 
+
 CallbackFuncType = Callable[[optuna.study.Study, optuna.trial.FrozenTrial], None]
 
 STORAGE_MODES = [

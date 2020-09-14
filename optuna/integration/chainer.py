@@ -3,6 +3,7 @@ from typing import Union
 
 import optuna
 
+
 with optuna._imports.try_import() as _imports:
     import chainer
     from chainer.training.extension import Extension
