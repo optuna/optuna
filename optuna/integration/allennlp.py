@@ -25,19 +25,22 @@ if _imports.is_successful():
     import _jsonnet
     from allennlp.training import EpochCallback
 else:
-    # `allennlp.training.EpochCallback` is a subclass of `Registerable`
-    # https://docs.allennlp.org/master/api/training/trainer/#epochcallback
-    # On the other hand, `EpochCallback` defined here is not `Registerable`,
-    # which causes a mypy checking feailure.
+    # I disable mypy here since `allennlp.training.EpochCallback` is a subclass of `Registrable`
+    # (https://docs.allennlp.org/master/api/training/trainer/#epochcallback) but `EpochCallback`
+    # defined here is not `Registrable`, which causes a mypy checking feailure.
     class EpochCallback:  # type: ignore
-        """Stub for EpochCallback.
-
-        This class is introduced for documentation CI.
-
-        """
+        """Stub for EpochCallback."""
 
         @classmethod
         def register(cls: Any, *args: Any, **kwargs: Any) -> Callable:
+            """Stub method for `EpochCallback.register`.
+
+            This method has the same signature as
+            `Registrable.register <https://docs.allennlp.org/master/
+            api/common/registrable/#registrable>`_ in AllenNLP.
+
+            """
+
             def wrapper(subclass: Any, *args: Any, **kwargs: Any) -> None:
                 return subclass
 
