@@ -14,7 +14,6 @@ from optuna import load_study
 from optuna import Trial
 
 
-
 with try_import() as _imports:
     import allennlp
     import allennlp.commands
