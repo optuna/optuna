@@ -10,10 +10,10 @@ import numpy as np
 
 import optuna
 from optuna import distributions
-from optuna.exceptions import ExperimentalWarning
 from optuna import samplers
 from optuna._imports import try_import
 from optuna._study_direction import StudyDirection
+from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
