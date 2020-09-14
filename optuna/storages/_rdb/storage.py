@@ -16,24 +16,24 @@ import alembic.command
 import alembic.config
 import alembic.migration
 import alembic.script
+from sqlalchemy import orm
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import orm
 from sqlalchemy.sql import functions
 
 import optuna
 from optuna import distributions
+from optuna import version
+from optuna._study_direction import StudyDirection
+from optuna._study_summary import StudySummary
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._rdb import models
-from optuna.study import StudyDirection
-from optuna.study import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna import version
 
 
 _logger = optuna.logging.get_logger(__name__)
@@ -111,8 +111,8 @@ class RDBStorage(BaseStorage):
         except ImportError as e:
             raise ImportError(
                 "Failed to import DB access module for the specified storage URL. "
-                "Please install appropriate one. (The actual import error is: " + str(e) + ".)"
-            )
+                "Please install appropriate one."
+            ) from e
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
@@ -139,8 +139,8 @@ class RDBStorage(BaseStorage):
         except ImportError as e:
             raise ImportError(
                 "Failed to import DB access module for the specified storage URL. "
-                "Please install appropriate one. (The actual import error is: " + str(e) + ".)"
-            )
+                "Please install appropriate one."
+            ) from e
 
         self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
         models.BaseModel.metadata.create_all(self.engine)
@@ -1107,10 +1107,11 @@ class RDBStorage(BaseStorage):
             message = (
                 "An exception is raised during the commit. "
                 "This typically happens due to invalid data in the commit, "
-                "e.g. exceeding max length. "
-                "(The actual exception is as follows: {})".format(repr(e))
+                "e.g. exceeding max length."
             )
-            raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
+            raise optuna.exceptions.StorageInternalError(message).with_traceback(
+                sys.exc_info()[2]
+            ) from e
 
     def remove_session(self) -> None:
         """Removes the current session.

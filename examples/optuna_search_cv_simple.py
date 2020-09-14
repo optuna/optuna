@@ -11,6 +11,7 @@ from sklearn.svm import SVC
 
 import optuna
 
+
 if __name__ == "__main__":
     clf = SVC(gamma="auto")
 

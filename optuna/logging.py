@@ -12,6 +12,7 @@ import colorlog
 
 from optuna import type_checking
 
+
 if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 

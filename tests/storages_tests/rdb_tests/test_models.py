@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from optuna._study_direction import StudyDirection
 from optuna.storages._rdb.models import BaseModel
 from optuna.storages._rdb.models import StudyModel
 from optuna.storages._rdb.models import StudySystemAttributeModel
@@ -12,7 +13,6 @@ from optuna.storages._rdb.models import TrialModel
 from optuna.storages._rdb.models import TrialSystemAttributeModel
 from optuna.storages._rdb.models import TrialUserAttributeModel
 from optuna.storages._rdb.models import VersionInfoModel
-from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
 

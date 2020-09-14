@@ -3,8 +3,8 @@ from typing import Any
 from typing import Optional
 
 import optuna
-from optuna.pruners._percentile import _is_first_in_interval_step
 from optuna.pruners import BasePruner
+from optuna.pruners._percentile import _is_first_in_interval_step
 
 
 def _check_value(value: Any) -> float:
@@ -15,7 +15,7 @@ def _check_value(value: Any) -> float:
         message = "The `value` argument is of type '{}' but supposed to be a float.".format(
             type(value).__name__
         )
-        raise TypeError(message)
+        raise TypeError(message) from None
 
     return value
 

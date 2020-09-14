@@ -19,6 +19,7 @@ import tensorflow_datasets as tfds
 
 import optuna
 
+
 MODEL_DIR = tempfile.mkdtemp()
 BATCH_SIZE = 128
 TRAIN_STEPS = 1000

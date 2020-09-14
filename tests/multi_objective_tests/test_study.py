@@ -7,7 +7,7 @@ import _pytest.capture
 import pytest
 
 import optuna
-from optuna.study import StudyDirection
+from optuna._study_direction import StudyDirection
 from optuna.testing.storage import StorageSupplier
 
 
