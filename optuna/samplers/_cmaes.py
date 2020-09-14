@@ -16,6 +16,7 @@ from optuna import logging
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
+from optuna.storages import BaseStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -23,6 +24,7 @@ from optuna.trial import TrialState
 _logger = logging.get_logger(__name__)
 
 _EPS = 1e-10
+_SYSTEM_ATTR_MAX_LENGTH = 2048
 
 
 class CmaEsSampler(BaseSampler):
@@ -294,8 +296,7 @@ class CmaEsSampler(BaseSampler):
                     search_space, ordered_keys, population_size=popsize, randomize_start_point=True
                 )
 
-            optimizer_str = pickle.dumps(optimizer).hex()
-            study._storage.set_trial_system_attr(trial._trial_id, "cma:optimizer", optimizer_str)
+            self._store_optimizer(study._storage, trial._trial_id, optimizer)
 
         # Caution: optimizer should update its seed value
         seed = self._cma_rng.randint(1, 2 ** 16) + trial.number
@@ -311,17 +312,37 @@ class CmaEsSampler(BaseSampler):
         }
         return external_values
 
+    def _store_optimizer(self, storage: BaseStorage, trial_id: int, optimizer: CMA) -> None:
+        optimizer_str = pickle.dumps(optimizer).hex()
+        optimizer_len = len(optimizer_str)
+
+        for i in range(optimizer_len % _SYSTEM_ATTR_MAX_LENGTH):
+            start = i * _SYSTEM_ATTR_MAX_LENGTH
+            end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
+            key = "cma:optimizer:{}".format(i)
+            storage.set_trial_system_attr(trial_id, key, optimizer_str[start:end])
+
     def _restore_optimizer(
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
     ) -> Tuple[Optional[CMA], int]:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
-            serialized_optimizer = trial.system_attrs.get(
-                "cma:optimizer", None
-            )  # type: Optional[str]
-            if serialized_optimizer is None:
+            len_optimizer_keys = len(
+                [key for key in trial.system_attrs if key.startswith("cma:optimizer")]
+            )
+
+            if len_optimizer_keys == 0:
                 continue
+
+            # "cma:optimizer" is used until v2.2.0.
+            serialized_optimizer = trial.system_attrs.get("cma:optimizer", None)
+            if serialized_optimizer is None:
+                serialized_optimizer = ""
+                for i in range(len_optimizer_keys):
+                    key = "cma:optimizer:{}".format(i)
+                    serialized_optimizer += trial.system_attrs[key]
+
             n_restarts = trial.system_attrs.get("cma:n_restarts", 0)  # type: int
             return pickle.loads(bytes.fromhex(serialized_optimizer)), n_restarts
         return None, 0
