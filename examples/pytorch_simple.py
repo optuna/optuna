@@ -20,6 +20,7 @@ from torchvision import transforms
 
 import optuna
 
+
 DEVICE = torch.device("cpu")
 BATCHSIZE = 128
 CLASSES = 10

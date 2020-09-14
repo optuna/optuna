@@ -1,8 +1,8 @@
 from typing import Any
 from typing import Dict
 
-from optuna.distributions import BaseDistribution
 from optuna import multi_objective
+from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial

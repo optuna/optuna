@@ -3,10 +3,13 @@ from typing import List
 from typing import Optional
 
 import optuna
+from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
+from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
+
 
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
@@ -16,7 +19,9 @@ _logger = optuna.logging.get_logger(__name__)
 
 @experimental("2.0.0")
 def plot_pareto_front(
-    study: MultiObjectiveStudy, names: Optional[List[str]] = None
+    study: MultiObjectiveStudy,
+    names: Optional[List[str]] = None,
+    include_dominated_trials: bool = False,
 ) -> "go.Figure":
     """Plot the pareto front of a study.
 
@@ -53,6 +58,9 @@ def plot_pareto_front(
         names:
             Objective name list used as the axis titles. If :obj:`None` is specified,
             "Objective {objective_index}" is used instead.
+        include_dominated_trials:
+            A flag to include all dominated trial's objective values.
+
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
@@ -65,14 +73,28 @@ def plot_pareto_front(
     _imports.check()
 
     if study.n_objectives == 2:
-        return _get_pareto_front_2d(study, names)
+        return _get_pareto_front_2d(study, names, include_dominated_trials)
     elif study.n_objectives == 3:
-        return _get_pareto_front_3d(study, names)
+        return _get_pareto_front_3d(study, names, include_dominated_trials)
     else:
         raise ValueError("`plot_pareto_front` function only supports 2 or 3 objective studies.")
 
 
-def _get_pareto_front_2d(study: MultiObjectiveStudy, names: Optional[List[str]]) -> "go.Figure":
+def _get_non_pareto_front_trials(
+    study: MultiObjectiveStudy,
+    pareto_trials: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
+) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
+
+    non_pareto_trials = []
+    for trial in study.get_trials():
+        if trial.state == TrialState.COMPLETE and trial not in pareto_trials:
+            non_pareto_trials.append(trial)
+    return non_pareto_trials
+
+
+def _get_pareto_front_2d(
+    study: MultiObjectiveStudy, names: Optional[List[str]], include_dominated_trials: bool = False
+) -> "go.Figure":
     if names is None:
         names = ["Objective 0", "Objective 1"]
     elif len(names) != 2:
@@ -82,18 +104,27 @@ def _get_pareto_front_2d(study: MultiObjectiveStudy, names: Optional[List[str]])
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
+    point_colors = ["blue"] * len(trials)
+    if include_dominated_trials:
+        non_pareto_trials = _get_non_pareto_front_trials(study, trials)
+        point_colors += ["red"] * len(non_pareto_trials)
+        trials += non_pareto_trials
+
     data = go.Scatter(
         x=[t.values[0] for t in trials],
         y=[t.values[1] for t in trials],
         text=[_make_hovertext(t) for t in trials],
         mode="markers",
         hovertemplate="%{text}<extra></extra>",
+        marker={"color": point_colors},
     )
     layout = go.Layout(title="Pareto-front Plot", xaxis_title=names[0], yaxis_title=names[1])
     return go.Figure(data=data, layout=layout)
 
 
-def _get_pareto_front_3d(study: MultiObjectiveStudy, names: Optional[List[str]]) -> "go.Figure":
+def _get_pareto_front_3d(
+    study: MultiObjectiveStudy, names: Optional[List[str]], include_dominated_trials: bool = False
+) -> "go.Figure":
     if names is None:
         names = ["Objective 0", "Objective 1", "Objective 2"]
     elif len(names) != 3:
@@ -103,6 +134,12 @@ def _get_pareto_front_3d(study: MultiObjectiveStudy, names: Optional[List[str]])
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
+    point_colors = ["blue"] * len(trials)
+    if include_dominated_trials:
+        non_pareto_trials = _get_non_pareto_front_trials(study, trials)
+        point_colors += ["red"] * len(non_pareto_trials)
+        trials += non_pareto_trials
+
     data = go.Scatter3d(
         x=[t.values[0] for t in trials],
         y=[t.values[1] for t in trials],
@@ -110,6 +147,7 @@ def _get_pareto_front_3d(study: MultiObjectiveStudy, names: Optional[List[str]])
         text=[_make_hovertext(t) for t in trials],
         mode="markers",
         hovertemplate="%{text}<extra></extra>",
+        marker={"color": point_colors},
     )
     layout = go.Layout(
         title="Pareto-front Plot",

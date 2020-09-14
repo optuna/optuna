@@ -9,6 +9,7 @@ from optuna.pruners._base import BasePruner
 from optuna.pruners._successive_halving import SuccessiveHalvingPruner
 from optuna.trial._state import TrialState
 
+
 _logger = logging.get_logger(__name__)
 
 

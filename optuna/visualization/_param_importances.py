@@ -16,10 +16,11 @@ from optuna.study import Study
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 
-if _imports.is_successful():
-    from optuna.visualization._plotly_imports import go
 
+if _imports.is_successful():
     import plotly
+
+    from optuna.visualization._plotly_imports import go
 
     Blues = plotly.colors.sequential.Blues
 

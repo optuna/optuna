@@ -6,7 +6,7 @@ import pytest
 
 import optuna
 from optuna import multi_objective
-from optuna.study import StudyDirection
+from optuna._study_direction import StudyDirection
 
 
 def test_population_size() -> None:
