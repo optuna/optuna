@@ -101,7 +101,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
         else:
             x_param = sorted_params[0]
             y_param = sorted_params[1]
-        cs = _generate_contour_suplot(trials, x_param, y_param, axs, cmap, contour_point_num)
+        cs = _generate_contour_subplot(trials, x_param, y_param, axs, cmap, contour_point_num)
         if cs:
             axcb = fig.colorbar(cs)
             axcb.set_label("Objective Value")
@@ -117,7 +117,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
         for x_i, x_param in enumerate(sorted_params):
             for y_i, y_param in enumerate(sorted_params):
                 ax = axs[y_i, x_i]
-                cs = _generate_contour_suplot(
+                cs = _generate_contour_subplot(
                     trials, x_param, y_param, ax, cmap, contour_point_num
                 )
                 if cs:
@@ -202,7 +202,7 @@ def _calculate_griddata(
     )
 
 
-def _generate_contour_suplot(
+def _generate_contour_subplot(
     trials: List[FrozenTrial],
     x_param: str,
     y_param: str,
