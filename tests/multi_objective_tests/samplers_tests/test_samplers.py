@@ -4,13 +4,14 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna import multi_objective
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna import multi_objective
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
+
 
 parametrize_sampler = pytest.mark.parametrize(
     "sampler_class",

@@ -16,8 +16,8 @@ import allennlp
 from packaging import version
 
 import optuna
-from optuna.integration.allennlp import dump_best_config
 from optuna.integration import AllenNLPExecutor
+from optuna.integration.allennlp import dump_best_config
 
 
 # This path trick is used since this example is also
