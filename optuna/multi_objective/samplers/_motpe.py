@@ -16,7 +16,7 @@ from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective import _hypervolume
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
-from optuna.multi_objective.samplers import RandomMultiObjectiveSampler
+from optuna.multi_objective.samplers._random import RandomMultiObjectiveSampler
 from optuna.samplers import TPESampler
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
