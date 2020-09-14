@@ -19,8 +19,8 @@ with try_import() as _imports:
     import allennlp.commands
     import allennlp.common.util
 
-# EpochCallback is conditionally imported for CI because allennlp is not available on
-# the eivironment that builds documentation.
+# EpochCallback is conditionally imported because allennlp may be unavailable in
+# the environment that builds the documentation.
 if _imports.is_successful():
     import _jsonnet
     from allennlp.training import EpochCallback
@@ -105,7 +105,7 @@ def _infer_and_cast(value: Optional[str]) -> Optional[Union[str, int, float, boo
         except ValueError:
             if value == "True":
                 return True
-            elif value == "False":
+            if value == "False":
                 return False
 
     return value
@@ -156,6 +156,8 @@ def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
         kwargs["min_resource"] = pruner._min_resource
         kwargs["reduction_factor"] = pruner._reduction_factor
         kwargs["min_early_stopping_rate"] = pruner._min_early_stopping_rate
+    elif isinstance(pruner, optuna.pruners.NopPruner):
+        pass
     else:
         raise ValueError("Unsupported pruner is specified: {}".format(type(pruner)))
 
@@ -397,7 +399,7 @@ class AllenNLPPruningCallback(EpochCallback):
                     "Fail to load study.\n"
                     "AllenNLPPruningCallback works only with Optuna and RDB or Redis storages."
                 )
-                raise Exception(message)
+                raise RuntimeException(message)
 
     def __call__(
         self,
