@@ -70,7 +70,7 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
-        return Axes
+        return ax
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
     if params is not None:
