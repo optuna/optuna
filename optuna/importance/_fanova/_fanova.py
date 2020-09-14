@@ -31,6 +31,7 @@ import numpy
 from optuna._imports import try_import
 from optuna.importance._fanova._tree import _FanovaTree
 
+
 with try_import() as _imports:
     from sklearn.compose import ColumnTransformer
     from sklearn.ensemble import RandomForestRegressor

@@ -4,14 +4,15 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
-from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
+
 
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import Contour

@@ -19,10 +19,6 @@ import joblib
 from joblib import delayed
 from joblib import Parallel
 
-from optuna._experimental import experimental
-from optuna._imports import try_import
-from optuna._study_direction import StudyDirection
-from optuna._study_summary import StudySummary  # NOQA
 from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
@@ -30,9 +26,14 @@ from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
+from optuna._experimental import experimental
+from optuna._imports import try_import
+from optuna._study_direction import StudyDirection
+from optuna._study_summary import StudySummary  # NOQA
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
 
 ObjectiveFuncType = Callable[[trial_module.Trial], float]
 

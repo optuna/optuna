@@ -9,9 +9,10 @@ from typing import Set
 import numpy
 
 import optuna
+from optuna import distributions
+from optuna import logging
 from optuna._deprecated import deprecated
 from optuna._imports import try_import
-from optuna import distributions
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -19,12 +20,12 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna import logging
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
 
 with try_import() as _imports:
     import cma

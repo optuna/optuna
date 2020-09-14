@@ -3,6 +3,7 @@ from optuna.study import Study
 from optuna.trial import TrialState
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
+
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import plt

@@ -4,6 +4,7 @@ from typing import Optional
 import optuna
 from optuna._deprecated import deprecated
 
+
 with optuna._imports.try_import() as _imports:
     from keras.callbacks import Callback
 
