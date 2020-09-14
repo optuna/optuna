@@ -1,13 +1,12 @@
 import os
 import sys
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
-
-from typing import Dict
-from typing import List
-from typing import Optional
 
 
 def get_version() -> str:
@@ -51,7 +50,7 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["black", "hacking", "mypy"],
+        "checking": ["black", "hacking", "isort", "mypy"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",

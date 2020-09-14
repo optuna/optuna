@@ -9,6 +9,7 @@ import pytest
 
 from optuna import distributions
 
+
 EXAMPLE_DISTRIBUTIONS = {
     "u": distributions.UniformDistribution(low=1.0, high=2.0),
     "l": distributions.LogUniformDistribution(low=0.001, high=100),
