@@ -44,21 +44,25 @@ else:
             return wrapper
 
 
-def _add_ppid(key: str) -> str:
-    """Add the ID of parent process to given string.
+PPID = os.getppid()
 
-    User might want to launch multiple studies that uses `AllenNLPExecutor`.
-    Because `AllenNLPExecutor` uses environment variables for communicating
-    between a parent process and a child process. A parent process creates a study,
-    defines a search space, and a child process trains a AllenNLP model by
-    `allennlp.commands.train.train_model`. If multiple processes use `AllenNLPExecutor`,
-    the one's configuration could be loaded in the another's configuration.
-    To avoid this hazard, we add ID of a parent process to each key of
-    environment variables.
-
-    """
-    ppid = os.getppid()
-    return "{}_{}".format(ppid, key)
+"""
+User might want to launch multiple studies that uses `AllenNLPExecutor`.
+Because `AllenNLPExecutor` uses environment variables for communicating
+between a parent process and a child process. A parent process creates a study,
+defines a search space, and a child process trains a AllenNLP model by
+`allennlp.commands.train.train_model`. If multiple processes use `AllenNLPExecutor`,
+the one's configuration could be loaded in the another's configuration.
+To avoid this hazard, we add ID of a parent process to each key of
+environment variables.
+"""
+PREFIX = "{}_OPTUNA_ALLENNLP".format(PPID)
+MONITOR = "{}_MONITOR".format(PREFIX)
+PRUNER_CLASS = "{}_PRUNER_CLASS".format(PREFIX)
+PRUNER_KEYS = "{}_PRUNER_KEYS".format(PREFIX)
+STORAGE_NAME = "{}_STORAGE_NAME".format(PREFIX)
+STUDY_NAME = "{}_STUDY_NAME".format(PREFIX)
+TRIAL_ID = "{}_TRIAL_ID".format(PREFIX)
 
 
 def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
@@ -72,7 +76,7 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     re-create the same pruner in `AllenNLPPruningCallback`.
 
     """
-    pruner_class = os.getenv(_add_ppid("OPTUNA_ALLENNLP_PRUNER_CLASS"))
+    pruner_class = os.getenv(PRUNER_CLASS)
     if pruner_class is None:
         return None
 
@@ -113,23 +117,24 @@ def _infer_and_cast(value: Optional[str]) -> Optional[Union[str, int, float, boo
 
 def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
     return {
-        "study_name": os.getenv(_add_ppid("OPTUNA_ALLENNLP_STUDY_NAME")),
-        "trial_id": os.getenv(_add_ppid("OPTUNA_ALLENNLP_TRIAL_ID")),
-        "storage": os.getenv(_add_ppid("OPTUNA_ALLENNLP_STORAGE_NAME")),
-        "monitor": os.getenv(_add_ppid("OPTUNA_ALLENNLP_MONITOR")),
+        "study_name": os.getenv(STUDY_NAME),
+        "trial_id": os.getenv(TRIAL_ID),
+        "storage": os.getenv(STORAGE_NAME),
+        "monitor": os.getenv(MONITOR),
     }
 
 
 def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int, float, bool]]]:
-    keys = os.getenv(_add_ppid("OPTUNA_ALLENNLP_PRUNER_KEYS"))
-    if keys is None:
+    keys = os.getenv(PRUNER_KEYS)
+
+    # keys would be empty when PRUNER_CLASS is `NopPruner`
+    if keys is None or keys == "":
         return {}
 
     kwargs = {}
     for key in keys.split(","):
-        parameter_key = "OPTUNA_ALLENNLP_{}".format(key)
-        value = os.getenv(_add_ppid(parameter_key))
-        kwargs[key] = _infer_and_cast(value)
+        key_without_prefix = key.replace("{}_".format(PREFIX), "")
+        kwargs[key_without_prefix] = _infer_and_cast(os.getenv(key))
 
     return kwargs
 
@@ -290,24 +295,23 @@ class AllenNLPExecutor(object):
         else:
             url = ""
 
-        system_attrs = {
-            "OPTUNA_ALLENNLP_STUDY_NAME": trial.study.study_name,
-            "OPTUNA_ALLENNLP_TRIAL_ID": str(trial._trial_id),
-            "OPTUNA_ALLENNLP_STORAGE_NAME": url,
-            "OPTUNA_ALLENNLP_MONITOR": metrics,
-        }
-
         pruner_params = _fetch_pruner_config(trial)
-        system_attrs["OPTUNA_ALLENNLP_PRUNER_KEYS"] = ",".join(pruner_params.keys())
-
         pruner_params = {
-            "OPTUNA_ALLENNLP_{}".format(key): str(value) for key, value in pruner_params.items()
+            "{}_{}".format(PREFIX, key): str(value) for key, value in pruner_params.items()
         }
-        system_attrs.update(pruner_params)
+
+        system_attrs = {
+            STUDY_NAME: trial.study.study_name,
+            TRIAL_ID: str(trial._trial_id),
+            STORAGE_NAME: url,
+            MONITOR: metrics,
+            PRUNER_KEYS: ",".join(pruner_params.keys()),
+        }
 
         if trial.study.pruner is not None:
-            system_attrs["OPTUNA_ALLENNLP_PRUNER_CLASS"] = type(trial.study.pruner).__name__
+            system_attrs[PRUNER_CLASS] = type(trial.study.pruner).__name__
 
+        system_attrs.update(pruner_params)
         self._system_attrs = system_attrs
 
     def _build_params(self) -> Dict[str, Any]:
@@ -325,8 +329,7 @@ class AllenNLPExecutor(object):
 
     def _set_environment_variables(self) -> None:
         for key, value in self._system_attrs.items():
-            key_with_ppid = _add_ppid(key)
-            os.environ[key_with_ppid] = value
+            os.environ[key] = value
 
     @staticmethod
     def _is_encodable(value: str) -> bool:
@@ -387,11 +390,11 @@ class AllenNLPPruningCallback(EpochCallback):
             self._trial = trial
             self._monitor = monitor
         else:
-            _environment_variables = _get_environment_variables_for_trial()
-            study_name = _environment_variables["study_name"]
-            trial_id = _environment_variables["trial_id"]
-            monitor = _environment_variables["monitor"]
-            storage = _environment_variables["storage"] or None
+            environment_variables = _get_environment_variables_for_trial()
+            study_name = environment_variables["study_name"]
+            trial_id = environment_variables["trial_id"]
+            monitor = environment_variables["monitor"]
+            storage = environment_variables["storage"]
 
             if (
                 study_name is not None
