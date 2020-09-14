@@ -29,6 +29,7 @@ from torchvision import transforms
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 
+
 if version.parse(pl.__version__) < version.parse("0.8.1"):
     raise RuntimeError("PyTorch Lightning>=0.8.1 is required for this example.")
 

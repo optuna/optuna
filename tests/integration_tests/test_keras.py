@@ -1,5 +1,5 @@
-from keras.layers import Dense
 from keras import Sequential
+from keras.layers import Dense
 import numpy as np
 import pytest
 

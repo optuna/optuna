@@ -9,15 +9,16 @@ import warnings
 import numpy as np
 
 import optuna
-from optuna._imports import try_import
 from optuna import distributions
 from optuna.exceptions import ExperimentalWarning
 from optuna import samplers
+from optuna._imports import try_import
+from optuna._study_direction import StudyDirection
 from optuna.samplers import BaseSampler
 from optuna.study import Study
-from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
 
 with try_import() as _imports:
     import skopt
