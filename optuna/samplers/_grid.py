@@ -14,6 +14,7 @@ from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
+
 GridValueType = Union[str, float, int, bool, None]
 
 

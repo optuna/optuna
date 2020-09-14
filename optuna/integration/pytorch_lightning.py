@@ -1,9 +1,10 @@
 import optuna
 
+
 with optuna._imports.try_import() as _imports:
-    from pytorch_lightning.callbacks import EarlyStopping
     from pytorch_lightning import LightningModule
     from pytorch_lightning import Trainer
+    from pytorch_lightning.callbacks import EarlyStopping
 
 if not _imports.is_successful():
     EarlyStopping = object  # NOQA
