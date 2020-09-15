@@ -2,9 +2,9 @@ import abc
 from typing import Any
 from typing import Dict
 
+from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
-from optuna import multi_objective
 
 
 @experimental("1.4.0")
