@@ -41,11 +41,15 @@ def test_plot_pareto_front_2d(include_dominated_trials: bool) -> None:
 
     with pytest.raises(ValueError):
         plot_pareto_front(
-            study, names=["Foo", "Bar", "Baz"], include_dominated_trials=include_dominated_trials,
+            study,
+            names=["Foo", "Bar", "Baz"],
+            include_dominated_trials=include_dominated_trials,
         )
 
     figure = plot_pareto_front(
-        study, names=["Foo", "Bar"], include_dominated_trials=include_dominated_trials,
+        study,
+        names=["Foo", "Bar"],
+        include_dominated_trials=include_dominated_trials,
     )
     assert figure.layout.xaxis.title.text == "Foo"
     assert figure.layout.yaxis.title.text == "Bar"
@@ -95,7 +99,9 @@ def test_plot_pareto_front_3d(include_dominated_trials: bool) -> None:
 
     with pytest.raises(ValueError):
         plot_pareto_front(
-            study, names=["Foo", "Bar"], include_dominated_trials=include_dominated_trials,
+            study,
+            names=["Foo", "Bar"],
+            include_dominated_trials=include_dominated_trials,
         )
 
     with pytest.raises(ValueError):
