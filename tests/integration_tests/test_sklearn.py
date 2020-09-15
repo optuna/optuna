@@ -1,4 +1,6 @@
+import numpy as np
 import pytest
+import scipy as sp
 from sklearn.datasets import make_blobs
 from sklearn.decomposition import PCA
 from sklearn.exceptions import NotFittedError
@@ -9,9 +11,6 @@ from sklearn.neighbors import KernelDensity
 from optuna import distributions
 from optuna import integration
 from optuna.study import create_study
-
-import numpy as np
-import scipy as sp
 
 
 def test_is_arraylike() -> None:

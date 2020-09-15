@@ -3,6 +3,7 @@ from typing import Union
 
 import optuna
 
+
 with optuna._imports.try_import() as _imports:
     import chainer
     from chainer.training.extension import Extension
@@ -79,7 +80,7 @@ class ChainerPruningExtension(Extension):
             raise TypeError(
                 "Type of observation value is not supported by ChainerPruningExtension.\n"
                 "{} cannot be cast to float.".format(type(observation_value))
-            )
+            ) from None
 
         return observation_value
 
