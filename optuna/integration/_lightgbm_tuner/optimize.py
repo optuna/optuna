@@ -17,6 +17,7 @@ import warnings
 
 import numpy as np
 import tqdm
+from packaging import version
 
 import optuna
 from optuna._deprecated import deprecated
@@ -987,6 +988,8 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         self.lgbm_kwargs["seed"] = seed
         self.lgbm_kwargs["fpreproc"] = fpreproc
         if return_cvbooster is not None:
+            if version.parse(lgb.__version__) < version.parse("3.0.0"):
+                raise ValueError("return_cvbooster requires lightgbm>=3.0.0.")
             self.lgbm_kwargs["return_cvbooster"] = return_cvbooster
 
     def _create_objective(

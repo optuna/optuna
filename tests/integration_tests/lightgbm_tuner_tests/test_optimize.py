@@ -946,19 +946,14 @@ class TestLightGBMTunerCV(object):
             for booster in best_booster.boosters:
                 assert booster.params["lambda_l1"] != unexpected_value
 
-        tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
-
-        # Resumed study does not have the best booster.
-        with pytest.raises(ValueError):
-            tuner2.get_best_booster()
-
-        # the `model_dir` argument is None
+        # The `model_dir` argument is None.
         with pytest.raises(ValueError) as excinfo:
             tuner3 = LightGBMTunerCV(
                 params,
                 dataset,
                 study=study,
                 model_dir=None,
+                return_cvbooster=True,
             )
             with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
                 tuner3.tune_regularization_factors()
