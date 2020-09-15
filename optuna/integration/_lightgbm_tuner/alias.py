@@ -41,6 +41,7 @@ def _handling_alias_parameters(lgbm_params: Dict[str, Any]) -> None:
 
 
 _ALIAS_METRIC_LIST = [
+    # The list `alias_names` do not include the `metric_name` itself.
     {
         "metric_name": "ndcg",
         "alias_names": [
@@ -55,20 +56,19 @@ _ALIAS_METRIC_LIST = [
     {"metric_name": "map", "alias_names": ["mean_average_precision"]},
     {
         "metric_name": "l2",
-        "alias_names": ["regression", "regression_l2", "l2", "mean_squared_error", "mse"],
+        "alias_names": ["regression", "regression_l2", "mean_squared_error", "mse"],
     },
     {
         "metric_name": "l1",
-        "alias_names": ["regression_l1", "l1", "mean_absolute_error", "mae"],
+        "alias_names": ["regression_l1", "mean_absolute_error", "mae"],
     },
     {
         "metric_name": "binary_logloss",
-        "alias_names": ["binary_logloss", "binary"],
+        "alias_names": ["binary"],
     },
     {
         "metric_name": "multi_logloss",
         "alias_names": [
-            "multi_logloss",
             "multiclass",
             "softmax",
             "multiclassova",
@@ -79,27 +79,23 @@ _ALIAS_METRIC_LIST = [
     },
     {
         "metric_name": "cross_entropy",
-        "alias_names": ["cross_entropy", "xentropy"],
+        "alias_names": ["xentropy"],
     },
     {
         "metric_name": "cross_entropy_lambda",
-        "alias_names": ["cross_entropy_lambda", "xentlambda"],
+        "alias_names": ["xentlambda"],
     },
     {
         "metric_name": "kullback_leibler",
-        "alias_names": ["kullback_leibler", "kldiv"],
+        "alias_names": ["kldiv"],
     },
     {
         "metric_name": "mape",
-        "alias_names": ["mape", "mean_absolute_percentage_error"],
-    },
-    {
-        "metric_name": "auc_mu",
-        "alias_names": ["auc_mu"],
+        "alias_names": ["mean_absolute_percentage_error"],
     },
     {
         "metric_name": "custom",
-        "alias_names": ["none", "null", "custom", "na"],
+        "alias_names": ["none", "null", "na"],
     },
     {
         "metric_name": "rmse",
