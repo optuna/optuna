@@ -40,8 +40,9 @@ def test_infer_relative_search_space() -> None:
         "b": distributions.LogUniformDistribution(1.0, 100.0),
         "c": distributions.DiscreteUniformDistribution(1.0, 100.0, 3.0),
         "d": distributions.IntUniformDistribution(1, 100),
-        "e": distributions.IntLogUniformDistribution(1, 100),
-        "f": distributions.CategoricalDistribution(["x", "y", "z"]),
+        "e": distributions.IntUniformDistribution(0, 100, step=2),
+        "f": distributions.IntLogUniformDistribution(1, 100),
+        "g": distributions.CategoricalDistribution(["x", "y", "z"]),
     }
 
     def obj(t: Trial) -> float:
@@ -49,8 +50,9 @@ def test_infer_relative_search_space() -> None:
         t.suggest_loguniform("b", 1.0, 100.0)
         t.suggest_discrete_uniform("c", 1.0, 100.0, 3.0)
         t.suggest_int("d", 1, 100)
-        t.suggest_int("e", 1, 100, log=True)
-        t.suggest_categorical("f", ["x", "y", "z"])
+        t.suggest_int("e", 0, 100, step=2)
+        t.suggest_int("f", 1, 100, log=True)
+        t.suggest_categorical("g", ["x", "y", "z"])
         return 0.0
 
     # We test on the empty input
@@ -243,16 +245,17 @@ def test_sample_relative_categorical_distributions() -> None:
     assert categorical_suggestion["param-a"] in categories
 
 
-def test_sample_relative_int_uniform_distributions() -> None:
+@pytest.mark.parametrize("step", [1, 2])
+def test_sample_relative_int_uniform_distributions(step: int) -> None:
     """Test sampling from int distribution returns integer."""
 
     study = optuna.create_study()
 
     def int_value_fn(idx: int) -> float:
         random.seed(idx)
-        return random.randint(0, 100)
+        return step * random.randint(0, 100 / step)
 
-    int_dist = optuna.distributions.IntUniformDistribution(1, 100)
+    int_dist = optuna.distributions.IntUniformDistribution(0, 100, step=step)
     past_trials = [
         frozen_trial_factory(i, dist=int_dist, value_fn=int_value_fn) for i in range(1, 8)
     ]
@@ -262,6 +265,7 @@ def test_sample_relative_int_uniform_distributions() -> None:
         int_suggestion = sampler.sample_relative(study, trial, {"param-a": int_dist})
     assert 1 <= int_suggestion["param-a"] <= 100
     assert isinstance(int_suggestion["param-a"], int)
+    assert int_suggestion["param-a"] % step == 0
 
 
 def test_sample_relative_int_loguniform_distributions() -> None:

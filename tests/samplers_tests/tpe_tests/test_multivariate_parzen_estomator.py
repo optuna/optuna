@@ -144,5 +144,6 @@ def test_log_pdf_multivariate_parzen_estimator() -> None:
     log_pdf = mpe.log_pdf(multivariate_samples)
     output_multivariate_samples = mpe.sample(np.random.RandomState(0), 100)
     output_log_pdf = mpe.log_pdf(output_multivariate_samples)
-    # The more data points, the smaller the value of ``log_pdf`` should be.
+    # The likelihood of the previous observations is a positive value, and that of the points
+    # sampled by the Parzen estimator is almost zero.
     assert np.all(log_pdf >= output_log_pdf)
