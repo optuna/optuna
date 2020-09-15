@@ -92,5 +92,4 @@ def test_handling_alias_metrics(aliases: List[str], expect: str) -> None:
     else:
         lgbm_params = {}
         _handling_alias_metrics(lgbm_params)
-        print("null case")
         assert lgbm_params == {}
