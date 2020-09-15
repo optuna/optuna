@@ -130,7 +130,7 @@ def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
 def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int, float, bool]]]:
     keys = os.getenv(_PRUNER_KEYS)
 
-    # keys would be empty when _PRUNER_CLASS is `NopPruner`
+    # keys would be empty when `_PRUNER_CLASS` is `NopPruner`
     if keys is None or keys == "":
         return {}
 
