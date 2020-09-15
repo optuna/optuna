@@ -47,7 +47,7 @@ else:
             return wrapper
 
 
-PPID = os.getppid()
+_PPID = os.getppid()
 
 """
 User might want to launch multiple studies that uses `AllenNLPExecutor`.
@@ -59,7 +59,7 @@ the one's configuration could be loaded in the another's configuration.
 To avoid this hazard, we add ID of a parent process to each key of
 environment variables.
 """
-PREFIX = "{}_OPTUNA_ALLENNLP".format(PPID)
+PREFIX = "{}_OPTUNA_ALLENNLP".format(_PPID)
 MONITOR = "{}_MONITOR".format(PREFIX)
 PRUNER_CLASS = "{}_PRUNER_CLASS".format(PREFIX)
 PRUNER_KEYS = "{}_PRUNER_KEYS".format(PREFIX)
