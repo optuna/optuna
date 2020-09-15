@@ -11,9 +11,9 @@ from packaging import version
 
 from optuna._experimental import experimental
 from optuna._imports import try_import
+from optuna._study_direction import StudyDirection
 import optuna.logging
 import optuna.study
-from optuna.study import StudyDirection
 import optuna.trial
 
 

@@ -17,16 +17,17 @@ import numpy as np
 import scipy as sp
 from scipy.sparse import spmatrix
 
-from optuna._experimental import experimental
-from optuna._imports import try_import
 from optuna import distributions
 from optuna import logging
 from optuna import samplers
 from optuna import study as study_module
+from optuna import TrialPruned
+from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
-from optuna import TrialPruned
+
 
 with try_import() as _imports:
     import pandas as pd
@@ -116,7 +117,7 @@ def _num_samples(x: ArrayLikeType) -> int:
     try:
         return len(x)
     except TypeError:
-        raise TypeError("Expected sequence or array-like, got %s." % type(x))
+        raise TypeError("Expected sequence or array-like, got %s." % type(x)) from None
 
 
 def _safe_indexing(
@@ -323,7 +324,7 @@ class _Objective(object):
                     train_score = self.error_score
 
             else:
-                raise ValueError("error_score must be 'raise' or numeric.")
+                raise ValueError("error_score must be 'raise' or numeric.") from e
 
         else:
             fit_time = time() - start_time

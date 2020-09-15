@@ -13,6 +13,7 @@ from tensorflow.keras.datasets import mnist
 
 import optuna
 
+
 if version.parse(tf.__version__) < version.parse("2.0.0"):
     raise RuntimeError("tensorflow>=2.0.0 is required for this example.")
 

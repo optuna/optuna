@@ -9,9 +9,10 @@ from typing import Set
 import numpy
 
 import optuna
+from optuna import distributions
+from optuna import logging
 from optuna._deprecated import deprecated
 from optuna._imports import try_import
-from optuna import distributions
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -19,12 +20,12 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna import logging
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
 
 with try_import() as _imports:
     import cma
@@ -146,7 +147,6 @@ class PyCmaSampler(BaseSampler):
         self._n_startup_trials = n_startup_trials
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._warn_independent_sampling = warn_independent_sampling
-        self._logger = optuna.logging.get_logger(__name__)
         self._search_space = optuna.samplers.IntersectionSearchSpace()
 
     def reseed_rng(self) -> None:
@@ -195,7 +195,7 @@ class PyCmaSampler(BaseSampler):
             return {}
 
         if len(search_space) == 1:
-            self._logger.info(
+            _logger.info(
                 "`PyCmaSampler` does not support optimization of 1-D search space. "
                 "`{}` is used instead of `PyCmaSampler`.".format(
                     self._independent_sampler.__class__.__name__
@@ -272,7 +272,7 @@ class PyCmaSampler(BaseSampler):
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
 
-        self._logger.warning(
+        _logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
             "by using `{}` instead of `PyCmaSampler` "
             "(optimization performance may be degraded). "

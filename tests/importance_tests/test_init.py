@@ -6,14 +6,15 @@ from typing import List
 import pytest
 
 import optuna
+from optuna import samplers
+from optuna import storages
 from optuna.importance import BaseImportanceEvaluator
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
-from optuna import samplers
-from optuna import storages
 from optuna.study import create_study
 from optuna.trial import Trial
+
 
 parametrize_storage = pytest.mark.parametrize(
     "storage_init_func",
@@ -36,15 +37,16 @@ def test_get_param_importances(
         x2 = trial.suggest_loguniform("x2", 0.1, 3)
         x3 = trial.suggest_discrete_uniform("x3", 0, 3, 1)
         x4 = trial.suggest_int("x4", -3, 3)
-        x5 = trial.suggest_categorical("x5", [1.0, 1.1, 1.2])
+        x5 = trial.suggest_int("x5", 1, 5, log=True)
+        x6 = trial.suggest_categorical("x6", [1.0, 1.1, 1.2])
         if trial.number % 2 == 0:
             # Conditional parameters are ignored unless `params` is specified and is not `None`.
-            x6 = trial.suggest_uniform("x6", 0.1, 3)
+            x7 = trial.suggest_uniform("x7", 0.1, 3)
 
-        assert isinstance(x5, float)
-        value = x1 ** 4 + x2 + x3 - x4 ** 2 - x5
+        assert isinstance(x6, float)
+        value = x1 ** 4 + x2 + x3 - x4 ** 2 - x5 + x6
         if trial.number % 2 == 0:
-            value += x6
+            value += x7
         return value
 
     study = create_study(storage_init_func(), sampler=samplers.RandomSampler())
@@ -53,8 +55,10 @@ def test_get_param_importances(
     param_importance = get_param_importances(study, evaluator=evaluator_init_func())
 
     assert isinstance(param_importance, OrderedDict)
-    assert len(param_importance) == 5
-    assert all(param_name in param_importance for param_name in ["x1", "x2", "x3", "x4", "x5"])
+    assert len(param_importance) == 6
+    assert all(
+        param_name in param_importance for param_name in ["x1", "x2", "x3", "x4", "x5", "x6"]
+    )
     prev_importance = float("inf")
     for param_name, importance in param_importance.items():
         assert isinstance(param_name, str)

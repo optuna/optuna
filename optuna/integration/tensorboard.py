@@ -5,6 +5,7 @@ import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
 
+
 with try_import() as _imports:
     from tensorboard.plugins.hparams import api as hp
     import tensorflow as tf
@@ -49,8 +50,8 @@ class TensorBoardCallback(object):
         run_name = "trial-%d" % trial.number
         run_dir = os.path.join(self._dirname, run_name)
         with tf.summary.create_file_writer(run_dir).as_default():
-            hp.hparams(hparams)  # record the values used in this trial
-            tf.summary.scalar(self._metric_name, trial_value, step=1)
+            hp.hparams(hparams, trial_id=run_name)  # record the values used in this trial
+            tf.summary.scalar(self._metric_name, trial_value, step=trial.number)
 
     def _add_distributions(
         self, distributions: Dict[str, optuna.distributions.BaseDistribution]
