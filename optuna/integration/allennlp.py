@@ -59,13 +59,13 @@ the one's configuration could be loaded in the another's configuration.
 To avoid this hazard, we add ID of a parent process to each key of
 environment variables.
 """
-PREFIX = "{}_OPTUNA_ALLENNLP".format(_PPID)
-MONITOR = "{}_MONITOR".format(PREFIX)
-PRUNER_CLASS = "{}_PRUNER_CLASS".format(PREFIX)
-PRUNER_KEYS = "{}_PRUNER_KEYS".format(PREFIX)
-STORAGE_NAME = "{}_STORAGE_NAME".format(PREFIX)
-STUDY_NAME = "{}_STUDY_NAME".format(PREFIX)
-TRIAL_ID = "{}_TRIAL_ID".format(PREFIX)
+_PREFIX = "{}_OPTUNA_ALLENNLP".format(_PPID)
+_MONITOR = "{}_MONITOR".format(_PREFIX)
+_PRUNER_CLASS = "{}_PRUNER_CLASS".format(_PREFIX)
+_PRUNER_KEYS = "{}_PRUNER_KEYS".format(_PREFIX)
+_STORAGE_NAME = "{}_STORAGE_NAME".format(_PREFIX)
+_STUDY_NAME = "{}_STUDY_NAME".format(_PREFIX)
+_TRIAL_ID = "{}_TRIAL_ID".format(_PREFIX)
 
 
 def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
@@ -79,7 +79,7 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     re-create the same pruner in `AllenNLPPruningCallback`.
 
     """
-    pruner_class = os.getenv(PRUNER_CLASS)
+    pruner_class = os.getenv(_PRUNER_CLASS)
     if pruner_class is None:
         return None
 
@@ -120,23 +120,23 @@ def _infer_and_cast(value: Optional[str]) -> Optional[Union[str, int, float, boo
 
 def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
     return {
-        "study_name": os.getenv(STUDY_NAME),
-        "trial_id": os.getenv(TRIAL_ID),
-        "storage": os.getenv(STORAGE_NAME),
-        "monitor": os.getenv(MONITOR),
+        "study_name": os.getenv(_STUDY_NAME),
+        "trial_id": os.getenv(_TRIAL_ID),
+        "storage": os.getenv(_STORAGE_NAME),
+        "monitor": os.getenv(_MONITOR),
     }
 
 
 def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int, float, bool]]]:
-    keys = os.getenv(PRUNER_KEYS)
+    keys = os.getenv(_PRUNER_KEYS)
 
-    # keys would be empty when PRUNER_CLASS is `NopPruner`
+    # keys would be empty when _PRUNER_CLASS is `NopPruner`
     if keys is None or keys == "":
         return {}
 
     kwargs = {}
     for key in keys.split(","):
-        key_without_prefix = key.replace("{}_".format(PREFIX), "")
+        key_without_prefix = key.replace("{}_".format(_PREFIX), "")
         kwargs[key_without_prefix] = _infer_and_cast(os.getenv(key))
 
     return kwargs
@@ -300,19 +300,19 @@ class AllenNLPExecutor(object):
 
         pruner_params = _fetch_pruner_config(trial)
         pruner_params = {
-            "{}_{}".format(PREFIX, key): str(value) for key, value in pruner_params.items()
+            "{}_{}".format(_PREFIX, key): str(value) for key, value in pruner_params.items()
         }
 
         system_attrs = {
-            STUDY_NAME: trial.study.study_name,
-            TRIAL_ID: str(trial._trial_id),
-            STORAGE_NAME: url,
-            MONITOR: metrics,
-            PRUNER_KEYS: ",".join(pruner_params.keys()),
+            _STUDY_NAME: trial.study.study_name,
+            _TRIAL_ID: str(trial._trial_id),
+            _STORAGE_NAME: url,
+            _MONITOR: metrics,
+            _PRUNER_KEYS: ",".join(pruner_params.keys()),
         }
 
         if trial.study.pruner is not None:
-            system_attrs[PRUNER_CLASS] = type(trial.study.pruner).__name__
+            system_attrs[_PRUNER_CLASS] = type(trial.study.pruner).__name__
 
         system_attrs.update(pruner_params)
         self._system_attrs = system_attrs
