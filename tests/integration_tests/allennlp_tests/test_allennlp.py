@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 from typing import Dict
+from typing import Type
 from typing import Union
 
 import _jsonnet
@@ -243,24 +244,33 @@ def test_allennlp_pruning_callback() -> None:
 
 
 @pytest.mark.parametrize(
-    "pruner_name,pruner_kwargs",
+    "pruner_class,pruner_kwargs",
     [
-        ("hyperband", {"min_resource": 3, "max_resource": 10, "reduction_factor": 5}),
-        ("median", {"n_startup_trials": 8, "n_warmup_steps": 1, "interval_steps": 3}),
-        ("noop", {}),
         (
-            "percentile",
+            optuna.pruners.HyperbandPruner,
+            {"min_resource": 3, "max_resource": 10, "reduction_factor": 5},
+        ),
+        (
+            optuna.pruners.MedianPruner,
+            {"n_startup_trials": 8, "n_warmup_steps": 1, "interval_steps": 3},
+        ),
+        (optuna.pruners.NopPruner, {}),
+        (
+            optuna.pruners.PercentilePruner,
             {"percentile": 50.0, "n_startup_trials": 10, "n_warmup_steps": 1, "interval_steps": 3},
         ),
         (
-            "successive_halving",
+            optuna.pruners.SuccessiveHalvingPruner,
             {"min_resource": 3, "reduction_factor": 5, "min_early_stopping_rate": 1},
         ),
-        ("threshold", {"lower": 0.0, "upper": 1.0, "n_warmup_steps": 3, "interval_steps": 2}),
+        (
+            optuna.pruners.ThresholdPruner,
+            {"lower": 0.0, "upper": 1.0, "n_warmup_steps": 3, "interval_steps": 2},
+        ),
     ],
 )
 def test_allennlp_pruning_callback_with_executor(
-    pruner_name: str, pruner_kwargs: Dict[str, Union[int, float]]
+    pruner_class: Type[optuna.pruners.BasePruner], pruner_kwargs: Dict[str, Union[int, float]]
 ) -> None:
     input_config_file = (
         "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
@@ -278,90 +288,18 @@ def test_allennlp_pruning_callback_with_executor(
         executor.run()
 
     with tempfile.TemporaryDirectory() as tmp_dir:
+        pruner_name = pruner_class.__name__
         os.mkdir(os.path.join(tmp_dir, pruner_name))
         storage = "sqlite:///" + os.path.join(tmp_dir, pruner_name, "result.db")
         serialization_dir = os.path.join(tmp_dir, pruner_name, "allennlp")
 
-        if pruner_name == "hyperband":
-            hyperband_pruner = optuna.pruners.HyperbandPruner(
-                min_resource=int(pruner_kwargs["min_resource"]),
-                max_resource=int(pruner_kwargs["max_resource"]),
-                reduction_factor=int(pruner_kwargs["reduction_factor"]),
-            )
-            run_allennlp_executor(hyperband_pruner)
-            pruner = optuna.integration.allennlp._create_pruner()
+        pruner = pruner_class(**pruner_kwargs)  # type: ignore
+        run_allennlp_executor(pruner)
+        ret_pruner = optuna.integration.allennlp._create_pruner()
 
-            assert isinstance(pruner, optuna.pruners.HyperbandPruner)
-            assert pruner._min_resource == pruner_kwargs["min_resource"]
-            assert pruner._max_resource == pruner_kwargs["max_resource"]
-            assert pruner._reduction_factor == pruner_kwargs["reduction_factor"]
-
-        elif pruner_name == "median":
-            median_pruner = optuna.pruners.MedianPruner(
-                n_startup_trials=int(pruner_kwargs["n_startup_trials"]),
-                n_warmup_steps=int(pruner_kwargs["n_warmup_steps"]),
-                interval_steps=int(pruner_kwargs["interval_steps"]),
-            )
-            run_allennlp_executor(median_pruner)
-            pruner = optuna.integration.allennlp._create_pruner()
-
-            assert isinstance(pruner, optuna.pruners.MedianPruner)
-            assert pruner._n_startup_trials == pruner_kwargs["n_startup_trials"]
-            assert pruner._n_warmup_steps == pruner_kwargs["n_warmup_steps"]
-            assert pruner._interval_steps == pruner_kwargs["interval_steps"]
-
-        elif pruner_name == "noop":
-            noop_pruner = optuna.pruners.NopPruner()
-            run_allennlp_executor(noop_pruner)
-            pruner = optuna.integration.allennlp._create_pruner()
-
-            assert isinstance(pruner, optuna.pruners.NopPruner)
-
-        elif pruner_name == "percentile":
-            percentile_pruner = optuna.pruners.PercentilePruner(
-                percentile=float(pruner_kwargs["percentile"]),
-                n_startup_trials=int(pruner_kwargs["n_startup_trials"]),
-                n_warmup_steps=int(pruner_kwargs["n_warmup_steps"]),
-                interval_steps=int(pruner_kwargs["interval_steps"]),
-            )
-            run_allennlp_executor(percentile_pruner)
-            pruner = optuna.integration.allennlp._create_pruner()
-
-            assert isinstance(pruner, optuna.pruners.PercentilePruner)
-            assert pruner._percentile == pruner_kwargs["percentile"]
-            assert pruner._n_startup_trials == pruner_kwargs["n_startup_trials"]
-            assert pruner._n_warmup_steps == pruner_kwargs["n_warmup_steps"]
-            assert pruner._interval_steps == pruner_kwargs["interval_steps"]
-
-        elif pruner_name == "successive_halving":
-            successive_halving_pruner = optuna.pruners.SuccessiveHalvingPruner(
-                min_resource=int(pruner_kwargs["min_resource"]),
-                reduction_factor=int(pruner_kwargs["reduction_factor"]),
-                min_early_stopping_rate=int(pruner_kwargs["min_early_stopping_rate"]),
-            )
-            run_allennlp_executor(successive_halving_pruner)
-            pruner = optuna.integration.allennlp._create_pruner()
-
-            assert isinstance(pruner, optuna.pruners.SuccessiveHalvingPruner)
-            assert pruner._min_resource == pruner_kwargs["min_resource"]
-            assert pruner._reduction_factor == pruner_kwargs["reduction_factor"]
-            assert pruner._min_early_stopping_rate == pruner_kwargs["min_early_stopping_rate"]
-
-        elif pruner_name == "threshold":
-            threshold_pruner = optuna.pruners.ThresholdPruner(
-                lower=float(pruner_kwargs["lower"]),
-                upper=float(pruner_kwargs["upper"]),
-                n_warmup_steps=int(pruner_kwargs["n_warmup_steps"]),
-                interval_steps=int(pruner_kwargs["interval_steps"]),
-            )
-            run_allennlp_executor(threshold_pruner)
-            pruner = optuna.integration.allennlp._create_pruner()
-
-            assert isinstance(pruner, optuna.pruners.ThresholdPruner)
-            assert pruner._lower == pruner_kwargs["lower"]
-            assert pruner._upper == pruner_kwargs["upper"]
-            assert pruner._n_warmup_steps == pruner_kwargs["n_warmup_steps"]
-            assert pruner._interval_steps == pruner_kwargs["interval_steps"]
+        assert isinstance(ret_pruner, pruner_class)
+        for key, value in pruner_kwargs.items():
+            assert getattr(ret_pruner, "_{}".format(key)) == value
 
 
 def test_allennlp_pruning_callback_with_invalid_executor() -> None:
