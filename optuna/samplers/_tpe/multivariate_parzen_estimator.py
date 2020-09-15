@@ -10,6 +10,7 @@ from optuna import distributions
 from optuna.distributions import BaseDistribution
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 
+
 EPS = 1e-12
 SIGMA0_MAGNITUDE = 0.2
 
