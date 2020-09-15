@@ -14,6 +14,7 @@ see the following link:
     https://github.com/optuna/optuna/blob/master/examples/mlflow/keras_mlflow.py
 
 """
+import warnings
 
 import keras
 from keras.datasets import mnist
@@ -23,6 +24,7 @@ from keras.models import Sequential
 
 import optuna
 from optuna.integration import KerasPruningCallback
+
 
 N_TRAIN_EXAMPLES = 3000
 N_VALID_EXAMPLES = 1000
@@ -90,6 +92,14 @@ def objective(trial):
 
 
 if __name__ == "__main__":
+    warnings.warn(
+        "Recent Keras release (2.4.0) simply redirects all APIs "
+        "in the standalone keras package to point to tf.keras. "
+        "There is now only one Keras: tf.keras. "
+        "There may be some breaking changes for some workflows by upgrading to keras 2.4.0. "
+        "Test before upgrading. "
+        "REF:https://github.com/keras-team/keras/releases/tag/2.4.0"
+    )
     study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
     study.optimize(objective, n_trials=100)
     pruned_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]

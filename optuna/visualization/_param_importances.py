@@ -16,10 +16,11 @@ from optuna.study import Study
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 
-if _imports.is_successful():
-    from optuna.visualization._plotly_imports import go
 
+if _imports.is_successful():
     import plotly
+
+    from optuna.visualization._plotly_imports import go
 
     Blues = plotly.colors.sequential.Blues
 
@@ -36,7 +37,9 @@ logger = get_logger(__name__)
 
 
 def plot_param_importances(
-    study: Study, evaluator: BaseImportanceEvaluator = None, params: Optional[List[str]] = None
+    study: Study,
+    evaluator: Optional[BaseImportanceEvaluator] = None,
+    params: Optional[List[str]] = None,
 ) -> "go.Figure":
     """Plot hyperparameter importances.
 

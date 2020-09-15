@@ -70,9 +70,9 @@ Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked wit
 Code is formatted with [black](https://github.com/psf/black).
 You have to install it first. This can be done with
 `pip install black`. The command to format a certain file
-is `black <filename_with_path> --line-length 99 --exclude="docs"`.
+is `black <filename_with_path>`.
 To just check the file you can use
-`black <filename_with_path> --line-length 99 --check --exclude="docs"`.
+`black <filename_with_path> --check`.
 You can also apply these operations to all files by replacing
 `<filename_with_path>` with a simple `.`.
 
@@ -106,8 +106,6 @@ circleci build --job <job_name>
 
 You can run the following jobs.
 
-- `tests-python35`
-  - Runs unit tests under Python 3.5
 - `tests-python36`
   - Runs unit tests under Python 3.6
 - `tests-python37`

@@ -62,7 +62,7 @@ Cardinality = float
         ([0], [([1.0], [(0, 1.0)])]),
         ([1], [([0.5], [(1, 0.5)]), ([0.5], [(4, 0.5)])]),
         ([2], [([1.5], [(2, 1.5), (4, 2.0)]), ([0.5], [(3, 0.5), (4, 2.0)])]),
-        ([0, 1], [([1.0, 0.5], [(1, 0.5)]), ([1.0, 0.5], [(4, 0.5)]),]),
+        ([0, 1], [([1.0, 0.5], [(1, 0.5)]), ([1.0, 0.5], [(4, 0.5)])]),
         ([0, 2], [([1.0, 1.5], [(2, 1.5), (4, 2.0)]), ([1.0, 0.5], [(3, 0.5), (4, 2.0)])]),
         (
             [1, 2],
@@ -265,16 +265,16 @@ def test_tree_get_node_subspaces(tree: _FanovaTree) -> None:
     expected_right_child_subspace = numpy.array([[0.0, 1.0], [0.5, 1.0], [0.0, 2.0]])
 
     numpy.testing.assert_array_equal(
-        tree._get_node_left_child_subspaces(0, search_spaces), expected_left_child_subspace,
+        tree._get_node_left_child_subspaces(0, search_spaces), expected_left_child_subspace
     )
     numpy.testing.assert_array_equal(
-        tree._get_node_right_child_subspaces(0, search_spaces), expected_right_child_subspace,
+        tree._get_node_right_child_subspaces(0, search_spaces), expected_right_child_subspace
     )
     numpy.testing.assert_array_equal(
-        tree._get_node_children_subspaces(0, search_spaces)[0], expected_left_child_subspace,
+        tree._get_node_children_subspaces(0, search_spaces)[0], expected_left_child_subspace
     )
     numpy.testing.assert_array_equal(
-        tree._get_node_children_subspaces(0, search_spaces)[1], expected_right_child_subspace,
+        tree._get_node_children_subspaces(0, search_spaces)[1], expected_right_child_subspace
     )
     numpy.testing.assert_array_equal(search_spaces, search_spaces_copy)
 
@@ -283,15 +283,15 @@ def test_tree_get_node_subspaces(tree: _FanovaTree) -> None:
     expected_right_child_subspace = numpy.array([[0.0, 1.0], [0.0, 1.0], [1.5, 2.0]])
 
     numpy.testing.assert_array_equal(
-        tree._get_node_left_child_subspaces(1, search_spaces), expected_left_child_subspace,
+        tree._get_node_left_child_subspaces(1, search_spaces), expected_left_child_subspace
     )
     numpy.testing.assert_array_equal(
-        tree._get_node_right_child_subspaces(1, search_spaces), expected_right_child_subspace,
+        tree._get_node_right_child_subspaces(1, search_spaces), expected_right_child_subspace
     )
     numpy.testing.assert_array_equal(
-        tree._get_node_children_subspaces(1, search_spaces)[0], expected_left_child_subspace,
+        tree._get_node_children_subspaces(1, search_spaces)[0], expected_left_child_subspace
     )
     numpy.testing.assert_array_equal(
-        tree._get_node_children_subspaces(1, search_spaces)[1], expected_right_child_subspace,
+        tree._get_node_children_subspaces(1, search_spaces)[1], expected_right_child_subspace
     )
     numpy.testing.assert_array_equal(search_spaces, search_spaces_copy)

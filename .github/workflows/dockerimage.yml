@@ -8,9 +8,11 @@ on:
     types: [published]
   pull_request:
     paths:
+      - .github/workflows/dockerimage.yml
       - Dockerfile
       - .dockerignore
       - setup.py
+      - .github/workflows/dockerimage.yml
 
 env:
   DOCKER_HUB_BASE_NAME: optuna/optuna
@@ -23,7 +25,7 @@ jobs:
 
     strategy:
       matrix:
-        python_version: ['3.5', '3.6', '3.7', '3.8']
+        python_version: ['3.6', '3.7', '3.8']
         build_type: ['', 'dev']  # "dev" installs all the dependencies including pytest.
 
     # This action cannot be executed in the forked repository.
@@ -42,10 +44,20 @@ jobs:
         fi
         echo "::set-env name=HUB_TAG::${DOCKER_HUB_BASE_NAME}:${TAG_NAME}"
 
-
     - name: Build the Docker image
       run: |
-        docker build . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
+        if [ "${{ github.event_name }}" = 'release' ]; then
+          # Cache is not available because the image tag includes the Optuna version.
+          CACHE_FROM=""
+        else
+          docker pull "${HUB_TAG}"
+          CACHE_FROM="--cache-from=${HUB_TAG}"
+        fi
+        docker build ${CACHE_FROM} . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
+
+    - name: Verify the built image
+      run: |
+        docker run "${HUB_TAG}" python examples/quadratic_simple.py
 
     - name: Login & Push to Docker Hub
       if: ${{ github.event_name != 'pull_request' }}

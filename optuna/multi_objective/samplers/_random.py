@@ -3,9 +3,9 @@ from typing import Dict
 from typing import Optional
 
 import optuna
+from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
-from optuna import multi_objective
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
 

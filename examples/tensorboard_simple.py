@@ -1,6 +1,7 @@
+import tensorflow as tf
+
 import optuna
 from optuna.integration.tensorboard import TensorBoardCallback
-import tensorflow as tf
 
 
 fashion_mnist = tf.keras.datasets.fashion_mnist
@@ -19,7 +20,7 @@ def train_test_model(num_units: int, dropout_rate: float, optimizer: str) -> flo
         ]
     )
     model.compile(
-        optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=["accuracy"],
+        optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=["accuracy"]
     )
 
     model.fit(x_train, y_train, epochs=1)  # Run with 1 epoch to speed things up for demo purposes

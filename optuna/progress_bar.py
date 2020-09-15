@@ -4,8 +4,9 @@ from typing import Optional
 
 from tqdm.auto import tqdm
 
-from optuna._experimental import experimental
 from optuna import logging as optuna_logging
+from optuna._experimental import experimental
+
 
 _tqdm_handler = None  # type: Optional[_TqdmLoggingHandler]
 
@@ -36,7 +37,7 @@ class _ProgressBar(object):
     """
 
     def __init__(
-        self, is_valid: bool, n_trials: Optional[int] = None, timeout: Optional[float] = None,
+        self, is_valid: bool, n_trials: Optional[int] = None, timeout: Optional[float] = None
     ) -> None:
         self._is_valid = is_valid
         self._n_trials = n_trials

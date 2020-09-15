@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.5, 3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8]
 
     # Not intended for forks.
     if: github.repository == 'optuna/optuna'
@@ -58,14 +58,7 @@ jobs:
 
     - name: Tests
       run: |
-        if [ ${{ matrix.python-version }} = 3.5 ]; then
-          pytest tests/integration_tests \
-            --ignore tests/integration_tests/test_pytorch_lightning.py \
-            --ignore tests/integration_tests/test_fastai.py \
-            --ignore tests/integration_tests/allennlp_tests/test_allennlp.py \
-            --ignore tests/integration_tests/test_catalyst.py \
-            --ignore tests/integration_tests/test_pytorch_ignite.py
-        elif [ ${{ matrix.python-version }} = 3.8 ]; then
+        if [ ${{ matrix.python-version }} = 3.8 ]; then
           pytest tests/integration_tests \
             --ignore tests/integration_tests/test_fastai.py \
             --ignore tests/integration_tests/allennlp_tests/test_allennlp.py

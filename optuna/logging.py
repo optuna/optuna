@@ -12,6 +12,7 @@ import colorlog
 
 from optuna import type_checking
 
+
 if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
@@ -211,8 +212,8 @@ def enable_propagation() -> None:
             study.optimize(objective, n_trials=10)
 
             with open('foo.log') as f:
+                assert f.readline().startswith("A new study created")
                 assert f.readline() == "Start optimization.\\n"
-                assert f.readline().startswith("Trial 0 finished with value:")
 
     """
 

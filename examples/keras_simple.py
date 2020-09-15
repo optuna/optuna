@@ -6,6 +6,7 @@ In this example, we optimize the validation accuracy of MNIST classification usi
 Keras. We optimize the filter and kernel size, kernel stride and layer activation.
 
 """
+import warnings
 
 from keras.backend import clear_session
 from keras.datasets import mnist
@@ -72,6 +73,14 @@ def objective(trial):
 
 
 if __name__ == "__main__":
+    warnings.warn(
+        "Recent Keras release (2.4.0) simply redirects all APIs "
+        "in the standalone keras package to point to tf.keras. "
+        "There is now only one Keras: tf.keras. "
+        "There may be some breaking changes for some workflows by upgrading to keras 2.4.0. "
+        "Test before upgrading. "
+        "REF:https://github.com/keras-team/keras/releases/tag/2.4.0"
+    )
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100, timeout=600)
 

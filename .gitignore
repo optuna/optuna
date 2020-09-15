@@ -101,6 +101,10 @@ ENV/
 # PyCharm
 .idea
 
+# VSCode
+.vscode
+.devcontainer
+
 # MyPy
 .mypy_cache
 
@@ -108,6 +112,5 @@ ENV/
 tutorial/example.db
 docs/_build/
 docs/source/reference/generated/
-docs/source/reference/alias_generated/
 docs/source/reference/multi_objective/generated/
 docs/source/tutorial/

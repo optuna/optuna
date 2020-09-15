@@ -1,11 +1,9 @@
 import optuna
-from optuna import type_checking
+from optuna.trial import Trial
 
-if type_checking.TYPE_CHECKING:
-    from optuna.trial import Trial  # NOQA
 
 with optuna._imports.try_import() as _imports:
-    from ignite.engine import Engine  # NOQA
+    from ignite.engine import Engine
 
 
 class PyTorchIgnitePruningHandler(object):
@@ -26,8 +24,7 @@ class PyTorchIgnitePruningHandler(object):
             <https://pytorch.org/ignite/engine.html#ignite.engine.Engine>`_ for further details.
     """
 
-    def __init__(self, trial, metric, trainer):
-        # type: (Trial, str, Engine) -> None
+    def __init__(self, trial: Trial, metric: str, trainer: "Engine") -> None:
 
         _imports.check()
 
@@ -35,8 +32,7 @@ class PyTorchIgnitePruningHandler(object):
         self._metric = metric
         self._trainer = trainer
 
-    def __call__(self, engine):
-        # type: (Engine) -> None
+    def __call__(self, engine: "Engine") -> None:
 
         score = engine.state.metrics[self._metric]
         self._trial.report(score, self._trainer.state.epoch)

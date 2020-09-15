@@ -5,11 +5,12 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
-from optuna.study import StudyDirection
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
+
 
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
@@ -63,7 +64,7 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
 
 def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
-    layout = go.Layout(title="Parallel Coordinate Plot",)
+    layout = go.Layout(title="Parallel Coordinate Plot")
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 

@@ -15,6 +15,7 @@ from optuna.importance._base import _get_study_data
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
 
+
 with try_import() as _imports:
     from sklearn.compose import ColumnTransformer
     from sklearn.ensemble import RandomForestRegressor
@@ -79,7 +80,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
 
 
 def _encode_categorical(
-    params_data: numpy.ndarray, distributions: ValuesView[BaseDistribution],
+    params_data: numpy.ndarray, distributions: ValuesView[BaseDistribution]
 ) -> Tuple[numpy.ndarray, numpy.ndarray]:
     # Transform the `params_data` matrix by expanding categorical integer-valued columns to one-hot
     # encoding matrices. Note that the resulting matrix can be sparse and potentially very big.
