@@ -4,15 +4,16 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+import warnings
 
 import numpy as np
 
 import optuna
 from optuna import distributions
 from optuna import samplers
-from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna._study_direction import StudyDirection
+from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -119,11 +120,11 @@ class SkoptSampler(BaseSampler):
         self._consider_pruned_trials = consider_pruned_trials
 
         if self._consider_pruned_trials:
-            self._raise_experimental_warning_for_consider_pruned_trials()
-
-    @experimental("2.0.0", name="`consider_pruned_trials = True` in SkoptSampler")
-    def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
-        pass
+            warnings.warn(
+                "`consider_pruned_trials` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
     def reseed_rng(self) -> None:
 
