@@ -104,7 +104,6 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 * [tf.keras](./examples/pruning/tfkeras_integration.py)
 * [XGBoost](./examples/pruning/xgboost_integration.py)
 
-
 ## Installation
 
 Optuna is available at [the Python Package Index](https://pypi.org/project/optuna/) and on [Anaconda Cloud](https://anaconda.org/conda-forge/optuna).
