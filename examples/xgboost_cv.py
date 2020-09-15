@@ -16,6 +16,7 @@ We have following way to execute this example:
 
 import os
 import shutil
+
 import sklearn.datasets
 import sklearn.metrics
 import xgboost as xgb
