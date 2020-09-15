@@ -178,10 +178,7 @@ class CmaEsSampler(BaseSampler):
             )
 
         # TODO(c-bata): Support BIPOP-CMA-ES.
-        if restart_strategy not in (
-            "ipop",
-            None,
-        ):
+        if restart_strategy not in ("ipop", None,):
             raise ValueError(
                 "restart_strategy={} is unsupported. Please specify: 'ipop' or None.".format(
                     restart_strategy
@@ -312,8 +309,7 @@ class CmaEsSampler(BaseSampler):
         return external_values
 
     def _restore_optimizer(
-        self,
-        completed_trials: "List[optuna.trial.FrozenTrial]",
+        self, completed_trials: "List[optuna.trial.FrozenTrial]",
     ) -> Tuple[Optional[CMA], int]:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):

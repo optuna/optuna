@@ -27,14 +27,14 @@ import optuna
 
 
 def objective(trial):
-    x = trial.suggest_uniform('x', -10, 10)
+    x = trial.suggest_uniform("x", -10, 10)
     return (x - 2) ** 2
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     study = optuna.create_study()
     study.optimize(objective, n_trials=100)
-    print('Best value: {} (params: {})\n'.format(study.best_value, study.best_params))
+    print("Best value: {} (params: {})\n".format(study.best_value, study.best_params))
 
 ###################################################################################################
 # However, we can reduce boilerplate codes by using our ``optuna`` command.
@@ -42,8 +42,9 @@ if __name__ == '__main__':
 
 
 def objective(trial):
-    x = trial.suggest_uniform('x', -10, 10)
+    x = trial.suggest_uniform("x", -10, 10)
     return (x - 2) ** 2
+
 
 ###################################################################################################
 # Even so, we can invoke the optimization as follows.
