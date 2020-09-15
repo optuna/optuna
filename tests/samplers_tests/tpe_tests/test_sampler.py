@@ -276,7 +276,7 @@ def test_sample_relative_int_uniform_distributions(step: int) -> None:
 
     def int_value_fn(idx: int) -> float:
         random.seed(idx)
-        return step * random.randint(0, 100 / step)
+        return step * random.randint(0, 100 // step)
 
     int_dist = optuna.distributions.IntUniformDistribution(0, 100, step=step)
     past_trials = [
