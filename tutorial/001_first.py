@@ -14,6 +14,7 @@ let us directly optimize a quadratic function in an IPython shell.
 
 import optuna
 
+
 ###################################################################################################
 # The objective function is what will be optimized.
 
