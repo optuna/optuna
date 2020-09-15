@@ -24,7 +24,7 @@ from optuna.trial import TrialState
 _logger = logging.get_logger(__name__)
 
 _EPS = 1e-10
-_SYSTEM_ATTR_MAX_LENGTH = 2048
+_SYSTEM_ATTR_MAX_LENGTH = 2000
 
 
 class CmaEsSampler(BaseSampler):

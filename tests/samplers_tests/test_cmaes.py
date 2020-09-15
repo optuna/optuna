@@ -12,14 +12,15 @@ import pytest
 
 import optuna
 from optuna import create_trial
+from optuna.samplers._cmaes import _concat_optimizer_str
 from optuna.samplers._cmaes import _initialize_sigma0
 from optuna.samplers._cmaes import _initialize_x0
 from optuna.samplers._cmaes import _initialize_x0_randomly
 from optuna.samplers._cmaes import _split_optimizer_str
-from optuna.samplers._cmaes import _concat_optimizer_str
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
-from optuna.trial import FrozenTrial, TrialState
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 def test_consider_pruned_trials_experimental_warning() -> None:
