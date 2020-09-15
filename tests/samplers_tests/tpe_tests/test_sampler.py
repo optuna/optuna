@@ -5,6 +5,7 @@ from typing import Optional
 from typing import Union
 from unittest.mock import Mock
 from unittest.mock import patch
+import warnings
 
 import numpy as np
 import pytest
@@ -33,6 +34,7 @@ def test_multivariate_experimental_warning() -> None:
 
 
 def test_infer_relative_search_space() -> None:
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
 
     sampler = TPESampler()
     search_space = {
@@ -72,6 +74,8 @@ def test_infer_relative_search_space() -> None:
 
 
 def test_sample_relative_empty_input() -> None:
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     sampler = TPESampler()
     # Study and frozen-trial are not supposed to be accessed.
     study = Mock(spec=[])
@@ -80,6 +84,8 @@ def test_sample_relative_empty_input() -> None:
 
 
 def test_sample_relative_seed_fix() -> None:
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
@@ -100,6 +106,8 @@ def test_sample_relative_seed_fix() -> None:
 
 
 def test_sample_relative_prior() -> None:
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
@@ -120,6 +128,8 @@ def test_sample_relative_prior() -> None:
 
 
 def test_sample_relative_n_startup_trial() -> None:
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
@@ -135,6 +145,8 @@ def test_sample_relative_n_startup_trial() -> None:
 
 
 def test_sample_relative_misc_arguments() -> None:
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 40)]
@@ -165,6 +177,8 @@ def test_sample_relative_misc_arguments() -> None:
 
 
 def test_sample_relative_uniform_distributions() -> None:
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     study = optuna.create_study()
 
     # Prepare sample from uniform distribution for cheking other distributions.
@@ -179,6 +193,9 @@ def test_sample_relative_uniform_distributions() -> None:
 
 def test_sample_relative_log_uniform_distributions() -> None:
     """Prepare sample from uniform distribution for cheking other distributions."""
+
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     study = optuna.create_study()
 
     uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
@@ -201,6 +218,8 @@ def test_sample_relative_log_uniform_distributions() -> None:
 
 def test_sample_relative_disrete_uniform_distributions() -> None:
     """Test samples from discrete have expected intervals."""
+
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
 
     study = optuna.create_study()
     disc_dist = optuna.distributions.DiscreteUniformDistribution(1.0, 100.0, 0.1)
@@ -227,6 +246,8 @@ def test_sample_relative_disrete_uniform_distributions() -> None:
 def test_sample_relative_categorical_distributions() -> None:
     """Test samples are drawn from the specified category."""
 
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     study = optuna.create_study()
     categories = [i * 0.3 + 1.0 for i in range(330)]
 
@@ -249,6 +270,8 @@ def test_sample_relative_categorical_distributions() -> None:
 def test_sample_relative_int_uniform_distributions(step: int) -> None:
     """Test sampling from int distribution returns integer."""
 
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     study = optuna.create_study()
 
     def int_value_fn(idx: int) -> float:
@@ -270,6 +293,8 @@ def test_sample_relative_int_uniform_distributions(step: int) -> None:
 
 def test_sample_relative_int_loguniform_distributions() -> None:
     """Test sampling from int distribution returns integer."""
+
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
 
     study = optuna.create_study()
 
@@ -301,6 +326,8 @@ def test_sample_relative_int_loguniform_distributions() -> None:
 def test_sample_relative_handle_unsuccessful_states(
     state: optuna.trial.TrialState,
 ) -> None:
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
@@ -323,6 +350,9 @@ def test_sample_relative_handle_unsuccessful_states(
 
 def test_sample_relative_ignored_states() -> None:
     """Tests FAIL, RUNNING, and WAITING states are equally."""
+
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
@@ -344,6 +374,9 @@ def test_sample_relative_ignored_states() -> None:
 
 def test_sample_relative_pruned_state() -> None:
     """Tests PRUNED state is treated differently from both FAIL and COMPLETE."""
+
+    warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
@@ -467,6 +500,7 @@ def test_sample_independent_uniform_distributions() -> None:
 
 def test_sample_independent_log_uniform_distributions() -> None:
     """Prepare sample from uniform distribution for cheking other distributions."""
+
     study = optuna.create_study()
 
     uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
@@ -603,6 +637,7 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
 
 def test_sample_independent_ignored_states() -> None:
     """Tests FAIL, RUNNING, and WAITING states are equally."""
+
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
@@ -624,6 +659,7 @@ def test_sample_independent_ignored_states() -> None:
 
 def test_sample_independent_pruned_state() -> None:
     """Tests PRUNED state is treated differently from both FAIL and COMPLETE."""
+
     study = optuna.create_study()
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
 
