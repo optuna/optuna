@@ -11,6 +11,8 @@ import optuna
 from optuna.samplers._cmaes import _initialize_sigma0
 from optuna.samplers._cmaes import _initialize_x0
 from optuna.samplers._cmaes import _initialize_x0_randomly
+from optuna.samplers._cmaes import _split_optimizer_str
+from optuna.samplers._cmaes import _concat_optimizer_str
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
@@ -213,3 +215,16 @@ def test_population_size_is_multiplied_when_enable_ipop() -> None:
 
         _, actual_kwargs = cma_class_mock.call_args
         assert actual_kwargs["population_size"] == inc_popsize * popsize
+
+
+@pytest.mark.parametrize("dummy_optimizer_str,attr_len", [
+    ("0123", 1),
+    ("01234567", 1),
+    ("01234567890123456789", 3),
+])
+def test_split_and_concat_optimizer_string(dummy_optimizer_str: str, attr_len: int) -> None:
+    with patch("optuna.samplers._cmaes._SYSTEM_ATTR_MAX_LENGTH", 8):
+        attrs = _split_optimizer_str(dummy_optimizer_str)
+        assert len(attrs) == attr_len
+        actual = _concat_optimizer_str(attrs)
+        assert dummy_optimizer_str == actual

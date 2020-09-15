@@ -314,13 +314,9 @@ class CmaEsSampler(BaseSampler):
 
     def _store_optimizer(self, storage: BaseStorage, trial_id: int, optimizer: CMA) -> None:
         optimizer_str = pickle.dumps(optimizer).hex()
-        optimizer_len = len(optimizer_str)
-
-        for i in range(optimizer_len % _SYSTEM_ATTR_MAX_LENGTH):
-            start = i * _SYSTEM_ATTR_MAX_LENGTH
-            end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
-            key = "cma:optimizer:{}".format(i)
-            storage.set_trial_system_attr(trial_id, key, optimizer_str[start:end])
+        optimizer_attrs = _split_optimizer_str(optimizer_str)
+        for key in optimizer_attrs:
+            storage.set_trial_system_attr(trial_id, key, optimizer_attrs[key])
 
     def _restore_optimizer(
         self,
@@ -328,20 +324,18 @@ class CmaEsSampler(BaseSampler):
     ) -> Tuple[Optional[CMA], int]:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
-            len_optimizer_keys = len(
-                [key for key in trial.system_attrs if key.startswith("cma:optimizer")]
-            )
-
-            if len_optimizer_keys == 0:
+            optimizer_attrs = {
+                key: value
+                for key, value in trial.system_attrs.items()
+                if key.startswith("cma:optimizer")
+            }
+            if len(optimizer_attrs) == 0:
                 continue
 
-            # "cma:optimizer" is used until v2.2.0.
-            serialized_optimizer = trial.system_attrs.get("cma:optimizer", None)
+            # Check "cma:optimizer" key for backward compatibility.
+            serialized_optimizer = optimizer_attrs.get("cma:optimizer", None)
             if serialized_optimizer is None:
-                serialized_optimizer = ""
-                for i in range(len_optimizer_keys):
-                    key = "cma:optimizer:{}".format(i)
-                    serialized_optimizer += trial.system_attrs[key]
+                serialized_optimizer = _concat_optimizer_str(optimizer_attrs)
 
             n_restarts = trial.system_attrs.get("cma:n_restarts", 0)  # type: int
             return pickle.loads(bytes.fromhex(serialized_optimizer)), n_restarts
@@ -432,6 +426,24 @@ class CmaEsSampler(BaseSampler):
                 copied_t.value = value
                 complete_trials.append(copied_t)
         return complete_trials
+
+
+def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:
+    optimizer_len = len(optimizer_str)
+    attrs = {}
+    for i in range(math.ceil(optimizer_len / _SYSTEM_ATTR_MAX_LENGTH)):
+        start = i * _SYSTEM_ATTR_MAX_LENGTH
+        end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
+        attrs["cma:optimizer:{}".format(i)] = optimizer_str[start:end]
+    return attrs
+
+
+def _concat_optimizer_str(attrs: Dict[str, str]) -> str:
+    serialized_optimizer = ""
+    for i in range(len(attrs)):
+        key = "cma:optimizer:{}".format(i)
+        serialized_optimizer += attrs[key]
+    return serialized_optimizer
 
 
 def _to_cma_param(distribution: BaseDistribution, optuna_param: Any) -> float:
