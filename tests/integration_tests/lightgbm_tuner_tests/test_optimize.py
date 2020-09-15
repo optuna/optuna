@@ -946,7 +946,7 @@ class TestLightGBMTunerCV(object):
             for booster in best_booster.boosters:
                 assert booster.params["lambda_l1"] != unexpected_value
 
-        # The `model_dir` argument is None.
+        # If `return_cvbooster`==True, `model_dir` should not be None.
         with pytest.raises(ValueError) as excinfo:
             tuner3 = LightGBMTunerCV(
                 params,
