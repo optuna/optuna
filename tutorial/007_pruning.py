@@ -25,10 +25,11 @@ import optuna
 def objective(trial):
     iris = sklearn.datasets.load_iris()
     classes = list(set(iris.target))
-    train_x, valid_x, train_y, valid_y = \
-        sklearn.model_selection.train_test_split(iris.data, iris.target, test_size=0.25, random_state=0)
+    train_x, valid_x, train_y, valid_y = sklearn.model_selection.train_test_split(
+        iris.data, iris.target, test_size=0.25, random_state=0
+    )
 
-    alpha = trial.suggest_loguniform('alpha', 1e-5, 1e-1)
+    alpha = trial.suggest_loguniform("alpha", 1e-5, 1e-1)
     clf = sklearn.linear_model.SGDClassifier(alpha=alpha)
 
     for step in range(100):
@@ -43,6 +44,7 @@ def objective(trial):
             raise optuna.TrialPruned()
 
     return 1.0 - clf.score(valid_x, valid_y)
+
 
 ###################################################################################################
 # Set up the median stopping rule as the pruning condition.
