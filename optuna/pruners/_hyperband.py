@@ -9,6 +9,7 @@ from optuna.pruners._base import BasePruner
 from optuna.pruners._successive_halving import SuccessiveHalvingPruner
 from optuna.trial._state import TrialState
 
+
 _logger = logging.get_logger(__name__)
 
 
@@ -73,7 +74,7 @@ class HyperbandPruner(BasePruner):
             import optuna
 
             X, y = load_iris(return_X_y=True)
-            X_train, X_test, y_train, y_test = train_test_split(X, y)
+            X_train, X_valid, y_train, y_valid = train_test_split(X, y)
             classes = np.unique(y)
             n_train_iter = 100
 

@@ -5,8 +5,9 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
-from optuna._experimental import experimental
 from optuna import distributions
+from optuna import logging
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -14,9 +15,9 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna import logging
 from optuna.trial._base import BaseTrial
 from optuna.trial._state import TrialState
+
 
 _logger = logging.get_logger(__name__)
 
@@ -61,8 +62,10 @@ class FrozenTrial(BaseTrial):
 
             .. testcode::
 
-                import optuna
+                import copy
                 import datetime
+
+                import optuna
 
                 def objective(trial):
                     x = trial.suggest_uniform('x', -1, 1)
@@ -76,12 +79,13 @@ class FrozenTrial(BaseTrial):
                 study.optimize(objective, n_trials=3)
 
                 best_trial = study.best_trial
+                best_trial_copy = copy.deepcopy(best_trial)
 
                 # re-evaluate
-                objective(t)
+                objective(best_trial)
 
                 # the user attribute is overwritten by re-evaluation
-                assert t.user_attrs != best_trial.user_attrs
+                assert best_trial.user_attrs != best_trial_copy.user_attrs
 
     .. note::
         Please refer to :class:`~optuna.trial.Trial` for details of methods and properties.

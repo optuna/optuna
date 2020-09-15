@@ -11,9 +11,9 @@ from typing import Tuple
 import numpy as np
 
 import optuna
+from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
-from optuna import multi_objective
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
 
@@ -226,9 +226,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
                 # will be used.
                 if len(generation_to_runnings[generation]) == 0:
                     population_numbers = [t.number for t in population]
-                    study.set_system_attr(
-                        cache_key, (generation, population_numbers),
-                    )
+                    study.set_system_attr(cache_key, (generation, population_numbers))
 
             parent_generation = generation
             parent_population = population

@@ -58,7 +58,8 @@ class MedianPruner(PercentilePruner):
             will be postponed until a value is reported.
     """
 
-    def __init__(self, n_startup_trials=5, n_warmup_steps=0, interval_steps=1):
-        # type: (int, int, int) -> None
+    def __init__(
+        self, n_startup_trials: int = 5, n_warmup_steps: int = 0, interval_steps: int = 1
+    ) -> None:
 
         super(MedianPruner, self).__init__(50.0, n_startup_trials, n_warmup_steps, interval_steps)

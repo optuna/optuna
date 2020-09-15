@@ -1,13 +1,12 @@
 import os
 import sys
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
-
-from typing import Dict
-from typing import List
-from typing import Optional
 
 
 def get_version() -> str:
@@ -32,7 +31,7 @@ def get_install_requires() -> List[str]:
     return [
         "alembic",
         "cliff",
-        "cmaes>=0.5.1",
+        "cmaes>=0.6.0",
         "colorlog",
         "joblib",
         "numpy",
@@ -51,7 +50,7 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["black", "hacking", "mypy"],
+        "checking": ["black", "hacking", "isort", "mypy"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
@@ -94,22 +93,17 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite", "thop"]
+            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "thop", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
         + (["stable-baselines3>=0.7.0"] if (3, 5) < sys.version_info[:2] else [])
-        + (
-            ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
-            if (3, 5) < sys.version_info[:2] < (3, 8)
-            else []
-        )
-        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else [])
+        + (["allennlp==1.0.0", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (
             ["llvmlite<=0.31.0", "fsspec<0.8.0"] if (3, 5) == sys.version_info[:2] else []
         )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
         # Newer `fsspec` uses f-strings, which is not compatible with Python 3.5.
-        + (["dask[dataframe]", "dask-ml",] if sys.version_info[:2] < (3, 8) else [])
+        + (["dask[dataframe]", "dask-ml"] if sys.version_info[:2] < (3, 8) else [])
         + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
         "experimental": ["redis"],
         "testing": [
@@ -139,17 +133,12 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite"]
+            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
-        + (
-            ["allennlp==1.0.0", "fastai<2", "pytorch_lightning>=0.7.1"]
-            if (3, 5) < sys.version_info[:2] < (3, 8)
-            else []
-        )
-        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
-        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
+        + (["allennlp==1.0.0", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -181,17 +170,12 @@ def get_extras_require() -> Dict[str, List[str]]:
                 if sys.platform == "darwin"
                 else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
             )
-            + ["pytorch-ignite"]
+            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "skorch"]
             if (3, 5) < sys.version_info[:2]
             else []
         )
-        + (
-            ["allennlp==1.0.0", "fastai<2", "pytorch-lightning>=0.7.1"]
-            if (3, 5) < sys.version_info[:2] < (3, 8)
-            else []
-        )
-        + (["catalyst"] if (3, 5) < sys.version_info[:2] else [])
-        + (["pytorch-lightning>=0.7.2"] if (3, 8) == sys.version_info[:2] else []),
+        + (["allennlp==1.0.0", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
+        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
     }
 
     return requirements
@@ -222,6 +206,7 @@ setup(
             "storages/_rdb/alembic.ini",
             "storages/_rdb/alembic/*.*",
             "storages/_rdb/alembic/versions/*.*",
+            "py.typed",
         ]
     },
     python_requires=">=3.5",

@@ -23,6 +23,7 @@ import torch
 import optuna
 from optuna.integration import AllenNLPPruningCallback
 
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from subsample_dataset_reader import SubsampleDatasetReader  # NOQA
 
@@ -64,7 +65,7 @@ def create_model(vocab, trial):
     num_filters = trial.suggest_int("num_filters", 32, 128)
 
     embedding = allennlp.modules.Embedding(
-        embedding_dim=embedding_dim, trainable=True, vocab=vocab,
+        embedding_dim=embedding_dim, trainable=True, vocab=vocab
     )
 
     encoder = allennlp.modules.seq2vec_encoders.CnnEncoder(
@@ -76,7 +77,7 @@ def create_model(vocab, trial):
 
     embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder({"tokens": embedding})
     model = allennlp.models.BasicClassifier(
-        text_field_embedder=embedder, seq2vec_encoder=encoder, dropout=dropout, vocab=vocab,
+        text_field_embedder=embedder, seq2vec_encoder=encoder, dropout=dropout, vocab=vocab
     )
 
     return model

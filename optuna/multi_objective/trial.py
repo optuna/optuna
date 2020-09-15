@@ -6,13 +6,14 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
-from optuna._experimental import experimental
-from optuna.distributions import BaseDistribution
 from optuna import multi_objective
-from optuna.study import StudyDirection
+from optuna._experimental import experimental
+from optuna._study_direction import StudyDirection
+from optuna.distributions import BaseDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
+
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
 
@@ -85,9 +86,7 @@ class MultiObjectiveTrial(object):
 
         return self._trial.suggest_discrete_uniform(name, low, high, q)
 
-    def suggest_int(
-        self, name: str, low: int, high: int, step: int = 1, log: bool = False,
-    ) -> int:
+    def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         """Suggest a value for the integer parameter.
 
         Please refer to the documentation of :func:`optuna.trial.Trial.suggest_int`

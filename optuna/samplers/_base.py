@@ -1,14 +1,10 @@
 import abc
+from typing import Any
+from typing import Dict
 
-from optuna import type_checking
-
-if type_checking.TYPE_CHECKING:
-    from typing import Any  # NOQA
-    from typing import Dict  # NOQA
-
-    from optuna.distributions import BaseDistribution  # NOQA
-    from optuna.study import Study  # NOQA
-    from optuna.trial import FrozenTrial  # NOQA
+from optuna.distributions import BaseDistribution
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 
 
 class BaseSampler(object, metaclass=abc.ABCMeta):
@@ -44,8 +40,9 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def infer_relative_search_space(self, study, trial):
-        # type: (Study, FrozenTrial) -> Dict[str, BaseDistribution]
+    def infer_relative_search_space(
+        self, study: Study, trial: FrozenTrial
+    ) -> Dict[str, BaseDistribution]:
         """Infer the search space that will be used by relative sampling in the target trial.
 
         This method is called right before :func:`~optuna.samplers.BaseSampler.sample_relative`
@@ -71,8 +68,9 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def sample_relative(self, study, trial, search_space):
-        # type: (Study, FrozenTrial, Dict[str, BaseDistribution]) -> Dict[str, Any]
+    def sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
         """Sample parameters in a given search space.
 
         This method is called once at the beginning of each trial, i.e., right before the
@@ -102,8 +100,13 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def sample_independent(self, study, trial, param_name, param_distribution):
-        # type: (Study, FrozenTrial, str, BaseDistribution) -> Any
+    def sample_independent(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        param_name: str,
+        param_distribution: BaseDistribution,
+    ) -> Any:
         """Sample a parameter for a given distribution.
 
         This method is called only for the parameters not contained in the search space returned

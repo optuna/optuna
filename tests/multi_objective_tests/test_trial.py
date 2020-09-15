@@ -6,8 +6,8 @@ from typing import Tuple
 import pytest
 
 import optuna
+from optuna._study_direction import StudyDirection
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
-from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
 
@@ -148,7 +148,7 @@ def test_dominates() -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
     def create_trial(
-        values: List[float], state: TrialState = TrialState.COMPLETE,
+        values: List[float], state: TrialState = TrialState.COMPLETE
     ) -> FrozenMultiObjectiveTrial:
         n_objectives = len(values)
         trial = optuna.trial.FrozenTrial(

@@ -11,17 +11,17 @@ from unittest.mock import patch
 import pytest
 
 import optuna
+from optuna._study_direction import StudyDirection
+from optuna._study_summary import StudySummary
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import _CachedStorage
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
-from optuna.study import StudyDirection
-from optuna.study import StudySummary
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -92,8 +92,7 @@ def test_create_new_study_unique_id(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_create_new_study_with_name(storage_mode):
-    # type: (str) -> None
+def test_create_new_study_with_name(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
 
@@ -150,8 +149,7 @@ def test_delete_study_after_create_multiple_studies(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
-    # type: (str) -> None
+def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
 
@@ -174,8 +172,7 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode):
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_study_id_from_trial_id(storage_mode):
-    # type: (str) -> None
+def test_get_study_id_from_trial_id(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
 
@@ -373,7 +370,7 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
         params={"x": 0.5},
         distributions={"x": UniformDistribution(0, 1)},
         user_attrs={"foo": "bar"},
-        system_attrs={"baz": 123,},
+        system_attrs={"baz": 123},
         intermediate_values={1: 10, 2: 100, 3: 1000},
         number=55,  # This entry is ignored.
         trial_id=-1,  # dummy value (unused).
