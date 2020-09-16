@@ -54,6 +54,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
+            "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
             "scikit-learn>=0.19.0,<0.23.0",
@@ -117,6 +118,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "cma",
             "fakeredis",
             "lightgbm",
+            "matplotlib>=3.0.0",
             "mlflow",
             "mpi4py",
             "mxnet",
@@ -143,6 +145,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
+            "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
