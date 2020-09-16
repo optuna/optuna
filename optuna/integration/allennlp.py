@@ -391,9 +391,7 @@ class AllenNLPPruningCallback(EpochCallback):
     """
 
     def __init__(
-        self,
-        trial: Optional[optuna.trial.Trial] = None,
-        monitor: Optional[str] = None,
+        self, trial: Optional[optuna.trial.Trial] = None, monitor: Optional[str] = None,
     ):
         _imports.check()
 
