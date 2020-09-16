@@ -257,7 +257,9 @@ def test_allennlp_pruning_callback_with_invalid_storage() -> None:
             return executor.run()
 
         study = optuna.create_study(
-            direction="maximize", pruner=optuna.pruners.HyperbandPruner(), storage=None,
+            direction="maximize",
+            pruner=optuna.pruners.HyperbandPruner(),
+            storage=None,
         )
 
         with pytest.raises(RuntimeError):
@@ -298,7 +300,7 @@ def test_allennlp_pruning_callback_with_executor(
     )
 
     def run_allennlp_executor(pruner: optuna.pruners.BasePruner) -> None:
-        study = optuna.create_study(direction="maximize", pruner=pruner, storage=storage,)
+        study = optuna.create_study(direction="maximize", pruner=pruner, storage=storage)
         trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
         trial.suggest_float("DROPOUT", 0.0, 0.5)
         executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, serialization_dir)
@@ -336,7 +338,7 @@ def test_allennlp_pruning_callback_with_invalid_executor() -> None:
         serialization_dir = os.path.join(tmp_dir, "allennlp")
         pruner = SomeNewPruner()
 
-        study = optuna.create_study(direction="maximize", pruner=pruner, storage=storage,)
+        study = optuna.create_study(direction="maximize", pruner=pruner, storage=storage)
         trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
         trial.suggest_float("DROPOUT", 0.0, 0.5)
 
