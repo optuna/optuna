@@ -8,6 +8,7 @@ import pytest
 
 import optuna
 
+
 _STUDY_NAME = "_test_multiprocess"
 
 

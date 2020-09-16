@@ -1,13 +1,12 @@
 import os
 import sys
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
-
-from typing import Dict
-from typing import List
-from typing import Optional
 
 
 def get_version() -> str:
@@ -51,10 +50,11 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["black", "hacking", "mypy"],
+        "checking": ["black", "hacking", "isort", "mypy"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
+            "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
             "scikit-learn>=0.19.0,<0.23.0",
@@ -87,25 +87,28 @@ def get_extras_require() -> Dict[str, List[str]]:
             "keras",
             "tensorflow>=2.0.0",
             "tensorflow-datasets",
+            "pytorch-ignite",
+            "pytorch-lightning>=0.8.1",
+            "thop",
+            "skorch",
+            "stable-baselines3>=0.7.0",
+            "catalyst",
         ]
         + (
-            (
-                ["torch==1.6.0", "torchvision==0.7.0"]
-                if sys.platform == "darwin"
-                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
-            )
-            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "thop", "skorch"]
-            if (3, 5) < sys.version_info[:2]
-            else []
+            ["torch==1.6.0", "torchvision==0.7.0"]
+            if sys.platform == "darwin"
+            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
         )
-        + (["stable-baselines3>=0.7.0"] if (3, 5) < sys.version_info[:2] else [])
-        + (["allennlp==1.0.0", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
         + (
-            ["llvmlite<=0.31.0", "fsspec<0.8.0"] if (3, 5) == sys.version_info[:2] else []
-        )  # Newer `llvmlite` is not distributed with wheels for Python 3.5.
-        # Newer `fsspec` uses f-strings, which is not compatible with Python 3.5.
-        + (["dask[dataframe]", "dask-ml"] if sys.version_info[:2] < (3, 8) else [])
-        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
+            [
+                "allennlp==1.0.0",
+                "fastai<2",
+                "dask[dataframe]",
+                "dask-ml",
+            ]
+            if sys.version_info[:2] < (3, 8)
+            else []
+        ),
         "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -115,6 +118,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "cma",
             "fakeredis",
             "lightgbm",
+            "matplotlib>=3.0.0",
             "mlflow",
             "mpi4py",
             "mxnet",
@@ -127,22 +131,21 @@ def get_extras_require() -> Dict[str, List[str]]:
             "keras",
             "tensorflow",
             "tensorflow-datasets",
+            "pytorch-ignite",
+            "pytorch-lightning>=0.8.1",
+            "skorch",
+            "catalyst",
         ]
         + (
-            (
-                ["torch==1.6.0", "torchvision==0.7.0"]
-                if sys.platform == "darwin"
-                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
-            )
-            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "skorch"]
-            if (3, 5) < sys.version_info[:2]
-            else []
+            ["torch==1.6.0", "torchvision==0.7.0"]
+            if sys.platform == "darwin"
+            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
         )
-        + (["allennlp==1.0.0", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
-        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
+        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
+            "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
@@ -164,19 +167,17 @@ def get_extras_require() -> Dict[str, List[str]]:
             "keras",
             "tensorflow",
             "tensorflow-datasets",
+            "pytorch-ignite",
+            "pytorch-lightning>=0.8.1",
+            "skorch",
+            "catalyst",
         ]
         + (
-            (
-                ["torch==1.6.0", "torchvision==0.7.0"]
-                if sys.platform == "darwin"
-                else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
-            )
-            + ["pytorch-ignite", "pytorch-lightning>=0.8.1", "skorch"]
-            if (3, 5) < sys.version_info[:2]
-            else []
+            ["torch==1.6.0", "torchvision==0.7.0"]
+            if sys.platform == "darwin"
+            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
         )
-        + (["allennlp==1.0.0", "fastai<2"] if (3, 5) < sys.version_info[:2] < (3, 8) else [])
-        + (["catalyst"] if (3, 5) < sys.version_info[:2] else []),
+        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
     }
 
     return requirements
@@ -210,7 +211,7 @@ setup(
             "py.typed",
         ]
     },
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     install_requires=get_install_requires(),
     tests_require=get_tests_require(),
     extras_require=get_extras_require(),
@@ -232,7 +233,6 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
