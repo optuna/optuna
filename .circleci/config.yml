@@ -43,7 +43,7 @@ jobs:
           name: black
           command: |
             . venv/bin/activate
-            black . --check
+            black . --check --diff
 
       - run:
           name: flake8
