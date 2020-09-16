@@ -243,6 +243,28 @@ def test_allennlp_pruning_callback() -> None:
         assert study.trials[0].value == 1.0
 
 
+def test_allennlp_pruning_callback_with_invalid_storage() -> None:
+    input_config_file = (
+        "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
+    )
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        def objective(trial: optuna.Trial) -> float:
+            trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+            trial.suggest_float("DROPOUT", 0.0, 0.5)
+            executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, tmp_dir)
+            return executor.run()
+
+        study = optuna.create_study(
+            direction="maximize",
+            pruner=optuna.pruners.HyperbandPruner(),
+            storage=None,
+        )
+
+        with pytest.raises(RuntimeError):
+            study.optimize(objective)
+
+
 @pytest.mark.parametrize(
     "pruner_class,pruner_kwargs",
     [

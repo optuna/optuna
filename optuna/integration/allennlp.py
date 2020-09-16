@@ -405,7 +405,7 @@ class AllenNLPPruningCallback(EpochCallback):
             monitor = environment_variables["monitor"]
             storage = environment_variables["storage"]
 
-            if study_name is None or trial_id is None or monitor is None:
+            if study_name is None or trial_id is None or monitor is None or storage is None:
                 message = (
                     "Fail to load study. Perhaps you attempt to use `AllenNLPPruningCallback`"
                     " without `AllenNLPExecutor`. If you want to use a callback"
@@ -416,11 +416,11 @@ class AllenNLPPruningCallback(EpochCallback):
                 raise RuntimeError(message)
 
             else:
-                # If `stoage` is `None` despite `study_name`, `trial_id`,
+                # If `stoage` is empty despite `study_name`, `trial_id`,
                 # and `monitor` are not `None`, users attempt to use `AllenNLPPruningCallback`
                 # with `AllenNLPExecutor` and in-memory storage.
                 # `AllenNLPruningCallback` needs RDB or Redis storages to work.
-                if storage is None:
+                if storage == "":
                     message = (
                         "If you want to use AllenNLPExecutor and AllenNLPPruningCallback,"
                         " you have to use RDB or Redis storage."
