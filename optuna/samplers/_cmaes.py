@@ -296,7 +296,11 @@ class CmaEsSampler(BaseSampler):
                     search_space, ordered_keys, population_size=popsize, randomize_start_point=True
                 )
 
-            self._store_optimizer(study._storage, trial._trial_id, optimizer)
+            # Store optimizer
+            optimizer_str = pickle.dumps(optimizer).hex()
+            optimizer_attrs = _split_optimizer_str(optimizer_str)
+            for key in optimizer_attrs:
+                study._storage.set_trial_system_attr(trial._trial_id, key, optimizer_attrs[key])
 
         # Caution: optimizer should update its seed value
         seed = self._cma_rng.randint(1, 2 ** 16) + trial.number
@@ -311,12 +315,6 @@ class CmaEsSampler(BaseSampler):
             k: _to_optuna_param(search_space[k], p) for k, p in zip(ordered_keys, params)
         }
         return external_values
-
-    def _store_optimizer(self, storage: BaseStorage, trial_id: int, optimizer: CMA) -> None:
-        optimizer_str = pickle.dumps(optimizer).hex()
-        optimizer_attrs = _split_optimizer_str(optimizer_str)
-        for key in optimizer_attrs:
-            storage.set_trial_system_attr(trial_id, key, optimizer_attrs[key])
 
     def _restore_optimizer(
         self,
@@ -438,11 +436,11 @@ def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:
     return attrs
 
 
-def _concat_optimizer_str(attrs: Dict[str, str]) -> str:
+def _concat_optimizer_str(optimizer_attrs: Dict[str, str]) -> str:
     serialized_optimizer = ""
-    for i in range(len(attrs)):
+    for i in range(len(optimizer_attrs)):
         key = "cma:optimizer:{}".format(i)
-        serialized_optimizer += attrs[key]
+        serialized_optimizer += optimizer_attrs[key]
     return serialized_optimizer
 
 

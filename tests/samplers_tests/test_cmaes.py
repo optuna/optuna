@@ -267,13 +267,13 @@ def test_restore_optimizer_from_substrings() -> None:
 @pytest.mark.parametrize(
     "dummy_optimizer_str,attr_len",
     [
-        ("0123", 1),
-        ("01234567", 1),
-        ("01234567890123456789", 3),
+        ("012", 1),
+        ("01234", 1),
+        ("0123456789012", 3),
     ],
 )
 def test_split_and_concat_optimizer_string(dummy_optimizer_str: str, attr_len: int) -> None:
-    with patch("optuna.samplers._cmaes._SYSTEM_ATTR_MAX_LENGTH", 8):
+    with patch("optuna.samplers._cmaes._SYSTEM_ATTR_MAX_LENGTH", 5):
         attrs = _split_optimizer_str(dummy_optimizer_str)
         assert len(attrs) == attr_len
         actual = _concat_optimizer_str(attrs)
