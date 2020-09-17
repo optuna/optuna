@@ -16,8 +16,8 @@ from typing import Union
 import warnings
 
 import numpy as np
-import tqdm
 from packaging import version
+import tqdm
 
 import optuna
 from optuna._deprecated import deprecated
@@ -1020,6 +1020,10 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         :meth: `~optuna.integration.lightgbm.LightGBMTunerCV.__init__`
         when you resume tuning or you run tuning in parallel.
         """
+        if self.lgbm_kwargs.get("return_cvbooster") is not True:
+            raise ValueError(
+                "LightGBMTunerCV requires `return_cvbooster=True` for method `get_best_booster()`."
+            )
         if self._best_booster_with_trial_number is not None:
             if self._best_booster_with_trial_number[1] == self.study.best_trial.number:
                 return self._best_booster_with_trial_number[0]
