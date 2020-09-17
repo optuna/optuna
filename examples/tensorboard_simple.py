@@ -1,6 +1,7 @@
+import tensorflow as tf
+
 import optuna
 from optuna.integration.tensorboard import TensorBoardCallback
-import tensorflow as tf
 
 
 fashion_mnist = tf.keras.datasets.fashion_mnist

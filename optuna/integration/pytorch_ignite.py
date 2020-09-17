@@ -1,6 +1,7 @@
 import optuna
 from optuna.trial import Trial
 
+
 with optuna._imports.try_import() as _imports:
     from ignite.engine import Engine
 
