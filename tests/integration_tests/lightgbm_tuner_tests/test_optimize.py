@@ -925,9 +925,9 @@ class TestLightGBMTunerCV(object):
         assert callback_mock.call_count == 10
 
     @pytest.mark.parametrize(
-        "model_dir, return_cvbooster", [(True, True), (None, True), (True, False), (None, False)]
+        "model_dir, return_cvbooster", [(True, True), (False, True), (True, False), (False, False)]
     )
-    def test_get_best_booster(self, model_dir: bool, return_cvbooster: bool) -> None:
+    def test_get_best_booster(self, model_dir: Optional[str], return_cvbooster: bool) -> None:
         unexpected_value = 20  # out of scope.
 
         params = {"verbose": -1, "lambda_l1": unexpected_value}  # type: Dict
@@ -953,13 +953,15 @@ class TestLightGBMTunerCV(object):
         else:
             with pytest.raises(ValueError) as excinfo:
                 with TemporaryDirectory() as tmpdir:
-                    if model_dir is not None:
-                        model_dir = tmpdir
+                    if model_dir is False:
+                        mod_dir = tmpdir
+                    else:
+                        mod_dir = None
                     tuner2 = LightGBMTunerCV(
                         params,
                         dataset,
                         study=study,
-                        model_dir=model_dir,
+                        model_dir=mod_dir,
                         return_cvbooster=return_cvbooster,
                     )
                     with mock.patch.object(
