@@ -953,7 +953,7 @@ class TestLightGBMTunerCV(object):
         else:
             with pytest.raises(ValueError) as excinfo:
                 with TemporaryDirectory() as tmpdir:
-                    if model_dir is False:
+                    if model_dir is True:
                         mod_dir = tmpdir
                     else:
                         mod_dir = None
