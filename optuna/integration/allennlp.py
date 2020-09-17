@@ -27,7 +27,7 @@ if _imports.is_successful():
 else:
     # I disable mypy here since `allennlp.training.EpochCallback` is a subclass of `Registrable`
     # (https://docs.allennlp.org/master/api/training/trainer/#epochcallback) but `EpochCallback`
-    # defined here is not `Registrable`, which causes a mypy checking feailure.
+    # defined here is not `Registrable`, which causes a mypy checking failure.
     class EpochCallback:  # type: ignore
         """Stub for EpochCallback."""
 
