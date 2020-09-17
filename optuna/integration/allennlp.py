@@ -232,10 +232,14 @@ class AllenNLPExecutor(object):
     See the examples of `objective function <https://github.com/optuna/optuna/blob/
     master/examples/allennlp/allennlp_jsonnet.py>`_.
 
-    From Optuna v2.1.0, users have to cast their parameters by using methods in Jsonnet.
-    Call ``std.parseInt`` for integer, or ``std.parseJson`` for floating point.
-    Please see the `example configuration <https://github.com/optuna/optuna/blob/master/
-    examples/allennlp/classifier.jsonnet>`_.
+    You can also see the tutorial of our AllenNLP integration on
+    `AllenNLP Guide <https://guide.allennlp.org/hyperparameter-optimization>`_.
+
+    .. note::
+        From Optuna v2.1.0, users have to cast their parameters by using methods in Jsonnet.
+        Call ``std.parseInt`` for integer, or ``std.parseJson`` for floating point.
+        Please see the `example configuration <https://github.com/optuna/optuna/blob/master/
+        examples/allennlp/classifier.jsonnet>`_.
 
     .. note::
         In :class:`~optuna.integration.AllenNLPExecutor`,
@@ -368,6 +372,9 @@ class AllenNLPPruningCallback(EpochCallback):
     See `the example <https://github.com/optuna/optuna/blob/master/
     examples/allennlp/allennlp_simple.py>`__
     if you want to add a proning callback which observes a metric.
+
+    You can also see the tutorial of our AllenNLP integration on
+    `AllenNLP Guide <https://guide.allennlp.org/hyperparameter-optimization>`_.
 
     .. note::
         When :class:`~optuna.integration.AllenNLPPruningCallback` is instantiated in Python script,
