@@ -41,7 +41,7 @@ else:
 
             """
 
-            def wrapper(subclass: Any, *args: Any, **kwargs: Any) -> None:
+            def wrapper(subclass: Any, *args: Any, **kwargs: Any) -> Any:
                 return subclass
 
             return wrapper
