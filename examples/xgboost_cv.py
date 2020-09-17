@@ -1,5 +1,5 @@
 """
-Optuna example that performs cross-validation for cancer dataset using XGBoost.
+Optuna example that optimizes a classifier configuration for cancer dataset using XGBoost.
 
 In this example, we optimize the accuracy of cancer detection using the XGBoost. The accuracy is
 estimated by cross-validation. We optimize both the choice of booster model and their
