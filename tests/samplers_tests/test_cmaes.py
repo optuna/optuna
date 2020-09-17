@@ -12,7 +12,7 @@ import pytest
 
 import optuna
 from optuna import create_trial
-from optuna.samplers._cmaes import _concat_optimizer_str
+from optuna.samplers._cmaes import _concat_optimizer_attrs
 from optuna.samplers._cmaes import _initialize_sigma0
 from optuna.samplers._cmaes import _initialize_x0
 from optuna.samplers._cmaes import _initialize_x0_randomly
@@ -269,12 +269,12 @@ def test_restore_optimizer_from_substrings() -> None:
     [
         ("012", 1),
         ("01234", 1),
-        ("0123456789012", 3),
+        ("012345", 2),
     ],
 )
 def test_split_and_concat_optimizer_string(dummy_optimizer_str: str, attr_len: int) -> None:
     with patch("optuna.samplers._cmaes._SYSTEM_ATTR_MAX_LENGTH", 5):
         attrs = _split_optimizer_str(dummy_optimizer_str)
         assert len(attrs) == attr_len
-        actual = _concat_optimizer_str(attrs)
+        actual = _concat_optimizer_attrs(attrs)
         assert dummy_optimizer_str == actual

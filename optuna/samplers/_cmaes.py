@@ -23,7 +23,8 @@ from optuna.trial import TrialState
 _logger = logging.get_logger(__name__)
 
 _EPS = 1e-10
-_SYSTEM_ATTR_MAX_LENGTH = 2000
+# The value of system_attrs must be less than 2046 characters on RDBStorage.
+_SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
 class CmaEsSampler(BaseSampler):
@@ -330,12 +331,12 @@ class CmaEsSampler(BaseSampler):
                 continue
 
             # Check "cma:optimizer" key for backward compatibility.
-            serialized_optimizer = optimizer_attrs.get("cma:optimizer", None)
-            if serialized_optimizer is None:
-                serialized_optimizer = _concat_optimizer_str(optimizer_attrs)
+            optimizer_str = optimizer_attrs.get("cma:optimizer", None)
+            if optimizer_str is None:
+                optimizer_str = _concat_optimizer_attrs(optimizer_attrs)
 
             n_restarts = trial.system_attrs.get("cma:n_restarts", 0)  # type: int
-            return pickle.loads(bytes.fromhex(serialized_optimizer)), n_restarts
+            return pickle.loads(bytes.fromhex(optimizer_str)), n_restarts
         return None, 0
 
     def _init_optimizer(
@@ -435,12 +436,12 @@ def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:
     return attrs
 
 
-def _concat_optimizer_str(optimizer_attrs: Dict[str, str]) -> str:
-    serialized_optimizer = ""
+def _concat_optimizer_attrs(optimizer_attrs: Dict[str, str]) -> str:
+    optimizer_str = ""
     for i in range(len(optimizer_attrs)):
         key = "cma:optimizer:{}".format(i)
-        serialized_optimizer += optimizer_attrs[key]
-    return serialized_optimizer
+        optimizer_str += optimizer_attrs[key]
+    return optimizer_str
 
 
 def _to_cma_param(distribution: BaseDistribution, optuna_param: Any) -> float:
