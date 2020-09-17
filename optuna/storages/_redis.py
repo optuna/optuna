@@ -40,17 +40,19 @@ class RedisStorage(BaseStorage):
 
         .. code::
 
-            >>> import optuna
-            >>>
-            >>> def objective(trial):
-            >>>     ...
-            >>>
-            >>> storage = optuna.storages.RedisStorage(
-            >>>     url='redis://passwd@localhost:port/db',
-            >>> )
-            >>>
-            >>> study = optuna.create_study(storage=storage)
-            >>> study.optimize(objective)
+            import optuna
+
+
+            def objective(trial):
+                ...
+
+
+            storage = optuna.storages.RedisStorage(
+                url='redis://passwd@localhost:port/db',
+            )
+
+            study = optuna.create_study(storage=storage)
+            study.optimize(objective)
 
     Args:
         url: URL of the redis storage, password and db are optional. (ie: redis://localhost:6379)
