@@ -67,6 +67,7 @@ class RedisStorage(BaseStorage):
 
         _imports.check()
 
+        self._url = url
         self._redis = redis.Redis.from_url(url)
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
