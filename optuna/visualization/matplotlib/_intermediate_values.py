@@ -15,6 +15,7 @@ def plot_intermediate_values(study: Study) -> Axes:
     """Plot intermediate values of all trials in a study with Matplotlib.
 
     .. seealso::  optuna.visualization.plot_intermediate_values
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their intermediate
