@@ -7,15 +7,18 @@ fi
 if [[ ! $(echo $res_pip_list | grep flake8) ]] ; then
   pip install flake8
 fi
+if [[ ! $(echo $res_pip_list | grep isort) ]] ; then
+  pip install isort
+fi
 if [[ ! $(echo $res_pip_list | grep mypy) ]] ; then
   pip install mypy
 fi
 
-black_update=0
+update=0
 while getopts "u" OPT
 do
   case $OPT in
-    u) black_update=1
+    u) update=1
        ;;
     *) ;;
   esac
@@ -23,7 +26,7 @@ done
 
 res_black=$(black . --check 2>&1)
 if [[ $(echo $res_black | grep reformatted) ]] ; then
-  if [ $black_update == 1 ] ; then
+  if [ $update == 1 ] ; then
     echo "Failed with black. The code will be formatted by black."
     black .
   else
@@ -42,6 +45,20 @@ if [[ $res_flake8 ]] ; then
   exit 1
 fi
 echo "Success in flake8."
+
+res_isort=$(isort . --check 2>&1)
+if [[ $(echo $res_isort | grep ERROR) ]] ; then
+  if [ $update == 1 ] ; then
+    echo "Failed with isort. The code will be formatted by isort."
+    isort .
+  else
+    echo "Failed with isort."
+    echo "$res_isort"
+    exit 1
+  fi
+else
+  echo "Success in isort."
+fi
 
 res_mypy=$(mypy .)
 if [[ ! $(echo $res_mypy | grep Success) ]] ; then
