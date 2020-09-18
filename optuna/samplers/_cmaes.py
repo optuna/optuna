@@ -437,11 +437,9 @@ def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:
 
 
 def _concat_optimizer_attrs(optimizer_attrs: Dict[str, str]) -> str:
-    optimizer_str = ""
-    for i in range(len(optimizer_attrs)):
-        key = "cma:optimizer:{}".format(i)
-        optimizer_str += optimizer_attrs[key]
-    return optimizer_str
+    return "".join(
+        optimizer_attrs["cma:optimizer:{}".format(i)] for i in range(len(optimizer_attrs))
+    )
 
 
 def _to_cma_param(distribution: BaseDistribution, optuna_param: Any) -> float:
