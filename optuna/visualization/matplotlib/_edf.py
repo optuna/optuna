@@ -46,7 +46,7 @@ def _get_edf_plot(studies: List[Study]) -> Axes:
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.set_title("Empirical Distribution Function Plot")
     ax.set_xlabel("Objective Value")
     ax.set_ylabel("Cumulative Probability")
