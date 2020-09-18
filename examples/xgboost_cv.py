@@ -1,18 +1,11 @@
 """
-Optuna example that performs Cross Validation for cancer dataset using XGBoost.
+Optuna example that optimizes a classifier configuration for cancer dataset using XGBoost.
 
-In this example, we perform cross-validation to accuracy of cancer detection
-using XGBoost. We optimize both the choice of booster model and their hyper
-parameters.
-
-We have following way to execute this example:
-
-(1) Execute this code directly.
-    $ python xgboost_cv.py
-
+In this example, we optimize the accuracy of cancer detection using the XGBoost. The accuracy is
+estimated by cross-validation. We optimize both the choice of booster model and their
+hyperparameters.
 
 """
-
 
 import os
 import shutil
@@ -24,13 +17,9 @@ import xgboost as xgb
 import optuna
 
 
-# Set constants
 SEED = 108
 N_FOLDS = 3
 CV_RESULT_DIR = "./xgboost_cv_results"
-
-if not os.path.exists(CV_RESULT_DIR):
-    os.mkdir(CV_RESULT_DIR)
 
 
 # FYI: Objective functions can take additional arguments
@@ -40,7 +29,7 @@ def objective(trial):
     dtrain = xgb.DMatrix(data, label=target)
 
     param = {
-        "silent": 1,
+        "verbosity": 0,
         "objective": "binary:logistic",
         "eval_metric": "auc",
         "booster": trial.suggest_categorical("booster", ["gbtree", "gblinear", "dart"]),
@@ -84,14 +73,17 @@ def objective(trial):
 
 
 if __name__ == "__main__":
+    if not os.path.exists(CV_RESULT_DIR):
+        os.mkdir(CV_RESULT_DIR)
 
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=20, timeout=600)
+
+    print("Number of finished trials: ", len(study.trials))
     print("Best trial:")
     trial = study.best_trial
 
     print("  Value: {}".format(trial.value))
-
     print("  Params: ")
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
