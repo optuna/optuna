@@ -14,41 +14,7 @@ _logger = get_logger(__name__)
 def plot_intermediate_values(study: Study) -> Axes:
     """Plot intermediate values of all trials in a study with Matplotlib.
 
-    Example:
-
-        The following code snippet shows how to plot intermediate values.
-
-        .. testcode::
-
-            import optuna
-
-            def f(x):
-                return (x - 2) ** 2
-
-            def df(x):
-                return 2 * x - 4
-
-            def objective(trial):
-                lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
-
-                x = 3
-                for step in range(128):
-                    y = f(x)
-
-                    trial.report(y, step=step)
-                    if trial.should_prune():
-                        raise optuna.TrialPruned()
-
-                    gy = df(x)
-                    x -= gy * lr
-
-                return y
-
-            study = optuna.create_study()
-            study.optimize(objective, n_trials=16)
-
-            optuna.visualization.matplotlib.plot_intermediate_values(study)
-
+    .. seealso::  optuna.visualization.plot_intermediate_values
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their intermediate
