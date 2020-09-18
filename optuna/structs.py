@@ -4,10 +4,10 @@ from typing import Dict
 from typing import Optional
 import warnings
 
-from optuna._deprecated import deprecated
 from optuna import _study_direction
 from optuna import exceptions
 from optuna import trial
+from optuna._deprecated import deprecated
 
 
 _message = (

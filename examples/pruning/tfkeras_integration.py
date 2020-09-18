@@ -103,10 +103,6 @@ def objective(trial):
         callbacks=callbacks,
     )
 
-    # TODO(@sfujiwara): Investigate why the logger here is called twice.
-    # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.DEBUG)
-    # tf.compat.v1.logging.info('hello optuna')
-
     return history.history[monitor][-1]
 
 

@@ -1,6 +1,7 @@
 import optuna
 from optuna._imports import try_import
 
+
 with try_import() as _imports:
     import mxnet as mx
 
