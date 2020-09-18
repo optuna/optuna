@@ -79,7 +79,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> Axes:
             You can pass multiple studies if you want to compare those EDFs.
 
     Returns:
-        A :class:`matplotlib.figure.Figure` object.
+        A :class:`matplotlib.axes.Axes` object.
     """
 
     _imports.check()
