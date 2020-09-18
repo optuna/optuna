@@ -90,17 +90,20 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 
 [Integrations modules](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html), which allow pruning, or early stopping, of unpromising trials are available for the following libraries:
 
-* [XGBoost](./examples/pruning/xgboost_integration.py)
-* [LightGBM](./examples/pruning/lightgbm_integration.py)
+* [AllenNLP](./examples/allennlp)
+* [Catalyst](./examples/catalyst_simple.py)
+* [Catboost](./examples/catboost_simple.py)
 * [Chainer](./examples/pruning/chainer_integration.py)
+* [FastAI](./examples/fastai_simple.py)
 * [Keras](./examples/pruning/keras_integration.py)
-* [TensorFlow](./examples/pruning/tensorflow_estimator_integration.py)
-* [tf.keras](./examples/pruning/tfkeras_integration.py)
+* [LightGBM](./examples/pruning/lightgbm_integration.py)
 * [MXNet](./examples/pruning/mxnet_integration.py)
+* [PyTorch](./examples/pytorch_simple.py)
 * [PyTorch Ignite](./examples/pytorch_ignite_simple.py)
 * [PyTorch Lightning](./examples/pytorch_lightning_simple.py)
-* [FastAI](./examples/fastai_simple.py)
-* [AllenNLP](./examples/allennlp)
+* [TensorFlow](./examples/pruning/tensorflow_estimator_integration.py)
+* [tf.keras](./examples/pruning/tfkeras_integration.py)
+* [XGBoost](./examples/pruning/xgboost_integration.py)
 
 ## Installation
 
