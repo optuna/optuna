@@ -28,24 +28,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> Axes:
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
 
-    Example:
-
-        The following code snippet shows how to plot the parameter relationship as contour plot
-        with Matplotlib.
-
-        .. testcode::
-
-            import optuna
-
-            def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_categorical('y', [-1, 0, 1])
-                return x ** 2 + y
-
-            study = optuna.create_study()
-            study.optimize(objective, n_trials=10)
-
-            optuna.visualization.matplotlib.plot_contour(study, params=['x', 'y'])
+    .. seealso::  optuna.visualization.plot_contour
 
     Args:
         study:
