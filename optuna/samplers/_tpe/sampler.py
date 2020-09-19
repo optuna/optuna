@@ -140,10 +140,13 @@ class TPESampler(BaseSampler):
             and Efficient Hyperparameter Optimization at Scale
             <http://proceedings.mlr.press/v80/falkner18a.html>`_ for more details.
 
-            .. versionadded:: 2.2.0
-                This option is an experimental feature. The interface may change in newer
+            .. note::
+                Added in v2.2.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.2.0.
+        warn_independent_sampling:
+            If this is :obj:`True`, a warning message is emitted when
+            the value of a parameter is sampled by using an independent sampler.
     """
 
     def __init__(

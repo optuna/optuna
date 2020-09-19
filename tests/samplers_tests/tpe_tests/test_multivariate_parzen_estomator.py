@@ -8,7 +8,7 @@ from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParz
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 
 
-search_space = {
+SEARCH_SPACE = {
     "a": distributions.UniformDistribution(1.0, 100.0),
     "b": distributions.LogUniformDistribution(1.0, 100.0),
     "c": distributions.DiscreteUniformDistribution(1.0, 100.0, 3.0),
@@ -17,7 +17,7 @@ search_space = {
     "f": distributions.CategoricalDistribution(["x", "y", "z"]),
 }
 
-multivariate_samples = {
+MULTIVARIATE_SAMPLES = {
     "a": np.array([1.0]),
     "b": np.array([1.0]),
     "c": np.array([1.0]),
@@ -26,7 +26,7 @@ multivariate_samples = {
     "f": np.array([1]),
 }
 
-_precompute_sigmas0 = (
+_PRECOMPUTE_SIGMAS0 = (
     "optuna.samplers._tpe.multivariate_parzen_estimator."
     "_MultivariateParzenEstimator._precompute_sigmas0"
 )
@@ -43,8 +43,8 @@ def test_init_multivariate_parzen_estimator(consider_prior: bool) -> None:
         weights=lambda x: np.arange(x) + 1.0,
     )
 
-    with patch(_precompute_sigmas0, return_value=np.ones(1)):
-        mpe = _MultivariateParzenEstimator(multivariate_samples, search_space, parameters)
+    with patch(_PRECOMPUTE_SIGMAS0, return_value=np.ones(1)):
+        mpe = _MultivariateParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
 
     weights = np.array([1] + consider_prior * [1], dtype=float)
     weights /= weights.sum()
@@ -57,7 +57,7 @@ def test_init_multivariate_parzen_estimator(consider_prior: bool) -> None:
     assert mpe._low == low
     assert mpe._high == high
 
-    sigmas = {
+    expected_sigmas = {
         "a": [99.0] + consider_prior * [99.0],
         "b": [np.log(100.0)] + consider_prior * [np.log(100)],
         "c": [102.0] + consider_prior * [102.0],
@@ -65,7 +65,7 @@ def test_init_multivariate_parzen_estimator(consider_prior: bool) -> None:
         "e": [np.log(100.5) - np.log(0.5)] + consider_prior * [np.log(100.5) - np.log(0.5)],
         "f": None,
     }
-    mus = {
+    expected_mus = {
         "a": [1.0] + consider_prior * [50.5],
         "b": [np.log(1.0)] + consider_prior * [np.log(100) / 2.0],
         "c": [1.0] + consider_prior * [50.5],
@@ -73,25 +73,33 @@ def test_init_multivariate_parzen_estimator(consider_prior: bool) -> None:
         "e": [np.log(1.0)] + consider_prior * [(np.log(100.5) + np.log(0.5)) / 2.0],
         "f": None,
     }
-    categorical_weights = {
+    expected_categorical_weights = {
         "a": None,
         "b": None,
         "c": None,
         "d": None,
         "e": None,
-        "f": np.array([[0.25, 0.5, 0.25]] + consider_prior * [[1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]]),
+        "f": np.array([[0.2, 0.6, 0.2], [1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]])
+        if consider_prior
+        else np.array([[0.25, 0.5, 0.25]]),
     }
 
     for param_name, values in mpe._sigmas.items():
-        assert np.all(
-            np.equal(mpe._sigmas[param_name], sigmas[param_name])
-        ), 'parameter "{}"'.format(param_name)
-        assert np.all(np.equal(mpe._mus[param_name], mus[param_name])), "parameter: {}".format(
-            param_name
+        np.testing.assert_equal(
+            mpe._sigmas[param_name],
+            expected_sigmas[param_name],
+            err_msg='parameter "{}"'.format(param_name),
         )
-        assert np.all(
-            np.equal(mpe._categorical_weights[param_name], categorical_weights[param_name])
-        ), "parameter: {}".format(param_name)
+        np.testing.assert_equal(
+            mpe._mus[param_name],
+            expected_mus[param_name],
+            err_msg="parameter: {}".format(param_name),
+        )
+        np.testing.assert_equal(
+            mpe._categorical_weights[param_name],
+            expected_categorical_weights[param_name],
+            err_msg="parameter: {}".format(param_name),
+        )
 
 
 def test_sample_multivariate_parzen_estimator() -> None:
@@ -104,8 +112,8 @@ def test_sample_multivariate_parzen_estimator() -> None:
         weights=lambda x: np.arange(x) + 1.0,
     )
 
-    with patch(_precompute_sigmas0, return_value=1e-8 * np.ones(2)):
-        mpe = _MultivariateParzenEstimator(multivariate_samples, search_space, parameters)
+    with patch(_PRECOMPUTE_SIGMAS0, return_value=1e-8 * np.ones(2)):
+        mpe = _MultivariateParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
 
     # Test the shape of the samples.
     output_multivariate_samples = mpe.sample(np.random.RandomState(0), 3)
@@ -114,14 +122,17 @@ def test_sample_multivariate_parzen_estimator() -> None:
 
     # Test the values of the output.
     # As we set ``consider_prior`` = False and pre-computed sigma to be 1e-8,
-    # the samples almost equals to the input ``multivariate_samples``.
+    # the samples almost equals to the input ``MULTIVARIATE_SAMPLES``.
     output_multivariate_samples = mpe.sample(np.random.RandomState(0), 1)
     for param_name, samples in output_multivariate_samples.items():
         if samples.dtype == str:
             assert samples[0] == "y", "parameter {}".format(param_name)
         else:
-            assert np.allclose(samples, multivariate_samples[param_name]), "parameter {}".format(
-                param_name
+            np.testing.assert_almost_equal(
+                samples,
+                MULTIVARIATE_SAMPLES[param_name],
+                decimal=2,
+                err_msg="parameter {}".format(param_name),
             )
 
     # Test the output when the seeds are fixed.
@@ -138,10 +149,10 @@ def test_log_pdf_multivariate_parzen_estimator() -> None:
         weights=lambda x: np.arange(x) + 1.0,
     )
     # Parzen estimator almost becomes mixture of Dirac measures.
-    with patch(_precompute_sigmas0, return_value=1e-8 * np.ones(1)):
-        mpe = _MultivariateParzenEstimator(multivariate_samples, search_space, parameters)
+    with patch(_PRECOMPUTE_SIGMAS0, return_value=1e-8 * np.ones(1)):
+        mpe = _MultivariateParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
 
-    log_pdf = mpe.log_pdf(multivariate_samples)
+    log_pdf = mpe.log_pdf(MULTIVARIATE_SAMPLES)
     output_multivariate_samples = mpe.sample(np.random.RandomState(0), 100)
     output_log_pdf = mpe.log_pdf(output_multivariate_samples)
     # The likelihood of the previous observations is a positive value, and that of the points
