@@ -1,9 +1,8 @@
+import math
 from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
-
-import math
 
 from optuna.logging import get_logger
 from optuna.study import Study
