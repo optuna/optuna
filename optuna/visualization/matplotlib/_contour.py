@@ -174,7 +174,12 @@ def _calculate_griddata(
 
         # Interpolate z-axis data on a grid with cubic interpolator.
         # TODO(ytknzw): Implement Plotly-like interpolation algorithm.
-        zi = griddata(np.column_stack((x_values, y_values)), z_values, (xi[None, :], yi[:, None]), method="cubic")
+        zi = griddata(
+            np.column_stack((x_values, y_values)),
+            z_values,
+            (xi[None, :], yi[:, None]),
+            method="cubic",
+        )
 
     return (
         xi,
