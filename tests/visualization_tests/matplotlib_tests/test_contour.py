@@ -41,7 +41,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
     assert figure.has_data() is False
 
     # Test with some trials.
-    study = prepare_study_with_trials()
+    study = prepare_study_with_trials(more_than_three=True)
 
     # Test ValueError due to wrong params.
     with pytest.raises(ValueError):
