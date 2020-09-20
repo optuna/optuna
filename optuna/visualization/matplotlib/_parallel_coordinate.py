@@ -71,11 +71,10 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
     cat_param_names = []
     cat_param_values = []
     cat_param_ticks = []
+    param_values = []
+    var_names = ["Objective Value"]
     for p_name in sorted_params:
-        values = []
-        for t in trials:
-            if p_name in t.params:
-                values.append(t.params[p_name])
+        values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
         try:
             tuple(map(float, values))
         except (TypeError, ValueError):
@@ -92,15 +91,8 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
         for i, v in enumerate(values):
             dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
 
-    param_values = []
-    var_names = ["Objective Value"]
-    for param_name in sorted_params:
-        param_values_trials = []
-        for t in trials:
-            if param_name in t.params:
-                param_values_trials.append(t.params[param_name])
-        var_names.append(param_name if len(param_name) < 20 else "{}...".format(param_name[:17]))
-        param_values.append(param_values_trials)
+        var_names.append(p_name if len(p_name) < 20 else "{}...".format(p_name[:17]))
+        param_values.append(values)
 
     # Draw multiple line plots and axes.
     # https://stackoverflow.com/a/50029441
