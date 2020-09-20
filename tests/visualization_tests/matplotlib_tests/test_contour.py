@@ -58,10 +58,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
             assert figure.has_data() is False
         elif len(params) == 2:
             # TODO(ytknzw): Add more specific assertion with the test case.
-            if params == ["param_a", "param_b"]:
-                assert figure.has_data() is False
-            elif params == ["param_b", "param_d"]:
-                assert figure.has_data() is True
+            assert figure.has_data() is True
     elif params is None:
         # TODO(ytknzw): Add more specific assertion with the test case.
         assert figure.shape == (len(study.best_params), len(study.best_params))
