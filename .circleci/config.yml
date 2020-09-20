@@ -43,13 +43,19 @@ jobs:
           name: black
           command: |
             . venv/bin/activate
-            black . --check
+            black . --check --diff
 
       - run:
           name: flake8
           command: |
             . venv/bin/activate
             flake8 .
+
+      - run:
+          name: isort
+          command: |
+            . venv/bin/activate
+            isort . --check --diff
 
       - run:
           name: mypy

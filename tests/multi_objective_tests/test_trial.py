@@ -6,8 +6,8 @@ from typing import Tuple
 import pytest
 
 import optuna
+from optuna._study_direction import StudyDirection
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
-from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
 

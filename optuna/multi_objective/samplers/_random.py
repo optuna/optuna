@@ -3,9 +3,9 @@ from typing import Dict
 from typing import Optional
 
 import optuna
+from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
-from optuna import multi_objective
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
 
@@ -41,6 +41,9 @@ class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
     def __init__(self, seed: Optional[int] = None) -> None:
         self._sampler = optuna.samplers.RandomSampler(seed=seed)
+
+    def reseed_rng(self) -> None:
+        self._sampler.reseed_rng()
 
     def infer_relative_search_space(
         self,

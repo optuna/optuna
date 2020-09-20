@@ -7,14 +7,14 @@ from typing import List  # NOQA
 from typing import Optional  # NOQA
 
 import optuna
-from optuna._experimental import experimental
-from optuna._imports import try_import
 from optuna import distributions
 from optuna import exceptions
-from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna._experimental import experimental
+from optuna._imports import try_import
+from optuna._study_direction import StudyDirection
+from optuna._study_summary import StudySummary
 from optuna.storages import BaseStorage
-from optuna.study import StudyDirection
-from optuna.study import StudySummary
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -40,17 +40,19 @@ class RedisStorage(BaseStorage):
 
         .. code::
 
-            >>> import optuna
-            >>>
-            >>> def objective(trial):
-            >>>     ...
-            >>>
-            >>> storage = optuna.storages.RedisStorage(
-            >>>     url='redis://passwd@localhost:port/db',
-            >>> )
-            >>>
-            >>> study = optuna.create_study(storage=storage)
-            >>> study.optimize(objective)
+            import optuna
+
+
+            def objective(trial):
+                ...
+
+
+            storage = optuna.storages.RedisStorage(
+                url='redis://passwd@localhost:port/db',
+            )
+
+            study = optuna.create_study(storage=storage)
+            study.optimize(objective)
 
     Args:
         url: URL of the redis storage, password and db are optional. (ie: redis://localhost:6379)
@@ -65,6 +67,7 @@ class RedisStorage(BaseStorage):
 
         _imports.check()
 
+        self._url = url
         self._redis = redis.Redis.from_url(url)
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
@@ -542,14 +545,6 @@ class RedisStorage(BaseStorage):
             return copy.deepcopy(trials)
         else:
             return trials
-
-    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
-
-        self._check_study_id(study_id)
-        if state is None:
-            return len(self.get_all_trials(study_id))
-
-        return len([t for t in self.get_all_trials(study_id) if t.state == state])
 
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         self._check_study_id(study_id)

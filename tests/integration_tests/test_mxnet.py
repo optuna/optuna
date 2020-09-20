@@ -1,8 +1,8 @@
+from typing import Union
+
 import mxnet as mx
 import numpy as np
 import pytest
-
-from typing import Union
 
 import optuna
 from optuna.integration.mxnet import MXNetPruningCallback
