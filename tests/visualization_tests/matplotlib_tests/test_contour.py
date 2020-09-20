@@ -3,14 +3,9 @@ from typing import Optional
 
 import pytest
 
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import LogUniformDistribution
 from optuna.study import create_study
-from optuna.study import StudyDirection
 from optuna.testing.visualization import prepare_study_with_trials
-from optuna.trial import create_trial
 from optuna.trial import Trial
-from optuna.visualization.matplotlib._contour import _generate_contour_subplot
 from optuna.visualization.matplotlib import plot_contour
 
 
