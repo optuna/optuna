@@ -6,6 +6,7 @@ import pytest
 
 import optuna
 
+
 MIN_RESOURCE = 1
 MAX_RESOURCE = 16
 REDUCTION_FACTOR = 2

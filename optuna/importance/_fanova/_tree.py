@@ -8,6 +8,7 @@ import numpy
 
 from optuna import type_checking
 
+
 if type_checking.TYPE_CHECKING:
     import sklearn.tree
 

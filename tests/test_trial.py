@@ -15,6 +15,8 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna import samplers
+from optuna import storages
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -22,17 +24,15 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna import samplers
-from optuna import storages
 from optuna.study import create_study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
-from optuna.trial._frozen import create_trial
 from optuna.trial import BaseTrial
 from optuna.trial import FixedTrial
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
+from optuna.trial._frozen import create_trial
 
 
 parametrize_storage = pytest.mark.parametrize(
