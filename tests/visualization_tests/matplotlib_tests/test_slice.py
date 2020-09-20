@@ -21,7 +21,9 @@ def test_plot_slice() -> None:
     # Test with a trial.
     # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_slice(study)
-    assert figure.has_data() is True
+    assert len(figure) == 2
+    assert figure[0].has_data() is True
+    assert figure[1].has_data() is True
 
     # Test with a trial to select parameter.
     # TODO(ytknzw): Add more specific assertion with the test case.
@@ -67,4 +69,6 @@ def test_plot_slice_log_scale() -> None:
     # Plot multiple parameters.
     # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_slice(study)
-    assert figure.has_data() is True
+    assert len(figure) == 2
+    assert figure[0].has_data() is True
+    assert figure[1].has_data() is True
