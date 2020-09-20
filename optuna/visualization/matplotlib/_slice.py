@@ -69,7 +69,6 @@ def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
 
     # Prepare data.
     obj_values = [t.value for t in trials]
-    trial_numbers = [t.number for t in trials]
 
     if n_params == 1:
         # Set up the graph style.
@@ -78,13 +77,7 @@ def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
 
         # Draw a scatter plot.
         sc = _generate_slice_subplot(
-            trials,
-            sorted_params[0],
-            axs,
-            cmap,
-            padding_ratio,
-            obj_values,  # type: ignore
-            trial_numbers,
+            trials, sorted_params[0], axs, cmap, padding_ratio, obj_values  # type: ignore
         )
     else:
         # Set up the graph style.
@@ -100,13 +93,7 @@ def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
         for i, param in enumerate(sorted_params):
             ax = axs[i]
             sc = _generate_slice_subplot(
-                trials,
-                param,
-                ax,
-                cmap,
-                padding_ratio,
-                obj_values,  # type: ignore
-                trial_numbers,
+                trials, param, ax, cmap, padding_ratio, obj_values  # type: ignore
             )
 
     axcb = fig.colorbar(sc, ax=axs)
@@ -122,9 +109,15 @@ def _generate_slice_subplot(
     cmap: Colormap,
     padding_ratio: float,
     obj_values: List[Union[int, float]],
-    trial_numbers: List[int],
 ) -> PathCollection:
-    x_values = [t.params[param] for t in trials if param in t.params]
+    x_values = []
+    y_values = []
+    trial_numbers = []
+    for t in trials:
+        if param in t.params:
+            x_values.append(t.params[param])
+            y_values.append(obj_values[t.number])
+            trial_numbers.append(t.number)
     ax.set(xlabel=param, ylabel="Objective Value")
     if _is_log_scale(trials, param):
         ax.set_xscale("log")
@@ -133,7 +126,7 @@ def _generate_slice_subplot(
     else:
         xlim = _calc_lim_with_padding(x_values, padding_ratio)
         ax.set_xlim(xlim[0], xlim[1])
-    sc = ax.scatter(x_values, obj_values, c=trial_numbers, cmap=cmap, edgecolors="grey")
+    sc = ax.scatter(x_values, y_values, c=trial_numbers, cmap=cmap, edgecolors="grey")
     ax.label_outer()
 
     return sc
