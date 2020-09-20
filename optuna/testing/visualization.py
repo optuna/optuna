@@ -1,5 +1,5 @@
-from optuna.distributions import UniformDistribution
 from optuna import Study
+from optuna.distributions import UniformDistribution
 from optuna.study import create_study
 from optuna.trial import create_trial
 

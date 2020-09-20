@@ -16,8 +16,8 @@ import allennlp
 from packaging import version
 
 import optuna
-from optuna.integration.allennlp import dump_best_config
 from optuna.integration import AllenNLPExecutor
+from optuna.integration.allennlp import dump_best_config
 
 
 # This path trick is used since this example is also
@@ -45,7 +45,11 @@ if __name__ == "__main__":
     if version.parse(allennlp.__version__) < version.parse("1.0.0"):
         raise RuntimeError("AllenNLP>=1.0.0 is required for this example.")
 
-    study = optuna.create_study(direction="maximize")
+    study = optuna.create_study(
+        direction="maximize",
+        storage="sqlite:///allennlp.db",
+        pruner=optuna.pruners.HyperbandPruner(),
+    )
     study.optimize(objective, n_trials=50, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))

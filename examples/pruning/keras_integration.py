@@ -25,6 +25,7 @@ from keras.models import Sequential
 import optuna
 from optuna.integration import KerasPruningCallback
 
+
 N_TRAIN_EXAMPLES = 3000
 N_VALID_EXAMPLES = 1000
 BATCHSIZE = 128

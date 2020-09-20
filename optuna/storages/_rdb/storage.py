@@ -16,24 +16,24 @@ import alembic.command
 import alembic.config
 import alembic.migration
 import alembic.script
+from sqlalchemy import orm
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import orm
 from sqlalchemy.sql import functions
 
 import optuna
 from optuna import distributions
+from optuna import version
+from optuna._study_direction import StudyDirection
+from optuna._study_summary import StudySummary
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._rdb import models
-from optuna.study import StudyDirection
-from optuna.study import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna import version
 
 
 _logger = optuna.logging.get_logger(__name__)
@@ -1042,16 +1042,6 @@ class RDBStorage(BaseStorage):
         self._commit(session)
 
         return self.get_trial(trial.trial_id)
-
-    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
-
-        session = self.scoped_session()
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        n_trials = models.TrialModel.count(session, study, state)
-
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
-        return n_trials
 
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         # Make sure that the given study exists.

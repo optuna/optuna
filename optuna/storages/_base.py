@@ -4,8 +4,9 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+from optuna._study_direction import StudyDirection
+from optuna._study_summary import StudySummary
 from optuna.distributions import BaseDistribution
-from optuna import study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -161,7 +162,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_study_direction(self, study_id: int, direction: study.StudyDirection) -> None:
+    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
         """Register an optimization problem direction to a study.
 
         Args:
@@ -234,7 +235,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_direction(self, study_id: int) -> study.StudyDirection:
+    def get_study_direction(self, study_id: int) -> StudyDirection:
         """Read whether a study maximizes or minimizes an objective.
 
         Args:
@@ -285,7 +286,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_all_study_summaries(self) -> List[study.StudySummary]:
+    def get_all_study_summaries(self) -> List[StudySummary]:
         """Read a list of :class:`~optuna.study.StudySummary` objects.
 
         Returns:
@@ -539,7 +540,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
         """Count the number of trials in a study.
 
@@ -556,7 +556,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        if state is None:
+            return len(self.get_all_trials(study_id, deepcopy=False))
+
+        return len([t for t in self.get_all_trials(study_id, deepcopy=False) if t.state == state])
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
         """Return the trial with the best value in a study.
@@ -580,7 +583,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         if len(all_trials) == 0:
             raise ValueError("No trials are completed yet.")
 
-        if self.get_study_direction(study_id) == study.StudyDirection.MAXIMIZE:
+        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
             best_trial = max(all_trials, key=lambda t: t.value)
         else:
             best_trial = min(all_trials, key=lambda t: t.value)

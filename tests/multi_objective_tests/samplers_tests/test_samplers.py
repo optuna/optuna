@@ -4,13 +4,14 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna import multi_objective
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna import multi_objective
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
+
 
 parametrize_sampler = pytest.mark.parametrize(
     "sampler_class",
@@ -65,6 +66,14 @@ def test_sample_independent(
             value /= distribution.q
             round_value = np.round(value)
             np.testing.assert_almost_equal(round_value, value)
+
+
+def test_random_mo_sampler_reseed_rng() -> None:
+    sampler = optuna.multi_objective.samplers.RandomMultiObjectiveSampler()
+    original_seed = sampler._sampler._rng.seed
+
+    sampler.reseed_rng()
+    assert original_seed != sampler._sampler._rng.seed
 
 
 def _create_new_trial(
