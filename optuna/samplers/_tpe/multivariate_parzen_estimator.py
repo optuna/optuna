@@ -298,11 +298,15 @@ class _MultivariateParzenEstimator:
         # TODO(kstoneriv3): This the bandwidth selection rule might not be optimal.
         observations = observations.astype(int)
         n_weights = self._n_weights
+        consider_prior = self._parameters.consider_prior
+        prior_weights = self._parameters.prior_weight
         distribution = self._search_space[param_name]
         assert isinstance(distribution, distributions.CategoricalDistribution)
         choices = distribution.choices
-        consider_prior = self._parameters.consider_prior
-        prior_weights = self._parameters.prior_weight
+
+        if n_weights == 0:
+            consider_prior = True
+
         if consider_prior:
             shape = (n_weights + 1, len(choices))
             value = prior_weights / (n_weights + 1)
