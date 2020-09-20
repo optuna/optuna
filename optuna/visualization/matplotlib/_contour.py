@@ -85,7 +85,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
             x_param = sorted_params[0]
             y_param = sorted_params[1]
         cs = _generate_contour_subplot(trials, x_param, y_param, axs, cmap, contour_point_num)
-        if cs:
+        if isinstance(cs, ContourSet):
             axcb = fig.colorbar(cs)
             axcb.set_label("Objective Value")
     else:
@@ -103,7 +103,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
                 cs = _generate_contour_subplot(
                     trials, x_param, y_param, ax, cmap, contour_point_num
                 )
-                if cs:
+                if isinstance(cs, ContourSet):
                     cs_list.append(cs)
         if cs_list:
             axcb = fig.colorbar(cs_list[0], ax=axs)
@@ -137,6 +137,8 @@ def _calculate_griddata(
     y_values = []
     z_values = []
     for trial in trials:
+        if x_param not in trial.params or y_param not in trial.params:
+            continue
         x_values.append(trial.params[x_param])
         y_values.append(trial.params[y_param])
         if isinstance(trial.value, int):
@@ -172,7 +174,7 @@ def _calculate_griddata(
 
         # Interpolate z-axis data on a grid with cubic interpolator.
         # TODO(ytknzw): Implement Plotly-like interpolation algorithm.
-        zi = griddata((x_values, y_values), z_values, (xi[None, :], yi[:, None]), method="cubic")
+        zi = griddata(np.column_stack((x_values, y_values)), z_values, (xi[None, :], yi[:, None]), method="cubic")
 
     return (
         xi,
