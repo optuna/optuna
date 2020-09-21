@@ -15,13 +15,13 @@ import numpy as np
 import optuna
 from optuna import distributions
 from optuna.distributions import BaseDistribution
+from optuna.samplers._sobol import sobol_seq
 from optuna.samplers import RandomSampler
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
-import sobol_seq
 
 _NUMERICAL_DISTRIBUTIONS = (
     distributions.UniformDistribution,
