@@ -59,7 +59,7 @@ class _MultivariateParzenEstimator:
         # `_low`, `_high`, `_q` are needed for transformation.
         multivariate_observations = self._transform_to_uniform(multivariate_observations)
 
-        # Transformed multivariate_observations might be needed for following operations.
+        # Transformed `multivariate_observations` might be needed for following operations.
         self._sigmas0 = self._precompute_sigmas0(multivariate_observations)
 
         self._mus = {}  # type: Dict[str, Optional[np.ndarray]]
