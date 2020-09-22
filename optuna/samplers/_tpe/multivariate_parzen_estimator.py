@@ -59,7 +59,7 @@ class _MultivariateParzenEstimator:
         # `_low`, `_high`, `_q` are needed for transformation.
         multivariate_observations = self._transform_to_uniform(multivariate_observations)
 
-        # Transformed multivariate_observations are needed for following operations.
+        # Transformed multivariate_observations might be needed for following operations.
         self._sigmas0 = self._precompute_sigmas0(multivariate_observations)
 
         self._mus = {}  # type: Dict[str, Optional[np.ndarray]]
@@ -282,14 +282,14 @@ class _MultivariateParzenEstimator:
 
         return transformed
 
-    def _precompute_sigmas0(self, multivariate_samples: Dict[str, np.ndarray]) -> np.ndarray:
+    def _precompute_sigmas0(self, multivariate_observations: Dict[str, np.ndarray]) -> np.ndarray:
         # We use Scott's rule for bandwidth selection.
         # This rule was used in the BOHB paper.
         # TODO(kstoneriv3): The constant factor SIGMA0_MAGNITUDE=0.2 might not be optimal.
-        n_samples = next(iter(multivariate_samples.values())).size
-        n_samples = max(n_samples, 1)
-        n_params = len(multivariate_samples)
-        return SIGMA0_MAGNITUDE * n_samples ** (-1.0 / (n_params + 4)) * np.ones(n_samples)
+        n_weights = next(iter(multivariate_observations.values())).size
+        n_weights = max(n_weights, 1)
+        n_params = len(multivariate_observations)
+        return SIGMA0_MAGNITUDE * n_weights ** (-1.0 / (n_params + 4)) * np.ones(n_weights)
 
     def _calculate_categorical_params(
         self, observations: np.ndarray, param_name: str
