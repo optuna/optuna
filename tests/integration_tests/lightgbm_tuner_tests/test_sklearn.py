@@ -17,8 +17,8 @@ from sklearn.preprocessing import LabelEncoder
 
 from optuna.integration._lightgbm_tuner.sklearn import check_fit_params
 from optuna.integration._lightgbm_tuner.sklearn import check_X
-from optuna.integration._lightgbm_tuner.sklearn import LGBMClassifier as OGBMClassifier
-from optuna.integration._lightgbm_tuner.sklearn import LGBMRegressor as OGBMRegressor
+from optuna.integration._lightgbm_tuner.sklearn import LGBMClassifier
+from optuna.integration._lightgbm_tuner.sklearn import LGBMRegressor
 from optuna import study as study_module
 
 n_estimators = 10
@@ -58,7 +58,7 @@ def test_ogbm_classifier(tmp_path: pathlib.Path) -> None:
 
     from sklearn.utils.estimator_checks import check_set_params
 
-    clf = OGBMClassifier(train_dir=tmp_path)
+    clf = LGBMClassifier(train_dir=tmp_path)
     name = clf.__class__.__name__
 
     check_set_params(name, clf)
@@ -69,7 +69,7 @@ def test_ogbm_regressor(tmp_path: pathlib.Path) -> None:
 
     from sklearn.utils.estimator_checks import check_set_params
 
-    reg = OGBMRegressor(train_dir=tmp_path)
+    reg = LGBMRegressor(train_dir=tmp_path)
     name = reg.__class__.__name__
 
     check_set_params(name, reg)
@@ -80,7 +80,7 @@ def test_hasattr(tmp_path: pathlib.Path, early_stopping_rounds: int) -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = OGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
+    clf = LGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
 
     attrs = {
         "classes_": np.ndarray,
@@ -129,7 +129,7 @@ def test_fit_with_params(
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = OGBMClassifier(
+    clf = LGBMClassifier(
         boosting_type=boosting_type,
         n_estimators=n_estimators,
         objective=objective,
@@ -149,7 +149,7 @@ def test_fit_with_invalid_study(tmp_path: pathlib.Path) -> None:
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
     study = study_module.create_study(direction="maximize")
-    clf = OGBMClassifier(study=study, train_dir=tmp_path)
+    clf = LGBMClassifier(study=study, train_dir=tmp_path)
 
     with pytest.raises(ValueError):
         clf.fit(X, y, eval_set=[(X_valid, y_valid)])
@@ -171,7 +171,7 @@ def test_fit_with_fit_params(
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = OGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
+    clf = LGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
 
     clf.fit(
         X,
@@ -186,7 +186,7 @@ def test_fit_with_unused_fit_params(tmp_path: pathlib.Path) -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = OGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
+    clf = LGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
 
     clf.fit(X, y, eval_set=[(X_valid, y_valid)], unknown_param=None)
 
@@ -196,7 +196,7 @@ def test_predict_with_predict_params(tmp_path: pathlib.Path, num_iteration: Opti
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = OGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
+    clf = LGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
 
     clf.fit(X, y, eval_set=[(X_valid, y_valid)])
 
@@ -210,7 +210,7 @@ def test_predict_with_unused_predict_params(tmp_path: pathlib.Path) -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = OGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
+    clf = LGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
 
     clf.fit(X, y, eval_set=[(X_valid, y_valid)])
 
@@ -222,7 +222,7 @@ def test_plot_importance(tmp_path: pathlib.Path, n_jobs: int) -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = OGBMClassifier(
+    clf = LGBMClassifier(
         n_estimators=n_estimators,
         n_jobs=n_jobs,
         refit=False,
