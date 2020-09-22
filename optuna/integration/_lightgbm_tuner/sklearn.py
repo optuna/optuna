@@ -416,14 +416,40 @@ class LGBMModel(lgb.LGBMModel):
         valid_sets = []
 
         if eval_set is not None:
-            for (X, y) in eval_set:
+
+            def _get_meta_data(collection: Optional[List], i: int) -> Any:
+                if collection is None:
+                    return None
+                elif isinstance(collection, list):
+                    return collection[i] if len(collection) > i else None
+                elif isinstance(collection, dict):
+                    return collection.get(i, None)
+                else:
+                    raise TypeError(
+                        "eval_sample_weight, eval_class_weight, eval_init_score, and eval_group "
+                        "should be dict or list"
+                    )
+
+            for i, (X_valid, y_valid) in enumerate(eval_set):
+                valid_class_weight = _get_meta_data(eval_class_weight, i)
+                valid_group = _get_meta_data(eval_group, i)
+                valid_init_score = _get_meta_data(eval_init_score, i)
+                valid_weight = _get_meta_data(eval_sample_weight, i)
+
+                if valid_class_weight is not None:
+                    valid_class_sample_weight = compute_sample_weight(valid_class_weight, y_valid)
+
+                    if valid_weight is None or len(valid_weight) == 0:
+                        valid_weight = valid_class_sample_weight
+                    else:
+                        valid_weight *= valid_class_sample_weight
+
                 valid_set = lgb.Dataset(
-                    X,
-                    label=y,
-                    # TODO(Kon): Pass weight, group and init_score to Dataset
-                    # weight=valid_weight,
-                    # group=valid_group,
-                    # init_score=valid_init_score,
+                    X_valid,
+                    label=y_valid,
+                    weight=valid_weight,
+                    group=valid_group,
+                    init_score=valid_init_score,
                     feature_name=feature_name,
                     categorical_feature=categorical_feature,
                 )
