@@ -34,6 +34,11 @@ _NUMERICAL_DISTRIBUTIONS = (
 _SUGGESTED_STATES = (TrialState.COMPLETE, TrialState.PRUNED)
 
 
+# It is recommended that we take the number of samples as power of two
+# to properly explit sobol sequence.
+# However, sobol sampler works iteratively anyways, so can use n_trials
+# which is not power of two.
+
 class SobolSampler(BaseSampler):
 
     def __init__(
