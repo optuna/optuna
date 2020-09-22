@@ -1,5 +1,4 @@
 import pathlib
-
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -9,17 +8,17 @@ from typing import Union
 import lightgbm as lgb
 import numpy as np
 import pytest
-
 from sklearn.datasets import load_boston
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
+from optuna import study as study_module
 from optuna.integration._lightgbm_tuner.sklearn import check_fit_params
 from optuna.integration._lightgbm_tuner.sklearn import check_X
 from optuna.integration._lightgbm_tuner.sklearn import LGBMClassifier
 from optuna.integration._lightgbm_tuner.sklearn import LGBMRegressor
-from optuna import study as study_module
+
 
 n_estimators = 10
 random_state = 0

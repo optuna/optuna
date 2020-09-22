@@ -1,5 +1,4 @@
 import pathlib
-
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -11,7 +10,6 @@ from typing import Union
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
-
 from scipy.sparse import spmatrix
 from sklearn.base import BaseEstimator
 from sklearn.base import ClassifierMixin
@@ -26,9 +24,9 @@ from sklearn.utils.validation import _assert_all_finite
 from sklearn.utils.validation import _num_samples
 from sklearn.utils.validation import column_or_1d
 
-from optuna.integration._lightgbm_tuner import optimize
 from optuna import logging
 from optuna import study as study_module
+from optuna.integration._lightgbm_tuner import optimize
 
 
 if lgb.__version__ >= "2.3":
