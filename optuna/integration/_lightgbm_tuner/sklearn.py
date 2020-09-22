@@ -1,13 +1,9 @@
-import copy
 import pathlib
-import pickle
-import time
 
 from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
 from typing import Union
@@ -15,38 +11,25 @@ from typing import Union
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
-import sklearn
 
 from scipy.sparse import spmatrix
 from sklearn.base import BaseEstimator
 from sklearn.base import ClassifierMixin
 from sklearn.base import is_classifier
 from sklearn.base import RegressorMixin
-from sklearn.model_selection import BaseCrossValidator
-from sklearn.model_selection import check_cv as sklearn_check_cv
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import check_array
 from sklearn.utils import check_consistent_length
-from sklearn.utils import check_random_state
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import _assert_all_finite
 from sklearn.utils.validation import _num_samples
 from sklearn.utils.validation import column_or_1d
 
-from optuna import distributions
-from optuna import integration
-from optuna.integration._lightgbm_tuner import alias
+from optuna.integration._lightgbm_tuner import optimize
 from optuna import logging
-from optuna import samplers
 from optuna import study as study_module
-from optuna import trial as trial_module
 
-
-if lgb.__version__ >= "3.0.0":
-    from lightgbm.engine import CVBooster as _CVBooster
-else:
-    from lightgbm.engine import _CVBooster
 
 if lgb.__version__ >= "2.3":
     from lightgbm.sklearn import _EvalFunctionWrapper
@@ -55,33 +38,12 @@ else:
     from lightgbm.sklearn import _eval_function_wrapper as _EvalFunctionWrapper
     from lightgbm.sklearn import _objective_function_wrapper as _ObjectiveFunctionWrapper
 
-if sklearn.__version__ >= "0.22":
-    from sklearn.utils import _safe_indexing
-else:
-    from sklearn.utils import safe_indexing as _safe_indexing
-
 __all__ = ["LGBMModel", "LGBMClassifier", "LGBMRegressor"]
-
-CVType = Union[BaseCrossValidator, int, List[Tuple]]
-
-LightGBMCallbackEnvType = NamedTuple(
-    "LightGBMCallbackEnv",
-    [
-        ("model", _CVBooster),
-        ("params", Dict[str, Any]),
-        ("iteration", int),
-        ("begin_iteration", int),
-        ("end_iteration", int),
-        ("evaluation_result_list", List),
-    ],
-)
 
 OneDimArrayLikeType = Union[np.ndarray, pd.Series]
 TwoDimArrayLikeType = Union[np.ndarray, pd.DataFrame, spmatrix]
 
 RandomStateType = Union[int, np.random.RandomState]
-
-MAX_INT = np.iinfo(np.int32).max
 
 OBJECTIVE2METRIC = {
     # classification
@@ -112,35 +74,6 @@ OBJECTIVE2METRIC = {
     "gamma": "gamma",
     "tweedie": "tweedie",
 }
-
-
-def check_cv(
-    cv: CVType = 5,
-    y: Optional[OneDimArrayLikeType] = None,
-    classifier: bool = False,
-) -> BaseCrossValidator:
-    """Check ``cv``.
-
-    Args:
-        cv:
-            Cross-validation strategy.
-
-        y:
-            Target.
-
-        classifier:
-            If the task is a classification task, ``StratifiedKFold`` will be
-            used.
-
-    Returns:
-        cv:
-            Converted cross-validation strategy.
-    """
-    if classifier and isinstance(cv, int):
-        _, counts = np.unique(y, return_counts=True)
-        cv = max(2, min(cv, *counts))
-
-    return sklearn_check_cv(cv, y, classifier)
 
 
 def check_X(
@@ -237,194 +170,8 @@ def check_fit_params(
     return X, y, sample_weight
 
 
-def _is_higher_better(metric: str) -> bool:
-    return metric in ["auc"]
-
-
-class _LightGBMExtractionCallback(object):
-    @property
-    def boosters_(self) -> List[lgb.Booster]:
-        return self.env_.model.boosters
-
-    def __call__(self, env: LightGBMCallbackEnvType) -> None:
-        self.env_ = env
-
-
-class _Objective(object):
-    def __init__(
-        self,
-        params: Dict[str, Any],
-        dataset: lgb.Dataset,
-        eval_name: str,
-        is_higher_better: bool,
-        n_samples: int,
-        train_dir: pathlib.Path,
-        weights: np.ndarray,
-        callbacks: Optional[List[Callable]] = None,
-        cv: Optional[CVType] = None,
-        early_stopping_rounds: Optional[int] = None,
-        enable_pruning: bool = False,
-        feval: Optional[Callable] = None,
-        fobj: Optional[Callable] = None,
-        init_model: Optional[Union[lgb.Booster, lgb.LGBMModel, str]] = None,
-        n_estimators: int = 100,
-        param_distributions: Optional[Dict[str, distributions.BaseDistribution]] = None,
-    ) -> None:
-        self.callbacks = callbacks
-        self.cv = cv
-        self.dataset = dataset
-        self.early_stopping_rounds = early_stopping_rounds
-        self.enable_pruning = enable_pruning
-        self.eval_name = eval_name
-        self.feval = feval
-        self.fobj = fobj
-        self.init_model = init_model
-        self.is_higher_better = is_higher_better
-        self.n_estimators = n_estimators
-        self.n_samples = n_samples
-        self.params = params
-        self.param_distributions = param_distributions
-        self.train_dir = train_dir
-        self.weights = weights
-
-    def __call__(self, trial: trial_module.Trial) -> float:
-        params = self._get_params(trial)  # type: Dict[str, Any]
-        dataset = copy.copy(self.dataset)
-        callbacks = self._get_callbacks(trial)  # type: List[Callable]
-        eval_hist = lgb.cv(
-            params,
-            dataset,
-            callbacks=callbacks,
-            early_stopping_rounds=self.early_stopping_rounds,
-            feval=self.feval,
-            fobj=self.fobj,
-            folds=self.cv,
-            init_model=self.init_model,
-            num_boost_round=self.n_estimators,
-        )  # Dict[str, List[float]]
-        values = eval_hist["{}-mean".format(self.eval_name)]  # type: List[float]
-        best_iteration = len(values)  # type: int
-
-        trial.set_user_attr("best_iteration", best_iteration)
-
-        booster_path = self.train_dir / "trial_{}.pkl".format(trial.number)  # type: pathlib.Path
-
-        boosters = callbacks[0].boosters_  # type: ignore
-
-        for b in boosters:
-            b.best_iteration = best_iteration
-
-            b.free_dataset()
-
-        booster = _VotingBooster(boosters, weights=self.weights)  # type: _VotingBooster
-
-        with booster_path.open("wb") as f:
-            pickle.dump(booster, f)
-
-        return values[-1]
-
-    def _get_callbacks(self, trial: trial_module.Trial) -> List[Callable]:
-        extraction_callback = _LightGBMExtractionCallback()  # type: _LightGBMExtractionCallback
-        callbacks = [extraction_callback]  # type: List[Callable]
-
-        if self.enable_pruning:
-            pruning_callback = integration.LightGBMPruningCallback(
-                trial, self.eval_name
-            )  # type: integration.LightGBMPruningCallback
-
-            callbacks.append(pruning_callback)
-
-        if self.callbacks is not None:
-            callbacks += self.callbacks
-
-        return callbacks
-
-    def _get_params(self, trial: trial_module.Trial) -> Dict[str, Any]:
-        params = self.params.copy()  # type: Dict[str, Any]
-
-        if self.param_distributions is None:
-            params["feature_fraction"] = trial.suggest_discrete_uniform(
-                "feature_fraction", 0.1, 1.0, 0.05
-            )
-            params["max_depth"] = trial.suggest_int("max_depth", 1, 7)
-            params["num_leaves"] = trial.suggest_int("num_leaves", 2, 2 ** params["max_depth"])
-            # See https://github.com/Microsoft/LightGBM/issues/907
-            params["min_data_in_leaf"] = trial.suggest_int(
-                "min_data_in_leaf",
-                1,
-                max(1, int(self.n_samples / params["num_leaves"])),
-            )
-            params["lambda_l1"] = trial.suggest_loguniform("lambda_l1", 1e-09, 10.0)
-            params["lambda_l2"] = trial.suggest_loguniform("lambda_l2", 1e-09, 10.0)
-
-            if params["boosting_type"] != "goss":
-                params["bagging_fraction"] = trial.suggest_discrete_uniform(
-                    "bagging_fraction", 0.5, 0.95, 0.05
-                )
-                params["bagging_freq"] = trial.suggest_int("bagging_freq", 1, 10)
-
-            return params
-
-        for name, distribution in self.param_distributions.items():
-            params[name] = trial._suggest(name, distribution)
-
-        return params
-
-
-class _VotingBooster(object):
-    @property
-    def feature_name(self) -> List[str]:
-        return self.boosters[0].feature_name
-
-    def __init__(self, boosters: List[lgb.Booster], weights: Optional[np.ndarray] = None) -> None:
-        if not boosters:
-            raise ValueError("boosters must be non-empty array.")
-
-        self.boosters = boosters
-        self.weights = weights
-
-    def feature_importance(self, **kwargs: Any) -> np.ndarray:
-        results = [b.feature_importance(**kwargs) for b in self.boosters]
-
-        return np.average(results, axis=0, weights=self.weights)
-
-    def predict(
-        self,
-        X: TwoDimArrayLikeType,
-        num_iteration: Optional[int] = None,
-        raw_score: bool = False,
-        pred_leaf: bool = False,
-        pred_contrib: bool = False,
-        **predict_params: Any
-    ) -> np.ndarray:
-        logger = logging.get_logger(__name__)
-
-        if raw_score:
-            raise ValueError("_VotingBooster cannot return raw scores.")
-
-        if pred_leaf:
-            raise ValueError("_VotingBooster cannot return leaf indices.")
-
-        if pred_contrib:
-            raise ValueError("_VotingBooster cannot return feature contributions.")
-
-        for key, value in predict_params.items():
-            logger.warning("{}={} will be ignored.".format(key, value))
-
-        results = [b.predict(X, num_iteration=num_iteration) for b in self.boosters]
-
-        return np.average(results, axis=0, weights=self.weights)
-
-
 class LGBMModel(lgb.LGBMModel):
     """Base class for models."""
-
-    @property
-    def best_index_(self) -> int:
-        """Get the best trial's number."""
-        self._check_is_fitted()
-
-        return self.study_.best_trial.number
 
     def __init__(
         self,
@@ -446,14 +193,10 @@ class LGBMModel(lgb.LGBMModel):
         reg_lambda: float = 0.0,
         random_state: Optional[RandomStateType] = None,
         n_jobs: int = -1,
+        silent: bool = True,
         importance_type: str = "split",
-        cv: CVType = 5,
-        enable_pruning: bool = False,
-        n_trials: int = 40,
-        param_distributions: Optional[Dict[str, distributions.BaseDistribution]] = None,
-        refit: bool = True,
         study: Optional[study_module.Study] = None,
-        timeout: Optional[float] = None,
+        timeout: Optional[int] = None,
         train_dir: Union[pathlib.Path, str] = "optgbm_info",
         **kwargs: Any
     ) -> None:
@@ -474,17 +217,13 @@ class LGBMModel(lgb.LGBMModel):
             random_state=random_state,
             reg_alpha=reg_alpha,
             reg_lambda=reg_lambda,
+            silent=silent,
             subsample=subsample,
             subsample_for_bin=subsample_for_bin,
             subsample_freq=subsample_freq,
             **kwargs,
         )
 
-        self.cv = cv
-        self.enable_pruning = enable_pruning
-        self.n_trials = n_trials
-        self.param_distributions = param_distributions
-        self.refit = refit
         self.study = study
         self.timeout = timeout
         self.train_dir = train_dir
@@ -503,85 +242,26 @@ class LGBMModel(lgb.LGBMModel):
         else:
             return "binary"
 
-    def _get_random_state(self) -> Optional[int]:
-        if self.random_state is None or isinstance(self.random_state, int):
-            return self.random_state
-
-        random_state = check_random_state(self.random_state)
-
-        return random_state.randint(0, MAX_INT)
-
-    def _get_train_dir(self) -> pathlib.Path:
-        train_dir = str(self.train_dir)
-
-        return pathlib.Path(train_dir)
-
-    def _make_booster(
-        self,
-        params: Dict[str, Any],
-        dataset: lgb.Dataset,
-        num_boost_round: int,
-        booster_path: pathlib.Path,
-        fobj: Optional[Callable] = None,
-        feature_name: Union[List[str], str] = "auto",
-        categorical_feature: Union[List[int], List[str], str] = "auto",
-        callbacks: Optional[List[Callable]] = None,
-        init_model: Optional[Union[lgb.Booster, lgb.LGBMModel, str]] = None,
-    ) -> Union[_VotingBooster, lgb.Booster]:
-        if self.refit:
-            booster = lgb.train(
-                params,
-                dataset,
-                num_boost_round=num_boost_round,
-                fobj=fobj,
-                feature_name=feature_name,
-                categorical_feature=categorical_feature,
-                callbacks=callbacks,
-                init_model=init_model,
-            )
-
-            booster.free_dataset()
-
-            return booster
-
-        with booster_path.open("rb") as f:
-            booster = pickle.load(f)
-
-        return booster
-
-    def _make_study(self, is_higher_better: bool) -> study_module.Study:
-        direction = "maximize" if is_higher_better else "minimize"
-
-        if self.study is None:
-            seed = self._get_random_state()
-            sampler = samplers.TPESampler(seed=seed)
-
-            return study_module.create_study(direction=direction, sampler=sampler)
-
-        _direction = (
-            study_module.StudyDirection.MAXIMIZE
-            if is_higher_better
-            else study_module.StudyDirection.MINIMIZE
-        )
-
-        if self.study.direction != _direction:
-            raise ValueError("direction of study must be '{}'.".format(direction))
-
-        return self.study
-
     def fit(
         self,
         X: TwoDimArrayLikeType,
         y: OneDimArrayLikeType,
         sample_weight: Optional[OneDimArrayLikeType] = None,
+        init_score: Optional[OneDimArrayLikeType] = None,
         group: Optional[OneDimArrayLikeType] = None,
+        eval_set: Optional[List[Tuple[TwoDimArrayLikeType, OneDimArrayLikeType]]] = None,
+        eval_names: Optional[List[str]] = None,
+        eval_sample_weight: Optional[List[OneDimArrayLikeType]] = None,
+        eval_class_weight: Optional[List[Union[Dict[str, float], str]]] = None,
+        eval_init_score: Optional[List[OneDimArrayLikeType]] = None,
+        eval_group: Optional[List[OneDimArrayLikeType]] = None,
         eval_metric: Optional[Union[Callable, List[str], str]] = None,
         early_stopping_rounds: Optional[int] = 10,
+        verbose: bool = True,
         feature_name: Union[List[str], str] = "auto",
         categorical_feature: Union[List[int], List[str], str] = "auto",
         callbacks: Optional[List[Callable]] = None,
         init_model: Optional[Union[lgb.Booster, lgb.LGBMModel, str]] = None,
-        groups: Optional[OneDimArrayLikeType] = None,
         **fit_params: Any
     ) -> "LGBMModel":
         """Fit the model according to the given training data.
@@ -596,8 +276,29 @@ class LGBMModel(lgb.LGBMModel):
             sample_weight:
                 Weights of training data.
 
+            init_score
+                Init score of training data.
+
             group:
                 Group data of training data.
+
+            eval_set
+                List of (X, y) tuple pairs to use as validation sets.
+
+            eval_names
+                Names of eval_set.
+
+            eval_sample_weight
+                Weights of eval data.
+
+            eval_class_weight
+                Class weights of eval data.
+
+            eval_init_score
+                Init score of eval data.
+
+            eval_group
+                Group data of eval data.
 
             eval_metric:
                 Evaluation metric. See
@@ -606,6 +307,11 @@ class LGBMModel(lgb.LGBMModel):
             early_stopping_rounds
                 Used to activate early stopping. The model will train until the
                 validation score stops improving.
+
+            verbose
+                If True, the eval metric on the eval set is printed at each
+                boosting stage. If int, the eval metric on the eval set is
+                printed at every verbose boosting stage.
 
             feature_name:
                 Feature names. If 'auto' and data is pandas DataFrame, data
@@ -627,11 +333,6 @@ class LGBMModel(lgb.LGBMModel):
             init_model:
                 Filename of LightGBM model, Booster instance or LGBMModel
                 instance used for continue training.
-
-            groups:
-                Group labels for the samples used while splitting the dataset
-                into traintest set. If ``group`` is not None, this parameter is
-                ignored.
 
             **fit_params:
                 Always ignored. This parameter exists for compatibility.
@@ -656,27 +357,22 @@ class LGBMModel(lgb.LGBMModel):
 
         self._n_features_in = self._n_features
 
-        is_classifier = self._estimator_type == "classifier"
-        cv = check_cv(self.cv, y, is_classifier)
-
-        seed = self._get_random_state()
-
         for key, value in fit_params.items():
             logger.warning("{}={} will be ignored.".format(key, value))
 
         params = self.get_params()
 
-        alias._handling_alias_parameters(params)
+        if (
+            not any(verbose_alias in params for verbose_alias in ("verbose", "verbosity"))
+            and self.silent
+        ):
+            params["verbose"] = -1
 
         for attr in (
             "class_weight",
-            "cv",
-            "enable_pruning",
             "importance_type",
             "n_estimators",
-            "n_trials",
-            "param_distributions",
-            "refit",
+            "silent",
             "study",
             "timeout",
             "train_dir",
@@ -684,8 +380,6 @@ class LGBMModel(lgb.LGBMModel):
             params.pop(attr, None)
 
         params["objective"] = self._get_objective()
-        params["random_state"] = seed
-        params["verbose"] = -1
 
         if self._n_classes is not None and self._n_classes > 2:
             params["num_classes"] = self._n_classes
@@ -693,7 +387,6 @@ class LGBMModel(lgb.LGBMModel):
         if callable(eval_metric):
             params["metric"] = "None"
             feval = _EvalFunctionWrapper(eval_metric)
-            eval_name, _, is_higher_better = eval_metric(y, y)
 
         elif isinstance(eval_metric, list):
             raise ValueError("eval_metric is not allowed to be a list.")
@@ -705,107 +398,69 @@ class LGBMModel(lgb.LGBMModel):
                 params["metric"] = eval_metric
 
             feval = None
-            eval_name = params["metric"]
-            is_higher_better = _is_higher_better(params["metric"])
 
         fobj = _ObjectiveFunctionWrapper(self.objective) if callable(self.objective) else None
 
         init_model = init_model.booster_ if isinstance(init_model, lgb.LGBMModel) else init_model
 
-        self.study_ = self._make_study(is_higher_better)
-
-        # See https://github.com/microsoft/LightGBM/issues/2319
-        if group is None and groups is not None:
-            indices = np.argsort(groups)
-            X = _safe_indexing(X, indices)
-            y = _safe_indexing(y, indices)
-            sample_weight = _safe_indexing(sample_weight, indices)
-            groups = _safe_indexing(groups, indices)
-            _, group = np.unique(groups, return_counts=True)
-
-        dataset = lgb.Dataset(
+        train_set = lgb.Dataset(
             X,
             label=y,
-            group=group,
             weight=sample_weight,
+            group=group,
+            init_score=init_score,
             feature_name=feature_name,
             categorical_feature=categorical_feature,
         )
 
-        train_dir = self._get_train_dir()
-        weights = np.array(
-            [np.sum(sample_weight[train]) for train, _ in cv.split(X, y, groups=groups)]
-        )
+        valid_sets = []
 
-        train_dir.mkdir(exist_ok=True, parents=True)
+        if eval_set is not None:
+            for (X, y) in eval_set:
+                valid_set = lgb.Dataset(
+                    X,
+                    label=y,
+                    # TODO(Kon): Pass weight, group and init_score to Dataset
+                    # weight=valid_weight,
+                    # group=valid_group,
+                    # init_score=valid_init_score,
+                    feature_name=feature_name,
+                    categorical_feature=categorical_feature,
+                )
 
-        objective = _Objective(
+            valid_sets.append(valid_set)
+
+        evals_result = {}  # type: Dict[Any, Any]
+        tuner = optimize.LightGBMTuner(
             params,
-            dataset,
-            eval_name,
-            is_higher_better,
-            n_samples,
-            train_dir,
-            weights,
-            callbacks=callbacks,
-            cv=cv,
-            early_stopping_rounds=early_stopping_rounds,
-            enable_pruning=self.enable_pruning,
+            train_set,
+            num_boost_round=self.n_estimators,
+            valid_sets=valid_sets,
+            valid_names=eval_names,
+            fobj=fobj,
             feval=feval,
-            fobj=fobj,
-            init_model=init_model,
-            n_estimators=self.n_estimators,
-            param_distributions=self.param_distributions,
-        )
-
-        logger.info("Searching the best hyperparameters...")
-
-        start_time = time.perf_counter()
-
-        self.study_.optimize(objective, catch=(), n_trials=self.n_trials, timeout=self.timeout)
-
-        elapsed_time = time.perf_counter() - start_time
-
-        best_iteration = self.study_.best_trial.user_attrs["best_iteration"]
-
-        self._best_iteration = None if early_stopping_rounds is None else best_iteration
-        self._best_score = self.study_.best_value
-        self._objective = params["objective"]
-        self.best_params_ = {**params, **self.study_.best_params}
-        self.n_splits_ = cv.get_n_splits(X, y, groups=groups)
-
-        logger.info(
-            "Finished hyperparemeter search! "
-            "(elapsed time: {:.3f} sec.) "
-            "The best_iteration is {}.".format(elapsed_time, best_iteration)
-        )
-
-        booster_path = train_dir / "trial_{}.pkl".format(self.study_.best_trial.number)
-
-        logger.info("Making booster(s)...")
-
-        start_time = time.perf_counter()
-
-        self._Booster = self._make_booster(
-            self.best_params_,
-            dataset,
-            best_iteration,
-            booster_path,
-            fobj=fobj,
-            feature_name=feature_name,
-            categorical_feature=categorical_feature,
+            # TODO(Kon): Pass init_model to LightGBMTuner
+            # init_model=init_model,
+            early_stopping_rounds=early_stopping_rounds,
+            evals_result=evals_result,
+            verbose_eval=verbose,
             callbacks=callbacks,
-            init_model=init_model,
+            time_budget=self.timeout,
+            study=self.study,
+            model_dir=str(self.train_dir),
         )
 
-        elapsed_time = time.perf_counter() - start_time
+        tuner.run()
 
-        logger.info(
-            "Finished making booster(s)! " "(elapsed time: {:.3f} sec.)".format(elapsed_time)
+        self._Booster = tuner.get_best_booster()
+        self._best_iteration = (
+            None if early_stopping_rounds is None else self._Booster.best_iteration
         )
+        self._best_score = self._Booster.best_score
+        self._evals_result = evals_result if evals_result else None
+        self._objective = params["objective"]
 
-        if self.refit:
-            self.refit_time_ = elapsed_time
+        self._Booster.free_dataset()
 
         return self
 
@@ -891,39 +546,13 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
         n_jobs:
             Number of parallel jobs. -1 means using all processors.
 
+        silent
+            If true, print messages while running boosting.
+
         importance_type:
             Type of feature importances. If 'split', result contains numbers of
             times the feature is used in a model. If 'gain', result contains
             total gains of splits which use the feature.
-
-        cv:
-            Cross-validation strategy. Possible inputs for cv are:
-
-            - integer to specify the number of folds in a CV splitter,
-            - a CV splitter,
-            - an iterable yielding (train, test) splits as arrays of indices.
-
-            If int, ``sklearn.model_selection.StratifiedKFold`` is used.
-
-        enable_pruning:
-            If True, pruning is performed.
-
-        n_trials:
-            Number of trials. If None, there is no limitation on the number of
-            trials. If ``timeout`` is also set to None, the study continues to
-            create trials until it receives a termination signal such as Ctrl+C
-            or SIGTERM. This trades off runtime vs quality of the solution.
-
-        param_distributions:
-            Dictionary where keys are parameters and values are distributions.
-            Distributions are assumed to implement the optuna distribution
-            interface. If None, ``num_leaves``, ``max_depth``,
-            ``min_child_samples``, ``subsample``, ``subsample_freq``,
-            ``colsample_bytree``, ``reg_alpha`` and ``reg_lambda`` are
-            searched.
-
-        refit:
-            If True, refit the estimator with the best found hyperparameters.
 
         study:
             Study corresponds to the optimization task. If None, a new study is
@@ -946,44 +575,18 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             may cause unexpected issues.
 
     Attributes:
-        best_iteration_:
-            Number of iterations as selected by early stopping.
-
-        best_params_:
-            Parameters of the best trial in the ``Study``.
-
-        best_score_:
-            Mean cross-validated score of the best estimator.
-
-        booster_:
-            Trained booster.
-
         encoder_:
             Label encoder.
-
-        n_features_:
-            Number of features of fitted model.
-
-        n_splits_:
-            Number of cross-validation splits.
-
-        objective_:
-            Concrete objective used while fitting this model.
-
-        study_:
-            Actual study.
-
-        refit_time_:
-            Time for refitting the best estimator. This is present only if
-            ``refit`` is set to True.
 
     Examples:
         >>> import optuna.integration.lightgbm as lgb
         >>> from sklearn.datasets import load_iris
+        >>> from sklearn.model_selection import train_test_split
         >>> tmp_path = getfixture("tmp_path")  # noqa
         >>> clf = lgb.LGBMClassifier(random_state=0, train_dir=tmp_path)
         >>> X, y = load_iris(return_X_y=True)
-        >>> clf.fit(X, y)
+        >>> X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
+        >>> clf.fit(X, y, eval_set=[(X_valid, y_valid)])
         LGBMClassifier(...)
         >>> y_pred = clf.predict(X)
     """
@@ -1007,14 +610,21 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
         X: TwoDimArrayLikeType,
         y: OneDimArrayLikeType,
         sample_weight: Optional[OneDimArrayLikeType] = None,
+        init_score: Optional[OneDimArrayLikeType] = None,
         group: Optional[OneDimArrayLikeType] = None,
+        eval_set: Optional[List[Tuple[TwoDimArrayLikeType, OneDimArrayLikeType]]] = None,
+        eval_names: Optional[List[str]] = None,
+        eval_sample_weight: Optional[List[OneDimArrayLikeType]] = None,
+        eval_class_weight: Optional[List[Union[Dict[str, float], str]]] = None,
+        eval_init_score: Optional[List[OneDimArrayLikeType]] = None,
+        eval_group: Optional[List[OneDimArrayLikeType]] = None,
         eval_metric: Optional[Union[Callable, List[str], str]] = None,
         early_stopping_rounds: Optional[int] = 10,
+        verbose: bool = True,
         feature_name: Union[List[str], str] = "auto",
         categorical_feature: Union[List[int], List[str], str] = "auto",
         callbacks: Optional[List[Callable]] = None,
         init_model: Optional[Union[lgb.Booster, lgb.LGBMModel, str]] = None,
-        groups: Optional[OneDimArrayLikeType] = None,
         **fit_params: Any
     ) -> "LGBMClassifier":
         """Docstring is inherited from the LGBMModel."""
@@ -1029,14 +639,21 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             X,
             y,
             sample_weight=sample_weight,
+            init_score=init_score,
             group=group,
+            eval_set=eval_set,
+            eval_names=eval_names,
+            eval_sample_weight=eval_sample_weight,
+            eval_class_weight=eval_class_weight,
+            eval_init_score=eval_init_score,
+            eval_group=eval_group,
             eval_metric=eval_metric,
             early_stopping_rounds=early_stopping_rounds,
+            verbose=verbose,
             feature_name=feature_name,
             categorical_feature=categorical_feature,
             callbacks=callbacks,
             init_model=init_model,
-            groups=groups,
             **fit_params,
         )
 
@@ -1205,39 +822,13 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
         n_jobs:
             Number of parallel jobs. -1 means using all processors.
 
+        silent
+            If true, print messages while running boosting.
+
         importance_type:
             Type of feature importances. If 'split', result contains numbers of
             times the feature is used in a model. If 'gain', result contains
             total gains of splits which use the feature.
-
-        cv:
-            Cross-validation strategy. Possible inputs for cv are:
-
-            - integer to specify the number of folds in a CV splitter,
-            - a CV splitter,
-            - an iterable yielding (train, test) splits as arrays of indices.
-
-            If int, ``sklearn.model_selection.StratifiedKFold`` is used.
-
-        enable_pruning:
-            If True, pruning is performed.
-
-        n_trials:
-            Number of trials. If None, there is no limitation on the number of
-            trials. If ``timeout`` is also set to None, the study continues to
-            create trials until it receives a termination signal such as Ctrl+C
-            or SIGTERM. This trades off runtime vs quality of the solution.
-
-        param_distributions:
-            Dictionary where keys are parameters and values are distributions.
-            Distributions are assumed to implement the optuna distribution
-            interface. If None, ``num_leaves``, ``max_depth``,
-            ``min_child_samples``, ``subsample``, ``subsample_freq``,
-            ``colsample_bytree``, ``reg_alpha`` and ``reg_lambda`` are
-            searched.
-
-        refit:
-            If True, refit the estimator with the best found hyperparameters.
 
         study:
             Study corresponds to the optimization task. If None, a new study is
@@ -1251,7 +842,7 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
             SIGTERM. This trades off runtime vs quality of the solution.
 
         train_dir
-        Directory for storing the files generated during training.
+            Directory for storing the files generated during training.
 
         **kwargs:
             Other parameters for the model. See
@@ -1259,42 +850,14 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
             parameters. Note, that **kwargs is not supported in sklearn, so it
             may cause unexpected issues.
 
-    Attributes:
-        best_iteration_:
-            Number of iterations as selected by early stopping.
-
-        best_params_:
-            Parameters of the best trial in the ``Study``.
-
-        best_score_:
-            Mean cross-validated score of the best estimator.
-
-        booster_:
-            Trained booster.
-
-        n_features_:
-            Number of features of fitted model.
-
-        n_splits_:
-            Number of cross-validation splits.
-
-        objective_:
-            Concrete objective used while fitting this model.
-
-        study_:
-            Actual study.
-
-        refit_time_:
-            Time for refitting the best estimator. This is present only if
-            ``refit`` is set to True.
-
-    Examples:
         >>> import optuna.integration.lightgbm as lgb
         >>> from sklearn.datasets import load_boston
+        >>> from sklearn.model_selection import train_test_split
         >>> tmp_path = getfixture("tmp_path")  # noqa
         >>> reg = lgb.LGBMRegressor(random_state=0, train_dir=tmp_path)
         >>> X, y = load_boston(return_X_y=True)
-        >>> reg.fit(X, y)
+        >>> X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
+        >>> reg.fit(X, y, eval_set=[(X_valid, y_valid)])
         LGBMRegressor(...)
         >>> y_pred = reg.predict(X)
     """
