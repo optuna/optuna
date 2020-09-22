@@ -9,10 +9,10 @@ from typing import Set
 from typing import Tuple
 
 from optuna import distributions
-from optuna.storages._rdb.storage import RDBStorage
+from optuna._study_direction import StudyDirection
+from optuna._study_summary import StudySummary
 from optuna.storages import BaseStorage
-from optuna.study import StudyDirection
-from optuna.study import StudySummary
+from optuna.storages._rdb.storage import RDBStorage
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -366,10 +366,6 @@ class _CachedStorage(BaseStorage):
             # The following two lines are latency-sensitive.
             trials = list(sorted(study.trials.values(), key=lambda t: t.number))
             return copy.deepcopy(trials) if deepcopy else trials
-
-    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
-
-        return self._backend.get_n_trials(study_id, state)
 
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         with self._lock:

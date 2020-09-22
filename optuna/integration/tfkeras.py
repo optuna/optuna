@@ -4,6 +4,7 @@ from typing import Optional
 
 import optuna
 
+
 with optuna._imports.try_import() as _imports:
     from tensorflow.keras.callbacks import Callback
 

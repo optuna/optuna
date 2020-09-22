@@ -9,6 +9,8 @@ import warnings
 
 import optuna
 from optuna import distributions
+from optuna import logging
+from optuna import pruners
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -17,8 +19,6 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna import logging
-from optuna import pruners
 from optuna.trial._base import BaseTrial
 
 

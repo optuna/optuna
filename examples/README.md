@@ -43,17 +43,20 @@ The following example demonstrates how to implement pruning logic with Optuna.
 
 In addition, integration modules are available for the following libraries, providing simpler interfaces to utilize pruning.
 
+* [Pruning with Catalyst integration module](./catalyst_simple.py)
+* [Pruning with Catboost integration module](./catboost_simple.py)
 * [Pruning with Chainer integration module](./pruning/chainer_integration.py)
-* [Pruning with XGBoost integration module](./pruning/xgboost_integration.py)
-* [Pruning with XGBoost integration module (cross validation, XGBoost.cv)](./pruning/xgboost_cv_integration.py)
-* [Pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
 * [Pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
-* [Pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
+* [Pruning with FastAI integration module](./fastai_simple.py)
 * [Pruning with Keras integration module](./pruning/keras_integration.py)
+* [Pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
 * [Pruning with MXNet integration module](./pruning/mxnet_integration.py)
+* [Pruning with PyTorch integration module](./pruning/pytorch_simple.py)
 * [Pruning with PyTorch Ignite integration module](./pytorch_ignite_simple.py)
 * [Pruning with PyTorch Lightning integration module](./pytorch_lightning_simple.py)
-* [Pruning with FastAI integration module](./fastai_simple.py)
+* [Pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
+* [Pruning with XGBoost integration module](./pruning/xgboost_integration.py)
+* [Pruning with XGBoost integration module (cross validation, XGBoost.cv)](./pruning/xgboost_cv_integration.py)
 
 ### Examples of User-Defined Sampler
 
@@ -73,19 +76,19 @@ In addition, integration modules are available for the following libraries, prov
 
 ### External projects using Optuna
 
-* [RL Baselines Zoo](https://github.com/DLR-RM/rl-baselines3-zoo)
 * [Allegro Trains](https://github.com/allegroai/trains)
-* [neptune.ai](https://neptune.ai)
-* [PyKEEN](https://github.com/pykeen/pykeen)
-* [Mozilla Voice STT](https://github.com/mozilla/DeepSpeech)
-* [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)
 * [Catalyst](https://github.com/catalyst-team/catalyst)
+* [Mozilla Voice STT](https://github.com/mozilla/DeepSpeech)
+* [neptune.ai](https://neptune.ai)
+* [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)
+* [PyKEEN](https://github.com/pykeen/pykeen)
+* [RL Baselines Zoo](https://github.com/DLR-RM/rl-baselines3-zoo)
 
 PRs to add additional projects welcome!
 
 ### Running with Optuna's Docker images?
 You can use our docker images with the tag ending with `-dev` to run most of the examples.
-For example, you can run [PyTorch Lightning Simple](./pytorch_ignite_simple.py) via `docker run --rm optuna/optuna:py3.7-dev python examples/pytorch_lightning_simple.py`.  
+For example, you can run [PyTorch Simple](./pytorch_simple.py) via `docker run --rm optuna/optuna:py3.7-dev python examples/pytorch_simple.py`.  
 Also, you can try our visualization example in Jupyter Notebook by opening `localhost:8888` in your browser after executing this:
 
 ```bash

@@ -37,7 +37,7 @@ If you choose to write some code, we have some conventions as follows.
 
 ### Coding Style
 
-Coding style is checked with [flake8](http://flake8.pycqa.org).
+Coding style is checked with [flake8](http://flake8.pycqa.org) and [isort](https://pycqa.github.io/isort/).
 Additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 
 ### Documentation
@@ -106,8 +106,6 @@ circleci build --job <job_name>
 
 You can run the following jobs.
 
-- `tests-python35`
-  - Runs unit tests under Python 3.5
 - `tests-python36`
   - Runs unit tests under Python 3.6
 - `tests-python37`

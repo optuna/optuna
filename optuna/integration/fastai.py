@@ -3,6 +3,7 @@ from typing import Any
 import optuna
 from optuna._imports import try_import
 
+
 with try_import() as _imports:
     from fastai.basic_train import Learner
     from fastai.callbacks import TrackerCallback

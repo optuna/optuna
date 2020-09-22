@@ -9,7 +9,6 @@ from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import desc
 from sqlalchemy import Enum
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import func
@@ -17,10 +16,12 @@ from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
+from sqlalchemy.ext.declarative import declarative_base
 
 from optuna import distributions
-from optuna.study import StudyDirection
+from optuna._study_direction import StudyDirection
 from optuna.trial import TrialState
+
 
 # Don't modify this version number anymore.
 # The schema management functionality has been moved to alembic.

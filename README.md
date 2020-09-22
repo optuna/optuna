@@ -2,7 +2,7 @@
 
 # Optuna: A hyperparameter optimization framework
 
-[![Python](https://img.shields.io/badge/python-3.5%20%7C%203.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
 [![conda](https://img.shields.io/conda/vn/conda-forge/optuna.svg)](https://anaconda.org/conda-forge/optuna)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/optuna/optuna)
@@ -23,6 +23,7 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## News
 
+- **2020-09-17** `isort` has been incorporated to keep import statements consistent. Read more about it in [CONTRIBUTING.md](./CONTRIBUTING.md)
 - **2020-08-07** We are welcoming [contributions](#contribution) and are working on streamlining the experience. Read more about it in the [blog](https://medium.com/optuna/optuna-wants-your-pull-request-ff619572302c)
 
 ## Key Features
@@ -30,7 +31,7 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 Optuna has modern functionalities as follows:
 
 - [Lightweight, versatile, and platform agnostic architecture](https://optuna.readthedocs.io/en/stable/tutorial/first.html)
-  - Handle a wide variety of tasks with a simple installation that has few requirements. 
+  - Handle a wide variety of tasks with a simple installation that has few requirements.
 - [Pythonic search spaces](https://optuna.readthedocs.io/en/stable/tutorial/configurations.html)
   - Define search spaces using familiar Python syntax including conditionals and loops.
 - [Efficient optimization algorithms](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html)
@@ -89,17 +90,20 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 
 [Integrations modules](https://optuna.readthedocs.io/en/stable/tutorial/pruning.html), which allow pruning, or early stopping, of unpromising trials are available for the following libraries:
 
-* [XGBoost](./examples/pruning/xgboost_integration.py)
-* [LightGBM](./examples/pruning/lightgbm_integration.py)
+* [AllenNLP](./examples/allennlp)
+* [Catalyst](./examples/catalyst_simple.py)
+* [Catboost](./examples/catboost_simple.py)
 * [Chainer](./examples/pruning/chainer_integration.py)
+* [FastAI](./examples/fastai_simple.py)
 * [Keras](./examples/pruning/keras_integration.py)
-* [TensorFlow](./examples/pruning/tensorflow_estimator_integration.py)
-* [tf.keras](./examples/pruning/tfkeras_integration.py)
+* [LightGBM](./examples/pruning/lightgbm_integration.py)
 * [MXNet](./examples/pruning/mxnet_integration.py)
+* [PyTorch](./examples/pytorch_simple.py)
 * [PyTorch Ignite](./examples/pytorch_ignite_simple.py)
 * [PyTorch Lightning](./examples/pytorch_lightning_simple.py)
-* [FastAI](./examples/fastai_simple.py)
-* [AllenNLP](./examples/allennlp)
+* [TensorFlow](./examples/pruning/tensorflow_estimator_integration.py)
+* [tf.keras](./examples/pruning/tfkeras_integration.py)
+* [XGBoost](./examples/pruning/xgboost_integration.py)
 
 ## Installation
 
@@ -115,7 +119,7 @@ $ pip install optuna
 $ conda install -c conda-forge optuna
 ```
 
-Optuna supports Python 3.5 or newer.
+Optuna supports Python 3.6 or newer.
 
 Also, we also provide Optuna docker images on [DockerHub](https://hub.docker.com/r/optuna/optuna).
 
