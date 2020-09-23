@@ -42,7 +42,7 @@ class _MultivariateParzenEstimator:
         self._search_space = search_space
         self._parameters = parameters
         self._n_observations = next(iter(multivariate_observations.values())).size
-        self._weights = self._calculate_weights(multivariate_observations)
+        self._weights = self._calculate_weights()
 
         self._low = {}  # type: Dict[str, Optional[float]]
         self._high = {}  # type: Dict[str, Optional[float]]
@@ -170,7 +170,7 @@ class _MultivariateParzenEstimator:
         ret = scipy.special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
         return ret
 
-    def _calculate_weights(self, multivariate_observations: Dict[str, np.ndarray]) -> np.ndarray:
+    def _calculate_weights(self) -> np.ndarray:
 
         # We decide the weights.
         consider_prior = self._parameters.consider_prior
@@ -282,7 +282,8 @@ class _MultivariateParzenEstimator:
 
         return transformed
 
-    def _precompute_sigmas0(self, multivariate_observations: Dict[str, np.ndarray]) -> np.ndarray:
+    @staticmethod
+    def _precompute_sigmas0(multivariate_observations: Dict[str, np.ndarray]) -> np.ndarray:
         # We use Scott's rule for bandwidth selection.
         # This rule was used in the BOHB paper.
         # TODO(kstoneriv3): The constant factor SIGMA0_MAGNITUDE=0.2 might not be optimal.
