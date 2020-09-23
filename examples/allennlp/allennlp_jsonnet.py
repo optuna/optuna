@@ -45,7 +45,11 @@ if __name__ == "__main__":
     if version.parse(allennlp.__version__) < version.parse("1.0.0"):
         raise RuntimeError("AllenNLP>=1.0.0 is required for this example.")
 
-    study = optuna.create_study(direction="maximize")
+    study = optuna.create_study(
+        direction="maximize",
+        storage="sqlite:///allennlp.db",
+        pruner=optuna.pruners.HyperbandPruner(),
+    )
     study.optimize(objective, n_trials=50, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))

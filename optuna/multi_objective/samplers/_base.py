@@ -109,3 +109,15 @@ class BaseMultiObjectiveSampler(object, metaclass=abc.ABCMeta):
         """
 
         raise NotImplementedError
+
+    def reseed_rng(self) -> None:
+        """Reseed sampler's random number generator.
+
+        This method is called by the :class:`~optuna.multi_objective.study.MultiObjectiveStudy`
+        instance if trials are executed in parallel with the option ``n_jobs>1``. In that case, the
+        sampler instance will be replicated including the state of the random number generator, and
+        they may suggest the same values. To prevent this issue, this method assigns a different
+        seed to each random number generator.
+        """
+
+        pass
