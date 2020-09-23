@@ -21,7 +21,7 @@ def test_plot_optimization_history(direction: str) -> None:
     study0 = create_study(direction=direction)
     study0.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
     figure = plot_edf(study0)
-    assert figure.has_data() is True
+    assert figure.has_data()
 
     # Test with two studies.
     # TODO(ytknzw): Add more specific assertion with the numbers of the studies.
