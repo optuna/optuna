@@ -290,7 +290,9 @@ class _MultivariateParzenEstimator:
         n_observations = next(iter(multivariate_observations.values())).size
         n_observations = max(n_observations, 1)
         n_params = len(multivariate_observations)
-        return SIGMA0_MAGNITUDE * n_observations ** (-1.0 / (n_params + 4)) * np.ones(n_observations)
+        return (
+            SIGMA0_MAGNITUDE * n_observations ** (-1.0 / (n_params + 4)) * np.ones(n_observations)
+        )
 
     def _calculate_categorical_params(
         self, observations: np.ndarray, param_name: str
