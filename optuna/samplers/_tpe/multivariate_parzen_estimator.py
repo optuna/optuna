@@ -41,7 +41,7 @@ class _MultivariateParzenEstimator:
 
         self._search_space = search_space
         self._parameters = parameters
-        self._n_weights = next(iter(multivariate_observations.values())).size
+        self._n_observations = next(iter(multivariate_observations.values())).size
         self._weights = self._calculate_weights(multivariate_observations)
 
         self._low = {}  # type: Dict[str, Optional[float]]
@@ -125,14 +125,14 @@ class _MultivariateParzenEstimator:
     def log_pdf(self, multivariate_samples: Dict[str, np.ndarray]) -> np.ndarray:
 
         multivariate_samples = self._transform_to_uniform(multivariate_samples)
-        n_weights = len(self._weights)
+        n_observations = len(self._weights)
         n_samples = next(iter(multivariate_samples.values())).size
         if n_samples == 0:
             return np.asarray([], dtype=float)
         # We compute log pdf (component_log_pdf)
         # for each sample in multivariate_samples (of size n_samples)
-        # for each component of `_MultivariateParzenEstimator` (of size n_weights).
-        component_log_pdf = np.zeros((n_samples, n_weights))
+        # for each component of `_MultivariateParzenEstimator` (of size n_observations).
+        component_log_pdf = np.zeros((n_samples, n_observations))
         for param_name, dist in self._search_space.items():
             samples = multivariate_samples[param_name]
             if isinstance(dist, distributions.CategoricalDistribution):
@@ -176,13 +176,13 @@ class _MultivariateParzenEstimator:
         consider_prior = self._parameters.consider_prior
         prior_weight = self._parameters.prior_weight
         weights_func = self._parameters.weights
-        n_weights = self._n_weights
+        n_observations = self._n_observations
         if consider_prior:
-            weights = np.empty(n_weights + 1)
-            weights[:-1] = weights_func(n_weights)
+            weights = np.empty(n_observations + 1)
+            weights[:-1] = weights_func(n_observations)
             weights[-1] = prior_weight
         else:
-            weights = weights_func(n_weights)
+            weights = weights_func(n_observations)
         weights /= weights.sum()
         return weights
 
@@ -286,10 +286,10 @@ class _MultivariateParzenEstimator:
         # We use Scott's rule for bandwidth selection.
         # This rule was used in the BOHB paper.
         # TODO(kstoneriv3): The constant factor SIGMA0_MAGNITUDE=0.2 might not be optimal.
-        n_weights = next(iter(multivariate_observations.values())).size
-        n_weights = max(n_weights, 1)
+        n_observations = next(iter(multivariate_observations.values())).size
+        n_observations = max(n_observations, 1)
         n_params = len(multivariate_observations)
-        return SIGMA0_MAGNITUDE * n_weights ** (-1.0 / (n_params + 4)) * np.ones(n_weights)
+        return SIGMA0_MAGNITUDE * n_observations ** (-1.0 / (n_params + 4)) * np.ones(n_observations)
 
     def _calculate_categorical_params(
         self, observations: np.ndarray, param_name: str
@@ -297,24 +297,24 @@ class _MultivariateParzenEstimator:
 
         # TODO(kstoneriv3): This the bandwidth selection rule might not be optimal.
         observations = observations.astype(int)
-        n_weights = self._n_weights
+        n_observations = self._n_observations
         consider_prior = self._parameters.consider_prior
         prior_weight = self._parameters.prior_weight
         distribution = self._search_space[param_name]
         assert isinstance(distribution, distributions.CategoricalDistribution)
         choices = distribution.choices
 
-        if n_weights == 0:
+        if n_observations == 0:
             consider_prior = True
 
         if consider_prior:
-            shape = (n_weights + 1, len(choices))
-            value = prior_weight / (n_weights + 1)
+            shape = (n_observations + 1, len(choices))
+            value = prior_weight / (n_observations + 1)
         else:
-            shape = (n_weights, len(choices))
-            value = prior_weight / n_weights
+            shape = (n_observations, len(choices))
+            value = prior_weight / n_observations
         weights = np.full(shape, fill_value=value)
-        weights[np.arange(n_weights), observations] += 1
+        weights[np.arange(n_observations), observations] += 1
         weights /= weights.sum(axis=1, keepdims=True)
         return weights
 
@@ -322,7 +322,7 @@ class _MultivariateParzenEstimator:
         self, observations: np.ndarray, param_name: str
     ) -> Tuple[np.ndarray, np.ndarray]:
 
-        n_weights = self._n_weights
+        n_observations = self._n_observations
         consider_prior = self._parameters.consider_prior
         consider_magic_clip = self._parameters.consider_magic_clip
         sigmas0 = self._sigmas0
@@ -331,7 +331,7 @@ class _MultivariateParzenEstimator:
         assert low is not None
         assert high is not None
 
-        if n_weights == 0:
+        if n_observations == 0:
             consider_prior = True
 
         if consider_prior:
@@ -339,13 +339,13 @@ class _MultivariateParzenEstimator:
             prior_mu = 0.5 * (low + high)
             prior_sigma = 1.0 * (high - low)
 
-            mus = np.empty(n_weights + 1)
-            mus[:n_weights] = observations
-            mus[n_weights] = prior_mu
+            mus = np.empty(n_observations + 1)
+            mus[:n_observations] = observations
+            mus[n_observations] = prior_mu
 
-            sigmas = np.empty(n_weights + 1)
-            sigmas[:n_weights] = sigmas0 * (high - low)
-            sigmas[n_weights] = prior_sigma
+            sigmas = np.empty(n_observations + 1)
+            sigmas[:n_observations] = sigmas0 * (high - low)
+            sigmas[n_observations] = prior_sigma
 
         else:
             mus = observations
