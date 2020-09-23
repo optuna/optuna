@@ -15,7 +15,7 @@ def test_plot_optimization_history(direction: str) -> None:
     assert not figure.has_data()
 
     figure = plot_edf([create_study(direction=direction), create_study(direction=direction)])
-    assert figure.has_data() is False
+    assert not figure.has_data()
 
     # Test with a study.
     study0 = create_study(direction=direction)
