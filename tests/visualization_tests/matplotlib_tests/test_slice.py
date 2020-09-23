@@ -14,7 +14,7 @@ def test_plot_slice() -> None:
     # Test with no trial.
     study = prepare_study_with_trials(no_trials=True)
     figure = plot_slice(study)
-    assert figure.has_data() is False
+    assert not figure.has_data()
 
     study = prepare_study_with_trials(with_c_d=False)
 
@@ -22,13 +22,13 @@ def test_plot_slice() -> None:
     # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_slice(study)
     assert len(figure) == 2
-    assert figure[0].has_data() is True
-    assert figure[1].has_data() is True
+    assert figure[0].has_data()
+    assert figure[1].has_data()
 
     # Test with a trial to select parameter.
     # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_slice(study, params=["param_a"])
-    assert figure.has_data() is True
+    assert figure.has_data()
 
     # Test with wrong parameters.
     with pytest.raises(ValueError):
@@ -42,7 +42,7 @@ def test_plot_slice() -> None:
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_slice(study)
-    assert figure.has_data() is False
+    assert not figure.has_data()
 
 
 def test_plot_slice_log_scale() -> None:
@@ -62,13 +62,13 @@ def test_plot_slice_log_scale() -> None:
     # Plot a parameter.
     # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_slice(study, params=["y_log"])
-    assert figure.has_data() is True
+    assert figure.has_data()
     figure = plot_slice(study, params=["x_linear"])
-    assert figure.has_data() is True
+    assert figure.has_data()
 
     # Plot multiple parameters.
     # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_slice(study)
     assert len(figure) == 2
-    assert figure[0].has_data() is True
-    assert figure[1].has_data() is True
+    assert figure[0].has_data()
+    assert figure[1].has_data()
