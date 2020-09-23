@@ -8,7 +8,7 @@ from optuna.visualization.matplotlib import plot_edf
 def test_plot_optimization_history(direction: str) -> None:
     # Test with no studies.
     figure = plot_edf([])
-    assert figure.has_data() is False
+    assert not figure.has_data()
 
     # Test with no trials.
     figure = plot_edf(create_study(direction=direction))
