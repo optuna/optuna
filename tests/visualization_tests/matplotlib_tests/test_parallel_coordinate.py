@@ -13,19 +13,19 @@ def test_plot_parallel_coordinate() -> None:
     # Test with no trial.
     study = create_study()
     figure = plot_parallel_coordinate(study)
-    assert figure.has_data() is False
+    assert not figure.has_data()
 
     study = prepare_study_with_trials(with_c_d=False)
 
     # Test with a trial.
     # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_parallel_coordinate(study)
-    assert figure.has_data() is True
+    assert figure.has_data()
 
     # Test with a trial to select parameter.
     # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_parallel_coordinate(study, params=["param_a"])
-    assert figure.has_data() is True
+    assert figure.has_data()
 
     # Test with wrong params that do not exist in trials
     with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
@@ -39,7 +39,7 @@ def test_plot_parallel_coordinate() -> None:
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_parallel_coordinate(study)
-    assert figure.has_data() is False
+    assert not figure.has_data()
 
     # Test with categorical params that cannot be converted to numeral.
     # TODO(ytknzw): Add more specific assertion with the test case.
@@ -65,4 +65,4 @@ def test_plot_parallel_coordinate() -> None:
         )
     )
     figure = plot_parallel_coordinate(study_categorical_params)
-    assert figure.has_data() is True
+    assert figure.has_data()
