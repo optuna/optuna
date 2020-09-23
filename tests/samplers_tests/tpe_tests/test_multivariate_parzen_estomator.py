@@ -84,7 +84,7 @@ def test_init_multivariate_parzen_estimator(consider_prior: bool) -> None:
         else np.array([[0.25, 0.5, 0.25]]),
     }
 
-    for param_name, values in mpe._sigmas.items():
+    for param_name in mpe._sigmas.keys():
         np.testing.assert_equal(
             mpe._sigmas[param_name],
             expected_sigmas[param_name],

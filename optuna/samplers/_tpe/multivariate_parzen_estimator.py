@@ -71,7 +71,7 @@ class _MultivariateParzenEstimator:
                 mus = sigmas = None
                 categorical_weights = self._calculate_categorical_params(observations, param_name)
             else:
-                mus, sigmas = self._calculate_parzen_est_params(observations, param_name)
+                mus, sigmas = self._calculate_numerical_params(observations, param_name)
                 categorical_weights = None
             self._mus[param_name] = mus
             self._sigmas[param_name] = sigmas
@@ -299,7 +299,7 @@ class _MultivariateParzenEstimator:
         observations = observations.astype(int)
         n_weights = self._n_weights
         consider_prior = self._parameters.consider_prior
-        prior_weights = self._parameters.prior_weight
+        prior_weight = self._parameters.prior_weight
         distribution = self._search_space[param_name]
         assert isinstance(distribution, distributions.CategoricalDistribution)
         choices = distribution.choices
@@ -309,16 +309,16 @@ class _MultivariateParzenEstimator:
 
         if consider_prior:
             shape = (n_weights + 1, len(choices))
-            value = prior_weights / (n_weights + 1)
+            value = prior_weight / (n_weights + 1)
         else:
             shape = (n_weights, len(choices))
-            value = prior_weights / n_weights
+            value = prior_weight / n_weights
         weights = np.full(shape, fill_value=value)
         weights[np.arange(n_weights), observations] += 1
         weights /= weights.sum(axis=1, keepdims=True)
         return weights
 
-    def _calculate_parzen_est_params(
+    def _calculate_numerical_params(
         self, observations: np.ndarray, param_name: str
     ) -> Tuple[np.ndarray, np.ndarray]:
 

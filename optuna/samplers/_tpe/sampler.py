@@ -145,8 +145,9 @@ class TPESampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.2.0.
         warn_independent_sampling:
-            If this is :obj:`True`, a warning message is emitted when
+            If this is :obj:`True` and `multivariate=True`, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler.
+            If `multivariate=False`, this flag has no effect.
     """
 
     def __init__(

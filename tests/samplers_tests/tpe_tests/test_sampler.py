@@ -55,7 +55,6 @@ def test_infer_relative_search_space() -> None:
         t.suggest_categorical("g", ["x", "y", "z"])
         return 0.0
 
-    # We test on the empty input
     # Study and frozen-trial are not supposed to be accessed.
     study1 = Mock(spec=[])
     frozen_trial = Mock(spec=[])
@@ -142,7 +141,7 @@ def test_sample_relative_n_startup_trial() -> None:
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     trial = frozen_trial_factory(8)
-    # sample_relative returns {} for only 3 observations.
+    # sample_relative returns {} for only 4 observations.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = TPESampler(n_startup_trials=5, seed=0, multivariate=True)
@@ -251,12 +250,9 @@ def test_sample_relative_disrete_uniform_distributions() -> None:
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         discrete_uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": disc_dist})
     assert 1.0 <= discrete_uniform_suggestion["param-a"] <= 100.0
-    assert (
-        abs(
-            int(discrete_uniform_suggestion["param-a"] * 10)
-            - discrete_uniform_suggestion["param-a"] * 10
-        )
-        < 1e-3
+    np.testing.assert_almost_equal(
+        int(discrete_uniform_suggestion["param-a"] * 10),
+        discrete_uniform_suggestion["param-a"] * 10,
     )
 
 
