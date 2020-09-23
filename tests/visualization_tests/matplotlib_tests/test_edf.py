@@ -29,3 +29,5 @@ def test_plot_optimization_history(direction: str) -> None:
     study1.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
     figure = plot_edf([study0, study1])
     assert figure.has_data()
+    figure = plot_edf((study0, study1))
+    assert figure.has_data()
