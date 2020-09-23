@@ -10,7 +10,7 @@ def test_plot_optimization_history(direction: str) -> None:
     # Test with no trial.
     study = create_study(direction=direction)
     figure = plot_optimization_history(study)
-    assert figure.has_data() is False
+    assert not figure.has_data()
 
     def objective(trial: Trial) -> float:
 
@@ -27,7 +27,7 @@ def test_plot_optimization_history(direction: str) -> None:
     study = create_study(direction=direction)
     study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(study)
-    assert figure.has_data() is True
+    assert figure.has_data()
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
@@ -37,4 +37,4 @@ def test_plot_optimization_history(direction: str) -> None:
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
 
     figure = plot_optimization_history(study)
-    assert figure.has_data() is False
+    assert not figure.has_data()
