@@ -367,10 +367,6 @@ class _CachedStorage(BaseStorage):
             trials = list(sorted(study.trials.values(), key=lambda t: t.number))
             return copy.deepcopy(trials) if deepcopy else trials
 
-    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
-
-        return self._backend.get_n_trials(study_id, state)
-
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         with self._lock:
             if study_id not in self._studies:

@@ -42,6 +42,9 @@ class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
     def __init__(self, seed: Optional[int] = None) -> None:
         self._sampler = optuna.samplers.RandomSampler(seed=seed)
 
+    def reseed_rng(self) -> None:
+        self._sampler.reseed_rng()
+
     def infer_relative_search_space(
         self,
         study: "multi_objective.study.MultiObjectiveStudy",

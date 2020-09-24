@@ -68,5 +68,10 @@ local ENCODER = CNN_FIELDS(
     },
     patience: 2,
     validation_metric: '+accuracy',
+    epoch_callbacks: [
+      {
+        type: 'optuna_pruner',
+      },
+    ],
   },
 }
