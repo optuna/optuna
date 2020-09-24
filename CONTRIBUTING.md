@@ -46,10 +46,10 @@ You can check the format, coding style, and type hints, just by executing a scri
 
 ```bash
 # Without any fixes.
-sh checks.sh
+bash checks.sh
 
 # With fixes on the format by `black` and the import order by `isort`.
-sh checks.sh -u
+bash checks.sh -u
 ```
 
 ### Documentation
