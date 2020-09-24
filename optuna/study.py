@@ -120,9 +120,11 @@ class BaseStudy(object):
 
                 import optuna
 
+
                 def objective(trial):
                     x = trial.suggest_uniform("x", -1, 1)
                     return x ** 2
+
 
                 study = optuna.create_study()
                 study.optimize(objective, n_trials=3)
@@ -200,10 +202,12 @@ class Study(BaseStudy):
 
                 import optuna
 
+
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 1)
                     y = trial.suggest_float("y", 0, 1)
                     return x ** 2 + y ** 2
+
 
                 study = optuna.create_study()
 
@@ -214,7 +218,7 @@ class Study(BaseStudy):
                 assert study.user_attrs == {
                     "objective function": "quadratic function",
                     "dimensions": 2,
-                    "contributors": ["Akiba", "Sano"]
+                    "contributors": ["Akiba", "Sano"],
                 }
 
         Returns:
@@ -258,9 +262,11 @@ class Study(BaseStudy):
 
                 import optuna
 
+
                 def objective(trial):
                     x = trial.suggest_uniform("x", -1, 1)
                     return x ** 2
+
 
                 study = optuna.create_study()
                 study.optimize(objective, n_trials=3)
@@ -387,10 +393,12 @@ class Study(BaseStudy):
 
                 import optuna
 
+
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 1)
                     y = trial.suggest_float("y", 0, 1)
                     return x ** 2 + y ** 2
+
 
                 study = optuna.create_study()
 
@@ -401,7 +409,7 @@ class Study(BaseStudy):
                 assert study.user_attrs == {
                     "objective function": "quadratic function",
                     "dimensions": 2,
-                    "contributors": ["Akiba", "Sano"]
+                    "contributors": ["Akiba", "Sano"],
                 }
 
         Args:
@@ -454,9 +462,11 @@ class Study(BaseStudy):
                 import optuna
                 import pandas
 
+
                 def objective(trial):
                     x = trial.suggest_uniform("x", -1, 1)
                     return x ** 2
+
 
                 study = optuna.create_study()
                 study.optimize(objective, n_trials=3)
@@ -556,11 +566,13 @@ class Study(BaseStudy):
 
                 import optuna
 
+
                 def objective(trial):
                     if trial.number == 4:
                         study.stop()
                     x = trial.suggest_uniform("x", 0, 10)
                     return x ** 2
+
 
                 study = optuna.create_study()
                 study.optimize(objective, n_trials=10)
@@ -593,9 +605,11 @@ class Study(BaseStudy):
 
                 import optuna
 
+
                 def objective(trial):
                     x = trial.suggest_uniform("x", 0, 10)
                     return x ** 2
+
 
                 study = optuna.create_study()
                 study.enqueue_trial({"x": 5})
@@ -627,9 +641,11 @@ class Study(BaseStudy):
                 import optuna
                 from optuna.distributions import UniformDistribution
 
+
                 def objective(trial):
                     x = trial.suggest_uniform("x", 0, 10)
                     return x ** 2
+
 
                 study = optuna.create_study()
                 assert len(study.trials) == 0
@@ -870,9 +886,11 @@ def create_study(
 
             import optuna
 
+
             def objective(trial):
                 x = trial.suggest_uniform("x", 0, 10)
                 return x ** 2
+
 
             study = optuna.create_study()
             study.optimize(objective, n_trials=3)
@@ -974,9 +992,11 @@ def load_study(
 
             import optuna
 
+
             def objective(trial):
                 x = trial.suggest_float("x", 0, 10)
                 return x ** 2
+
 
             study = optuna.create_study(storage="sqlite:///example.db", study_name="my_study")
             study.optimize(objective, n_trials=3)
@@ -1030,9 +1050,11 @@ def delete_study(
 
             import optuna
 
+
             def objective(trial):
                 x = trial.suggest_float("x", -10, 10)
                 return (x - 2) ** 2
+
 
             study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
             study.optimize(objective, n_trials=3)
@@ -1076,9 +1098,11 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
 
             import optuna
 
+
             def objective(trial):
                 x = trial.suggest_float("x", -10, 10)
                 return (x - 2) ** 2
+
 
             study = optuna.create_study(study_name="example-study", storage="sqlite:///example.db")
             study.optimize(objective, n_trials=3)

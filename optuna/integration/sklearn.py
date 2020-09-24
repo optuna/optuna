@@ -479,21 +479,16 @@ class OptunaSearchCV(BaseEstimator):
 
         .. testcode::
 
-                import optuna
-                from sklearn.datasets import load_iris
-                from sklearn.svm import SVC
+            import optuna
+            from sklearn.datasets import load_iris
+            from sklearn.svm import SVC
 
-                clf = SVC(gamma='auto')
-                param_distributions = {
-                    'C': optuna.distributions.LogUniformDistribution(1e-10, 1e+10)
-                }
-                optuna_search = optuna.integration.OptunaSearchCV(
-                    clf,
-                    param_distributions
-                )
-                X, y = load_iris(return_X_y=True)
-                optuna_search.fit(X, y)
-                y_pred = optuna_search.predict(X)
+            clf = SVC(gamma="auto")
+            param_distributions = {"C": optuna.distributions.LogUniformDistribution(1e-10, 1e10)}
+            optuna_search = optuna.integration.OptunaSearchCV(clf, param_distributions)
+            X, y = load_iris(return_X_y=True)
+            optuna_search.fit(X, y)
+            y_pred = optuna_search.predict(X)
     """
 
     _required_parameters = ["estimator", "param_distributions"]
