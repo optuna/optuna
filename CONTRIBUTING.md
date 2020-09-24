@@ -42,7 +42,9 @@ Coding style is checked with [flake8](http://flake8.pycqa.org) and [isort](https
 and additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked with [mypy](http://mypy-lang.org/).
 
-You can check the format, coding style, and type hints, just by executing a script `checks.sh`.
+You can check the format, coding style, and type hint at the same time just by executing a script `checks.sh`.
+If your environment misses some dependencies such as black, flake8, isort or mypy, 
+you will be asked to install them.
 
 ```bash
 # Without any fixes.
