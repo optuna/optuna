@@ -68,6 +68,14 @@ def test_sample_independent(
             np.testing.assert_almost_equal(round_value, value)
 
 
+def test_random_mo_sampler_reseed_rng() -> None:
+    sampler = optuna.multi_objective.samplers.RandomMultiObjectiveSampler()
+    original_seed = sampler._sampler._rng.seed
+
+    sampler.reseed_rng()
+    assert original_seed != sampler._sampler._rng.seed
+
+
 def _create_new_trial(
     study: multi_objective.study.MultiObjectiveStudy,
 ) -> multi_objective.trial.FrozenMultiObjectiveTrial:

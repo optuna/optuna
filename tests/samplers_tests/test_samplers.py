@@ -29,6 +29,7 @@ parametrize_sampler = pytest.mark.parametrize(
     [
         optuna.samplers.RandomSampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
+        lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
         lambda: optuna.integration.PyCmaSampler(),
     ],
