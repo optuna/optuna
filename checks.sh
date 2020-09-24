@@ -26,12 +26,12 @@ done
 
 res_black=$(black . --check 2>&1)
 if [[ $(echo $res_black | grep reformatted) ]] ; then
-  if [ $update == 1 ] ; then
+  if [ $update -eq 1 ] ; then
     echo "Failed with black. The code will be formatted by black."
     black .
   else
-    echo "Failed with black."
     echo "$res_black"
+    echo "Failed with black."
     exit 1
   fi
 else
@@ -40,20 +40,20 @@ fi
 
 res_flake8=$(flake8 .)
 if [[ $res_flake8 ]] ; then
-  echo "Failed with flake8."
   echo "$res_flake8"
+  echo "Failed with flake8."
   exit 1
 fi
 echo "Success in flake8."
 
 res_isort=$(isort . --check 2>&1)
 if [[ $(echo $res_isort | grep ERROR) ]] ; then
-  if [ $update == 1 ] ; then
+  if [ $update -eq 1 ] ; then
     echo "Failed with isort. The code will be formatted by isort."
     isort .
   else
-    echo "Failed with isort."
     echo "$res_isort"
+    echo "Failed with isort."
     exit 1
   fi
 else
@@ -62,8 +62,8 @@ fi
 
 res_mypy=$(mypy .)
 if [[ ! $(echo $res_mypy | grep Success) ]] ; then
-  echo "Failed with mypy."
   echo "$res_mypy"
+  echo "Failed with mypy."
   exit 1
 fi
 echo "Success in mypy"
