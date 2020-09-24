@@ -558,7 +558,7 @@ class Study(BaseStudy):
 
                 def objective(trial):
                     if trial.number == 4:
-                        study.stop()
+                        trial.study.stop()
                     x = trial.suggest_uniform("x", 0, 10)
                     return x ** 2
 
