@@ -11,17 +11,17 @@ from unittest.mock import patch
 import pytest
 
 import optuna
+from optuna._study_direction import StudyDirection
+from optuna._study_summary import StudySummary
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages import _CachedStorage
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
-from optuna.study import StudyDirection
-from optuna.study import StudySummary
+from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -832,6 +832,35 @@ def test_get_n_trials(storage_mode: str) -> None:
         non_existent_study_id = max(study_id_to_summaries.keys()) + 1
         with pytest.raises(KeyError):
             assert storage.get_n_trials(non_existent_study_id)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_n_trials_state_option(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+        storage.set_study_direction(study_id, StudyDirection.MAXIMIZE)
+        generator = random.Random(51)
+
+        states = [
+            TrialState.COMPLETE,
+            TrialState.COMPLETE,
+            TrialState.PRUNED,
+        ]
+
+        for s in states:
+            t = _generate_trial(generator)
+            t.state = s
+            storage.create_new_trial(study_id, template_trial=t)
+
+        assert storage.get_n_trials(study_id, TrialState.COMPLETE) == 2
+        assert storage.get_n_trials(study_id, TrialState.PRUNED) == 1
+
+        other_states = [
+            s for s in ALL_STATES if s != TrialState.COMPLETE and s != TrialState.PRUNED
+        ]
+        for s in other_states:
+            assert storage.get_n_trials(study_id, s) == 0
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

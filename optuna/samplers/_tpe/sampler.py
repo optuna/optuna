@@ -5,24 +5,39 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
+import warnings
 
 import numpy as np
 import scipy.special
 from scipy.stats import truncnorm
 
 from optuna import distributions
+from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
+from optuna.exceptions import ExperimentalWarning
+from optuna.logging import get_logger
+from optuna.samplers import BaseSampler
+from optuna.samplers import IntersectionSearchSpace
+from optuna.samplers import RandomSampler
+from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
-from optuna.samplers import BaseSampler
-from optuna.samplers import RandomSampler
 from optuna.study import Study
-from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
 EPS = 1e-12
+_DISTRIBUTION_CLASSES = (
+    distributions.UniformDistribution,
+    distributions.LogUniformDistribution,
+    distributions.DiscreteUniformDistribution,
+    distributions.IntUniformDistribution,
+    distributions.IntLogUniformDistribution,
+    distributions.CategoricalDistribution,
+)
+_logger = get_logger(__name__)
 
 
 def default_gamma(x: int) -> int:
@@ -119,6 +134,20 @@ class TPESampler(BaseSampler):
             for more details.
         seed:
             Seed for random number generator.
+        multivariate:
+            If this is :obj:`True`, the multivariate TPE is used when suggesting parameters.
+            The multivariate TPE is reported to outperform the independent TPE. See `BOHB: Robust
+            and Efficient Hyperparameter Optimization at Scale
+            <http://proceedings.mlr.press/v80/falkner18a.html>`_ for more details.
+
+            .. note::
+                Added in v2.2.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.2.0.
+        warn_independent_sampling:
+            If this is :obj:`True` and ``multivariate=True``, a warning message is emitted when
+            the value of a parameter is sampled by using an independent sampler.
+            If ``multivariate=False``, this flag has no effect.
     """
 
     def __init__(
@@ -132,6 +161,9 @@ class TPESampler(BaseSampler):
         gamma: Callable[[int], int] = default_gamma,
         weights: Callable[[int], np.ndarray] = default_weights,
         seed: Optional[int] = None,
+        *,
+        multivariate: bool = False,
+        warn_independent_sampling: bool = True
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
@@ -143,8 +175,19 @@ class TPESampler(BaseSampler):
         self._gamma = gamma
         self._weights = weights
 
+        self._warn_independent_sampling = warn_independent_sampling
         self._rng = np.random.RandomState(seed)
         self._random_sampler = RandomSampler(seed=seed)
+
+        self._multivariate = multivariate
+        self._search_space = IntersectionSearchSpace()
+
+        if multivariate:
+            warnings.warn(
+                "``multivariate`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
     def reseed_rng(self) -> None:
 
@@ -155,13 +198,68 @@ class TPESampler(BaseSampler):
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
 
-        return {}
+        if not self._multivariate:
+            return {}
+
+        search_space = {}  # type: Dict[str, BaseDistribution]
+        for name, distribution in self._search_space.calculate(study).items():
+            if not isinstance(distribution, _DISTRIBUTION_CLASSES):
+                if self._warn_independent_sampling:
+                    complete_trials = study._storage.get_all_trials(
+                        study._study_id, deepcopy=False
+                    )
+                    if len(complete_trials) >= self._n_startup_trials:
+                        self._log_independent_sampling(trial, name)
+                continue
+            search_space[name] = distribution
+
+        return search_space
+
+    def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
+        _logger.warning(
+            "The parameter '{}' in trial#{} is sampled independently "
+            "instead of being sampled by multivariate TPE sampler. "
+            "(optimization performance may be degraded). "
+            "You can suppress this warning by setting `warn_independent_sampling` "
+            "to `False` in the constructor of `TPESampler`, "
+            "if this independent sampling is intended behavior.".format(param_name, trial.number)
+        )
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
 
-        return {}
+        if search_space == {}:
+            return {}
+
+        param_names = list(search_space.keys())
+        values, scores = _get_multivariate_observation_pairs(study, param_names)
+
+        # If the number of samples is insufficient, we run random trial.
+        n = len(scores)
+        if n < self._n_startup_trials:
+            return {}
+
+        # We divide data into below and above.
+        below, above = self._split_multivariate_observation_pairs(values, scores)
+        # We then sample by maximizing log likelihood ratio.
+        mpe_below = _MultivariateParzenEstimator(
+            below, search_space, self._parzen_estimator_parameters
+        )
+        mpe_above = _MultivariateParzenEstimator(
+            above, search_space, self._parzen_estimator_parameters
+        )
+        samples_below = mpe_below.sample(self._rng, self._n_ei_candidates)
+        log_likelihoods_below = mpe_below.log_pdf(samples_below)
+        log_likelihoods_above = mpe_above.log_pdf(samples_below)
+        ret = TPESampler._compare_multivariate(
+            samples_below, log_likelihoods_below, log_likelihoods_above
+        )
+
+        for param_name, dist in search_space.items():
+            ret[param_name] = dist.to_external_repr(ret[param_name])
+
+        return ret
 
     def sample_independent(
         self,
@@ -231,6 +329,28 @@ class TPESampler(BaseSampler):
         below = np.asarray([v for v in below if v is not None], dtype=float)
         above = config_vals[np.sort(loss_ascending[n_below:])]
         above = np.asarray([v for v in above if v is not None], dtype=float)
+        return below, above
+
+    def _split_multivariate_observation_pairs(
+        self,
+        config_vals: Dict[str, List[Optional[float]]],
+        loss_vals: List[Tuple[float, float]],
+    ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+
+        config_vals = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
+        loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
+
+        n_below = self._gamma(len(loss_vals))
+        index_loss_ascending = np.argsort(loss_vals)
+        # `np.sort` is used to keep chronological order.
+        index_below = np.sort(index_loss_ascending[:n_below])
+        index_above = np.sort(index_loss_ascending[n_below:])
+        below = {}
+        above = {}
+        for param_name, param_val in config_vals.items():
+            below[param_name] = param_val[index_below]
+            above[param_name] = param_val[index_above]
+
         return below, above
 
     def _sample_uniform(
@@ -533,6 +653,31 @@ class TPESampler(BaseSampler):
             return np.asarray([])
 
     @classmethod
+    def _compare_multivariate(
+        cls,
+        multivariate_samples: Dict[str, np.ndarray],
+        log_l: np.ndarray,
+        log_g: np.ndarray,
+    ) -> Dict[str, Union[float, int]]:
+
+        sample_size = next(iter(multivariate_samples.values())).size
+        if sample_size:
+            score = log_l - log_g
+            if sample_size != score.size:
+                raise ValueError(
+                    "The size of the 'samples' and that of the 'score' "
+                    "should be same. "
+                    "But (samples.size, score.size) = ({}, {})".format(sample_size, score.size)
+                )
+            best = np.argmax(score)
+            return {k: v[best] for k, v in multivariate_samples.items()}
+        else:
+            raise ValueError(
+                "The size of 'samples' should be more than 0."
+                "But samples.size = {}".format(sample_size)
+            )
+
+    @classmethod
     def _logsum_rows(cls, x: np.ndarray) -> np.ndarray:
 
         x = np.asarray(x)
@@ -649,5 +794,45 @@ def _get_observation_pairs(
 
         values.append(param_value)
         scores.append(score)
+
+    return values, scores
+
+
+def _get_multivariate_observation_pairs(
+    study: Study, param_names: List[str]
+) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, float]]]:
+
+    sign = 1
+    if study.direction == StudyDirection.MAXIMIZE:
+        sign = -1
+
+    scores = []
+    values = {
+        param_name: [] for param_name in param_names
+    }  # type: Dict[str, List[Optional[float]]]
+    for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
+
+        # We extract score from the trial.
+        if trial.state is TrialState.COMPLETE and trial.value is not None:
+            score = (-float("inf"), sign * trial.value)
+        elif trial.state is TrialState.PRUNED:
+            if len(trial.intermediate_values) > 0:
+                step, intermediate_value = max(trial.intermediate_values.items())
+                if math.isnan(intermediate_value):
+                    score = (-step, float("inf"))
+                else:
+                    score = (-step, sign * intermediate_value)
+            else:
+                score = (float("inf"), 0.0)
+        else:
+            continue
+        scores.append(score)
+
+        # We extract param_value from the trial.
+        for param_name in param_names:
+            assert param_name in trial.params
+            distribution = trial.distributions[param_name]
+            param_value = distribution.to_internal_repr(trial.params[param_name])
+            values[param_name].append(param_value)
 
     return values, scores

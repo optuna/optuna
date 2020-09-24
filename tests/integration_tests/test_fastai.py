@@ -79,4 +79,4 @@ def test_fastai_pruning_callback(tmpdir: Any) -> None:
 
 
 # https://github.com/optuna/optuna/pull/1399#issuecomment-646956305
-torch.utils.data.DataLoader.__init__ = fastai.basic_data.old_dl_init
+torch.utils.data.DataLoader.__init__ = fastai.basic_data.old_dl_init  # type: ignore

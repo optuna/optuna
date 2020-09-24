@@ -3,6 +3,7 @@ from typing import Union
 
 import optuna
 
+
 with optuna._imports.try_import() as _imports:
     import chainer
     from chainer.training.extension import Extension
@@ -10,7 +11,7 @@ with optuna._imports.try_import() as _imports:
     from chainer.training.triggers import ManualScheduleTrigger
 
 if not _imports.is_successful():
-    Extension = object  # NOQA
+    Extension = object  # type: ignore # NOQA
 
 
 class ChainerPruningExtension(Extension):
@@ -71,10 +72,10 @@ class ChainerPruningExtension(Extension):
         _imports.check()
 
         if isinstance(observation_value, chainer.Variable):
-            observation_value = observation_value.data
+            observation_value = observation_value.data  # type: ignore
 
         try:
-            observation_value = float(observation_value)
+            observation_value = float(observation_value)  # type: ignore
         except TypeError:
             raise TypeError(
                 "Type of observation value is not supported by ChainerPruningExtension.\n"
