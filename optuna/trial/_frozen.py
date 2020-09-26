@@ -102,7 +102,7 @@ class FrozenTrial(BaseTrial):
         state:
             :class:`TrialState` of the :class:`~optuna.trial.Trial`.
         value:
-            Objective value of the :class:`~optuna.trial.Trial`.
+            Objective value of the :class:`~optuna.trial.Trial` or a sequence of such values.
         datetime_start:
             Datetime where the :class:`~optuna.trial.Trial` started.
         datetime_complete:
@@ -120,7 +120,7 @@ class FrozenTrial(BaseTrial):
         self,
         number: int,
         state: TrialState,
-        value: Optional[float],
+        value: Optional[Union[float, Sequence[float]]],
         datetime_start: Optional[datetime.datetime],
         datetime_complete: Optional[datetime.datetime],
         params: Dict[str, Any],
@@ -447,12 +447,12 @@ class FrozenTrial(BaseTrial):
 def create_trial(
     *,
     state: Optional[TrialState] = None,
-    value: Optional[float] = None,
+    value: Optional[Union[float, Sequence[float]]] = None,
     params: Optional[Dict[str, Any]] = None,
     distributions: Optional[Dict[str, BaseDistribution]] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
     system_attrs: Optional[Dict[str, Any]] = None,
-    intermediate_values: Optional[Dict[int, float]] = None
+    intermediate_values: Optional[Dict[int, float]] = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
 

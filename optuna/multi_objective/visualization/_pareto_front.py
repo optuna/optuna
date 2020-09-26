@@ -5,6 +5,7 @@ from typing import Optional
 import optuna
 from optuna import multi_objective
 from optuna._experimental import experimental
+from optuna.multi_objective._selection import _get_pareto_front_trials
 from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from optuna.trial import TrialState
@@ -102,7 +103,7 @@ def _get_pareto_front_2d(
     elif len(names) != 2:
         raise ValueError("The length of `names` is supposed to be 2.")
 
-    trials = study.get_pareto_front_trials()
+    trials = _get_pareto_front_trials(study)
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
@@ -113,8 +114,8 @@ def _get_pareto_front_2d(
         trials += non_pareto_trials
 
     data = go.Scatter(
-        x=[t.values[0] for t in trials],
-        y=[t.values[1] for t in trials],
+        x=[t.value[0] for t in trials],
+        y=[t.value[1] for t in trials],
         text=[_make_hovertext(t) for t in trials],
         mode="markers",
         hovertemplate="%{text}<extra></extra>",
@@ -132,7 +133,7 @@ def _get_pareto_front_3d(
     elif len(names) != 3:
         raise ValueError("The length of `names` is supposed to be 3.")
 
-    trials = study.get_pareto_front_trials()
+    trials = _get_pareto_front_trials(study)
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
@@ -143,9 +144,9 @@ def _get_pareto_front_3d(
         trials += non_pareto_trials
 
     data = go.Scatter3d(
-        x=[t.values[0] for t in trials],
-        y=[t.values[1] for t in trials],
-        z=[t.values[2] for t in trials],
+        x=[t.value[0] for t in trials],
+        y=[t.value[1] for t in trials],
+        z=[t.value[2] for t in trials],
         text=[_make_hovertext(t) for t in trials],
         mode="markers",
         hovertemplate="%{text}<extra></extra>",
@@ -160,6 +161,6 @@ def _get_pareto_front_3d(
 
 def _make_hovertext(trial: FrozenMultiObjectiveTrial) -> str:
     text = json.dumps(
-        {"number": trial.number, "values": trial.values, "params": trial.params}, indent=2
+        {"number": trial.number, "values": trial.value, "params": trial.params}, indent=2
     )
     return text.replace("\n", "<br>")

@@ -9,6 +9,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
 from typing import Tuple
 from typing import Type
@@ -28,6 +29,7 @@ from optuna import storages
 from optuna import trial as trial_module
 from optuna._experimental import experimental
 from optuna._imports import try_import
+from optuna._study_direction import _get_study_direction
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
 from optuna.trial import create_trial
@@ -187,6 +189,18 @@ class Study(BaseStudy):
 
         self.__dict__.update(state)
         self._optimize_lock = threading.Lock()
+
+    @property
+    def n_objectives(self) -> int:
+        """Return the number of objectives.
+
+        Returns:
+            Number of objectives.
+        """
+
+        if isinstance(self.direction, str):
+            return 1
+        return len(self.direction)
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
@@ -792,8 +806,9 @@ class Study(BaseStudy):
         trial_number = trial.number
 
         try:
-            result = func(trial)
+            value = func(trial)
         except exceptions.TrialPruned as e:
+            # TODO(hvy): Handle multi-objective cases.
             message = "Trial {} pruned. {}".format(trial_number, str(e))
             _logger.info(message)
 
@@ -826,48 +841,97 @@ class Study(BaseStudy):
             if gc_after_trial:
                 gc.collect()
 
+        value, failure_message = self._check_value(value, trial)
+
+        if failure_message is None:
+            assert value is not None
+            self._storage.set_trial_value(trial_id, value)
+            self._storage.set_trial_state(trial_id, TrialState.COMPLETE)
+            self._log_completed_trial(trial, value)
+        else:
+            self._storage.set_trial_system_attr(trial_id, "fail_reason", failure_message)
+            self._storage.set_trial_state(trial_id, TrialState.FAIL)
+            _logger.warning(failure_message)
+
+        return trial
+
+    def _check_value(
+        self, orginal_value: Union[float, Sequence[float]], trial: trial_module.Trial
+    ) -> Tuple[Union[float, Sequence[float]], Optional[str]]:
+        value = None
+        failure_message = None
+
+        if self.n_objectives > 1:
+            if self.n_objectives != len(orginal_value):
+                failure_message = (
+                    "Trial {} failed, because the number of the values {} is did not match the "
+                    "number of the objectives {}.".format(
+                        trial_number, len(orginal_value), self.n_objectives
+                    )
+                )
+            else:
+                value = []
+                for v in orginal_value:
+                    v, failure_message = self._check_single_value(v, trial)
+                    if failure_message is not None:
+                        # `value` is assumed to be ignored on failure so we can set it to any
+                        # value.
+                        value = None
+                        continue
+                    else:
+                        value.append(v)
+        else:
+            value, failure_message = self._check_single_value(orginal_value, trial)
+
+        return value, failure_message
+
+    def _check_single_value(
+        self, orginal_value: float, trial: trial_module.Trial
+    ) -> Tuple[float, Optional[str]]:
+        value = None
+        failure_message = None
+
         try:
-            result = float(result)
+            value = float(orginal_value)
         except (
             ValueError,
             TypeError,
         ):
-            message = (
+            failure_message = (
                 "Trial {} failed, because the returned value from the "
                 "objective function cannot be cast to float. Returned value is: "
-                "{}".format(trial_number, repr(result))
+                "{}".format(trial.number, repr(orginal_value))
             )
-            _logger.warning(message)
-            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-            self._storage.set_trial_state(trial_id, TrialState.FAIL)
-            return trial
 
-        if math.isnan(result):
-            message = "Trial {} failed, because the objective function returned {}.".format(
-                trial_number, result
+        if value is not None and math.isnan(value):
+            failure_message = (
+                "Trial {} failed, because the objective function returned {}.".format(
+                    trial.number, orginal_value
+                )
             )
-            _logger.warning(message)
-            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-            self._storage.set_trial_state(trial_id, TrialState.FAIL)
-            return trial
 
-        self._storage.set_trial_value(trial_id, result)
-        self._storage.set_trial_state(trial_id, TrialState.COMPLETE)
-        self._log_completed_trial(trial, result)
+        return value, failure_message
 
-        return trial
-
-    def _log_completed_trial(self, trial: trial_module.Trial, result: float) -> None:
+    def _log_completed_trial(
+        self, trial: trial_module.Trial, value: Union[float, Sequence[float]]
+    ) -> None:
 
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        _logger.info(
-            "Trial {} finished with value: {} and parameters: {}. "
-            "Best is trial {} with value: {}.".format(
-                trial.number, result, trial.params, self.best_trial.number, self.best_value
+        if isinstance(value, float):
+            _logger.info(
+                "Trial {} finished with value: {} and parameters: {}. "
+                "Best is trial {} with value: {}.".format(
+                    trial.number, value, trial.params, self.best_trial.number, self.best_value
+                )
             )
-        )
+        else:
+            _logger.info(
+                "Trial {} finished with value: {} and parameters: {}. ".format(
+                    trial.number, value, trial.params
+                )
+            )
 
 
 def create_study(
@@ -875,7 +939,7 @@ def create_study(
     sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
     study_name: Optional[str] = None,
-    direction: str = "minimize",
+    direction: Union[str, Sequence[str]] = "minimize",
     load_if_exists: bool = False,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
@@ -959,14 +1023,12 @@ def create_study(
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
-    if direction == "minimize":
-        _direction = StudyDirection.MINIMIZE
-    elif direction == "maximize":
-        _direction = StudyDirection.MAXIMIZE
+    if isinstance(direction, str):
+        direction = _get_study_direction(direction)
     else:
-        raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
+        direction = [_get_study_direction(d) for d in direction]
 
-    study._storage.set_study_direction(study_id, _direction)
+    study._storage.set_study_direction(study_id, direction)
 
     return study
 
