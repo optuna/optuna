@@ -721,7 +721,7 @@ class Study(BaseStudy):
         time_start: Optional[datetime.datetime],
     ) -> None:
 
-        i_trial = 0
+        i_trial = self._storage.get_n_trials(self._study_id)
 
         if time_start is None:
             time_start = datetime.datetime.now()
