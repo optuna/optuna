@@ -42,7 +42,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "Axes":
     return _get_edf_plot(studies)
 
 
-def _get_edf_plot(studies: List[Study]) -> Axes:
+def _get_edf_plot(studies: List[Study]) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
