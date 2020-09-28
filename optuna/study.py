@@ -310,6 +310,10 @@ class Study(BaseStudy):
                 Flag to show progress bars or not. To disable progress bar, set this ``False``.
                 Currently, progress bar is experimental feature and disabled
                 when ``n_jobs`` :math:`\\ne 1`.
+
+        Raises:
+            RuntimeError:
+                If nested invocation of this method occurs.
         """
 
         if not isinstance(catch, tuple):
