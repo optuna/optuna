@@ -22,7 +22,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_slice(study: Study, params: Optional[List[str]] = None) -> Axes:
+def plot_slice(study: Study, params: Optional[List[str]] = None) -> "Axes":
     """Plot the parameter relationship as slice plot in a study with Matplotlib.
 
     .. seealso::  optuna.visualization.plot_slice
@@ -42,7 +42,7 @@ def plot_slice(study: Study, params: Optional[List[str]] = None) -> Axes:
     return _get_slice_plot(study, params)
 
 
-def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
+def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> "Axes":
 
     # Calculate basic numbers for plotting.
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
@@ -110,7 +110,7 @@ def _generate_slice_subplot(
     cmap: Colormap,
     padding_ratio: float,
     obj_values: List[Union[int, float]],
-) -> PathCollection:
+) -> "PathCollection":
     x_values = []
     y_values = []
     trial_numbers = []
