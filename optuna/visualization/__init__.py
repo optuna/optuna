@@ -1,3 +1,4 @@
+from optuna.visualization import matplotlib  # NOQA
 from optuna.visualization._contour import plot_contour  # NOQA
 from optuna.visualization._edf import plot_edf  # NOQA
 from optuna.visualization._intermediate_values import plot_intermediate_values  # NOQA
