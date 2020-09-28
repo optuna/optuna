@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 
 import optuna
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -47,6 +48,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
+@experimental("2.2.0")
 def plot_param_importances(
     study: Study,
     evaluator: Optional[BaseImportanceEvaluator] = None,
