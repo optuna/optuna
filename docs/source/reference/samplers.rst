@@ -1,3 +1,5 @@
+.. module:: optuna.samplers
+
 optuna.samplers
 ===============
 
