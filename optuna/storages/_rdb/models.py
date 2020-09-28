@@ -40,7 +40,6 @@ class StudyModel(BaseModel):
     __tablename__ = "studies"
     study_id = Column(Integer, primary_key=True)
     study_name = Column(String(MAX_INDEXED_STRING_LENGTH), index=True, unique=True, nullable=False)
-    direction = Column(Enum(StudyDirection), nullable=False)
 
     @classmethod
     def find_by_id(
@@ -85,6 +84,17 @@ class StudyModel(BaseModel):
     def all(cls, session: orm.Session) -> List["StudyModel"]:
 
         return session.query(cls).all()
+
+
+class StudyDirectionModel(BaseModel):
+    __tablename__ = "study_direction"
+    study_direction_id = Column(Integer, primary_key=True)
+    direction = Column(Enum(StudyDirection), nullable=False)
+    study_id = Column(Integer, ForeignKey("studies.study_id"))
+
+    study = orm.relationship(
+        StudyModel, backref=orm.backref("direction", cascade="all, delete-orphan")
+    )
 
 
 class StudyUserAttributeModel(BaseModel):
@@ -164,7 +174,6 @@ class TrialModel(BaseModel):
     number = Column(Integer)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     state = Column(Enum(TrialState), nullable=False)
-    value = Column(Float)
     datetime_start = Column(DateTime, default=datetime.now)
     datetime_complete = Column(DateTime)
 
@@ -186,6 +195,7 @@ class TrialModel(BaseModel):
 
         return query.one_or_none()
 
+    # TODO(hvy): Support MO values.
     @classmethod
     def find_max_value_trial(cls, study_id: int, session: orm.Session) -> "TrialModel":
 
@@ -193,7 +203,9 @@ class TrialModel(BaseModel):
             session.query(cls)
             .filter(cls.study_id == study_id)
             .filter(cls.state == TrialState.COMPLETE)
-            .order_by(desc(cls.value))
+            .join(TrialValueModel)
+            .group_by(TrialValueModel.trial_id)  # Look at first value only.
+            .order_by(desc(TrialValueModel.value))
             .limit(1)
             .one_or_none()
         )
@@ -201,6 +213,7 @@ class TrialModel(BaseModel):
             raise ValueError(NOT_FOUND_MSG)
         return trial
 
+    # TODO(hvy): Support MO values.
     @classmethod
     def find_min_value_trial(cls, study_id: int, session: orm.Session) -> "TrialModel":
 
@@ -208,7 +221,9 @@ class TrialModel(BaseModel):
             session.query(cls)
             .filter(cls.study_id == study_id)
             .filter(cls.state == TrialState.COMPLETE)
-            .order_by(asc(cls.value))
+            .join(TrialValueModel)
+            .group_by(TrialValueModel.trial_id)  # Look at first value only.
+            .order_by(asc(TrialValueModel.value))
             .limit(1)
             .one_or_none()
         )
@@ -475,21 +490,32 @@ class TrialParamModel(BaseModel):
 
 
 class TrialValueModel(BaseModel):
-    __tablename__ = "trial_values"
-    __table_args__ = (UniqueConstraint("trial_id", "step"),)  # type: Any
+    __tablename__ = "trial_value"
     trial_value_id = Column(Integer, primary_key=True)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
+    value = Column(Float)
+
+    trial = orm.relationship(
+        TrialModel, backref=orm.backref("value", cascade="all, delete-orphan")
+    )
+
+
+class TrialIntermediateValueModel(BaseModel):
+    __tablename__ = "trial_intermediate_values"
+    __table_args__ = (UniqueConstraint("trial_id", "step"),)  # type: Any
+    trial_intermediate_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     step = Column(Integer)
     value = Column(Float)
 
     trial = orm.relationship(
-        TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
+        TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
     )
 
     @classmethod
     def find_by_trial_and_step(
         cls, trial: TrialModel, step: int, session: orm.Session
-    ) -> Optional["TrialValueModel"]:
+    ) -> Optional["TrialIntermediateValueModel"]:
 
         trial_value = (
             session.query(cls)
@@ -501,7 +527,9 @@ class TrialValueModel(BaseModel):
         return trial_value
 
     @classmethod
-    def where_study(cls, study: StudyModel, session: orm.Session) -> List["TrialValueModel"]:
+    def where_study(
+        cls, study: StudyModel, session: orm.Session
+    ) -> List["TrialIntermediateValueModel"]:
 
         trial_values = (
             session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
@@ -510,14 +538,16 @@ class TrialValueModel(BaseModel):
         return trial_values
 
     @classmethod
-    def where_trial(cls, trial: TrialModel, session: orm.Session) -> List["TrialValueModel"]:
+    def where_trial(
+        cls, trial: TrialModel, session: orm.Session
+    ) -> List["TrialIntermediateValueModel"]:
 
         trial_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
 
         return trial_values
 
     @classmethod
-    def all(cls, session: orm.Session) -> List["TrialValueModel"]:
+    def all(cls, session: orm.Session) -> List["TrialIntermediateValueModel"]:
 
         return session.query(cls).all()
 

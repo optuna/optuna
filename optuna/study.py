@@ -198,9 +198,11 @@ class Study(BaseStudy):
             Number of objectives.
         """
 
-        if isinstance(self.direction, str):
-            return 1
-        return len(self.direction)
+        direction = self.direction
+
+        if isinstance(direction, Sequence):
+            return len(direction)
+        return 1
 
     @property
     def user_attrs(self) -> Dict[str, Any]:

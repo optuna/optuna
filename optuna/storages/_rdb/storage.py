@@ -8,7 +8,9 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
+from typing import Union
 import uuid
 import weakref
 
@@ -152,7 +154,8 @@ class RDBStorage(BaseStorage):
         if study_name is None:
             study_name = self._create_unique_study_name(session)
 
-        study = models.StudyModel(study_name=study_name, direction=StudyDirection.NOT_SET)
+        direction = models.StudyDirectionModel(direction=StudyDirection.NOT_SET)
+        study = models.StudyModel(study_name=study_name, direction=[direction])
         session.add(study)
         if not self._commit_with_integrity_check(session):
             raise optuna.exceptions.DuplicatedStudyError(
@@ -188,20 +191,23 @@ class RDBStorage(BaseStorage):
         return study_name
 
     # TODO(sano): Prevent simultaneously setting different direction in distributed environments.
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
-
+    def set_study_direction(
+        self, study_id: int, direction: Union[StudyDirection, Sequence[StudyDirection]]
+    ) -> None:
         session = self.scoped_session()
 
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        if isinstance(direction, StudyDirection):
+            direction = [direction]
 
-        if study.direction != StudyDirection.NOT_SET and study.direction != direction:
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        prev_direction = [d.direction for d in study.direction]
+
+        if prev_direction[0] != StudyDirection.NOT_SET and prev_direction != direction:
             raise ValueError(
-                "Cannot overwrite study direction from {} to {}.".format(
-                    study.direction, direction
-                )
+                "Cannot overwrite study direction from {} to {}.".format(prev_direction, direction)
             )
 
-        study.direction = direction
+        study.direction = [models.StudyDirectionModel(direction=d) for d in direction]
 
         self._commit(session)
 
@@ -275,7 +281,10 @@ class RDBStorage(BaseStorage):
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
-        return study.direction
+        direction = study.direction
+        if len(direction) == 1:
+            return direction[0].direction
+        return [d.direction for d in direction]
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -331,6 +340,7 @@ class RDBStorage(BaseStorage):
 
         return system_attrs
 
+    # TODO(hvy): Support MO.
     def get_all_study_summaries(self) -> List[StudySummary]:
 
         session = self.scoped_session()
@@ -351,7 +361,11 @@ class RDBStorage(BaseStorage):
             models.StudyModel.direction,
             summarized_trial.c.datetime_start,
             functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
-        ).select_from(orm.outerjoin(models.StudyModel, summarized_trial))
+        ).select_from(
+            orm.outerjoin(
+                orm.join(models.StudyModel, models.StudyDirectionModel), summarized_trial
+            )
+        )
 
         study_summary = study_summary_stmt.all()
         study_summaries = []
@@ -386,8 +400,8 @@ class RDBStorage(BaseStorage):
                 system_attrs = session.query(models.TrialSystemAttributeModel).filter(
                     models.TrialSystemAttributeModel.trial_id == best_trial.trial_id
                 )
-                intermediate = session.query(models.TrialValueModel).filter(
-                    models.TrialValueModel.trial_id == best_trial.trial_id
+                intermediate = session.query(models.TrialIntermediateValueModel).filter(
+                    models.TrialIntermediateValueModel.trial_id == best_trial.trial_id
                 )
                 best_trial_frozen = FrozenTrial(
                     best_trial.number,
@@ -506,11 +520,16 @@ class RDBStorage(BaseStorage):
             # the state is set to `template_trial.state`.
             temp_state = TrialState.RUNNING
 
+            value = template_trial.value
+            if not isinstance(value, Sequence):
+                value = [value]
+            value = [models.TrialValueModel(value=v) for v in value]
+
             trial = models.TrialModel(
                 study_id=study_id,
                 number=None,
                 state=temp_state,
-                value=template_trial.value,
+                value=value,
                 datetime_start=template_trial.datetime_start,
                 datetime_complete=template_trial.datetime_complete,
             )
@@ -554,7 +573,7 @@ class RDBStorage(BaseStorage):
         self,
         trial_id: int,
         state: Optional[TrialState] = None,
-        value: Optional[float] = None,
+        value: Optional[Union[float, Sequence[float]]] = None,
         intermediate_values: Optional[Dict[int, float]] = None,
         params: Optional[Dict[str, Any]] = None,
         distributions_: Optional[Dict[str, distributions.BaseDistribution]] = None,
@@ -619,7 +638,9 @@ class RDBStorage(BaseStorage):
             trial_model.datetime_complete = datetime_complete
 
         if value is not None:
-            trial_model.value = value
+            if not isinstance(value, Sequence):
+                value = [value]
+            trial_model.value = [models.TrialValueModel(value=v) for v in value]
 
         if user_attrs:
             trial_user_attrs = (
@@ -655,8 +676,8 @@ class RDBStorage(BaseStorage):
             )
         if intermediate_values:
             value_models = (
-                session.query(models.TrialValueModel)
-                .filter(models.TrialValueModel.trial_id == trial_id)
+                session.query(models.TrialIntermediateValueModel)
+                .filter(models.TrialIntermediateValueModel.trial_id == trial_id)
                 .all()
             )
             value_dict = {value_model.step: value_model for value_model in value_models}
@@ -664,8 +685,8 @@ class RDBStorage(BaseStorage):
                 if s in value_dict:
                     value_dict[s].value = v
                     session.add(value_dict[s])
-            trial_model.values.extend(
-                models.TrialValueModel(step=s, value=v)
+            trial_model.intermediate_values.extend(
+                models.TrialIntermediateValueModel(step=s, value=v)
                 for s, v in intermediate_values.items()
                 if s not in value_dict
             )
@@ -826,14 +847,16 @@ class RDBStorage(BaseStorage):
 
         return trial_param.param_value
 
-    def set_trial_value(self, trial_id: int, value: float) -> None:
+    def set_trial_value(self, trial_id: int, value: Union[float, Sequence[float]]) -> None:
 
         session = self.scoped_session()
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial.value = value
+        if not isinstance(value, Sequence):
+            value = [value]
+        trial.value = [models.TrialValueModel(value=v) for v in value]
 
         self._commit(session)
 
@@ -856,9 +879,11 @@ class RDBStorage(BaseStorage):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial_value = models.TrialValueModel.find_by_trial_and_step(trial, step, session)
+        trial_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
+            trial, step, session
+        )
         if trial_value is None:
-            trial_value = models.TrialValueModel(
+            trial_value = models.TrialIntermediateValueModel(
                 trial_id=trial_id, step=step, value=intermediate_value
             )
             session.add(trial_value)
@@ -964,7 +989,8 @@ class RDBStorage(BaseStorage):
             trial_models = (
                 session.query(models.TrialModel)
                 .options(orm.selectinload(models.TrialModel.params))
-                .options(orm.selectinload(models.TrialModel.values))
+                .options(orm.selectinload(models.TrialModel.value))
+                .options(orm.selectinload(models.TrialModel.intermediate_values))
                 .options(orm.selectinload(models.TrialModel.user_attributes))
                 .options(orm.selectinload(models.TrialModel.system_attributes))
                 .filter(
@@ -987,7 +1013,8 @@ class RDBStorage(BaseStorage):
             trial_models = (
                 session.query(models.TrialModel)
                 .options(orm.selectinload(models.TrialModel.params))
-                .options(orm.selectinload(models.TrialModel.values))
+                .options(orm.selectinload(models.TrialModel.value))
+                .options(orm.selectinload(models.TrialModel.intermediate_values))
                 .options(orm.selectinload(models.TrialModel.user_attributes))
                 .options(orm.selectinload(models.TrialModel.system_attributes))
                 .filter(models.TrialModel.study_id == study_id)
@@ -1003,10 +1030,14 @@ class RDBStorage(BaseStorage):
 
     @staticmethod
     def _build_frozen_trial_from_trial_model(trial: models.TrialModel) -> FrozenTrial:
+        value = [v.value for v in trial.value]
+        if len(value) == 1:  # Single-objective, else multi-objective.
+            value = value[0]
+
         return FrozenTrial(
             number=trial.number,
             state=trial.state,
-            value=trial.value,
+            value=value,
             datetime_start=trial.datetime_start,
             datetime_complete=trial.datetime_complete,
             params={
@@ -1023,10 +1054,11 @@ class RDBStorage(BaseStorage):
             system_attrs={
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
-            intermediate_values={value.step: value.value for value in trial.values},
+            intermediate_values={value.step: value.value for value in trial.intermediate_values},
             trial_id=trial.trial_id,
         )
 
+    # TODO(hvy): Handle multi-objective.
     def get_best_trial(self, study_id: int) -> FrozenTrial:
 
         session = self.scoped_session()
