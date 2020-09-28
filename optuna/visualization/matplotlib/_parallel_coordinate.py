@@ -19,7 +19,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -> Axes:
+def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -> "Axes":
     """Plot the high-dimentional parameter relationships in a study with Matplotlib.
 
     .. seealso::  optuna.visualization.plot_parallel_coordinate
@@ -39,7 +39,7 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
     return _get_parallel_coordinate_plot(study, params)
 
 
-def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
+def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = None) -> "Axes":
 
     # Set up the graph style.
     fig, ax = plt.subplots()
