@@ -51,7 +51,7 @@ def plot_param_importances(
     study: Study,
     evaluator: Optional[BaseImportanceEvaluator] = None,
     params: Optional[List[str]] = None,
-) -> Axes:
+) -> "Axes":
     """Plot hyperparameter importances with Matplotlib.
 
     .. seealso::  optuna.visualization.plot_param_importances
@@ -81,7 +81,7 @@ def _get_param_importance_plot(
     study: Study,
     evaluator: Optional[BaseImportanceEvaluator] = None,
     params: Optional[List[str]] = None,
-) -> Axes:
+) -> "Axes":
 
     # Set up the graph style.
     fig, ax = plt.subplots()
@@ -119,7 +119,7 @@ def _get_param_importance_plot(
     return ax
 
 
-def _get_distribution(param_name: str, study: Study) -> BaseDistribution:
+def _get_distribution(param_name: str, study: Study) -> "BaseDistribution":
     for trial in study.trials:
         if param_name in trial.distributions:
             return trial.distributions[param_name]
