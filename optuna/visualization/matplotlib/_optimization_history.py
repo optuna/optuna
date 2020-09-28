@@ -1,3 +1,4 @@
+from optuna._experimental import experimental
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
@@ -12,6 +13,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
+@experimental("2.2.0")
 def plot_optimization_history(study: Study) -> "Axes":
     """Plot optimization history of all trials in a study with Matplotlib.
 
