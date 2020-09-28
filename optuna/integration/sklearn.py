@@ -35,7 +35,7 @@ with try_import() as _imports:
     from sklearn.base import BaseEstimator
     from sklearn.base import clone
     from sklearn.base import is_classifier
-    from sklearn.metrics.scorer import check_scoring
+    from sklearn.metrics import check_scoring
     from sklearn.model_selection import BaseCrossValidator
     from sklearn.model_selection import check_cv
     from sklearn.model_selection import cross_validate
