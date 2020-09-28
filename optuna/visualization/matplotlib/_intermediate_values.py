@@ -11,7 +11,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_intermediate_values(study: Study) -> Axes:
+def plot_intermediate_values(study: Study) -> "Axes":
     """Plot intermediate values of all trials in a study with Matplotlib.
 
     .. seealso::  optuna.visualization.plot_intermediate_values
@@ -29,7 +29,7 @@ def plot_intermediate_values(study: Study) -> Axes:
     return _get_intermediate_plot(study)
 
 
-def _get_intermediate_plot(study: Study) -> Axes:
+def _get_intermediate_plot(study: Study) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
