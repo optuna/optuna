@@ -24,9 +24,11 @@ class RandomSampler(BaseSampler):
             import optuna
             from optuna.samplers import RandomSampler
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -5, 5)
-                return x**2
+                x = trial.suggest_uniform("x", -5, 5)
+                return x ** 2
+
 
             study = optuna.create_study(sampler=RandomSampler())
             study.optimize(objective, n_trials=10)

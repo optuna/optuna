@@ -40,9 +40,11 @@ class FrozenTrial(BaseTrial):
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -1, 1)
+                x = trial.suggest_uniform("x", -1, 1)
                 return x ** 2
+
 
             study = optuna.create_study()
             study.optimize(objective, n_trials=3)
@@ -67,13 +69,15 @@ class FrozenTrial(BaseTrial):
 
                 import optuna
 
+
                 def objective(trial):
-                    x = trial.suggest_uniform('x', -1, 1)
+                    x = trial.suggest_uniform("x", -1, 1)
 
                     # this user attribute always differs
-                    trial.set_user_attr('evaluation time', datetime.datetime.now())
+                    trial.set_user_attr("evaluation time", datetime.datetime.now())
 
-                    return x**2
+                    return x ** 2
+
 
                 study = optuna.create_study()
                 study.optimize(objective, n_trials=3)
