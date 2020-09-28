@@ -18,7 +18,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_edf(study: Union[Study, Sequence[Study]]) -> Axes:
+def plot_edf(study: Union[Study, Sequence[Study]]) -> "Axes":
     """Plot the objective value EDF (empirical distribution function) of a study with Matplotlib.
 
     .. seealso::  optuna.visualization.plot_edf
