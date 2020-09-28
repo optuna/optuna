@@ -639,6 +639,9 @@ class _LightGBMBaseTuner(_BaseTuner):
             pbar.close()
             del pbar
 
+        if objective.best_booster_with_trial_number is not None:
+            self._best_booster_with_trial_number = objective.best_booster_with_trial_number
+
         return objective
 
     @abc.abstractmethod
@@ -833,23 +836,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
 
         return self.get_best_booster()
 
-    def _tune_params(
-        self,
-        target_param_names: List[str],
-        n_trials: int,
-        sampler: optuna.samplers.BaseSampler,
-        step_name: str,
-    ) -> _OptunaObjective:
-
-        objective = super(LightGBMTuner, self)._tune_params(
-            target_param_names, n_trials, sampler, step_name
-        )
-
-        if objective.best_booster_with_trial_number is not None:
-            self._best_booster_with_trial_number = objective.best_booster_with_trial_number
-            self._best_params.update(self.best_params)
-        return objective
-
     def _create_objective(
         self,
         target_param_names: List[str],
@@ -1017,7 +1003,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         If the best booster cannot be found, :class:`ValueError` will be raised.
         To prevent the errors, please save boosters by specifying
         both of the ``model_dir`` and the ``return_cvbooster`` arguments of
-        :meth: `~optuna.integration.lightgbm.LightGBMTunerCV.__init__`
+        :meth: `~optuna.integration.lightgbm.LightGBMTunerCV.__init__`,
         when you resume tuning or you run tuning in parallel.
         """
         if self.lgbm_kwargs.get("return_cvbooster") is not True:
@@ -1044,7 +1030,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         path = os.path.join(self._model_dir, "{}.pkl".format(best_trial.number))
         if not os.path.exists(path):
             raise ValueError(
-                "The best booster cannot be found in {}. If you execute `LightGBMTuner` in "
+                "The best booster cannot be found in {}. If you execute `LightGBMTunerCV` in "
                 "distributed environment, please use network file system (e.g., NFS) to share "
                 "models with multiple workers.".format(self._model_dir)
             )

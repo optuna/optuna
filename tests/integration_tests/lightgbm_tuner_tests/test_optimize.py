@@ -925,48 +925,59 @@ class TestLightGBMTunerCV(object):
         assert callback_mock.call_count == 10
 
     @pytest.mark.parametrize(
-        "model_dir, return_cvbooster", [(True, True), (False, True), (True, False), (False, False)]
+        "return_cvbooster, model_dir", [(True, True), (True, False), (False, True), (False, False)]
     )
-    def test_get_best_booster(self, model_dir: Optional[str], return_cvbooster: bool) -> None:
+    def test_get_best_booster(self, return_cvbooster: bool, model_dir: Optional[str]) -> None:
         unexpected_value = 20  # out of scope.
 
         params = {"verbose": -1, "lambda_l1": unexpected_value}  # type: Dict
         dataset = lgb.Dataset(np.zeros((10, 10)))
-
         study = optuna.create_study()
-        if model_dir and return_cvbooster:
+
+        if return_cvbooster:
             with TemporaryDirectory() as tmpdir:
+                model_dir = tmpdir if model_dir else None
+
                 tuner = LightGBMTunerCV(
                     params,
                     dataset,
                     study=study,
-                    model_dir=tmpdir,
+                    model_dir=model_dir,
                     return_cvbooster=return_cvbooster,
                 )
+
+                with pytest.raises(ValueError):
+                    tuner.get_best_booster()
+
                 with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
                     tuner.tune_regularization_factors()
 
-                best_booster = tuner.get_best_booster()
-                for booster in best_booster.boosters:
+                best_boosters = tuner.get_best_booster().boosters
+                for booster in best_boosters:
                     assert booster.params["lambda_l1"] != unexpected_value
 
-        else:
-            with pytest.raises(ValueError) as excinfo:
-                with TemporaryDirectory() as tmpdir:
-                    if model_dir is True:
-                        mod_dir = tmpdir
-                    else:
-                        mod_dir = None
+                if model_dir is not None:
                     tuner2 = LightGBMTunerCV(
                         params,
                         dataset,
                         study=study,
-                        model_dir=mod_dir,
+                        model_dir=tmpdir,
                         return_cvbooster=return_cvbooster,
                     )
-                    with mock.patch.object(
-                        _OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]
-                    ):
-                        tuner2.tune_regularization_factors()
-                    tuner2.get_best_booster()
+                    best_boosters2 = tuner2.get_best_booster().boosters
+                    for booster, booster2 in zip(best_boosters, best_boosters2):
+                        assert booster.params == booster2.params
+
+        else:
+            with pytest.raises(ValueError) as excinfo:
+                tuner2 = LightGBMTunerCV(
+                    params,
+                    dataset,
+                    study=study,
+                    model_dir=None,
+                    return_cvbooster=return_cvbooster,
+                )
+                with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+                    tuner2.tune_regularization_factors()
+                tuner2.get_best_booster()
             assert excinfo.type is ValueError
