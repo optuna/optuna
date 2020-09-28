@@ -12,7 +12,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_optimization_history(study: Study) -> Axes:
+def plot_optimization_history(study: Study) -> "Axes":
     """Plot optimization history of all trials in a study with Matplotlib.
 
     .. seealso::  optuna.visualization.plot_optimization_history
@@ -30,7 +30,7 @@ def plot_optimization_history(study: Study) -> Axes:
     return _get_optimization_history_plot(study)
 
 
-def _get_optimization_history_plot(study: Study) -> Axes:
+def _get_optimization_history_plot(study: Study) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
