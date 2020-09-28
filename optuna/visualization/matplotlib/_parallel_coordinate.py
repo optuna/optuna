@@ -5,6 +5,7 @@ from typing import Optional
 
 import numpy as np
 
+from optuna._experimental import experimental
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -19,6 +20,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
+@experimental("2.2.0")
 def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -> "Axes":
     """Plot the high-dimentional parameter relationships in a study with Matplotlib.
 
