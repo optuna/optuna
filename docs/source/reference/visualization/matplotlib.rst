@@ -5,7 +5,8 @@ optuna.visualization.matplotlib
     The following functions use matplotlib as a backend.
 
 .. autosummary::
-   :toctree: generated/
-   :nosignatures:
+    :toctree: generated/
+    :nosignatures:
 
-   optuna.visualization.is_available
+    optuna.visualization.matplotlib.plot_edf
+    optuna.visualization.matplotlib.is_available
