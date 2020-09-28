@@ -24,7 +24,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_contour(study: Study, params: Optional[List[str]] = None) -> Axes:
+def plot_contour(study: Study, params: Optional[List[str]] = None) -> "Axes":
     """Plot the parameter relationship as contour plot in a study with Matplotlib.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
@@ -46,7 +46,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> Axes:
     return _get_contour_plot(study, params)
 
 
-def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
+def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "Axes":
     # Calculate basic numbers for plotting.
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
@@ -113,7 +113,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> Axes:
     return axs
 
 
-def _set_cmap(study: Study) -> Colormap:
+def _set_cmap(study: Study) -> "Colormap":
     cmap = plt.get_cmap("Blues_r")
     if study.direction == StudyDirection.MINIMIZE:
         cmap = plt.get_cmap("Blues")
@@ -200,7 +200,7 @@ def _generate_contour_subplot(
     ax: Axes,
     cmap: Colormap,
     contour_point_num: int,
-) -> ContourSet:
+) -> "ContourSet":
 
     x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
     y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
