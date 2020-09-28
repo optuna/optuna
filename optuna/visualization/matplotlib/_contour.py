@@ -6,6 +6,7 @@ from typing import Union
 import numpy as np
 from scipy.interpolate import griddata
 
+from optuna._experimental import experimental
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
@@ -24,6 +25,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
+@experimental("2.2.0")
 def plot_contour(study: Study, params: Optional[List[str]] = None) -> "Axes":
     """Plot the parameter relationship as contour plot in a study with Matplotlib.
 
