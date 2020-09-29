@@ -20,7 +20,7 @@ _logger = get_logger(__name__)
 
 
 @experimental("2.2.0")
-def plot_edf(study: Union[Study, Sequence[Study]]) -> Axes:
+def plot_edf(study: Union[Study, Sequence[Study]]) -> "Axes":
     """Plot the objective value EDF (empirical distribution function) of a study with Matplotlib.
 
     .. seealso::  optuna.visualization.plot_edf
@@ -44,7 +44,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> Axes:
     return _get_edf_plot(studies)
 
 
-def _get_edf_plot(studies: List[Study]) -> Axes:
+def _get_edf_plot(studies: List[Study]) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
