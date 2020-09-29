@@ -1,3 +1,6 @@
+import pickle
+from typing import Any
+from typing import Dict
 from typing import List
 from unittest.mock import MagicMock
 from unittest.mock import Mock
@@ -8,12 +11,16 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna import create_trial
+from optuna.samplers._cmaes import _concat_optimizer_attrs
 from optuna.samplers._cmaes import _initialize_sigma0
 from optuna.samplers._cmaes import _initialize_x0
 from optuna.samplers._cmaes import _initialize_x0_randomly
+from optuna.samplers._cmaes import _split_optimizer_str
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 def test_consider_pruned_trials_experimental_warning() -> None:
@@ -213,3 +220,61 @@ def test_population_size_is_multiplied_when_enable_ipop() -> None:
 
         _, actual_kwargs = cma_class_mock.call_args
         assert actual_kwargs["population_size"] == inc_popsize * popsize
+
+
+def test_restore_optimizer_keeps_backward_compatibility() -> None:
+    sampler = optuna.samplers.CmaEsSampler()
+    optimizer = CMA(np.zeros(2), sigma=1.3)
+    optimizer_str = pickle.dumps(optimizer).hex()
+
+    completed_trials = [
+        create_trial(state=TrialState.COMPLETE, value=0.1),
+        create_trial(
+            state=TrialState.COMPLETE,
+            value=0.1,
+            system_attrs={"cma:optimizer": optimizer_str, "cma:n_restarts": 1},
+        ),
+        create_trial(state=TrialState.COMPLETE, value=0.1),
+    ]
+    optimizer, n_restarts = sampler._restore_optimizer(completed_trials)
+    assert isinstance(optimizer, CMA)
+    assert n_restarts == 1
+
+
+def test_restore_optimizer_from_substrings() -> None:
+    sampler = optuna.samplers.CmaEsSampler()
+    optimizer = CMA(np.zeros(10), sigma=1.3)
+    optimizer_str = pickle.dumps(optimizer).hex()
+
+    system_attrs = _split_optimizer_str(optimizer_str)  # type: Dict[str, Any]
+    assert len(system_attrs) > 1
+    system_attrs["cma:n_restarts"] = 1
+
+    completed_trials = [
+        create_trial(state=TrialState.COMPLETE, value=0.1),
+        create_trial(
+            state=TrialState.COMPLETE,
+            value=0.1,
+            system_attrs=system_attrs,
+        ),
+        create_trial(state=TrialState.COMPLETE, value=0.1),
+    ]
+    optimizer, n_restarts = sampler._restore_optimizer(completed_trials)
+    assert isinstance(optimizer, CMA)
+    assert n_restarts == 1
+
+
+@pytest.mark.parametrize(
+    "dummy_optimizer_str,attr_len",
+    [
+        ("012", 1),
+        ("01234", 1),
+        ("012345", 2),
+    ],
+)
+def test_split_and_concat_optimizer_string(dummy_optimizer_str: str, attr_len: int) -> None:
+    with patch("optuna.samplers._cmaes._SYSTEM_ATTR_MAX_LENGTH", 5):
+        attrs = _split_optimizer_str(dummy_optimizer_str)
+        assert len(attrs) == attr_len
+        actual = _concat_optimizer_attrs(attrs)
+        assert dummy_optimizer_str == actual
