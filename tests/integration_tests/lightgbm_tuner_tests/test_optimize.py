@@ -946,12 +946,12 @@ class TestLightGBMTunerCV(object):
             for booster in best_boosters:
                 assert booster.params["lambda_l1"] != unexpected_value
 
-                tuner2 = LightGBMTunerCV(
-                    params, dataset, study=study, model_dir=tmpdir, return_cvbooster=True
-                )
-                best_boosters2 = tuner2.get_best_booster().boosters
-                for booster, booster2 in zip(best_boosters, best_boosters2):
-                    assert booster.params == booster2.params
+            tuner2 = LightGBMTunerCV(
+                params, dataset, study=study, model_dir=tmpdir, return_cvbooster=True
+            )
+            best_boosters2 = tuner2.get_best_booster().boosters
+            for booster, booster2 in zip(best_boosters, best_boosters2):
+                assert booster.params == booster2.params
 
     def test_get_best_booster_with_error(self) -> None:
         params = {"verbose": -1}  # type: Dict
