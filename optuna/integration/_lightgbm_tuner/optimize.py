@@ -384,7 +384,6 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._parse_args(*args, **kwargs)
         self._start_time = None  # type: Optional[float]
         self._optuna_callbacks = optuna_callbacks
-        self._best_params = {}
         self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
         self._model_dir = model_dir
 
@@ -396,9 +395,6 @@ class _LightGBMBaseTuner(_BaseTuner):
                 "for the tuner to tune min_data_in_leaf."
             )
         self.lgbm_params["feature_pre_filter"] = False
-
-        # Set default parameters as best.
-        self._best_params.update(_DEFAULT_LIGHTGBM_PARAMETERS)
 
         if study is None:
             self.study = optuna.create_study(
@@ -1022,7 +1018,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             raise ValueError(
                 "The best booster cannot be found. It may be found in the other processes due to "
                 "resuming or distributed computing. Please set the `model_dir` argument of "
-                "`LightGBMTuner.__init__` and make sure that boosters are shared with all "
+                "`LightGBMTunerCV.__init__` and make sure that boosters are shared with all "
                 "processes."
             )
 

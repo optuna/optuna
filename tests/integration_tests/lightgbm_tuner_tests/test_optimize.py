@@ -924,60 +924,61 @@ class TestLightGBMTunerCV(object):
 
         assert callback_mock.call_count == 10
 
-    @pytest.mark.parametrize(
-        "return_cvbooster, model_dir", [(True, True), (True, False), (False, True), (False, False)]
-    )
-    def test_get_best_booster(self, return_cvbooster: bool, model_dir: Optional[str]) -> None:
+    def test_get_best_booster(self) -> None:
         unexpected_value = 20  # out of scope.
 
         params = {"verbose": -1, "lambda_l1": unexpected_value}  # type: Dict
         dataset = lgb.Dataset(np.zeros((10, 10)))
         study = optuna.create_study()
 
-        if return_cvbooster:
-            with TemporaryDirectory() as tmpdir:
-                model_dir = tmpdir if model_dir else None
+        with TemporaryDirectory() as tmpdir:
+            tuner = LightGBMTunerCV(
+                params, dataset, study=study, model_dir=tmpdir, return_cvbooster=True
+            )
 
-                tuner = LightGBMTunerCV(
-                    params,
-                    dataset,
-                    study=study,
-                    model_dir=model_dir,
-                    return_cvbooster=return_cvbooster,
-                )
+            with pytest.raises(ValueError):
+                tuner.get_best_booster()
 
-                with pytest.raises(ValueError):
-                    tuner.get_best_booster()
+            with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+                tuner.tune_regularization_factors()
 
-                with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
-                    tuner.tune_regularization_factors()
+            best_boosters = tuner.get_best_booster().boosters
+            for booster in best_boosters:
+                assert booster.params["lambda_l1"] != unexpected_value
 
-                best_boosters = tuner.get_best_booster().boosters
-                for booster in best_boosters:
-                    assert booster.params["lambda_l1"] != unexpected_value
-
-                if model_dir is not None:
-                    tuner2 = LightGBMTunerCV(
-                        params,
-                        dataset,
-                        study=study,
-                        model_dir=tmpdir,
-                        return_cvbooster=return_cvbooster,
-                    )
-                    best_boosters2 = tuner2.get_best_booster().boosters
-                    for booster, booster2 in zip(best_boosters, best_boosters2):
-                        assert booster.params == booster2.params
-
-        else:
-            with pytest.raises(ValueError) as excinfo:
                 tuner2 = LightGBMTunerCV(
-                    params,
-                    dataset,
-                    study=study,
-                    model_dir=None,
-                    return_cvbooster=return_cvbooster,
+                    params, dataset, study=study, model_dir=tmpdir, return_cvbooster=True
                 )
-                with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
-                    tuner2.tune_regularization_factors()
-                tuner2.get_best_booster()
-            assert excinfo.type is ValueError
+                best_boosters2 = tuner2.get_best_booster().boosters
+                for booster, booster2 in zip(best_boosters, best_boosters2):
+                    assert booster.params == booster2.params
+
+    def test_get_best_booster_with_error(self) -> None:
+        params = {"verbose": -1}  # type: Dict
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+        study = optuna.create_study()
+
+        tuner = LightGBMTunerCV(
+            params, dataset, study=study, model_dir=None, return_cvbooster=True
+        )
+        # No trial is completed yet.
+        with pytest.raises(ValueError):
+            tuner.get_best_booster()
+
+        with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+            tuner.tune_regularization_factors()
+
+        tuner2 = LightGBMTunerCV(
+            params, dataset, study=study, model_dir=None, return_cvbooster=True
+        )
+        # Resumed the study does not have the best booster.
+        with pytest.raises(ValueError):
+            tuner2.get_best_booster()
+
+        with TemporaryDirectory() as tmpdir:
+            tuner3 = LightGBMTunerCV(
+                params, dataset, study=study, model_dir=tmpdir, return_cvbooster=True
+            )
+            # The booster was not saved hence not found in the `model_dir`.
+            with pytest.raises(ValueError):
+                tuner3.get_best_booster()
