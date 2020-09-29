@@ -199,7 +199,7 @@ def _generate_contour_subplot(
     trials: List[FrozenTrial],
     x_param: str,
     y_param: str,
-    ax: Axes,
+    ax: "Axes",
     cmap: Colormap,
     contour_point_num: int,
 ) -> "ContourSet":
