@@ -5,6 +5,7 @@ from typing import Union
 
 import numpy as np
 
+from optuna._experimental import experimental
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -18,7 +19,8 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_edf(study: Union[Study, Sequence[Study]]) -> Axes:
+@experimental("2.2.0")
+def plot_edf(study: Union[Study, Sequence[Study]]) -> "Axes":
     """Plot the objective value EDF (empirical distribution function) of a study with Matplotlib.
 
     .. seealso::  optuna.visualization.plot_edf
@@ -42,7 +44,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> Axes:
     return _get_edf_plot(studies)
 
 
-def _get_edf_plot(studies: List[Study]) -> Axes:
+def _get_edf_plot(studies: List[Study]) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
