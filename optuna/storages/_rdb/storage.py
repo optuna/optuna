@@ -54,18 +54,15 @@ class RDBStorage(BaseStorage):
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
+                x = trial.suggest_uniform("x", -100, 100)
                 return x ** 2
 
+
             storage = optuna.storages.RDBStorage(
-                url='sqlite:///:memory:',
-                engine_kwargs={
-                    'pool_size': 20,
-                    'connect_args': {
-                        'timeout': 10
-                    }
-                }
+                url="sqlite:///:memory:",
+                engine_kwargs={"pool_size": 20, "connect_args": {"timeout": 10}},
             )
 
             study = optuna.create_study(storage=storage)
