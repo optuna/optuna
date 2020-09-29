@@ -108,7 +108,7 @@ def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> "Axes":
 def _generate_slice_subplot(
     trials: List[FrozenTrial],
     param: str,
-    ax: Axes,
+    ax: "Axes",
     cmap: Colormap,
     padding_ratio: float,
     obj_values: List[Union[int, float]],
