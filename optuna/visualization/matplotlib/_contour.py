@@ -200,7 +200,7 @@ def _generate_contour_subplot(
     x_param: str,
     y_param: str,
     ax: "Axes",
-    cmap: Colormap,
+    cmap: "Colormap",
     contour_point_num: int,
 ) -> "ContourSet":
 
