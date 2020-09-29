@@ -33,6 +33,7 @@ class ThresholdPruner(BasePruner):
             from optuna.pruners import ThresholdPruner
             from optuna import TrialPruned
 
+
             def objective_for_upper(trial):
                 for step, y in enumerate(ys_for_upper):
                     trial.report(y, step)
