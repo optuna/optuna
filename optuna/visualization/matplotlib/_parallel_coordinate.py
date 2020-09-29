@@ -9,7 +9,6 @@ from optuna._experimental import experimental
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import TrialState
-from optuna._experimental import experimental
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
