@@ -1,5 +1,6 @@
 from typing import List
 
+from optuna._experimental import experimental
 from optuna.distributions import LogUniformDistribution
 from optuna.trial import FrozenTrial
 from optuna.visualization.matplotlib import _matplotlib_imports
@@ -8,6 +9,7 @@ from optuna.visualization.matplotlib import _matplotlib_imports
 __all__ = ["is_available"]
 
 
+@experimental("2.2.0")
 def is_available() -> bool:
     """Returns whether visualization with ``matplotlib`` is available or not.
 
