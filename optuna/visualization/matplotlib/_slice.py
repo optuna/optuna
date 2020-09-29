@@ -109,7 +109,7 @@ def _generate_slice_subplot(
     trials: List[FrozenTrial],
     param: str,
     ax: "Axes",
-    cmap: Colormap,
+    cmap: "Colormap",
     padding_ratio: float,
     obj_values: List[Union[int, float]],
 ) -> "PathCollection":
