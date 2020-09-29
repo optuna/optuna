@@ -1,5 +1,3 @@
-.. module:: optuna.pruners
-
 optuna.pruners
 ==============
 
