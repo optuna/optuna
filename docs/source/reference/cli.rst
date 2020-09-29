@@ -1,3 +1,5 @@
+.. module:: optuna.cli
+
 optuna.cli
 ==========
 
