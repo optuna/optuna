@@ -8,6 +8,7 @@ from optuna.pruners._percentile import PercentilePruner  # NOQA
 from optuna.pruners._successive_halving import SuccessiveHalvingPruner  # NOQA
 from optuna.pruners._threshold import ThresholdPruner  # NOQA
 
+
 if TYPE_CHECKING:
     from optuna.study import Study
     from optuna.trial import FrozenTrial
