@@ -2,7 +2,7 @@ optuna.visualization.matplotlib
 ===============================
 
 .. note::
-    The following functions use matplotlib as a backend.
+    The following functions use Matplotlib as a backend.
 
 .. autosummary::
     :toctree: generated/
