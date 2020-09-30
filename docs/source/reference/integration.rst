@@ -1,7 +1,5 @@
 .. module:: optuna.integration
 
-.. _integration_list:
-
 optuna.integration
 ==================
 
