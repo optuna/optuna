@@ -16,9 +16,9 @@ from optuna._experimental import experimental
 from optuna._study_direction import StudyDirection
 from optuna.pruners import NopPruner
 from optuna.storages import BaseStorage
-from optuna.study import Study
 from optuna.study import create_study as _create_study
 from optuna.study import load_study as _load_study
+from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
