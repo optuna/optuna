@@ -54,7 +54,6 @@ class ThresholdPruner(BasePruner):
 
             ys_for_upper = [0.0, 0.1, 0.2, 0.5, 1.2]
             ys_for_lower = [100.0, 90.0, 0.1, 0.0, -1]
-            n_trial_step = 5
 
             study = create_study(pruner=ThresholdPruner(upper=1.0))
             study.optimize(objective_for_upper, n_trials=10)
