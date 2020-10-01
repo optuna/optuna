@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # As described in `CONTRIBUTING.md`, this script checks Optuna's source codes for formatting,
-# coding style and type hints. The `-u` option enables automatic formatting by `black`.
+# coding style and type hints. The `-u` option enables automatic formatting by `black` and `isort`.
 
 git update-index --chmod=+x
 
@@ -40,43 +40,43 @@ black_target="examples optuna tests"
 res_black=$(black $black_target --check --diff 2>&1)
 if [ $? -eq 1 ] ; then
   if [ $update -eq 1 ] ; then
-    echo "Failed with black. The code will be formatted by black."
+    echo "black failed. The code will be formatted by black."
     black .
   else
     echo "$res_black"
-    echo "Failed with black."
+    echo "black failed."
     exit 1
   fi
 else
-  echo "Success in black."
+  echo "black succeeded."
 fi
 
 res_flake8=$(flake8 .)
 if [ $? -eq 1 ] ; then
   echo "$res_flake8"
-  echo "Failed with flake8."
+  echo "flake8 failed."
   exit 1
 fi
-echo "Success in flake8."
+echo "flake8 succeeded."
 
 res_isort=$(isort . --check 2>&1)
 if [ $? -eq 1 ] ; then
   if [ $update -eq 1 ] ; then
-    echo "Failed with isort. The code will be formatted by isort."
+    echo "isort failed. The code will be formatted by isort."
     isort .
   else
     echo "$res_isort"
-    echo "Failed with isort."
+    echo "isort failed."
     exit 1
   fi
 else
-  echo "Success in isort."
+  echo "isort succeeded."
 fi
 
 res_mypy=$(mypy .)
 if [ $? -eq 1 ] ; then
   echo "$res_mypy"
-  echo "Failed with mypy."
+  echo "mypy failed."
   exit 1
 fi
-echo "Success in mypy"
+echo "mypy succeeded."
