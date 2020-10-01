@@ -27,7 +27,7 @@ class PartialFixedSampler(BaseSampler):
 
         search_space = self._base_sampler.infer_relative_search_space(study, trial)
         
-        for param_name in self._fixed_params.key():
+        for param_name in self._fixed_params.keys():
             if name in search_space:
                 del search_space[name]
 
