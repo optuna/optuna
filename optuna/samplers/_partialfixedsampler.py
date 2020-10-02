@@ -48,7 +48,7 @@ class PartialFixedSampler(BaseSampler):
 
     """
 
-    def __init__(self, fixed_params: Dict[str, Any], base_sampler: Optional[BaseSampler]) -> None:
+    def __init__(self, fixed_params: Dict[str, Any], base_sampler: BaseSampler) -> None:
         self._fixed_params = fixed_params
         self._base_sampler = base_sampler
 
@@ -101,7 +101,7 @@ class PartialFixedSampler(BaseSampler):
             )
 
     @property
-    def fixed_params(self):
+    def fixed_params(self) -> Dict[str, Any]:
         """Return fixed parameters.
 
             .. versionadded:: 2.2.0
