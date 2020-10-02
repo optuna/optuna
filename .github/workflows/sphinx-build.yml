@@ -27,7 +27,7 @@ jobs:
     - name: Build Document
       run: |
         cd docs
-        make html -j
+        make html
         cd ../
 
     - uses: actions/upload-artifact@v2
@@ -56,4 +56,4 @@ jobs:
     - name: Run Doctest
       run: |
         cd docs
-        make doctest -j
+        make doctest
