@@ -11,29 +11,21 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    container: readthedocs/build:latest
-
     steps:
-
-    - name: Update Git
-      run: |
-        add-apt-repository ppa:git-core/ppa -y
-        apt-get update
-        apt-get install -y git
-      shell: bash {0}
 
     - uses: actions/checkout@v2
 
+    - uses: actions/setup-python@v2
+      with:
+        python_version: 3.8
+
     - name: Install Dependencies
       run: |
-        python -m venv venv || virtualenv venv --python=python3.8
-        . venv/bin/activate
-        pip install -U pip
+        python -m pip install -U pip
         pip install --progress-bar off -U .[document]
 
     - name: Build Document
       run: |
-        . venv/bin/activate
         cd docs
         make html
         cd ../
@@ -47,24 +39,17 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    container: readthedocs/build:latest
-
     steps:
-
-    - name: Update Git
-      run: |
-        add-apt-repository ppa:git-core/ppa -y
-        apt-get update
-        apt-get install -y git
-      shell: bash {0}
 
     - uses: actions/checkout@v2
 
+    - uses: actions/setup-python@v2
+      with:
+        python_version: 3.8
+
     - name: Install Dependencies
       run: |
-        python -m venv venv || virtualenv venv --python=python3.8
-        . venv/bin/activate
-        pip install -U pip
+        python -m pip install -U pip
         pip install --progress-bar off -U .[document,doctest]
 
     # TODO (crcrpar): Prevent sphinx-gallery build
