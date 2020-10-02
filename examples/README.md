@@ -83,6 +83,7 @@ In addition, integration modules are available for the following libraries, prov
 * [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)
 * [PyKEEN](https://github.com/pykeen/pykeen)
 * [RL Baselines Zoo](https://github.com/DLR-RM/rl-baselines3-zoo)
+* [CuPy](https://github.com/cupy/cupy)
 
 PRs to add additional projects welcome!
 
