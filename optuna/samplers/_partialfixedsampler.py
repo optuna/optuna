@@ -14,6 +14,8 @@ from optuna.trial import FrozenTrial
 class PartialFixedSampler(BaseSampler):
     """Sampler that can sample with some parameters fixed.
 
+        .. versionadded:: 2.2.0
+
     Example:
 
         After optimizing with :class:`~optuna.samplers.TPESampler`,
@@ -97,3 +99,13 @@ class PartialFixedSampler(BaseSampler):
             return self._base_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )
+
+    @property
+    def fixed_params(self):
+        """Return fixed parameters.
+
+        Returns:
+            A dictionary containing fixed parameters.
+        """
+
+        return self._fixed_params
