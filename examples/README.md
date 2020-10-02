@@ -77,13 +77,13 @@ In addition, integration modules are available for the following libraries, prov
 ### External projects using Optuna
 
 * [Allegro Trains](https://github.com/allegroai/trains)
+* [BBO-Rietveld: Automated crystal structure refinement](https://github.com/quantumbeam/BBO-Rietveld)
 * [Catalyst](https://github.com/catalyst-team/catalyst)
 * [Mozilla Voice STT](https://github.com/mozilla/DeepSpeech)
 * [neptune.ai](https://neptune.ai)
 * [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)
 * [PyKEEN](https://github.com/pykeen/pykeen)
 * [RL Baselines Zoo](https://github.com/DLR-RM/rl-baselines3-zoo)
-* [BBO-Rietveld: Automated crystal structure refinement](https://github.com/quantumbeam/BBO-Rietveld)
 
 PRs to add additional projects welcome!
 
