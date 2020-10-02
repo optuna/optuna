@@ -104,6 +104,8 @@ class PartialFixedSampler(BaseSampler):
     def fixed_params(self):
         """Return fixed parameters.
 
+            .. versionadded:: 2.2.0
+
         Returns:
             A dictionary containing fixed parameters.
         """
