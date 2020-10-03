@@ -1,9 +1,9 @@
 from typing import Any
 from typing import Dict
+import warnings
 
 import numpy
 
-from optuna import distributions
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
@@ -34,7 +34,7 @@ class PartialFixedSampler(BaseSampler):
 
             best_params = study.best_params
             fixed_params = {"y": best_params["y"]}
-            base_sampler = optuna.samplers.CmaEsSampler()
+            base_sampler = optuna.samplers.RandomSampler()
             partial_sampler = PartialFixedSampler(fixed_params, base_sampler)
 
             study.sampler = partial_sampler
@@ -85,14 +85,24 @@ class PartialFixedSampler(BaseSampler):
         study: Study,
         trial: FrozenTrial,
         param_name: str,
-        param_distribution: distributions.BaseDistribution,
+        param_distribution: BaseDistribution,
     ) -> Any:
 
         # Fixed params will be sampled here.
+
         # If param_name isn't in self._fixed_params.keys(), param_value == None.
         param_value = self._fixed_params.get(param_name)
 
         if param_value:
+            # Check if a parameter value is contained in the range of this distribution.
+            param_value_in_internal_repr = param_distribution.to_internal_repr(param_value)
+            contained = param_distribution._contains(param_value_in_internal_repr)
+
+            if not contained:
+                warnings.warn(
+                    "Fixed parameter '{}' with value {} is out of range "
+                    "for distribution {}.".format(param_name, param_value, param_distribution)
+                )
             return param_value
         else:
             return self._base_sampler.sample_independent(
