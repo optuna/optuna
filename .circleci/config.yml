@@ -43,7 +43,7 @@ jobs:
           name: black
           command: |
             . venv/bin/activate
-            black . --check --diff
+            black . --diff
 
       - run:
           name: flake8
@@ -55,7 +55,7 @@ jobs:
           name: isort
           command: |
             . venv/bin/activate
-            isort . --check --diff
+            isort . --diff
 
       - run:
           name: mypy
