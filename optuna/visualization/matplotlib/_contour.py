@@ -31,7 +31,8 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "Axes":
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
 
-    .. seealso::  optuna.visualization.plot_contour
+    .. seealso::
+        Please refer to :func:`~optuna.visualization.plot_contour` for an example.
 
     Args:
         study:
