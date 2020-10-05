@@ -25,7 +25,7 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
     """Plot the high-dimentional parameter relationships in a study with Matplotlib.
 
     .. seealso::
-        Please refer to :func:`~optuna.visualization.plot_parallel_coordinate` for an example.
+        Please refer to :func:`optuna.visualization.plot_parallel_coordinate` for an example.
 
     Args:
         study:
