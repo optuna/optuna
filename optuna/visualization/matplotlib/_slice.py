@@ -27,7 +27,8 @@ _logger = get_logger(__name__)
 def plot_slice(study: Study, params: Optional[List[str]] = None) -> "Axes":
     """Plot the parameter relationship as slice plot in a study with Matplotlib.
 
-    .. seealso::  optuna.visualization.plot_slice
+    .. seealso::
+        Please refer to :func:`~optuna.visualization.plot_slice` for an example.
 
     Args:
         study:
