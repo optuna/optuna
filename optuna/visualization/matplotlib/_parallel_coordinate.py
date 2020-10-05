@@ -24,7 +24,8 @@ _logger = get_logger(__name__)
 def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -> "Axes":
     """Plot the high-dimentional parameter relationships in a study with Matplotlib.
 
-    .. seealso::  optuna.visualization.plot_parallel_coordinate
+    .. seealso::
+        Please refer to :func:`~optuna.visualization.plot_parallel_coordinate` for an example.
 
     Args:
         study:
