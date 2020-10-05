@@ -16,7 +16,7 @@ _logger = get_logger(__name__)
 def plot_intermediate_values(study: Study) -> "Axes":
     """Plot intermediate values of all trials in a study with Matplotlib.
 
-    .. seealso::  
+    .. seealso::
         Please refer to :func:`~optuna.visualization.plot_intermediate_values` for an example.
 
     Args:
