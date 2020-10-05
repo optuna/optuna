@@ -4,16 +4,18 @@ import warnings
 
 import numpy
 
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
 
+@experimental("2.3.0")
 class PartialFixedSampler(BaseSampler):
     """Sampler that can sample with some parameters fixed.
 
-        .. versionadded:: 2.2.0
+        .. versionadded:: 2.3.0
 
     Example:
 
@@ -34,16 +36,10 @@ class PartialFixedSampler(BaseSampler):
 
             best_params = study.best_params
             fixed_params = {"y": best_params["y"]}
-            base_sampler = optuna.samplers.RandomSampler()
-            partial_sampler = PartialFixedSampler(fixed_params, base_sampler)
+            partial_sampler = PartialFixedSampler(fixed_params, study.sampler)
 
             study.sampler = partial_sampler
             study.optimize(objective, n_trials=10)
-
-    .. seealso::
-
-        Please check :class:`optuna.samplers.BaseSampler` page for
-        more information on how the sampler works.
 
     """
 
@@ -112,8 +108,6 @@ class PartialFixedSampler(BaseSampler):
     @property
     def fixed_params(self) -> Dict[str, Any]:
         """Return fixed parameters.
-
-            .. versionadded:: 2.2.0
 
         Returns:
             A dictionary containing fixed parameters.
