@@ -17,7 +17,8 @@ _logger = get_logger(__name__)
 def plot_optimization_history(study: Study) -> "Axes":
     """Plot optimization history of all trials in a study with Matplotlib.
 
-    .. seealso::  optuna.visualization.plot_optimization_history
+    .. seealso::
+        Please refer to :func:`~optuna.visualization.plot_optimization_history` for an example.
 
     Args:
         study:
