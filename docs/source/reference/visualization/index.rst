@@ -2,7 +2,7 @@ optuna.visualization
 ====================
 
 .. note::
-    In the :mod:`~optuna.visualization` module, the following functions use plotly to create figures, but `JupyterLab`_ cannot
+    In the :mod:`optuna.visualization` module, the following functions use plotly to create figures, but `JupyterLab`_ cannot
     render them by default. Please follow this `installation guide`_ to show figures in
     `JupyterLab`_.
 
@@ -23,7 +23,7 @@ optuna.visualization
    optuna.visualization.is_available
 
 .. note::
-    The following :mod:`~optuna.visualization.matplotlib` module uses Matplotlib as a backend.
+    The following :mod:`optuna.visualization.matplotlib` module uses Matplotlib as a backend.
 
 .. toctree::
     :maxdepth: 1
