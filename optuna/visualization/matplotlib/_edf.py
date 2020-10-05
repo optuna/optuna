@@ -24,7 +24,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "Axes":
     """Plot the objective value EDF (empirical distribution function) of a study with Matplotlib.
 
     .. seealso::
-        Please refer to :func:`~optuna.visualization.plot_edf` for an example.
+        Please refer to :func:`optuna.visualization.plot_edf` for an example.
 
     Args:
         study:
