@@ -17,7 +17,7 @@ def plot_intermediate_values(study: Study) -> "Axes":
     """Plot intermediate values of all trials in a study with Matplotlib.
 
     .. seealso::
-        Please refer to :func:`~optuna.visualization.plot_intermediate_values` for an example.
+        Please refer to :func:`optuna.visualization.plot_intermediate_values` for an example.
 
     Args:
         study:
