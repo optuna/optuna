@@ -79,6 +79,7 @@ In addition, integration modules are available for the following libraries, prov
 * [Allegro Trains](https://github.com/allegroai/trains)
 * [BBO-Rietveld: Automated crystal structure refinement](https://github.com/quantumbeam/BBO-Rietveld)
 * [Catalyst](https://github.com/catalyst-team/catalyst)
+* [CuPy](https://github.com/cupy/cupy)
 * [Mozilla Voice STT](https://github.com/mozilla/DeepSpeech)
 * [neptune.ai](https://neptune.ai)
 * [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)
