@@ -56,7 +56,8 @@ def plot_param_importances(
 ) -> "Axes":
     """Plot hyperparameter importances with Matplotlib.
 
-    .. seealso::  optuna.visualization.plot_param_importances
+    .. seealso::
+        Please refer to :func:`~optuna.visualization.plot_param_importances` for an example.
 
     Args:
         study:
