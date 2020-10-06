@@ -12,16 +12,13 @@ from optuna import TrialPruned
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
+from optuna.integration.mpi import MPIStudy
+from optuna.integration.mpi import MPITrial
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.study import Study
 from optuna.trial import BaseTrial
 from optuna.trial import Trial
-from optuna.integration.mpi import MPIStudy
-from optuna.integration.mpi import MPITrial
-from optuna.storages import InMemoryStorage
-from optuna.storages import RDBStorage
-from optuna import TrialPruned
 
 
 with try_import() as _imports:

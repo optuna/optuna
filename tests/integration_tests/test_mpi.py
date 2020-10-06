@@ -8,21 +8,22 @@ import pytest
 
 from optuna import create_study
 from optuna import distributions
+from optuna import pruners
+from optuna import Study
+from optuna import TrialPruned
+from optuna import type_checking
 from optuna.integration.chainermn import ChainerMNStudy
 from optuna.integration.chainermn import ChainerMNTrial
 from optuna.integration.mpi import MPIStudy
 from optuna.integration.mpi import MPITrial
-from optuna import pruners
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna import Study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
-from optuna import TrialPruned
-from optuna import type_checking
+
 
 if type_checking.TYPE_CHECKING:
     from types import TracebackType  # NOQA

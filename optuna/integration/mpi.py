@@ -9,6 +9,8 @@ from typing import Type
 from typing import Union
 import warnings
 
+from optuna import TrialPruned
+from optuna import type_checking
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
@@ -18,8 +20,7 @@ from optuna.storages import RDBStorage
 from optuna.study import Study
 from optuna.trial import BaseTrial
 from optuna.trial import Trial
-from optuna import TrialPruned
-from optuna import type_checking
+
 
 if type_checking.TYPE_CHECKING:
     from optuna.distributions import CategoricalChoiceType  # NOQA
