@@ -46,21 +46,27 @@ def _optimize(
         raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
     # TODO(crcrpar): Make progress bar work when n_jobs != 1.
-    study._progress_bar = pbar_module._ProgressBar(
-        show_progress_bar and n_jobs == 1, n_trials, timeout
-    )
+    progress_bar = pbar_module._ProgressBar(show_progress_bar and n_jobs == 1, n_trials, timeout)
 
     study._stop_flag = False
 
     try:
         if n_jobs == 1:
             _optimize_sequential(
-                study, func, n_trials, timeout, catch, callbacks, gc_after_trial, None
+                study,
+                func,
+                n_trials,
+                timeout,
+                catch,
+                callbacks,
+                gc_after_trial,
+                reseed_sampler_rng=False,
+                time_start=None,
+                progress_bar=progress_bar,
             )
         else:
             if show_progress_bar:
-                msg = "Progress bar only supports serial execution (`n_jobs=1`)."
-                warnings.warn(msg)
+                warnings.warn("Progress bar only supports serial execution (`n_jobs=1`).")
 
             time_start = datetime.datetime.now()
 
@@ -84,41 +90,32 @@ def _optimize(
                 if not isinstance(
                     parallel._backend, joblib.parallel.ThreadingBackend
                 ) and isinstance(study._storage, storages.InMemoryStorage):
-                    msg = (
+                    warnings.warn(
                         "The default storage cannot be shared by multiple processes. "
                         "Please use an RDB (RDBStorage) when you use joblib for "
                         "multi-processing. The usage of RDBStorage can be found in "
-                        "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html."
+                        "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html.",
+                        UserWarning,
                     )
-                    warnings.warn(msg, UserWarning)
 
                 parallel(
-                    delayed(_reseed_and_optimize_sequential)(
-                        study, func, 1, timeout, catch, callbacks, gc_after_trial, time_start
+                    delayed(_optimize_sequential)(
+                        study,
+                        func,
+                        1,
+                        timeout,
+                        catch,
+                        callbacks,
+                        gc_after_trial,
+                        reseed_sampler_rng=True,
+                        time_start=time_start,
+                        progress_bar=None,
                     )
                     for _ in _iter
                 )
     finally:
         study._optimize_lock.release()
-        study._progress_bar.close()
-        del study._progress_bar
-
-
-def _reseed_and_optimize_sequential(
-    study: "optuna.Study",
-    func: "optuna.study.ObjectiveFuncType",
-    n_trials: Optional[int],
-    timeout: Optional[float],
-    catch: Tuple[Type[Exception], ...],
-    callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]],
-    gc_after_trial: bool,
-    time_start: Optional[datetime.datetime],
-) -> None:
-
-    study.sampler.reseed_rng()
-    _optimize_sequential(
-        study, func, n_trials, timeout, catch, callbacks, gc_after_trial, time_start
-    )
+        progress_bar.close()
 
 
 def _optimize_sequential(
@@ -129,8 +126,13 @@ def _optimize_sequential(
     catch: Tuple[Type[Exception], ...],
     callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]],
     gc_after_trial: bool,
+    reseed_sampler_rng: bool,
     time_start: Optional[datetime.datetime],
+    progress_bar: Optional[pbar_module._ProgressBar],
 ) -> None:
+
+    if reseed_sampler_rng:
+        study.sampler.reseed_rng()
 
     i_trial = 0
 
@@ -151,34 +153,33 @@ def _optimize_sequential(
             if elapsed_seconds >= timeout:
                 break
 
-        _run_trial_and_callbacks(study, func, catch, callbacks, gc_after_trial)
+        try:
+            trial = _run_trial(study, func, catch)
+        except Exception:
+            raise
+        finally:
+            # The following line mitigates memory problems that can be occurred in some
+            # environments (e.g., services that use computing containers such as CircleCI).
+            # Please refer to the following PR for further details:
+            # https://github.com/optuna/optuna/pull/325.
+            if gc_after_trial:
+                gc.collect()
 
-        study._progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
+        if callbacks is not None:
+            frozen_trial = copy.deepcopy(study._storage.get_trial(trial._trial_id))
+            for callback in callbacks:
+                callback(study, frozen_trial)
+
+        if progress_bar is not None:
+            progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
 
     study._storage.remove_session()
-
-
-def _run_trial_and_callbacks(
-    study: "optuna.Study",
-    func: "optuna.study.ObjectiveFuncType",
-    catch: Tuple[Type[Exception], ...],
-    callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]],
-    gc_after_trial: bool,
-) -> None:
-
-    trial = _run_trial(study, func, catch, gc_after_trial)
-
-    if callbacks is not None:
-        frozen_trial = copy.deepcopy(study._storage.get_trial(trial._trial_id))
-        for callback in callbacks:
-            callback(study, frozen_trial)
 
 
 def _run_trial(
     study: "optuna.Study",
     func: "optuna.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
-    gc_after_trial: bool,
 ) -> trial_module.Trial:
 
     trial = study._ask()
@@ -189,11 +190,10 @@ def _run_trial(
     try:
         result = func(trial)
     except exceptions.TrialPruned as e:
-        message = "Trial {} pruned. {}".format(trial_number, str(e))
-        _logger.info(message)
-
         # Register the last intermediate value if present as the value of the trial.
         # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
+        _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
+
         frozen_trial = study._storage.get_trial(trial_id)
         study._tell(
             trial,
@@ -206,6 +206,7 @@ def _run_trial(
             trial_number, repr(e)
         )
         _logger.warning(message, exc_info=True)
+
         study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
 
         study._tell(trial, TrialState.FAIL, None)
@@ -213,13 +214,6 @@ def _run_trial(
         if isinstance(e, catch):
             return trial
         raise
-    finally:
-        # The following line mitigates memory problems that can be occurred in some
-        # environments (e.g., services that use computing containers such as CircleCI).
-        # Please refer to the following PR for further details:
-        # https://github.com/optuna/optuna/pull/325.
-        if gc_after_trial:
-            gc.collect()
 
     try:
         result = float(result)
@@ -233,7 +227,9 @@ def _run_trial(
             "{}".format(trial_number, repr(result))
         )
         _logger.warning(message)
+
         study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
+
         study._tell(trial, TrialState.FAIL, None)
         return trial
 
@@ -244,23 +240,11 @@ def _run_trial(
         _logger.warning(message)
 
         study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
+
         study._tell(trial, TrialState.FAIL, None)
         return trial
 
     study._tell(trial, TrialState.COMPLETE, result)
-    _log_completed_trial(study, trial, result)
+    study._log_completed_trial(trial, result)
 
     return trial
-
-
-def _log_completed_trial(study: "optuna.Study", trial: trial_module.Trial, result: float) -> None:
-
-    if not _logger.isEnabledFor(logging.INFO):
-        return
-
-    _logger.info(
-        "Trial {} finished with value: {} and parameters: {}. "
-        "Best is trial {} with value: {}.".format(
-            trial.number, result, trial.params, study.best_trial.number, study.best_value
-        )
-    )

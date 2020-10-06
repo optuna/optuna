@@ -658,13 +658,25 @@ class Study(BaseStudy):
         return trial_module.Trial(self, trial_id)
 
     def _tell(self, trial: trial_module.Trial, state: TrialState, value: Optional[float]) -> None:
-        # TODO(hvy): Cast value to float and handle errors here.
-
         if state == TrialState.COMPLETE:
             assert value is not None
         if value is not None:
             self._storage.set_trial_value(trial._trial_id, value)
         self._storage.set_trial_state(trial._trial_id, state)
+
+    def _log_completed_trial(self, trial: trial_module.Trial, result: float) -> None:
+        # This method is overwritten by `MultiObjectiveStudy` using `types.MethodType` so one must
+        # be careful modifying this method, e.g. making this a free function.
+
+        if not _logger.isEnabledFor(logging.INFO):
+            return
+
+        _logger.info(
+            "Trial {} finished with value: {} and parameters: {}. "
+            "Best is trial {} with value: {}.".format(
+                trial.number, result, trial.params, self.best_trial.number, self.best_value
+            )
+        )
 
 
 def create_study(
