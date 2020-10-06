@@ -195,11 +195,9 @@ def _run_trial(
         _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
 
         frozen_trial = study._storage.get_trial(trial_id)
-        study._tell(
-            trial,
-            TrialState.PRUNED,
-            frozen_trial.intermediate_values.get(frozen_trial.last_step, None),
-        )
+        last_step = frozen_trial.last_step
+        value = None if last_step is None else frozen_trial.intermediate_values[last_step]
+        study._tell(trial, TrialState.PRUNED, value)
         return trial
     except Exception as e:
         message = "Trial {} failed because of the following error: {}".format(
