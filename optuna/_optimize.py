@@ -188,7 +188,7 @@ def _run_trial(
     trial_number = trial.number
 
     try:
-        result = func(trial)
+        value = func(trial)
     except exceptions.TrialPruned as e:
         # Register the last intermediate value if present as the value of the trial.
         # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
@@ -212,9 +212,8 @@ def _run_trial(
         if isinstance(e, catch):
             return trial
         raise
-
     try:
-        result = float(result)
+        value = float(value)
     except (
         ValueError,
         TypeError,
@@ -222,7 +221,7 @@ def _run_trial(
         message = (
             "Trial {} failed, because the returned value from the "
             "objective function cannot be cast to float. Returned value is: "
-            "{}".format(trial_number, repr(result))
+            "{}".format(trial_number, repr(value))
         )
         _logger.warning(message)
 
@@ -231,9 +230,9 @@ def _run_trial(
         study._tell(trial, TrialState.FAIL, None)
         return trial
 
-    if math.isnan(result):
+    if math.isnan(value):
         message = "Trial {} failed, because the objective function returned {}.".format(
-            trial_number, result
+            trial_number, value
         )
         _logger.warning(message)
 
@@ -242,7 +241,7 @@ def _run_trial(
         study._tell(trial, TrialState.FAIL, None)
         return trial
 
-    study._tell(trial, TrialState.COMPLETE, result)
-    study._log_completed_trial(trial, result)
+    study._tell(trial, TrialState.COMPLETE, value)
+    study._log_completed_trial(trial, value)
 
     return trial

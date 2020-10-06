@@ -664,7 +664,7 @@ class Study(BaseStudy):
             self._storage.set_trial_value(trial._trial_id, value)
         self._storage.set_trial_state(trial._trial_id, state)
 
-    def _log_completed_trial(self, trial: trial_module.Trial, result: float) -> None:
+    def _log_completed_trial(self, trial: trial_module.Trial, value: float) -> None:
         # This method is overwritten by `MultiObjectiveStudy` using `types.MethodType` so one must
         # be careful modifying this method, e.g. making this a free function.
 
@@ -674,7 +674,7 @@ class Study(BaseStudy):
         _logger.info(
             "Trial {} finished with value: {} and parameters: {}. "
             "Best is trial {} with value: {}.".format(
-                trial.number, result, trial.params, self.best_trial.number, self.best_value
+                trial.number, value, trial.params, self.best_trial.number, self.best_value
             )
         )
 
