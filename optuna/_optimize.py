@@ -130,7 +130,6 @@ def _optimize_sequential(
     time_start: Optional[datetime.datetime],
     progress_bar: Optional[pbar_module._ProgressBar],
 ) -> None:
-
     if reseed_sampler_rng:
         study.sampler.reseed_rng()
 
@@ -181,7 +180,6 @@ def _run_trial(
     func: "optuna.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.Trial:
-
     trial = study._ask()
 
     trial_id = trial._trial_id
