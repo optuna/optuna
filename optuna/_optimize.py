@@ -190,8 +190,6 @@ def _run_trial(
     except exceptions.TrialPruned as e:
         # Register the last intermediate value if present as the value of the trial.
         # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
-        _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
-
         frozen_trial = study._storage.get_trial(trial_id)
         last_step = frozen_trial.last_step
         study._tell(
@@ -199,20 +197,19 @@ def _run_trial(
             TrialState.PRUNED,
             None if last_step is None else frozen_trial.intermediate_values[last_step],
         )
+        _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
         return trial
     except Exception as e:
         message = "Trial {} failed because of the following error: {}".format(
             trial_number, repr(e)
         )
-        _logger.warning(message, exc_info=True)
-
         study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-
         study._tell(trial, TrialState.FAIL, None)
-
+        _logger.warning(message, exc_info=True)
         if isinstance(e, catch):
             return trial
         raise
+
     try:
         value = float(value)
     except (
@@ -224,25 +221,20 @@ def _run_trial(
             "objective function cannot be cast to float. Returned value is: "
             "{}".format(trial_number, repr(value))
         )
-        _logger.warning(message)
-
         study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-
         study._tell(trial, TrialState.FAIL, None)
+        _logger.warning(message)
         return trial
 
     if math.isnan(value):
         message = "Trial {} failed, because the objective function returned {}.".format(
             trial_number, value
         )
-        _logger.warning(message)
-
         study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-
         study._tell(trial, TrialState.FAIL, None)
+        _logger.warning(message)
         return trial
 
     study._tell(trial, TrialState.COMPLETE, value)
     study._log_completed_trial(trial, value)
-
     return trial
