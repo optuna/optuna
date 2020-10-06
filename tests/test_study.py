@@ -20,6 +20,7 @@ import pandas as pd
 import pytest
 
 import optuna
+from optuna import _optimize
 from optuna import create_trial
 from optuna.testing.storage import StorageSupplier
 
@@ -340,7 +341,7 @@ def test_run_trial(storage_mode: str) -> None:
         study = optuna.create_study(storage=storage)
 
         # Test trial without exception.
-        study._run_trial(func, catch=(Exception,), gc_after_trial=True)
+        _optimize._run_trial(study, func, catch=(Exception,), gc_after_trial=True)
         check_study(study)
 
         # Test trial with acceptable exception.
@@ -348,7 +349,9 @@ def test_run_trial(storage_mode: str) -> None:
 
             raise ValueError
 
-        trial = study._run_trial(func_value_error, catch=(ValueError,), gc_after_trial=True)
+        trial = _optimize._run_trial(
+            study, func_value_error, catch=(ValueError,), gc_after_trial=True
+        )
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = "Trial 1 failed because of the following error: ValueError()"
@@ -357,14 +360,16 @@ def test_run_trial(storage_mode: str) -> None:
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
-            study._run_trial(func_value_error, catch=(ArithmeticError,), gc_after_trial=True)
+            _optimize._run_trial(
+                study, func_value_error, catch=(ArithmeticError,), gc_after_trial=True
+            )
 
         # Test trial with invalid objective value: None
         def func_none(_: optuna.trial.Trial) -> float:
 
             return None  # type: ignore
 
-        trial = study._run_trial(func_none, catch=(Exception,), gc_after_trial=True)
+        trial = _optimize._run_trial(study, func_none, catch=(Exception,), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = (
@@ -380,7 +385,7 @@ def test_run_trial(storage_mode: str) -> None:
 
             return float("nan")
 
-        trial = study._run_trial(func_nan, catch=(Exception,), gc_after_trial=True)
+        trial = _optimize._run_trial(study, func_nan, catch=(Exception,), gc_after_trial=True)
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
         expected_message = "Trial 4 failed, because the objective function returned nan."
@@ -407,7 +412,7 @@ def test_run_trial_with_trial_pruned(
 
         raise trial_pruned_class()
 
-    trial = study._run_trial(func_with_trial_pruned, catch=(), gc_after_trial=True)
+    trial = _optimize._run_trial(study, func_with_trial_pruned, catch=(), gc_after_trial=True)
     frozen_trial = study._storage.get_trial(trial._trial_id)
     assert frozen_trial.value == report_value
     assert frozen_trial.state == optuna.trial.TrialState.PRUNED
@@ -789,7 +794,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
         assert t.params["x"] == 1
 
 
-@patch("optuna.study.gc.collect")
+@patch("optuna._optimize.gc.collect")
 def test_optimize_with_gc(collect_mock: Mock) -> None:
 
     study = optuna.create_study()
@@ -798,7 +803,7 @@ def test_optimize_with_gc(collect_mock: Mock) -> None:
     assert collect_mock.call_count == 10
 
 
-@patch("optuna.study.gc.collect")
+@patch("optuna._optimize.gc.collect")
 def test_optimize_without_gc(collect_mock: Mock) -> None:
 
     study = optuna.create_study()
@@ -978,16 +983,16 @@ def test_log_completed_trial_skip_storage_access() -> None:
     storage = study._storage
 
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, 1.0)
+        _optimize._log_completed_trial(study, trial, 1.0)
         # Trial.best_trial and Trial.best_params access storage.
         assert mock_object.call_count == 2
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, 1.0)
+        _optimize._log_completed_trial(study, trial, 1.0)
         assert mock_object.call_count == 0
 
     optuna.logging.set_verbosity(optuna.logging.DEBUG)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, 1.0)
+        _optimize._log_completed_trial(study, trial, 1.0)
         assert mock_object.call_count == 2
