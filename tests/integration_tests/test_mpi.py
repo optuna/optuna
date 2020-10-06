@@ -455,7 +455,6 @@ class TestMPITrial(object):
             study = TestMPIStudy._create_shared_study(storage, comm)
             low = 1
             high = 10
-            step = 1
             for _ in range(10):
                 mn_trial = _create_new_trial(study, trial_init_func, comm)
 
