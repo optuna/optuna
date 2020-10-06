@@ -273,7 +273,7 @@ class MPIStudy(object):
             An MPI communicator.
     """
 
-    def __init__(self, study: Study, comm: "Comm",) -> None:
+    def __init__(self, study: Study, comm: "Comm") -> None:
 
         _imports.check()
 
