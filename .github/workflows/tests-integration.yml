@@ -12,6 +12,8 @@ jobs:
   tests-integration:
     runs-on: ubuntu-latest
 
+    # TODO (crcrpar): Add 3.9 to python-version matrix once libraries support it.
+    # As far as I know, PyTorch still does not support it.
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]

@@ -28,7 +28,7 @@ def get_long_description() -> str:
 
 def get_install_requires() -> List[str]:
 
-    return [
+    requirements = [
         "alembic",
         "cliff",
         "cmaes>=0.6.0",
@@ -40,6 +40,9 @@ def get_install_requires() -> List[str]:
         "sqlalchemy>=1.1.0",
         "tqdm",
     ]
+    if sys.version_info[:2] > (3, 8):
+        requirements.append("Cython")
+    return requirements
 
 
 def get_tests_require() -> List[str]:
@@ -237,6 +240,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",
