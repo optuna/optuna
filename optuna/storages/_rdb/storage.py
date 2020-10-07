@@ -54,18 +54,15 @@ class RDBStorage(BaseStorage):
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
+                x = trial.suggest_uniform("x", -100, 100)
                 return x ** 2
 
+
             storage = optuna.storages.RDBStorage(
-                url='sqlite:///:memory:',
-                engine_kwargs={
-                    'pool_size': 20,
-                    'connect_args': {
-                        'timeout': 10
-                    }
-                }
+                url="sqlite:///:memory:",
+                engine_kwargs={"pool_size": 20, "connect_args": {"timeout": 10}},
             )
 
             study = optuna.create_study(storage=storage)
@@ -1042,16 +1039,6 @@ class RDBStorage(BaseStorage):
         self._commit(session)
 
         return self.get_trial(trial.trial_id)
-
-    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
-
-        session = self.scoped_session()
-        study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        n_trials = models.TrialModel.count(session, study, state)
-
-        # Terminate transaction explicitly to avoid connection timeout during transaction.
-        self._commit(session)
-        return n_trials
 
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         # Make sure that the given study exists.

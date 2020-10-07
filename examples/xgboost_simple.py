@@ -26,7 +26,7 @@ def objective(trial):
     dvalid = xgb.DMatrix(valid_x, label=valid_y)
 
     param = {
-        "silent": 1,
+        "verbosity": 0,
         "objective": "binary:logistic",
         "booster": trial.suggest_categorical("booster", ["gbtree", "gblinear", "dart"]),
         "lambda": trial.suggest_float("lambda", 1e-8, 1.0, log=True),
@@ -53,5 +53,13 @@ def objective(trial):
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=100)
-    print(study.best_trial)
+    study.optimize(objective, n_trials=100, timeout=600)
+
+    print("Number of finished trials: ", len(study.trials))
+    print("Best trial:")
+    trial = study.best_trial
+
+    print("  Value: {}".format(trial.value))
+    print("  Params: ")
+    for key, value in trial.params.items():
+        print("    {}: {}".format(key, value))

@@ -24,14 +24,15 @@ class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
             import optuna
             from optuna.multi_objective.samplers import RandomMultiObjectiveSampler
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -5, 5)
-                y = trial.suggest_uniform('y', -5, 5)
+                x = trial.suggest_uniform("x", -5, 5)
+                y = trial.suggest_uniform("y", -5, 5)
                 return x ** 2, y + 10
 
+
             study = optuna.multi_objective.create_study(
-                ["minimize", "minimize"],
-                sampler=RandomMultiObjectiveSampler()
+                ["minimize", "minimize"], sampler=RandomMultiObjectiveSampler()
             )
             study.optimize(objective, n_trials=10)
 
@@ -41,6 +42,9 @@ class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
     def __init__(self, seed: Optional[int] = None) -> None:
         self._sampler = optuna.samplers.RandomSampler(seed=seed)
+
+    def reseed_rng(self) -> None:
+        self._sampler.reseed_rng()
 
     def infer_relative_search_space(
         self,

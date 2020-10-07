@@ -6,14 +6,16 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+import warnings
 
 from cmaes import CMA
 import numpy as np
 
 import optuna
 from optuna import logging
-from optuna._experimental import experimental
+from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
+from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -22,6 +24,8 @@ from optuna.trial import TrialState
 _logger = logging.get_logger(__name__)
 
 _EPS = 1e-10
+# The value of system_attrs must be less than 2046 characters on RDBStorage.
+_SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
 class CmaEsSampler(BaseSampler):
@@ -35,10 +39,12 @@ class CmaEsSampler(BaseSampler):
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -1, 1)
-                y = trial.suggest_int('y', -1, 1)
+                x = trial.suggest_uniform("x", -1, 1)
+                y = trial.suggest_int("y", -1, 1)
                 return x ** 2 + y
+
 
             sampler = optuna.samplers.CmaEsSampler()
             study = optuna.create_study(sampler=sampler)
@@ -163,10 +169,18 @@ class CmaEsSampler(BaseSampler):
         self._inc_popsize = inc_popsize
 
         if self._restart_strategy:
-            self._raise_experimental_warning_for_restart_strategy()
+            warnings.warn(
+                "`restart_strategy` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
         if self._consider_pruned_trials:
-            self._raise_experimental_warning_for_consider_pruned_trials()
+            warnings.warn(
+                "`consider_pruned_trials` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
         # TODO(c-bata): Support BIPOP-CMA-ES.
         if restart_strategy not in (
@@ -178,14 +192,6 @@ class CmaEsSampler(BaseSampler):
                     restart_strategy
                 )
             )
-
-    @experimental("2.1.0", name="`restart_strategy is not None` in CmaEsSampler")
-    def _raise_experimental_warning_for_restart_strategy(self) -> None:
-        pass
-
-    @experimental("2.0.0", name="`consider_pruned_trials = True` in CmaEsSampler")
-    def _raise_experimental_warning_for_consider_pruned_trials(self) -> None:
-        pass
 
     def reseed_rng(self) -> None:
         # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
@@ -281,7 +287,8 @@ class CmaEsSampler(BaseSampler):
                     [_to_cma_param(search_space[k], t.params[k]) for k in ordered_keys],
                     dtype=float,
                 )
-                solutions.append((x, t.value))
+                y = t.value if study.direction == StudyDirection.MINIMIZE else -t.value
+                solutions.append((x, y))
 
             optimizer.tell(solutions)
 
@@ -293,8 +300,11 @@ class CmaEsSampler(BaseSampler):
                     search_space, ordered_keys, population_size=popsize, randomize_start_point=True
                 )
 
+            # Store optimizer
             optimizer_str = pickle.dumps(optimizer).hex()
-            study._storage.set_trial_system_attr(trial._trial_id, "cma:optimizer", optimizer_str)
+            optimizer_attrs = _split_optimizer_str(optimizer_str)
+            for key in optimizer_attrs:
+                study._storage.set_trial_system_attr(trial._trial_id, key, optimizer_attrs[key])
 
         # Caution: optimizer should update its seed value
         seed = self._cma_rng.randint(1, 2 ** 16) + trial.number
@@ -316,13 +326,21 @@ class CmaEsSampler(BaseSampler):
     ) -> Tuple[Optional[CMA], int]:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
-            serialized_optimizer = trial.system_attrs.get(
-                "cma:optimizer", None
-            )  # type: Optional[str]
-            if serialized_optimizer is None:
+            optimizer_attrs = {
+                key: value
+                for key, value in trial.system_attrs.items()
+                if key.startswith("cma:optimizer")
+            }
+            if len(optimizer_attrs) == 0:
                 continue
+
+            # Check "cma:optimizer" key for backward compatibility.
+            optimizer_str = optimizer_attrs.get("cma:optimizer", None)
+            if optimizer_str is None:
+                optimizer_str = _concat_optimizer_attrs(optimizer_attrs)
+
             n_restarts = trial.system_attrs.get("cma:n_restarts", 0)  # type: int
-            return pickle.loads(bytes.fromhex(serialized_optimizer)), n_restarts
+            return pickle.loads(bytes.fromhex(optimizer_str)), n_restarts
         return None, 0
 
     def _init_optimizer(
@@ -410,6 +428,22 @@ class CmaEsSampler(BaseSampler):
                 copied_t.value = value
                 complete_trials.append(copied_t)
         return complete_trials
+
+
+def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:
+    optimizer_len = len(optimizer_str)
+    attrs = {}
+    for i in range(math.ceil(optimizer_len / _SYSTEM_ATTR_MAX_LENGTH)):
+        start = i * _SYSTEM_ATTR_MAX_LENGTH
+        end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
+        attrs["cma:optimizer:{}".format(i)] = optimizer_str[start:end]
+    return attrs
+
+
+def _concat_optimizer_attrs(optimizer_attrs: Dict[str, str]) -> str:
+    return "".join(
+        optimizer_attrs["cma:optimizer:{}".format(i)] for i in range(len(optimizer_attrs))
+    )
 
 
 def _to_cma_param(distribution: BaseDistribution, optuna_param: Any) -> float:

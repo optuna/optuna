@@ -33,17 +33,16 @@ class GridSampler(BaseSampler):
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_int('y', -100, 100)
+                x = trial.suggest_uniform("x", -100, 100)
+                y = trial.suggest_int("y", -100, 100)
                 return x ** 2 + y ** 2
 
-            search_space = {
-                'x': [-50, 0, 50],
-                'y': [-99, 0, 99]
-            }
+
+            search_space = {"x": [-50, 0, 50], "y": [-99, 0, 99]}
             study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space))
-            study.optimize(objective, n_trials=3*3)
+            study.optimize(objective, n_trials=3 * 3)
 
     Note:
 
@@ -62,13 +61,15 @@ class GridSampler(BaseSampler):
 
             import optuna
 
+
             def objective(trial):
                 # The following suggest method specifies integer points between -5 and 5.
-                x = trial.suggest_discrete_uniform('x', -5, 5, 1)
+                x = trial.suggest_discrete_uniform("x", -5, 5, 1)
                 return x ** 2
 
+
             # Non-int points are specified in the grid.
-            search_space = {'x': [-0.5, 0.5]}
+            search_space = {"x": [-0.5, 0.5]}
             study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space))
             study.optimize(objective, n_trials=2)
 

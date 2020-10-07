@@ -29,8 +29,9 @@ class TrialPruned(OptunaError):
             X_train, X_valid, y_train, y_valid = train_test_split(X, y)
             classes = np.unique(y)
 
+
             def objective(trial):
-                alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
+                alpha = trial.suggest_uniform("alpha", 0.0, 1.0)
                 clf = SGDClassifier(alpha=alpha)
                 n_train_iter = 100
 
@@ -45,7 +46,8 @@ class TrialPruned(OptunaError):
 
                 return clf.score(X_valid, y_valid)
 
-            study = optuna.create_study(direction='maximize')
+
+            study = optuna.create_study(direction="maximize")
             study.optimize(objective, n_trials=20)
     """
 

@@ -540,7 +540,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
         """Count the number of trials in a study.
 
@@ -557,7 +556,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        raise NotImplementedError
+        if state is None:
+            return len(self.get_all_trials(study_id, deepcopy=False))
+
+        return len([t for t in self.get_all_trials(study_id, deepcopy=False) if t.state == state])
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
         """Return the trial with the best value in a study.

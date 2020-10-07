@@ -1,0 +1,59 @@
+name: Sphinx
+
+on:
+  push:
+    branches:
+      - master
+  pull_request: {}
+
+jobs:
+  documentation:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        pip install --progress-bar off -U .[document]
+
+    - name: Build Document
+      run: |
+        cd docs
+        make html
+        cd ../
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: built-document
+        path: docs/build
+
+  doctest:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install -U pip
+        pip install --progress-bar off -U .[document,doctest]
+
+    # TODO (crcrpar): Prevent sphinx-gallery build
+    - name: Run Doctest
+      run: |
+        cd docs
+        make doctest
