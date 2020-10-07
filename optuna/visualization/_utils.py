@@ -10,7 +10,7 @@ __all__ = ["is_available"]
 
 
 def is_available() -> bool:
-    """Returns whether visualization is available or not.
+    """Returns whether visualization with plotly is available or not.
 
     .. note::
 
@@ -20,7 +20,7 @@ def is_available() -> bool:
         plotly.
 
     Returns:
-        :obj:`True` if visualization is available, :obj:`False` otherwise.
+        :obj:`True` if visualization with plotly is available, :obj:`False` otherwise.
     """
 
     return _plotly_imports._imports.is_successful()
