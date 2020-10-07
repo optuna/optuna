@@ -17,11 +17,6 @@ import optuna
 from optuna import multi_objective
 from optuna.multi_objective.samplers import _motpe
 from optuna.multi_objective.samplers import MOTPEMultiObjectiveSampler
-from optuna.samplers import TPESampler
-
-
-if optuna.type_checking.TYPE_CHECKING:
-    from optuna.trial import Trial  # NOQA
 
 
 class MockSystemAttr:
@@ -652,11 +647,11 @@ def build_state_fn(state: optuna.trial.TrialState) -> Callable[[int], optuna.tri
 
 
 def test_reseed_rng() -> None:
-    sampler = TPESampler()
+    sampler = MOTPEMultiObjectiveSampler()
     original_seed = sampler._rng.seed
 
     with patch.object(
-        sampler._random_sampler, "reseed_rng", wraps=sampler._random_sampler.reseed_rng
+        sampler._mo_random_sampler, "reseed_rng", wraps=sampler._mo_random_sampler.reseed_rng
     ) as mock_object:
         sampler.reseed_rng()
         assert mock_object.call_count == 1

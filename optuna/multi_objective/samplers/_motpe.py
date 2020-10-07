@@ -36,7 +36,7 @@ def _default_weights_above(x: int) -> np.ndarray:
     return np.ones(x)
 
 
-@experimental("2.2.0")
+@experimental("2.3.0")
 class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
@@ -151,6 +151,10 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         )
         self._n_ehvi_candidates = n_ehvi_candidates
         self._mo_random_sampler = RandomMultiObjectiveSampler(seed=seed)
+
+    def reseed_rng(self) -> None:
+        self._rng = np.random.RandomState()
+        self._mo_random_sampler.reseed_rng()
 
     def infer_relative_search_space(
         self,
