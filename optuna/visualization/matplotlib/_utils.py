@@ -11,7 +11,7 @@ __all__ = ["is_available"]
 
 @experimental("2.2.0")
 def is_available() -> bool:
-    """Returns whether visualization with ``matplotlib`` is available or not.
+    """Returns whether visualization with Matplotlib is available or not.
 
     .. note::
 
@@ -21,7 +21,7 @@ def is_available() -> bool:
         matplotlib>=3.0.0`` to install Matplotlib.
 
     Returns:
-        :obj:`True` if visualization with ``matplotlib`` is available, :obj:`False` otherwise.
+        :obj:`True` if visualization with Matplotlib is available, :obj:`False` otherwise.
     """
 
     return _matplotlib_imports._imports.is_successful()

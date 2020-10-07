@@ -109,6 +109,15 @@ def set_verbosity(verbosity: int) -> None:
     Args:
         verbosity:
             Logging level, e.g., ``optuna.logging.DEBUG`` and ``optuna.logging.INFO``.
+
+    .. note::
+        Optuna has following logging levels:
+
+        - ``optuna.logging.CRITICAL``, ``optuna.logging.FATAL``
+        - ``optuna.logging.ERROR``
+        - ``optuna.logging.WARNING``, ``optuna.logging.WARN``
+        - ``optuna.logging.INFO``
+        - ``optuna.logging.DEBUG``
     """
 
     _configure_library_root_logger()
