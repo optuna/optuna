@@ -66,7 +66,7 @@ def plot_param_importances(
 
         .. raw:: html
 
-            <iframe src="../../_static/plot_param_importances.html"
+            <iframe src="../../../_static/plot_param_importances.html"
              width="100%" height="500px" frameborder="0">
             </iframe>
 
