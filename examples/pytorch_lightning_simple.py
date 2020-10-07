@@ -71,10 +71,14 @@ class Net(nn.Module):
         self.layers.append(nn.Linear(input_dim, CLASSES))
 
         # Assigning the layers as class variables (PyTorch requirement).
+        # Parameters of a layer are returned when calling model.parameters(),
+        # only if the layer is a class variable. Thus, assigning as class
+        # variable is necessary to make the layer parameters trainable.
         for idx, layer in enumerate(self.layers):
             setattr(self, "fc{}".format(idx), layer)
 
-        # Assigning the dropouts as class variables (PyTorch requirement).
+        # Assigning the dropouts as class variables (PyTorch requirement), for
+        # the same reason as above.
         for idx, dropout in enumerate(self.dropouts):
             setattr(self, "drop{}".format(idx), dropout)
 

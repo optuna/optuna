@@ -74,7 +74,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
 
         .. raw:: html
 
-            <iframe src="../../_static/plot_edf.html"
+            <iframe src="../../../_static/plot_edf.html"
              width="100%" height="500px" frameborder="0">
             </iframe>
 

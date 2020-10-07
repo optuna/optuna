@@ -54,7 +54,6 @@ class ThresholdPruner(BasePruner):
 
             ys_for_upper = [0.0, 0.1, 0.2, 0.5, 1.2]
             ys_for_lower = [100.0, 90.0, 0.1, 0.0, -1]
-            n_trial_step = 5
 
             study = create_study(pruner=ThresholdPruner(upper=1.0))
             study.optimize(objective_for_upper, n_trials=10)
@@ -70,7 +69,7 @@ class ThresholdPruner(BasePruner):
             A maximum value which determines whether pruner prunes or not.
             If an intermediate value is larger than upper, it prunes.
         n_warmup_steps:
-            Pruning is disabled until the trial exceeds the given number of step.
+            Pruning is disabled if the step is less than the given number of warmup steps.
         interval_steps:
             Interval in number of steps between the pruning checks, offset by the warmup steps.
             If no value has been reported at the time of a pruning check, that particular check
