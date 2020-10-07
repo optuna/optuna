@@ -113,4 +113,5 @@ tutorial/example.db
 docs/_build/
 docs/source/reference/generated/
 docs/source/reference/multi_objective/generated/
+docs/source/reference/visualization/generated/
 docs/source/tutorial/

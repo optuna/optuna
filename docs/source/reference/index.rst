@@ -18,4 +18,4 @@ API Reference
     structs
     study
     trial
-    visualization
+    visualization/index

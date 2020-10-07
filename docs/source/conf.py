@@ -172,6 +172,7 @@ autosummary_generate = True
 autodoc_default_options = {
     'members': True,
     'inherited-members': True,
+    'exclude-members': 'with_traceback',
 }
 
 sphinx_gallery_conf = {
