@@ -5,7 +5,7 @@ on:
     - cron: '0 15 * * *'
 
 jobs:
-  build:
+  examples:
 
     runs-on: ubuntu-latest
     strategy:

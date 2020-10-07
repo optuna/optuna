@@ -54,7 +54,7 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
 
         .. raw:: html
 
-            <iframe src="../../_static/plot_intermediate_values.html"
+            <iframe src="../../../_static/plot_intermediate_values.html"
              width="100%" height="500px" frameborder="0">
             </iframe>
 
