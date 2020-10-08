@@ -9,5 +9,6 @@ optuna.visualization.matplotlib
     :nosignatures:
 
     optuna.visualization.matplotlib.plot_edf
+    optuna.visualization.matplotlib.plot_intermediate_values
     optuna.visualization.matplotlib.plot_optimization_history
     optuna.visualization.matplotlib.is_available
