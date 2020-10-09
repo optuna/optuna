@@ -1,4 +1,3 @@
-import pathlib
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -52,34 +51,34 @@ def test_check_fit_params() -> None:
     assert isinstance(sample_weight, np.ndarray)
 
 
-def test_ogbm_classifier(tmp_path: pathlib.Path) -> None:
+def test_ogbm_classifier() -> None:
     pytest.importorskip("sklearn", minversion="0.20.0")
 
     from sklearn.utils.estimator_checks import check_set_params
 
-    clf = LGBMClassifier(train_dir=tmp_path)
+    clf = LGBMClassifier()
     name = clf.__class__.__name__
 
     check_set_params(name, clf)
 
 
-def test_ogbm_regressor(tmp_path: pathlib.Path) -> None:
+def test_ogbm_regressor() -> None:
     pytest.importorskip("sklearn", minversion="0.20.0")
 
     from sklearn.utils.estimator_checks import check_set_params
 
-    reg = LGBMRegressor(train_dir=tmp_path)
+    reg = LGBMRegressor()
     name = reg.__class__.__name__
 
     check_set_params(name, reg)
 
 
 @pytest.mark.parametrize("early_stopping_rounds", [None, early_stopping_rounds])
-def test_hasattr(tmp_path: pathlib.Path, early_stopping_rounds: int) -> None:
+def test_hasattr(early_stopping_rounds: int) -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = LGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
+    clf = LGBMClassifier(n_estimators=n_estimators)
 
     attrs = {
         "classes_": np.ndarray,
@@ -122,9 +121,7 @@ def test_hasattr(tmp_path: pathlib.Path, early_stopping_rounds: int) -> None:
     ],
 )
 @pytest.mark.parametrize("objective", [None, "binary", log_likelihood])
-def test_fit_with_params(
-    tmp_path: pathlib.Path, boosting_type: str, objective: Optional[Union[Callable, str]]
-) -> None:
+def test_fit_with_params(boosting_type: str, objective: Optional[Union[Callable, str]]) -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
@@ -132,7 +129,6 @@ def test_fit_with_params(
         boosting_type=boosting_type,
         n_estimators=n_estimators,
         objective=objective,
-        train_dir=tmp_path,
     )
 
     # See https://github.com/microsoft/LightGBM/issues/2328
@@ -143,12 +139,12 @@ def test_fit_with_params(
         clf.fit(X, y, eval_set=[(X_valid, y_valid)])
 
 
-def test_fit_with_invalid_study(tmp_path: pathlib.Path) -> None:
+def test_fit_with_invalid_study() -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
     study = study_module.create_study(direction="maximize")
-    clf = LGBMClassifier(study=study, train_dir=tmp_path)
+    clf = LGBMClassifier(study=study)
 
     with pytest.raises(ValueError):
         clf.fit(X, y, eval_set=[(X_valid, y_valid)])
@@ -165,12 +161,12 @@ def test_fit_with_invalid_study(tmp_path: pathlib.Path) -> None:
     ],
 )
 def test_fit_with_fit_params(
-    tmp_path: pathlib.Path, callbacks: Optional[List[Callable]], eval_metric: Union[Callable, str]
+    callbacks: Optional[List[Callable]], eval_metric: Union[Callable, str]
 ) -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = LGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
+    clf = LGBMClassifier(n_estimators=n_estimators)
 
     clf.fit(
         X,
@@ -181,21 +177,21 @@ def test_fit_with_fit_params(
     )
 
 
-def test_fit_with_unused_fit_params(tmp_path: pathlib.Path) -> None:
+def test_fit_with_unused_fit_params() -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = LGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
+    clf = LGBMClassifier(n_estimators=n_estimators)
 
     clf.fit(X, y, eval_set=[(X_valid, y_valid)], unknown_param=None)
 
 
 @pytest.mark.parametrize("num_iteration", [None, 3])
-def test_predict_with_predict_params(tmp_path: pathlib.Path, num_iteration: Optional[int]) -> None:
+def test_predict_with_predict_params(num_iteration: Optional[int]) -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = LGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
+    clf = LGBMClassifier(n_estimators=n_estimators)
 
     clf.fit(X, y, eval_set=[(X_valid, y_valid)])
 
@@ -205,11 +201,11 @@ def test_predict_with_predict_params(tmp_path: pathlib.Path, num_iteration: Opti
     assert y.shape == y_pred.shape
 
 
-def test_predict_with_unused_predict_params(tmp_path: pathlib.Path) -> None:
+def test_predict_with_unused_predict_params() -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
-    clf = LGBMClassifier(n_estimators=n_estimators, train_dir=tmp_path)
+    clf = LGBMClassifier(n_estimators=n_estimators)
 
     clf.fit(X, y, eval_set=[(X_valid, y_valid)])
 
@@ -217,7 +213,7 @@ def test_predict_with_unused_predict_params(tmp_path: pathlib.Path) -> None:
 
 
 @pytest.mark.parametrize("n_jobs", [-1, 1])
-def test_plot_importance(tmp_path: pathlib.Path, n_jobs: int) -> None:
+def test_plot_importance(n_jobs: int) -> None:
     X, y = load_breast_cancer(return_X_y=True)
     X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
 
@@ -225,7 +221,6 @@ def test_plot_importance(tmp_path: pathlib.Path, n_jobs: int) -> None:
         n_estimators=n_estimators,
         n_jobs=n_jobs,
         refit=False,
-        train_dir=tmp_path,
     )
 
     clf.fit(X, y, eval_set=[(X_valid, y_valid)])

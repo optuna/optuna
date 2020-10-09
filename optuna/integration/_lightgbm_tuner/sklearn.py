@@ -1,4 +1,3 @@
-import pathlib
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -165,7 +164,7 @@ class LGBMModel(lgb.LGBMModel):
         importance_type: str = "split",
         study: Optional[study_module.Study] = None,
         timeout: Optional[int] = None,
-        train_dir: Union[pathlib.Path, str] = "optgbm_info",
+        model_dir: Optional[str] = None,
         **kwargs: Any
     ) -> None:
         super().__init__(
@@ -194,7 +193,7 @@ class LGBMModel(lgb.LGBMModel):
 
         self.study = study
         self.timeout = timeout
-        self.train_dir = train_dir
+        self.model_dir = model_dir
 
     def _check_is_fitted(self) -> None:
         getattr(self, "n_features_")
@@ -343,7 +342,7 @@ class LGBMModel(lgb.LGBMModel):
             "silent",
             "study",
             "timeout",
-            "train_dir",
+            "model_dir",
         ):
             params.pop(attr, None)
 
@@ -441,7 +440,7 @@ class LGBMModel(lgb.LGBMModel):
             callbacks=callbacks,
             time_budget=self.timeout,
             study=self.study,
-            model_dir=str(self.train_dir),
+            model_dir=self.model_dir,
         )
 
         tuner.run()
@@ -559,7 +558,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             trials until it receives a termination signal such as Ctrl+C or
             SIGTERM. This trades off runtime vs quality of the solution.
 
-        train_dir
+        model_dir
             Directory for storing the files generated during training.
 
         **kwargs:
@@ -576,8 +575,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
         >>> import optuna.integration.lightgbm as lgb
         >>> from sklearn.datasets import load_iris
         >>> from sklearn.model_selection import train_test_split
-        >>> tmp_path = getfixture("tmp_path")  # noqa
-        >>> clf = lgb.LGBMClassifier(random_state=0, train_dir=tmp_path)
+        >>> clf = lgb.LGBMClassifier(random_state=0)
         >>> X, y = load_iris(return_X_y=True)
         >>> X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
         >>> clf.fit(X, y, eval_set=[(X_valid, y_valid)])
@@ -835,7 +833,7 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
             trials until it receives a termination signal such as Ctrl+C or
             SIGTERM. This trades off runtime vs quality of the solution.
 
-        train_dir
+        model_dir
             Directory for storing the files generated during training.
 
         **kwargs:
@@ -847,8 +845,7 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
         >>> import optuna.integration.lightgbm as lgb
         >>> from sklearn.datasets import load_boston
         >>> from sklearn.model_selection import train_test_split
-        >>> tmp_path = getfixture("tmp_path")  # noqa
-        >>> reg = lgb.LGBMRegressor(random_state=0, train_dir=tmp_path)
+        >>> reg = lgb.LGBMRegressor(random_state=0)
         >>> X, y = load_boston(return_X_y=True)
         >>> X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
         >>> reg.fit(X, y, eval_set=[(X_valid, y_valid)])
