@@ -1,20 +1,20 @@
 # Functions
 
 """
-This configurable Optuna example demonstrates the use of pruning when using 
+This configurable Optuna example demonstrates the use of pruning when using
 custom cross-validation functions based on LightGBM classifiers or regressors.
 
-In this example, we optimize cross-validation accuracy of either a classification model 
-of breast cancer probability or a regression model of Boston housing prices, 
-with a custom CV function custom_cv_fun() applying LightGBM's .fit() method 
-to each cross-validation fold separately, instead of using the standard 
+In this example, we optimize cross-validation accuracy of either a classification model
+of breast cancer probability or a regression model of Boston housing prices,
+with a custom CV function custom_cv_fun() applying LightGBM's .fit() method
+to each cross-validation fold separately, instead of using the standard
 built-in .cv() function.
 
-Throughout training, an Optuna pruner observes intermediate results and if necessary 
+Throughout training, an Optuna pruner observes intermediate results and if necessary
 stops early unpromising trials using a callback, resulting in noticeably faster execution
 times with unaffected accuracy.
 
-The example emphasizes reproducibility, giving the user precise control over all seed 
+The example emphasizes reproducibility, giving the user precise control over all seed
 values that are being used to let her arrive at the same results over repeated studies.
 
 You can run this example using python 3 interpreter, e.g. as follows:
