@@ -62,6 +62,8 @@ LightGBM
    optuna.integration.lightgbm.train
    optuna.integration.lightgbm.LightGBMTuner
    optuna.integration.lightgbm.LightGBMTunerCV
+   optuna.integration.lightgbm.LGBMClasssier
+   optuna.integration.lightgbm.LGBMRegressor
 
 MLflow
 ------
