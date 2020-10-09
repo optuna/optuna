@@ -243,39 +243,39 @@ class LGBMModel(lgb.LGBMModel):
             sample_weight:
                 Weights of training data.
 
-            init_score
+            init_score:
                 Init score of training data.
 
             group:
                 Group data of training data.
 
-            eval_set
+            eval_set:
                 List of (X, y) tuple pairs to use as validation sets.
 
-            eval_names
+            eval_names:
                 Names of eval_set.
 
-            eval_sample_weight
+            eval_sample_weight:
                 Weights of eval data.
 
-            eval_class_weight
+            eval_class_weight:
                 Class weights of eval data.
 
-            eval_init_score
+            eval_init_score:
                 Init score of eval data.
 
-            eval_group
+            eval_group:
                 Group data of eval data.
 
             eval_metric:
                 Evaluation metric. See
                 https:/lightgbm.readthedocs.io/en/latest/Parameters.html#metric.
 
-            early_stopping_rounds
+            early_stopping_rounds:
                 Used to activate early stopping. The model will train until the
                 validation score stops improving.
 
-            verbose
+            verbose:
                 If True, the eval metric on the eval set is printed at each
                 boosting stage. If int, the eval metric on the eval set is
                 printed at every verbose boosting stage.
@@ -539,7 +539,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
         n_jobs:
             Number of parallel jobs. -1 means using all processors.
 
-        silent
+        silent:
             If true, print messages while running boosting.
 
         importance_type:
@@ -558,7 +558,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             trials until it receives a termination signal such as Ctrl+C or
             SIGTERM. This trades off runtime vs quality of the solution.
 
-        model_dir
+        model_dir:
             Directory for storing the files generated during training.
 
         **kwargs:
@@ -694,7 +694,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             X:
                 Data.
 
-            raw_score
+            raw_score:
                 If True, return raw scores.
 
             num_iteration:
@@ -702,10 +702,10 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
                 best iteration exists, it is used; otherwise, all trees are
                 used. If <=0, all trees are used (no limits).
 
-            pred_leaf
+            pred_leaf:
                 If True, return leaf indices.
 
-            pred_contrib
+            pred_contrib:
                 If True, return feature contributions.
 
             **predict_params:
@@ -814,7 +814,7 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
         n_jobs:
             Number of parallel jobs. -1 means using all processors.
 
-        silent
+        silent:
             If true, print messages while running boosting.
 
         importance_type:
@@ -833,7 +833,7 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
             trials until it receives a termination signal such as Ctrl+C or
             SIGTERM. This trades off runtime vs quality of the solution.
 
-        model_dir
+        model_dir:
             Directory for storing the files generated during training.
 
         **kwargs:
