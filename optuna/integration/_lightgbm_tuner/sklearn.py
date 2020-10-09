@@ -43,36 +43,6 @@ TwoDimArrayLikeType = Union[np.ndarray, pd.DataFrame, spmatrix]
 
 RandomStateType = Union[int, np.random.RandomState]
 
-OBJECTIVE2METRIC = {
-    # classification
-    "binary": "binary_logloss",
-    "multiclass": "multi_logloss",
-    "softmax": "multi_logloss",
-    "multiclassova": "multi_logloss",
-    "multiclass_ova": "multi_logloss",
-    "ova": "multi_logloss",
-    "ovr": "multi_logloss",
-    # regression
-    "mean_absoluter_error": "l1",
-    "mae": "l1",
-    "regression_l1": "l1",
-    "l2_root": "l2",
-    "mean_squared_error": "l2",
-    "mse": "l2",
-    "regression": "l2",
-    "regression_l2": "l2",
-    "root_mean_squared_error": "l2",
-    "rmse": "l2",
-    "huber": "huber",
-    "fair": "fair",
-    "poisson": "poisson",
-    "quantile": "quantile",
-    "mean_absolute_percentage_error": "mape",
-    "mape": "mape",
-    "gamma": "gamma",
-    "tweedie": "tweedie",
-}
-
 
 def check_X(
     X: TwoDimArrayLikeType, estimator: Optional[BaseEstimator] = None, **kwargs: Any
@@ -391,7 +361,7 @@ class LGBMModel(lgb.LGBMModel):
 
         else:
             if eval_metric is None:
-                params["metric"] = OBJECTIVE2METRIC[params["objective"]]
+                params["metric"] = params["objective"]
             else:
                 params["metric"] = eval_metric
 
