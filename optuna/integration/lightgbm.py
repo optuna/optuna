@@ -14,11 +14,11 @@ if _imports.is_successful():
     # To pass tests/integration_tests/lightgbm_tuner_tests/test_optimize.py.
     from lightgbm import Dataset  # NOQA
 
-    from optuna.integration._lightgbm_tuner import LightGBMTuner  # NOQA
-    from optuna.integration._lightgbm_tuner import LightGBMTunerCV  # NOQA
     from optuna.integration._lightgbm_tuner import LGBMClassifier  # NOQA
     from optuna.integration._lightgbm_tuner import LGBMModel  # NOQA
     from optuna.integration._lightgbm_tuner import LGBMRegressor  # NOQA
+    from optuna.integration._lightgbm_tuner import LightGBMTuner  # NOQA
+    from optuna.integration._lightgbm_tuner import LightGBMTunerCV  # NOQA
 
     _names_from_tuners = ["train", "LGBMModel", "LGBMClassifier", "LGBMRegressor"]
 
