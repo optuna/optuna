@@ -1,17 +1,24 @@
 # Functions
 
 """
-This configurable Optuna example demonstrates the use of pruning when using custom cross-validation functions based on LightGBM classifiers or regressors.
+This configurable Optuna example demonstrates the use of pruning when using 
+custom cross-validation functions based on LightGBM classifiers or regressors.
 
-In this example, we optimize cross-validation accuracy of either a classification model of breast cancer probability or a regression model of Boston housing prices, with a custom CV function custom_cv_fun() applying LightGBM's .fit() method to each cross-validation fold separately, instead of using the standard built-in .cv() function.
+In this example, we optimize cross-validation accuracy of either a classification model 
+of breast cancer probability or a regression model of Boston housing prices, 
+with a custom CV function custom_cv_fun() applying LightGBM's .fit() method 
+to each cross-validation fold separately, instead of using the standard 
+built-in .cv() function.
 
-Throughout training, an Optuna pruner observes intermediate results and if necessary stops early unpromising trials using a callback, resulting in noticeably faster execution times with unaffected accuracy.
+Throughout training, an Optuna pruner observes intermediate results and if necessary 
+stops early unpromising trials using a callback, resulting in noticeably faster execution
+times with unaffected accuracy.
 
-The example emphasizes reproducibility, giving the user precise control over all seed values that are being used to let her arrive at the same results over repeated studies.
+The example emphasizes reproducibility, giving the user precise control over all seed 
+values that are being used to let her arrive at the same results over repeated studies.
 
 You can run this example using python 3 interpreter, e.g. as follows:
     $ python lightgbm_with_custom_cv_function.py
-    
 """
 
 # Import packages
@@ -24,7 +31,6 @@ from optuna.samplers import TPESampler
 from optuna.pruners import MedianPruner
 import pandas as pd
 from pprint import pprint
-import random
 from sklearn import datasets
 from sklearn.model_selection import KFold, train_test_split
 
@@ -193,7 +199,7 @@ class Objective_custom:
             "lambda_l1": float(trial.suggest_float("lambda_l1", 1e-06, 100, log=True)),
             "lambda_l2": float(trial.suggest_float("lambda_l2", 1e-06, 100, log=True)),
             "learning_rate": float(trial.suggest_float("learning_rate", 0.0001, 0.3, log=True)),
-            # caution: num_boost_round should be used as argument, not passed among hyperparameters to params
+            # caution: num_boost_round should be used as argument, not params key
             # 'num_boost_round': trial.suggest_int('num_boost_round', 100, 2000, log=False),
             "num_leaves": trial.suggest_int("num_leaves", 3, 100, log=True),
             # static parameters:
@@ -335,7 +341,7 @@ def main():
     optuna_best_metrics = {}
     optuna_best_params = {}
 
-    ## Using custom fun.
+    # Instantiate the custom function
     objective = Objective_custom(
         train_x_df,
         train_y_df,
@@ -382,7 +388,7 @@ def main():
     optuna_best_params["custom"] = all_best_params
 
     print(
-        "\nBest %s metric for optuna+custom fun. (mean from original CV models, as reported by Optuna): %.5f\n"
+        "\nBest %s metric for optuna+custom fun. (CV models mean reported by Optuna): %.5f\n"
         % (METRIC, optuna_best_metrics["custom"])
     )
 
