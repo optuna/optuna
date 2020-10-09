@@ -12,11 +12,6 @@ The example emphasizes reproducibility, giving the user precise control over all
 You can run this example using python 3 interpreter, e.g. as follows:
     $ python lightgbm_with_custom_cv_function.py
     
-Notes: 
-- OBJECTIVE can switch between "binary" / "classification" (default) and "regression" examples,
-- USE_PRUNING can turn off pruning if changed from default True to False,
-- USE_STOPPING can turn off early stopping if changed from default True to False,    
-    
 """
 
 # Import packages
@@ -192,18 +187,12 @@ class Objective_custom:
     def __call__(self, trial):
 
         params = {
-            "bagging_fraction": float(
-                trial.suggest_float("bagging_fraction", 0.1, 1, log=False)
-            ),
+            "bagging_fraction": float(trial.suggest_float("bagging_fraction", 0.1, 1, log=False)),
             "bagging_freq": trial.suggest_int("bagging_freq", 1, 100, log=True),
-            "feature_fraction": float(
-                trial.suggest_float("feature_fraction", 0.1, 1, log=False)
-            ),
+            "feature_fraction": float(trial.suggest_float("feature_fraction", 0.1, 1, log=False)),
             "lambda_l1": float(trial.suggest_float("lambda_l1", 1e-06, 100, log=True)),
             "lambda_l2": float(trial.suggest_float("lambda_l2", 1e-06, 100, log=True)),
-            "learning_rate": float(
-                trial.suggest_float("learning_rate", 0.0001, 0.3, log=True)
-            ),
+            "learning_rate": float(trial.suggest_float("learning_rate", 0.0001, 0.3, log=True)),
             # caution: num_boost_round should be used as argument, not passed among hyperparameters to params
             # 'num_boost_round': trial.suggest_int('num_boost_round', 100, 2000, log=False),
             "num_leaves": trial.suggest_int("num_leaves", 3, 100, log=True),
@@ -225,9 +214,7 @@ class Objective_custom:
             # random boosting and stopping rounds
             # will be passed as arguments
             num_boost_round = trial.suggest_int("num_boost_round", 100, 2000, log=False)
-            early_stopping_rounds = trial.suggest_int(
-                "early_stopping_rounds", 2, 500, log=True
-            )
+            early_stopping_rounds = trial.suggest_int("early_stopping_rounds", 2, 500, log=True)
         else:
             num_boost_round = self.fixed_rounds
             early_stopping_rounds = None
@@ -250,9 +237,7 @@ class Objective_custom:
 
         # get mean CV metric from the appropriate key
         # of the dict returned by the custom CV function
-        eval_mean_metric = cv_results_dict["folds_mean_data"][
-            "eval_mean-" + self.eval_metric
-        ]
+        eval_mean_metric = cv_results_dict["folds_mean_data"]["eval_mean-" + self.eval_metric]
 
         print("Mean CV metric: %.5f" % eval_mean_metric)
 
@@ -366,9 +351,7 @@ def main():
         verbosity=VERBOSE_LGBM,
     )
 
-    study = optuna.create_study(
-        sampler=OPTUNA_SAMPLER, pruner=OPTUNA_PRUNER, direction=OPT_DIR
-    )
+    study = optuna.create_study(sampler=OPTUNA_SAMPLER, pruner=OPTUNA_PRUNER, direction=OPT_DIR)
 
     start_time = datetime.now()
 
@@ -378,11 +361,7 @@ def main():
     optim_time_custom = datetime.now() - start_time
     print(
         "\nOptuna+custom fun. study with %d trials took %.2f s. Time per trial: %.2f s."
-        % (
-            TRIALS,
-            optim_time_custom.total_seconds(),
-            optim_time_custom.total_seconds() / TRIALS,
-        )
+        % (TRIALS, optim_time_custom.total_seconds(), optim_time_custom.total_seconds() / TRIALS)
     )
 
     optuna_best_metrics["custom"] = study.best_value
