@@ -16,6 +16,9 @@ if _imports.is_successful():
 
     from optuna.integration._lightgbm_tuner import LightGBMTuner  # NOQA
     from optuna.integration._lightgbm_tuner import LightGBMTunerCV  # NOQA
+    from optuna.integration._lightgbm_tuner import LGBMClassifier  # NOQA
+    from optuna.integration._lightgbm_tuner import LGBMModel  # NOQA
+    from optuna.integration._lightgbm_tuner import LGBMRegressor  # NOQA
 
     _names_from_tuners = ["train", "LGBMModel", "LGBMClassifier", "LGBMRegressor"]
 
