@@ -24,7 +24,8 @@ You can run this example using python 3 interpreter, e.g. as follows:
 # Import packages
 
 from datetime import datetime
-from lightgbm import LGBMClassifier, LGBMRegressor
+from lightgbm import LGBMClassifier
+from lightgbm import LGBMRegressor
 import numpy as np
 import optuna
 from optuna.samplers import TPESampler
@@ -32,7 +33,8 @@ from optuna.pruners import MedianPruner
 import pandas as pd
 from pprint import pprint
 from sklearn import datasets
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import KFold
+from sklearn.model_selection import train_test_split
 
 
 # Custom functions
