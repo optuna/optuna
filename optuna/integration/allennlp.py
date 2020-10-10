@@ -142,7 +142,7 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int
     return kwargs
 
 
-def _fetch_pruner_config(trial: optuna.trial.BaseTrial) -> Dict[str, Any]:
+def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
     pruner = trial.study.pruner
     kwargs = {}  # type: Dict[str, Any]
 
@@ -290,7 +290,11 @@ class AllenNLPExecutor(object):
         else:
             self._include_package = include_package
 
-        storage = trial.study._storage
+        study = None
+        storage = None
+        if isinstance(trial, optuna.Trial):
+            study = trial.study
+            storage = study._storage
 
         if isinstance(storage, optuna.storages.RDBStorage):
             url = storage.url
@@ -302,21 +306,27 @@ class AllenNLPExecutor(object):
         else:
             url = ""
 
-        pruner_params = _fetch_pruner_config(trial)
+        if isinstance(trial, optuna.Trial):
+            pruner_params = _fetch_pruner_config(trial)
+        else:
+            pruner_params = {}
         pruner_params = {
             "{}_{}".format(_PREFIX, key): str(value) for key, value in pruner_params.items()
         }
 
+        trial_id = 0
+        if isinstance(trial, optuna.Trial):
+            trial_id = trial._trial_id
         system_attrs = {
-            _STUDY_NAME: trial.study.study_name,
-            _TRIAL_ID: str(trial._trial_id),
+            _STUDY_NAME: study.study_name if study is not None else "",
+            _TRIAL_ID: str(trial_id),
             _STORAGE_NAME: url,
             _MONITOR: metrics,
             _PRUNER_KEYS: ",".join(pruner_params.keys()),
         }
 
-        if trial.study.pruner is not None:
-            system_attrs[_PRUNER_CLASS] = type(trial.study.pruner).__name__
+        if study is not None and study.pruner is not None:
+            system_attrs[_PRUNER_CLASS] = type(study.pruner).__name__
 
         system_attrs.update(pruner_params)
         self._system_attrs = system_attrs

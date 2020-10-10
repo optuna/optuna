@@ -163,6 +163,10 @@ class ChainerMNTrial(BaseTrial):
         self.delegate = trial
         self.comm = comm
 
+    def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
+
+        raise NotImplementedError
+
     def suggest_float(
         self,
         name: str,

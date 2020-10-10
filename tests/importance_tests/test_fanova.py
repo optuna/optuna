@@ -1,7 +1,7 @@
 from optuna import create_study
 from optuna.importance import FanovaImportanceEvaluator
 from optuna.samplers import RandomSampler
-from optuna.trials import BaseTrial
+from optuna.trial import BaseTrial
 
 
 def objective(trial: BaseTrial) -> float:

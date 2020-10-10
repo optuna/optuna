@@ -56,6 +56,11 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
+
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def report(self, value: float, step: int) -> None:
 
         raise NotImplementedError

@@ -40,7 +40,8 @@ class MultiObjectiveTrial(object):
 
         # TODO(ohta): Optimize the code below to eliminate the `MultiObjectiveStudy` construction.
         # See also: https://github.com/optuna/optuna/pull/1054/files#r407982636
-        self._n_objectives = multi_objective.study.MultiObjectiveStudy(trial.study).n_objectives
+        if isinstance(trial, optuna.Trial): # kostyl
+            self._n_objectives = multi_objective.study.MultiObjectiveStudy(trial.study).n_objectives
 
     def suggest_float(
         self,
@@ -236,8 +237,11 @@ class MultiObjectiveTrial(object):
     # integrations for multi-objective optimization.
 
     def _get_values(self) -> List[Optional[float]]:
-        trial = self._trial.study._storage.get_trial(self._trial._trial_id)
-        return [trial.intermediate_values.get(i) for i in range(self._n_objectives)]
+        if isinstance(self._trial, optuna.Trial):
+            trial = self._trial.study._storage.get_trial(self._trial._trial_id)
+            return [trial.intermediate_values.get(i) for i in range(self._n_objectives)]
+        else:
+            return []
 
 
 @experimental("1.4.0")

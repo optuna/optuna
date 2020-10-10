@@ -76,6 +76,8 @@ class LightGBMPruningCallback(object):
 
     def __call__(self, env: "CallbackEnv") -> None:
 
+        if not isinstance(self._trial, optuna.Trial):
+            return None
         # If this callback has been passed to `lightgbm.cv` function,
         # the value of `is_cv` becomes `True`. See also:
         # https://github.com/Microsoft/LightGBM/blob/v2.2.2/python-package/lightgbm/engine.py#L329
