@@ -10,8 +10,8 @@ from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
+from optuna.trial import BaseTrial
 from optuna.trial import FrozenTrial
-from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -32,10 +32,10 @@ class MultiObjectiveTrial(object):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` object.
+            A :class:`~optuna.trial.BaseTrial` object.
     """
 
-    def __init__(self, trial: Trial):
+    def __init__(self, trial: BaseTrial):
         self._trial = trial
 
         # TODO(ohta): Optimize the code below to eliminate the `MultiObjectiveStudy` construction.

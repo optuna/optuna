@@ -19,6 +19,7 @@ from optuna.storages import BaseStorage
 from optuna.study import Study
 from optuna.trial import BaseTrial
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
