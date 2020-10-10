@@ -636,7 +636,8 @@ def test_nested_optimization() -> None:
     def objective(trial: optuna.trial.BaseTrial) -> float:
 
         with pytest.raises(RuntimeError):
-            trial.study.optimize(lambda _: 0.0, n_trials=1)
+            if isinstance(trial, optuna.Trial):
+                trial.study.optimize(lambda _: 0.0, n_trials=1)
 
         return 1.0
 
@@ -647,7 +648,8 @@ def test_nested_optimization() -> None:
 def test_stop_in_objective() -> None:
     def objective(trial: optuna.trial.BaseTrial, threshold_number: int) -> float:
         if trial.number >= threshold_number:
-            trial.study.stop()
+            if isinstance(trial, optuna.Trial):
+                trial.study.stop()
 
         return trial.number
 
