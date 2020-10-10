@@ -142,7 +142,7 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int
     return kwargs
 
 
-def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
+def _fetch_pruner_config(trial: optuna.trial.BaseTrial) -> Dict[str, Any]:
     pruner = trial.study.pruner
     kwargs = {}  # type: Dict[str, Any]
 
@@ -250,7 +250,7 @@ class AllenNLPExecutor(object):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation
+            A :class:`~optuna.trial.BaseTrial` corresponding to the current evaluation
             of the objective function.
         config_file:
             Config file for AllenNLP.
@@ -270,7 +270,7 @@ class AllenNLPExecutor(object):
 
     def __init__(
         self,
-        trial: optuna.Trial,
+        trial: optuna.trial.BaseTrial,
         config_file: str,
         serialization_dir: str,
         metrics: str = "best_validation_accuracy",
@@ -389,7 +389,7 @@ class AllenNLPPruningCallback(EpochCallback):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            A :class:`~optuna.trial.BaseTrial` corresponding to the current evaluation of the
             objective function.
         monitor:
             An evaluation metric for pruning, e.g. ``validation_loss`` or
@@ -399,7 +399,7 @@ class AllenNLPPruningCallback(EpochCallback):
 
     def __init__(
         self,
-        trial: Optional[optuna.trial.Trial] = None,
+        trial: Optional[optuna.trial.BaseTrial] = None,
         monitor: Optional[str] = None,
     ):
         _imports.check()

@@ -20,8 +20,8 @@ from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.testing.storage import StorageSupplier
+from optuna.trial import BaseTrial
 from optuna.trial import FrozenTrial
-from optuna.trial import Trial
 
 
 parametrize_sampler = pytest.mark.parametrize(
@@ -247,7 +247,7 @@ def test_sample_relative() -> None:
     )
     study = optuna.study.create_study(sampler=sampler)
 
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
 
         # Predefined parameters are sampled by `sample_relative()` method.
         assert trial.suggest_uniform("a", 0, 5) == 3.2
@@ -299,7 +299,7 @@ def test_intersection_search_space() -> None:
 
     # Failed or pruned trials are not considered in the calculation of
     # an intersection search space.
-    def objective(trial: Trial, exception: Exception) -> float:
+    def objective(trial: BaseTrial, exception: Exception) -> float:
 
         trial.suggest_uniform("z", 0, 1)
         raise exception
@@ -339,7 +339,7 @@ def test_nan_objective_value(sampler_class: Callable[[], BaseSampler]) -> None:
 
     study = optuna.create_study(sampler=sampler_class())
 
-    def objective(trial: Trial, base_value: float) -> float:
+    def objective(trial: BaseTrial, base_value: float) -> float:
 
         return trial.suggest_uniform("x", 0.1, 0.2) + base_value
 

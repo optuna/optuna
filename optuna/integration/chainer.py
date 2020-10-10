@@ -25,7 +25,7 @@ class ChainerPruningExtension(Extension):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            A :class:`~optuna.trial.BaseTrial` corresponding to the current evaluation of the
             objective function.
         observation_key:
             An evaluation metric for pruning, e.g., ``main/loss`` and
@@ -45,7 +45,7 @@ class ChainerPruningExtension(Extension):
 
     def __init__(
         self,
-        trial: optuna.trial.Trial,
+        trial: optuna.trial.BaseTrial,
         observation_key: str,
         pruner_trigger: Union[Tuple[(int, str)], "IntervalTrigger", "ManualScheduleTrigger"],
     ) -> None:

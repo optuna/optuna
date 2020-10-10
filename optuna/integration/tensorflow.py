@@ -20,7 +20,7 @@ class TensorFlowPruningHook(SessionRunHook):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of
+            A :class:`~optuna.trial.BaseTrial` corresponding to the current evaluation of
             the objective function.
         estimator:
             An estimator which you will use.
@@ -32,7 +32,7 @@ class TensorFlowPruningHook(SessionRunHook):
 
     def __init__(
         self,
-        trial: optuna.trial.Trial,
+        trial: optuna.trial.BaseTrial,
         estimator: "tf.estimator.Estimator",
         metric: str,
         run_every_steps: int,

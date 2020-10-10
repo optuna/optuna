@@ -109,7 +109,7 @@ def test_lightgbm_pruning_callback_errors(cv: bool) -> None:
 
 
 def objective(
-    trial: optuna.trial.Trial,
+    trial: optuna.trial.BaseTrial,
     metric: str = "binary_error",
     valid_name: str = "valid_0",
     force_default_valid_names: bool = False,

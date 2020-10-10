@@ -17,8 +17,8 @@ from optuna._experimental import experimental
 from optuna._study_direction import StudyDirection
 from optuna.storages import BaseStorage
 from optuna.study import Study
+from optuna.trial import BaseTrial
 from optuna.trial import FrozenTrial
-from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -310,7 +310,7 @@ class MultiObjectiveStudy(object):
                 study.optimize(objective, n_trials=3)
         """
 
-        def mo_objective(trial: Trial) -> float:
+        def mo_objective(trial: BaseTrial) -> float:
             mo_trial = multi_objective.trial.MultiObjectiveTrial(trial)
             values = objective(mo_trial)
             mo_trial._report_complete_values(values)

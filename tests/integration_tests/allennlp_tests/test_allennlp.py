@@ -176,7 +176,7 @@ def test_allennlp_executor_with_include_package_arr() -> None:
 def test_dump_best_config() -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
 
-        def objective(trial: optuna.Trial) -> float:
+        def objective(trial: optuna.trial.BaseTrial) -> float:
             trial.suggest_uniform("DROPOUT", dropout, dropout)
             executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, tmp_dir)
             return executor.run()
@@ -200,7 +200,7 @@ def test_dump_best_config() -> None:
 def test_allennlp_pruning_callback() -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
 
-        def objective(trial: optuna.Trial) -> float:
+        def objective(trial: optuna.trial.BaseTrial) -> float:
             reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
                 tokenizer=allennlp.data.tokenizers.SpacyTokenizer()
             )
@@ -250,7 +250,7 @@ def test_allennlp_pruning_callback_with_invalid_storage() -> None:
 
     with tempfile.TemporaryDirectory() as tmp_dir:
 
-        def objective(trial: optuna.Trial) -> float:
+        def objective(trial: optuna.trial.BaseTrial) -> float:
             trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
             trial.suggest_float("DROPOUT", 0.0, 0.5)
             executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, tmp_dir)

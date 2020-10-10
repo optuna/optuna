@@ -45,7 +45,7 @@ class LightGBMPruningCallback(object):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of
+            A :class:`~optuna.trial.BaseTrial` corresponding to the current evaluation of
             the objective function.
         metric:
             An evaluation metric for pruning, e.g., ``binary_error`` and ``multi_error``.
@@ -65,7 +65,7 @@ class LightGBMPruningCallback(object):
     """
 
     def __init__(
-        self, trial: optuna.trial.Trial, metric: str, valid_name: str = "valid_0"
+        self, trial: optuna.trial.BaseTrial, metric: str, valid_name: str = "valid_0"
     ) -> None:
 
         _imports.check()

@@ -114,7 +114,7 @@ def test_successive_halving_pruner_with_auto_min_resource(n_reports: int, n_tria
 
     assert pruner._min_resource is None
 
-    def objective(trial: optuna.trial.Trial) -> float:
+    def objective(trial: optuna.trial.BaseTrial) -> float:
 
         for i in range(n_reports):
             trial.report(1.0 / (i + 1), i)

@@ -1,10 +1,10 @@
 from optuna import create_study
-from optuna import Trial
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.samplers import RandomSampler
+from optuna.trial import BaseTrial
 
 
-def objective(trial: Trial) -> float:
+def objective(trial: BaseTrial) -> float:
     x1 = trial.suggest_uniform("x1", 0.1, 3)
     x2 = trial.suggest_loguniform("x2", 0.1, 3)
     x3 = trial.suggest_loguniform("x3", 2, 4)

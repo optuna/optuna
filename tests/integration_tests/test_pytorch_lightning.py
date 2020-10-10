@@ -65,7 +65,7 @@ class Model(pl.LightningModule):
 
 
 def test_pytorch_lightning_pruning_callback() -> None:
-    def objective(trial: optuna.trial.Trial) -> float:
+    def objective(trial: optuna.trial.BaseTrial) -> float:
 
         trainer = pl.Trainer(
             early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="accuracy"),

@@ -18,7 +18,7 @@ class SkorchPruningCallback(Callback):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            A :class:`~optuna.trial.BaseTrial` corresponding to the current evaluation of the
             objective function.
         monitor:
             An evaluation metric for pruning, e.g. ``val_loss`` or
@@ -27,7 +27,7 @@ class SkorchPruningCallback(Callback):
             is formatted.
     """
 
-    def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
+    def __init__(self, trial: optuna.trial.BaseTrial, monitor: str) -> None:
 
         _imports.check()
 

@@ -30,7 +30,7 @@ class XGBoostPruningCallback(object):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            A :class:`~optuna.trial.BaseTrial` corresponding to the current evaluation of the
             objective function.
         observation_key:
             An evaluation metric for pruning, e.g., ``validation-error`` and
@@ -41,7 +41,7 @@ class XGBoostPruningCallback(object):
             for further details.
     """
 
-    def __init__(self, trial: optuna.trial.Trial, observation_key: str) -> None:
+    def __init__(self, trial: optuna.trial.BaseTrial, observation_key: str) -> None:
 
         _imports.check()
 

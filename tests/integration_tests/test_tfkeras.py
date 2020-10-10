@@ -10,7 +10,7 @@ from optuna.testing.integration import DeterministicPruner
 
 
 def test_tfkeras_pruning_callback() -> None:
-    def objective(trial: optuna.trial.Trial) -> float:
+    def objective(trial: optuna.trial.BaseTrial) -> float:
 
         model = tf.keras.Sequential()
         model.add(tf.keras.layers.Dense(1, activation="sigmoid", input_dim=20))

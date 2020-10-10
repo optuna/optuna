@@ -460,7 +460,7 @@ def test_suggest_int_log(storage_init_func: Callable[[], storages.BaseStorage]) 
 
 @parametrize_storage
 def test_distributions(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
 
         trial.suggest_uniform("a", 0, 10)
         trial.suggest_loguniform("b", 0.1, 10)
@@ -690,7 +690,7 @@ def test_datetime_start(storage_init_func: Callable[[], storages.BaseStorage]) -
 
     trial_datetime_start = [None]  # type: List[Optional[datetime.datetime]]
 
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
 
         trial_datetime_start[0] = trial.datetime_start
         return 1.0

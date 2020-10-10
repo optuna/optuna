@@ -31,7 +31,7 @@ class KerasPruningCallback(Callback):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            A :class:`~optuna.trial.BaseTrial` corresponding to the current evaluation of the
             objective function.
         monitor:
             An evaluation metric for pruning, e.g., ``val_loss`` and
@@ -43,7 +43,7 @@ class KerasPruningCallback(Callback):
             epochs faster before applying pruning.
     """
 
-    def __init__(self, trial: optuna.trial.Trial, monitor: str, interval: int = 1) -> None:
+    def __init__(self, trial: optuna.trial.BaseTrial, monitor: str, interval: int = 1) -> None:
         super(KerasPruningCallback, self).__init__()
 
         _imports.check()

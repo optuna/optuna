@@ -5,7 +5,7 @@ import optuna
 from optuna.integration.mlflow import MLflowCallback
 
 
-def _objective_func(trial: optuna.trial.Trial) -> float:
+def _objective_func(trial: optuna.trial.BaseTrial) -> float:
 
     x = trial.suggest_uniform("x", -1.0, 1.0)
     y = trial.suggest_loguniform("y", 20, 30)
@@ -20,7 +20,7 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
 # When it is fixed on MLflow side this test can be removed.
 # see https://github.com/optuna/optuna/issues/1340
 # see https://github.com/mlflow/mlflow/issues/2931
-def _objective_func_long_user_attr(trial: optuna.trial.Trial) -> float:
+def _objective_func_long_user_attr(trial: optuna.trial.BaseTrial) -> float:
 
     x = trial.suggest_uniform("x", -1.0, 1.0)
     y = trial.suggest_loguniform("y", 20, 30)

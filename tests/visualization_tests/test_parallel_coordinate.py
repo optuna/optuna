@@ -3,8 +3,8 @@ import pytest
 from optuna.distributions import CategoricalDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
+from optuna.trial import BaseTrial
 from optuna.trial import create_trial
-from optuna.trial import Trial
 from optuna.visualization import plot_parallel_coordinate
 
 
@@ -45,7 +45,7 @@ def test_plot_parallel_coordinate() -> None:
         plot_parallel_coordinate(study, params=["optuna", "optuna"])
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
+    def fail_objective(_: BaseTrial) -> float:
 
         raise ValueError
 

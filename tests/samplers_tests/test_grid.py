@@ -13,7 +13,7 @@ import pytest
 import optuna
 from optuna import samplers
 from optuna.samplers._grid import GridValueType
-from optuna.trial import Trial
+from optuna.trial import BaseTrial
 
 
 def _n_grids(search_space: Mapping[str, Sequence[Union[str, float, None]]]) -> int:
@@ -22,7 +22,7 @@ def _n_grids(search_space: Mapping[str, Sequence[Union[str, float, None]]]) -> i
 
 
 def test_study_optimize_with_single_search_space() -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
 
         a = trial.suggest_int("a", 0, 100)
         b = trial.suggest_uniform("b", -0.1, 0.1)
@@ -80,7 +80,7 @@ def test_study_optimize_with_single_search_space() -> None:
 
 
 def test_study_optimize_with_exceeding_number_of_trials() -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
 
         return trial.suggest_int("a", 0, 100)
 
@@ -96,7 +96,7 @@ def test_study_optimize_with_exceeding_number_of_trials() -> None:
 
 
 def test_study_optimize_with_multiple_search_spaces() -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
 
         a = trial.suggest_int("a", 0, 100)
         b = trial.suggest_uniform("b", -100, 100)

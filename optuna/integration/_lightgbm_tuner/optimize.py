@@ -198,7 +198,7 @@ class _OptunaObjective(_BaseTuner):
             if target_param_name not in supported_param_names:
                 raise NotImplementedError("Parameter `{}` is not supported for tunning.")
 
-    def _preprocess(self, trial: optuna.trial.Trial) -> None:
+    def _preprocess(self, trial: optuna.trial.BaseTrial) -> None:
         if self.pbar is not None:
             self.pbar.set_description(self.pbar_fmt.format(self.step_name, self.best_score))
 
@@ -228,7 +228,7 @@ class _OptunaObjective(_BaseTuner):
             param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + _EPS))
             self.lgbm_params["min_child_samples"] = param_value
 
-    def __call__(self, trial: optuna.trial.Trial) -> float:
+    def __call__(self, trial: optuna.trial.BaseTrial) -> float:
 
         self._preprocess(trial)
 
@@ -254,7 +254,7 @@ class _OptunaObjective(_BaseTuner):
         return val_score
 
     def _postprocess(
-        self, trial: optuna.trial.Trial, elapsed_secs: float, average_iteration_time: float
+        self, trial: optuna.trial.BaseTrial, elapsed_secs: float, average_iteration_time: float
     ) -> None:
         if self.pbar is not None:
             self.pbar.set_description(self.pbar_fmt.format(self.step_name, self.best_score))
@@ -297,7 +297,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
         val_scores = cv_results["{}-mean".format(metric)]
         return val_scores
 
-    def __call__(self, trial: optuna.trial.Trial) -> float:
+    def __call__(self, trial: optuna.trial.BaseTrial) -> float:
 
         self._preprocess(trial)
 

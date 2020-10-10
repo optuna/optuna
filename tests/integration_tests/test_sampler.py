@@ -53,7 +53,7 @@ def test_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
     study = optuna.create_study(sampler=sampler)
 
     # First trial.
-    def objective0(trial: optuna.trial.Trial) -> float:
+    def objective0(trial: optuna.trial.BaseTrial) -> float:
 
         p0 = trial.suggest_uniform("p0", 0, 10)
         p1 = trial.suggest_loguniform("p1", 1, 10)
@@ -72,7 +72,7 @@ def test_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
         assert mock_object.call_count == 5
 
     # Second trial.
-    def objective1(trial: optuna.trial.Trial) -> float:
+    def objective1(trial: optuna.trial.BaseTrial) -> float:
 
         # p0, p2 and p4 are deleted.
         p1 = trial.suggest_loguniform("p1", 1, 10)
@@ -91,7 +91,7 @@ def test_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
         assert [call[1][2] for call in mock_object.mock_calls] == ["p5"]
 
     # Third trial.
-    def objective2(trial: optuna.trial.Trial) -> float:
+    def objective2(trial: optuna.trial.BaseTrial) -> float:
 
         p1 = trial.suggest_loguniform("p1", 50, 100)  # The range has been changed
         p3 = trial.suggest_discrete_uniform("p3", 0, 9, 3)
@@ -152,7 +152,7 @@ def test_warn_independent_sampling(sampler_class: Callable[[bool], BaseSampler])
         assert mock_object.call_count == 0
 
 
-def _objective(trial: optuna.trial.Trial) -> float:
+def _objective(trial: optuna.trial.BaseTrial) -> float:
 
     p0 = trial.suggest_uniform("p0", -3.3, 5.2)
     p1 = trial.suggest_uniform("p1", 2.0, 2.0)

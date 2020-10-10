@@ -5,7 +5,7 @@ import pytest
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
-from optuna.trial import Trial
+from optuna.trial import BaseTrial
 from optuna.visualization import plot_param_importances
 
 
@@ -45,7 +45,7 @@ def test_plot_param_importances() -> None:
         plot_param_importances(study, params=["optuna"])
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
+    def fail_objective(_: BaseTrial) -> float:
 
         raise ValueError
 

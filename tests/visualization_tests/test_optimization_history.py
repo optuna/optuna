@@ -1,7 +1,7 @@
 import pytest
 
 from optuna.study import create_study
-from optuna.trial import Trial
+from optuna.trial import BaseTrial
 from optuna.visualization import plot_optimization_history
 
 
@@ -12,7 +12,7 @@ def test_plot_optimization_history(direction: str) -> None:
     figure = plot_optimization_history(study)
     assert len(figure.data) == 0
 
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
 
         if trial.number == 0:
             return 1.0
@@ -36,7 +36,7 @@ def test_plot_optimization_history(direction: str) -> None:
         assert figure.data[1].y == (1.0, 2.0, 2.0)
 
     # Ignore failed trials.
-    def fail_objective(_: Trial) -> float:
+    def fail_objective(_: BaseTrial) -> float:
         raise ValueError
 
     study = create_study(direction=direction)

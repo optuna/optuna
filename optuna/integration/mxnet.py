@@ -15,7 +15,7 @@ class MXNetPruningCallback(object):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            A :class:`~optuna.trial.BaseTrial` corresponding to the current evaluation of the
             objective function.
         eval_metric:
             An evaluation metric name for pruning, e.g., ``cross-entropy`` and
@@ -25,7 +25,7 @@ class MXNetPruningCallback(object):
             <https://mxnet.apache.org/api/python/metric/metric.html>`_ for further details.
     """
 
-    def __init__(self, trial: optuna.trial.Trial, eval_metric: str) -> None:
+    def __init__(self, trial: optuna.trial.BaseTrial, eval_metric: str) -> None:
 
         _imports.check()
 

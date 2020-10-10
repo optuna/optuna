@@ -10,7 +10,7 @@ from optuna.testing.integration import DeterministicPruner
 
 
 def test_mxnet_pruning_callback() -> None:
-    def objective(trial: optuna.trial.Trial, eval_metric: Union[list, str]) -> float:
+    def objective(trial: optuna.trial.BaseTrial, eval_metric: Union[list, str]) -> float:
 
         # Symbol
         data = mx.symbol.Variable("data")

@@ -9,7 +9,7 @@ import optuna
 from optuna.integration.tensorboard import TensorBoardCallback
 
 
-def _objective_func(trial: optuna.trial.Trial) -> float:
+def _objective_func(trial: optuna.trial.BaseTrial) -> float:
     x = trial.suggest_uniform("x", -1.0, 1.0)
     y = trial.suggest_loguniform("y", 20.0, 30.0)
     z = trial.suggest_categorical("z", (-1.0, 1.0))

@@ -88,7 +88,7 @@ def test_sample_relative_n_startup_trials() -> None:
     )
     study = optuna.create_study(sampler=sampler)
 
-    def objective(t: optuna.Trial) -> float:
+    def objective(t: optuna.trial.BaseTrial) -> float:
 
         value = t.suggest_int("x", -1, 1) + t.suggest_int("y", -1, 1)
         if t.number == 0:
@@ -193,7 +193,7 @@ def test_population_size_is_multiplied_when_enable_ipop() -> None:
     )
     study = optuna.create_study(sampler=sampler)
 
-    def objective(trial: optuna.Trial) -> float:
+    def objective(trial: optuna.trial.BaseTrial) -> float:
         _ = trial.suggest_uniform("x", -1, 1)
         _ = trial.suggest_uniform("y", -1, 1)
         return 1.0

@@ -8,8 +8,8 @@ from optuna.distributions import LogUniformDistribution
 from optuna.study import create_study
 from optuna.study import StudyDirection
 from optuna.testing.visualization import prepare_study_with_trials
+from optuna.trial import BaseTrial
 from optuna.trial import create_trial
-from optuna.trial import Trial
 from optuna.visualization import plot_contour
 from optuna.visualization._contour import _generate_contour_subplot
 
@@ -34,7 +34,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
 
     # Test whether trials with `ValueError`s are ignored.
 
-    def fail_objective(_: Trial) -> float:
+    def fail_objective(_: BaseTrial) -> float:
 
         raise ValueError
 

@@ -25,8 +25,8 @@ from optuna import TrialPruned
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.study import StudyDirection
+from optuna.trial import BaseTrial
 from optuna.trial import FrozenTrial
-from optuna.trial import Trial
 
 
 with try_import() as _imports:
@@ -216,7 +216,7 @@ class _Objective(object):
         self.X = X
         self.y = y
 
-    def __call__(self, trial: Trial) -> float:
+    def __call__(self, trial: BaseTrial) -> float:
 
         estimator = clone(self.estimator)
         params = self._get_params(trial)
@@ -243,7 +243,7 @@ class _Objective(object):
         return trial.user_attrs["mean_test_score"]
 
     def _cross_validate_with_pruning(
-        self, trial: Trial, estimator: "BaseEstimator"
+        self, trial: BaseTrial, estimator: "BaseEstimator"
     ) -> Dict[str, OneDimArrayLikeType]:
 
         if is_classifier(estimator):
@@ -288,7 +288,7 @@ class _Objective(object):
 
         return scores
 
-    def _get_params(self, trial: Trial) -> Dict[str, Any]:
+    def _get_params(self, trial: BaseTrial) -> Dict[str, Any]:
 
         return {
             name: trial._suggest(name, distribution)
@@ -345,7 +345,7 @@ class _Objective(object):
 
         return ret
 
-    def _store_scores(self, trial: Trial, scores: Dict[str, OneDimArrayLikeType]) -> None:
+    def _store_scores(self, trial: BaseTrial, scores: Dict[str, OneDimArrayLikeType]) -> None:
 
         for name, array in scores.items():
             if name in ["test_score", "train_score"]:

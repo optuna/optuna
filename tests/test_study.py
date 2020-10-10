@@ -34,7 +34,7 @@ STORAGE_MODES = [
 ]
 
 
-def func(trial: optuna.trial.Trial, x_max: float = 1.0) -> float:
+def func(trial: optuna.trial.BaseTrial, x_max: float = 1.0) -> float:
 
     x = trial.suggest_uniform("x", -x_max, x_max)
     y = trial.suggest_loguniform("y", 20, 30)
@@ -51,7 +51,7 @@ class Func(object):
         self.lock = threading.Lock()
         self.x_max = 10.0
 
-    def __call__(self, trial: optuna.trial.Trial) -> float:
+    def __call__(self, trial: optuna.trial.BaseTrial) -> float:
 
         with self.lock:
             self.n_calls += 1
@@ -192,7 +192,7 @@ def test_optimize_with_catch(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
 
-        def func_value_error(_: optuna.trial.Trial) -> float:
+        def func_value_error(_: optuna.trial.BaseTrial) -> float:
 
             raise ValueError
 
@@ -219,7 +219,7 @@ def test_optimize_with_catch_invalid_type(catch: Any) -> None:
 
     study = optuna.create_study()
 
-    def func_value_error(_: optuna.trial.Trial) -> float:
+    def func_value_error(_: optuna.trial.BaseTrial) -> float:
 
         raise ValueError
 
@@ -277,7 +277,7 @@ def test_study_set_and_get_system_attrs(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_trial_set_and_get_user_attrs(storage_mode: str) -> None:
-    def f(trial: optuna.trial.Trial) -> float:
+    def f(trial: optuna.trial.BaseTrial) -> float:
 
         trial.set_user_attr("train_accuracy", 1)
         assert trial.user_attrs["train_accuracy"] == 1
@@ -292,7 +292,7 @@ def test_trial_set_and_get_user_attrs(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_trial_set_and_get_system_attrs(storage_mode: str) -> None:
-    def f(trial: optuna.trial.Trial) -> float:
+    def f(trial: optuna.trial.BaseTrial) -> float:
 
         trial.set_system_attr("system_message", "test")
         assert trial.system_attrs["system_message"] == "test"
@@ -344,7 +344,7 @@ def test_run_trial(storage_mode: str) -> None:
         check_study(study)
 
         # Test trial with acceptable exception.
-        def func_value_error(_: optuna.trial.Trial) -> float:
+        def func_value_error(_: optuna.trial.BaseTrial) -> float:
 
             raise ValueError
 
@@ -360,7 +360,7 @@ def test_run_trial(storage_mode: str) -> None:
             study._run_trial(func_value_error, catch=(ArithmeticError,), gc_after_trial=True)
 
         # Test trial with invalid objective value: None
-        def func_none(_: optuna.trial.Trial) -> float:
+        def func_none(_: optuna.trial.BaseTrial) -> float:
 
             return None  # type: ignore
 
@@ -376,7 +376,7 @@ def test_run_trial(storage_mode: str) -> None:
         assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
         # Test trial with invalid objective value: nan
-        def func_nan(_: optuna.trial.Trial) -> float:
+        def func_nan(_: optuna.trial.BaseTrial) -> float:
 
             return float("nan")
 
@@ -400,7 +400,7 @@ def test_run_trial_with_trial_pruned(
 
     study = optuna.create_study()
 
-    def func_with_trial_pruned(trial: optuna.trial.Trial) -> float:
+    def func_with_trial_pruned(trial: optuna.trial.BaseTrial) -> float:
 
         if report_value is not None:
             trial.report(report_value, 1)
@@ -469,7 +469,7 @@ def test_study_trials_dataframe_with_no_trials() -> None:
 )
 @pytest.mark.parametrize("multi_index", [True, False])
 def test_trials_dataframe(storage_mode: str, attrs: Tuple[str, ...], multi_index: bool) -> None:
-    def f(trial: optuna.trial.Trial) -> float:
+    def f(trial: optuna.trial.BaseTrial) -> float:
 
         x = trial.suggest_int("x", 1, 1)
         y = trial.suggest_categorical("y", (2.5,))
@@ -545,7 +545,7 @@ def test_trials_dataframe(storage_mode: str, attrs: Tuple[str, ...], multi_index
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_trials_dataframe_with_failure(storage_mode: str) -> None:
-    def f(trial: optuna.trial.Trial) -> float:
+    def f(trial: optuna.trial.BaseTrial) -> float:
 
         x = trial.suggest_int("x", 1, 1)
         y = trial.suggest_categorical("y", (2.5,))
@@ -633,7 +633,7 @@ def test_delete_study(storage_mode: str) -> None:
 
 
 def test_nested_optimization() -> None:
-    def objective(trial: optuna.trial.Trial) -> float:
+    def objective(trial: optuna.trial.BaseTrial) -> float:
 
         with pytest.raises(RuntimeError):
             trial.study.optimize(lambda _: 0.0, n_trials=1)
@@ -645,7 +645,7 @@ def test_nested_optimization() -> None:
 
 
 def test_stop_in_objective() -> None:
-    def objective(trial: optuna.trial.Trial, threshold_number: int) -> float:
+    def objective(trial: optuna.trial.BaseTrial, threshold_number: int) -> float:
         if trial.number >= threshold_number:
             trial.study.stop()
 
@@ -716,7 +716,7 @@ def test_enqueue_trial_properly_sets_param_values(storage_mode: str) -> None:
         study.enqueue_trial(params={"x": -5, "y": 5})
         study.enqueue_trial(params={"x": -1, "y": 0})
 
-        def objective(trial: optuna.trial.Trial) -> float:
+        def objective(trial: optuna.trial.BaseTrial) -> float:
 
             x = trial.suggest_int("x", -10, 10)
             y = trial.suggest_int("y", -10, 10)
@@ -741,7 +741,7 @@ def test_enqueue_trial_with_unfixed_parameters(storage_mode: str) -> None:
 
         study.enqueue_trial(params={"x": -5})
 
-        def objective(trial: optuna.trial.Trial) -> float:
+        def objective(trial: optuna.trial.BaseTrial) -> float:
 
             x = trial.suggest_int("x", -10, 10)
             y = trial.suggest_int("y", -10, 10)
@@ -762,7 +762,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
 
         study.enqueue_trial(params={"x": 11})
 
-        def objective(trial: optuna.trial.Trial) -> float:
+        def objective(trial: optuna.trial.BaseTrial) -> float:
 
             return trial.suggest_int("x", -10, 10)
 
@@ -779,7 +779,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
 
         study.enqueue_trial(params={"x": 11})
 
-        def objective(trial: optuna.trial.Trial) -> float:
+        def objective(trial: optuna.trial.BaseTrial) -> float:
 
             return trial.suggest_int("x", 1, 1)  # Single element.
 
@@ -822,7 +822,7 @@ def test_callbacks(n_jobs: int) -> None:
 
     study = optuna.create_study()
 
-    def objective(trial: optuna.trial.Trial) -> float:
+    def objective(trial: optuna.trial.BaseTrial) -> float:
 
         return trial.suggest_int("x", 1, 1)
 

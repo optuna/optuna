@@ -11,7 +11,7 @@ from optuna.testing.integration import DeterministicPruner
 
 @pytest.mark.parametrize("interval, epochs", [(1, 1), (2, 1), (2, 2)])
 def test_keras_pruning_callback(interval: int, epochs: int) -> None:
-    def objective(trial: optuna.trial.Trial) -> float:
+    def objective(trial: optuna.trial.BaseTrial) -> float:
 
         model = Sequential()
         model.add(Dense(1, activation="sigmoid", input_dim=20))

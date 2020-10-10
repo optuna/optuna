@@ -5,7 +5,7 @@ import optuna.trial
 
 
 def _create_some_study() -> optuna.Study:
-    def f(trial: optuna.trial.Trial) -> float:
+    def f(trial: optuna.trial.BaseTrial) -> float:
 
         x = trial.suggest_uniform("x", -10, 10)
         y = trial.suggest_loguniform("y", 10, 20)

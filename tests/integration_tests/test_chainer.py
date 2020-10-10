@@ -48,7 +48,7 @@ def test_chainer_pruning_extension_trigger() -> None:
 
 
 def test_chainer_pruning_extension() -> None:
-    def objective(trial: optuna.trial.Trial) -> float:
+    def objective(trial: optuna.trial.BaseTrial) -> float:
 
         model = L.Classifier(chainer.Sequential(L.Linear(None, 2)))
         optimizer = chainer.optimizers.Adam()

@@ -664,7 +664,7 @@ class TestLightGBMTuner(object):
 
         tuner = LightGBMTuner({}, None, valid_sets=lgb.Dataset(np.zeros((10, 10))))
 
-        def objective(trial: optuna.trial.Trial, value: float) -> float:
+        def objective(trial: optuna.trial.BaseTrial, value: float) -> float:
 
             trial.set_system_attr(
                 optuna.integration._lightgbm_tuner.optimize._STEP_NAME_KEY,

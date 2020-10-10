@@ -16,7 +16,7 @@ def f(x: float, y: float) -> float:
     return (x - 3) ** 2 + y
 
 
-def objective(trial: optuna.Trial) -> float:
+def objective(trial: optuna.trial.BaseTrial) -> float:
     x = trial.suggest_float("x", -10, 10)
     y = trial.suggest_float("y", -10, 10)
     trial.report(x, 0)

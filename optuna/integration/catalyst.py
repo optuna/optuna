@@ -22,7 +22,7 @@ class CatalystPruningCallback(Callback):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            A :class:`~optuna.trial.BaseTrial` corresponding to the current evaluation of the
             objective function.
         metric (str):
             Name of a metric, which is passed to `catalyst.core.State.valid_metrics` dictionary to
@@ -30,7 +30,7 @@ class CatalystPruningCallback(Callback):
             on this value.
     """
 
-    def __init__(self, trial: optuna.trial.Trial, metric: str = "loss") -> None:
+    def __init__(self, trial: optuna.trial.BaseTrial, metric: str = "loss") -> None:
 
         # set order=1000 to run pruning callback after other callbacks
         # refer to `catalyst.core.CallbackOrder`

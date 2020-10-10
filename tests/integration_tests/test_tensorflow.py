@@ -23,7 +23,7 @@ def fixed_value_input_fn() -> typing.Tuple[typing.Dict[str, tf.Tensor], tf.Tenso
 
 
 def test_tensorflow_pruning_hook() -> None:
-    def objective(trial: optuna.trial.Trial) -> float:
+    def objective(trial: optuna.trial.BaseTrial) -> float:
 
         clf = tf.estimator.DNNClassifier(
             hidden_units=[],

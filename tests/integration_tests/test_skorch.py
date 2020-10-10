@@ -22,7 +22,7 @@ def test_skorch_pruning_callback() -> None:
 
     X, y = torch.zeros(5, 4), torch.zeros(5, dtype=torch.long)
 
-    def objective(trial: optuna.trial.Trial) -> float:
+    def objective(trial: optuna.trial.BaseTrial) -> float:
 
         net = skorch.NeuralNetClassifier(
             ClassifierModule,

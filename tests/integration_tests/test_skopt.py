@@ -143,7 +143,7 @@ def test_reseed_rng() -> None:
         assert mock_object.call_count == 1
 
 
-def _objective(trial: optuna.trial.Trial) -> float:
+def _objective(trial: optuna.trial.BaseTrial) -> float:
 
     p0 = trial.suggest_uniform("p0", -3.3, 5.2)
     p1 = trial.suggest_uniform("p1", 2.0, 2.0)

@@ -13,7 +13,7 @@ from optuna.importance import FanovaImportanceEvaluator
 from optuna.importance import get_param_importances
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.study import create_study
-from optuna.trial import Trial
+from optuna.trial import BaseTrial
 
 
 parametrize_storage = pytest.mark.parametrize(
@@ -32,7 +32,7 @@ def test_get_param_importances(
     storage_init_func: Callable[[], storages.BaseStorage],
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
         x1 = trial.suggest_uniform("x1", 0.1, 3)
         x2 = trial.suggest_loguniform("x2", 0.1, 3)
         x3 = trial.suggest_discrete_uniform("x3", 0, 3, 1)
@@ -76,7 +76,7 @@ def test_get_param_importances_with_params(
     params: List[str],
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
         x1 = trial.suggest_uniform("x1", 0.1, 3)
         x2 = trial.suggest_loguniform("x2", 0.1, 3)
         x3 = trial.suggest_discrete_uniform("x3", 0, 3, 1)
@@ -113,7 +113,7 @@ def test_get_param_importances_invalid_empty_study(
     with pytest.raises(ValueError):
         get_param_importances(study, evaluator=evaluator_init_func())
 
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
         raise optuna.TrialPruned
 
     study.optimize(objective, n_trials=3)
@@ -126,7 +126,7 @@ def test_get_param_importances_invalid_empty_study(
 def test_get_param_importances_invalid_single_trial(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
 ) -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
         x1 = trial.suggest_uniform("x1", 0.1, 3)
         return x1 ** 2
 
@@ -138,7 +138,7 @@ def test_get_param_importances_invalid_single_trial(
 
 
 def test_get_param_importances_invalid_evaluator_type() -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
         x1 = trial.suggest_uniform("x1", 0.1, 3)
         return x1 ** 2
 
@@ -153,7 +153,7 @@ def test_get_param_importances_invalid_evaluator_type() -> None:
 def test_get_param_importances_invalid_no_completed_trials_params(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
 ) -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
         x1 = trial.suggest_uniform("x1", 0.1, 3)
         if trial.number % 2 == 0:
             _ = trial.suggest_loguniform("x2", 0.1, 3)
@@ -180,7 +180,7 @@ def test_get_param_importances_invalid_no_completed_trials_params(
 def test_get_param_importances_invalid_dynamic_search_space_params(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
 ) -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
         x1 = trial.suggest_uniform("x1", 0.1, trial.number + 0.1)
         return x1 ** 2
 
@@ -195,7 +195,7 @@ def test_get_param_importances_invalid_dynamic_search_space_params(
 def test_get_param_importances_invalid_params_type(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
 ) -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
         x1 = trial.suggest_uniform("x1", 0.1, 3)
         return x1 ** 2
 

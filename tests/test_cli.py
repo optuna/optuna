@@ -13,7 +13,7 @@ from optuna.storages import RDBStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
-from optuna.trial import Trial
+from optuna.trial import BaseTrial
 
 
 def test_create_study_command() -> None:
@@ -264,7 +264,7 @@ def test_dashboard_command_with_allow_websocket_origin(origins: List[str]) -> No
 
 
 # An example of objective functions for testing study optimize command
-def objective_func(trial: Trial) -> float:
+def objective_func(trial: BaseTrial) -> float:
 
     x = trial.suggest_uniform("x", -10, 10)
     return (x + 5) ** 2

@@ -15,7 +15,7 @@ from optuna import distributions
 from optuna import TrialPruned
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
-from optuna.trial import Trial
+from optuna.trial import BaseTrial
 
 
 @pytest.mark.parametrize("use_hyperband", [False, True])
@@ -45,7 +45,7 @@ def test_infer_relative_search_space() -> None:
         "g": distributions.CategoricalDistribution(["x", "y", "z"]),
     }
 
-    def obj(t: Trial) -> float:
+    def obj(t: BaseTrial) -> float:
         t.suggest_uniform("a", 1.0, 100.0)
         t.suggest_loguniform("b", 1.0, 100.0)
         t.suggest_discrete_uniform("c", 1.0, 100.0, 3.0)
@@ -695,7 +695,7 @@ def test_sample_independent_pruned_state() -> None:
 
 
 def test_get_observation_pairs() -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
         if trial.number == 0:
@@ -761,7 +761,7 @@ def test_get_observation_pairs() -> None:
 
 
 def test_get_multivariate_observation_pairs() -> None:
-    def objective(trial: Trial) -> float:
+    def objective(trial: BaseTrial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
         y = trial.suggest_int("y", 6, 6)

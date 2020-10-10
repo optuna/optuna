@@ -44,7 +44,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class ClassifierModule(nn.Module):
-    def __init__(self, trial: optuna.Trial) -> None:
+    def __init__(self, trial: optuna.trial.BaseTrial) -> None:
         super().__init__()
 
         # We optimize the number of layers, hidden units in each layer and dropouts.
@@ -67,7 +67,7 @@ class ClassifierModule(nn.Module):
         return F.softmax(self.model(x), dim=-1)
 
 
-def objective(trial: optuna.Trial) -> float:
+def objective(trial: optuna.trial.BaseTrial) -> float:
     net = skorch.NeuralNetClassifier(
         ClassifierModule(trial),
         max_epochs=20,

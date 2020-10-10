@@ -54,7 +54,7 @@ def test_fastai_pruning_callback(tmpdir: Any) -> None:
         train_ds=train_ds, valid_ds=valid_ds, test_ds=None, path=tmpdir, bs=1  # batch size
     )
 
-    def objective(trial: optuna.trial.Trial) -> float:
+    def objective(trial: optuna.trial.BaseTrial) -> float:
 
         model = nn.Sequential(nn.Linear(20, 1), nn.Sigmoid())
         learn = Learner(
