@@ -1,8 +1,7 @@
 name: examples
 
 on:
-  schedule:
-    - cron: '0 15 * * *'
+  pull_request: {}
 
 jobs:
   examples:
@@ -10,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7]
 
     if: github.repository == 'optuna/optuna'
     steps:
@@ -46,41 +45,6 @@ jobs:
         pip install --progress-bar off $(ls dist/*.tar.gz)[example] -f https://download.pytorch.org/whl/torch_stable.html
     - name: Run examples
       run: |
-        # TODO(hvy): Stop ignoring allennlp_jsonnet.py when https://github.com/optuna/optuna/issues/1526 is resolved.
-        if [ ${{ matrix.python-version }} = 3.8 ]; then
-          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai_.*|allennlp'
-        else
-          IGNORES='chainermn_.*|allennlp_jsonnet.py'
-        fi
-
-        for file in `find examples -name '*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`
-        do
-          echo $file
-          python $file > /dev/null
-          if grep -e '\-\-pruning' $file > /dev/null; then
-            echo $file --pruning
-            python $file --pruning > /dev/null
-          fi
-        done
-      env:
-        OMP_NUM_THREADS: 1
-    - name: Run Jupyter notebook examples
-      run: |
-        for file in `find examples -name '*.ipynb'`
-        do
-          echo $file
-          pytest --nbval-lax $file > /dev/null
-        done
-      env:
-        OMP_NUM_THREADS: 1
-    - name: Run multi-node examples
-      run: |
-        STORAGE_URL=sqlite:///example.db
-        for file in `find examples -name 'chainermn_*.py'`
-        do
-          echo $file
-          STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
-          mpirun -n 2 -- python $file $STUDY_NAME $STORAGE_URL > /dev/null
-        done
+        python -W always -d examples/allennlp/allennlp_jsonnet.py
       env:
         OMP_NUM_THREADS: 1
