@@ -6,8 +6,9 @@ from typing import Any
 from typing import Dict
 from typing import Sequence
 from typing import Union
-import numpy
 import warnings
+
+import numpy
 
 
 CategoricalChoiceType = Union[None, bool, int, float, str]

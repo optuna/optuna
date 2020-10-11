@@ -6,6 +6,7 @@ from typing import Sequence
 from typing import Union
 
 from optuna import distributions
+from optuna import exceptions
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -14,7 +15,6 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna import exceptions
 from optuna.trial._base import BaseTrial
 
 
@@ -141,10 +141,10 @@ class FixedTrial(BaseTrial):
         self._system_attrs[key] = value
 
     def set_suggest_end(self):
-         # type: () -> None
+        # type: () -> None
 
-         if self._stop_opt == 1:
-             raise exceptions.TrialStopOpt()
+        if self._stop_opt == 1:
+            raise exceptions.TrialStopOpt()
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
 

@@ -705,7 +705,8 @@ class Study(BaseStudy):
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
     def add_trials(
-        self, trials,  # type: List[FrozenTrial]
+        self,
+        trials,  # type: List[FrozenTrial]
     ):
         # type: (...) -> None
 
