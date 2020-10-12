@@ -55,7 +55,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "Axes
 
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         return ax
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
