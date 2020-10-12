@@ -87,7 +87,7 @@ def _get_param_importance_plot(
 ) -> "Axes":
 
     # Set up the graph style.
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     ax.set_title("Hyperparameter Importances")
     ax.set_xlabel("Importance")
