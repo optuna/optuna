@@ -88,7 +88,7 @@ class MLflowCallback(object):
         self,
         tracking_uri: Optional[str] = None,
         metric_name: str = "value",
-        nest_trials: Optional[bool] = False,
+        nest_trials: bool = False,
         tag_study_user_attrs: Optional[bool] = False,
     ) -> None:
 
