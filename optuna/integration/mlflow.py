@@ -79,9 +79,9 @@ class MLflowCallback(object):
             Flag indicating whether or not trials should be logged as
             nested runs. This is often helpful for aggregating trials
             to a particular study, under a given experiment.
-        attach_study_attrs:
-            Flag indicating whether or not to attach the study's user attrs
-            to the mlflow trial.
+        tag_study_user_attrs:
+            Flag indicating whether or not to add the study's user attrs
+            to the mlflow trial as tags.
     """
 
     def __init__(
@@ -89,7 +89,7 @@ class MLflowCallback(object):
         tracking_uri: Optional[str] = None,
         metric_name: str = "value",
         nest_trials: Optional[bool] = False,
-        attach_study_attrs: Optional[bool] = False,
+        tag_study_user_attrs: Optional[bool] = False,
     ) -> None:
 
         _imports.check()
@@ -97,7 +97,7 @@ class MLflowCallback(object):
         self._tracking_uri = tracking_uri
         self._metric_name = metric_name
         self._nest_trials = nest_trials
-        self._attach_study_attrs = attach_study_attrs
+        self._tag_study_user_attrs = tag_study_user_attrs
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
@@ -133,7 +133,7 @@ class MLflowCallback(object):
             if isinstance(study_direction, StudyDirection):
                 tags["direction"] = str(study_direction).split(".")[-1]
 
-            if self._attach_study_attrs:
+            if self._tag_study_user_attrs:
                 tags.update(study.user_attrs)
             tags.update(trial.user_attrs)
             distributions = {
