@@ -16,8 +16,8 @@ from optuna import type_checking
 if type_checking.TYPE_CHECKING:
     from typing import Optional  # NOQA
 
-_lock = threading.Lock()
-_default_handler = None  # type: Optional[logging.Handler]
+_lock: threading.Lock = threading.Lock()
+_default_handler: Optional[logging.Handler] = None
 
 
 def create_default_formatter() -> colorlog.ColoredFormatter:
@@ -53,7 +53,7 @@ def _configure_library_root_logger() -> None:
         _default_handler.setFormatter(create_default_formatter())
 
         # Apply our default configuration to the library root logger.
-        library_root_logger = _get_library_root_logger()
+        library_root_logger: logging.Logger = _get_library_root_logger()
         library_root_logger.addHandler(_default_handler)
         library_root_logger.setLevel(logging.INFO)
         library_root_logger.propagate = False
@@ -67,7 +67,7 @@ def _reset_library_root_logger() -> None:
         if not _default_handler:
             return
 
-        library_root_logger = _get_library_root_logger()
+        library_root_logger: logging.Logger = _get_library_root_logger()
         library_root_logger.removeHandler(_default_handler)
         library_root_logger.setLevel(logging.NOTSET)
         _default_handler = None
