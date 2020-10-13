@@ -1096,9 +1096,7 @@ class RDBStorage(BaseStorage):
                 "This typically happens due to invalid data in the commit, "
                 "e.g. exceeding max length."
             )
-            raise optuna.exceptions.StorageInternalError(message).with_traceback(
-                sys.exc_info()[2]
-            ) from e
+            raise optuna.exceptions.StorageInternalError(message) from e
 
     def remove_session(self) -> None:
         """Removes the current session.
