@@ -11,6 +11,7 @@ from typing import Optional
 
 import colorlog
 
+
 _lock: threading.Lock = threading.Lock()
 _default_handler: Optional[logging.Handler] = None
 
