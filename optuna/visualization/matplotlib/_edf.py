@@ -25,14 +25,6 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "Axes":
 
     .. seealso::  optuna.visualization.plot_edf
 
-    Args:
-        study:
-            A target :class:`~optuna.study.Study` object.
-            You can pass multiple studies if you want to compare those EDFs.
-
-    Returns:
-        A :class:`matplotlib.axes.Axes` object.
-
     Example:
 
         The following code snippet shows how to plot EDF.
@@ -71,6 +63,14 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "Axes":
             study2.optimize(lambda t: objective(t, 1, 3), n_trials=500)
 
             optuna.visualization.matplotlib.plot_edf([study0, study1, study2])
+
+    Args:
+        study:
+            A target :class:`~optuna.study.Study` object.
+            You can pass multiple studies if you want to compare those EDFs.
+
+    Returns:
+        A :class:`matplotlib.axes.Axes` object.
     """
 
     _imports.check()
