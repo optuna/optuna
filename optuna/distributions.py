@@ -508,6 +508,7 @@ def _adjust_discrete_uniform_high(low: float, high: float, q: float) -> float:
     d_q = decimal.Decimal(str(q))
 
     d_r = d_high - d_low
+    decimal.getcontext().prec = 10000
 
     if d_r % d_q != decimal.Decimal("0"):
         old_high = high

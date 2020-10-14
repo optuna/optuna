@@ -3,6 +3,7 @@ from typing import Dict
 from typing import Optional
 
 import numpy
+import random
 
 from optuna import distributions
 from optuna.distributions import BaseDistribution
@@ -39,6 +40,7 @@ class RandomSampler(BaseSampler):
 
     def __init__(self, seed: Optional[int] = None) -> None:
 
+        random.seed(seed)
         self._rng = numpy.random.RandomState(seed)
 
     def reseed_rng(self) -> None:
@@ -83,9 +85,9 @@ class RandomSampler(BaseSampler):
             return float(min(max(v, param_distribution.low), param_distribution.high))
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
             # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
-            r = (param_distribution.high - param_distribution.low) / param_distribution.step
+            r = (param_distribution.high - param_distribution.low) // param_distribution.step
             # numpy.random.randint includes low but excludes high.
-            s = self._rng.randint(0, r + 1)
+            s = random.randint(0, r)
             v = s * param_distribution.step + param_distribution.low
             return int(v)
         elif isinstance(param_distribution, distributions.IntLogUniformDistribution):
