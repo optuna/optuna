@@ -478,7 +478,7 @@ class MultiObjectiveStudy(object):
         return self._study._study_id
 
 
-def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:
+def _log_completed_trial(self: Study, trial: Trial, value: float) -> None:
     if not _logger.isEnabledFor(logging.INFO):
         return
 

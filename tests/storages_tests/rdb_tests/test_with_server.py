@@ -30,7 +30,7 @@ def run_optimize(args: Tuple[str, str]) -> None:
     study_name = args[0]
     storage_url = args[1]
     # Create a study
-    study = optuna.create_study(study_name=study_name, storage=storage_url, load_if_exists=True)
+    study = optuna.load_study(study_name=study_name, storage=storage_url)
     # Run optimization
     study.optimize(objective, n_trials=20)
 
@@ -105,6 +105,7 @@ def test_loaded_trials(storage_url: str) -> None:
 def test_multiprocess(storage_url: str) -> None:
     n_workers = 8
     study_name = _STUDY_NAME
+    optuna.create_study(storage=storage_url, study_name=study_name)
     with Pool(n_workers) as pool:
         pool.map(run_optimize, [(study_name, storage_url)] * n_workers)
 
