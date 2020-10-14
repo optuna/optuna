@@ -12,7 +12,7 @@ from optuna.trial._state import TrialState
 
 with try_import() as _imports:
     # `trials_dataframe` is disabled if pandas is not available.
-    import pandas as pd  # NOQA
+    import pandas as pd
 
 # Required for type annotation in `Study.trials_dataframe`.
 if not _imports.is_successful():
