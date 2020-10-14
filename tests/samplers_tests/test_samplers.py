@@ -358,24 +358,21 @@ def test_nan_objective_value(sampler_class: Callable[[], BaseSampler]) -> None:
     assert int(study.best_value) == 1
 
 
-
 @parametrize_sampler
-def test_partial_fixed_sampling(
-    sampler_class: Callable[[], BaseSampler]
-) -> None:
+def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> None:
 
     study = optuna.create_study(sampler=sampler_class())
-    
+
     def objective(trial):
         x = trial.suggest_uniform("x", -1, 1)
         y = trial.suggest_int("y", -1, 1)
         return x + y
-    
+
     # First trial.
     study.optimize(objective, n_trials=1)
-        
+
     # Second trial (`y` parameter is fixed as 0).
-    fixed_params = {"y": 0}    
+    fixed_params = {"y": 0}
     study.sampler = PartialFixedSampler(fixed_params, study.sampler)
     study.optimize(objective, n_trials=1)
     tmp_trial_params = study.trials[-1].params
