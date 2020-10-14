@@ -34,9 +34,7 @@ def _get_percentile_intermediate_result_over_trials(
         raise ValueError("No trials have been completed.")
 
     intermediate_values = [
-        t.intermediate_values[step]
-        for t in completed_trials
-        if step in t.intermediate_values
+        t.intermediate_values[step] for t in completed_trials if step in t.intermediate_values
     ]
     is_maximize = direction == StudyDirection.MAXIMIZE
 
