@@ -1,9 +1,9 @@
+import random
 from typing import Any
 from typing import Dict
 from typing import Optional
 
 import numpy
-import random
 
 from optuna import distributions
 from optuna.distributions import BaseDistribution

@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import pickle
+import sys
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -8,7 +9,6 @@ from typing import Sequence
 
 import numpy as np
 import pytest
-import sys
 
 import optuna
 from optuna.distributions import BaseDistribution
