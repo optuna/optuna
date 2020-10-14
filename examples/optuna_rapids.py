@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Optuna example using RAPIDS library for optimization.
 
@@ -42,7 +41,7 @@ def objective(trial, X_param, y_param):
 
 if __name__ == "__main__":
     N_TRIALS = 10
-    study_name = "optuna_experiment"
+    study_name = "rapids_experiment"
     storage_name = "sqlite:///simple_storage.db"
 
     data, target = load_iris(return_X_y=True)
