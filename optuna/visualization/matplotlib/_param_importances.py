@@ -118,7 +118,7 @@ def _get_param_importance_plot(
         color=[_get_color(param_name, study) for param_name in param_names],
         tick_label=param_names,
     )
-    ax.legend(handles=_legend_elements, title="Distributions")
+    ax.legend(handles=_legend_elements, title="Distributions", loc="lower right")
     return ax
 
 
