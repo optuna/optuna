@@ -99,7 +99,7 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
         param_values.append(values)
 
     # Draw multiple line plots and axes.
-    # https://stackoverflow.com/a/50029441
+    # Ref: https://stackoverflow.com/a/50029441
     ax.set_xlim(0, len(sorted_params))
     ax.set_ylim(obj_min, obj_max)
     xs = [range(0, len(sorted_params) + 1) for i in range(len(dims_obj_base))]
