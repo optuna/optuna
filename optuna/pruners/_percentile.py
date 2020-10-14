@@ -39,7 +39,7 @@ def _get_percentile_intermediate_result_over_trials(
     is_maximize = direction == StudyDirection.MAXIMIZE
 
     if not intermediate_values:
-        return -math.inf if is_maximize else math.inf
+        return math.nan
 
     if is_maximize:
         percentile = 100 - percentile
