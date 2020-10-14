@@ -89,7 +89,13 @@ class PartialFixedSampler(BaseSampler):
         # If param_name isn't in self._fixed_params.keys(), param_value == None.
         param_value = self._fixed_params.get(param_name)
 
-        if param_value:
+        if param_value is None:
+            # Unfixed params are sampled here.
+            return self._base_sampler.sample_independent(
+                study, trial, param_name, param_distribution
+            )
+        else:
+            # Fixed params are sampled here.
             # Check if a parameter value is contained in the range of this distribution.
             param_value_in_internal_repr = param_distribution.to_internal_repr(param_value)
             contained = param_distribution._contains(param_value_in_internal_repr)
@@ -100,10 +106,6 @@ class PartialFixedSampler(BaseSampler):
                     "for distribution {}.".format(param_name, param_value, param_distribution)
                 )
             return param_value
-        else:
-            return self._base_sampler.sample_independent(
-                study, trial, param_name, param_distribution
-            )
 
     @property
     def fixed_params(self) -> Dict[str, Any]:
