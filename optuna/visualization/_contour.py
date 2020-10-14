@@ -3,6 +3,8 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
+from typing import Any
 
 from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
@@ -70,6 +72,13 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
     return _get_contour_plot(study, params)
 
 
+def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Union[str, Any]]:
+    values = [t.params[p_name] for t in trials if p_name in t.params]
+    if not _is_categorical(trials, p_name):
+        return values
+    return list(map(str, values))
+
+
 def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
     layout = go.Layout(title="Contour Plot")
@@ -96,7 +105,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
     param_values_range = {}
     update_category_axes = {}
     for p_name in sorted_params:
-        values = [t.params[p_name] for t in trials if p_name in t.params]
+        values = _get_param_values(trials, p_name)
 
         min_value = min(values)
         max_value = max(values)
@@ -193,8 +202,8 @@ def _generate_contour_subplot(
     if param_values_range is None:
         param_values_range = {}
 
-    x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
-    y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
+    x_indices = sorted(set(_get_param_values(trials, x_param)))
+    y_indices = sorted(set(_get_param_values(trials, y_param)))
     if len(x_indices) < 2:
         _logger.warning("Param {} unique value length is less than 2.".format(x_param))
         return go.Contour(), go.Scatter()
@@ -218,10 +227,16 @@ def _generate_contour_subplot(
     for trial in trials:
         if x_param not in trial.params or y_param not in trial.params:
             continue
-        x_values.append(trial.params[x_param])
-        y_values.append(trial.params[y_param])
-        x_i = x_indices.index(trial.params[x_param])
-        y_i = y_indices.index(trial.params[y_param])
+        x_value = trial.params[x_param]
+        y_value = trial.params[y_param]
+        if _is_categorical(trials, x_param):
+            x_value = str(x_value)
+        if _is_categorical(trials, y_param):
+            y_value = str(y_value)
+        x_values.append(x_value)
+        y_values.append(y_value)
+        x_i = x_indices.index(x_value)
+        y_i = y_indices.index(y_value)
         if isinstance(trial.value, int):
             value = float(trial.value)
         elif isinstance(trial.value, float):
