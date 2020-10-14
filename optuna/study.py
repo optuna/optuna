@@ -1,4 +1,3 @@
-import collections
 import copy
 import threading
 from typing import Any
@@ -6,7 +5,6 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import Union
@@ -17,8 +15,9 @@ from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
+from optuna._dataframe import _trials_dataframe
+from optuna._dataframe import pd
 from optuna._experimental import experimental
-from optuna._imports import try_import
 from optuna._optimize import _optimize
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
@@ -29,9 +28,6 @@ from optuna.trial import TrialState
 
 ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
-with try_import() as _pandas_imports:
-    # `trials_dataframe` is disabled if pandas is not available.
-    import pandas as pd  # NOQA
 
 _logger = logging.get_logger(__name__)
 
@@ -430,65 +426,7 @@ class Study(BaseStudy):
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
-
-        _pandas_imports.check()
-
-        trials = self.get_trials(deepcopy=False)
-
-        # If no trials, return an empty dataframe.
-        if not len(trials):
-            return pd.DataFrame()
-
-        assert all(isinstance(trial, FrozenTrial) for trial in trials)
-        attrs_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
-        for attr in attrs:
-            if attr.startswith("_"):
-                # Python conventional underscores are omitted in the dataframe.
-                df_column = attr[1:]
-            else:
-                df_column = attr
-            attrs_to_df_columns[attr] = df_column
-
-        # column_agg is an aggregator of column names.
-        # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
-        # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
-        column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
-        non_nested_attr = ""
-
-        def _create_record_and_aggregate_column(trial: FrozenTrial) -> Dict[Tuple[str, str], Any]:
-
-            record = {}
-            for attr, df_column in attrs_to_df_columns.items():
-                value = getattr(trial, attr)
-                if isinstance(value, TrialState):
-                    # Convert TrialState to str and remove the common prefix.
-                    value = str(value).split(".")[-1]
-                if isinstance(value, dict):
-                    for nested_attr, nested_value in value.items():
-                        record[(df_column, nested_attr)] = nested_value
-                        column_agg[attr].add((df_column, nested_attr))
-                else:
-                    record[(df_column, non_nested_attr)] = value
-                    column_agg[attr].add((df_column, non_nested_attr))
-            return record
-
-        records = list([_create_record_and_aggregate_column(trial) for trial in trials])
-
-        columns = sum(
-            (sorted(column_agg[k]) for k in attrs if k in column_agg), []
-        )  # type: List[Tuple[str, str]]
-
-        df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
-
-        if not multi_index:
-            # Flatten the `MultiIndex` columns where names are concatenated with underscores.
-            # Filtering is required to omit non-nested columns avoiding unwanted trailing
-            # underscores.
-            df.columns = [
-                "_".join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns
-            ]
-
-        return df
+        return _trials_dataframe(self, attrs, multi_index)
 
     def stop(self) -> None:
 

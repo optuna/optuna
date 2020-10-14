@@ -68,10 +68,10 @@ def test_pytorch_lightning_pruning_callback() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
 
         trainer = pl.Trainer(
-            early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="accuracy"),
             min_epochs=0,  # Required to fire the callback after the first epoch.
             max_epochs=2,
             checkpoint_callback=False,
+            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
         )
 
         model = Model()
