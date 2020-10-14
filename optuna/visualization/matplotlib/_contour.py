@@ -64,7 +64,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "Axes
         sorted_params = sorted(list(all_params))
     elif len(params) <= 1:
         _logger.warning("The length of params must be greater than 1.")
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         return ax
     else:
         for input_p_name in params:
