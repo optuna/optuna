@@ -143,7 +143,7 @@ def test_discrete_uniform(
         IntUniformDistribution(-10, 10, 2),
         IntUniformDistribution(0, 10, 2),
         IntUniformDistribution(-10, 0, 2),
-        IntUniformDistribution(0, sys.float_info.max, 1),
+        IntUniformDistribution(0, int(sys.float_info.max), 1),
     ],
 )
 def test_int(
