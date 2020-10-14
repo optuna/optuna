@@ -66,10 +66,10 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
-    obj_org = [t.value for t in trials]
+    obj_org = [t.value for t in trials if t.value is not None]
     obj_min = min(obj_org)
     obj_max = max(obj_org)
-    obj_w = obj_max - obj_min  # type: ignore
+    obj_w = obj_max - obj_min
     dims_obj_base = [[o] for o in obj_org]
 
     cat_param_names = []
