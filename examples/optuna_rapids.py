@@ -43,7 +43,6 @@ def objective(trial, X_param, y_param):
 if __name__ == "__main__":
     N_TRIALS = 10
     study_name = "optuna_experiment"
-    storage_name = "sqlite:///simple_storage.db"
 
     data, target = load_iris(return_X_y=True)
     # To use the GPU model
@@ -52,12 +51,10 @@ if __name__ == "__main__":
 
     study = optuna.create_study(sampler=optuna.samplers.TPESampler(),
                                 study_name=study_name,
-                                direction="maximize",
-                                storage=storage_name)
+                                direction="maximize")
 
     study.optimize(lambda trial: objective(trial, X, y),
-                   n_trials=N_TRIALS,
-                   n_jobs=-1)
+                   n_trials=N_TRIALS)
 
     print("Number of finished trials: {}".format(len(study.trials)))
 
