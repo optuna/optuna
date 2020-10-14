@@ -81,7 +81,8 @@ class MLflowCallback(object):
             to a particular study, under a given experiment.
         tag_study_user_attrs:
             Flag indicating whether or not to add the study's user attrs
-            to the mlflow trial as tags.
+            to the mlflow trial as tags. Please note that when this flag is
+            set, key value pairs in study.user_attrs will supersede existing tags.
     """
 
     def __init__(
@@ -89,7 +90,7 @@ class MLflowCallback(object):
         tracking_uri: Optional[str] = None,
         metric_name: str = "value",
         nest_trials: bool = False,
-        tag_study_user_attrs: Optional[bool] = False,
+        tag_study_user_attrs: bool = False,
     ) -> None:
 
         _imports.check()
