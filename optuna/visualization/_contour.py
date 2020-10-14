@@ -72,7 +72,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
     return _get_contour_plot(study, params)
 
 
-def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Union[str, Any]]:
+def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Union[str, float, Any]]:
     values = [t.params[p_name] for t in trials if p_name in t.params]
     if not _is_categorical(trials, p_name):
         return values
