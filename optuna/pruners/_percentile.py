@@ -36,12 +36,11 @@ def _get_percentile_intermediate_result_over_trials(
     intermediate_values = [
         t.intermediate_values[step] for t in completed_trials if step in t.intermediate_values
     ]
-    is_maximize = direction == StudyDirection.MAXIMIZE
 
     if not intermediate_values:
         return math.nan
 
-    if is_maximize:
+    if direction == StudyDirection.MAXIMIZE:
         percentile = 100 - percentile
 
     return float(
