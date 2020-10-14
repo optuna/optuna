@@ -4,7 +4,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
 
 from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
