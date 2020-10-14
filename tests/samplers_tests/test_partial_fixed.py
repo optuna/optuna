@@ -58,7 +58,7 @@ def test_incompatible_types(fixed_y: Union[float, int]) -> None:
 
 
 @pytest.mark.parametrize("fixed_y", [-2, 2])
-def test_out_of_the_range(fixed_y: int):
+def test_out_of_the_range(fixed_y: int) -> None:
     def objective(trial: Trial) -> float:
         x = trial.suggest_int("x", -1, 1)
         y = trial.suggest_int("y", -1, 1)
