@@ -695,17 +695,6 @@ class TPESampler(BaseSampler):
         z = denominator / numerator
         return 0.5 * (1 + scipy.special.erf(z))
 
-    @classmethod
-    def _log_normal_cdf(cls, x: float, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
-
-        mu, sigma = map(np.asarray, (mu, sigma))
-        if x < 0:
-            raise ValueError("Negative argument is given to _lognormal_cdf. x: {}".format(x))
-        denominator = np.log(np.maximum(x, EPS)) - mu
-        numerator = np.maximum(np.sqrt(2) * sigma, EPS)
-        z = denominator / numerator
-        return 0.5 + 0.5 * scipy.special.erf(z)
-
     @staticmethod
     def hyperopt_parameters() -> Dict[str, Any]:
         """Return the the default parameters of hyperopt (v0.1.2).
