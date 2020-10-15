@@ -9,7 +9,7 @@ on:
     - cron: '0 23 * * SUN-THU'
 
 jobs:
-  build:
+  tests:
     runs-on: ubuntu-latest
 
     strategy:

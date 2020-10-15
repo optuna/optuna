@@ -34,12 +34,14 @@ class FixedTrial(BaseTrial):
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_categorical('y', [-1, 0, 1])
+                x = trial.suggest_uniform("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
 
-            assert objective(optuna.trial.FixedTrial({'x': 1, 'y': 0})) == 1
+
+            assert objective(optuna.trial.FixedTrial({"x": 1, "y": 0})) == 1
 
 
     .. note::

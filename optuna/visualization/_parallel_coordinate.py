@@ -31,19 +31,21 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_categorical('y', [-1, 0, 1])
+                x = trial.suggest_uniform("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
+
 
             study = optuna.create_study()
             study.optimize(objective, n_trials=10)
 
-            optuna.visualization.plot_parallel_coordinate(study, params=['x', 'y'])
+            optuna.visualization.plot_parallel_coordinate(study, params=["x", "y"])
 
         .. raw:: html
 
-            <iframe src="../../_static/plot_parallel_coordinate.html"
+            <iframe src="../../../_static/plot_parallel_coordinate.html"
              width="100%" height="500px" frameborder="0">
             </iframe>
 
