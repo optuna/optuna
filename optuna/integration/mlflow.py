@@ -134,13 +134,14 @@ class MLflowCallback(object):
             if isinstance(study_direction, StudyDirection):
                 tags["direction"] = str(study_direction).split(".")[-1]
 
-            if self._tag_study_user_attrs:
-                tags.update(study.user_attrs)
             tags.update(trial.user_attrs)
             distributions = {
                 (k + "_distribution"): str(v) for (k, v) in trial.distributions.items()
             }
             tags.update(distributions)
+
+            if self._tag_study_user_attrs:
+                tags.update(study.user_attrs)
 
             # This is a temporary fix on Optuna side. It avoids an error with user
             # attributes that are too long. It should be fixed on MLflow side later.
