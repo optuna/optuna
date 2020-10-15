@@ -1,4 +1,6 @@
+import mlflow
 from mlflow.tracking import MlflowClient
+from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
 import py
 
 import optuna
@@ -132,3 +134,29 @@ def test_tag_truncation(tmpdir: py.path.local) -> None:
 
     my_user_attr = first_run_dict["data"]["tags"]["my_user_attr"]
     assert len(my_user_attr) <= 5000
+
+
+def test_nest_trials(tmpdir: py.path.local) -> None:
+    tmp_tracking_uri = "file:{}".format(tmpdir)
+
+    study_name = "my_study"
+    mlflow.set_tracking_uri(tmp_tracking_uri)
+    mlflow.set_experiment(study_name)
+
+    mlflc = MLflowCallback(tracking_uri=tmp_tracking_uri, nest_trials=True)
+    study = optuna.create_study(study_name=study_name)
+
+    n_trials = 3
+    with mlflow.start_run() as parent_run:
+        study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
+
+    mlfl_client = MlflowClient(tmp_tracking_uri)
+    experiments = mlfl_client.list_experiments()
+    experiment_id = experiments[0].experiment_id
+
+    all_runs = mlfl_client.search_runs([experiment_id])
+    nested_runs = [r for r in all_runs if MLFLOW_PARENT_RUN_ID in r.data.tags]
+
+    assert len(all_runs) == n_trials + 1
+    assert len(nested_runs) == n_trials
+    assert all(r.data.tags[MLFLOW_PARENT_RUN_ID] == parent_run.info.run_id for r in nested_runs)
