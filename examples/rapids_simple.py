@@ -12,19 +12,17 @@ To run this example:
 Learn more about rapids: https://rapids.ai/
 """
 import cudf
-import optuna
 from cuml.ensemble import RandomForestClassifier
 from cuml.metrics import accuracy_score
 from cuml.preprocessing.model_selection import train_test_split
 from sklearn.datasets import load_iris
 
+import optuna
+
 
 def train_and_eval(X_param, y_param, max_depth=16, n_estimators=100):
-    X_train, X_valid, y_train, y_valid = train_test_split(X_param,
-                                                          y_param,
-                                                          random_state=77)
-    classifier = RandomForestClassifier(max_depth=max_depth,
-                                        n_estimators=n_estimators)
+    X_train, X_valid, y_train, y_valid = train_test_split(X_param, y_param, random_state=77)
+    classifier = RandomForestClassifier(max_depth=max_depth, n_estimators=n_estimators)
     classifier.fit(X_train, y_train)
     y_pred = classifier.predict(X_valid)
     score = accuracy_score(y_valid, y_pred)
@@ -34,8 +32,7 @@ def train_and_eval(X_param, y_param, max_depth=16, n_estimators=100):
 def objective(trial, X_param, y_param):
     max_depth = trial.suggest_int("max_depth", 7, 15)
     n_estimators = trial.suggest_int("n_estimators", 100, 1000)
-    score = train_and_eval(X_param, y_param, max_depth=max_depth,
-                           n_estimators=n_estimators)
+    score = train_and_eval(X_param, y_param, max_depth=max_depth, n_estimators=n_estimators)
     return score
 
 
@@ -45,15 +42,14 @@ if __name__ == "__main__":
 
     data, target = load_iris(return_X_y=True)
     # To use the GPU model
-    X = cudf.DataFrame(data).astype('float32')
+    X = cudf.DataFrame(data).astype("float32")
     y = cudf.Series(target)
 
-    study = optuna.create_study(sampler=optuna.samplers.TPESampler(),
-                                study_name=study_name,
-                                direction="maximize")
+    study = optuna.create_study(
+        sampler=optuna.samplers.TPESampler(), study_name=study_name, direction="maximize"
+    )
 
-    study.optimize(lambda trial: objective(trial, X, y),
-                   n_trials=N_TRIALS)
+    study.optimize(lambda trial: objective(trial, X, y), n_trials=N_TRIALS)
 
     print("Number of finished trials: {}".format(len(study.trials)))
 
