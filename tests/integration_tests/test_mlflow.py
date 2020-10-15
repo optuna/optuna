@@ -132,3 +132,32 @@ def test_tag_truncation(tmpdir: py.path.local) -> None:
 
     my_user_attr = first_run_dict["data"]["tags"]["my_user_attr"]
     assert len(my_user_attr) <= 5000
+
+
+def test_tag_study_user_attrs(tmpdir: py.path.local) -> None:
+    tracking_file_name = "file:{}".format(tmpdir)
+    study_name = "my_study"
+    n_trials = 3
+
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, tag_study_user_attrs=True)
+    study = optuna.create_study(study_name=study_name)
+    study.set_user_attr("my_study_attr", "a")
+    study.optimize(_objective_func_long_user_attr, n_trials=n_trials, callbacks=[mlflc])
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiments = mlfl_client.list_experiments()
+    assert len(experiments) == 1
+
+    experiment = experiments[0]
+    assert experiment.name == study_name
+    experiment_id = experiment.experiment_id
+
+    run_infos = mlfl_client.list_run_infos(experiment_id)
+    assert len(run_infos) == n_trials
+
+    first_run_id = run_infos[0].run_id
+    first_run = mlfl_client.get_run(first_run_id)
+    first_run_dict = first_run.to_dictionary()
+
+    my_study_attr = first_run_dict["data"]["tags"]["my_study_attr"]
+    assert my_study_attr == "a"
