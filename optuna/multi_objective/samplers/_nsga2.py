@@ -90,6 +90,10 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         self._random_sampler = multi_objective.samplers.RandomMultiObjectiveSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
 
+    def reseed_rng(self) -> None:
+        self._random_sampler.reseed_rng()
+        self._rng = np.random.RandomState()
+
     def infer_relative_search_space(
         self,
         study: "multi_objective.study.MultiObjectiveStudy",

@@ -60,7 +60,8 @@ Below is an example that uses ``lambda``:
     study = optuna.create_study()
     study.optimize(lambda trial: objective(trial, min_x, max_x), n_trials=100)
 
-Please also refer to `sklearn_addtitional_args.py <https://github.com/optuna/optuna/blob/master/examples/sklearn_additional_args.py>`_ example.
+Please also refer to `sklearn_addtitional_args.py <https://github.com/optuna/optuna/blob/master/examples/sklearn_additional_args.py>`_ example,
+which reuses the dataset instead of loading it in each trial execution.
 
 
 Can I use Optuna without remote RDB servers?

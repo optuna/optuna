@@ -233,7 +233,7 @@ if _imports.is_successful():
                         self.doc.add_next_tick_callback(self.update_callback)
 
         @tornado.gen.coroutine
-        def update_callback(self) -> None:
+        def update_callback(self) -> Any:
 
             with self.lock:
                 current_trials = self.current_trials

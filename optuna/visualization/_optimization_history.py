@@ -22,10 +22,12 @@ def plot_optimization_history(study: Study) -> "go.Figure":
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_categorical('y', [-1, 0, 1])
+                x = trial.suggest_uniform("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
+
 
             study = optuna.create_study()
             study.optimize(objective, n_trials=10)
@@ -34,7 +36,7 @@ def plot_optimization_history(study: Study) -> "go.Figure":
 
         .. raw:: html
 
-            <iframe src="../../_static/plot_optimization_history.html"
+            <iframe src="../../../_static/plot_optimization_history.html"
              width="100%" height="500px" frameborder="0">
             </iframe>
 

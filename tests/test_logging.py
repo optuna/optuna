@@ -73,7 +73,7 @@ def test_verbosity(capsys: _pytest.capture.CaptureFixture) -> None:
     assert "bye-debug" not in err
 
 
-def test_propagation(caplog: _pytest.capture.CaptureFixture) -> None:
+def test_propagation(caplog: _pytest.logging.LogCaptureFixture) -> None:
 
     optuna.logging._reset_library_root_logger()
     logger = optuna.logging.get_logger("optuna.foo")

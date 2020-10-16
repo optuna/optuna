@@ -37,19 +37,21 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_categorical('y', [-1, 0, 1])
+                x = trial.suggest_uniform("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
+
 
             study = optuna.create_study()
             study.optimize(objective, n_trials=30)
 
-            optuna.visualization.plot_contour(study, params=['x', 'y'])
+            optuna.visualization.plot_contour(study, params=["x", "y"])
 
         .. raw:: html
 
-            <iframe src="../../_static/plot_contour.html"
+            <iframe src="../../../_static/plot_contour.html"
                 width="100%" height="500px" frameborder="0">
             </iframe>
 
