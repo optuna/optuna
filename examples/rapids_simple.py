@@ -1,13 +1,13 @@
 """
 Optuna example using RAPIDS library for optimization.
 
-In this example, we perform HPO on Iris dataset using cuML's
-RandomForestClassifier. This should be used a starting point
+In this example, we perform hyperparameter optimization on Iris dataset using cuML's
+RandomForestClassifier. This should be used as a starting point
 to extend the search for larger problems, and wider depths.
 
 To run this example:
 
-    $ python optuna_rapids.py
+    $ python rapids_simple.py
 
 Learn more about rapids: https://rapids.ai/
 """
