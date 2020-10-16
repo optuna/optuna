@@ -160,5 +160,5 @@ def test_nest_trials(tmpdir: py.path.local) -> None:
     assert len(all_runs) == n_trials + 1
     assert len(child_runs) == n_trials
     assert all(r.data.tags[MLFLOW_PARENT_RUN_ID] == parent_run.info.run_id for r in child_runs)
-    assert all(set(r.data.params) == {"x", "y", "z"} for r in child_runs)
-    assert all(set(r.data.metrics) == {"value"} for r in child_runs)
+    assert all(set(r.data.params.keys()) == {"x", "y", "z"} for r in child_runs)
+    assert all(set(r.data.metrics.keys()) == {"value"} for r in child_runs)
