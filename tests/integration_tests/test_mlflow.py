@@ -2,6 +2,7 @@ import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
 import py
+import pytest
 
 import optuna
 from optuna.integration.mlflow import MLflowCallback
@@ -162,3 +163,18 @@ def test_nest_trials(tmpdir: py.path.local) -> None:
     assert all(r.data.tags[MLFLOW_PARENT_RUN_ID] == parent_run.info.run_id for r in child_runs)
     assert all(set(r.data.params.keys()) == {"x", "y", "z"} for r in child_runs)
     assert all(set(r.data.metrics.keys()) == {"value"} for r in child_runs)
+
+
+def test_mlflow_callback_fails_when_nest_trials_is_false_and_active_run_exists(tmpdir):
+    tmp_tracking_uri = "file:{}".format(tmpdir)
+
+    study_name = "my_study"
+    mlflow.set_tracking_uri(tmp_tracking_uri)
+    mlflow.set_experiment(study_name)
+
+    mlflc = MLflowCallback(tracking_uri=tmp_tracking_uri, nest_trials=False)
+    study = optuna.create_study(study_name=study_name)
+
+    with mlflow.start_run():
+        with pytest.raises(Exception, match=r"Run with UUID \w+ is already active."):
+            study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
