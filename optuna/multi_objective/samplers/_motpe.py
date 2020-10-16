@@ -87,16 +87,11 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         seed:
             Seed for random number generator.
 
-    The original paper utilizes Latin hypercube sampling (LHS) for initialization. The following
-    code is an example of initializing MOTPE using LHS. Here
-    `pyDOE2 <https://pypi.org/project/pyDOE2/>`_ is used for LHS.
-
     Example:
 
         .. testcode::
 
                 import numpy as np
-                import pyDOE2
 
                 seed = 128
                 num_variables = 9
@@ -108,20 +103,13 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
                         x.append(trial.suggest_uniform(f"x{i}", 0.0, 2.0 * i))
                     return x
 
+                # Note: Initialization with Latin hypercube sampling may improve optimization
+                # performance.
                 sampler = optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler(
                     n_startup_trials=n_startup_trials,
                     n_ehvi_candidates=24,
                     seed=seed
                 )
-                # NOTE: Sampled vectors are normalized. Denormalization is needed when a search
-                # space is not normalized.
-                initial_samples = pyDOE2.lhs(
-                    num_variables, samples=n_startup_trials, criterion='maximin',
-                    random_state=np.random.RandomState(seed)
-                )
-                for s in initial_samples:
-                    study.enqueue_trial({f'x{i}': v for i, v in enumerate(s, start=1)})
-
                 study.optimize(objective, n_trials=250)
     """
 
