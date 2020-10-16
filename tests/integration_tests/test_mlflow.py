@@ -165,7 +165,9 @@ def test_nest_trials(tmpdir: py.path.local) -> None:
     assert all(set(r.data.metrics.keys()) == {"value"} for r in child_runs)
 
 
-def test_mlflow_callback_fails_when_nest_trials_is_false_and_active_run_exists(tmpdir):
+def test_mlflow_callback_fails_when_nest_trials_is_false_and_active_run_exists(
+    tmpdir: py.path.local,
+) -> None:
     tmp_tracking_uri = "file:{}".format(tmpdir)
 
     study_name = "my_study"
