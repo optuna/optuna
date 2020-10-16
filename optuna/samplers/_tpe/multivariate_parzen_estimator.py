@@ -155,7 +155,7 @@ class _MultivariateParzenEstimator:
                 p_accept = cdf_func(high, mus, sigmas) - cdf_func(low, mus, sigmas)
                 if q is None:
                     distance = samples[:, None] - mus
-                    mahalanobis = distance / sigmas
+                    mahalanobis = distance / np.maximum(sigmas, EPS)
                     z = np.sqrt(2 * np.pi) * sigmas
                     coefficient = 1 / z / p_accept
                     log_pdf = -0.5 * mahalanobis ** 2 + np.log(coefficient)
@@ -165,7 +165,7 @@ class _MultivariateParzenEstimator:
                     cdf = cdf_func(upper_bound[:, None], mus[None], sigmas[None]) - cdf_func(
                         lower_bound[:, None], mus[None], sigmas[None]
                     )
-                    log_pdf = np.log(cdf) - np.log(p_accept)
+                    log_pdf = np.log(cdf + EPS) - np.log(p_accept + EPS)
             component_log_pdf += log_pdf
         ret = scipy.special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
         return ret

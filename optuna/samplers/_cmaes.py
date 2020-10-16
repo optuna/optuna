@@ -68,7 +68,7 @@ class CmaEsSampler(BaseSampler):
       <http://www.cmap.polytechnique.fr/~nikolaus.hansen/cec2005ipopcmaes.pdf>`_
 
     .. seealso::
-        You can also use :class:`optuna.integration.CmaEsSampler` which is a sampler using cma
+        You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
         library as the backend.
 
     Args:
