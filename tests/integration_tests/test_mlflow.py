@@ -155,8 +155,8 @@ def test_nest_trials(tmpdir: py.path.local) -> None:
     experiment_id = experiments[0].experiment_id
 
     all_runs = mlfl_client.search_runs([experiment_id])
-    nested_runs = [r for r in all_runs if MLFLOW_PARENT_RUN_ID in r.data.tags]
+    child_runs = [r for r in all_runs if MLFLOW_PARENT_RUN_ID in r.data.tags]
 
     assert len(all_runs) == n_trials + 1
-    assert len(nested_runs) == n_trials
-    assert all(r.data.tags[MLFLOW_PARENT_RUN_ID] == parent_run.info.run_id for r in nested_runs)
+    assert len(child_runs) == n_trials
+    assert all(r.data.tags[MLFLOW_PARENT_RUN_ID] == parent_run.info.run_id for r in child_runs)
