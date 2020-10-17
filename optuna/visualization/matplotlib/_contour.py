@@ -36,7 +36,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "Axes":
 
     Warnings:
         Output figures of this Matplotlib-based
-        :func:`optuna.visualization.matplotlib.plot_contour` function would be different from
+        :func:`~optuna.visualization.matplotlib.plot_contour` function would be different from
         those of the Plotly-based :func:`~optuna.visualization.plot_contour`.
 
     Args:
