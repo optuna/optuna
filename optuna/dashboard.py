@@ -5,6 +5,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Set
 
 import numpy as np
 from packaging import version
@@ -41,7 +42,7 @@ with try_import() as _imports:
 _mode: Optional[str] = None
 _study: Optional[optuna.study.Study] = None
 
-_HEADER_FORMAT = """
+_HEADER_FORMAT: str = """
 <style>
 body {{
     margin: 20px;
@@ -57,7 +58,7 @@ h1, p {{
 </p>
 """
 
-_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+_DATETIME_FORMAT: str = "%Y-%m-%d %H:%M:%S"
 
 if _imports.is_successful():
 
@@ -66,19 +67,20 @@ if _imports.is_successful():
             self, trials: List[optuna.trial.FrozenTrial], direction: StudyDirection
         ) -> None:
 
-            complete_trials = [
+            complete_trials: List[optuna.trial.FrozenTrial] = [
                 trial for trial in trials if trial.state == optuna.trial.TrialState.COMPLETE
             ]
-            self.trial_ids = set([trial._trial_id for trial in complete_trials])
+            self.trial_ids: Set[int] = set([trial._trial_id for trial in complete_trials])
 
-            self.direction = direction
-            values = [trial.value for trial in complete_trials]
+            self.direction: StudyDirection = direction
+            values: List[Optional[float]] = [trial.value for trial in complete_trials]
+            best_values: np.ndarray
             if direction == StudyDirection.MINIMIZE:
                 best_values = np.minimum.accumulate(values, axis=0)
             else:
                 best_values = np.maximum.accumulate(values, axis=0)
 
-            self.cds = bokeh.models.ColumnDataSource(
+            self.cds: bokeh.models.ColumnDataSource = bokeh.models.ColumnDataSource(
                 {
                     "#": list(range(len(complete_trials))),
                     "value": values,
@@ -86,7 +88,7 @@ if _imports.is_successful():
                 }
             )
 
-            self.best_value = best_values[-1] if complete_trials else np.inf
+            self.best_value: Optional[float] = best_values[-1] if complete_trials else np.inf
 
         def create_figure(self) -> bokeh.plotting.Figure:
 
@@ -121,7 +123,7 @@ if _imports.is_successful():
     class _AllTrialsWidget(object):
         def __init__(self, trials: List[optuna.trial.FrozenTrial]) -> None:
 
-            self.cds = bokeh.models.ColumnDataSource(self.trials_to_dict(trials))
+            self.cds: bokeh.models.ColumnDataSource = bokeh.models.ColumnDataSource(self.trials_to_dict(trials))
 
         def create_table(self) -> bokeh.models.widgets.DataTable:
 
@@ -146,15 +148,16 @@ if _imports.is_successful():
             new_trials: List[optuna.trial.FrozenTrial],
         ) -> None:
 
-            modified_indices = []
-            modified_trials = []
+            modified_indices: List[int] = []
+            modified_trials: List[optuna.trial.FrozenTrial] = []
+            new_trial: optuna.trial.FrozenTrial
             for i, old_trial in enumerate(old_trials):
                 new_trial = new_trials[i]
                 if old_trial != new_trial:
                     modified_indices.append(i)
                     modified_trials.append(new_trial)
 
-            patch_dict = self.trials_to_dict(modified_trials)
+            patch_dict: Dict[str, List[Any]] = self.trials_to_dict(modified_trials)
             patch_dict = {k: list(zip(modified_indices, v)) for k, v in patch_dict.items()}
             self.cds.patch(patch_dict)
 
@@ -185,24 +188,24 @@ if _imports.is_successful():
     class _DashboardApp(object):
         def __init__(self, study: optuna.study.Study, launch_update_thread: bool) -> None:
 
-            self.study = study
-            self.launch_update_thread = launch_update_thread
-            self.lock = threading.Lock()
+            self.study: optuna.study.Study = study
+            self.launch_update_thread: bool = launch_update_thread
+            self.lock: threading.Lock = threading.Lock()
 
         def __call__(self, doc: bokeh.document.Document) -> None:
 
-            self.doc = doc
+            self.doc: bokeh.document.Document = doc
             self.current_trials: Optional[List[optuna.trial.FrozenTrial]] = (
                 self.study.trials
             )
             self.new_trials: Optional[List[optuna.trial.FrozenTrial]] = None
-            self.complete_trials_widget = _CompleteTrialsWidget(
+            self.complete_trials_widget: _CompleteTrialsWidget = _CompleteTrialsWidget(
                 self.current_trials, self.study.direction
             )
-            self.all_trials_widget = _AllTrialsWidget(self.current_trials)
+            self.all_trials_widget: _AllTrialsWidget = _AllTrialsWidget(self.current_trials)
 
             self.doc.title = "Optuna Dashboard (Beta)"
-            header = _HEADER_FORMAT.format(study_name=self.study.study_name)
+            header: str = _HEADER_FORMAT.format(study_name=self.study.study_name)
             self.doc.add_root(
                 bokeh.layouts.layout(
                     [
@@ -216,13 +219,14 @@ if _imports.is_successful():
 
             if self.launch_update_thread:
                 thread = threading.Thread(target=self.thread_loop)
-                self.stop_event = threading.Event()
+                self.stop_event: threading.Event = threading.Event()
                 thread.daemon = True
                 thread.start()
                 self.doc.on_session_destroyed(lambda _: self.stop_event.set())
 
         def thread_loop(self) -> None:
 
+            new_trials: List[optuna.trial.FrozenTrial]
             while not self.stop_event.is_set():
                 time.sleep(1)
                 new_trials = self.study.trials
@@ -255,7 +259,7 @@ def _show_experimental_warning() -> None:
 
 def _get_this_source_path() -> str:
 
-    path = __file__
+    path: str = __file__
 
     # Sometimes __file__ points to a *.pyc file, but Bokeh doesn't accept it.
     if path.endswith(".pyc"):

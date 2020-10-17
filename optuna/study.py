@@ -35,8 +35,8 @@ _logger = logging.get_logger(__name__)
 class BaseStudy(object):
     def __init__(self, study_id: int, storage: storages.BaseStorage) -> None:
 
-        self._study_id = study_id
-        self._storage = storage
+        self._study_id: int = study_id
+        self._storage: storages.BaseStorage = storage
 
     @property
     def best_params(self) -> Dict[str, Any]:
@@ -154,16 +154,16 @@ class Study(BaseStudy):
         pruner: Optional[pruners.BasePruner] = None,
     ) -> None:
 
-        self.study_name = study_name
+        self.study_name: str = study_name
         storage = storages.get_storage(storage)
         study_id = storage.get_study_id_from_name(study_name)
         super(Study, self).__init__(study_id, storage)
 
-        self.sampler = sampler or samplers.TPESampler()
-        self.pruner = pruner or pruners.MedianPruner()
+        self.sampler: samplers.BaseSampler = sampler or samplers.TPESampler()
+        self.pruner: pruners.BasePruner = pruner or pruners.MedianPruner()
 
-        self._optimize_lock = threading.Lock()
-        self._stop_flag = False
+        self._optimize_lock: threading.Lock = threading.Lock()
+        self._stop_flag: bool = False
 
     def __getstate__(self) -> Dict[Any, Any]:
 
