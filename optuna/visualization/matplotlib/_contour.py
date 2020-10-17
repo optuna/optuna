@@ -34,6 +34,10 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "Axes":
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_contour` for an example.
 
+    .. warnings also::
+        Output figures of this Matplotlib-based `plot_contour` function would be different from
+        those of the Plotly-based `plot_contour`.
+
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
@@ -46,6 +50,10 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "Axes":
     """
 
     _imports.check()
+    _logger.warning(
+        "Output figures of this Matplotlib-based `plot_contour` function would be different from "
+        "those of the Plotly-based `plot_contour`."
+    )
     return _get_contour_plot(study, params)
 
 
