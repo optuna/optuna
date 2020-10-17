@@ -123,7 +123,9 @@ if _imports.is_successful():
     class _AllTrialsWidget(object):
         def __init__(self, trials: List[optuna.trial.FrozenTrial]) -> None:
 
-            self.cds: bokeh.models.ColumnDataSource = bokeh.models.ColumnDataSource(self.trials_to_dict(trials))
+            self.cds: bokeh.models.ColumnDataSource = bokeh.models.ColumnDataSource(
+                self.trials_to_dict(trials)
+            )
 
         def create_table(self) -> bokeh.models.widgets.DataTable:
 
@@ -195,9 +197,7 @@ if _imports.is_successful():
         def __call__(self, doc: bokeh.document.Document) -> None:
 
             self.doc: bokeh.document.Document = doc
-            self.current_trials: Optional[List[optuna.trial.FrozenTrial]] = (
-                self.study.trials
-            )
+            self.current_trials: Optional[List[optuna.trial.FrozenTrial]] = self.study.trials
             self.new_trials: Optional[List[optuna.trial.FrozenTrial]] = None
             self.complete_trials_widget: _CompleteTrialsWidget = _CompleteTrialsWidget(
                 self.current_trials, self.study.direction
