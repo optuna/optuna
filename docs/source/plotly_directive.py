@@ -109,24 +109,24 @@ def run_code(code):
     return namespace[variable_name]
 
 
-def get_fig_out_path(rst_path):
+def get_fig_out_path(rst_path, conf_dir, builder_out_dir):
     rst_name = os.path.basename(rst_path)
     base = os.path.splitext(rst_name)[0]
     fig_out_name = base.replace(".", "-") + ".html"
-    out_dir = os.path.dirname(os.path.relpath(rst_path, start=setup.confdir))
-    out_dir = os.path.join(setup.app.builder.outdir, out_dir)
+    out_dir = os.path.dirname(os.path.relpath(rst_path, start=conf_dir))
+    out_dir = os.path.join(builder_out_dir, out_dir)
     return os.path.join(out_dir, fig_out_name)
 
 
 def run(arguments, content, options, state_machine, state, lineno):
     rst_path = state_machine.document.attributes["source"]
-    fig_out_path = get_fig_out_path(rst_path)
+    fig_out_path = get_fig_out_path(rst_path, setup.confdir, setup.app.builder.outdir)
     os.makedirs(os.path.dirname(fig_out_path), exist_ok=True)
 
     # run code and save generated plotly figure
     try:
+        code = textwrap.dedent("\n".join(map(str, content)))
         if not os.path.exists(fig_out_path) or out_of_date(rst_path, fig_out_path):
-            code = textwrap.dedent("\n".join(map(str, content)))
             fig = run_code(code)
             save_plotly_figure(fig, fig_out_path)
 
