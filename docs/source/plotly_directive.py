@@ -5,6 +5,20 @@ https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/sphinxext/pl
 # Requirements:
 1. docstring contains a single code block.
 2. the code block ends with an expression that evaluates to a plotly figure.
+
+# Usage
+def f():
+    '''
+    .. plotly::
+        import plotly.graph_objects as go
+        import numpy as np
+
+        x = np.linspace(0, 10, 100)
+        y = np.sin(x)
+
+        go.Figure(data=go.Scatter(x=t, y=y, mode='markers'))
+
+    '''
 """
 
 import os
@@ -84,7 +98,7 @@ def assign_last_line_into_fig(code):
     return "\n".join(rest + ["{} = ".format(FIGURE_VARIABLE_NAME) + last])
 
 
-def generate_figure(code):
+def run_code(code):
     namespace = {}
 
     try:
@@ -95,7 +109,7 @@ def generate_figure(code):
     return namespace[FIGURE_VARIABLE_NAME]
 
 
-def genereate_fig_out_path(rst_path):
+def get_fig_out_path(rst_path):
     rst_name = os.path.basename(rst_path)
     base = os.path.splitext(rst_name)[0]
     fig_out_name = base.replace(".", "-") + ".html"
@@ -106,14 +120,14 @@ def genereate_fig_out_path(rst_path):
 
 def run(arguments, content, options, state_machine, state, lineno):
     rst_path = state_machine.document.attributes["source"]
-    fig_out_path = genereate_fig_out_path(rst_path)
+    fig_out_path = get_fig_out_path(rst_path)
     os.makedirs(os.path.dirname(fig_out_path), exist_ok=True)
     code = textwrap.dedent("\n".join(map(str, content)))
 
     # save a figure
     try:
         if not os.path.exists(fig_out_path) or out_of_date(rst_path, fig_out_path):
-            fig = generate_figure(code)
+            fig = run_code(code)
             save_plotly_figure(fig, fig_out_path)
 
         errors = []
