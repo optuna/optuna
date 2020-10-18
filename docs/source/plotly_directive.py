@@ -106,10 +106,8 @@ def genereate_fig_out_path(rst_path):
 
 def run(arguments, content, options, state_machine, state, lineno):
     rst_path = state_machine.document.attributes["source"]
-
     fig_out_path = genereate_fig_out_path(rst_path)
     os.makedirs(os.path.dirname(fig_out_path), exist_ok=True)
-
     code = textwrap.dedent("\n".join(map(str, content)))
 
     # save a figure
