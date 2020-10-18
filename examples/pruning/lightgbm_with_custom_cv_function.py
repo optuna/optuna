@@ -1,5 +1,3 @@
-# Functions
-
 """
 This configurable Optuna example demonstrates the use of pruning when using
 custom cross-validation functions based on LightGBM classifiers or regressors.
@@ -69,7 +67,7 @@ def custom_cv_fun(
     splits = kf.split(X, y)
 
     # iterate over folds
-    for n, (train_index, valid_index) in enumerate(splits):
+    for train_index, valid_index in splits:
 
         # subset train and valid (out-of-fold) parts of the fold
         X_train, X_valid = X.iloc[train_index], X.iloc[valid_index]
@@ -106,6 +104,7 @@ def custom_cv_fun(
 
     # average folds iterations numbers
     folds_data = {}
+    # default to -1 iterations when early stopping is not used
     folds_data["best_iterations_mean"] = -1
     if fold_best_iterations[0] is not None:
         folds_data["best_iterations_mean"] = int(np.mean(fold_best_iterations))
@@ -164,7 +163,7 @@ def load_sklearn_toy_data(
         return train_x, valid_x, train_y, valid_y
 
 
-class Objective_custom:
+class ObjectiveCustom:
     def __init__(
         self,
         train_x_df,
@@ -284,6 +283,8 @@ def main():
 
     # set metric for model training and validation
     # as well as its optimization direction
+    METRIC = "unknown"
+    OPT_DIR = "unknown"
     if OBJECTIVE in ["binary", "classification"]:
         METRIC = "auc"
         OPT_DIR = "maximize"
@@ -311,7 +312,7 @@ def main():
         WORKERS_NUM = 1
 
     # fix seed for data partitioning (train_test_split())
-    # and morel training (lgbm.fit())
+    # and model training (lgbm.fit())
     SEED = 123
 
     # select sampler for Optuna:
@@ -346,7 +347,7 @@ def main():
     optuna_best_params = {}
 
     # Instantiate the custom function
-    objective = Objective_custom(
+    objective = ObjectiveCustom(
         train_x_df,
         train_y_df,
         objective=OBJECTIVE,
@@ -370,9 +371,11 @@ def main():
 
     optim_time_custom = datetime.now() - start_time
     print(
-        "\nOptuna+custom fun. study with %d trials took %.2f s. Time per trial: %.2f s."
-        % (TRIALS, optim_time_custom.total_seconds(), optim_time_custom.total_seconds() / TRIALS)
+        "\nOptuna+custom fun. study with {:d} trials took {:.2f} s.".format(
+            TRIALS, optim_time_custom.total_seconds()
+        )
     )
+    print("Time per trial: {:.2f} s.".format(optim_time_custom.total_seconds() / TRIALS))
 
     optuna_best_metrics["custom"] = study.best_value
 
@@ -392,8 +395,9 @@ def main():
     optuna_best_params["custom"] = all_best_params
 
     print(
-        "\nBest %s metric for optuna+custom fun. (CV models mean reported by Optuna): %.5f\n"
-        % (METRIC, optuna_best_metrics["custom"])
+        "\nBest mean {} for Optuna+custom fun. (reported by Optuna): {:.5f}\n".format(
+            METRIC, optuna_best_metrics["custom"]
+        )
     )
 
     print("Optuna-optimized best hyperparameters: ")
