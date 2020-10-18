@@ -8,6 +8,8 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Set
+from typing import Tuple
+from typing import Union
 import uuid
 import weakref
 
@@ -936,24 +938,40 @@ class RDBStorage(BaseStorage):
 
         return frozen_trial
 
-    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
+    def get_all_trials(
+        self,
+        study_id: int,
+        deepcopy: bool = True,
+        state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None,
+    ) -> List[FrozenTrial]:
 
-        trials = self._get_trials(study_id, set())
+        trials = self._get_trials(study_id, state, set())
 
         return copy.deepcopy(trials) if deepcopy else trials
 
-    def _get_trials(self, study_id: int, excluded_trial_ids: Set[int]) -> List[FrozenTrial]:
+    def _get_trials(
+        self,
+        study_id: int,
+        state: Optional[Union[Tuple[TrialState, ...], TrialState]],
+        excluded_trial_ids: Set[int],
+    ) -> List[FrozenTrial]:
 
         session = self.scoped_session()
 
         # Ensure that the study exists.
         models.StudyModel.find_or_raise_by_id(study_id, session)
 
-        trial_ids = (
-            session.query(models.TrialModel.trial_id)
-            .filter(models.TrialModel.study_id == study_id)
-            .all()
+        query = session.query(models.TrialModel.trial_id).filter(
+            models.TrialModel.study_id == study_id
         )
+
+        if state is not None:
+            if isinstance(state, TrialState):
+                state = (state,)
+            query = query.filter(models.TrialModel.state.in_(state))
+
+        trial_ids = query.all()
+
         trial_ids = set(
             trial_id_tuple[0]
             for trial_id_tuple in trial_ids

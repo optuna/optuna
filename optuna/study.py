@@ -95,7 +95,11 @@ class BaseStudy(object):
 
         return self.get_trials()
 
-    def get_trials(self, deepcopy: bool = True) -> List[FrozenTrial]:
+    def get_trials(
+        self,
+        deepcopy: bool = True,
+        state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None,
+    ) -> List[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
@@ -125,13 +129,15 @@ class BaseStudy(object):
                 Note that if you set the flag to :obj:`False`, you shouldn't mutate
                 any fields of the returned trial. Otherwise the internal state of
                 the study may corrupt and unexpected behavior may happen.
+            state:
+                Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
             A list of :class:`~optuna.FrozenTrial` objects.
         """
 
         self._storage.read_trials_from_remote_storage(self._study_id)
-        return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
+        return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, state=state)
 
 
 class Study(BaseStudy):
