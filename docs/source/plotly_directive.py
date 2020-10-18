@@ -64,6 +64,7 @@ def setup(app):
     return metadata
 
 
+# `source_code` must be intended
 RST_TEMPLATE = """
 .. code-block:: python
 
@@ -71,9 +72,7 @@ RST_TEMPLATE = """
 
 .. raw:: html
 
-   <iframe src="./{{ figure_name }}"
-     width="100%" height="500px" frameborder="0">
-   </iframe>
+    <iframe src="./{{ figure_name }}" width="100%" height="500px" frameborder="0"></iframe>
 """
 
 
