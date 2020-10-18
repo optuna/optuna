@@ -1,26 +1,23 @@
 """
-# Based on:
-https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/sphinxext/plot_directive.py
+Usage:
+```
+.. plotly::
 
-# Requirements:
+    import plotly.graph_objects as go
+    import numpy as np
+
+    x = np.linspace(0, 10, 100)
+    y = np.sin(x)
+
+    go.Figure(data=go.Scatter(x=t, y=y, mode='markers'))
+```
+
+Requirements:
 1. docstring contains a single code block.
 2. the code block ends with an expression that evaluates to a plotly figure.
 
-# Usage:
-
-def f():
-    '''
-    .. plotly::
-
-        import plotly.graph_objects as go
-        import numpy as np
-
-        x = np.linspace(0, 10, 100)
-        y = np.sin(x)
-
-        go.Figure(data=go.Scatter(x=t, y=y, mode='markers'))
-
-    '''
+Based on:
+https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/sphinxext/plot_directive.py
 """
 
 import os
@@ -67,8 +64,7 @@ def setup(app):
     return metadata
 
 
-FIGURE_VARIABLE_NAME = "fig"
-TEMPLATE = """
+RST_TEMPLATE = """
 .. code-block:: python
 
 {{ source_code }}
@@ -95,20 +91,22 @@ def save_plotly_figure(fig, path):
         f.write(fig_html)
 
 
-def assign_last_line_into_fig(code):
+def assign_last_line_into_variable(code, variable_name):
     *rest, last = code.strip().split("\n")
-    return "\n".join(rest + ["{} = ".format(FIGURE_VARIABLE_NAME) + last])
+    last = "{} = ".format(variable_name) + last
+    return "\n".join([*rest, last])
 
 
 def run_code(code):
     namespace = {}
+    variable_name = "fig"
 
     try:
-        exec(assign_last_line_into_fig(code), namespace)
+        exec(assign_last_line_into_variable(code, variable_name), namespace)
     except (Exception, SystemExit) as err:
         raise PlotError(traceback.format_exc()) from err
 
-    return namespace[FIGURE_VARIABLE_NAME]
+    return namespace[variable_name]
 
 
 def get_fig_out_path(rst_path):
@@ -124,11 +122,11 @@ def run(arguments, content, options, state_machine, state, lineno):
     rst_path = state_machine.document.attributes["source"]
     fig_out_path = get_fig_out_path(rst_path)
     os.makedirs(os.path.dirname(fig_out_path), exist_ok=True)
-    code = textwrap.dedent("\n".join(map(str, content)))
 
-    # save a figure
+    # run code and save generated plotly figure
     try:
         if not os.path.exists(fig_out_path) or out_of_date(rst_path, fig_out_path):
+            code = textwrap.dedent("\n".join(map(str, content)))
             fig = run_code(code)
             save_plotly_figure(fig, fig_out_path)
 
@@ -143,12 +141,10 @@ def run(arguments, content, options, state_machine, state, lineno):
         errors = [sm]
 
     # generate output restructuredtext
-    rst = jinja2.Template(TEMPLATE).render(
+    rst = jinja2.Template(RST_TEMPLATE).render(
         source_code=textwrap.indent(code, " " * 4),
         figure_name=os.path.basename(fig_out_path),
     )
-
-    # insert restructuredtext
     total_lines = [*rst.split("\n"), "\n"]
     state_machine.insert_input(total_lines, source=rst_path)
 
