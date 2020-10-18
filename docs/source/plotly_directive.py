@@ -6,10 +6,12 @@ https://github.com/matplotlib/matplotlib/blob/master/lib/matplotlib/sphinxext/pl
 1. docstring contains a single code block.
 2. the code block ends with an expression that evaluates to a plotly figure.
 
-# Usage
+# Usage:
+
 def f():
     '''
     .. plotly::
+
         import plotly.graph_objects as go
         import numpy as np
 
