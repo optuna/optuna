@@ -5,8 +5,10 @@ import math
 from typing import Callable
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Type
+from typing import Union
 import warnings
 
 import joblib
@@ -211,7 +213,7 @@ def _run_trial(
             return trial
         raise
 
-    value, failure_message = study._check_value(value, trial)
+    value, failure_message = _check_value(study.n_objectives, value, trial)
 
     if failure_message is None:
         assert value is not None
@@ -224,3 +226,62 @@ def _run_trial(
         _logger.warning(failure_message)
 
     return trial
+
+
+def _check_value(
+    n_objectives: int, orginal_value: Union[float, Sequence[float]], trial: trial_module.Trial
+) -> Tuple[Union[float, Sequence[float]], Optional[str]]:
+    value = None
+    failure_message = None
+
+    trial_number = trial.number
+    if n_objectives > 1:
+        if n_objectives != len(orginal_value):
+            failure_message = (
+                "Trial {} failed, because the number of the values {} is did not match the "
+                "number of the objectives {}.".format(
+                    trial_number, len(orginal_value), n_objectives
+                )
+            )
+        else:
+            value = []
+            for v in orginal_value:
+                v, failure_message = _check_single_value(v, trial)
+                if failure_message is not None:
+                    # `value` is assumed to be ignored on failure so we can set it to any value.
+                    value = None
+                    continue
+                else:
+                    value.append(v)
+    else:
+        value, failure_message = _check_single_value(orginal_value, trial)
+
+    return value, failure_message
+
+
+def _check_single_value(
+    original_value: float, trial: trial_module.Trial
+) -> Tuple[float, Optional[str]]:
+    value = None
+    failure_message = None
+
+    try:
+        value = float(original_value)
+    except (
+        ValueError,
+        TypeError,
+    ):
+        failure_message = (
+            "Trial {} failed, because the returned value from the "
+            "objective function cannot be cast to float. Returned value is: "
+            "{}".format(trial.number, repr(original_value))
+        )
+
+    if value is not None and math.isnan(value):
+        failure_message = (
+            "Trial {} failed, because the objective function returned {}.".format(
+                trial.number, original_value
+            )
+        )
+
+    return value, failure_message

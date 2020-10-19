@@ -619,64 +619,6 @@ class Study(BaseStudy):
             self._storage.set_trial_value(trial._trial_id, value)
         self._storage.set_trial_state(trial._trial_id, state)
 
-    def _check_value(
-        self, orginal_value: Union[float, Sequence[float]], trial: trial_module.Trial
-    ) -> Tuple[Union[float, Sequence[float]], Optional[str]]:
-        value = None
-        failure_message = None
-
-        trial_number = trial.number
-        if self.n_objectives > 1:
-            if self.n_objectives != len(orginal_value):
-                failure_message = (
-                    "Trial {} failed, because the number of the values {} is did not match the "
-                    "number of the objectives {}.".format(
-                        trial_number, len(orginal_value), self.n_objectives
-                    )
-                )
-            else:
-                value = []
-                for v in orginal_value:
-                    v, failure_message = self._check_single_value(v, trial)
-                    if failure_message is not None:
-                        # `value` is assumed to be ignored on failure so we can set it to any
-                        # value.
-                        value = None
-                        continue
-                    else:
-                        value.append(v)
-        else:
-            value, failure_message = self._check_single_value(orginal_value, trial)
-
-        return value, failure_message
-
-    def _check_single_value(
-        self, orginal_value: float, trial: trial_module.Trial
-    ) -> Tuple[float, Optional[str]]:
-        value = None
-        failure_message = None
-
-        try:
-            value = float(orginal_value)
-        except (
-            ValueError,
-            TypeError,
-        ):
-            failure_message = (
-                "Trial {} failed, because the returned value from the "
-                "objective function cannot be cast to float. Returned value is: "
-                "{}".format(trial.number, repr(orginal_value))
-            )
-
-        if value is not None and math.isnan(value):
-            failure_message = (
-                "Trial {} failed, because the objective function returned {}.".format(
-                    trial.number, orginal_value
-                )
-            )
-
-        return value, failure_message
-
     def _log_completed_trial(
         self, trial: trial_module.Trial, value: Union[float, Sequence[float]]
     ) -> None:
