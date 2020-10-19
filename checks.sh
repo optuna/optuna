@@ -11,7 +11,7 @@ if [ ! "$(echo $res_pip_list | grep black)" ] ; then
   missing_dependencies+=(black)
 fi
 if [ ! "$(echo $res_pip_list | grep flake8)" ] ; then
-  missing_dependencies+=(flake8)
+  missing_dependencies+=(hacking)
 fi
 if [ ! "$(echo $res_pip_list | grep isort)" ] ; then
   missing_dependencies+=(isort)
@@ -20,7 +20,7 @@ if [ ! "$(echo $res_pip_list | grep mypy)" ] ; then
   missing_dependencies+=(mypy)
 fi
 if [ ! ${#missing_dependencies[@]} -eq 0 ]; then
-  echo "The following dependencies are missed:" "${missing_dependencies[@]}"
+  echo "The following dependencies are missing:" "${missing_dependencies[@]}"
   read -p "Would you like to install the missing dependencies? (y/N): " yn
   case "$yn" in [yY]*) ;; *) echo "abort." ; exit ;; esac
   pip install "${missing_dependencies[@]}"
@@ -36,8 +36,9 @@ do
   esac
 done
 
-black_target="examples optuna tests"
-res_black=$(black $black_target --check --diff 2>&1)
+target="examples optuna tests"
+
+res_black=$(black "$target" --check --diff 2>&1)
 if [ $? -eq 1 ] ; then
   if [ $update -eq 1 ] ; then
     echo "black failed. The code will be formatted by black."
@@ -51,7 +52,7 @@ else
   echo "black succeeded."
 fi
 
-res_flake8=$(flake8 .)
+res_flake8=$(flake8 "$target")
 if [ $? -eq 1 ] ; then
   echo "$res_flake8"
   echo "flake8 failed."
@@ -59,7 +60,7 @@ if [ $? -eq 1 ] ; then
 fi
 echo "flake8 succeeded."
 
-res_isort=$(isort . --check 2>&1)
+res_isort=$(isort "$target" --check 2>&1)
 if [ $? -eq 1 ] ; then
   if [ $update -eq 1 ] ; then
     echo "isort failed. The code will be formatted by isort."
@@ -73,7 +74,7 @@ else
   echo "isort succeeded."
 fi
 
-res_mypy=$(mypy .)
+res_mypy=$(mypy "$target")
 if [ $? -eq 1 ] ; then
   echo "$res_mypy"
   echo "mypy failed."
