@@ -105,8 +105,6 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
                         x.append(trial.suggest_uniform(f"x{i}", 0.0, 2.0 * i))
                     return x
 
-                # Note: Initialization with Latin hypercube sampling may improve optimization
-                # performance.
                 sampler = optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler(
                     n_startup_trials=n_startup_trials,
                     n_ehvi_candidates=24,
