@@ -86,7 +86,9 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
             default, weights are automatically calculated by the MOTPE's default strategy.
         seed:
             Seed for random number generator.
-
+    .. note::
+        Initialization with Latin hypercube sampling may improve optimization performance.
+        However, the current implementation only supports initialization with random sampling.
     Example:
 
         .. testcode::
