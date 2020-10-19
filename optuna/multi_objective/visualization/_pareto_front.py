@@ -1,10 +1,12 @@
 import json
 from typing import List
 from typing import Optional
+from typing import Union
 
 import optuna
 from optuna import multi_objective
 from optuna._experimental import experimental
+from optuna.multi_objective._selection import _get_pareto_front_trials
 from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from optuna.trial import TrialState
@@ -19,7 +21,7 @@ _logger = optuna.logging.get_logger(__name__)
 
 @experimental("2.0.0")
 def plot_pareto_front(
-    study: MultiObjectiveStudy,
+    study: Union["optuna.Study", MultiObjectiveStudy],
     names: Optional[List[str]] = None,
     include_dominated_trials: bool = False,
 ) -> "go.Figure":
@@ -83,9 +85,11 @@ def plot_pareto_front(
 
 
 def _get_non_pareto_front_trials(
-    study: MultiObjectiveStudy,
-    pareto_trials: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
-) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
+    study: Union["optuna.Study", MultiObjectiveStudy],
+    pareto_trials: List[
+        Union["optuna.trial.FrozenTrial", "multi_objective.trial.FrozenMultiObjectiveTrial"]
+    ],
+) -> List[Union["optuna.trial.FrozenTrial", "multi_objective.trial.FrozenMultiObjectiveTrial"]]:
 
     non_pareto_trials = []
     for trial in study.get_trials():
@@ -95,14 +99,16 @@ def _get_non_pareto_front_trials(
 
 
 def _get_pareto_front_2d(
-    study: MultiObjectiveStudy, names: Optional[List[str]], include_dominated_trials: bool = False
+    study: Union["optuna.Study", MultiObjectiveStudy],
+    names: Optional[List[str]],
+    include_dominated_trials: bool = False,
 ) -> "go.Figure":
     if names is None:
         names = ["Objective 0", "Objective 1"]
     elif len(names) != 2:
         raise ValueError("The length of `names` is supposed to be 2.")
 
-    trials = study.get_pareto_front_trials()
+    trials = _get_pareto_front_trials(study)
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
@@ -112,9 +118,21 @@ def _get_pareto_front_2d(
         point_colors += ["red"] * len(non_pareto_trials)
         trials += non_pareto_trials
 
+    value0 = []
+    value1 = []
+    for t in trials:
+        if isinstance(t, FrozenMultiObjectiveTrial):  # Backwards compatibility.
+            v0 = t.values[0]
+            v1 = t.values[1]
+        else:
+            v0 = t.value[0]
+            v1 = t.value[1]
+        value0.append(v0)
+        value1.append(v1)
+
     data = go.Scatter(
-        x=[t.values[0] for t in trials],
-        y=[t.values[1] for t in trials],
+        x=value0,
+        y=value1,
         text=[_make_hovertext(t) for t in trials],
         mode="markers",
         hovertemplate="%{text}<extra></extra>",
@@ -132,7 +150,7 @@ def _get_pareto_front_3d(
     elif len(names) != 3:
         raise ValueError("The length of `names` is supposed to be 3.")
 
-    trials = study.get_pareto_front_trials()
+    trials = _get_pareto_front_trials(study)
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
@@ -142,10 +160,26 @@ def _get_pareto_front_3d(
         point_colors += ["red"] * len(non_pareto_trials)
         trials += non_pareto_trials
 
+    value0 = []
+    value1 = []
+    value2 = []
+    for t in trials:
+        if isinstance(t, FrozenMultiObjectiveTrial):  # Backwards compatibility.
+            v0 = t.values[0]
+            v1 = t.values[1]
+            v2 = t.values[2]
+        else:
+            v0 = t.value[0]
+            v1 = t.value[1]
+            v2 = t.value[2]
+        value0.append(v0)
+        value1.append(v1)
+        value2.append(v2)
+
     data = go.Scatter3d(
-        x=[t.values[0] for t in trials],
-        y=[t.values[1] for t in trials],
-        z=[t.values[2] for t in trials],
+        x=value0,
+        y=value1,
+        z=value2,
         text=[_make_hovertext(t) for t in trials],
         mode="markers",
         hovertemplate="%{text}<extra></extra>",
@@ -158,8 +192,11 @@ def _get_pareto_front_3d(
     return go.Figure(data=data, layout=layout)
 
 
-def _make_hovertext(trial: FrozenMultiObjectiveTrial) -> str:
-    text = json.dumps(
-        {"number": trial.number, "values": trial.values, "params": trial.params}, indent=2
-    )
+def _make_hovertext(trial: Union["optuna.trial.FrozenTrial", FrozenMultiObjectiveTrial]) -> str:
+    if isinstance(trial, FrozenMultiObjectiveTrial):  # Backwards compatibility.
+        value = trial.values
+    else:
+        value = trial.value
+
+    text = json.dumps({"number": trial.number, "values": value, "params": trial.params}, indent=2)
     return text.replace("\n", "<br>")

@@ -10,7 +10,6 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -38,7 +37,7 @@ logger = get_logger(__name__)
 
 def plot_param_importances(
     study: Study,
-    evaluator: Optional[BaseImportanceEvaluator] = None,
+    evaluator: Optional["BaseImportanceEvaluator"] = None,
     params: Optional[List[str]] = None,
 ) -> "go.Figure":
     """Plot hyperparameter importances.

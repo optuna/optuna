@@ -3,6 +3,8 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
+from typing import Union
 
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
@@ -162,22 +164,24 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
+    def set_study_direction(
+        self, study_id: int, direction: Union[StudyDirection, Sequence[StudyDirection]]
+    ) -> None:
         """Register an optimization problem direction to a study.
 
         Args:
             study_id:
                 ID of the study.
             direction:
-                Either :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
-                :obj:`~optuna.study.StudyDirection.MINIMIZE`.
+                A study direction of value :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
+                :obj:`~optuna.study.StudyDirection.MINIMIZE`, or a sequence of such values.
 
         Raises:
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
             :exc:`ValueError`:
-                If the direction is already set and the passed ``direction`` is the opposite
-                direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
+                If the direction is already set and any of the passed ``direction`` is the
+                opposite direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
         """
         raise NotImplementedError
 
@@ -235,7 +239,9 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_direction(
+        self, study_id: int
+    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
         """Read whether a study maximizes or minimizes an objective.
 
         Args:
@@ -243,7 +249,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 ID of a study.
 
         Returns:
-            Optimization direction of the study.
+            Optimization direction of the study or a sequence of such directions.
 
         Raises:
             :exc:`KeyError`:
@@ -414,7 +420,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_value(self, trial_id: int, value: float) -> None:
+    def set_trial_value(self, trial_id: int, value: Union[float, Sequence[float]]) -> None:
         """Set a return value of an objective function.
 
         This method overwrites any existing trial value.
@@ -423,7 +429,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             trial_id:
                 ID of the trial.
             value:
-                Value of the objective function.
+                Value of the objective function or a sequence of such values.
 
         Raises:
             :exc:`KeyError`:

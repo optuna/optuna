@@ -5,7 +5,9 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
+from typing import Union
 import uuid
 
 import optuna
@@ -77,7 +79,9 @@ class InMemoryStorage(BaseStorage):
             del self._study_name_to_id[study_name]
             del self._studies[study_id]
 
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
+    def set_study_direction(
+        self, study_id: int, direction: Union[StudyDirection, Sequence[StudyDirection]]
+    ) -> None:
 
         with self._lock:
             self._check_study_id(study_id)
@@ -126,7 +130,9 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].name
 
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_direction(
+        self, study_id: int
+    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
 
         with self._lock:
             self._check_study_id(study_id)
@@ -283,7 +289,7 @@ class InMemoryStorage(BaseStorage):
             distribution = trial.distributions[param_name]
             return distribution.to_internal_repr(trial.params[param_name])
 
-    def set_trial_value(self, trial_id: int, value: float) -> None:
+    def set_trial_value(self, trial_id: int, value: Union[float, Sequence[float]]) -> None:
 
         with self._lock:
             trial = self._get_trial(trial_id)
