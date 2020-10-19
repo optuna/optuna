@@ -1,5 +1,6 @@
 from mlflow.tracking import MlflowClient
 import py
+import pytest
 
 import optuna
 from optuna.integration.mlflow import MLflowCallback
@@ -132,3 +133,33 @@ def test_tag_truncation(tmpdir: py.path.local) -> None:
 
     my_user_attr = first_run_dict["data"]["tags"]["my_user_attr"]
     assert len(my_user_attr) <= 5000
+
+
+@pytest.mark.parametrize("tag_study_user_attrs", [True, False])
+def test_tag_study_user_attrs(tmpdir: py.path.local, tag_study_user_attrs: bool) -> None:
+    tracking_file_name = "file:{}".format(tmpdir)
+    study_name = "my_study"
+    n_trials = 3
+
+    mlflc = MLflowCallback(
+        tracking_uri=tracking_file_name, tag_study_user_attrs=tag_study_user_attrs
+    )
+    study = optuna.create_study(study_name=study_name)
+    study.set_user_attr("my_study_attr", "a")
+    study.optimize(_objective_func_long_user_attr, n_trials=n_trials, callbacks=[mlflc])
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiments = mlfl_client.list_experiments()
+    assert len(experiments) == 1
+
+    experiment = experiments[0]
+    assert experiment.name == study_name
+    experiment_id = experiment.experiment_id
+
+    runs = mlfl_client.search_runs([experiment_id])
+    assert len(runs) == n_trials
+
+    if tag_study_user_attrs:
+        assert all((r.data.tags["my_study_attr"] == "a") for r in runs)
+    else:
+        assert all(("my_study_attr" not in r.data.tags) for r in runs)
