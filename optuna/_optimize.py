@@ -188,6 +188,7 @@ def _run_trial(
     try:
         value = func(trial)
     except exceptions.TrialPruned as e:
+        # TODO(mamu): Handle multi-objective cases.
         # Register the last intermediate value if present as the value of the trial.
         # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
         frozen_trial = study._storage.get_trial(trial_id)
@@ -210,31 +211,16 @@ def _run_trial(
             return trial
         raise
 
-    try:
-        value = float(value)
-    except (
-        ValueError,
-        TypeError,
-    ):
-        message = (
-            "Trial {} failed, because the returned value from the "
-            "objective function cannot be cast to float. Returned value is: "
-            "{}".format(trial_number, repr(value))
-        )
-        study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-        study._tell(trial, TrialState.FAIL, None)
-        _logger.warning(message)
-        return trial
+    value, failure_message = study._check_value(value, trial)
 
-    if math.isnan(value):
-        message = "Trial {} failed, because the objective function returned {}.".format(
-            trial_number, value
-        )
-        study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-        study._tell(trial, TrialState.FAIL, None)
-        _logger.warning(message)
-        return trial
+    if failure_message is None:
+        assert value is not None
+        study._storage.set_trial_value(trial_id, value)
+        study._storage.set_trial_state(trial_id, TrialState.COMPLETE)
+        study._log_completed_trial(trial, value)
+    else:
+        study._storage.set_trial_system_attr(trial_id, "fail_reason", failure_message)
+        study._storage.set_trial_state(trial_id, TrialState.FAIL)
+        _logger.warning(failure_message)
 
-    study._tell(trial, TrialState.COMPLETE, value)
-    study._log_completed_trial(trial, value)
     return trial
