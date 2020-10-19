@@ -89,6 +89,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
     .. note::
         Initialization with Latin hypercube sampling may improve optimization performance.
         However, the current implementation only supports initialization with random sampling.
+
     Example:
 
         .. testcode::
