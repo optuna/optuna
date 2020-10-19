@@ -272,7 +272,9 @@ class RDBStorage(BaseStorage):
 
         return study.study_name
 
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_direction(
+        self, study_id: int
+    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
 
         session = self.scoped_session()
 
@@ -357,7 +359,7 @@ class RDBStorage(BaseStorage):
         study_summary_stmt = session.query(
             models.StudyModel.study_id,
             models.StudyModel.study_name,
-            models.StudyModel.direction,
+            models.StudyDirectionModel.direction,
             summarized_trial.c.datetime_start,
             functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
         ).select_from(
@@ -378,6 +380,15 @@ class RDBStorage(BaseStorage):
             except ValueError:
                 best_trial_frozen = None  # type: Optional[FrozenTrial]
             if best_trial:
+                value = (
+                    session.query(models.TrialValueModel.value)
+                    .filter(models.TrialValueModel.trial_id == best_trial.trial_id)
+                    .all()[0]
+                )
+                if len(value) == 0:
+                    value = None
+                elif len(value) == 1:
+                    value = value[0]
                 params = (
                     session.query(
                         models.TrialParamModel.param_name,
@@ -405,7 +416,7 @@ class RDBStorage(BaseStorage):
                 best_trial_frozen = FrozenTrial(
                     best_trial.number,
                     TrialState.COMPLETE,
-                    best_trial.value,
+                    value,
                     best_trial.datetime_start,
                     best_trial.datetime_complete,
                     param_dict,
@@ -1030,7 +1041,9 @@ class RDBStorage(BaseStorage):
     @staticmethod
     def _build_frozen_trial_from_trial_model(trial: models.TrialModel) -> FrozenTrial:
         value = [v.value for v in trial.value]
-        if len(value) == 1:  # Single-objective, else multi-objective.
+        if len(value) == 0:
+            value = None
+        elif len(value) == 1:  # Single-objective, else multi-objective.
             value = value[0]
 
         return FrozenTrial(

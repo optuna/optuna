@@ -14,8 +14,8 @@ import optuna
 from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
-from optuna.samplers import BaseSampler
 from optuna.multi_objective._selection import _dominates
+from optuna.samplers import BaseSampler
 
 
 # Define key names of `Trial.system_attrs`.

@@ -5,8 +5,10 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
 from typing import Tuple
+from typing import Union
 
 from optuna import distributions
 from optuna._study_direction import StudyDirection
@@ -89,7 +91,9 @@ class _CachedStorage(BaseStorage):
 
         self._backend.delete_study(study_id)
 
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
+    def set_study_direction(
+        self, study_id: int, direction: Union[StudyDirection, Sequence[StudyDirection]]
+    ) -> None:
 
         with self._lock:
             if study_id in self._studies:
@@ -138,7 +142,9 @@ class _CachedStorage(BaseStorage):
             self._studies[study_id].name = name
         return name
 
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_direction(
+        self, study_id: int
+    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
 
         with self._lock:
             if study_id in self._studies:
