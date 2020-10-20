@@ -871,7 +871,7 @@ class RDBStorage(BaseStorage):
         self._commit(session)
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
     ) -> None:
 
         session = self.scoped_session()
@@ -883,7 +883,7 @@ class RDBStorage(BaseStorage):
         self._commit_with_integrity_check(session)
 
     def _set_trial_intermediate_value_without_commit(
-        self, session: orm.Session, trial_id: int, step: int, intermediate_value: float
+        self, session: orm.Session, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
     ) -> None:
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)

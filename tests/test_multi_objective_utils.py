@@ -17,10 +17,10 @@ def test_dominates() -> None:
     ) -> FrozenTrial:
         trial = optuna.trial.FrozenTrial(
             state=state,
-            intermediate_values={i: v for i, v in enumerate(values)},
+            intermediate_values={},
             # The following attributes aren't used in this test case.
             number=0,
-            value=None,
+            value=values,
             datetime_start=None,
             datetime_complete=None,
             params={},

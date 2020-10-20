@@ -1,10 +1,12 @@
 import copy
 from datetime import datetime
 import pickle
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Sequence
+from typing import Union
 
 import optuna
 from optuna import distributions
@@ -166,7 +168,7 @@ class RedisStorage(BaseStorage):
 
         return "study_id:{:010d}:direction".format(study_id)
 
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
+    def set_study_direction(self, study_id: int, direction: Union[StudyDirection, Sequence[StudyDirection]]) -> None:
 
         self._check_study_id(study_id)
 
@@ -229,7 +231,7 @@ class RedisStorage(BaseStorage):
             raise KeyError("No such study: {}.".format(study_id))
         return pickle.loads(study_name_pkl)
 
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_direction(self, study_id: int) -> Union[StudyDirection, Sequence[StudyDirection]]:
 
         direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
         if direction_pkl is None:
@@ -436,7 +438,7 @@ class RedisStorage(BaseStorage):
         distribution = self.get_trial(trial_id).distributions[param_name]
         return distribution.to_internal_repr(self.get_trial(trial_id).params[param_name])
 
-    def set_trial_value(self, trial_id: int, value: float) -> None:
+    def set_trial_value(self, trial_id: int, value: Union[float, Sequence[float]]) -> None:
 
         self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
@@ -474,7 +476,7 @@ class RedisStorage(BaseStorage):
         return
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
     ) -> None:
 
         self._check_trial_id(trial_id)

@@ -4,7 +4,7 @@ from typing import Optional
 
 import optuna
 from optuna._experimental import experimental
-from optuna.multi_objective._selection import _get_pareto_front_trials
+from optuna._multi_objective_utils import _get_pareto_front_trials
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState

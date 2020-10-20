@@ -288,7 +288,7 @@ class _CachedStorage(BaseStorage):
         self._backend._update_trial(trial_id, value=value)
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
     ) -> None:
 
         with self._lock:

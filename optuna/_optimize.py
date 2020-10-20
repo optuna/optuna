@@ -253,6 +253,7 @@ def _check_value(
                     continue
                 else:
                     value.append(v)
+            value = tuple(value)
     else:
         value, failure_message = _check_single_value(original_value, trial)
 

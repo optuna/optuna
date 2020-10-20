@@ -2,7 +2,7 @@ import json
 from typing import List
 from typing import Optional
 
-import optuna
+from optuna import logging
 from optuna import multi_objective
 from optuna._deprecated import deprecated
 from optuna._experimental import experimental
@@ -15,7 +15,7 @@ from optuna.visualization._plotly_imports import _imports
 if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
 
-_logger = optuna.logging.get_logger(__name__)
+_logger = logging.get_logger(__name__)
 
 
 @deprecated("2.3.0", "3.0.0")

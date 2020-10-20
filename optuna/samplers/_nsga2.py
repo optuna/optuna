@@ -13,8 +13,8 @@ import numpy as np
 import optuna
 from optuna import multi_objective
 from optuna._experimental import experimental
+from optuna._multi_objective_utils import _dominates
 from optuna.distributions import BaseDistribution
-from optuna.multi_objective._selection import _dominates
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial

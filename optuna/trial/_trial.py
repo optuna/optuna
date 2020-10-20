@@ -575,10 +575,7 @@ class Trial(BaseTrial):
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
-        if isinstance(value, float):
-            value = (value,)
-
-        if len(value) != self.study.n_objectives:
+        if isinstance(value, tuple) and len(value) != self.study.n_objectives:
             raise ValueError(
                 "The number of the intermediate values {} at step {} is mismatched with"
                 "the number of the objectives {}.",
@@ -589,15 +586,13 @@ class Trial(BaseTrial):
 
         intermediate_values = self.storage.get_trial(self._trial_id).intermediate_values
 
-        for i, v in enumerate(value):
-            s = self.study.n_objectives * step + i
-            if s in intermediate_values:
-                # Do nothing if already reported.
-                # TODO(hvy): Consider raising a warning or an error.
-                # See https://github.com/optuna/optuna/issues/852.
-                return
+        if step in intermediate_values:
+            # Do nothing if already reported.
+            # TODO(hvy): Consider raising a warning or an error.
+            # See https://github.com/optuna/optuna/issues/852.
+            return
 
-            self.storage.set_trial_intermediate_value(self._trial_id, s, v)
+        self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
     def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.

@@ -441,7 +441,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: Union[float, Sequence[float]]
     ) -> None:
         """Report an intermediate value of an objective function.
 
