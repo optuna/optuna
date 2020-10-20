@@ -229,23 +229,23 @@ def _run_trial(
 
 
 def _check_value(
-    n_objectives: int, orginal_value: Union[float, Sequence[float]], trial: trial_module.Trial
+    n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
 ) -> Tuple[Union[float, Sequence[float]], Optional[str]]:
     value = None
     failure_message = None
 
     trial_number = trial.number
-    if n_objectives > 1:
-        if n_objectives != len(orginal_value):
+    if isinstance(original_value, Sequence):
+        if n_objectives != len(original_value):
             failure_message = (
                 "Trial {} failed, because the number of the values {} is did not match the "
                 "number of the objectives {}.".format(
-                    trial_number, len(orginal_value), n_objectives
+                    trial_number, len(original_value), n_objectives
                 )
             )
         else:
             value = []
-            for v in orginal_value:
+            for v in original_value:
                 v, failure_message = _check_single_value(v, trial)
                 if failure_message is not None:
                     # `value` is assumed to be ignored on failure so we can set it to any value.
@@ -254,7 +254,7 @@ def _check_value(
                 else:
                     value.append(v)
     else:
-        value, failure_message = _check_single_value(orginal_value, trial)
+        value, failure_message = _check_single_value(original_value, trial)
 
     return value, failure_message
 

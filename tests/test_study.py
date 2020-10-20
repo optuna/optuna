@@ -7,6 +7,7 @@ import time
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
 from unittest.mock import Mock  # NOQA
@@ -22,6 +23,7 @@ import pytest
 import optuna
 from optuna import _optimize
 from optuna import create_trial
+from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
 
 
@@ -992,3 +994,56 @@ def test_log_completed_trial_skip_storage_access() -> None:
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
         study._log_completed_trial(trial, 1.0)
         assert mock_object.call_count == 2
+
+
+def test_create_study_with_multi_objectives() -> None:
+    study = optuna.create_study(direction=["maximize"])
+    assert study.n_objectives == 1
+    assert study.direction == [StudyDirection.MAXIMIZE]
+
+    study = optuna.create_study(direction=["maximize", "minimize"])
+    assert study.n_objectives == 2
+    assert study.direction == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+
+    with pytest.raises(ValueError):
+        # Empty `direction` isn't allowed.
+        _ = optuna.create_study(direction=[])
+
+
+@pytest.mark.parametrize("n_objectives", [1, 2, 3])
+def test_optimize_with_multi_objectives(n_objectives: int) -> None:
+    direction = ["minimize" for _ in range(n_objectives)]
+    study = optuna.create_study(direction=direction)
+
+    def objective(trial: optuna.trial.Trial) -> List[float]:
+        return [trial.suggest_uniform("v{}".format(i), 0, 5) for i in range(n_objectives)]
+
+    study.optimize(objective, n_trials=10)
+
+    assert len(study.trials) == 10
+
+    print(study.trials)
+    for trial in study.trials:
+        assert len(trial.value) == n_objectives
+
+
+def test_pareto_front() -> None:
+    study = optuna.create_study(direction=["minimize", "maximize"])
+    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == set()
+
+    study.optimize(lambda t: [2, 2], n_trials=1)
+    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == {(2, 2)}
+
+    study.optimize(lambda t: [1, 1], n_trials=1)
+    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == {(1, 1), (2, 2)}
+
+    study.optimize(lambda t: [3, 1], n_trials=1)
+    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == {(1, 1), (2, 2)}
+
+    study.optimize(lambda t: [1, 3], n_trials=1)
+    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == {(1, 3)}
+    assert len(study.get_pareto_front_trials()) == 1
+
+    study.optimize(lambda t: [1, 3], n_trials=1)  # The trial result is the same as the above one.
+    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == {(1, 3)}
+    assert len(study.get_pareto_front_trials()) == 2

@@ -24,12 +24,13 @@ from optuna._optimize import _optimize
 from optuna._study_direction import _get_study_direction
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
+from optuna.multi_objective._selection import _get_pareto_front_trials
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-ObjectiveFuncType = Callable[[trial_module.Trial], float]
+ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]]
 
 
 _logger = logging.get_logger(__name__)
@@ -75,11 +76,11 @@ class BaseStudy(object):
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
     @property
-    def direction(self) -> StudyDirection:
+    def direction(self) -> Union[StudyDirection, Sequence[StudyDirection]]:
         """Return the direction of the study.
 
         Returns:
-            A :class:`~optuna.study.StudyDirection` object.
+            A :class:`~optuna.study.StudyDirection` object or a sequence of such values.
         """
 
         return self._storage.get_study_direction(self._study_id)
@@ -588,6 +589,21 @@ class Study(BaseStudy):
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
+    @experimental("2.3.0")
+    def get_pareto_front_trials(self) -> List[FrozenTrial]:
+        """Return trials located at the pareto front in the study.
+
+        A trial is located at the pareto front if there are no trials that dominate the trial.
+        It's called that a trial ``t0`` dominates another trial ``t1`` if
+        ``all(v0 <= v1) for v0, v1 in zip(t0.values, t1.values)`` and
+        ``any(v0 < v1) for v0, v1 in zip(t0.values, t1.values)`` are held.
+
+        Returns:
+            A list of :class:`~optuna.trial.FrozenTrial` objects.
+        """
+
+        return _get_pareto_front_trials(self)
+
     def _pop_waiting_trial_id(self) -> Optional[int]:
 
         # TODO(c-bata): Reduce database query counts for extracting waiting trials.
@@ -712,6 +728,13 @@ def create_study(
 
     """
 
+    if isinstance(direction, str):
+        direction = _get_study_direction(direction)
+    else:
+        if len(direction) < 1:
+            raise ValueError("The number of objectives must be greater than 0.")
+        direction = [_get_study_direction(d) for d in direction]
+
     storage = storages.get_storage(storage)
     try:
         study_id = storage.create_new_study(study_name)
@@ -729,11 +752,6 @@ def create_study(
 
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
-
-    if isinstance(direction, str):
-        direction = _get_study_direction(direction)
-    else:
-        direction = [_get_study_direction(d) for d in direction]
 
     study._storage.set_study_direction(study_id, direction)
 
