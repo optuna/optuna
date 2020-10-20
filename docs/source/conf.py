@@ -12,9 +12,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
-sys.path.insert(0, os.path.abspath('.'))
+# import os
+# import sys
+# sys.path.insert(0, os.path.abspath('.'))
 
 import pkg_resources
 
@@ -194,3 +194,9 @@ plot_include_source = True
 plot_formats = [("png", 90)]
 plot_html_show_formats = False
 plot_html_show_source_link = False
+
+# sphinx plotly directive
+plotly_include_source = True
+plotly_formats = ["html"]
+plotly_html_show_formats = False
+plotly_html_show_source_link = False
