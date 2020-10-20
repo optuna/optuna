@@ -3,8 +3,6 @@
 # As described in `CONTRIBUTING.md`, this script checks Optuna's source codes for formatting,
 # coding style and type hints. The `-u` option enables automatic formatting by `black` and `isort`.
 
-git update-index --chmod=+x
-
 res_pip_list=$(pip freeze)
 missing_dependencies=()
 if [ ! "$(echo $res_pip_list | grep black)" ] ; then
