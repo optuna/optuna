@@ -558,7 +558,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             study_id:
                 ID of the study.
             state:
-                :class:`~optuna.trial.TrialState` to filter trials.
+                Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
             Number of trials in the study.
