@@ -3,7 +3,6 @@ from datetime import datetime
 import json
 import logging
 import os
-import sys
 from typing import Any
 from typing import Dict
 from typing import List
@@ -54,18 +53,15 @@ class RDBStorage(BaseStorage):
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
+                x = trial.suggest_uniform("x", -100, 100)
                 return x ** 2
 
+
             storage = optuna.storages.RDBStorage(
-                url='sqlite:///:memory:',
-                engine_kwargs={
-                    'pool_size': 20,
-                    'connect_args': {
-                        'timeout': 10
-                    }
-                }
+                url="sqlite:///:memory:",
+                engine_kwargs={"pool_size": 20, "connect_args": {"timeout": 10}},
             )
 
             study = optuna.create_study(storage=storage)
@@ -1099,9 +1095,7 @@ class RDBStorage(BaseStorage):
                 "This typically happens due to invalid data in the commit, "
                 "e.g. exceeding max length."
             )
-            raise optuna.exceptions.StorageInternalError(message).with_traceback(
-                sys.exc_info()[2]
-            ) from e
+            raise optuna.exceptions.StorageInternalError(message) from e
 
     def remove_session(self) -> None:
         """Removes the current session.

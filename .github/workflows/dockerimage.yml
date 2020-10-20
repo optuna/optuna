@@ -19,7 +19,7 @@ env:
 
 jobs:
 
-  build:
+  dockerimage:
 
     runs-on: ubuntu-latest
 
