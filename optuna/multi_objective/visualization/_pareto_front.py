@@ -21,7 +21,7 @@ _logger = optuna.logging.get_logger(__name__)
 @deprecated("2.3.0", "3.0.0")
 @experimental("2.0.0")
 def plot_pareto_front(
-    study:  MultiObjectiveStudy,
+    study: MultiObjectiveStudy,
     names: Optional[List[str]] = None,
     include_dominated_trials: bool = False,
 ) -> "go.Figure":
@@ -97,7 +97,7 @@ def _get_non_pareto_front_trials(
 
 
 def _get_pareto_front_2d(
-    study: MultiObjectiveStudy, names: Optional[List[str]], include_dominated_trials: bool = False,
+    study: MultiObjectiveStudy, names: Optional[List[str]], include_dominated_trials: bool = False
 ) -> "go.Figure":
     if names is None:
         names = ["Objective 0", "Objective 1"]
