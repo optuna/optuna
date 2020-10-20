@@ -16,6 +16,8 @@ from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective._selection import _dominates
 from optuna.samplers import BaseSampler
+from optuna.study import Study
+from optuna.trial import FrozenTrial
 
 
 # Define key names of `Trial.system_attrs`.
@@ -24,7 +26,7 @@ _PARENTS_KEY = "multi_objective:nsga2:parents"
 _POPULATION_CACHE_KEY_PREFIX = "multi_objective:nsga2:population"
 
 
-@experimental("2.2.0")
+@experimental("2.3.0")
 class NSGAIISampler(BaseSampler):
     """Multi-objective sampler using the NSGA-II algorithm.
 
@@ -92,15 +94,13 @@ class NSGAIISampler(BaseSampler):
         self._rng = np.random.RandomState(seed)
 
     def infer_relative_search_space(
-        self,
-        study: "Study",
-        trial: "FrozenTrial",
+        self, study: Study, trial: FrozenTrial,
     ) -> Dict[str, BaseDistribution]:
         return {}
 
     def sample_relative(
         self,
-        study: "Study",
+        study: Study,
         trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
@@ -127,8 +127,8 @@ class NSGAIISampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: "Study",
-        trial: "FrozenTrial",
+        study: Study,
+        trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
@@ -158,7 +158,7 @@ class NSGAIISampler(BaseSampler):
 
         return param
 
-    def _collect_parent_population(self, study: "Study") -> Tuple[int, List["FrozenTrial"]]:
+    def _collect_parent_population(self, study: Study) -> Tuple[int, List[FrozenTrial]]:
         trials = study._storage.get_all_trials(study._study_id, deepcopy=False)
 
         generation_to_runnings = defaultdict(list)
@@ -231,9 +231,9 @@ class NSGAIISampler(BaseSampler):
 
     def _select_elite_population(
         self,
-        study: "Study",
-        population: List["FrozenTrial"],
-    ) -> List["FrozenTrial"]:
+        study: Study,
+        population: List[FrozenTrial],
+    ) -> List[FrozenTrial]:
         elite_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
         population_per_rank = _fast_non_dominated_sort(population, study.direction)
         for population in population_per_rank:
@@ -249,9 +249,9 @@ class NSGAIISampler(BaseSampler):
 
     def _select_parent(
         self,
-        study: "Study",
-        population: List["FrozenTrial"],
-    ) -> "FrozenTrial":
+        study: Study,
+        population: List[FrozenTrial],
+    ) -> FrozenTrial:
         # TODO(ohta): Consider to allow users to specify the number of parent candidates.
         candidate0 = self._rng.choice(population)
         candidate1 = self._rng.choice(population)
@@ -264,9 +264,9 @@ class NSGAIISampler(BaseSampler):
 
 
 def _fast_non_dominated_sort(
-    population: List["FrozenTrial"],
+    population: List[FrozenTrial],
     directions: List[optuna.study.StudyDirection],
-) -> List[List["FrozenTrial"]]:
+) -> List[List[FrozenTrial]]:
     dominated_count = defaultdict(int)  # type: DefaultDict[int, int]
     dominates_list = defaultdict(list)
 
@@ -304,7 +304,7 @@ def _fast_non_dominated_sort(
 
 
 def _crowding_distance_sort(
-    population: List["FrozenTrial"],
+    population: List[FrozenTrial],
 ) -> None:
     manhattan_distances = defaultdict(float)
     for i in range(len(population[0].value)):

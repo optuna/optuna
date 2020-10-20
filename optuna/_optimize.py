@@ -278,10 +278,8 @@ def _check_single_value(
         )
 
     if value is not None and math.isnan(value):
-        failure_message = (
-            "Trial {} failed, because the objective function returned {}.".format(
-                trial.number, original_value
-            )
+        failure_message = "Trial {} failed, because the objective function returned {}.".format(
+            trial.number, original_value
         )
 
     return value, failure_message
