@@ -117,10 +117,10 @@ def _generate_slice_subplot(
     x_values = []
     y_values = []
     trial_numbers = []
-    for t in trials:
+    for t, obj_v in zip(trials, obj_values):
         if param in t.params:
             x_values.append(t.params[param])
-            y_values.append(obj_values[t.number])
+            y_values.append(obj_v)
             trial_numbers.append(t.number)
     ax.set(xlabel=param, ylabel="Objective Value")
     if _is_log_scale(trials, param):
