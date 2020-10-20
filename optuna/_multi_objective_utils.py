@@ -1,22 +1,17 @@
 from typing import List
 from typing import Optional
-from typing import Union
 
 import optuna
 from optuna.study import StudyDirection
 from optuna.trial import TrialState
 
 
-def _get_pareto_front_trials(
-    study: Union["optuna.Study", "optuna.multi_objective.study.MultiObjectiveStudy"]
-) -> List["optuna.FrozenTrial"]:
+def _get_pareto_front_trials(study: "optuna.Study") -> List["optuna.trial.FrozenTrial"]:
     pareto_front = []
     trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
-    if isinstance(
-        study, optuna.multi_objective.study.MultiObjectiveStudy
-    ):  # Backwards compatibility.
-        direction = study.directions
+    if isinstance(study.direction, str):
+        direction = [study.direction]
     else:
         direction = study.direction
 
@@ -35,18 +30,12 @@ def _get_pareto_front_trials(
 
 
 def _dominates(
-    trial0: Union["optuna.FrozenTrial", "optuna.multi_objective.trial.FrozenMultiObjectiveTrial"],
-    trial1: Union["optuna.FrozenTrial", "optuna.multi_objective.trial.FrozenMultiObjectiveTrial"],
+    trial0: "optuna.trial.FrozenTrial",
+    trial1: "optuna.trial.FrozenTrial",
     directions: List[StudyDirection],
 ) -> bool:
-    if isinstance(
-        trial0, optuna.multi_objective.trial.FrozenMultiObjectiveTrial
-    ):  # Backwards compatibility.
-        value0 = trial0.values
-        value1 = trial1.values
-    else:
-        value0 = trial0.value
-        value1 = trial1.value
+    value0 = trial0.value
+    value1 = trial1.value
 
     assert not isinstance(value0, float), "Trial should have multiple values."
     assert not isinstance(value1, float), "Trial should have multiple values."

@@ -1,5 +1,4 @@
 import copy
-import math
 import threading
 from typing import Any
 from typing import Callable
@@ -24,7 +23,7 @@ from optuna._optimize import _optimize
 from optuna._study_direction import _get_study_direction
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
-from optuna.multi_objective._selection import _get_pareto_front_trials
+from optuna._multi_objective_utils import _get_pareto_front_trials
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
