@@ -5,6 +5,7 @@ from typing import Union
 
 import optuna
 from optuna import multi_objective
+from optuna._deprecated import deprecated
 from optuna._experimental import experimental
 from optuna.multi_objective._selection import _get_pareto_front_trials
 from optuna.multi_objective.study import MultiObjectiveStudy
@@ -19,6 +20,7 @@ if _imports.is_successful():
 _logger = optuna.logging.get_logger(__name__)
 
 
+@deprecated("2.3.0", "3.0.0")
 @experimental("2.0.0")
 def plot_pareto_front(
     study: Union["optuna.Study", MultiObjectiveStudy],

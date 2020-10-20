@@ -2,12 +2,14 @@ from typing import Any
 from typing import Dict
 
 from optuna import multi_objective
+from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
 
+@deprecated("2.3.0", "3.0.0")
 class _MultiObjectiveSamplerAdapter(BaseSampler):
     """Adapter for to :class:`~optuna.multi_objective.samplers.BaseMultiObjectiveSampler`.
 

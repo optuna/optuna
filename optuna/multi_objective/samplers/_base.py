@@ -3,10 +3,12 @@ from typing import Any
 from typing import Dict
 
 from optuna import multi_objective
+from optuna._deprecated import deprecated
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 
 
+@deprecated("2.3.0", "3.0.0")
 @experimental("1.4.0")
 class BaseMultiObjectiveSampler(object, metaclass=abc.ABCMeta):
     """Base class for multi-objective samplers.
