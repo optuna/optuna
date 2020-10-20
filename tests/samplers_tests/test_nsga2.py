@@ -20,9 +20,7 @@ def test_population_size() -> None:
     study = create_study(direction=["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=40)
 
-    generations = Counter(
-        [t.system_attrs[_nsga2._GENERATION_KEY] for t in study.trials]
-    )
+    generations = Counter([t.system_attrs[_nsga2._GENERATION_KEY] for t in study.trials])
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
     # Set `population_size` to 2.
@@ -31,9 +29,7 @@ def test_population_size() -> None:
     study = create_study(direction=["minimize"], sampler=sampler)
     study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=40)
 
-    generations = Counter(
-        [t.system_attrs[_nsga2._GENERATION_KEY] for t in study.trials]
-    )
+    generations = Counter([t.system_attrs[_nsga2._GENERATION_KEY] for t in study.trials])
     assert generations == {i: 2 for i in range(20)}
 
     # Invalid population size.
@@ -92,9 +88,7 @@ def test_fast_non_dominated_sort() -> None:
         _create_frozen_trial(2, [20]),
         _create_frozen_trial(3, [30]),
     ]
-    population_per_rank = _nsga2._fast_non_dominated_sort(
-        trials, directions
-    )
+    population_per_rank = _nsga2._fast_non_dominated_sort(trials, directions)
     assert [{t.number for t in population} for population in population_per_rank] == [
         {0},
         {1, 2},
@@ -110,9 +104,7 @@ def test_fast_non_dominated_sort() -> None:
         _create_frozen_trial(3, [30, 10]),
         _create_frozen_trial(4, [15, 15]),
     ]
-    population_per_rank = _nsga2._fast_non_dominated_sort(
-        trials, directions
-    )
+    population_per_rank = _nsga2._fast_non_dominated_sort(trials, directions)
     assert [{t.number for t in population} for population in population_per_rank] == [
         {0, 2, 3},
         {4},
@@ -129,9 +121,7 @@ def test_fast_non_dominated_sort() -> None:
         _create_frozen_trial(4, [0, 0, 9]),
         _create_frozen_trial(5, [0, 9, 9]),
     ]
-    population_per_rank = _nsga2._fast_non_dominated_sort(
-        trials, directions
-    )
+    population_per_rank = _nsga2._fast_non_dominated_sort(trials, directions)
     assert [{t.number for t in population} for population in population_per_rank] == [
         {2},
         {0, 3, 5},
@@ -199,9 +189,7 @@ def test_reseed_rng() -> None:
 
 
 # TODO(ohta): Consider to move this utility function to `optuna.testing` module.
-def _create_frozen_trial(
-    number: int, values: List[float]
-) -> FrozenTrial:
+def _create_frozen_trial(number: int, values: List[float]) -> FrozenTrial:
     trial = FrozenTrial(
         number=number,
         trial_id=number,

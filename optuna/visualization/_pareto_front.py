@@ -81,7 +81,8 @@ def plot_pareto_front(
 
 
 def _get_non_pareto_front_trials(
-    study: Study, pareto_trials: List[FrozenTrial],
+    study: Study,
+    pareto_trials: List[FrozenTrial],
 ) -> List[FrozenTrial]:
 
     non_pareto_trials = []
@@ -92,7 +93,9 @@ def _get_non_pareto_front_trials(
 
 
 def _get_pareto_front_2d(
-    study: Study, names: Optional[List[str]], include_dominated_trials: bool = False,
+    study: Study,
+    names: Optional[List[str]],
+    include_dominated_trials: bool = False,
 ) -> "go.Figure":
     if names is None:
         names = ["Objective 0", "Objective 1"]

@@ -19,11 +19,11 @@ from optuna import trial as trial_module
 from optuna._dataframe import _trials_dataframe
 from optuna._dataframe import pd
 from optuna._experimental import experimental
+from optuna._multi_objective_utils import _get_pareto_front_trials
 from optuna._optimize import _optimize
 from optuna._study_direction import _get_study_direction
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
-from optuna._multi_objective_utils import _get_pareto_front_trials
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState

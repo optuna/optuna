@@ -3,8 +3,8 @@ from typing import List
 import pytest
 
 import optuna
-from optuna._study_direction import StudyDirection
 from optuna._multi_objective_utils import _dominates
+from optuna._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -12,9 +12,7 @@ from optuna.trial import TrialState
 def test_dominates() -> None:
     directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
 
-    def create_trial(
-        values: List[float], state: TrialState = TrialState.COMPLETE
-    ) -> FrozenTrial:
+    def create_trial(values: List[float], state: TrialState = TrialState.COMPLETE) -> FrozenTrial:
         trial = optuna.trial.FrozenTrial(
             state=state,
             intermediate_values={},

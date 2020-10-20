@@ -168,7 +168,9 @@ class RedisStorage(BaseStorage):
 
         return "study_id:{:010d}:direction".format(study_id)
 
-    def set_study_direction(self, study_id: int, direction: Union[StudyDirection, Sequence[StudyDirection]]) -> None:
+    def set_study_direction(
+        self, study_id: int, direction: Union[StudyDirection, Sequence[StudyDirection]]
+    ) -> None:
 
         self._check_study_id(study_id)
 
@@ -231,7 +233,9 @@ class RedisStorage(BaseStorage):
             raise KeyError("No such study: {}.".format(study_id))
         return pickle.loads(study_name_pkl)
 
-    def get_study_direction(self, study_id: int) -> Union[StudyDirection, Sequence[StudyDirection]]:
+    def get_study_direction(
+        self, study_id: int
+    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
 
         direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
         if direction_pkl is None:
