@@ -721,7 +721,7 @@ def test_trial_report() -> None:
     with pytest.raises(TypeError):
         trial.report("foo", 7)  # type: ignore
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         trial.report([1, 2, 3], 7)  # type: ignore
 
     with pytest.raises(TypeError):

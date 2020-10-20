@@ -498,8 +498,8 @@ class Trial(BaseTrial):
 
         return self._suggest(name, CategoricalDistribution(choices=choices))
 
-    def report(self, value: float, step: int) -> None:
-        """Report an objective function value for a given step.
+    def report(self, value: Union[float, Sequence[float]], step: int) -> None:
+        """Report an objective function value or a sequence of such values for a given step.
 
         The reported values are used by the pruners to determine whether this trial should be
         pruned.
@@ -548,7 +548,7 @@ class Trial(BaseTrial):
 
         Args:
             value:
-                A value returned from the objective function.
+                A value or a sequence of such values returned from the objective function.
             step:
                 Step of the trial (e.g., Epoch of neural network training). Note that pruners
                 assume that ``step`` starts at zero. For example,
@@ -556,27 +556,48 @@ class Trial(BaseTrial):
                 ``n_warmup_steps`` as the warmup mechanism.
         """
 
+        # TODO(ohta): Allow users reporting a subset of target values.
+        # See https://github.com/optuna/optuna/pull/1054/files#r401594785 for the detail.
+
         try:
-            # For convenience, we allow users to report a value that can be cast to `float`.
+            # For convenience, we allow users to report values that can be cast to `float`.
             value = float(value)
         except (TypeError, ValueError):
-            message = "The `value` argument is of type '{}' but supposed to be a float.".format(
-                type(value).__name__
-            )
-            raise TypeError(message) from None
+            try:
+                value = tuple(map(float, value))
+            except (TypeError, ValueError):
+                message = (
+                    f"The `value` argument is of type '{type(value).__name__}' but supposed to be "
+                    f"a float or a sequence of such values."
+                )
+                raise TypeError(message) from None
 
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
+        if isinstance(value, float):
+            value = (value,)
+
+        if len(value) != self.study.n_objectives:
+            raise ValueError(
+                "The number of the intermediate values {} at step {} is mismatched with"
+                "the number of the objectives {}.",
+                len(value),
+                step,
+                self.study.n_objectives,
+            )
+
         intermediate_values = self.storage.get_trial(self._trial_id).intermediate_values
 
-        if step in intermediate_values:
-            # Do nothing if already reported.
-            # TODO(hvy): Consider raising a warning or an error.
-            # See https://github.com/optuna/optuna/issues/852.
-            return
+        for i, v in enumerate(value):
+            s = self.study.n_objectives * step + i
+            if s in intermediate_values:
+                # Do nothing if already reported.
+                # TODO(hvy): Consider raising a warning or an error.
+                # See https://github.com/optuna/optuna/issues/852.
+                return
 
-        self.storage.set_trial_intermediate_value(self._trial_id, step, value)
+            self.storage.set_trial_intermediate_value(self._trial_id, s, v)
 
     def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.
@@ -811,3 +832,7 @@ class Trial(BaseTrial):
         """
 
         return self.storage.get_trial_number_from_id(self._trial_id)
+
+    # TODO(ohta): Add `to_single_objective` method.
+    # This method would be helpful to use the existing pruning
+    # integrations for multi-objective optimization.

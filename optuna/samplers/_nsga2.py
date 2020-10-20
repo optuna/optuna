@@ -94,7 +94,7 @@ class NSGAIISampler(BaseSampler):
         self._rng = np.random.RandomState(seed)
 
     def infer_relative_search_space(
-        self, study: Study, trial: FrozenTrial,
+        self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         return {}
 
