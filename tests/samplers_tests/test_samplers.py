@@ -355,3 +355,49 @@ def test_nan_objective_value(sampler_class: Callable[[], BaseSampler]) -> None:
     # Non NaN objective value.
     study.optimize(lambda t: objective(t, 1), n_trials=1, catch=())
     assert int(study.best_value) == 1
+
+
+@pytest.mark.parametrize(
+    "sampler_class", [optuna.samplers.RandomSampler, optuna.samplers.NSGAIISampler]
+)
+@pytest.mark.parametrize(
+    "distribution",
+    [
+        UniformDistribution(-1.0, 1.0),
+        UniformDistribution(0.0, 1.0),
+        UniformDistribution(-1.0, 0.0),
+        LogUniformDistribution(1e-7, 1.0),
+        DiscreteUniformDistribution(-10, 10, 0.1),
+        DiscreteUniformDistribution(-10.2, 10.2, 0.1),
+        IntUniformDistribution(-10, 10),
+        IntUniformDistribution(0, 10),
+        IntUniformDistribution(-10, 0),
+        IntUniformDistribution(-10, 10, 2),
+        IntUniformDistribution(0, 10, 2),
+        IntUniformDistribution(-10, 0, 2),
+        CategoricalDistribution((1, 2, 3)),
+        CategoricalDistribution(("a", "b", "c")),
+        CategoricalDistribution((1, "a")),
+    ],
+)
+def test_sample_independent_with_mult_objectives(
+    sampler_class: Callable[[], BaseSampler], distribution: UniformDistribution
+) -> None:
+    study = optuna.create_study(direction=["minimize", "maximize"], sampler=sampler_class())
+    for i in range(100):
+        value = study.sampler.sample_independent(
+            study, _create_new_trial(study), "x", distribution
+        )
+        assert distribution._contains(distribution.to_internal_repr(value))
+
+        if not isinstance(distribution, CategoricalDistribution):
+            # Please see https://github.com/optuna/optuna/pull/393 why this assertion is needed.
+            assert not isinstance(value, np.floating)
+
+        if isinstance(distribution, DiscreteUniformDistribution):
+            # Check the value is a multiple of `distribution.q` which is
+            # the quantization interval of the distribution.
+            value -= distribution.low
+            value /= distribution.q
+            round_value = np.round(value)
+            np.testing.assert_almost_equal(round_value, value)
