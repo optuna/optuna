@@ -1047,3 +1047,23 @@ def test_pareto_front() -> None:
     study.optimize(lambda t: [1, 3], n_trials=1)  # The trial result is the same as the above one.
     assert {tuple(t.value) for t in study.get_pareto_front_trials()} == {(1, 3)}
     assert len(study.get_pareto_front_trials()) == 2
+
+
+def test_callbacks_with_multi_objectives() -> None:
+    study = optuna.create_study(direction=["minimize", "maximize"])
+
+    def objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
+        x = trial.suggest_float("x", 0, 10)
+        y = trial.suggest_float("y", 0, 10)
+        return x, y
+
+    list0 = []
+    list1 = []
+    callbacks = [
+        lambda study, trial: list0.append(trial.number),
+        lambda study, trial: list1.append(trial.number),
+    ]
+    study.optimize(objective, n_trials=2, callbacks=callbacks)
+
+    assert list0 == [0, 1]
+    assert list1 == [0, 1]
