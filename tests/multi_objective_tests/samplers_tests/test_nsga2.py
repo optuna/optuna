@@ -186,6 +186,16 @@ def test_study_system_attr_for_population_cache() -> None:
     assert len(cached_entries[0][1]) == 10  # Population size.
 
 
+def test_reseed_rng() -> None:
+    sampler = multi_objective.samplers.NSGAIIMultiObjectiveSampler(population_size=10)
+    original_seed = sampler._rng.seed
+    original_random_sampler_seed = sampler._random_sampler._sampler._rng.seed
+
+    sampler.reseed_rng()
+    assert original_seed != sampler._rng.seed
+    assert original_random_sampler_seed != sampler._random_sampler._sampler._rng.seed
+
+
 # TODO(ohta): Consider to move this utility function to `optuna.testing` module.
 def _create_frozen_trial(
     number: int, values: List[float]

@@ -1,3 +1,5 @@
+.. module:: optuna.importance
+
 optuna.importance
 =================
 

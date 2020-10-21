@@ -1,3 +1,5 @@
+.. module:: optuna.logging
+
 optuna.logging
 ==============
 

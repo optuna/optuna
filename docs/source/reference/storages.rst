@@ -1,3 +1,5 @@
+.. module:: optuna.storages
+
 optuna.storages
 ===============
 

@@ -1,3 +1,5 @@
+.. module:: optuna.visualization.matplotlib
+
 optuna.visualization.matplotlib
 ===============================
 
