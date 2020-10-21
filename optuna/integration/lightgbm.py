@@ -16,7 +16,6 @@ if _imports.is_successful():
 
     from optuna.integration._lightgbm_tuner import LightGBMTuner  # NOQA
     from optuna.integration._lightgbm_tuner import LightGBMTunerCV  # NOQA
-
     from optuna.integration._lightgbm_tuner import StepwiseLightGBMTuner  # NOQA
     from optuna.integration._lightgbm_tuner import StepwiseLightGBMTunerCV  # NOQA
     from optuna.integration._lightgbm_tuner.steps import *  # NOQA
