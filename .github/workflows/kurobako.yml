@@ -1,0 +1,80 @@
+name: kurobako
+
+# TODO: Discuss the trigger configuration
+on:
+  pull_request: {}
+
+jobs:
+  hpobench-naval:
+
+    runs-on: ubuntu-18.04
+    container: docker://dvcorg/cml-py3:latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install gnuplot
+      run: |
+        sudo apt update
+        sudo apt -y install gnuplot
+
+    - name: Cache kurobako CLI
+      id: cache-kurobako
+      uses: actions/cache@v2
+      with:
+        path: ./kurobako
+        key: kurobako-0-2-6
+
+    - name: Download kurobako CLI
+      if: steps.cache-kurobako.outputs.cache-hit != 'true'
+      run: |
+        curl -L https://github.com/sile/kurobako/releases/download/0.2.6/kurobako-0.2.6.linux-amd64 -o kurobako
+        chmod +x kurobako
+        ./kurobako -h
+
+    - name: Cache hpobench dataset
+      id: cache-hpobench-dataset
+      uses: actions/cache@v2
+      with:
+        path: ./fcnet_tabular_benchmarks
+        key: hpobench-dataset
+
+    - name: Download hpobench dataset
+      if: steps.cache-hpobench-dataset.outputs.cache-hit != 'true'
+      run: |
+        wget http://ml4aad.org/wp-content/uploads/2019/01/fcnet_tabular_benchmarks.tar.gz
+        tar xf fcnet_tabular_benchmarks.tar.gz
+
+    # TODO: Discuss the benchmark task-solver-pruner configuration
+    - name: Run Benchmark
+      run: |
+        ./kurobako solver random | tee solver.json
+        ./kurobako problem hpobench ./fcnet_tabular_benchmarks/fcnet_protein_structure_data.hdf5 | tee problem.json
+        ./kurobako studies --solvers $(cat solver.json) --problems $(cat problem.json) | ./kurobako run > report.json
+        cat report.json | ./kurobako report > report.md
+        cat report.json | ./kurobako plot curve
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: hpobench-naval-report
+        path: |
+          report.md
+          images/**/*
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: hpobench-naval-report
+        path: |
+          report.md
+          images/**/*.png
+
+    - name: cml_run
+      env:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        for file in `find images '*.png'`
+        do
+          echo $file
+          cml-publish images/**/*.png --md >> report.md
+        done
+        cml-send-comment report.md
