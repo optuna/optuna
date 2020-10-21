@@ -5,7 +5,7 @@ on:
   pull_request: {}
 
 jobs:
-  hpobench-naval:
+  hpobench-protein:
 
     runs-on: ubuntu-18.04
     container: docker://dvcorg/cml-py3:latest
@@ -59,7 +59,7 @@ jobs:
         name: hpobench-naval-report
         path: |
           report.md
-          images/**/*
+          images/**/*.png
 
     - uses: actions/download-artifact@v2
       with:
@@ -72,9 +72,9 @@ jobs:
       env:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        for file in `find images '*.png'`
+        for file in `find images -name '*.png'`
         do
           echo $file
-          cml-publish images/**/*.png --md >> report.md
+          cml-publish $file --md >> report.md
         done
         cml-send-comment report.md
