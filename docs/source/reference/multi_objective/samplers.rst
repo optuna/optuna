@@ -1,3 +1,5 @@
+.. module:: optuna.multi_objective.samplers
+
 optuna.multi_objective.samplers
 ===============================
 

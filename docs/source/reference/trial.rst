@@ -1,3 +1,5 @@
+.. module:: optuna.trial
+
 optuna.trial
 ============
 

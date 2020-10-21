@@ -1,3 +1,5 @@
+.. module:: optuna.study
+
 optuna.study
 ============
 

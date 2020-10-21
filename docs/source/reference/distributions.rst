@@ -1,3 +1,5 @@
+.. module:: optuna.distributions
+
 optuna.distributions
 ====================
 
