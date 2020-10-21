@@ -176,7 +176,7 @@ def test_plot_contour_log_scale_and_str_category() -> None:
         assert figure.layout[axis]["type"] == param_type
 
 
-def test_plot_contour_mixture_category_types():
+def test_plot_contour_mixture_category_types() -> None:
     study = create_study()
     study.add_trial(
         create_trial(
