@@ -202,17 +202,14 @@ class GridStep(Step):
         dists = {}
         for name, values in search_space.items():
             if isinstance(values[0], (str, bool)):
-                dist = distributions.CategoricalDistribution(values)
+                dists[name] = distributions.CategoricalDistribution(values)
             elif isinstance(values[0], int):
-                dist = distributions.IntUniformDistribution(
-                    min(values), max(values)  # type: ignore
-                )
+                low, high = min(values), max(values)  # type: ignore
+                dists[name] = distributions.IntUniformDistribution(low, high)  # type: ignore
             else:
                 # add 1 to high to include higher bound
-                dist = distributions.UniformDistribution(
-                    min(values), max(values) + 1  # type: ignore
-                )
-            dists[name] = dist
+                low, high = min(values), max(values) + 1  # type: ignore
+                dists[name] = distributions.UniformDistribution(low, high)  # type: ignore
         return dists
 
 
