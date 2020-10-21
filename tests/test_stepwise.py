@@ -12,7 +12,6 @@ import pytest
 
 import optuna
 from optuna import stepwise
-from optuna import study
 import optuna.distributions
 import optuna.study
 import optuna.trial
@@ -75,22 +74,23 @@ def test_grid_step(x: Any, y: Any) -> None:
     assert actual == expected
 
 
-def make_int_steps(n_steps: int, low: int = 0, high: int = 10) -> List[Tuple[str, stepwise.Step]]:
-    """Return  a list of tuples [(0, step_0), ..., (n, step_n)]
-    where each step's n_trials argument is set to the index in the list.
+def _make_int_steps(n_steps: int, low: int = 0, high: int = 10) -> List[Tuple[str, stepwise.Step]]:
+    """Return  a list of tuples [(0, step_0), ..., (n, step_n)].
+
+    Each step's n_trials argument is set to the index in the list.
     """
     dists = {PARAM_KEY: optuna.distributions.IntUniformDistribution(low, high)}
     return [(str(i), stepwise.Step(dists, n_trials=i)) for i in range(1, n_steps + 1)]
 
 
-def objective(trial: optuna.Trial, params: Dict[str, Any]) -> float:
+def _objective(trial: optuna.Trial, params: Dict[str, Any]) -> float:
     return params.get(PARAM_KEY, -1)
 
 
 @pytest.mark.parametrize("n_trials", range(-1, 10))
 def test_global_n_trials(n_trials: int) -> None:
     n_steps = 3
-    tuner = stepwise.StepwiseTuner(objective, steps=make_int_steps(n_steps))
+    tuner = stepwise.StepwiseTuner(_objective, steps=_make_int_steps(n_steps))
     tuner.optimize(n_trials=n_trials)
 
     if n_trials < 0:
@@ -102,7 +102,7 @@ def test_global_n_trials(n_trials: int) -> None:
 
 @pytest.mark.parametrize("timeout", [-1, 0, 0.5, 1])
 def test_global_n_timeout(timeout: float) -> None:
-    tuner = stepwise.StepwiseTuner(objective, steps=make_int_steps(1000))
+    tuner = stepwise.StepwiseTuner(_objective, steps=_make_int_steps(1000))
     tuner.optimize(timeout=timeout)
 
     if timeout > 0:
@@ -135,8 +135,8 @@ def check_optimize(tuner: stepwise.StepwiseTuner, expected: float) -> None:
 def test_optimize_default() -> None:
     default_value = 0
     tuner = stepwise.StepwiseTuner(
-        objective=objective,
-        steps=make_int_steps(n_steps=3, low=1, high=1),
+        objective=_objective,
+        steps=_make_int_steps(n_steps=3, low=1, high=1),
         default_params={PARAM_KEY: default_value},
     )
     check_optimize(tuner, expected=default_value)
@@ -144,8 +144,8 @@ def test_optimize_default() -> None:
 
 def test_optimize() -> None:
     tuner = stepwise.StepwiseTuner(
-        objective=objective,
-        steps=make_int_steps(n_steps=3, low=1, high=1),
+        objective=_objective,
+        steps=_make_int_steps(n_steps=3, low=1, high=1),
         default_params={PARAM_KEY: 99},
     )
     check_optimize(tuner, expected=1)
@@ -157,7 +157,7 @@ def test_callable_step() -> None:
         return stepwise.Step(dists, n_trials=1)
 
     tuner = stepwise.StepwiseTuner(
-        objective=objective,
+        objective=_objective,
         steps=[("1", make_step)],
         default_params={PARAM_KEY: 99},
     )
@@ -165,13 +165,13 @@ def test_callable_step() -> None:
 
 
 def test_resume_optimize() -> None:
-    steps = make_int_steps(n_steps=1)
+    steps = _make_int_steps(n_steps=1)
 
-    tuner = stepwise.StepwiseTuner(objective=objective, steps=steps)
+    tuner = stepwise.StepwiseTuner(objective=_objective, steps=steps)
     tuner.optimize(n_trials=2)
     n_trials = len(tuner.study.trials)
 
-    tuner2 = stepwise.StepwiseTuner(objective=objective, steps=steps, study=tuner.study)
+    tuner2 = stepwise.StepwiseTuner(objective=_objective, steps=steps, study=tuner.study)
     tuner.optimize(n_trials=1)
     assert len(tuner2.study.trials) == n_trials + 1
 
@@ -179,6 +179,6 @@ def test_resume_optimize() -> None:
 def test_all_budgets_none() -> None:
     dists = {PARAM_KEY: optuna.distributions.IntUniformDistribution(0, 1)}
     steps = [("step", stepwise.Step(dists))]
-    tuner = stepwise.StepwiseTuner(objective=objective, steps=steps)
+    tuner = stepwise.StepwiseTuner(objective=_objective, steps=steps)
     with pytest.raises(ValueError):
         tuner.optimize()
