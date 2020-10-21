@@ -283,7 +283,7 @@ class RDBStorage(BaseStorage):
         # Ensure that that study exists.
         models.StudyModel.find_or_raise_by_id(study_id, session)
         attributes = models.StudyUserAttributeModel.where_study_id(study_id, session)
-        user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
+        user_attrs = {attr.key: self._decode_json(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
@@ -296,7 +296,7 @@ class RDBStorage(BaseStorage):
         # Ensure that that study exists.
         models.StudyModel.find_or_raise_by_id(study_id, session)
         attributes = models.StudySystemAttributeModel.where_study_id(study_id, session)
-        system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
+        system_attrs = {attr.key: self._deck_json(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
@@ -310,7 +310,7 @@ class RDBStorage(BaseStorage):
         models.TrialModel.find_or_raise_by_id(trial_id, session)
 
         attributes = models.TrialUserAttributeModel.where_trial_id(trial_id, session)
-        user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
+        user_attrs = {attr.key: self._decode_json(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
@@ -324,7 +324,7 @@ class RDBStorage(BaseStorage):
         models.TrialModel.find_or_raise_by_id(trial_id, session)
 
         attributes = models.TrialSystemAttributeModel.where_trial_id(trial_id, session)
-        system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
+        system_attrs = {attr.key: self._decode_json(attr.value_json) for attr in attributes}
         # Terminate transaction explicitly to avoid connection timeout during transaction.
         self._commit(session)
 
@@ -396,8 +396,8 @@ class RDBStorage(BaseStorage):
                     best_trial.datetime_complete,
                     param_dict,
                     param_distributions,
-                    {i.key: json.loads(i.value_json) for i in user_attrs},
-                    {i.key: json.loads(i.value_json) for i in system_attrs},
+                    {i.key: self._decode_json(i.value_json) for i in user_attrs},
+                    {i.key: self._decode_json(i.value_json) for i in system_attrs},
                     {value.step: value.value for value in intermediate},
                     best_trial.trial_id,
                 )
@@ -412,8 +412,8 @@ class RDBStorage(BaseStorage):
                     study_name=study.study_name,
                     direction=study.direction,
                     best_trial=best_trial_frozen,
-                    user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
-                    system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
+                    user_attrs={i.key: self._decode_json(i.value_json) for i in user_attrs},
+                    system_attrs={i.key: elf._decode_json(i.value_json) for i in system_attrs},
                     n_trials=study.n_trial,
                     datetime_start=study.datetime_start,
                     study_id=study.study_id,
@@ -1018,9 +1018,9 @@ class RDBStorage(BaseStorage):
                 p.param_name: distributions.json_to_distribution(p.distribution_json)
                 for p in trial.params
             },
-            user_attrs={attr.key: json.loads(attr.value_json) for attr in trial.user_attributes},
+            user_attrs={attr.key: self._decode_json(attr.value_json) for attr in trial.user_attributes},
             system_attrs={
-                attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
+                attr.key: self._decode_json(attr.value_json) for attr in trial.system_attributes
             },
             intermediate_values={value.step: value.value for value in trial.values},
             trial_id=trial.trial_id,
@@ -1044,6 +1044,13 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
         models.StudyModel.find_or_raise_by_id(study_id, session)
         self._commit(session)
+
+    @staticmethod
+    def _decode_json(value: str) -> Any:
+        try:
+            return json.loads(value)
+        except json.decoder.JSONDecodeError:
+            return value
 
     @staticmethod
     def _set_default_engine_kwargs_for_mysql(url: str, engine_kwargs: Dict[str, Any]) -> None:
