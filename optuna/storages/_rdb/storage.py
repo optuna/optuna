@@ -63,6 +63,9 @@ def _scoped_session(scoped_session: orm.scoped_session) -> Generator[orm.Session
             "(The actual exception is as follows: {})".format(repr(e))
         )
         raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
+    except Exception:
+        session.rollback()
+        raise
 
 
 class RDBStorage(BaseStorage):
