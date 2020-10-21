@@ -7,7 +7,6 @@ from typing import Optional
 from unittest.mock import patch
 
 import pytest
-
 from sqlalchemy.exc import IntegrityError
 
 from optuna import version
