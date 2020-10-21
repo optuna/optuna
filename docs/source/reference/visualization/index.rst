@@ -3,6 +3,8 @@
 optuna.visualization
 ====================
 
+The :mod:`~optuna.visualization` module provides utility functions for plotting the optimization process using plotly and matplotlib. Plotting functions take generally take a :class:`~optuna.study.Study` object and optional parameters passed as a list to a ``params`` argument.
+
 .. note::
     In the :mod:`~optuna.visualization` module, the following functions use plotly to create figures, but `JupyterLab`_ cannot
     render them by default. Please follow this `installation guide`_ to show figures in

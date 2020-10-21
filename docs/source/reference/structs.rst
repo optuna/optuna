@@ -3,6 +3,8 @@
 optuna.structs
 ==============
 
+This module is deprecated, with former functionality moved to :class:`optuna.trial` and :class:`optuna.study`.
+
 .. autoclass:: TrialState
     :members:
 
