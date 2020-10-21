@@ -1,4 +1,4 @@
-.. _integration_list:
+.. module:: optuna.integration
 
 optuna.integration
 ==================
