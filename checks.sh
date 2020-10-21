@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # As described in `CONTRIBUTING.md`, this script checks Optuna's source codes for formatting,
 # coding style and type hints. The `-u` option enables automatic formatting by `black` and `isort`.
 
