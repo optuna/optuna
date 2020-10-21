@@ -452,6 +452,8 @@ class RDBStorage(BaseStorage):
                     trial = self._get_prepared_new_trial(study_id, template_trial, session)
                 break  # Successfully created trial.
             except OperationalError:
+                session.rollback()
+
                 if n_retries > 2:
                     raise
 
