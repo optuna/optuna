@@ -229,12 +229,22 @@ class _OptunaObjective(_BaseTuner):
             param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + _EPS))
             self.lgbm_params["min_child_samples"] = param_value
 
+    def _copy_valid_sets(self, valid_sets: "VALID_SET_TYPE") -> "VALID_SET_TYPE":
+        if isinstance(valid_sets, list):
+            return [copy.copy(d) for d in valid_sets]
+        if isinstance(valid_sets, tuple):
+            return tuple([copy.copy(d) for d in valid_sets])
+        return copy.copy(valid_sets)
+
     def __call__(self, trial: optuna.trial.Trial) -> float:
 
         self._preprocess(trial)
 
         start_time = time.time()
-        booster = lgb.train(self.lgbm_params, self.train_set, **self.lgbm_kwargs)
+        train_set = copy.copy(self.train_set)
+        kwargs = copy.copy(self.lgbm_kwargs)
+        kwargs["valid_sets"] = self._copy_valid_sets(kwargs["valid_sets"])
+        booster = lgb.train(self.lgbm_params, train_set, **kwargs)
 
         val_score = self._get_booster_best_score(booster)
         elapsed_secs = time.time() - start_time
@@ -304,7 +314,8 @@ class _OptunaObjectiveCV(_OptunaObjective):
         self._preprocess(trial)
 
         start_time = time.time()
-        cv_results = lgb.cv(self.lgbm_params, self.train_set, **self.lgbm_kwargs)
+        train_set = copy.copy(self.train_set)
+        cv_results = lgb.cv(self.lgbm_params, train_set, **self.lgbm_kwargs)
 
         val_scores = self._get_cv_scores(cv_results)
         val_score = val_scores[-1]
