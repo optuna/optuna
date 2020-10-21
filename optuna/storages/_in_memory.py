@@ -130,13 +130,17 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].name
 
-    def get_study_direction(
-        self, study_id: int
-    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
+    def get_study_direction(self, study_id: int) -> Union[StudyDirection, Tuple[StudyDirection]]:
 
         with self._lock:
             self._check_study_id(study_id)
-            return self._studies[study_id].direction
+            direction = self._studies[study_id].direction
+            if isinstance(direction, StudyDirection):
+                return direction
+            elif isinstance(direction, Sequence):
+                return tuple(direction)
+            else:
+                assert False
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -298,7 +302,7 @@ class InMemoryStorage(BaseStorage):
             trial = copy.copy(trial)
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            trial.value = value
+            trial.set_value(value)
             self._set_trial(trial_id, trial)
 
     def _update_cache(self, trial_id: int, study_id: int) -> None:
@@ -339,7 +343,7 @@ class InMemoryStorage(BaseStorage):
 
             trial = copy.copy(trial)
             trial.intermediate_values = copy.copy(trial.intermediate_values)
-            trial.intermediate_values[step] = intermediate_value
+            trial.set_intermediate_value(step, intermediate_value)
             self._set_trial(trial_id, trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:

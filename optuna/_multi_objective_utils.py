@@ -2,7 +2,7 @@ from typing import List
 from typing import Optional
 
 import optuna
-from optuna.study import StudyDirection
+from optuna._study_direction import StudyDirection
 from optuna.trial import TrialState
 
 

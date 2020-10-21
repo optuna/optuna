@@ -502,7 +502,6 @@ class TrialValueModel(BaseModel):
 
 class TrialIntermediateValueModel(BaseModel):
     __tablename__ = "trial_intermediate_values"
-    __table_args__ = (UniqueConstraint("trial_id", "step"),)  # type: Any
     trial_intermediate_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     step = Column(Integer)
@@ -515,15 +514,17 @@ class TrialIntermediateValueModel(BaseModel):
     @classmethod
     def find_by_trial_and_step(
         cls, trial: TrialModel, step: int, session: orm.Session
-    ) -> Optional["TrialIntermediateValueModel"]:
+    ) -> Optional[List["TrialIntermediateValueModel"]]:
 
         trial_value = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
             .filter(cls.step == step)
-            .one_or_none()
+            .all()
         )
 
+        if len(trial_value) == 0:
+            return None
         return trial_value
 
     @classmethod

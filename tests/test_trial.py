@@ -1054,6 +1054,21 @@ def test_frozen_trial_set_system_attrs() -> None:
     assert trial.system_attrs["system_message"] == "test"
 
 
+def test_frozen_trial_set_value() -> None:
+
+    trial = _create_frozen_trial()
+    trial.set_value(0.1)
+    assert trial.value == 0.1
+
+    trial = _create_frozen_trial()
+    trial.set_value((0.1, 0.2))
+    assert trial.value == (0.1, 0.2)
+
+    trial = _create_frozen_trial()
+    trial.set_value([0.1, 0.2])
+    assert trial.value == (0.1, 0.2)
+
+
 def test_frozen_trial_validate() -> None:
 
     # Valid.

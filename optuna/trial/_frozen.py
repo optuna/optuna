@@ -133,13 +133,21 @@ class FrozenTrial(BaseTrial):
 
         self._number = number
         self.state = state
-        self.value = value
+        if isinstance(value, Sequence):
+            self.value = tuple(value)
+        else:
+            self.value = value
         self._datetime_start = datetime_start
         self.datetime_complete = datetime_complete
         self._params = params
         self._user_attrs = user_attrs
         self._system_attrs = system_attrs
-        self.intermediate_values = intermediate_values
+        self.intermediate_values = {}
+        for step in intermediate_values.keys():
+            if isinstance(intermediate_values[step], Sequence):
+                self.intermediate_values[step] = tuple(intermediate_values[step])
+            else:
+                self.intermediate_values[step] = intermediate_values[step]
         self._distributions = distributions
         self._trial_id = trial_id
 
@@ -297,6 +305,20 @@ class FrozenTrial(BaseTrial):
     def set_system_attr(self, key: str, value: Any) -> None:
 
         self._system_attrs[key] = value
+
+    def set_value(self, value: Union[float, Sequence[float]]) -> None:
+
+        if isinstance(value, Sequence):
+            self.value = tuple(value)
+        else:
+            self.value = value
+
+    def set_intermediate_value(self, step: int, value: Union[float, Sequence[float]]) -> None:
+
+        if isinstance(value, Sequence):
+            self.intermediate_values[step] = tuple(value)
+        else:
+            self.intermediate_values[step] = value
 
     def _validate(self) -> None:
 

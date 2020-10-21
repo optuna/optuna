@@ -6,6 +6,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 import optuna
@@ -233,14 +234,16 @@ class RedisStorage(BaseStorage):
             raise KeyError("No such study: {}.".format(study_id))
         return pickle.loads(study_name_pkl)
 
-    def get_study_direction(
-        self, study_id: int
-    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
+    def get_study_direction(self, study_id: int) -> Union[StudyDirection, Tuple[StudyDirection]]:
 
         direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
         if direction_pkl is None:
             raise KeyError("No such study: {}.".format(study_id))
-        return pickle.loads(direction_pkl)
+        direction = pickle.loads(direction_pkl)
+        if isinstance(direction, StudyDirection):
+            return direction
+        else:
+            return tuple(direction)
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -448,7 +451,7 @@ class RedisStorage(BaseStorage):
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial.value = value
+        trial.set_value(value)
         self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
     def _update_cache(self, trial_id: int) -> None:
@@ -486,7 +489,7 @@ class RedisStorage(BaseStorage):
         self._check_trial_id(trial_id)
         frozen_trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, frozen_trial.state)
-        frozen_trial.intermediate_values[step] = intermediate_value
+        frozen_trial.set_intermediate_value(step, intermediate_value)
         self._set_trial(trial_id, frozen_trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:

@@ -999,11 +999,11 @@ def test_log_completed_trial_skip_storage_access() -> None:
 def test_create_study_with_multi_objectives() -> None:
     study = optuna.create_study(direction=["maximize"])
     assert study.n_objectives == 1
-    assert study.direction == [StudyDirection.MAXIMIZE]
+    assert study.direction == (StudyDirection.MAXIMIZE,)
 
     study = optuna.create_study(direction=["maximize", "minimize"])
     assert study.n_objectives == 2
-    assert study.direction == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+    assert study.direction == (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE)
 
     with pytest.raises(ValueError):
         # Empty `direction` isn't allowed.

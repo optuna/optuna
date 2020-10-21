@@ -9,6 +9,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
+from typing import Tuple
 from typing import Union
 import uuid
 import weakref
@@ -196,10 +197,12 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         if isinstance(direction, StudyDirection):
-            direction = [direction]
+            direction = (direction,)
+        else:
+            direction = tuple(direction)
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        prev_direction = [d.direction for d in study.direction]
+        prev_direction = tuple([d.direction for d in study.direction])
 
         if prev_direction[0] != StudyDirection.NOT_SET and prev_direction != direction:
             raise ValueError(
@@ -272,9 +275,7 @@ class RDBStorage(BaseStorage):
 
         return study.study_name
 
-    def get_study_direction(
-        self, study_id: int
-    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
+    def get_study_direction(self, study_id: int) -> Union[StudyDirection, Tuple[StudyDirection]]:
 
         session = self.scoped_session()
 
@@ -285,7 +286,7 @@ class RDBStorage(BaseStorage):
         direction = study.direction
         if len(direction) == 1:
             return direction[0].direction
-        return [d.direction for d in direction]
+        return tuple([d.direction for d in direction])
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -413,6 +414,19 @@ class RDBStorage(BaseStorage):
                 intermediate = session.query(models.TrialIntermediateValueModel).filter(
                     models.TrialIntermediateValueModel.trial_id == best_trial.trial_id
                 )
+                intermediate_values = {}
+                for intermediate_value_model in intermediate:
+                    if intermediate_value_model.step in intermediate_values:
+                        intermediate_values[intermediate_value_model.step] = intermediate_values[
+                            intermediate_value_model.step
+                        ] + (intermediate_value_model.value,)
+                    else:
+                        intermediate_values[intermediate_value_model.step] = (
+                            intermediate_value_model.value,
+                        )
+                for k, v in intermediate_values.items():
+                    if len(v) == 1:
+                        intermediate_values[k] = v[0]
                 best_trial_frozen = FrozenTrial(
                     best_trial.number,
                     TrialState.COMPLETE,
@@ -423,7 +437,7 @@ class RDBStorage(BaseStorage):
                     param_distributions,
                     {i.key: json.loads(i.value_json) for i in user_attrs},
                     {i.key: json.loads(i.value_json) for i in system_attrs},
-                    {value.step: value.value for value in intermediate},
+                    intermediate_values,
                     best_trial.trial_id,
                 )
             user_attrs = session.query(models.StudyUserAttributeModel).filter(
@@ -690,16 +704,23 @@ class RDBStorage(BaseStorage):
                 .filter(models.TrialIntermediateValueModel.trial_id == trial_id)
                 .all()
             )
-            value_dict = {value_model.step: value_model for value_model in value_models}
+            value_dict = {}
+            for value_model in value_models:
+                if value_model.step in value_dict:
+                    value_dict[value_model.step].append(value_model)
+                else:
+                    value_dict[value_model.step] = [value_model]
             for s, v in intermediate_values.items():
+                if not isinstance(v, Sequence):
+                    v = [v]
                 if s in value_dict:
-                    value_dict[s].value = v
-                    session.add(value_dict[s])
-            trial_model.intermediate_values.extend(
-                models.TrialIntermediateValueModel(step=s, value=v)
-                for s, v in intermediate_values.items()
-                if s not in value_dict
-            )
+                    for i, x in enumerate(v):
+                        value_dict[s][i].value = x
+                        session.add(value_dict[s][i])
+                else:
+                    trial_model.intermediate_values.extend(
+                        [models.TrialIntermediateValueModel(step=s, value=x) for x in v]
+                    )
         if params and distributions_:
             trial_param = (
                 session.query(models.TrialParamModel)
@@ -893,16 +914,21 @@ class RDBStorage(BaseStorage):
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
+        if not isinstance(intermediate_value, Sequence):
+            intermediate_value = [intermediate_value]
+
+        trial_values = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
         )
-        if trial_value is None:
-            trial_value = models.TrialIntermediateValueModel(
-                trial_id=trial_id, step=step, value=intermediate_value
-            )
-            session.add(trial_value)
+        if trial_values is None:
+            for v in intermediate_value:
+                trial_value = models.TrialIntermediateValueModel(
+                    trial_id=trial_id, step=step, value=v
+                )
+                session.add(trial_value)
         else:
-            trial_value.value = intermediate_value
+            for i, v in enumerate(intermediate_value):
+                trial_values[i].value = v
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -1050,6 +1076,16 @@ class RDBStorage(BaseStorage):
         elif len(value) == 1:  # Single-objective, else multi-objective.
             value = value[0]
 
+        intermediate_values = {}
+        for v in trial.intermediate_values:
+            if v.step in intermediate_values:
+                intermediate_values[v.step] = intermediate_values[v.step] + (v.value,)
+            else:
+                intermediate_values[v.step] = (v.value,)
+        for k, v in intermediate_values.items():
+            if len(v) == 1:
+                intermediate_values[k] = v[0]
+
         return FrozenTrial(
             number=trial.number,
             state=trial.state,
@@ -1070,7 +1106,7 @@ class RDBStorage(BaseStorage):
             system_attrs={
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
-            intermediate_values={value.step: value.value for value in trial.intermediate_values},
+            intermediate_values=intermediate_values,
             trial_id=trial.trial_id,
         )
 

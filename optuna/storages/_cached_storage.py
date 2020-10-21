@@ -22,8 +22,8 @@ from optuna.trial import TrialState
 class _TrialUpdate:
     def __init__(self) -> None:
         self.state = None  # type: Optional[TrialState]
-        self.value = None  # type: Optional[float]
-        self.intermediate_values = dict()  # type: Dict[int, float]
+        self.value = None  # type: Optional[Union[float, Sequence[float]]]
+        self.intermediate_values = dict()  # type: Dict[int, Union[float, Sequence[float]]]
         self.user_attrs = dict()  # type: Dict[str, Any]
         self.system_attrs = dict()  # type: Dict[str, Any]
         self.params = dict()  # type: Dict[str, Any]
@@ -41,7 +41,9 @@ class _StudyInfo:
         self.updates = dict()  # type: Dict[int, _TrialUpdate]
         # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
-        self.direction = StudyDirection.NOT_SET  # type: StudyDirection
+        self.direction = (
+            StudyDirection.NOT_SET
+        )  # type: Union[StudyDirection, Sequence[StudyDirection]]
         self.name = None  # type: Optional[str]
 
 
@@ -142,22 +144,27 @@ class _CachedStorage(BaseStorage):
             self._studies[study_id].name = name
         return name
 
-    def get_study_direction(
-        self, study_id: int
-    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
+    def get_study_direction(self, study_id: int) -> Union[StudyDirection, Tuple[StudyDirection]]:
 
         with self._lock:
             if study_id in self._studies:
                 direction = self._studies[study_id].direction
                 if direction != StudyDirection.NOT_SET:
-                    return direction
+                    if isinstance(direction, StudyDirection):
+                        return direction
+                    else:
+                        return tuple(direction)
 
         direction = self._backend.get_study_direction(study_id)
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             self._studies[study_id].direction = direction
-        return direction
+
+        if isinstance(direction, StudyDirection):
+            return direction
+        else:
+            return tuple(direction)
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -274,14 +281,14 @@ class _CachedStorage(BaseStorage):
         trial = self.get_trial(trial_id)
         return trial.distributions[param_name].to_internal_repr(trial.params[param_name])
 
-    def set_trial_value(self, trial_id: int, value: float) -> None:
+    def set_trial_value(self, trial_id: int, value: Union[float, Sequence[float]]) -> None:
 
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
-                cached_trial.value = value
+                cached_trial.set_value(value)
                 updates.value = value
                 return
 
@@ -296,9 +303,7 @@ class _CachedStorage(BaseStorage):
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
-                intermediate_values = copy.copy(cached_trial.intermediate_values)
-                intermediate_values[step] = intermediate_value
-                cached_trial.intermediate_values = intermediate_values
+                cached_trial.set_intermediate_value(step, intermediate_value)
                 updates.intermediate_values[step] = intermediate_value
                 self._flush_trial(trial_id)
                 return

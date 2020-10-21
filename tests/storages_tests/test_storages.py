@@ -5,7 +5,9 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
+from typing import Union
 from unittest.mock import patch
 
 import pytest
@@ -194,13 +196,36 @@ def test_set_and_get_study_direction(storage_mode: str) -> None:
         for target, opposite in [
             (StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE),
             (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE),
+            (
+                (StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE),
+                (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE),
+            ),
+            (
+                [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE],
+                [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE],
+            ),
         ]:
 
             study_id = storage.create_new_study()
 
-            def check_set_and_get(direction: StudyDirection) -> None:
+            def check_set_and_get(
+                direction: Union[StudyDirection, Sequence[StudyDirection]]
+            ) -> None:
                 storage.set_study_direction(study_id, direction)
-                assert storage.get_study_direction(study_id) == direction
+                got_direction = storage.get_study_direction(study_id)
+
+                print(got_direction)
+                if isinstance(got_direction, StudyDirection):
+                    assert got_direction == direction
+                elif isinstance(got_direction, tuple):
+                    assert got_direction == tuple(direction)
+                else:
+                    assert (
+                        False
+                    ), (
+                        "Direction of a study shoule be a StudyDirection object or a tuple of "
+                        "such values."
+                    )
 
             assert storage.get_study_direction(study_id) == StudyDirection.NOT_SET
 
@@ -574,20 +599,26 @@ def test_set_trial_value(storage_mode: str) -> None:
         trial_id_1 = storage.create_new_trial(study_id)
         trial_id_2 = storage.create_new_trial(study_id)
         trial_id_3 = storage.create_new_trial(storage.create_new_study())
+        trial_id_4 = storage.create_new_trial(study_id)
+        trial_id_5 = storage.create_new_trial(study_id)
 
         # Test setting new value.
         storage.set_trial_value(trial_id_1, 0.5)
         storage.set_trial_value(trial_id_3, float("inf"))
+        storage.set_trial_value(trial_id_4, (0.1, 0.2, 0.3))
+        storage.set_trial_value(trial_id_5, [0.1, 0.2, 0.3])
 
         assert storage.get_trial(trial_id_1).value == 0.5
         assert storage.get_trial(trial_id_2).value is None
         assert storage.get_trial(trial_id_3).value == float("inf")
+        assert storage.get_trial(trial_id_4).value == (0.1, 0.2, 0.3)
+        assert storage.get_trial(trial_id_5).value == (0.1, 0.2, 0.3)
 
         # Values can be overwritten.
         storage.set_trial_value(trial_id_1, 0.2)
         assert storage.get_trial(trial_id_1).value == 0.2
 
-        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3) + 1
+        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3, trial_id_4, trial_id_5) + 1
         with pytest.raises(KeyError):
             storage.set_trial_value(non_existent_trial_id, 1)
 
@@ -607,6 +638,8 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         trial_id_1 = storage.create_new_trial(study_id)
         trial_id_2 = storage.create_new_trial(study_id)
         trial_id_3 = storage.create_new_trial(storage.create_new_study())
+        trial_id_4 = storage.create_new_trial(study_id)
+        trial_id_5 = storage.create_new_trial(study_id)
 
         # Test setting new values.
         storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
@@ -614,16 +647,20 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
         storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
         storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
+        storage.set_trial_intermediate_value(trial_id_4, 0, (0.1, 0.2, 0.3))
+        storage.set_trial_intermediate_value(trial_id_5, 0, [0.1, 0.2, 0.3])
 
         assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
         assert storage.get_trial(trial_id_2).intermediate_values == {}
         assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
+        assert storage.get_trial(trial_id_4).intermediate_values == {0: (0.1, 0.2, 0.3)}
+        assert storage.get_trial(trial_id_5).intermediate_values == {0: (0.1, 0.2, 0.3)}
 
         # Test setting existing step.
         storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
         assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.2, 2: 0.4}
 
-        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3) + 1
+        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3, trial_id_4, trial_id_5) + 1
         with pytest.raises(KeyError):
             storage.set_trial_intermediate_value(non_existent_trial_id, 0, 0.2)
 
