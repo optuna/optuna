@@ -3,6 +3,9 @@ from typing import Any
 from optuna.integration._lightgbm_tuner.optimize import _imports as _imports
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV  # NOQA
+from optuna.integration._lightgbm_tuner.steps import *
+from optuna.integration._lightgbm_tuner.stepwise import StepwiseLightGBMTuner
+from optuna.integration._lightgbm_tuner.stepwise import StepwiseLightGBMTunerCV  # NOQA
 
 
 if _imports.is_successful():

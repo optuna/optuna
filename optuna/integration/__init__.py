@@ -14,7 +14,13 @@ _import_structure = {
     "cma": ["CmaEsSampler", "PyCmaSampler"],
     "mlflow": ["MLflowCallback"],
     "keras": ["KerasPruningCallback"],
-    "lightgbm": ["LightGBMPruningCallback", "LightGBMTuner", "LightGBMTunerCV"],
+    "lightgbm": [
+        "LightGBMPruningCallback",
+        "LightGBMTuner",
+        "LightGBMTunerCV",
+        "StepwiseLightGBMTuner",
+        "StepwiseLightGBMTunerCV",
+    ],
     "pytorch_ignite": ["PyTorchIgnitePruningHandler"],
     "pytorch_lightning": ["PyTorchLightningPruningCallback"],
     "sklearn": ["OptunaSearchCV"],
@@ -45,6 +51,8 @@ if TYPE_CHECKING:
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMTuner  # NOQA
     from optuna.integration.lightgbm import LightGBMTunerCV  # NOQA
+    from optuna.integration.lightgbm import StepwiseLightGBMTuner  # NOQA
+    from optuna.integration.lightgbm import StepwiseLightGBMTunerCV  # NOQA
     from optuna.integration.mlflow import MLflowCallback  # NOQA
     from optuna.integration.mxnet import MXNetPruningCallback  # NOQA
     from optuna.integration.pytorch_ignite import PyTorchIgnitePruningHandler  # NOQA
