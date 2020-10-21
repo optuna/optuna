@@ -453,8 +453,6 @@ class RDBStorage(BaseStorage):
                     trial = self._get_prepared_new_trial(study_id, template_trial, session)
                 break  # Successfully created trial.
             except OperationalError:
-                session.rollback()
-
                 if n_retries > 2:
                     raise
 
@@ -585,10 +583,8 @@ class RDBStorage(BaseStorage):
                 .one_or_none()
             )
             if trial_model is None:
-                session.rollback()
                 raise KeyError(models.NOT_FOUND_MSG)
             if trial_model.state.is_finished():
-                session.rollback()
                 raise RuntimeError("Cannot change attributes of finished trial.")
             if (
                 state
@@ -693,7 +689,6 @@ class RDBStorage(BaseStorage):
             with _scoped_session(self.scoped_session) as session:
                 trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
                 if trial is None:
-                    session.rollback()
                     raise KeyError(models.NOT_FOUND_MSG)
 
                 self.check_trial_is_updatable(trial_id, trial.state)
