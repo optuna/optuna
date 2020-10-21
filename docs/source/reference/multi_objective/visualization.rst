@@ -1,3 +1,5 @@
+.. module:: optuna.multi_objective.visualization
+
 optuna.multi_objective.visualization
 ====================================
 
