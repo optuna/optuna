@@ -14,7 +14,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Type
 from typing import TypeVar
-from typing import Union, Sequence
+from typing import Union
 
 import numpy as np
 
@@ -23,7 +23,8 @@ from optuna import distributions
 from optuna import logging
 from optuna import pruners
 from optuna import samplers
-from optuna.study import StudyDirection, ObjectiveFuncType
+from optuna.study import ObjectiveFuncType
+from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 
 
@@ -243,7 +244,8 @@ class StepwiseTuner:
              A callable that implements objective function. The callable must accept
              a class:`~optuna.Trial` object and a dictionary of parameters to optimize.
         steps:
-            List of (step_name, :class:`~.Step`) tuples that will be optimized in the
+            List of (step_name, :class:`~.Step` or Callable[[Dict[str, Any]], class:`~.Step`])
+            tuples that will be optimized in the
             in the order in which they are listed.
         default_params:
             The parameters that will serve as a baseline for the optimization in order
