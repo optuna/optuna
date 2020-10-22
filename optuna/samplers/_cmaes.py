@@ -6,9 +6,11 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 import warnings
 
 from cmaes import CMA
+from cmaes import SepCMA
 import numpy as np
 
 import optuna
@@ -26,6 +28,9 @@ _logger = logging.get_logger(__name__)
 _EPS = 1e-10
 # The value of system_attrs must be less than 2046 characters on RDBStorage.
 _SYSTEM_ATTR_MAX_LENGTH = 2045
+
+
+CmaClass = Union[CMA, SepCMA]
 
 
 class CmaEsSampler(BaseSampler):
@@ -66,6 +71,9 @@ class CmaEsSampler(BaseSampler):
       size. In Proceedings of the IEEE Congress on Evolutionary Computation (CEC 2005),
       pages 1769–1776. IEEE Press, 2005.
       <http://www.cmap.polytechnique.fr/~nikolaus.hansen/cec2005ipopcmaes.pdf>`_
+    - `Raymond Ros, Nikolaus Hansen. A Simple Modification in CMA-ES Achieving Linear
+      Time and Space Complexity. Raport instytutowy, INRIA, 2008.
+      <https://hal.inria.fr/inria-00287367/document>`_
 
     .. seealso::
         You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
@@ -142,6 +150,16 @@ class CmaEsSampler(BaseSampler):
                 to set this flag :obj:`True` when the :class:`~optuna.pruners.HyperbandPruner` is
                 used. Please see `the benchmark result
                 <https://github.com/optuna/optuna/pull/1229>`_ for the details.
+
+        use_separable_cma:
+            If this is :obj:`True`, the covariance matrix is constrained to be diagonal.
+            Due to reduce the model complexity, the learning rate for the covariance matrix
+            is reduced. Consequently, this algorithm outperforms CMA-ES on separable functions.
+
+            .. note::
+                Added in v2.3.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.3.0.
     """
 
     def __init__(
@@ -155,7 +173,8 @@ class CmaEsSampler(BaseSampler):
         *,
         consider_pruned_trials: bool = False,
         restart_strategy: Optional[str] = None,
-        inc_popsize: int = 2
+        inc_popsize: int = 2,
+        use_separable_cma: bool = False
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
@@ -167,6 +186,7 @@ class CmaEsSampler(BaseSampler):
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
         self._inc_popsize = inc_popsize
+        self._use_separable_cma = use_separable_cma
 
         if self._restart_strategy:
             warnings.warn(
@@ -178,6 +198,13 @@ class CmaEsSampler(BaseSampler):
         if self._consider_pruned_trials:
             warnings.warn(
                 "`consider_pruned_trials` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
+        if self._use_separable_cma:
+            warnings.warn(
+                "`use_separable_cma` option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
@@ -323,7 +350,7 @@ class CmaEsSampler(BaseSampler):
     def _restore_optimizer(
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
-    ) -> Tuple[Optional[CMA], int]:
+    ) -> Tuple[Optional[CmaClass], int]:
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
@@ -349,7 +376,7 @@ class CmaEsSampler(BaseSampler):
         ordered_keys: List[str],
         population_size: Optional[int] = None,
         randomize_start_point: bool = False,
-    ) -> CMA:
+    ) -> CmaClass:
         if randomize_start_point:
             # `_initialize_x0_randomly ` returns internal representations.
             x0 = _initialize_x0_randomly(self._cma_rng, search_space)
@@ -373,6 +400,17 @@ class CmaEsSampler(BaseSampler):
         sigma0 = max(sigma0, _EPS)
         bounds = _get_search_space_bound(ordered_keys, search_space)
         n_dimension = len(ordered_keys)
+
+        if self._use_separable_cma:
+            return SepCMA(
+                mean=mean,
+                sigma=sigma0,
+                bounds=bounds,
+                seed=self._cma_rng.randint(1, 2 ** 31 - 2),
+                n_max_resampling=10 * n_dimension,
+                population_size=population_size,
+            )
+
         return CMA(
             mean=mean,
             sigma=sigma0,
