@@ -75,7 +75,7 @@ class BaseStudy(object):
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
     @property
-    def direction(self) -> Union[StudyDirection, Sequence[StudyDirection]]:
+    def direction(self) -> Union[StudyDirection, Tuple[StudyDirection]]:
         """Return the direction of the study.
 
         Returns:
