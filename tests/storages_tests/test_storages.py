@@ -220,9 +220,7 @@ def test_set_and_get_study_direction(storage_mode: str) -> None:
                 elif isinstance(got_direction, tuple):
                     assert got_direction == tuple(direction)
                 else:
-                    assert (
-                        False
-                    ), (
+                    assert False, (
                         "Direction of a study shoule be a StudyDirection object or a tuple of "
                         "such values."
                     )

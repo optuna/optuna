@@ -302,7 +302,7 @@ class InMemoryStorage(BaseStorage):
             trial = copy.copy(trial)
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            trial.set_value(value)
+            trial.value = value
             self._set_trial(trial_id, trial)
 
     def _update_cache(self, trial_id: int, study_id: int) -> None:
@@ -342,8 +342,9 @@ class InMemoryStorage(BaseStorage):
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial = copy.copy(trial)
-            trial.intermediate_values = copy.copy(trial.intermediate_values)
-            trial.set_intermediate_value(step, intermediate_value)
+            intermediate_values = copy.copy(trial.intermediate_values)
+            intermediate_values[step] = intermediate_value
+            trial.intermediate_values = intermediate_values
             self._set_trial(trial_id, trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:

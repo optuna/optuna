@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from typing import Union
 
 from optuna import distributions
@@ -133,21 +134,13 @@ class FrozenTrial(BaseTrial):
 
         self._number = number
         self.state = state
-        if isinstance(value, Sequence):
-            self.value = tuple(value)
-        else:
-            self.value = value
+        self._value = value
         self._datetime_start = datetime_start
         self.datetime_complete = datetime_complete
         self._params = params
         self._user_attrs = user_attrs
         self._system_attrs = system_attrs
-        self.intermediate_values = {}
-        for step in intermediate_values.keys():
-            if isinstance(intermediate_values[step], Sequence):
-                self.intermediate_values[step] = tuple(intermediate_values[step])
-            else:
-                self.intermediate_values[step] = intermediate_values[step]
+        self._intermediate_values = intermediate_values
         self._distributions = distributions
         self._trial_id = trial_id
 
@@ -306,20 +299,6 @@ class FrozenTrial(BaseTrial):
 
         self._system_attrs[key] = value
 
-    def set_value(self, value: Union[float, Sequence[float]]) -> None:
-
-        if isinstance(value, Sequence):
-            self.value = tuple(value)
-        else:
-            self.value = value
-
-    def set_intermediate_value(self, step: int, value: Union[float, Sequence[float]]) -> None:
-
-        if isinstance(value, Sequence):
-            self.intermediate_values[step] = tuple(value)
-        else:
-            self.intermediate_values[step] = value
-
     def _validate(self) -> None:
 
         if self.datetime_start is None:
@@ -388,6 +367,19 @@ class FrozenTrial(BaseTrial):
         self._number = value
 
     @property
+    def value(self) -> Union[float, Tuple[float]]:
+
+        if isinstance(self._value, Sequence):
+            return tuple(self._value)
+        else:
+            return self._value
+
+    @value.setter
+    def value(self, v: Union[float, Sequence[float]]) -> None:
+
+        self._value = v
+
+    @property
     def datetime_start(self) -> Optional[datetime.datetime]:
 
         return self._datetime_start
@@ -406,6 +398,23 @@ class FrozenTrial(BaseTrial):
     def params(self, params: Dict[str, Any]) -> None:
 
         self._params = params
+
+    @property
+    def intermediate_values(self) -> Dict[int, Union[float, Tuple[float]]]:
+
+        value = {}
+        for k, v in self._intermediate_values.items():
+            if isinstance(v, Sequence):
+                value[k] = tuple(v)
+            else:
+                value[k] = v
+
+        return value
+
+    @intermediate_values.setter
+    def intermediate_values(self, value: Dict[int, Union[float, Sequence[float]]]) -> None:
+
+        self._intermediate_values = value
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
