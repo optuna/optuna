@@ -239,9 +239,9 @@ class FrozenTrial(BaseTrial):
                     "The specified `step` is {}.".format(step)
                 )
             else:
-                distribution: Union[IntUniformDistribution, IntLogUniformDistribution] = IntUniformDistribution(
-                    low=low, high=high, step=step
-                )
+                distribution: Union[
+                    IntUniformDistribution, IntLogUniformDistribution
+                ] = IntUniformDistribution(low=low, high=high, step=step)
         else:
             if log:
                 distribution = IntLogUniformDistribution(low=low, high=high)

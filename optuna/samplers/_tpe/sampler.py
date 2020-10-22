@@ -800,9 +800,7 @@ def _get_multivariate_observation_pairs(
         sign = -1
 
     scores = []
-    values: Dict[str, List[Optional[float]]] = {
-        param_name: [] for param_name in param_names
-    }
+    values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
 
         # We extract score from the trial.

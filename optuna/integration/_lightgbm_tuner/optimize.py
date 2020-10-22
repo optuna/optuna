@@ -395,9 +395,9 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._parse_args(*args, **kwargs)
         self._start_time: Optional[float] = None
         self._optuna_callbacks = optuna_callbacks
-        self._best_booster_with_trial_number: Optional[Tuple[Union[lgb.Booster, lgb.CVBooster], int]] = (
-            None
-        )
+        self._best_booster_with_trial_number: Optional[
+            Tuple[Union[lgb.Booster, lgb.CVBooster], int]
+        ] = None
         self._model_dir = model_dir
 
         # Should not alter data since `min_data_in_leaf` is tuned.

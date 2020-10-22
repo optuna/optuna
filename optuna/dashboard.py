@@ -192,9 +192,7 @@ if _imports.is_successful():
         def __call__(self, doc: bokeh.document.Document) -> None:
 
             self.doc = doc
-            self.current_trials: Optional[List[optuna.trial.FrozenTrial]] = (
-                self.study.trials
-            )
+            self.current_trials: Optional[List[optuna.trial.FrozenTrial]] = self.study.trials
             self.new_trials: Optional[List[optuna.trial.FrozenTrial]] = None
             self.complete_trials_widget = _CompleteTrialsWidget(
                 self.current_trials, self.study.direction

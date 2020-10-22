@@ -723,9 +723,7 @@ class TestLightGBMTunerCV(object):
     ) -> LightGBMTunerCV:
 
         # Required keyword arguments.
-        kwargs: Dict[str, Any] = dict(
-            num_boost_round=5, early_stopping_rounds=2, study=study
-        )
+        kwargs: Dict[str, Any] = dict(num_boost_round=5, early_stopping_rounds=2, study=study)
         kwargs.update(kwargs_options)
 
         runner = LightGBMTunerCV(params, train_set, **kwargs)
