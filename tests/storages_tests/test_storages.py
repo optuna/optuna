@@ -747,7 +747,7 @@ def test_get_all_study_summaries(storage_mode: str) -> None:
         summaries = storage.get_all_study_summaries()
         assert len(summaries) == len(expected_summaries)
         for _, expected_summary in expected_summaries.items():
-            summary = None  # type: Optional[StudySummary]
+            summary: Optional[StudySummary] = None
             for s in summaries:
                 if s.study_name == expected_summary.study_name:
                     summary = s
@@ -892,8 +892,8 @@ def _setup_studies(
     direction: Optional[StudyDirection] = None,
 ) -> Tuple[Dict[int, StudySummary], Dict[int, Dict[int, FrozenTrial]]]:
     generator = random.Random(seed)
-    study_id_to_summary = {}  # type: Dict[int, StudySummary]
-    study_id_to_trials = {}  # type: Dict[int, Dict[int, FrozenTrial]]
+    study_id_to_summary: Dict[int, StudySummary] = {}
+    study_id_to_trials: Dict[int, Dict[int, FrozenTrial]] = {}
     for i in range(n_study):
         study_name = "test-study-name-{}".format(i)
         study_id = storage.create_new_study(study_name=study_name)

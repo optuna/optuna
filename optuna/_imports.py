@@ -13,7 +13,7 @@ class _DeferredImportExceptionContextManager(object):
     """
 
     def __init__(self) -> None:
-        self._deferred = None  # type: Optional[Tuple[Exception, str]]
+        self._deferred: Optional[Tuple[Exception, str]] = None
 
     def __enter__(self) -> "_DeferredImportExceptionContextManager":
         """Enter the context manager.

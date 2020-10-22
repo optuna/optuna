@@ -355,14 +355,14 @@ class RDBStorage(BaseStorage):
         study_summary = study_summary_stmt.all()
         study_summaries = []
         for study in study_summary:
-            best_trial = None  # type: Optional[models.TrialModel]
+            best_trial: Optional[models.TrialModel] = None
             try:
                 if study.direction == StudyDirection.MAXIMIZE:
                     best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
                 else:
                     best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
             except ValueError:
-                best_trial_frozen = None  # type: Optional[FrozenTrial]
+                best_trial_frozen: Optional[FrozenTrial] = None
             if best_trial:
                 params = (
                     session.query(

@@ -432,9 +432,9 @@ class Trial(BaseTrial):
                     "The specified `step` is {}.".format(step)
                 )
             else:
-                distribution = IntUniformDistribution(
+                distribution: Union[IntUniformDistribution, IntLogUniformDistribution] = IntUniformDistribution(
                     low=low, high=high, step=step
-                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+                )
         else:
             if log:
                 distribution = IntLogUniformDistribution(low=low, high=high)
