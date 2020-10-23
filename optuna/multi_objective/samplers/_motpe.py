@@ -95,7 +95,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
 
         .. testcode::
 
-                import numpy as np
+                import optuna
 
                 seed = 128
                 num_variables = 9
@@ -104,7 +104,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
                 def objective(trial):
                     x = []
                     for i in range(1, num_variables + 1):
-                        x.append(trial.suggest_uniform(f"x{i}", 0.0, 2.0 * i))
+                        x.append(trial.suggest_float(f"x{i}", 0.0, 2.0 * i))
                     return x
 
                 sampler = optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler(
@@ -112,6 +112,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
                     n_ehvi_candidates=24,
                     seed=seed
                 )
+                study = optuna.multi_objective.create_study(["minimize"] * num_variables)
                 study.optimize(objective, n_trials=250)
     """
 
