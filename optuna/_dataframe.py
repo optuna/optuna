@@ -30,7 +30,7 @@ def _trials_dataframe(
     if not len(trials):
         return pd.DataFrame()
 
-    attrs_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
+    attrs_to_df_columns: Dict[str, str] = collections.OrderedDict()
     for attr in attrs:
         if attr.startswith("_"):
             # Python conventional underscores are omitted in the dataframe.
@@ -42,7 +42,7 @@ def _trials_dataframe(
     # column_agg is an aggregator of column names.
     # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
     # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
-    column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
+    column_agg: Dict[str, Set] = collections.defaultdict(set)
     non_nested_attr = ""
 
     def _create_record_and_aggregate_column(
@@ -66,9 +66,9 @@ def _trials_dataframe(
 
     records = list([_create_record_and_aggregate_column(trial) for trial in trials])
 
-    columns = sum(
+    columns: List[Tuple[str, str]] = sum(
         (sorted(column_agg[k]) for k in attrs if k in column_agg), []
-    )  # type: List[Tuple[str, str]]
+    )
 
     df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
 

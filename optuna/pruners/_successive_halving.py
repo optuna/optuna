@@ -137,7 +137,7 @@ class SuccessiveHalvingPruner(BasePruner):
                 "but must be `min_early_stopping_rate >= 0`".format(min_early_stopping_rate)
             )
 
-        self._min_resource = None  # type: Optional[int]
+        self._min_resource: Optional[int] = None
         if isinstance(min_resource, int):
             self._min_resource = min_resource
         self._reduction_factor = reduction_factor
@@ -151,7 +151,7 @@ class SuccessiveHalvingPruner(BasePruner):
 
         rung = _get_current_rung(trial)
         value = trial.intermediate_values[step]
-        trials = None  # type: Optional[List["optuna.trial.FrozenTrial"]]
+        trials: Optional[List["optuna.trial.FrozenTrial"]] = None
 
         while True:
             if self._min_resource is None:

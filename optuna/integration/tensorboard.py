@@ -34,7 +34,7 @@ class TensorBoardCallback(object):
         _imports.check()
         self._dirname = dirname
         self._metric_name = metric_name
-        self._hp_params = dict()  # type: Dict[str, hp.HParam]
+        self._hp_params: Dict[str, hp.HParam] = dict()
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
         if len(self._hp_params) == 0:
