@@ -20,7 +20,7 @@ from functools import partial
 from fastai import vision
 
 import optuna
-from optuna.integration import FastAIPruningCallback
+from optuna.integration import FastAIV1PruningCallback
 
 
 BATCHSIZE = 128
@@ -63,7 +63,7 @@ def objective(trial):
         model,
         silent=True,
         metrics=[vision.accuracy],
-        callback_fns=[partial(FastAIPruningCallback, trial=trial, monitor="valid_loss")],
+        callback_fns=[partial(FastAIV1PruningCallback, trial=trial, monitor="valid_loss")],
     )
     learn.fit(EPOCHS)
 

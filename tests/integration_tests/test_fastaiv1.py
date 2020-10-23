@@ -13,7 +13,7 @@ import torch.utils.data
 from torch.utils.data import Dataset
 
 import optuna
-from optuna.integration import FastAIPruningCallback
+from optuna.integration import FastAIV1PruningCallback
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -61,7 +61,7 @@ def test_fastai_pruning_callback(tmpdir: Any) -> None:
             data_bunch,
             model,
             metrics=[accuracy],
-            callback_fns=[partial(FastAIPruningCallback, trial=trial, monitor="valid_loss")],
+            callback_fns=[partial(FastAIV1PruningCallback, trial=trial, monitor="valid_loss")],
         )
 
         learn.fit(1)

@@ -25,7 +25,8 @@ _import_structure = {
     "tensorflow": ["TensorFlowPruningHook"],
     "tfkeras": ["TFKerasPruningCallback"],
     "xgboost": ["XGBoostPruningCallback"],
-    "fastai": ["FastAIPruningCallback"],
+    "fastaiv1": ["FastAIPruningCallback", "FastAIV1PruningCallback"],
+    "fastaiv2": ["FastAIV2PruningCallback"],
 }
 
 
@@ -40,7 +41,9 @@ if TYPE_CHECKING:
     from optuna.integration.chainermn import ChainerMNStudy  # NOQA
     from optuna.integration.cma import CmaEsSampler  # NOQA
     from optuna.integration.cma import PyCmaSampler  # NOQA
-    from optuna.integration.fastai import FastAIPruningCallback  # NOQA
+    from optuna.integration.fastaiv1 import FastAIPruningCallback  # NOQA
+    from optuna.integration.fastaiv1 import FastAIV1PruningCallback  # NOQA
+    from optuna.integration.fastaiv2 import FastAIV2PruningCallback  # NOQA
     from optuna.integration.keras import KerasPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMTuner  # NOQA
