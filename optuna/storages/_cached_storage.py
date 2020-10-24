@@ -21,11 +21,11 @@ class _TrialUpdate:
     def __init__(self) -> None:
         self.state: Optional[TrialState] = None
         self.value: Optional[float] = None
-        self.intermediate_values: Dict[int, float] = dict()
-        self.user_attrs: Dict[str, Any] = dict()
-        self.system_attrs: Dict[str, Any] = dict()
-        self.params: Dict[str, Any] = dict()
-        self.distributions: Dict[str, distributions.BaseDistribution] = dict()
+        self.intermediate_values: Dict[int, float] = {}
+        self.user_attrs: Dict[str, Any] = {}
+        self.system_attrs: Dict[str, Any] = {}
+        self.params: Dict[str, Any] = {}
+        self.distributions: Dict[str, distributions.BaseDistribution] = {}
         self.datetime_complete: Optional[datetime.datetime] = None
 
 
@@ -36,7 +36,7 @@ class _StudyInfo:
         # A list of trials which do not require storage access to read latest attributes.
         self.owned_or_finished_trial_ids: Set[int] = set()
         # Cache any writes which are not reflected to the actual storage yet in updates.
-        self.updates: Dict[int, _TrialUpdate] = dict()
+        self.updates: Dict[int, _TrialUpdate] = {}
         # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
         self.direction: StudyDirection = StudyDirection.NOT_SET
@@ -57,7 +57,7 @@ class _CachedStorage(BaseStorage):
     def __init__(self, backend: RDBStorage) -> None:
         self._backend = backend
         self._studies: Dict[int, _StudyInfo] = {}
-        self._trial_id_to_study_id_and_number: Dict[int, Tuple[int, int]] = dict()
+        self._trial_id_to_study_id_and_number: Dict[int, Tuple[int, int]] = {}
         self._lock = threading.Lock()
 
     def __getstate__(self) -> Dict[Any, Any]:
