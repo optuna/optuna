@@ -56,9 +56,9 @@ class _Fanova(object):
             min_samples_leaf=min_samples_leaf,
             random_state=seed,
         )
-        self._trees = None  # type: Optional[List[_FanovaTree]]
-        self._variances = None  # type: Optional[Dict[Tuple[int, ...], numpy.ndarray]]
-        self._features_to_raw_features = None  # type: Optional[List[numpy.ndarray]]
+        self._trees: Optional[List[_FanovaTree]] = None
+        self._variances: Optional[Dict[Tuple[int, ...], numpy.ndarray]] = None
+        self._features_to_raw_features: Optional[List[numpy.ndarray]] = None
 
     def fit(
         self,
@@ -93,7 +93,7 @@ class _Fanova(object):
 
         self._compute_variances(features)
 
-        fractions = []  # type: Union[List[float], numpy.ndarray]
+        fractions: Union[List[float], numpy.ndarray] = []
 
         for tree_index, tree in enumerate(self._trees):
             tree_variance = tree.variance
@@ -140,7 +140,7 @@ class _CategoricalFeaturesOneHotEncoder(object):
     def __init__(self) -> None:
         # `features_to_raw_features["column index in original matrix"]
         #     == "numpy.ndarray with corresponding columns in the transformed matrix"`
-        self.features_to_raw_features = None  # type: Optional[List[numpy.ndarray]]
+        self.features_to_raw_features: Optional[List[numpy.ndarray]] = None
 
     def fit_transform(
         self,
@@ -185,7 +185,7 @@ class _CategoricalFeaturesOneHotEncoder(object):
         # `ColumnTransformer.fit_transform`.
         X = transformer.fit_transform(X)
 
-        features_to_raw_features = [None for _ in range(n_features)]  # type: List[numpy.ndarray]
+        features_to_raw_features: List[numpy.ndarray] = [None for _ in range(n_features)]
         i = 0
         if len(categorical_features) > 0:
             categories = transformer.transformers_[0][1].categories_

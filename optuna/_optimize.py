@@ -76,7 +76,7 @@ def _optimize(
 
                 if timeout is not None:
                     # This is needed for mypy.
-                    t = timeout  # type: float
+                    t: float = timeout
                     return (datetime.datetime.now() - time_start).total_seconds() > t
 
                 return False
