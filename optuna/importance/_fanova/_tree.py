@@ -65,8 +65,8 @@ class _FanovaTree(object):
 
         sample = numpy.full(self._n_features, fill_value=numpy.nan, dtype=numpy.float64)
 
-        values = []  # type: Union[List[float], numpy.ndarray]
-        weights = []  # type: Union[List[float], numpy.ndarray]
+        values: Union[List[float], numpy.ndarray] = []
+        weights: Union[List[float], numpy.ndarray] = []
 
         for midpoints, sizes in zip(product_midpoints, product_sizes):
             sample[features] = numpy.array(midpoints)
@@ -213,7 +213,7 @@ class _FanovaTree(object):
         return midpoints, sizes
 
     def _compute_features_split_values(self) -> List[numpy.ndarray]:
-        all_split_values = [set() for _ in range(self._n_features)]  # type: List[Set[float]]
+        all_split_values: List[Set[float]] = [set() for _ in range(self._n_features)]
 
         for node_index in range(self._n_nodes):
             feature = self._get_node_split_feature(node_index)
@@ -221,7 +221,7 @@ class _FanovaTree(object):
                 threshold = self._get_node_split_threshold(node_index)
                 all_split_values[feature].add(threshold)
 
-        sorted_all_split_values = []  # type: List[numpy.ndarray]
+        sorted_all_split_values: List[numpy.ndarray] = []
 
         for split_values in all_split_values:
             split_values_array = numpy.array(list(split_values), dtype=numpy.float64)

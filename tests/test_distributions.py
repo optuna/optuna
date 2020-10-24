@@ -10,7 +10,7 @@ import pytest
 from optuna import distributions
 
 
-EXAMPLE_DISTRIBUTIONS = {
+EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
     "u": distributions.UniformDistribution(low=1.0, high=2.0),
     "l": distributions.LogUniformDistribution(low=0.001, high=100),
     "du": distributions.DiscreteUniformDistribution(low=1.0, high=9.0, q=2.0),
@@ -19,7 +19,7 @@ EXAMPLE_DISTRIBUTIONS = {
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
     "c3": distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"]),
     "ilu": distributions.IntLogUniformDistribution(low=2, high=12, step=2),
-}  # type: Dict[str, Any]
+}
 
 EXAMPLE_JSONS = {
     "u": '{"name": "UniformDistribution", "attributes": {"low": 1.0, "high": 2.0}}',
@@ -222,7 +222,7 @@ def test_single() -> None:
     with warnings.catch_warnings():
         # UserWarning will be raised since the range is not divisible by step.
         warnings.simplefilter("ignore", category=UserWarning)
-        single_distributions = [
+        single_distributions: List[distributions.BaseDistribution] = [
             distributions.UniformDistribution(low=1.0, high=1.0),
             distributions.LogUniformDistribution(low=7.3, high=7.3),
             distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
@@ -231,11 +231,11 @@ def test_single() -> None:
             distributions.IntUniformDistribution(low=-123, high=-120, step=4),
             distributions.CategoricalDistribution(choices=("foo",)),
             distributions.IntLogUniformDistribution(low=2, high=2),
-        ]  # type: List[distributions.BaseDistribution]
+        ]
     for distribution in single_distributions:
         assert distribution.single()
 
-    nonsingle_distributions = [
+    nonsingle_distributions: List[distributions.BaseDistribution] = [
         distributions.UniformDistribution(low=1.0, high=1.001),
         distributions.LogUniformDistribution(low=7.3, high=10),
         distributions.DiscreteUniformDistribution(low=-30, high=-20, q=2),
@@ -247,7 +247,7 @@ def test_single() -> None:
         distributions.IntUniformDistribution(low=-123, high=0, step=123),
         distributions.CategoricalDistribution(choices=("foo", "bar")),
         distributions.IntLogUniformDistribution(low=2, high=4),
-    ]  # type: List[distributions.BaseDistribution]
+    ]
     for distribution in nonsingle_distributions:
         assert not distribution.single()
 

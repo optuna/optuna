@@ -19,28 +19,28 @@ from optuna.trial import TrialState
 
 class _TrialUpdate:
     def __init__(self) -> None:
-        self.state = None  # type: Optional[TrialState]
-        self.value = None  # type: Optional[float]
-        self.intermediate_values = dict()  # type: Dict[int, float]
-        self.user_attrs = dict()  # type: Dict[str, Any]
-        self.system_attrs = dict()  # type: Dict[str, Any]
-        self.params = dict()  # type: Dict[str, Any]
-        self.distributions = dict()  # type: Dict[str, distributions.BaseDistribution]
-        self.datetime_complete = None  # type: Optional[datetime.datetime]
+        self.state: Optional[TrialState] = None
+        self.value: Optional[float] = None
+        self.intermediate_values: Dict[int, float] = {}
+        self.user_attrs: Dict[str, Any] = {}
+        self.system_attrs: Dict[str, Any] = {}
+        self.params: Dict[str, Any] = {}
+        self.distributions: Dict[str, distributions.BaseDistribution] = {}
+        self.datetime_complete: Optional[datetime.datetime] = None
 
 
 class _StudyInfo:
     def __init__(self) -> None:
         # Trial number to corresponding FrozenTrial.
-        self.trials = {}  # type: Dict[int, FrozenTrial]
+        self.trials: Dict[int, FrozenTrial] = {}
         # A list of trials which do not require storage access to read latest attributes.
-        self.owned_or_finished_trial_ids = set()  # type: Set[int]
+        self.owned_or_finished_trial_ids: Set[int] = set()
         # Cache any writes which are not reflected to the actual storage yet in updates.
-        self.updates = dict()  # type: Dict[int, _TrialUpdate]
+        self.updates: Dict[int, _TrialUpdate] = {}
         # Cache distributions to avoid storage access on distribution consistency check.
-        self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
-        self.direction = StudyDirection.NOT_SET  # type: StudyDirection
-        self.name = None  # type: Optional[str]
+        self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
+        self.direction: StudyDirection = StudyDirection.NOT_SET
+        self.name: Optional[str] = None
 
 
 class _CachedStorage(BaseStorage):
@@ -56,8 +56,8 @@ class _CachedStorage(BaseStorage):
 
     def __init__(self, backend: RDBStorage) -> None:
         self._backend = backend
-        self._studies = {}  # type: Dict[int, _StudyInfo]
-        self._trial_id_to_study_id_and_number = dict()  # type: Dict[int, Tuple[int, int]]
+        self._studies: Dict[int, _StudyInfo] = {}
+        self._trial_id_to_study_id_and_number: Dict[int, Tuple[int, int]] = {}
         self._lock = threading.Lock()
 
     def __getstate__(self) -> Dict[Any, Any]:

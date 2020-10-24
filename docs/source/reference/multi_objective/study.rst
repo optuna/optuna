@@ -1,3 +1,5 @@
+.. module:: optuna.multi_objective.study
+
 optuna.multi_objective.study
 ============================
 

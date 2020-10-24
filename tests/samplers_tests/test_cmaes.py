@@ -246,7 +246,7 @@ def test_restore_optimizer_from_substrings() -> None:
     optimizer = CMA(np.zeros(10), sigma=1.3)
     optimizer_str = pickle.dumps(optimizer).hex()
 
-    system_attrs = _split_optimizer_str(optimizer_str)  # type: Dict[str, Any]
+    system_attrs: Dict[str, Any] = _split_optimizer_str(optimizer_str)
     assert len(system_attrs) > 1
     system_attrs["cma:n_restarts"] = 1
 

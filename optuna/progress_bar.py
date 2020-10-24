@@ -8,7 +8,7 @@ from optuna import logging as optuna_logging
 from optuna._experimental import experimental
 
 
-_tqdm_handler = None  # type: Optional[_TqdmLoggingHandler]
+_tqdm_handler: Optional["_TqdmLoggingHandler"] = None
 
 
 # Reference: https://gist.github.com/hvy/8b80c2cedf02b15c24f85d1fa17ebe02
