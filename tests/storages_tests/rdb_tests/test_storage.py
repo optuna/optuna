@@ -148,7 +148,7 @@ def test_scoped_session() -> None:
     # This object violates the unique constraint of version_info_id.
     v = VersionInfoModel(version_info_id=1, schema_version=1, library_version="0.0.1")
     with pytest.raises(IntegrityError):
-        with _scoped_session(storage.scoped_session) as session:
+        with _scoped_session(storage.scoped_session, False) as session:
             session.add(v)
 
 

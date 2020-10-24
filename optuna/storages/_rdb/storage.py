@@ -42,7 +42,10 @@ _logger = optuna.logging.get_logger(__name__)
 
 
 @contextmanager
-def _scoped_session(scoped_session: orm.scoped_session) -> Generator[orm.Session, None, None]:
+def _scoped_session(
+    scoped_session: orm.scoped_session,
+    ignore_integrity_error: bool = True,
+) -> Generator[orm.Session, None, None]:
     session = scoped_session()
     try:
         yield session
@@ -53,7 +56,8 @@ def _scoped_session(scoped_session: orm.scoped_session) -> Generator[orm.Session
             "Another one might have committed a record with the same key(s).".format(repr(e))
         )
         session.rollback()
-        raise
+        if not ignore_integrity_error:
+            raise
     except SQLAlchemyError as e:
         session.rollback()
         message = (
@@ -177,7 +181,7 @@ class RDBStorage(BaseStorage):
     def create_new_study(self, study_name: Optional[str] = None) -> int:
 
         try:
-            with _scoped_session(self.scoped_session) as session:
+            with _scoped_session(self.scoped_session, False) as session:
                 if study_name is None:
                     study_name = self._create_unique_study_name(session)
 
@@ -689,7 +693,7 @@ class RDBStorage(BaseStorage):
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
 
         try:
-            with _scoped_session(self.scoped_session) as session:
+            with _scoped_session(self.scoped_session, False) as session:
                 trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
                 if trial is None:
                     raise KeyError(models.NOT_FOUND_MSG)
