@@ -351,9 +351,13 @@ class RDBStorage(BaseStorage):
                 best_trial: Optional[models.TrialModel] = None
                 try:
                     if study.direction == StudyDirection.MAXIMIZE:
-                        best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
+                        best_trial = models.TrialModel.find_max_value_trial(
+                            study.study_id, session
+                        )
                     else:
-                        best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
+                        best_trial = models.TrialModel.find_min_value_trial(
+                            study.study_id, session
+                        )
                 except ValueError:
                     best_trial_frozen: Optional[FrozenTrial] = None
                 if best_trial:
