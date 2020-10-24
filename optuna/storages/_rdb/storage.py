@@ -51,12 +51,13 @@ def _scoped_session(
         yield session
         session.commit()
     except IntegrityError as e:
-        _logger.debug(
-            "Ignoring {}. This happens due to a timing issue among threads/processes/nodes. "
-            "Another one might have committed a record with the same key(s).".format(repr(e))
-        )
         session.rollback()
-        if not ignore_integrity_error:
+        if ignore_integrity_error:
+            _logger.debug(
+                "Ignoring {}. This happens due to a timing issue among threads/processes/nodes. "
+                "Another one might have committed a record with the same key(s).".format(repr(e))
+            )
+        else:
             raise
     except SQLAlchemyError as e:
         session.rollback()
