@@ -36,7 +36,7 @@ def objective(trial):
     trial.suggest_int("HIDDEN_SIZE", 16, 32)
 
     serialization_dir = os.path.join(MODEL_DIR, "test_{}".format(trial.number))
-    executor = AllenNLPExecutor(trial, CONFIG_PATH, serialization_dir, recover=True)
+    executor = AllenNLPExecutor(trial, CONFIG_PATH, serialization_dir, force=True)
 
     return executor.run()
 

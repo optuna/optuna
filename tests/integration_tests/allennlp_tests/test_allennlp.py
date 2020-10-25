@@ -183,13 +183,11 @@ def test_allennlp_executor_with_options() -> None:
             trial,
             "tests/integration_tests/allennlp_tests/example_with_include_package.jsonnet",
             tmp_dir,
-            recover=True,
             force=True,
             file_friendly_logging=True,
             include_package=["tests.integration_tests.allennlp_tests.tiny_single_id"],
         )
 
-        assert executor._recover
         assert executor._force
         assert executor._file_friendly_logging
 
