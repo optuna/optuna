@@ -9,7 +9,9 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
+from typing import Union
 from unittest.mock import Mock  # NOQA
 from unittest.mock import patch
 import uuid
@@ -75,10 +77,12 @@ def check_params(params: Dict[str, Any]) -> None:
     assert sorted(params.keys()) == ["x", "y", "z"]
 
 
-def check_value(value: Optional[float]) -> None:
+def check_value(value: Optional[Union[float, Sequence[float]]]) -> None:
 
-    assert isinstance(value, float)
-    assert -1.0 <= value <= 12.0 ** 2 + 5.0 ** 2 + 1.0
+    if isinstance(value, float):
+        assert -1.0 <= value <= 12.0 ** 2 + 5.0 ** 2 + 1.0
+    else:
+        assert isinstance(value, Sequence)
 
 
 def check_frozen_trial(frozen_trial: optuna.trial.FrozenTrial) -> None:
@@ -1024,6 +1028,7 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
 
     print(study.trials)
     for trial in study.trials:
+        assert isinstance(trial.value, Sequence)
         assert len(trial.value) == n_objectives
 
 

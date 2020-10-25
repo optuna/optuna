@@ -6,6 +6,7 @@ from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 import numpy as np
@@ -322,8 +323,8 @@ def _crowding_distance_sort(
 
         v_min = population[0].values[i]
         v_max = population[-1].values[i]
-        assert v_min is not None
-        assert v_max is not None
+        assert v_min is not None and not isinstance(v_min, Sequence)
+        assert v_max is not None and not isinstance(v_max, Sequence)
 
         width = v_max - v_min
         if width == 0:
@@ -335,8 +336,8 @@ def _crowding_distance_sort(
         for j in range(1, len(population) - 1):
             v_high = population[j + 1].values[i]
             v_low = population[j - 1].values[i]
-            assert v_high is not None
-            assert v_low is not None
+            assert v_high is not None and not isinstance(v_high, Sequence)
+            assert v_low is not None and not isinstance(v_low, Sequence)
 
             manhattan_distances[population[j].number] += (v_high - v_low) / width
 

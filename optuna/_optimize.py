@@ -213,13 +213,13 @@ def _run_trial(
             return trial
         raise
 
-    value, failure_message = _check_value(study.n_objectives, value, trial)
+    checked_value, failure_message = _check_value(study.n_objectives, value, trial)
 
     if failure_message is None:
-        assert value is not None
-        study._storage.set_trial_value(trial_id, value)
+        assert checked_value is not None
+        study._storage.set_trial_value(trial_id, checked_value)
         study._storage.set_trial_state(trial_id, TrialState.COMPLETE)
-        study._log_completed_trial(trial, value)
+        study._log_completed_trial(trial, checked_value)
     else:
         study._storage.set_trial_system_attr(trial_id, "fail_reason", failure_message)
         study._storage.set_trial_state(trial_id, TrialState.FAIL)
@@ -230,8 +230,8 @@ def _run_trial(
 
 def _check_value(
     n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
-) -> Tuple[Union[float, Sequence[float]], Optional[str]]:
-    value = None
+) -> Tuple[Optional[Union[float, Sequence[float]]], Optional[str]]:
+    value: Optional[Union[float, Sequence[float]]] = None
     failure_message = None
 
     trial_number = trial.number
@@ -246,14 +246,14 @@ def _check_value(
         else:
             value = []
             for v in original_value:
-                v, failure_message = _check_single_value(v, trial)
+                checked_v, failure_message = _check_single_value(v, trial)
                 if failure_message is not None:
                     # `value` is assumed to be ignored on failure so we can set it to any value.
                     value = None
                     continue
                 else:
-                    value.append(v)
-            value = tuple(value)
+                    assert isinstance(value, list)
+                    value.append(checked_v)
     else:
         value, failure_message = _check_single_value(original_value, trial)
 
@@ -262,7 +262,7 @@ def _check_value(
 
 def _check_single_value(
     original_value: float, trial: trial_module.Trial
-) -> Tuple[float, Optional[str]]:
+) -> Tuple[Optional[float], Optional[str]]:
     value = None
     failure_message = None
 

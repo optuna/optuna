@@ -3,7 +3,6 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 
 from optuna import distributions
@@ -367,7 +366,7 @@ class FrozenTrial(BaseTrial):
         self._number = value
 
     @property
-    def value(self) -> Union[float, Tuple[float]]:
+    def value(self) -> Optional[Union[float, Sequence[float]]]:
 
         if isinstance(self._value, Sequence):
             return tuple(self._value)
@@ -375,7 +374,7 @@ class FrozenTrial(BaseTrial):
             return self._value
 
     @value.setter
-    def value(self, v: Union[float, Sequence[float]]) -> None:
+    def value(self, v: Optional[Union[float, Sequence[float]]]) -> None:
 
         self._value = v
 
@@ -400,9 +399,9 @@ class FrozenTrial(BaseTrial):
         self._params = params
 
     @property
-    def intermediate_values(self) -> Dict[int, Union[float, Tuple[float]]]:
+    def intermediate_values(self) -> Dict[int, Union[float, Sequence[float]]]:
 
-        value = {}
+        value: Dict[int, Union[float, Sequence[float]]] = {}
         for k, v in self._intermediate_values.items():
             if isinstance(v, Sequence):
                 value[k] = tuple(v)

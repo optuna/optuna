@@ -6,7 +6,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 
 import optuna
@@ -234,7 +233,9 @@ class RedisStorage(BaseStorage):
             raise KeyError("No such study: {}.".format(study_id))
         return pickle.loads(study_name_pkl)
 
-    def get_study_direction(self, study_id: int) -> Union[StudyDirection, Tuple[StudyDirection]]:
+    def get_study_direction(
+        self, study_id: int
+    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
 
         direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
         if direction_pkl is None:
@@ -465,8 +466,8 @@ class RedisStorage(BaseStorage):
             return
 
         best_value_or_none = self.get_best_trial(study_id).value
-        assert best_value_or_none is not None
-        assert trial.value is not None
+        assert best_value_or_none is not None and not isinstance(best_value_or_none, Sequence)
+        assert trial.value is not None and not isinstance(trial.value, Sequence)
         best_value = float(best_value_or_none)
         new_value = float(trial.value)
 

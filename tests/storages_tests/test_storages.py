@@ -205,7 +205,8 @@ def test_set_and_get_study_direction(storage_mode: str) -> None:
                 [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE],
             ),
         ]:
-
+            assert isinstance(target, StudyDirection) or isinstance(target, Sequence)
+            assert isinstance(opposite, StudyDirection) or isinstance(opposite, Sequence)
             study_id = storage.create_new_study()
 
             def check_set_and_get(
@@ -214,10 +215,9 @@ def test_set_and_get_study_direction(storage_mode: str) -> None:
                 storage.set_study_direction(study_id, direction)
                 got_direction = storage.get_study_direction(study_id)
 
-                print(got_direction)
-                if isinstance(got_direction, StudyDirection):
+                if isinstance(direction, StudyDirection):
                     assert got_direction == direction
-                elif isinstance(got_direction, tuple):
+                elif isinstance(direction, Sequence):
                     assert got_direction == tuple(direction)
                 else:
                     assert False, (
@@ -991,7 +991,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     distributions = {}
     user_attrs = {}
     system_attrs = {}
-    intermediate_values = {}
+    intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
     for key, (value, dist) in example_params.items():
         if generator.choice([True, False]):
             params[key] = value

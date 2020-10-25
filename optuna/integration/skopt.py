@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 import warnings
 
@@ -325,7 +326,7 @@ class _Optimizer(object):
             param_values.append(param_value)
 
         value = trial.value
-        assert value is not None
+        assert value is not None and not isinstance(value, Sequence)
 
         if study.direction == StudyDirection.MAXIMIZE:
             value = -value

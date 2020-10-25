@@ -561,16 +561,16 @@ class Trial(BaseTrial):
 
         try:
             # For convenience, we allow users to report values that can be cast to `float`.
-            value = float(value)
-        except (TypeError, ValueError):
-            try:
+            if not isinstance(value, Sequence) or isinstance(value, str):
+                value = float(value)
+            else:
                 value = tuple(map(float, value))
-            except (TypeError, ValueError):
-                message = (
-                    f"The `value` argument is of type '{type(value).__name__}' but supposed to be "
-                    f"a float or a sequence of such values."
-                )
-                raise TypeError(message) from None
+        except (TypeError, ValueError):
+            message = (
+                f"The `value` argument is of type '{type(value).__name__}' but supposed to be "
+                f"a float or a sequence of such values."
+            )
+            raise TypeError(message) from None
 
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))

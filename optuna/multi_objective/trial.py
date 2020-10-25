@@ -239,7 +239,12 @@ class MultiObjectiveTrial(object):
 
     def _get_values(self) -> List[Optional[float]]:
         trial = self._trial.study._storage.get_trial(self._trial._trial_id)
-        return [trial.intermediate_values.get(i) for i in range(self._n_objectives)]
+        ret = []
+        for i in range(self._n_objectives):
+            v = trial.intermediate_values.get(i)
+            assert v is None or isinstance(v, float)
+            ret.append(v)
+        return ret
 
 
 @deprecated("2.3.0", "3.0.0")
@@ -290,6 +295,7 @@ class FrozenMultiObjectiveTrial(object):
             if step not in intermediate_values:
                 intermediate_values[step] = list(None for _ in range(n_objectives))
 
+            assert value is None or isinstance(value, float)
             intermediate_values[step][key % n_objectives] = value
         self.intermediate_values = {k: tuple(v) for k, v in intermediate_values.items()}
 
@@ -355,8 +361,13 @@ class FrozenMultiObjectiveTrial(object):
         if other.state != TrialState.COMPLETE:
             return True
 
-        values0 = [_normalize_value(v, d) for v, d in zip(self.values, directions)]
-        values1 = [_normalize_value(v, d) for v, d in zip(other.values, directions)]
+        values0 = []
+        values1 = []
+        for v0, v1, d in zip(self.values, other.values, directions):
+            assert not isinstance(v0, Sequence)
+            assert not isinstance(v1, Sequence)
+            values0.append(_normalize_value(v0, d))
+            values1.append(_normalize_value(v1, d))
 
         if values0 == values1:
             return False

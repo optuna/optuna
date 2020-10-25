@@ -116,6 +116,10 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
             max_value = max_value + padding
         param_values_range[p_name] = (min_value, max_value)
 
+    assert isinstance(
+        study.direction, StudyDirection
+    ), "The contour plot is supported only for single-objective optimization."
+
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
         y_param = sorted_params[1]

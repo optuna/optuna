@@ -2,6 +2,7 @@ import functools
 import math
 from typing import KeysView
 from typing import List
+from typing import Sequence
 
 import numpy as np
 
@@ -180,22 +181,23 @@ class PercentilePruner(BasePruner):
         if step < n_warmup_steps:
             return False
 
+        assert isinstance(trial.intermediate_values, dict)
         if not _is_first_in_interval_step(
             step, trial.intermediate_values.keys(), n_warmup_steps, self._interval_steps
         ):
             return False
 
-        direction = study.direction
-        best_intermediate_result = _get_best_intermediate_result_over_steps(trial, direction)
+        assert not isinstance(study.direction, Sequence)
+        best_intermediate_result = _get_best_intermediate_result_over_steps(trial, study.direction)
         if math.isnan(best_intermediate_result):
             return True
 
         p = _get_percentile_intermediate_result_over_trials(
-            all_trials, direction, step, self._percentile
+            all_trials, study.direction, step, self._percentile
         )
         if math.isnan(p):
             return False
 
-        if direction == StudyDirection.MAXIMIZE:
+        if study.direction == StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p

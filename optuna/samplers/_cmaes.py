@@ -5,6 +5,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 import warnings
 
@@ -282,7 +283,9 @@ class CmaEsSampler(BaseSampler):
         if len(solution_trials) >= optimizer.population_size:
             solutions = []  # type: List[Tuple[np.ndarray, float]]
             for t in solution_trials[: optimizer.population_size]:
-                assert t.value is not None, "completed trials must have a value"
+                assert t.value is not None and not isinstance(
+                    t.value, Sequence
+                ), "completed trials must have a value"
                 x = np.array(
                     [_to_cma_param(search_space[k], t.params[k]) for k in ordered_keys],
                     dtype=float,

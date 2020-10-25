@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -71,7 +73,7 @@ def _get_optimization_history_plot(study: Study) -> "go.Figure":
     comp = min if study.direction == StudyDirection.MINIMIZE else max
     for trial in trials:
         trial_value = trial.value
-        assert trial_value is not None  # For mypy
+        assert trial_value is not None and not isinstance(trial_value, Sequence)  # For mypy
         best_values.append(comp(best_values[-1], trial_value))
     best_values.pop(0)
     traces = [

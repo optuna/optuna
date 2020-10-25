@@ -196,6 +196,7 @@ if _imports.is_successful():
                 self.study.trials
             )  # type: Optional[List[optuna.trial.FrozenTrial]]
             self.new_trials = None  # type: Optional[List[optuna.trial.FrozenTrial]]
+            assert isinstance(self.study.direction, StudyDirection)
             self.complete_trials_widget = _CompleteTrialsWidget(
                 self.current_trials, self.study.direction
             )

@@ -1,6 +1,7 @@
 import math
 from typing import Any
 from typing import Optional
+from typing import Sequence
 
 import optuna
 from optuna.pruners import BasePruner
@@ -121,12 +122,14 @@ class ThresholdPruner(BasePruner):
         if step < n_warmup_steps:
             return False
 
+        assert isinstance(trial.intermediate_values, dict)
         if not _is_first_in_interval_step(
             step, trial.intermediate_values.keys(), n_warmup_steps, self._interval_steps
         ):
             return False
 
         latest_value = trial.intermediate_values[step]
+        assert not isinstance(latest_value, Sequence)
         if math.isnan(latest_value):
             return True
 

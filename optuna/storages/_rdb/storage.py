@@ -275,7 +275,9 @@ class RDBStorage(BaseStorage):
 
         return study.study_name
 
-    def get_study_direction(self, study_id: int) -> Union[StudyDirection, Tuple[StudyDirection]]:
+    def get_study_direction(
+        self, study_id: int
+    ) -> Union[StudyDirection, Tuple[StudyDirection, ...]]:
 
         session = self.scoped_session()
 
@@ -414,16 +416,16 @@ class RDBStorage(BaseStorage):
                 intermediate = session.query(models.TrialIntermediateValueModel).filter(
                     models.TrialIntermediateValueModel.trial_id == best_trial.trial_id
                 )
-                intermediate_values = {}
+                intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
                 for intermediate_value_model in intermediate:
-                    if intermediate_value_model.step in intermediate_values:
-                        intermediate_values[intermediate_value_model.step] = intermediate_values[
-                            intermediate_value_model.step
-                        ] + (intermediate_value_model.value,)
+                    s = intermediate_value_model.step
+                    v = intermediate_value_model.value
+                    if s in intermediate_values:
+                        intermediate_value = intermediate_values[s]
+                        assert isinstance(intermediate_value, tuple)
+                        intermediate_values[s] = intermediate_value + (v,)
                     else:
-                        intermediate_values[intermediate_value_model.step] = (
-                            intermediate_value_model.value,
-                        )
+                        intermediate_values[s] = (v,)
                 for k, v in intermediate_values.items():
                     if len(v) == 1:
                         intermediate_values[k] = v[0]
@@ -544,16 +546,15 @@ class RDBStorage(BaseStorage):
             # the state is set to `template_trial.state`.
             temp_state = TrialState.RUNNING
 
-            value = template_trial.value
+            value: Union[float, Sequence[Optional[float]], None] = template_trial.value
             if not isinstance(value, Sequence):
-                value = [value]
-            value = [models.TrialValueModel(value=v) for v in value]
+                value = (value,)
 
             trial = models.TrialModel(
                 study_id=study_id,
                 number=None,
                 state=temp_state,
-                value=value,
+                value=[models.TrialValueModel(value=v) for v in value],
                 datetime_start=template_trial.datetime_start,
                 datetime_complete=template_trial.datetime_complete,
             )
@@ -598,7 +599,7 @@ class RDBStorage(BaseStorage):
         trial_id: int,
         state: Optional[TrialState] = None,
         value: Optional[Union[float, Sequence[float]]] = None,
-        intermediate_values: Optional[Dict[int, float]] = None,
+        intermediate_values: Optional[Dict[int, Union[float, Sequence[float]]]] = None,
         params: Optional[Dict[str, Any]] = None,
         distributions_: Optional[Dict[str, distributions.BaseDistribution]] = None,
         user_attrs: Optional[Dict[str, Any]] = None,
@@ -704,7 +705,7 @@ class RDBStorage(BaseStorage):
                 .filter(models.TrialIntermediateValueModel.trial_id == trial_id)
                 .all()
             )
-            value_dict = {}
+            value_dict: Dict[int, List[models.TrialIntermediateValueModel]] = {}
             for value_model in value_models:
                 if value_model.step in value_dict:
                     value_dict[value_model.step].append(value_model)
@@ -1070,16 +1071,20 @@ class RDBStorage(BaseStorage):
 
     @staticmethod
     def _build_frozen_trial_from_trial_model(trial: models.TrialModel) -> FrozenTrial:
-        value = [v.value for v in trial.value]
-        if len(value) == 0:
+        _value = [v.value for v in trial.value]
+        if len(_value) == 0:
             value = None
-        elif len(value) == 1:  # Single-objective, else multi-objective.
-            value = value[0]
+        elif len(_value) == 1:  # Single-objective, else multi-objective.
+            value = _value[0]
+        else:
+            value = _value
 
-        intermediate_values = {}
+        intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
         for v in trial.intermediate_values:
             if v.step in intermediate_values:
-                intermediate_values[v.step] = intermediate_values[v.step] + (v.value,)
+                intermediate_value = intermediate_values[v.step]
+                assert isinstance(intermediate_value, tuple)
+                intermediate_values[v.step] = intermediate_value + (v.value,)
             else:
                 intermediate_values[v.step] = (v.value,)
         for k, v in intermediate_values.items():

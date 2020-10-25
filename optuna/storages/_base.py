@@ -4,7 +4,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 
 from optuna._study_direction import StudyDirection
@@ -240,7 +239,9 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_direction(self, study_id: int) -> Union[StudyDirection, Tuple[StudyDirection]]:
+    def get_study_direction(
+        self, study_id: int
+    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
         """Read whether a study maximizes or minimizes an objective.
 
         Args:

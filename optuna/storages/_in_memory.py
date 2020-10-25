@@ -130,7 +130,9 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].name
 
-    def get_study_direction(self, study_id: int) -> Union[StudyDirection, Tuple[StudyDirection]]:
+    def get_study_direction(
+        self, study_id: int
+    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
 
         with self._lock:
             self._check_study_id(study_id)
@@ -323,6 +325,8 @@ class InMemoryStorage(BaseStorage):
         if best_value is None:
             self._studies[study_id].best_trial_id = trial_id
             return
+        if isinstance(best_value, Sequence) or isinstance(new_value, Sequence):
+            return
         # Complete trials do not have `None` values.
         assert new_value is not None
 
@@ -430,5 +434,7 @@ class _StudyInfo:
         self.user_attrs = {}  # type: Dict[str, Any]
         self.system_attrs = {}  # type: Dict[str, Any]
         self.name = name  # type: str
-        self.direction = StudyDirection.NOT_SET
+        self.direction = (
+            StudyDirection.NOT_SET
+        )  # type: Union[StudyDirection, Sequence[StudyDirection]]
         self.best_trial_id = None  # type: Optional[int]

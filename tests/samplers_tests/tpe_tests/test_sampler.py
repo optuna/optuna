@@ -2,6 +2,7 @@ import random
 from typing import Callable
 from typing import Dict
 from typing import Optional
+from typing import Sequence
 from typing import Union
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -819,7 +820,7 @@ def frozen_trial_factory(
     ] = lambda _: optuna.trial.TrialState.COMPLETE,
     value_fn: Optional[Callable[[int], Union[int, float]]] = None,
     target_fn: Callable[[float], float] = lambda val: (val - 20.0) ** 2,
-    interm_val_fn: Callable[[int], Dict[int, float]] = lambda _: {},
+    interm_val_fn: Callable[[int], Dict[int, Union[float, Sequence[float]]]] = lambda _: {},
 ) -> optuna.trial.FrozenTrial:
     if value_fn is None:
         random.seed(idx)

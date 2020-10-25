@@ -153,6 +153,9 @@ class SuccessiveHalvingPruner(BasePruner):
         value = trial.intermediate_values[step]
         trials = None  # type: Optional[List["optuna.trial.FrozenTrial"]]
 
+        assert isinstance(value, float)
+        assert isinstance(study.direction, StudyDirection)
+
         while True:
             if self._min_resource is None:
                 if trials is None:

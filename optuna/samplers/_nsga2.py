@@ -6,12 +6,12 @@ from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 import numpy as np
 
 import optuna
-from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna._multi_objective_utils import _dominates
 from optuna.distributions import BaseDistribution
@@ -105,7 +105,7 @@ class NSGAIISampler(BaseSampler):
     def sample_relative(
         self,
         study: Study,
-        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
+        trial: FrozenTrial,
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         parent_generation, parent_population = self._collect_parent_population(study)
@@ -238,7 +238,8 @@ class NSGAIISampler(BaseSampler):
         study: Study,
         population: List[FrozenTrial],
     ) -> List[FrozenTrial]:
-        elite_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
+        elite_population = []  # type: List[FrozenTrial]
+        assert isinstance(study.direction, Sequence)
         population_per_rank = _fast_non_dominated_sort(population, study.direction)
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
@@ -260,6 +261,8 @@ class NSGAIISampler(BaseSampler):
         candidate0 = self._rng.choice(population)
         candidate1 = self._rng.choice(population)
 
+        assert isinstance(study.direction, Sequence)
+
         # TODO(ohta): Consider crowding distance.
         if _dominates(candidate0, candidate1, study.direction):
             return candidate0
@@ -269,7 +272,7 @@ class NSGAIISampler(BaseSampler):
 
 def _fast_non_dominated_sort(
     population: List[FrozenTrial],
-    directions: List[optuna.study.StudyDirection],
+    directions: Sequence[optuna.study.StudyDirection],
 ) -> List[List[FrozenTrial]]:
     dominated_count = defaultdict(int)  # type: DefaultDict[int, int]
     dominates_list = defaultdict(list)
@@ -311,8 +314,17 @@ def _crowding_distance_sort(
     population: List[FrozenTrial],
 ) -> None:
     manhattan_distances = defaultdict(float)
+
+    assert isinstance(population[0].value, Sequence)
+    assert isinstance(population[-1].value, Sequence)
+
     for i in range(len(population[0].value)):
-        population.sort(key=lambda x: x.value[i])
+
+        def _key_func(x: FrozenTrial) -> float:
+            assert isinstance(x.value, Sequence)
+            return x.value[i]
+
+        population.sort(key=_key_func)
 
         v_min = population[0].value[i]
         v_max = population[-1].value[i]
@@ -327,8 +339,12 @@ def _crowding_distance_sort(
         manhattan_distances[population[-1].number] = float("inf")
 
         for j in range(1, len(population) - 1):
-            v_high = population[j + 1].value[i]
-            v_low = population[j - 1].value[i]
+            population_high = population[j + 1].value
+            population_low = population[j - 1].value
+            assert isinstance(population_high, Sequence)
+            assert isinstance(population_low, Sequence)
+            v_high = population_high[i]
+            v_low = population_low[i]
             assert v_high is not None
             assert v_low is not None
 

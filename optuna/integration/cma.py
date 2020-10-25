@@ -4,6 +4,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
 
 import numpy
@@ -222,6 +223,7 @@ class PyCmaSampler(BaseSampler):
 
         optimizer = _Optimizer(search_space, self._x0, sigma0, self._cma_stds, self._cma_opts)
         trials = study.trials
+        assert isinstance(study.direction, StudyDirection)
         last_told_trial_number = optimizer.tell(trials, study.direction)
         return optimizer.ask(trials, last_told_trial_number)
 
@@ -353,6 +355,7 @@ class _Optimizer(object):
             xs = []
             ys = []
             for t in complete_trials[i * popsize : (i + 1) * popsize]:
+                assert not isinstance(t.value, Sequence)
                 x = [
                     self._to_cma_params(self._search_space, name, t.params[name])
                     for name in self._param_names

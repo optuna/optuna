@@ -4,6 +4,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 import warnings
@@ -766,11 +767,13 @@ def _get_observation_pairs(
     values = []
     scores = []
     for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
+        assert not isinstance(trial.value, Sequence)
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
+                assert not isinstance(intermediate_value, Sequence)
                 if math.isnan(intermediate_value):
                     score = (-step, float("inf"))
                 else:
@@ -804,13 +807,14 @@ def _get_multivariate_observation_pairs(
         param_name: [] for param_name in param_names
     }  # type: Dict[str, List[Optional[float]]]
     for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
-
+        assert not isinstance(trial.value, Sequence)
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
+                assert not isinstance(intermediate_value, Sequence)
                 if math.isnan(intermediate_value):
                     score = (-step, float("inf"))
                 else:

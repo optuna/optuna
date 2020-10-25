@@ -112,9 +112,16 @@ def _get_pareto_front_2d(
         point_colors += ["red"] * len(non_pareto_trials)
         trials += non_pareto_trials
 
+    x = []
+    y = []
+    for t in trials:
+        assert isinstance(t.value, tuple), "The number of objectives should be equal to 2."
+        x.append(t.value[0])
+        y.append(t.value[1])
+
     data = go.Scatter(
-        x=[t.value[0] for t in trials],
-        y=[t.value[1] for t in trials],
+        x=x,
+        y=y,
         text=[_make_hovertext(t) for t in trials],
         mode="markers",
         hovertemplate="%{text}<extra></extra>",
@@ -142,10 +149,19 @@ def _get_pareto_front_3d(
         point_colors += ["red"] * len(non_pareto_trials)
         trials += non_pareto_trials
 
+    x = []
+    y = []
+    z = []
+    for t in trials:
+        assert isinstance(t.value, tuple), "The number of objectives should be equal to 3."
+        x.append(t.value[0])
+        y.append(t.value[1])
+        z.append(t.value[2])
+
     data = go.Scatter3d(
-        x=[t.value[0] for t in trials],
-        y=[t.value[1] for t in trials],
-        z=[t.value[2] for t in trials],
+        x=x,
+        y=y,
+        z=z,
         text=[_make_hovertext(t) for t in trials],
         mode="markers",
         hovertemplate="%{text}<extra></extra>",

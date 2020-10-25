@@ -1,5 +1,6 @@
 from typing import List
 from typing import Optional
+from typing import Sequence
 
 import optuna
 from optuna._study_direction import StudyDirection
@@ -10,8 +11,9 @@ def _get_pareto_front_trials(study: "optuna.Study") -> List["optuna.trial.Frozen
     pareto_front = []
     trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
-    if isinstance(study.direction, str):
-        direction = [study.direction]
+    direction: Sequence[StudyDirection]
+    if isinstance(study.direction, StudyDirection):
+        direction = (study.direction,)
     else:
         direction = study.direction
 
@@ -32,13 +34,13 @@ def _get_pareto_front_trials(study: "optuna.Study") -> List["optuna.trial.Frozen
 def _dominates(
     trial0: "optuna.trial.FrozenTrial",
     trial1: "optuna.trial.FrozenTrial",
-    directions: List[StudyDirection],
+    directions: Sequence[StudyDirection],
 ) -> bool:
     value0 = trial0.value
     value1 = trial1.value
 
-    assert not isinstance(value0, float), "Trial should have multiple values."
-    assert not isinstance(value1, float), "Trial should have multiple values."
+    assert isinstance(value0, Sequence), "Trial should have multiple values."
+    assert isinstance(value1, Sequence), "Trial should have multiple values."
 
     if len(value0) != len(value1):
         raise ValueError("Trials with different numbers of objectives cannot be compared.")
@@ -54,13 +56,13 @@ def _dominates(
     if trial1.state != TrialState.COMPLETE:
         return True
 
-    value0 = [_normalize_value(v, d) for v, d in zip(value0, directions)]
-    value1 = [_normalize_value(v, d) for v, d in zip(value1, directions)]
+    normalized_value0 = [_normalize_value(v, d) for v, d in zip(value0, directions)]
+    normalized_value1 = [_normalize_value(v, d) for v, d in zip(value1, directions)]
 
-    if value0 == value1:
+    if normalized_value0 == normalized_value1:
         return False
 
-    return all([v0 <= v1 for v0, v1 in zip(value0, value1)])
+    return all([v0 <= v1 for v0, v1 in zip(normalized_value0, normalized_value1)])
 
 
 def _normalize_value(value: Optional[float], direction: StudyDirection) -> float:

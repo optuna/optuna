@@ -1320,12 +1320,12 @@ def test_system_attrs_with_multi_objectives() -> None:
 
     def objective(trial: optuna.trial.Trial) -> List[float]:
         trial.set_system_attr("foo", "bar")
-        assert trial.system_attrs == {"foo": "bar"}
+        assert trial.system_attrs["foo"] == "bar"
         return [0, 0, 0]
 
     study.optimize(objective, n_trials=1)
 
-    assert study.trials[0].system_attrs == {"foo": "bar"}
+    assert study.trials[0].system_attrs["foo"] == "bar"
 
 
 def test_params_and_distributions_with_multi_objectives() -> None:

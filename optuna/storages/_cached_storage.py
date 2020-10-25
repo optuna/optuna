@@ -144,7 +144,9 @@ class _CachedStorage(BaseStorage):
             self._studies[study_id].name = name
         return name
 
-    def get_study_direction(self, study_id: int) -> Union[StudyDirection, Tuple[StudyDirection]]:
+    def get_study_direction(
+        self, study_id: int
+    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
 
         with self._lock:
             if study_id in self._studies:

@@ -160,6 +160,9 @@ class _Studies(Lister):
 
         rows = []
         for s in summaries:
+            assert isinstance(
+                s.direction, optuna.study.StudyDirection
+            ), "Optuna's CLI is supported only for single-objective optimization."
             start = (
                 s.datetime_start.strftime(self._datetime_format)
                 if s.datetime_start is not None

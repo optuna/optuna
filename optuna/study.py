@@ -42,6 +42,20 @@ class BaseStudy(object):
         self._storage = storage
 
     @property
+    def n_objectives(self) -> int:
+        """Return the number of objectives.
+
+        Returns:
+            Number of objectives.
+        """
+
+        direction = self.direction
+
+        if isinstance(direction, Sequence):
+            return len(direction)
+        return 1
+
+    @property
     def best_params(self) -> Dict[str, Any]:
         """Return parameters of the best trial in the study.
 
@@ -61,8 +75,14 @@ class BaseStudy(object):
 
         best_value = self.best_trial.value
         assert best_value is not None
+        assert (
+            self.n_objectives == 1
+        ), "The `Study.best_value` is only supported for single-objective optimization."
 
-        return best_value
+        if isinstance(best_value, Sequence):
+            return best_value[0]
+        else:
+            return best_value
 
     @property
     def best_trial(self) -> FrozenTrial:
@@ -75,7 +95,7 @@ class BaseStudy(object):
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
     @property
-    def direction(self) -> Union[StudyDirection, Tuple[StudyDirection]]:
+    def direction(self) -> Union[StudyDirection, Sequence[StudyDirection]]:
         """Return the direction of the study.
 
         Returns:
@@ -178,20 +198,6 @@ class Study(BaseStudy):
 
         self.__dict__.update(state)
         self._optimize_lock = threading.Lock()
-
-    @property
-    def n_objectives(self) -> int:
-        """Return the number of objectives.
-
-        Returns:
-            Number of objectives.
-        """
-
-        direction = self.direction
-
-        if isinstance(direction, Sequence):
-            return len(direction)
-        return 1
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
@@ -627,7 +633,12 @@ class Study(BaseStudy):
             trial_id = self._storage.create_new_trial(self._study_id)
         return trial_module.Trial(self, trial_id)
 
-    def _tell(self, trial: trial_module.Trial, state: TrialState, value: Optional[float]) -> None:
+    def _tell(
+        self,
+        trial: trial_module.Trial,
+        state: TrialState,
+        value: Optional[Union[float, Sequence[float]]],
+    ) -> None:
         if state == TrialState.COMPLETE:
             assert value is not None
         if value is not None:
@@ -724,19 +735,22 @@ def create_study(
 
     Raises:
         ValueError:
-            If ``direction`` is neither 'minimize' nor 'maximize'.
+            If ``direction`` is neither 'minimize' nor 'maximize' when it is a string. Or, when
+            ``direction`` is a sequence of strings, if the element of ``direction`` is neither
+            `minimize` nor `maximize`.
 
     See also:
         :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
 
     """
 
+    direction_obj: Union[StudyDirection, List[StudyDirection]]
     if isinstance(direction, str):
-        direction = _get_study_direction(direction)
+        direction_obj = _get_study_direction(direction)
     else:
         if len(direction) < 1:
             raise ValueError("The number of objectives must be greater than 0.")
-        direction = [_get_study_direction(d) for d in direction]
+        direction_obj = [_get_study_direction(d) for d in direction]
 
     storage = storages.get_storage(storage)
     try:
@@ -753,10 +767,17 @@ def create_study(
         else:
             raise
 
+    if sampler is None and isinstance(direction_obj, Sequence):
+        _logger.info(
+            "Multi-objective optimization is set, but no sampler is specified. "
+            "The sampler is set to `samplers.NSGAIISampler`."
+        )
+        sampler = samplers.NSGAIISampler()
+
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
-    study._storage.set_study_direction(study_id, direction)
+    study._storage.set_study_direction(study_id, direction_obj)
 
     return study
 
