@@ -607,7 +607,6 @@ class RDBStorage(BaseStorage):
                 and state == TrialState.RUNNING
                 and trial_model.state != TrialState.WAITING
             ):
-                session.rollback()
                 return False
 
             if state:
@@ -709,7 +708,6 @@ class RDBStorage(BaseStorage):
                 self.check_trial_is_updatable(trial_id, trial.state)
 
                 if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
-                    session.rollback()
                     return False
 
                 trial.state = state
