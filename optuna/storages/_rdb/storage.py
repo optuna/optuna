@@ -27,6 +27,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import functions
 
 import optuna
+from optuna.exceptions import StorageInternalError
 from optuna import distributions
 from optuna import version
 from optuna._study_direction import StudyDirection
@@ -44,7 +45,7 @@ _logger = optuna.logging.get_logger(__name__)
 @contextmanager
 def _scoped_session(
     scoped_session: orm.scoped_session,
-    ignore_integrity_error: bool = True,
+    ignore_integrity_error: bool = False,
 ) -> Generator[orm.Session, None, None]:
     session = scoped_session()
     try:
@@ -58,7 +59,13 @@ def _scoped_session(
                 "Another one might have committed a record with the same key(s).".format(repr(e))
             )
         else:
-            raise
+            message = (
+                "An exception is raised during the commit. "
+                "This typically happens due to invalid data in the commit, "
+                "e.g. exceeding max length. "
+                "(The actual exception is as follows: {})".format(repr(e))
+            )
+            raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
     except SQLAlchemyError as e:
         session.rollback()
         message = (
@@ -182,13 +189,13 @@ class RDBStorage(BaseStorage):
     def create_new_study(self, study_name: Optional[str] = None) -> int:
 
         try:
-            with _scoped_session(self.scoped_session, False) as session:
+            with _scoped_session(self.scoped_session) as session:
                 if study_name is None:
                     study_name = self._create_unique_study_name(session)
 
                 study = models.StudyModel(study_name=study_name, direction=StudyDirection.NOT_SET)
                 session.add(study)
-        except IntegrityError:
+        except StorageInternalError:
             raise optuna.exceptions.DuplicatedStudyError(
                 "Another study with name '{}' already exists. "
                 "Please specify a different name, or reuse the existing one "
@@ -202,7 +209,7 @@ class RDBStorage(BaseStorage):
 
     def delete_study(self, study_id: int) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             session.delete(study)
 
@@ -235,7 +242,7 @@ class RDBStorage(BaseStorage):
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
             if attribute is None:
@@ -248,7 +255,7 @@ class RDBStorage(BaseStorage):
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
             if attribute is None:
@@ -694,7 +701,7 @@ class RDBStorage(BaseStorage):
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
 
         try:
-            with _scoped_session(self.scoped_session, False) as session:
+            with _scoped_session(self.scoped_session) as session:
                 trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
                 if trial is None:
                     raise KeyError(models.NOT_FOUND_MSG)
@@ -708,7 +715,7 @@ class RDBStorage(BaseStorage):
                 trial.state = state
                 if state.is_finished():
                     trial.datetime_complete = datetime.now()
-        except IntegrityError:
+        except StorageInternalError:
             return False
         return True
 
@@ -720,7 +727,7 @@ class RDBStorage(BaseStorage):
         distribution: distributions.BaseDistribution,
     ) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _scoped_session(self.scoped_session, True) as session:
             self._set_trial_param_without_commit(
                 session, trial_id, param_name, param_value_internal, distribution
             )
@@ -820,7 +827,7 @@ class RDBStorage(BaseStorage):
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _scoped_session(self.scoped_session, True) as session:
             self._set_trial_intermediate_value_without_commit(
                 session, trial_id, step, intermediate_value
             )
@@ -843,7 +850,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _scoped_session(self.scoped_session, True) as session:
             self._set_trial_user_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_user_attr_without_commit(
@@ -864,7 +871,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _scoped_session(self.scoped_session, True) as session:
             self._set_trial_system_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_system_attr_without_commit(
@@ -1088,7 +1095,7 @@ class _VersionManager(object):
 
     def _init_version_info_model(self) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _scoped_session(self.scoped_session, True) as session:
             version_info = models.VersionInfoModel.find(session)
             if version_info is not None:
                 return

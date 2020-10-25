@@ -7,11 +7,11 @@ from typing import Optional
 from unittest.mock import patch
 
 import pytest
-from sqlalchemy.exc import IntegrityError
 
 from optuna import version
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
+from optuna.exceptions import StorageInternalError
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import VersionInfoModel
@@ -147,8 +147,8 @@ def test_scoped_session() -> None:
 
     # This object violates the unique constraint of version_info_id.
     v = VersionInfoModel(version_info_id=1, schema_version=1, library_version="0.0.1")
-    with pytest.raises(IntegrityError):
-        with _scoped_session(storage.scoped_session, False) as session:
+    with pytest.raises(StorageInternalError):
+        with _scoped_session(storage.scoped_session) as session:
             session.add(v)
 
 
