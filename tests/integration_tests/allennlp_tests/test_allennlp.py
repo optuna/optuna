@@ -173,6 +173,27 @@ def test_allennlp_executor_with_include_package_arr() -> None:
         assert isinstance(result, float)
 
 
+def test_allennlp_executor_with_options() -> None:
+    study = optuna.create_study(direction="maximize")
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        executor = optuna.integration.AllenNLPExecutor(
+            trial,
+            "tests/integration_tests/allennlp_tests/example_with_include_package.jsonnet",
+            tmp_dir,
+            recover=True,
+            force=True,
+            file_friendly_logging=True,
+            include_package=["tests.integration_tests.allennlp_tests.tiny_single_id"],
+        )
+
+        assert executor._recover
+        assert executor._force
+        assert executor._file_friendly_logging
+
+
 def test_dump_best_config() -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
 
@@ -257,9 +278,7 @@ def test_allennlp_pruning_callback_with_invalid_storage() -> None:
             return executor.run()
 
         study = optuna.create_study(
-            direction="maximize",
-            pruner=optuna.pruners.HyperbandPruner(),
-            storage=None,
+            direction="maximize", pruner=optuna.pruners.HyperbandPruner(), storage=None,
         )
 
         with pytest.raises(RuntimeError):

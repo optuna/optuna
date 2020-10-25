@@ -261,6 +261,17 @@ class AllenNLPExecutor(object):
             A path which model weights and logs are saved.
         metrics:
             An evaluation metric for the result of ``objective``.
+        recover:
+            If recover is ``True``, an executor resumes training
+            from the state in ``serialization_dir``.
+            Note that recovering training in ``AllenNLPExecurot`` needs to fix random seed
+            in a sampler for obtaining reproducible optimization result.
+            Please see `the FAQ <https://optuna.readthedocs.io/en/stable/
+            faq.html#how-can-i-obtain-reproducible-optimization-results>`_ for more information.
+        force:
+            If True, an executor overwrite the output directory if it exists.
+        file_friendly_logging:
+            If True, tqdm status is printed on separate lines and slows tqdm refresh rate.
         include_package:
             Additional packages to include.
             For more information, please see
@@ -274,6 +285,9 @@ class AllenNLPExecutor(object):
         config_file: str,
         serialization_dir: str,
         metrics: str = "best_validation_accuracy",
+        recover: bool = False,
+        force: bool = False,
+        file_friendly_logging: bool = False,
         *,
         include_package: Optional[Union[str, List[str]]] = None,
     ):
@@ -283,6 +297,10 @@ class AllenNLPExecutor(object):
         self._config_file = config_file
         self._serialization_dir = serialization_dir
         self._metrics = metrics
+        self._recover = recover
+        self._force = force
+        self._file_friendly_logging = file_friendly_logging
+
         if include_package is None:
             include_package = []
         if isinstance(include_package, str):
@@ -358,8 +376,13 @@ class AllenNLPExecutor(object):
 
         self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
-        allennlp.commands.train.train_model(params, self._serialization_dir)
-
+        allennlp.commands.train.train_model(
+            params=params,
+            serialization_dir=self._serialization_dir,
+            file_friendly_logging=self._file_friendly_logging,
+            recover=self._recover,
+            force=self._force,
+        )
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]
 
@@ -398,9 +421,7 @@ class AllenNLPPruningCallback(EpochCallback):
     """
 
     def __init__(
-        self,
-        trial: Optional[optuna.trial.Trial] = None,
-        monitor: Optional[str] = None,
+        self, trial: Optional[optuna.trial.Trial] = None, monitor: Optional[str] = None,
     ):
         _imports.check()
 

@@ -36,7 +36,7 @@ def objective(trial):
     trial.suggest_int("HIDDEN_SIZE", 16, 32)
 
     serialization_dir = os.path.join(MODEL_DIR, "test_{}".format(trial.number))
-    executor = AllenNLPExecutor(trial, CONFIG_PATH, serialization_dir)
+    executor = AllenNLPExecutor(trial, CONFIG_PATH, serialization_dir, recover=True)
 
     return executor.run()
 
@@ -49,7 +49,9 @@ if __name__ == "__main__":
         direction="maximize",
         storage="sqlite:///allennlp.db",
         pruner=optuna.pruners.HyperbandPruner(),
+        sampler=optuna.samplers.TPESampler(seed=10),
     )
+
     study.optimize(objective, n_trials=50, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
