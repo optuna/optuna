@@ -276,7 +276,9 @@ def test_allennlp_pruning_callback_with_invalid_storage() -> None:
             return executor.run()
 
         study = optuna.create_study(
-            direction="maximize", pruner=optuna.pruners.HyperbandPruner(), storage=None,
+            direction="maximize",
+            pruner=optuna.pruners.HyperbandPruner(),
+            storage=None,
         )
 
         with pytest.raises(RuntimeError):
