@@ -144,7 +144,7 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int
 
 def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
     pruner = trial.study.pruner
-    kwargs = {}  # type: Dict[str, Any]
+    kwargs: Dict[str, Any] = {}
 
     if isinstance(pruner, optuna.pruners.HyperbandPruner):
         kwargs["min_resource"] = pruner._min_resource
