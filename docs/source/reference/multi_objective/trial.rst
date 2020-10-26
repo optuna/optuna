@@ -1,3 +1,5 @@
+.. module:: optuna.multi_objective.trial
+
 optuna.multi_objective.trial
 ============================
 

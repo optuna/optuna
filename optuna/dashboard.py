@@ -2,6 +2,7 @@ import collections
 import threading
 import time
 from typing import Any
+from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -38,8 +39,8 @@ with try_import() as _imports:
         )
 
 
-_mode = None  # type: Optional[str]
-_study = None  # type: Optional[optuna.study.Study]
+_mode: Optional[str] = None
+_study: Optional[optuna.study.Study] = None
 
 _HEADER_FORMAT = """
 <style>
@@ -99,7 +100,7 @@ if _imports.is_successful():
 
         def update(self, new_trials: List[optuna.trial.FrozenTrial]) -> None:
 
-            stream_dict = collections.defaultdict(list)  # type: Dict[str, List[Any]]
+            stream_dict: DefaultDict[str, List[Any]] = collections.defaultdict(list)
 
             for trial in new_trials:
                 if trial.state != optuna.trial.TrialState.COMPLETE:
@@ -192,10 +193,8 @@ if _imports.is_successful():
         def __call__(self, doc: bokeh.document.Document) -> None:
 
             self.doc = doc
-            self.current_trials = (
-                self.study.trials
-            )  # type: Optional[List[optuna.trial.FrozenTrial]]
-            self.new_trials = None  # type: Optional[List[optuna.trial.FrozenTrial]]
+            self.current_trials: Optional[List[optuna.trial.FrozenTrial]] = self.study.trials
+            self.new_trials: Optional[List[optuna.trial.FrozenTrial]] = None
             self.complete_trials_widget = _CompleteTrialsWidget(
                 self.current_trials, self.study.direction
             )

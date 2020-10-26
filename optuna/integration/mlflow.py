@@ -123,7 +123,7 @@ class MLflowCallback(object):
             mlflow.log_params(trial.params)
 
             # This sets the tags for MLflow.
-            tags = {}  # type: Dict[str, str]
+            tags: Dict[str, str] = {}
             tags["number"] = str(trial.number)
             tags["datetime_start"] = str(trial.datetime_start)
             tags["datetime_complete"] = str(trial.datetime_complete)
