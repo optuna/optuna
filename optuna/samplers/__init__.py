@@ -5,4 +5,4 @@ from optuna.samplers._random import RandomSampler  # NOQA
 from optuna.samplers._search_space import intersection_search_space  # NOQA
 from optuna.samplers._search_space import IntersectionSearchSpace  # NOQA
 from optuna.samplers._tpe.sampler import TPESampler  # NOQA
-from optuna.samplers.multi_objective  # NOQA
+from optuna.samplers import multi_objective  # NOQA
