@@ -358,7 +358,7 @@ def test_nan_objective_value(sampler_class: Callable[[], BaseSampler]) -> None:
 
 
 @pytest.mark.parametrize(
-    "sampler_class", [optuna.samplers.RandomSampler, optuna.samplers.NSGAIISampler]
+    "sampler_class", [optuna.samplers.RandomSampler, optuna.samplers.multi_objective.NSGAIISampler]
 )
 @pytest.mark.parametrize(
     "distribution",

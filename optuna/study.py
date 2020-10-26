@@ -770,9 +770,9 @@ def create_study(
     if sampler is None and isinstance(direction_obj, Sequence):
         _logger.info(
             "Multi-objective optimization is set, but no sampler is specified. "
-            "The sampler is set to `samplers.NSGAIISampler`."
+            "The sampler is set to `samplers.multi_objective.NSGAIISampler`."
         )
-        sampler = samplers.NSGAIISampler()
+        sampler = samplers.multi_objective.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)

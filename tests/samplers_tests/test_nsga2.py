@@ -5,8 +5,8 @@ from typing import Tuple
 import pytest
 
 from optuna import create_study
-from optuna.samplers import _nsga2
-from optuna.samplers import NSGAIISampler
+from optuna.samplers.multi_objective import _nsga2
+from optuna.samplers.multi_objective import NSGAIISampler
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
