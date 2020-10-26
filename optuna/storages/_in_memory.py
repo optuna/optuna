@@ -429,22 +429,10 @@ class InMemoryStorage(BaseStorage):
 
 class _StudyInfo:
     def __init__(self, name: str) -> None:
-<<<<<<< HEAD
-        self.trials = []  # type: List[FrozenTrial]
-        self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
-        self.user_attrs = {}  # type: Dict[str, Any]
-        self.system_attrs = {}  # type: Dict[str, Any]
-        self.name = name  # type: str
-        self.direction = (
-            StudyDirection.NOT_SET
-        )  # type: Union[StudyDirection, Sequence[StudyDirection]]
-        self.best_trial_id = None  # type: Optional[int]
-=======
         self.trials: List[FrozenTrial] = []
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
         self.user_attrs: Dict[str, Any] = {}
         self.system_attrs: Dict[str, Any] = {}
         self.name: str = name
-        self.direction = StudyDirection.NOT_SET
+        self.direction: Union[StudyDirection, Sequence[StudyDirection]] = StudyDirection.NOT_SET
         self.best_trial_id: Optional[int] = None
->>>>>>> master

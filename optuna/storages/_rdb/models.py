@@ -490,12 +490,7 @@ class TrialParamModel(BaseModel):
 
 
 class TrialValueModel(BaseModel):
-<<<<<<< HEAD
     __tablename__ = "trial_value"
-=======
-    __tablename__ = "trial_values"
-    __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
->>>>>>> master
     trial_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     value = Column(Float)

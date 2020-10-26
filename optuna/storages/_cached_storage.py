@@ -21,25 +21,14 @@ from optuna.trial import TrialState
 
 class _TrialUpdate:
     def __init__(self) -> None:
-<<<<<<< HEAD
-        self.state = None  # type: Optional[TrialState]
-        self.value = None  # type: Optional[Union[float, Sequence[float]]]
-        self.intermediate_values = dict()  # type: Dict[int, Union[float, Sequence[float]]]
-        self.user_attrs = dict()  # type: Dict[str, Any]
-        self.system_attrs = dict()  # type: Dict[str, Any]
-        self.params = dict()  # type: Dict[str, Any]
-        self.distributions = dict()  # type: Dict[str, distributions.BaseDistribution]
-        self.datetime_complete = None  # type: Optional[datetime.datetime]
-=======
         self.state: Optional[TrialState] = None
-        self.value: Optional[float] = None
-        self.intermediate_values: Dict[int, float] = {}
+        self.value: Optional[Union[float, Sequence[float]]] = None
+        self.intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
         self.user_attrs: Dict[str, Any] = {}
         self.system_attrs: Dict[str, Any] = {}
         self.params: Dict[str, Any] = {}
         self.distributions: Dict[str, distributions.BaseDistribution] = {}
         self.datetime_complete: Optional[datetime.datetime] = None
->>>>>>> master
 
 
 class _StudyInfo:
@@ -51,17 +40,9 @@ class _StudyInfo:
         # Cache any writes which are not reflected to the actual storage yet in updates.
         self.updates: Dict[int, _TrialUpdate] = {}
         # Cache distributions to avoid storage access on distribution consistency check.
-<<<<<<< HEAD
-        self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
-        self.direction = (
-            StudyDirection.NOT_SET
-        )  # type: Union[StudyDirection, Sequence[StudyDirection]]
-        self.name = None  # type: Optional[str]
-=======
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
-        self.direction: StudyDirection = StudyDirection.NOT_SET
+        self.direction: Union[StudyDirection, Sequence[StudyDirection]] = StudyDirection.NOT_SET
         self.name: Optional[str] = None
->>>>>>> master
 
 
 class _CachedStorage(BaseStorage):
