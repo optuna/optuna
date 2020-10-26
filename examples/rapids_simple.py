@@ -37,19 +37,14 @@ def objective(trial, X_param, y_param):
 
 
 if __name__ == "__main__":
-    N_TRIALS = 10
-    study_name = "rapids_experiment"
-
     data, target = load_iris(return_X_y=True)
     # To use the GPU model
     X = cudf.DataFrame(data).astype("float32")
     y = cudf.Series(target)
 
-    study = optuna.create_study(
-        sampler=optuna.samplers.TPESampler(), study_name=study_name, direction="maximize"
-    )
+    study = optuna.create_study(study_name="rapids_experiment", direction="maximize")
 
-    study.optimize(lambda trial: objective(trial, X, y), n_trials=N_TRIALS)
+    study.optimize(lambda trial: objective(trial, X, y), n_trials=100)
 
     print("Number of finished trials: {}".format(len(study.trials)))
 
