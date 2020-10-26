@@ -249,7 +249,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 ID of a study.
 
         Returns:
-            Optimization direction of the study or a sequence of such directions.
+            Optimization direction of the study or a tuple of such directions.
 
         Raises:
             :exc:`KeyError`:

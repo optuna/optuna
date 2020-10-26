@@ -187,17 +187,18 @@ class PercentilePruner(BasePruner):
         ):
             return False
 
-        assert not isinstance(study.direction, Sequence)
-        best_intermediate_result = _get_best_intermediate_result_over_steps(trial, study.direction)
+        direction = study.direction
+        assert not isinstance(direction, Sequence)
+        best_intermediate_result = _get_best_intermediate_result_over_steps(trial, direction)
         if math.isnan(best_intermediate_result):
             return True
 
         p = _get_percentile_intermediate_result_over_trials(
-            all_trials, study.direction, step, self._percentile
+            all_trials, direction, step, self._percentile
         )
         if math.isnan(p):
             return False
 
-        if study.direction == StudyDirection.MAXIMIZE:
+        if direction == StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p

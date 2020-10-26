@@ -9,7 +9,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
-from typing import Tuple
 from typing import Union
 import uuid
 import weakref
@@ -277,7 +276,7 @@ class RDBStorage(BaseStorage):
 
     def get_study_direction(
         self, study_id: int
-    ) -> Union[StudyDirection, Tuple[StudyDirection, ...]]:
+    ) -> Union[StudyDirection, Sequence[StudyDirection]]:
 
         session = self.scoped_session()
 
@@ -378,8 +377,10 @@ class RDBStorage(BaseStorage):
             try:
                 if study.direction == StudyDirection.MAXIMIZE:
                     best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
-                else:
+                elif study.direction == StudyDirection.MINIMIZE:
                     best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
+                else:
+                    raise ValueError
             except ValueError:
                 best_trial_frozen = None  # type: Optional[FrozenTrial]
             if best_trial:
@@ -392,6 +393,12 @@ class RDBStorage(BaseStorage):
                     value = None
                 elif len(value) == 1:
                     value = value[0]
+                else:
+                    assert False, (
+                        "Currently, the best trial is determined only for single-objective "
+                        "optimization."
+                    )
+
                 params = (
                     session.query(
                         models.TrialParamModel.param_name,
@@ -407,12 +414,14 @@ class RDBStorage(BaseStorage):
                     distribution = distributions.json_to_distribution(param.distribution_json)
                     param_dict[param.param_name] = distribution.to_external_repr(param.param_value)
                     param_distributions[param.param_name] = distribution
+
                 user_attrs = session.query(models.TrialUserAttributeModel).filter(
                     models.TrialUserAttributeModel.trial_id == best_trial.trial_id
                 )
                 system_attrs = session.query(models.TrialSystemAttributeModel).filter(
                     models.TrialSystemAttributeModel.trial_id == best_trial.trial_id
                 )
+
                 intermediate = session.query(models.TrialIntermediateValueModel).filter(
                     models.TrialIntermediateValueModel.trial_id == best_trial.trial_id
                 )
@@ -421,14 +430,19 @@ class RDBStorage(BaseStorage):
                     s = intermediate_value_model.step
                     v = intermediate_value_model.value
                     if s in intermediate_values:
+                        assert False, (
+                            "Currently, the best trial is determined only for single-objective "
+                            "optimization."
+                        )
                         intermediate_value = intermediate_values[s]
                         assert isinstance(intermediate_value, tuple)
                         intermediate_values[s] = intermediate_value + (v,)
                     else:
                         intermediate_values[s] = (v,)
                 for k, v in intermediate_values.items():
-                    if len(v) == 1:
+                    if not isinstance(study.direction, Sequence):
                         intermediate_values[k] = v[0]
+
                 best_trial_frozen = FrozenTrial(
                     best_trial.number,
                     TrialState.COMPLETE,
@@ -442,6 +456,7 @@ class RDBStorage(BaseStorage):
                     intermediate_values,
                     best_trial.trial_id,
                 )
+
             user_attrs = session.query(models.StudyUserAttributeModel).filter(
                 models.StudyUserAttributeModel.study_id == study.study_id
             )

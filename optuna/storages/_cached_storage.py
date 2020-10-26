@@ -305,7 +305,7 @@ class _CachedStorage(BaseStorage):
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
-                intermediate_values = cached_trial.intermediate_values
+                intermediate_values = copy.copy(cached_trial.intermediate_values)
                 intermediate_values[step] = intermediate_value
                 cached_trial.intermediate_values = intermediate_values
                 updates.intermediate_values[step] = intermediate_value
