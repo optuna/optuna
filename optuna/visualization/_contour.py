@@ -33,7 +33,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
 
         The following code snippet shows how to plot the parameter relationship as contour plot.
 
-        .. testcode::
+        .. plotly::
 
             import optuna
 
@@ -48,12 +48,6 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
             study.optimize(objective, n_trials=30)
 
             optuna.visualization.plot_contour(study, params=["x", "y"])
-
-        .. raw:: html
-
-            <iframe src="../../../_static/plot_contour.html"
-                width="100%" height="500px" frameborder="0">
-            </iframe>
 
     Args:
         study:

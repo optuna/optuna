@@ -27,7 +27,7 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
 
         The following code snippet shows how to plot the high-dimentional parameter relationships.
 
-        .. testcode::
+        .. plotly::
 
             import optuna
 
@@ -42,12 +42,6 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
             study.optimize(objective, n_trials=10)
 
             optuna.visualization.plot_parallel_coordinate(study, params=["x", "y"])
-
-        .. raw:: html
-
-            <iframe src="../../../_static/plot_parallel_coordinate.html"
-             width="100%" height="500px" frameborder="0">
-            </iframe>
 
     Args:
         study:

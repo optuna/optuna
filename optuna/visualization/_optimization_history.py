@@ -18,7 +18,7 @@ def plot_optimization_history(study: Study) -> "go.Figure":
 
         The following code snippet shows how to plot optimization history.
 
-        .. testcode::
+        .. plotly::
 
             import optuna
 
@@ -33,12 +33,6 @@ def plot_optimization_history(study: Study) -> "go.Figure":
             study.optimize(objective, n_trials=10)
 
             optuna.visualization.plot_optimization_history(study)
-
-        .. raw:: html
-
-            <iframe src="../../../_static/plot_optimization_history.html"
-             width="100%" height="500px" frameborder="0">
-            </iframe>
 
     Args:
         study:
