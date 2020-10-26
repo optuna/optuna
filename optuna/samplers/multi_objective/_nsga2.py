@@ -15,7 +15,7 @@ import optuna
 from optuna._experimental import experimental
 from optuna._multi_objective_utils import _dominates
 from optuna.distributions import BaseDistribution
-from optuna.samplers import BaseSampler
+from optuna.samplers._base import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
