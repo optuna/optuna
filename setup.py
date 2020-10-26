@@ -100,12 +100,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
         )
         + (
-            [
-                "allennlp==1.0.0",
-                "fastai>=2",
-                "dask[dataframe]",
-                "dask-ml",
-            ]
+            ["allennlp==1.0.0", "fastai>=2", "dask[dataframe]", "dask-ml",]
             if sys.version_info[:2] < (3, 8)
             else []
         ),

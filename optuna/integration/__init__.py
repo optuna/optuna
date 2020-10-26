@@ -42,8 +42,8 @@ if TYPE_CHECKING:
     from optuna.integration.cma import CmaEsSampler  # NOQA
     from optuna.integration.cma import PyCmaSampler  # NOQA
     from optuna.integration.fastaiv1 import FastAIV1PruningCallback  # NOQA
-    from optuna.integration.fastaiv2 import FastAIV2PruningCallback  # NOQA
     from optuna.integration.fastaiv2 import FastAIPruningCallback  # NOQA
+    from optuna.integration.fastaiv2 import FastAIV2PruningCallback  # NOQA
     from optuna.integration.keras import KerasPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMTuner  # NOQA

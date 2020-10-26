@@ -34,6 +34,7 @@ class FastAIV2PruningCallback(TrackerCallback):
         Register a pruning callback to ``learn.fit`` and ``learn.fit_one_cycle``.
 
         .. code::
+
             learn = cnn_learner(dls, resnet18, metrics=[error_rate])
             learn.fit(n_epochs, cbs=[FastAIPruningCallback(trial)]) # Monitor "valid_loss"
             learn.fit_one_cycle(

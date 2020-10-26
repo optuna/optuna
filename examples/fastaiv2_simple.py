@@ -15,9 +15,15 @@ argument.
 """
 
 import argparse
-from functools import partial
 
-from fastai.vision.all import *
+from fastai.vision.all import accuracy
+from fastai.vision.all import aug_transforms
+from fastai.vision.all import CudaCallback
+from fastai.vision.all import ImageDataLoaders
+from fastai.vision.all import Learner
+from fastai.vision.all import SimpleCNN
+from fastai.vision.all import untar_data
+from fastai.vision.all import URLs
 
 import optuna
 from optuna.integration import FastAIPruningCallback
@@ -65,7 +71,7 @@ def objective(trial):
         # You could as FastAIPruningCallback in the fit function
         cbs=[FastAIPruningCallback(trial), CudaCallback],
     )
-    
+
     # See https://forums.fast.ai/t/how-to-diable-progress-bar-completely/65249/3
     # to disable progress bar and logging info
     with learn.no_bar():
