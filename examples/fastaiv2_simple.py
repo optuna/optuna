@@ -1,5 +1,5 @@
 """
-Optuna example that optimizes convolutional neural network and data augmentation using FastAI V1.
+Optuna example that optimizes convolutional neural network and data augmentation using FastAI V2.
 
 In this example, we optimize the hyperparameters of a convolutional neural network and
 data augmentation for hand-written digit recognition in terms of validation accuracy.
@@ -11,23 +11,23 @@ as this uses the entire MNIST dataset.
 
 You can run this example as follows, pruning can be turned on and off with the `--pruning`
 argument.
-    $ python fastaiv1_simple.py [--pruning]
+    $ python fastaiv2_simple.py [--pruning]
 """
 
 import argparse
 from functools import partial
 
-from fastai import vision
+from fastai.vision.all import *
 
 import optuna
-from optuna.integration import FastAIV1PruningCallback
+from optuna.integration import FastAIPruningCallback
 
 
 BATCHSIZE = 128
 EPOCHS = 10
 
 
-path = vision.untar_data(vision.URLs.MNIST_SAMPLE)
+path = untar_data(URLs.MNIST_SAMPLE)
 
 
 def objective(trial):
@@ -37,15 +37,15 @@ def objective(trial):
         # MNIST is a hand-written digit dataset. Thus horizontal and vertical flipping are
         # disabled. However, the two flipping will be important when the dataset is CIFAR or
         # ImageNet.
-        tfms = vision.get_transforms(
+        tfms = aug_transforms(
             do_flip=False,
             flip_vert=False,
-            max_rotate=trial.suggest_int("max_rotate", -45, 45),
+            max_rotate=trial.suggest_int("max_rotate", 0, 45),
             max_zoom=trial.suggest_float("max_zoom", 1, 2),
             p_affine=trial.suggest_discrete_uniform("p_affine", 0.1, 1.0, 0.1),
         )
-    data = vision.ImageDataBunch.from_folder(
-        path, bs=BATCHSIZE, ds_tfms=tfms if apply_tfms else None
+    data = ImageDataLoaders.from_folder(
+        path, bs=BATCHSIZE, batch_tfms=tfms if apply_tfms else None
     )
 
     n_layers = trial.suggest_int("n_layers", 2, 5)
@@ -56,22 +56,27 @@ def objective(trial):
         n_channels.append(out_channels)
     n_channels.append(2)
 
-    model = vision.simple_cnn(n_channels)
+    model = SimpleCNN(n_channels)
 
-    learn = vision.Learner(
+    learn = Learner(
         data,
         model,
-        silent=True,
-        metrics=[vision.accuracy],
-        callback_fns=[partial(FastAIV1PruningCallback, trial=trial, monitor="valid_loss")],
+        metrics=[accuracy],
+        # You could as FastAIPruningCallback in the fit function
+        cbs=[FastAIPruningCallback(trial), CudaCallback],
     )
-    learn.fit(EPOCHS)
+    
+    # See https://forums.fast.ai/t/how-to-diable-progress-bar-completely/65249/3
+    # to disable progress bar and logging info
+    with learn.no_bar():
+        with learn.no_logging():
+            learn.fit(EPOCHS)
 
-    return learn.validate()[-1].item()
+    return learn.validate()[-1]
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="FastAI V1 example.")
+    parser = argparse.ArgumentParser(description="FastAI V2 example.")
     parser.add_argument(
         "--pruning",
         "-p",

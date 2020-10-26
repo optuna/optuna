@@ -102,7 +102,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         + (
             [
                 "allennlp==1.0.0",
-                "fastai<2",
+                "fastai>=2",
                 "dask[dataframe]",
                 "dask-ml",
             ]
@@ -141,7 +141,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             if sys.platform == "darwin"
             else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
         )
-        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
+        + (["allennlp==1.0.0", "fastai>=2"] if sys.version_info[:2] < (3, 8) else []),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -177,7 +177,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             if sys.platform == "darwin"
             else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
         )
-        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
+        + (["allennlp==1.0.0", "fastai>=2"] if sys.version_info[:2] < (3, 8) else []),
     }
 
     return requirements

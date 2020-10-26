@@ -6,8 +6,8 @@ from fastai.learner import Learner
 from fastai.metrics import accuracy
 import pytest
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
+import torch.nn.functional as F
 
 import optuna
 from optuna.integration import FastAIV2PruningCallback
@@ -36,13 +36,7 @@ def test_fastai_pruning_callback(tmpdir: Any) -> None:
 
     def objective(trial: optuna.trial.Trial) -> float:
         model = nn.Sequential(nn.Linear(20, 1), nn.Sigmoid())
-        learn = Learner(
-            data,
-            model,
-            loss_func=F.nll_loss,
-            metrics=[accuracy],
-            cbs=[CudaCallback],
-        )
+        learn = Learner(data, model, loss_func=F.nll_loss, metrics=[accuracy], cbs=[CudaCallback],)
 
         learn.fit(1, cbs=FastAIV2PruningCallback(trial))
 

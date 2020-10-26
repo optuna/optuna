@@ -9,16 +9,20 @@ from optuna._imports import try_import
 
 with try_import() as _imports:
     import fastai
+
     if version.parse(fastai.__version__) >= version.parse("2.0.0"):
-        raise ImportError(f"You don't have fastai V1 installed! Fastai version: {fastai.__version__}")
-    
+        raise ImportError(
+            f"You don't have fastai V1 installed! Fastai version: {fastai.__version__}"
+        )
+
     from fastai.basic_train import Learner
     from fastai.callbacks import TrackerCallback
-    
+
 if not _imports.is_successful():
     TrackerCallback = object  # NOQA
 
 
+@deprecated("2.3.0")
 class FastAIV1PruningCallback(TrackerCallback):
     """FastAI callback to prune unpromising trials for fastai.
 
@@ -78,7 +82,3 @@ class FastAIV1PruningCallback(TrackerCallback):
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
-
-@deprecated("2.3.0", text="Please, use `FastAIV1PruningCallback` if you have fastai v1 or `FastAIV2PruningCallback` in case of fastai v2.")
-class FastAIPruningCallback(FastAIV1PruningCallback): 
-    pass
