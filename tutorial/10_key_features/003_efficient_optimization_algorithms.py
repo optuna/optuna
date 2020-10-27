@@ -27,36 +27,13 @@ Optuna provides the following sampling algorithms:
 
 The default sampler is :class:`optuna.samplers.TPESampler`.
 
-
-Pruning Algorithms
+Switching Samplers
 ------------------
 
-``Pruners`` automatically stop unpromising trials at the early stages of the training (a.k.a., automated early-stopping).
-
-Optuna provides the following pruning algorithms:
-
-- Asynchronous Successive Halving algorithm implemted in :class:`optuna.pruners.SuccessiveHalvingPruner`
-
-- Hyperband algorithm implemented in :class:`optuna.pruners.HyperbandPruner`
-
-- Median pruning algorithm implemented in :class:`optuna.pruners.MedianPruner`
-
-- Threshold pruning algorithm implemented in :class:`optuna.pruners.ThresholdPruner`
-
-We use :class:`optuna.pruners.MedianPruner` in most examples,
-though basically it is outperformed by :class:`optuna.pruners.SuccessiveHalvingPruner` and
-:class:`optuna.pruners.HyperbandPruner` as in `this benchmark result <https://github.com/optuna/optuna/wiki/%5BUnder-Construction%5D-Benchmarks-with-Kurobako>`_.
-
-
-Activating Pruners
-------------------
-To turn on the pruning feature, you need to call :func:`~optuna.trial.Trial.report` and :func:`~optuna.trial.Trial.should_prune` after each step of the iterative training.
-:func:`~optuna.trial.Trial.report` periodically monitors the intermediate objective values.
-:func:`~optuna.trial.Trial.should_prune` decides termination of the trial that does not meet a predefined condition.
-
-We would recommend using integration modules for major machine learning frameworks.
-Exclusive list is :ref:`integration_list` and usecases are available in  `optuna/examples <https://github.com/optuna/optuna/tree/master/examples/>`_.
 """
+
+import logging
+import sys
 
 import sklearn.datasets
 import sklearn.linear_model
@@ -90,10 +67,75 @@ def objective(trial):
 
 
 ###################################################################################################
-# Set up the median stopping rule as the pruning condition.
+# By default, Optuna uses :class:`~optuna.samplers.TPESampler` as follows.
 
-import logging
-import sys
+study = optuna.create_study()
+print(f"Sampler is {study.sampler.__class__.__name__}")
+
+###################################################################################################
+# If you want to use different samplers for example :class:`~optuna.samplers.RandomSampler`,
+
+study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
+study.optimize(objective, n_trials=20)
+
+
+###################################################################################################
+# Pruning Algorithms
+# ------------------
+#
+# ``Pruners`` automatically stop unpromising trials at the early stages of the training (a.k.a., automated early-stopping).
+#
+# Optuna provides the following pruning algorithms:
+#
+# - Asynchronous Successive Halving algorithm implemted in :class:`optuna.pruners.SuccessiveHalvingPruner`
+#
+# - Hyperband algorithm implemented in :class:`optuna.pruners.HyperbandPruner`
+#
+# - Median pruning algorithm implemented in :class:`optuna.pruners.MedianPruner`
+#
+# - Threshold pruning algorithm implemented in :class:`optuna.pruners.ThresholdPruner`
+#
+# We use :class:`optuna.pruners.MedianPruner` in most examples,
+# though basically it is outperformed by :class:`optuna.pruners.SuccessiveHalvingPruner` and
+# :class:`optuna.pruners.HyperbandPruner` as in `this benchmark result <https://github.com/optuna/optuna/wiki/%5BUnder-Construction%5D-Benchmarks-with-Kurobako>`_.
+#
+#
+# Activating Pruners
+# ------------------
+# To turn on the pruning feature, you need to call :func:`~optuna.trial.Trial.report` and :func:`~optuna.trial.Trial.should_prune` after each step of the iterative training.
+# :func:`~optuna.trial.Trial.report` periodically monitors the intermediate objective values.
+# :func:`~optuna.trial.Trial.should_prune` decides termination of the trial that does not meet a predefined condition.
+#
+# We would recommend using integration modules for major machine learning frameworks.
+# Exclusive list is :ref:`integration_list` and usecases are available in  `optuna/examples <https://github.com/optuna/optuna/tree/master/examples/>`_.
+
+
+def objective(trial):
+    iris = sklearn.datasets.load_iris()
+    classes = list(set(iris.target))
+    train_x, valid_x, train_y, valid_y = sklearn.model_selection.train_test_split(
+        iris.data, iris.target, test_size=0.25, random_state=0
+    )
+
+    alpha = trial.suggest_loguniform("alpha", 1e-5, 1e-1)
+    clf = sklearn.linear_model.SGDClassifier(alpha=alpha)
+
+    for step in range(100):
+        clf.partial_fit(train_x, train_y, classes=classes)
+
+        # Report intermediate objective value.
+        intermediate_value = 1.0 - clf.score(valid_x, valid_y)
+        trial.report(intermediate_value, step)
+
+        # Handle pruning based on the intermediate value.
+        if trial.should_prune():
+            raise optuna.TrialPruned()
+
+    return 1.0 - clf.score(valid_x, valid_y)
+
+
+###################################################################################################
+# Set up the median stopping rule as the pruning condition.
 
 # Add stream handler of stdout to show the messages
 optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
