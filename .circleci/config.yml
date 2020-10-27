@@ -87,7 +87,7 @@ jobs:
             make html
 
       - store_artifacts:
-          path: ./docs/build
+          path: ./docs/build/html
 
   doctest:
     docker:
