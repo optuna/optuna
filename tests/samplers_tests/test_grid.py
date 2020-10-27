@@ -85,7 +85,7 @@ def test_study_optimize_with_exceeding_number_of_trials() -> None:
         return trial.suggest_int("a", 0, 100)
 
     # When `n_trials` is `None`, the optimization stops just after all grids are evaluated.
-    search_space = {"a": [0, 50]}  # type: Dict[str, List[GridValueType]]
+    search_space: Dict[str, List[GridValueType]] = {"a": [0, 50]}
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
     study.optimize(objective, n_trials=None)
     assert len(study.trials) == 2
@@ -156,7 +156,7 @@ def test_cast_value() -> None:
 
 def test_has_same_search_space() -> None:
 
-    search_space = {"x": [3, 2, 1], "y": ["a", "b", "c"]}  # type: Dict[str, List[Union[int, str]]]
+    search_space: Dict[str, List[Union[int, str]]] = {"x": [3, 2, 1], "y": ["a", "b", "c"]}
     sampler = samplers.GridSampler(search_space)
     assert sampler._same_search_space(search_space)
     assert sampler._same_search_space({"x": np.array([3, 2, 1]), "y": ["a", "b", "c"]})

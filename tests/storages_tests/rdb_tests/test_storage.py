@@ -94,7 +94,7 @@ def test_set_default_engine_kwargs_for_mysql(
 def test_set_default_engine_kwargs_for_mysql_with_other_rdb() -> None:
 
     # Do not change engine_kwargs if database is not MySQL.
-    engine_kwargs = {}  # type: Dict[str, Any]
+    engine_kwargs: Dict[str, Any] = {}
     RDBStorage._set_default_engine_kwargs_for_mysql("sqlite:///example.db", engine_kwargs)
     assert "pool_pre_ping" not in engine_kwargs
     RDBStorage._set_default_engine_kwargs_for_mysql("postgres:///example.db", engine_kwargs)

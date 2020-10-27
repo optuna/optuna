@@ -689,6 +689,10 @@ def create_study(
     Returns:
         A :class:`~optuna.study.Study` object.
 
+    Raises:
+        ValueError:
+            If ``direction`` is neither 'minimize' nor 'maximize'.
+
     See also:
         :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
 

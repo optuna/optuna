@@ -688,7 +688,7 @@ def test_relative_parameters(storage_init_func: Callable[[], storages.BaseStorag
 @parametrize_storage
 def test_datetime_start(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
 
-    trial_datetime_start = [None]  # type: List[Optional[datetime.datetime]]
+    trial_datetime_start: List[Optional[datetime.datetime]] = [None]
 
     def objective(trial: Trial) -> float:
 
@@ -1086,14 +1086,14 @@ def test_frozen_trial_validate() -> None:
         invalid_trial._validate()
 
     # Invalid: Inconsistent `params` and `distributions`
-    inconsistent_pairs = [
+    inconsistent_pairs: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]] = [
         # `params` has an extra element.
         ({"x": 0.1, "y": 0.5}, {"x": UniformDistribution(0, 1)}),
         # `distributions` has an extra element.
         ({"x": 0.1}, {"x": UniformDistribution(0, 1), "y": LogUniformDistribution(0.1, 1.0)}),
         # The value of `x` isn't contained in the distribution.
         ({"x": -0.5}, {"x": UniformDistribution(0, 1)}),
-    ]  # type: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]]
+    ]
 
     for params, distributions in inconsistent_pairs:
         invalid_trial = copy.copy(valid_trial)

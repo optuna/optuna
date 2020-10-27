@@ -104,6 +104,10 @@ class UniformDistribution(BaseDistribution):
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
+
+    Raises:
+        ValueError:
+            If ``low`` value is larger than ``high`` value.
     """
 
     def __init__(self, low: float, high: float) -> None:
@@ -141,6 +145,11 @@ class LogUniformDistribution(BaseDistribution):
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
             Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
+
+    Raises:
+        ValueError:
+            If ``low`` value is larger than ``high`` value, or ``low`` value is smaller than or
+            equal to 0.
     """
 
     def __init__(self, low: float, high: float) -> None:
@@ -190,6 +199,10 @@ class DiscreteUniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
         q:
             A discretization step.
+
+    Raises:
+        ValueError:
+            If ``low`` value is larger than ``high`` value.
     """
 
     def __init__(self, low: float, high: float, q: float) -> None:
@@ -241,6 +254,11 @@ class IntUniformDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
         step:
             A step for spacing between values.
+
+    Raises:
+        ValueError:
+            If ``low`` value is larger than ``high`` value, or ``step`` value is smaller or
+            equal to 0.
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
@@ -303,6 +321,10 @@ class IntLogUniformDistribution(BaseDistribution):
                 this value and assume that ``step`` is always 1.
                 User-defined samplers may continue to use other values besides 1 during the
                 deprecation.
+
+    Raises:
+        ValueError:
+            If ``low`` value is larger than ``high`` value, or ``low`` value is smaller than 1.
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
@@ -388,6 +410,10 @@ class CategoricalDistribution(BaseDistribution):
     Attributes:
         choices:
             Parameter value candidates.
+
+    Raises:
+        ValueError:
+            If ``choices`` do not contain any elements.
     """
 
     def __init__(self, choices: Sequence[CategoricalChoiceType]) -> None:
@@ -446,6 +472,10 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
 
     Returns:
         A deserialized distribution.
+
+    Raises:
+        ValueError:
+            If the unknown class is specified.
     """
 
     json_dict = json.loads(json_str)
@@ -487,6 +517,12 @@ def check_distribution_compatibility(
 
     Returns:
         True denotes given distributions are compatible. Otherwise, they are not.
+
+    Raises:
+        ValueError:
+            If different distribution kinds are set to ``dist_old`` and ``dist_new``,
+            or ``dist_old.choices`` doesn't match ``dist_new.choices``
+            for :class:`~optuna.distributions.CategoricalDistribution`.
     """
 
     if dist_old.__class__ != dist_new.__class__:

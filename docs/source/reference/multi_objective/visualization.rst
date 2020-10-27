@@ -1,8 +1,10 @@
+.. module:: optuna.multi_objective.visualization
+
 optuna.multi_objective.visualization
 ====================================
 
 .. note::
-    :mod:`~optuna.multi_objective.visualization` module uses plotly to create figures,
+    :mod:`optuna.multi_objective.visualization` module uses plotly to create figures,
     but `JupyterLab`_ cannot render them by default. Please follow this `installation guide`_ to
     show figures in `JupyterLab`_.
 

@@ -58,10 +58,10 @@ class FixedTrial(BaseTrial):
     def __init__(self, params: Dict[str, Any], number: int = 0) -> None:
 
         self._params = params
-        self._suggested_params = {}  # type: Dict[str, Any]
-        self._distributions = {}  # type: Dict[str, BaseDistribution]
-        self._user_attrs = {}  # type: Dict[str, Any]
-        self._system_attrs = {}  # type: Dict[str, Any]
+        self._suggested_params: Dict[str, Any] = {}
+        self._distributions: Dict[str, BaseDistribution] = {}
+        self._user_attrs: Dict[str, Any] = {}
+        self._system_attrs: Dict[str, Any] = {}
         self._datetime_start = datetime.datetime.now()
         self._number = number
 
@@ -106,9 +106,9 @@ class FixedTrial(BaseTrial):
                     "The specified `step` is {}.".format(step)
                 )
             else:
-                distribution = IntUniformDistribution(
-                    low=low, high=high, step=step
-                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+                distribution: Union[
+                    IntUniformDistribution, IntLogUniformDistribution
+                ] = IntUniformDistribution(low=low, high=high, step=step)
         else:
             if log:
                 distribution = IntLogUniformDistribution(low=low, high=high)

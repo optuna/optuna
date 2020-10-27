@@ -203,7 +203,7 @@ class TPESampler(BaseSampler):
         if not self._multivariate:
             return {}
 
-        search_space = {}  # type: Dict[str, BaseDistribution]
+        search_space: Dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
             if not isinstance(distribution, _DISTRIBUTION_CLASSES):
                 if self._warn_independent_sampling:
@@ -670,7 +670,7 @@ class TPESampler(BaseSampler):
                     "But (samples.size, score.size) = ({}, {})".format(sample_size, score.size)
                 )
             best = np.argmax(score)
-            return {k: v[best] for k, v in multivariate_samples.items()}
+            return {k: v[best].item() for k, v in multivariate_samples.items()}
         else:
             raise ValueError(
                 "The size of 'samples' should be more than 0."
@@ -780,7 +780,7 @@ def _get_observation_pairs(
         else:
             assert False
 
-        param_value = None  # type: Optional[float]
+        param_value: Optional[float] = None
         if param_name in trial.params:
             distribution = trial.distributions[param_name]
             param_value = distribution.to_internal_repr(trial.params[param_name])
@@ -800,9 +800,7 @@ def _get_multivariate_observation_pairs(
         sign = -1
 
     scores = []
-    values = {
-        param_name: [] for param_name in param_names
-    }  # type: Dict[str, List[Optional[float]]]
+    values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     for trial in study.get_trials(deepcopy=False, state=(TrialState.COMPLETE, TrialState.PRUNED)):
 
         # We extract score from the trial.
