@@ -1017,3 +1017,19 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
         intermediate_values=intermediate_values,
         trial_id=0,  # dummy
     )
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+
+        storage.set_study_direction(study_id, [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE])
+        generator = random.Random(51)
+        for i in range(3):
+            template_trial = _generate_trial(generator)
+            template_trial.state = TrialState.COMPLETE
+            template_trial.value = [i, i + 1]
+            storage.create_new_trial(study_id, template_trial=template_trial)
+        assert storage.get_best_trial(study_id).number == 0

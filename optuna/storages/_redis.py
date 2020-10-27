@@ -466,6 +466,11 @@ class RedisStorage(BaseStorage):
             return
 
         best_value_or_none = self.get_best_trial(study_id).value
+
+        if isinstance(best_value_or_none, Sequence) or isinstance(trial.value, Sequence):
+            self._set_best_trial(study_id, 0)
+            return
+
         assert best_value_or_none is not None and not isinstance(best_value_or_none, Sequence)
         assert trial.value is not None and not isinstance(trial.value, Sequence)
         best_value = float(best_value_or_none)
