@@ -1145,6 +1145,9 @@ class RDBStorage(BaseStorage):
             all_trials = models.TrialModel.all(session)
             return self._build_frozen_trial_from_trial_model(all_trials[0])
 
+        if isinstance(direction, Sequence):
+            direction = direction[0]
+
         if direction == StudyDirection.MAXIMIZE:
             trial = models.TrialModel.find_max_value_trial(study_id, session)
         else:

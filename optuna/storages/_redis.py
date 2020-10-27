@@ -240,6 +240,7 @@ class RedisStorage(BaseStorage):
         direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
         if direction_pkl is None:
             raise KeyError("No such study: {}.".format(study_id))
+            raise KeyError("No such study: {}.".format(study_id))
         direction = pickle.loads(direction_pkl)
         if isinstance(direction, StudyDirection):
             return direction
@@ -424,6 +425,9 @@ class RedisStorage(BaseStorage):
                 )
                 # Return the first trial as a dummy trial.
                 return all_trials[0]
+
+            if isinstance(direction, Sequence):
+                direction = direction[0]
 
             if direction == StudyDirection.MAXIMIZE:
                 best_trial = max(all_trials, key=lambda t: t.value)
