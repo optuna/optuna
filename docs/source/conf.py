@@ -54,6 +54,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'cliff.sphinxext',
     'sphinx_gallery.gen_gallery',
+    'matplotlib.sphinxext.plot_directive',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -190,3 +191,9 @@ sphinx_gallery_conf = {
     'filename_pattern': r'/*\.py',
     'first_notebook_cell': None,
 }
+
+# matplotlib plot directive
+plot_include_source = True
+plot_formats = [("png", 90)]
+plot_html_show_formats = False
+plot_html_show_source_link = False

@@ -10,12 +10,14 @@ from typing import Tuple
 from typing import Type
 from typing import Union
 
-import optuna
 from optuna import logging
 from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna._study_direction import StudyDirection
+from optuna.pruners import NopPruner
 from optuna.storages import BaseStorage
+from optuna.study import create_study as _create_study
+from optuna.study import load_study as _load_study
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
@@ -118,11 +120,11 @@ def create_study(
     if not all(d in ["minimize", "maximize"] for d in directions):
         raise ValueError("`directions` includes unknown direction names.")
 
-    study = optuna.create_study(
+    study = _create_study(
         study_name=study_name,
         storage=storage,
         sampler=sampler_adapter,
-        pruner=optuna.pruners.NopPruner(),
+        pruner=NopPruner(),
         load_if_exists=load_if_exists,
     )
 
@@ -198,7 +200,7 @@ def load_study(
     mo_sampler = sampler or multi_objective.samplers.RandomMultiObjectiveSampler()
     sampler_adapter = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
-    study = optuna.load_study(study_name=study_name, storage=storage, sampler=sampler_adapter)
+    study = _load_study(study_name=study_name, storage=storage, sampler=sampler_adapter)
 
     return MultiObjectiveStudy(study)
 
@@ -478,7 +480,7 @@ class MultiObjectiveStudy(object):
         return self._study._study_id
 
 
-def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:
+def _log_completed_trial(self: Study, trial: Trial, value: float) -> None:
     if not _logger.isEnabledFor(logging.INFO):
         return
 

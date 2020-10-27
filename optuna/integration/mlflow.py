@@ -79,14 +79,30 @@ class MLflowCallback(object):
             Name of the metric. Since the metric itself is just a number,
             `metric_name` can be used to give it a name. So you know later
             if it was roc-auc or accuracy.
+        nest_trials:
+            Flag indicating whether or not trials should be logged as
+            nested runs. This is often helpful for aggregating trials
+            to a particular study, under a given experiment.
+        tag_study_user_attrs:
+            Flag indicating whether or not to add the study's user attrs
+            to the mlflow trial as tags. Please note that when this flag is
+            set, key value pairs in study.user_attrs will supersede existing tags.
     """
 
-    def __init__(self, tracking_uri: Optional[str] = None, metric_name: str = "value") -> None:
+    def __init__(
+        self,
+        tracking_uri: Optional[str] = None,
+        metric_name: str = "value",
+        nest_trials: bool = False,
+        tag_study_user_attrs: bool = False,
+    ) -> None:
 
         _imports.check()
 
         self._tracking_uri = tracking_uri
         self._metric_name = metric_name
+        self._nest_trials = nest_trials
+        self._tag_study_user_attrs = tag_study_user_attrs
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
@@ -97,7 +113,7 @@ class MLflowCallback(object):
         # This sets the experiment of MLflow.
         mlflow.set_experiment(study.study_name)
 
-        with mlflow.start_run(run_name=str(trial.number)):
+        with mlflow.start_run(run_name=str(trial.number), nested=self._nest_trials):
 
             # This sets the metric for MLflow.
             trial_value = trial.value if trial.value is not None else float("nan")
@@ -107,7 +123,7 @@ class MLflowCallback(object):
             mlflow.log_params(trial.params)
 
             # This sets the tags for MLflow.
-            tags = {}  # type: Dict[str, str]
+            tags: Dict[str, str] = {}
             tags["number"] = str(trial.number)
             tags["datetime_start"] = str(trial.datetime_start)
             tags["datetime_complete"] = str(trial.datetime_complete)
@@ -127,6 +143,9 @@ class MLflowCallback(object):
                 (k + "_distribution"): str(v) for (k, v) in trial.distributions.items()
             }
             tags.update(distributions)
+
+            if self._tag_study_user_attrs:
+                tags.update(study.user_attrs)
 
             # This is a temporary fix on Optuna side. It avoids an error with user
             # attributes that are too long. It should be fixed on MLflow side later.

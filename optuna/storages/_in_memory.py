@@ -29,9 +29,9 @@ class InMemoryStorage(BaseStorage):
     """
 
     def __init__(self) -> None:
-        self._trial_id_to_study_id_and_number = {}  # type: Dict[int, Tuple[int, int]]
-        self._study_name_to_id = {}  # type: Dict[str, int]
-        self._studies = {}  # type: Dict[int, _StudyInfo]
+        self._trial_id_to_study_id_and_number: Dict[int, Tuple[int, int]] = {}
+        self._study_name_to_id: Dict[str, int] = {}
+        self._studies: Dict[int, _StudyInfo] = {}
 
         self._max_study_id = -1
         self._max_trial_id = -1
@@ -414,10 +414,10 @@ class InMemoryStorage(BaseStorage):
 
 class _StudyInfo:
     def __init__(self, name: str) -> None:
-        self.trials = []  # type: List[FrozenTrial]
-        self.param_distribution = {}  # type: Dict[str, distributions.BaseDistribution]
-        self.user_attrs = {}  # type: Dict[str, Any]
-        self.system_attrs = {}  # type: Dict[str, Any]
-        self.name = name  # type: str
+        self.trials: List[FrozenTrial] = []
+        self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
+        self.user_attrs: Dict[str, Any] = {}
+        self.system_attrs: Dict[str, Any] = {}
+        self.name: str = name
         self.direction = StudyDirection.NOT_SET
-        self.best_trial_id = None  # type: Optional[int]
+        self.best_trial_id: Optional[int] = None
