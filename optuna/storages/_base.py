@@ -570,7 +570,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         return len([t for t in self.get_all_trials(study_id, deepcopy=False) if t.state == state])
 
-    def get_best_trial(self, study_id: int) -> Optional[FrozenTrial]:
+    def get_best_trial(self, study_id: int) -> FrozenTrial:
         """Return the trial with the best value in a study.
 
         Args:
@@ -593,16 +593,21 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             raise ValueError("No trials are completed yet.")
 
         direction = self.get_study_direction(study_id)
-        if direction == StudyDirection.MAXIMIZE:
-            best_trial = max(all_trials, key=lambda t: t.value)
-        elif direction == StudyDirection.MINIMIZE:
-            best_trial = min(all_trials, key=lambda t: t.value)
-        else:
+        if isinstance(direction, Sequence) and len(direction) > 1:
             _logger.warning(
                 "The best trial is only supported for single-objective optimization. "
                 f"The directions are {direction}."
             )
-            best_trial = None
+            # Return the first trial as a dummy trial.
+            return all_trials[0]
+
+        if isinstance(direction, Sequence):
+            direction = direction[0]
+
+        if direction == StudyDirection.MAXIMIZE:
+            best_trial = max(all_trials, key=lambda t: t.value)
+        else:
+            best_trial = min(all_trials, key=lambda t: t.value)
 
         return best_trial
 
