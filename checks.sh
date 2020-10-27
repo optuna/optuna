@@ -36,6 +36,7 @@ done
 
 target="examples optuna tests"
 mypy_target="optuna tests"
+res_all=0
 
 res_black=$(black $target --check --diff 2>&1)
 if [ $? -eq 1 ] ; then
@@ -45,7 +46,7 @@ if [ $? -eq 1 ] ; then
   else
     echo "$res_black"
     echo "black failed."
-    exit 1
+    res_all=1
   fi
 else
   echo "black succeeded."
@@ -55,7 +56,7 @@ res_flake8=$(flake8 $target)
 if [ $? -eq 1 ] ; then
   echo "$res_flake8"
   echo "flake8 failed."
-  exit 1
+  res_all=1
 fi
 echo "flake8 succeeded."
 
@@ -67,7 +68,7 @@ if [ $? -eq 1 ] ; then
   else
     echo "$res_isort"
     echo "isort failed."
-    exit 1
+    res_all=1
   fi
 else
   echo "isort succeeded."
@@ -77,6 +78,10 @@ res_mypy=$(mypy $mypy_target)
 if [ $? -eq 1 ] ; then
   echo "$res_mypy"
   echo "mypy failed."
-  exit 1
+  res_all=1
 fi
 echo "mypy succeeded."
+
+if [ $res_all -eq 1 ] ; then
+  exit 1
+fi
