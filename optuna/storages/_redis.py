@@ -416,7 +416,16 @@ class RedisStorage(BaseStorage):
             if len(all_trials) == 0:
                 raise ValueError("No trials are completed yet.")
 
-            if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+            direction = self.get_study_direction(study_id)
+            if isinstance(direction, Sequence) and len(direction) > 1:
+                _logger.warning(
+                    "The best trial is only supported for single-objective optimization. "
+                    f"The directions are {direction}."
+                )
+                # Return the first trial as a dummy trial.
+                return all_trials[0]
+
+            if direction == StudyDirection.MAXIMIZE:
                 best_trial = max(all_trials, key=lambda t: t.value)
             else:
                 best_trial = min(all_trials, key=lambda t: t.value)

@@ -1134,7 +1134,18 @@ class RDBStorage(BaseStorage):
     def get_best_trial(self, study_id: int) -> FrozenTrial:
 
         session = self.scoped_session()
-        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+
+        direction = self.get_study_direction(study_id)
+        if isinstance(direction, Sequence) and len(direction) > 1:
+            _logger.warning(
+                "The best trial is only supported for single-objective optimization. "
+                f"The directions are {direction}."
+            )
+            # Return the first trial as a dummy trial.
+            all_trials = models.TrialModel.all(session)
+            return self._build_frozen_trial_from_trial_model(all_trials[0])
+
+        if direction == StudyDirection.MAXIMIZE:
             trial = models.TrialModel.find_max_value_trial(study_id, session)
         else:
             trial = models.TrialModel.find_min_value_trial(study_id, session)
