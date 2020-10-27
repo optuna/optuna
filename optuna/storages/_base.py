@@ -6,12 +6,15 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
+from optuna import logging
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
 from optuna.distributions import BaseDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
+_logger = logging.get_logger(__name__)
 
 DEFAULT_STUDY_NAME_PREFIX = "no-name-"
 
@@ -567,7 +570,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         return len([t for t in self.get_all_trials(study_id, deepcopy=False) if t.state == state])
 
-    def get_best_trial(self, study_id: int) -> FrozenTrial:
+    def get_best_trial(self, study_id: int) -> Optional[FrozenTrial]:
         """Return the trial with the best value in a study.
 
         Args:
@@ -589,10 +592,17 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         if len(all_trials) == 0:
             raise ValueError("No trials are completed yet.")
 
-        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+        direction = self.get_study_direction(study_id)
+        if direction == StudyDirection.MAXIMIZE:
             best_trial = max(all_trials, key=lambda t: t.value)
-        else:
+        elif direction == StudyDirection.MINIMIZE:
             best_trial = min(all_trials, key=lambda t: t.value)
+        else:
+            _logger.warning(
+                "The best trial is only supported for single-objective optimization. "
+                f"The directions are {direction}."
+            )
+            best_trial = None
 
         return best_trial
 

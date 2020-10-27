@@ -67,10 +67,21 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
     """
 
     _imports.check()
+
+    if study.n_objectives > 1:
+        raise NotImplementedError(
+            "The contour plot only supports the single-objective optimization."
+        )
+
     return _get_contour_plot(study, params)
 
 
 def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
+
+    if isinstance(study.direction, StudyDirection):
+        direction = study.direction
+    else:
+        direction = study.direction[0]
 
     layout = go.Layout(title="Contour Plot")
 
@@ -116,15 +127,11 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
             max_value = max_value + padding
         param_values_range[p_name] = (min_value, max_value)
 
-    assert isinstance(
-        study.direction, StudyDirection
-    ), "The contour plot is supported only for single-objective optimization."
-
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
         y_param = sorted_params[1]
         sub_plots = _generate_contour_subplot(
-            trials, x_param, y_param, study.direction, param_values_range
+            trials, x_param, y_param, direction, param_values_range
         )
         figure = go.Figure(data=sub_plots, layout=layout)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
@@ -153,7 +160,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
                     figure.add_trace(go.Scatter(), row=y_i + 1, col=x_i + 1)
                 else:
                     sub_plots = _generate_contour_subplot(
-                        trials, x_param, y_param, study.direction, param_values_range
+                        trials, x_param, y_param, direction, param_values_range
                     )
                     contour = sub_plots[0]
                     scatter = sub_plots[1]

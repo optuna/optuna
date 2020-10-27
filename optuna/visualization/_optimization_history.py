@@ -52,10 +52,21 @@ def plot_optimization_history(study: Study) -> "go.Figure":
     """
 
     _imports.check()
+
+    if study.n_objectives > 1:
+        raise NotImplementedError(
+            "The optimization history plot only supports the single-objective optimization."
+        )
+
     return _get_optimization_history_plot(study)
 
 
 def _get_optimization_history_plot(study: Study) -> "go.Figure":
+
+    if isinstance(study.direction, StudyDirection):
+        direction = study.direction
+    else:
+        direction = study.direction[0]
 
     layout = go.Layout(
         title="Optimization History Plot",
@@ -69,8 +80,8 @@ def _get_optimization_history_plot(study: Study) -> "go.Figure":
         _logger.warning("Study instance does not contain trials.")
         return go.Figure(data=[], layout=layout)
 
-    best_values = [float("inf")] if study.direction == StudyDirection.MINIMIZE else [-float("inf")]
-    comp = min if study.direction == StudyDirection.MINIMIZE else max
+    best_values = [float("inf")] if direction == StudyDirection.MINIMIZE else [-float("inf")]
+    comp = min if direction == StudyDirection.MINIMIZE else max
     for trial in trials:
         trial_value = trial.value
         assert trial_value is not None and not isinstance(trial_value, Sequence)  # For mypy

@@ -52,6 +52,12 @@ def plot_optimization_history(study: Study) -> "Axes":
     """
 
     _imports.check()
+
+    if study.n_objectives > 1:
+        raise NotImplementedError(
+            "The optimization history plot only supports the single-objective optimization."
+        )
+
     return _get_optimization_history_plot(study)
 
 

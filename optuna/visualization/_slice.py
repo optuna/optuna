@@ -60,6 +60,12 @@ def plot_slice(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
     """
 
     _imports.check()
+
+    if study.n_objectives > 1:
+        raise NotImplementedError(
+            "The slice plot only supports the single-objective optimization."
+        )
+
     return _get_slice_plot(study, params)
 
 

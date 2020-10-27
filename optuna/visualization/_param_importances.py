@@ -92,6 +92,11 @@ def plot_param_importances(
 
     _imports.check()
 
+    if study.n_objectives > 1:
+        raise NotImplementedError(
+            "The parameter importance plot only supports the single-objective optimization."
+        )
+
     layout = go.Layout(
         title="Hyperparameter Importances",
         xaxis={"title": "Importance"},

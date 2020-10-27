@@ -61,10 +61,21 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
     """
 
     _imports.check()
+
+    if study.n_objectives > 1:
+        raise NotImplementedError(
+            "The parallel coordinate plot only supports the single-objective optimization."
+        )
+
     return _get_parallel_coordinate_plot(study, params)
 
 
 def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
+
+    if isinstance(study.direction, StudyDirection):
+        direction = study.direction
+    else:
+        direction = study.direction[0]
 
     layout = go.Layout(title="Parallel Coordinate Plot")
 
@@ -121,7 +132,7 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
                 "colorscale": "blues",
                 "colorbar": {"title": "Objective Value"},
                 "showscale": True,
-                "reversescale": study.direction == StudyDirection.MINIMIZE,
+                "reversescale": direction == StudyDirection.MINIMIZE,
             },
         )
     ]

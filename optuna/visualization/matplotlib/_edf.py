@@ -82,6 +82,11 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "Axes":
     else:
         studies = list(study)
 
+    if any([s.n_objectives > 1 for s in studies]):
+        raise NotImplementedError(
+            "The EDF plot only supports the single-objective optimization."
+        )
+
     return _get_edf_plot(studies)
 
 
