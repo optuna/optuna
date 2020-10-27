@@ -4,7 +4,7 @@
 Quick Visualization for Hyperparameter Optimization Analysis
 ============================================================
 
-Optuna provides various visualization features in :ref:`visualization_module` to optimization results visually.
+Optuna provides various visualization features in :mod:`optuna.visualization` to optimization results visually.
 
 This tutorial walks you through this module by visualizing the history of multi-layer preceptron for FashionMNIST implemented in PyTorch.
 """

@@ -107,7 +107,7 @@ study.optimize(objective, n_trials=20)
 # :func:`~optuna.trial.Trial.should_prune` decides termination of the trial that does not meet a predefined condition.
 #
 # We would recommend using integration modules for major machine learning frameworks.
-# Exclusive list is :ref:`integration_list` and usecases are available in  `optuna/examples <https://github.com/optuna/optuna/tree/master/examples/>`_.
+# Exclusive list is :mod:`optuna.integration` and usecases are available in  `optuna/examples <https://github.com/optuna/optuna/tree/master/examples/>`_.
 
 
 def objective(trial):
@@ -177,7 +177,7 @@ study.optimize(objective, n_trials=20)
 # -------------------------------
 # To implement pruning mechanism in much simpler forms, Optuna provides integration modules for the following libraries.
 #
-# For the complete list of Optuna's integration modules, see :ref:`integration_list`.
+# For the complete list of Optuna's integration modules, see :mod:`optuna.integration`.
 #
 # For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
 # (See also `example <https://github.com/optuna/optuna/blob/master/examples/pruning/xgboost_integration.py>`_ for the entire script.)
