@@ -142,6 +142,10 @@ class CmaEsSampler(BaseSampler):
                 to set this flag :obj:`True` when the :class:`~optuna.pruners.HyperbandPruner` is
                 used. Please see `the benchmark result
                 <https://github.com/optuna/optuna/pull/1229>`_ for the details.
+
+    Raises:
+        ValueError:
+            If ``restart_strategy`` is not 'ipop' or :obj:`None`.
     """
 
     def __init__(
