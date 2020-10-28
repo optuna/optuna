@@ -278,10 +278,10 @@ class AllenNLPExecutor(object):
         config_file: str,
         serialization_dir: str,
         metrics: str = "best_validation_accuracy",
-        force: bool = False,
-        file_friendly_logging: bool = False,
         *,
         include_package: Optional[Union[str, List[str]]] = None,
+        force: bool = False,
+        file_friendly_logging: bool = False,
     ):
         _imports.check()
 
