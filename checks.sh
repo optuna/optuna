@@ -21,7 +21,6 @@ if [ ! ${#missing_dependencies[@]} -eq 0 ]; then
   read -p "Would you like to install the missing dependencies? (y/N): " yn
   case "$yn" in [yY]*) ;; *) echo "abort." ; exit ;; esac
   pip install "${missing_dependencies[@]}"
-This conversation was marked as resolved by hvy
 fi
 
 update=0
@@ -57,8 +56,9 @@ if [ $? -eq 1 ] ; then
   echo "$res_flake8"
   echo "flake8 failed."
   res_all=1
+else
+  echo "flake8 succeeded."
 fi
-echo "flake8 succeeded."
 
 res_isort=$(isort $target --check 2>&1)
 if [ $? -eq 1 ] ; then
@@ -79,8 +79,9 @@ if [ $? -eq 1 ] ; then
   echo "$res_mypy"
   echo "mypy failed."
   res_all=1
+else
+  echo "mypy succeeded."
 fi
-echo "mypy succeeded."
 
 if [ $res_all -eq 1 ] ; then
   exit 1
