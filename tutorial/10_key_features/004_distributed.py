@@ -28,7 +28,7 @@ Alternatively, in Python script you can use :func:`optuna.create_study`.
 
 .. code-block:: bash
 
-    $ optuna create-study --study-name "distributed-example" --storage "sqlite:///example.db"
+    $ optuna create-study --study-name "distributed-example" --storage "mysql:///example.db"
     [I 2020-07-21 13:43:39,642] A new study created with name: distributed-example
 
 
@@ -43,7 +43,7 @@ Then, write an optimization script. Let's assume that ``foo.py`` contains the fo
         return (x - 2) ** 2
 
     if __name__ == '__main__':
-        study = optuna.load_study(study_name='distributed-example', storage='sqlite:///example.db')
+        study = optuna.load_study(study_name="distributed-example", storage="mysql:///example.db")
         study.optimize(objective, n_trials=100)
 
 
@@ -73,7 +73,7 @@ Process 2 (the same command as process 1):
     ...
 
 .. note::
-    We do not recommend SQLite for large scale distributed optimizations because it may cause serious performance issues. Please consider to use another database engine like PostgreSQL or MySQL.
+    We do not recommend SQLite for distributed optimizations at scale because it may cause deadlocks and serious performance issues. Please consider to use another database engine like PostgreSQL or MySQL.
 
 .. note::
     Please avoid putting the SQLite database on NFS when running distributed optimizations. See also: https://www.sqlite.org/faq.html#q5
