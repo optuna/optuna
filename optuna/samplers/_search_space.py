@@ -43,6 +43,10 @@ class IntersectionSearchSpace(object):
 
         Returns:
             A dictionary containing the parameter names and parameter's distributions.
+
+        Raises:
+            ValueError:
+                If different studies are passed into this method.
         """
 
         if self._study_id is None:
