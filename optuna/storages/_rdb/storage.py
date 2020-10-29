@@ -4,7 +4,6 @@ from datetime import datetime
 import json
 import logging
 import os
-import sys
 from typing import Any
 from typing import Dict
 from typing import Generator
@@ -31,7 +30,6 @@ from optuna import distributions
 from optuna import version
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
-from optuna.exceptions import StorageInternalError
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._rdb import models
