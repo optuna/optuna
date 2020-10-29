@@ -37,7 +37,13 @@ def test_fastai_pruning_callback(tmpdir: Any) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
         model = nn.Sequential(nn.Linear(20, 1), nn.Sigmoid())
         learn = Learner(data, model, loss_func=F.nll_loss, metrics=[accuracy], cbs=[CudaCallback],)
-
+        learn = Learner(
+            data,
+            model,
+            loss_func=F.nll_loss,
+            metrics=[accuracy],
+            cbs=[CudaCallback],
+        )
         learn.fit(1, cbs=FastAIV2PruningCallback(trial))
 
         return 1.0
