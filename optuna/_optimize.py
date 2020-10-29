@@ -213,7 +213,7 @@ def _run_trial(
             return trial
         raise
 
-    checked_value, failure_message = _check_value(study.n_objectives, value, trial)
+    checked_value, failure_message = _check_value(study._n_ovbjectives, value, trial)
 
     if failure_message is None:
         assert checked_value is not None

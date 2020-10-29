@@ -68,7 +68,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
 
     _imports.check()
 
-    if study.n_objectives > 1:
+    if study._n_ovbjectives > 1:
         raise NotImplementedError(
             "The contour plot only supports the single-objective optimization."
         )

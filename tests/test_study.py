@@ -1002,11 +1002,11 @@ def test_log_completed_trial_skip_storage_access() -> None:
 
 def test_create_study_with_multi_objectives() -> None:
     study = optuna.create_study(direction=["maximize"])
-    assert study.n_objectives == 1
+    assert study._n_ovbjectives == 1
     assert study.direction == (StudyDirection.MAXIMIZE,)
 
     study = optuna.create_study(direction=["maximize", "minimize"])
-    assert study.n_objectives == 2
+    assert study._n_ovbjectives == 2
     assert study.direction == (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE)
 
     with pytest.raises(ValueError):
@@ -1034,24 +1034,24 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
 
 def test_pareto_front() -> None:
     study = optuna.create_study(direction=["minimize", "maximize"])
-    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == set()
+    assert {tuple(t.value) for t in study.get_best_trials()} == set()
 
     study.optimize(lambda t: [2, 2], n_trials=1)
-    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == {(2, 2)}
+    assert {tuple(t.value) for t in study.get_best_trials()} == {(2, 2)}
 
     study.optimize(lambda t: [1, 1], n_trials=1)
-    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == {(1, 1), (2, 2)}
+    assert {tuple(t.value) for t in study.get_best_trials()} == {(1, 1), (2, 2)}
 
     study.optimize(lambda t: [3, 1], n_trials=1)
-    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == {(1, 1), (2, 2)}
+    assert {tuple(t.value) for t in study.get_best_trials()} == {(1, 1), (2, 2)}
 
     study.optimize(lambda t: [1, 3], n_trials=1)
-    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == {(1, 3)}
-    assert len(study.get_pareto_front_trials()) == 1
+    assert {tuple(t.value) for t in study.get_best_trials()} == {(1, 3)}
+    assert len(study.get_best_trials()) == 1
 
     study.optimize(lambda t: [1, 3], n_trials=1)  # The trial result is the same as the above one.
-    assert {tuple(t.value) for t in study.get_pareto_front_trials()} == {(1, 3)}
-    assert len(study.get_pareto_front_trials()) == 2
+    assert {tuple(t.value) for t in study.get_best_trials()} == {(1, 3)}
+    assert len(study.get_best_trials()) == 2
 
 
 def test_callbacks_with_multi_objectives() -> None:

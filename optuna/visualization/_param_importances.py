@@ -92,7 +92,7 @@ def plot_param_importances(
 
     _imports.check()
 
-    if study.n_objectives > 1:
+    if study._n_ovbjectives > 1:
         raise NotImplementedError(
             "The parameter importance plot only supports the single-objective optimization."
         )

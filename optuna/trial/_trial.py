@@ -575,13 +575,13 @@ class Trial(BaseTrial):
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
-        if isinstance(value, tuple) and len(value) != self.study.n_objectives:
+        if isinstance(value, tuple) and len(value) != self.study._n_ovbjectives:
             raise ValueError(
                 "The number of the intermediate values {} at step {} is mismatched with"
                 "the number of the objectives {}.",
                 len(value),
                 step,
-                self.study.n_objectives,
+                self.study._n_ovbjectives,
             )
 
         intermediate_values = self.storage.get_trial(self._trial_id).intermediate_values

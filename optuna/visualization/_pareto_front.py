@@ -72,9 +72,9 @@ def plot_pareto_front(
 
     _imports.check()
 
-    if study.n_objectives == 2:
+    if study._n_ovbjectives == 2:
         return _get_pareto_front_2d(study, names, include_dominated_trials)
-    elif study.n_objectives == 3:
+    elif study._n_ovbjectives == 3:
         return _get_pareto_front_3d(study, names, include_dominated_trials)
     else:
         raise ValueError("`plot_pareto_front` function only supports 2 or 3 objective studies.")

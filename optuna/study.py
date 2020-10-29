@@ -42,7 +42,7 @@ class BaseStudy(object):
         self._storage = storage
 
     @property
-    def n_objectives(self) -> int:
+    def _n_ovbjectives(self) -> int:
         """Return the number of objectives.
 
         Returns:
@@ -76,7 +76,7 @@ class BaseStudy(object):
         best_value = self.best_trial.value
         assert best_value is not None
         assert (
-            self.n_objectives == 1
+            self._n_ovbjectives == 1
         ), "The `Study.best_value` is only supported for single-objective optimization."
 
         if isinstance(best_value, Sequence):
@@ -595,7 +595,7 @@ class Study(BaseStudy):
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
     @experimental("2.3.0")
-    def get_pareto_front_trials(self) -> List[FrozenTrial]:
+    def get_best_trials(self) -> List[FrozenTrial]:
         """Return trials located at the pareto front in the study.
 
         A trial is located at the pareto front if there are no trials that dominate the trial.

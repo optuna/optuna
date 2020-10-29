@@ -69,7 +69,7 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
 
     _imports.check()
 
-    if study.n_objectives > 1:
+    if study._n_ovbjectives > 1:
         raise NotImplementedError(
             "The intermediate values plot only supports the single-objective optimization."
         )

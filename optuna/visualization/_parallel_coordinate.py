@@ -62,7 +62,7 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
 
     _imports.check()
 
-    if study.n_objectives > 1:
+    if study._n_ovbjectives > 1:
         raise NotImplementedError(
             "The parallel coordinate plot only supports the single-objective optimization."
         )
