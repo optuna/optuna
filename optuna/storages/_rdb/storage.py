@@ -59,22 +59,15 @@ def _scoped_session(
                 "Another one might have committed a record with the same key(s).".format(repr(e))
             )
         else:
-            message = (
-                "An exception is raised during the commit. "
-                "This typically happens due to invalid data in the commit, "
-                "e.g. exceeding max length. "
-                "(The actual exception is as follows: {})".format(repr(e))
-            )
-            raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
+            raise
     except SQLAlchemyError as e:
         session.rollback()
         message = (
             "An exception is raised during the commit. "
             "This typically happens due to invalid data in the commit, "
             "e.g. exceeding max length. "
-            "(The actual exception is as follows: {})".format(repr(e))
         )
-        raise optuna.exceptions.StorageInternalError(message).with_traceback(sys.exc_info()[2])
+        raise optuna.exceptions.StorageInternalError(message) from e
     except Exception:
         session.rollback()
         raise
@@ -195,7 +188,7 @@ class RDBStorage(BaseStorage):
 
                 study = models.StudyModel(study_name=study_name, direction=StudyDirection.NOT_SET)
                 session.add(study)
-        except StorageInternalError:
+        except IntegrityError:
             raise optuna.exceptions.DuplicatedStudyError(
                 "Another study with name '{}' already exists. "
                 "Please specify a different name, or reuse the existing one "
@@ -713,7 +706,7 @@ class RDBStorage(BaseStorage):
                 trial.state = state
                 if state.is_finished():
                     trial.datetime_complete = datetime.now()
-        except StorageInternalError:
+        except IntegrityError:
             return False
         return True
 
