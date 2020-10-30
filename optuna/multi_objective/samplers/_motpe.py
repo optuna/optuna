@@ -402,13 +402,19 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
             above = np.log(above)
 
         size = (self._n_ehvi_candidates,)
+
+        weights_below: Callable[[int], np.ndarray]
+
         if self._weights is _default_weights_above:
+
             weights_below = lambda _: np.asarray(
                 study._storage.get_trial(trial._trial_id).system_attrs[_WEIGHTS_BELOW_KEY],
                 dtype=float,
             )
+
         else:
             weights_below = self._weights
+
         parzen_estimator_parameters_below = _ParzenEstimatorParameters(
             self._parzen_estimator_parameters.consider_prior,
             self._parzen_estimator_parameters.prior_weight,
