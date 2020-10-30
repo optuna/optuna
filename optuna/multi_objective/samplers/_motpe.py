@@ -35,6 +35,7 @@ def _default_gamma(x: int) -> int:
 def _default_weights_above(x: int) -> np.ndarray:
     return np.ones(x)
 
+
 @experimental("2.3.0")
 class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
