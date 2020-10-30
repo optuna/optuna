@@ -20,6 +20,7 @@ from optuna.multi_objective.samplers._random import RandomMultiObjectiveSampler
 from optuna.samplers import TPESampler
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
+from optuna.samplers._tpe.sampler import default_weights
 from optuna.study import StudyDirection
 
 
@@ -77,7 +78,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
             A function that takes the number of finished trials and returns the number of trials to
             form a density function for samples with low grains. See the original paper for more
             details.
-        weights:
+        weights_above:
             A function that takes the number of finished trials and returns a weight for them. As
             default, weights are automatically calculated by the MOTPE's default strategy.
         seed:
@@ -121,6 +122,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         n_startup_trials: int = 10,
         n_ehvi_candidates: int = 24,
         gamma: Callable[[int], int] = default_gamma,
+        weights_above: Callable[[int], np.ndarray] = default_weights,
         seed: Optional[int] = None,
     ) -> None:
 
@@ -132,6 +134,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
             n_startup_trials=n_startup_trials,
             n_ei_candidates=n_ehvi_candidates,
             gamma=gamma,
+            weights=weights_above,
             seed=seed,
         )
         self._n_ehvi_candidates = n_ehvi_candidates
