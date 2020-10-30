@@ -407,7 +407,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
 
         if self._weights is _default_weights_above:
 
-            weights_below = lambda _: np.asarray(
+            weights_below = lambda _: np.asarray(  # NOQA
                 study._storage.get_trial(trial._trial_id).system_attrs[_WEIGHTS_BELOW_KEY],
                 dtype=float,
             )
