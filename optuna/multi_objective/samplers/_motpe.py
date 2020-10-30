@@ -253,9 +253,9 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         # We cache the result of splitting.
         if _SPLITCACHE_KEY in trial.system_attrs:
             split_cache = trial.system_attrs[_SPLITCACHE_KEY]
-            indices_below = split_cache["indices_below"]
-            weights_below = split_cache["weights_below"]
-            indices_above = split_cache["indices_above"]
+            indices_below = np.asarray(split_cache["indices_below"])
+            weights_below = np.asarray(split_cache["weights_below"])
+            indices_above = np.asarray(split_cache["indices_above"])
         else:
             nondomination_ranks = _calculate_nondomination_rank(lvals)
             n_below = self._gamma(len(lvals))
