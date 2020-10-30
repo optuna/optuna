@@ -13,14 +13,13 @@ from optuna.trial import FrozenTrial
 
 @experimental("2.3.0")
 class PartialFixedSampler(BaseSampler):
-    """Sampler that can sample with some parameters fixed.
+    """Sampler that can sample parameters with fixed parameters.
 
         .. versionadded:: 2.3.0
 
     Example:
 
-        After optimizing with :class:`~optuna.samplers.TPESampler`,
-        fix the value of ``y`` and optimize again with :class:`~optuna.samplers.CmaEsSampler`.
+         After several steps of optimization, you can fix the value of ``y`` and re-optimize it.
 
         .. testcode::
 
@@ -46,6 +45,7 @@ class PartialFixedSampler(BaseSampler):
     def __init__(self, fixed_params: Dict[str, Any], base_sampler: BaseSampler) -> None:
         self._fixed_params = fixed_params
         self._base_sampler = base_sampler
+        self._rng = numpy.random.RandomState()
 
     def reseed_rng(self) -> None:
 
@@ -84,9 +84,7 @@ class PartialFixedSampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        # Fixed params will be sampled here.
-
-        # If param_name isn't in self._fixed_params.keys(), param_value == None.
+        # If param_name isn't in self._fixed_params.keys(), param_value is set to None.
         param_value = self._fixed_params.get(param_name)
 
         if param_value is None:

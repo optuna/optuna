@@ -5,6 +5,7 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+import warnings
 
 import numpy as np
 import pytest
@@ -371,9 +372,11 @@ def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> Non
     # First trial.
     study.optimize(objective, n_trials=1)
 
-    # Second trial (`y` parameter is fixed as 0).
+    # Second trial. Here, the parameter ``y`` is fixed as 0.
     fixed_params = {"y": 0}
-    study.sampler = PartialFixedSampler(fixed_params, study.sampler)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        study.sampler = PartialFixedSampler(fixed_params, study.sampler)
     study.optimize(objective, n_trials=1)
-    tmp_trial_params = study.trials[-1].params
-    assert tmp_trial_params["y"] == 0
+    trial_params = study.trials[-1].params
+    assert trial_params["y"] == fixed_params["y"]
