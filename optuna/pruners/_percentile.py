@@ -33,19 +33,19 @@ def _get_percentile_intermediate_result_over_trials(
     if len(completed_trials) == 0:
         raise ValueError("No trials have been completed.")
 
+    intermediate_values = [
+        t.intermediate_values[step] for t in completed_trials if step in t.intermediate_values
+    ]
+
+    if not intermediate_values:
+        return math.nan
+
     if direction == StudyDirection.MAXIMIZE:
         percentile = 100 - percentile
 
     return float(
         np.nanpercentile(
-            np.array(
-                [
-                    t.intermediate_values[step]
-                    for t in completed_trials
-                    if step in t.intermediate_values
-                ],
-                np.float,
-            ),
+            np.array(intermediate_values, np.float),
             percentile,
         )
     )

@@ -44,9 +44,9 @@ class _MultivariateParzenEstimator:
         self._n_observations = next(iter(multivariate_observations.values())).size
         self._weights = self._calculate_weights()
 
-        self._low = {}  # type: Dict[str, Optional[float]]
-        self._high = {}  # type: Dict[str, Optional[float]]
-        self._q = {}  # type: Dict[str, Optional[float]]
+        self._low: Dict[str, Optional[float]] = {}
+        self._high: Dict[str, Optional[float]] = {}
+        self._q: Dict[str, Optional[float]] = {}
         for param_name, dist in search_space.items():
             if isinstance(dist, distributions.CategoricalDistribution):
                 low = high = q = None
@@ -62,9 +62,9 @@ class _MultivariateParzenEstimator:
         # Transformed `multivariate_observations` might be needed for following operations.
         self._sigmas0 = self._precompute_sigmas0(multivariate_observations)
 
-        self._mus = {}  # type: Dict[str, Optional[np.ndarray]]
-        self._sigmas = {}  # type: Dict[str, Optional[np.ndarray]]
-        self._categorical_weights = {}  # type: Dict[str, Optional[np.ndarray]]
+        self._mus: Dict[str, Optional[np.ndarray]] = {}
+        self._sigmas: Dict[str, Optional[np.ndarray]] = {}
+        self._categorical_weights: Dict[str, Optional[np.ndarray]] = {}
         for param_name, dist in search_space.items():
             observations = multivariate_observations[param_name]
             if isinstance(dist, distributions.CategoricalDistribution):
@@ -155,7 +155,7 @@ class _MultivariateParzenEstimator:
                 p_accept = cdf_func(high, mus, sigmas) - cdf_func(low, mus, sigmas)
                 if q is None:
                     distance = samples[:, None] - mus
-                    mahalanobis = distance / sigmas
+                    mahalanobis = distance / np.maximum(sigmas, EPS)
                     z = np.sqrt(2 * np.pi) * sigmas
                     coefficient = 1 / z / p_accept
                     log_pdf = -0.5 * mahalanobis ** 2 + np.log(coefficient)
@@ -165,7 +165,7 @@ class _MultivariateParzenEstimator:
                     cdf = cdf_func(upper_bound[:, None], mus[None], sigmas[None]) - cdf_func(
                         lower_bound[:, None], mus[None], sigmas[None]
                     )
-                    log_pdf = np.log(cdf) - np.log(p_accept)
+                    log_pdf = np.log(cdf + EPS) - np.log(p_accept + EPS)
             component_log_pdf += log_pdf
         ret = scipy.special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
         return ret

@@ -141,10 +141,10 @@ class HyperbandPruner(BasePruner):
         self._min_resource = min_resource
         self._max_resource = max_resource
         self._reduction_factor = reduction_factor
-        self._pruners = []  # type: List[SuccessiveHalvingPruner]
+        self._pruners: List[SuccessiveHalvingPruner] = []
         self._total_trial_allocation_budget = 0
-        self._trial_allocation_budgets = []  # type: List[int]
-        self._n_brackets = None  # type: Optional[int]
+        self._trial_allocation_budgets: List[int] = []
+        self._n_brackets: Optional[int] = None
 
         if not isinstance(self._max_resource, int) and self._max_resource != "auto":
             raise ValueError(

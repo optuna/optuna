@@ -90,6 +90,10 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         self._random_sampler = multi_objective.samplers.RandomMultiObjectiveSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
 
+    def reseed_rng(self) -> None:
+        self._random_sampler.reseed_rng()
+        self._rng = np.random.RandomState()
+
     def infer_relative_search_space(
         self,
         study: "multi_objective.study.MultiObjectiveStudy",
@@ -180,7 +184,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
             generation_to_population[generation].append(trial)
 
         hasher = hashlib.sha256()
-        parent_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
+        parent_population: List[multi_objective.trial.FrozenMultiObjectiveTrial] = []
         parent_generation = -1
         while True:
             generation = parent_generation + 1
@@ -238,7 +242,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         study: "multi_objective.study.MultiObjectiveStudy",
         population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
     ) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
-        elite_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
+        elite_population: List[multi_objective.trial.FrozenMultiObjectiveTrial] = []
         population_per_rank = _fast_non_dominated_sort(population, study.directions)
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
@@ -271,7 +275,7 @@ def _fast_non_dominated_sort(
     population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
     directions: List[optuna.study.StudyDirection],
 ) -> List[List["multi_objective.trial.FrozenMultiObjectiveTrial"]]:
-    dominated_count = defaultdict(int)  # type: DefaultDict[int, int]
+    dominated_count: DefaultDict[int, int] = defaultdict(int)
     dominates_list = defaultdict(list)
 
     for p, q in itertools.combinations(population, 2):

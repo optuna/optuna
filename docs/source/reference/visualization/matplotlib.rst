@@ -1,3 +1,5 @@
+.. module:: optuna.visualization.matplotlib
+
 optuna.visualization.matplotlib
 ===============================
 
@@ -11,4 +13,6 @@ optuna.visualization.matplotlib
     optuna.visualization.matplotlib.plot_contour
     optuna.visualization.matplotlib.plot_edf
     optuna.visualization.matplotlib.plot_intermediate_values
+    optuna.visualization.matplotlib.plot_optimization_history
+    optuna.visualization.matplotlib.plot_parallel_coordinate
     optuna.visualization.matplotlib.is_available
