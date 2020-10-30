@@ -278,7 +278,7 @@ class FrozenMultiObjectiveTrial(object):
 
         self.values = tuple(trial.intermediate_values.get(i) for i in range(n_objectives))
 
-        intermediate_values = {}  # type: Dict[int, List[Optional[float]]]
+        intermediate_values: Dict[int, List[Optional[float]]] = {}
         for key, value in trial.intermediate_values.items():
             if key < n_objectives:
                 continue

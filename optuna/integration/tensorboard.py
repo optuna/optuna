@@ -34,7 +34,7 @@ class TensorBoardCallback(object):
         _imports.check()
         self._dirname = dirname
         self._metric_name = metric_name
-        self._hp_params = dict()  # type: Dict[str, hp.HParam]
+        self._hp_params: Dict[str, hp.HParam] = {}
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
         if len(self._hp_params) == 0:
@@ -42,7 +42,7 @@ class TensorBoardCallback(object):
         if trial.state != optuna.trial.TrialState.COMPLETE:
             return
         trial_value = trial.value if trial.value is not None else float("nan")
-        hparams = dict()
+        hparams = {}
         for param_name, param_value in trial.params.items():
             if param_name not in self._hp_params:
                 self._add_distributions(trial.distributions)

@@ -174,3 +174,32 @@ def test_plot_contour_log_scale_and_str_category() -> None:
     for axis, (param_range, param_type) in axis_to_range_and_type.items():
         assert figure.layout[axis]["range"] == param_range
         assert figure.layout[axis]["type"] == param_type
+
+
+def test_plot_contour_mixture_category_types() -> None:
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": None, "param_b": 101},
+            distributions={
+                "param_a": CategoricalDistribution([None, "100"]),
+                "param_b": CategoricalDistribution([101, 102.0]),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=0.5,
+            params={"param_a": "100", "param_b": 102.0},
+            distributions={
+                "param_a": CategoricalDistribution([None, "100"]),
+                "param_b": CategoricalDistribution([101, 102.0]),
+            },
+        )
+    )
+    figure = plot_contour(study)
+    assert figure.layout["xaxis"]["range"] == ("100", "None")
+    assert figure.layout["yaxis"]["range"] == ("101", "102.0")
+    assert figure.layout["xaxis"]["type"] == "category"
+    assert figure.layout["yaxis"]["type"] == "category"

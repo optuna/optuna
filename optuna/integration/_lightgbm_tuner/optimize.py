@@ -93,7 +93,7 @@ class _BaseTuner(object):
     def _get_booster_best_score(self, booster: "lgb.Booster") -> float:
 
         metric = self._get_metric_for_objective()
-        valid_sets = self.lgbm_kwargs.get("valid_sets")  # type: Optional[VALID_SET_TYPE]
+        valid_sets: Optional[VALID_SET_TYPE] = self.lgbm_kwargs.get("valid_sets")
 
         if self.lgbm_kwargs.get("valid_names") is not None:
             if type(self.lgbm_kwargs["valid_names"]) is str:
@@ -144,7 +144,7 @@ class _BaseTuner(object):
     def higher_is_better(self) -> bool:
 
         metric_name = self.lgbm_params.get("metric", "binary_logloss")
-        return metric_name.startswith(("auc", "ndcg", "map"))
+        return metric_name in ("auc", "ndcg", "map")
 
     def compare_validation_metrics(self, val_score: float, best_score: float) -> bool:
 
@@ -177,7 +177,7 @@ class _OptunaObjective(_BaseTuner):
 
         self.trial_count = 0
         self.best_score = best_score
-        self.best_booster_with_trial_number = None  # type: Optional[Tuple["lgb.Booster", int]]
+        self.best_booster_with_trial_number: Optional[Tuple["lgb.Booster", int]] = None
         self.step_name = step_name
         self.model_dir = model_dir
 
@@ -378,7 +378,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         _handling_alias_metrics(params)
 
         args = [params, train_set]
-        kwargs = dict(
+        kwargs: Dict[str, Any] = dict(
             num_boost_round=num_boost_round,
             fobj=fobj,
             feval=feval,
@@ -391,13 +391,13 @@ class _LightGBMBaseTuner(_BaseTuner):
             sample_size=sample_size,
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
-        )  # type: Dict[str, Any]
+        )
         self._parse_args(*args, **kwargs)
-        self._start_time = None  # type: Optional[float]
+        self._start_time: Optional[float] = None
         self._optuna_callbacks = optuna_callbacks
-        self._best_booster_with_trial_number = (
-            None
-        )  # type: Optional[Tuple[Union[lgb.Booster, lgb.CVBooster], int]]
+        self._best_booster_with_trial_number: Optional[
+            Tuple[Union[lgb.Booster, lgb.CVBooster], int]
+        ] = None
         self._model_dir = model_dir
 
         # Should not alter data since `min_data_in_leaf` is tuned.
@@ -823,7 +823,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         self.lgbm_kwargs["learning_rates"] = learning_rates
         self.lgbm_kwargs["keep_training_booster"] = keep_training_booster
 
-        self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
+        self._best_booster_with_trial_number: Optional[Tuple[lgb.Booster, int]] = None
         self._model_dir = model_dir
 
         if self._model_dir is not None and not os.path.exists(self._model_dir):
