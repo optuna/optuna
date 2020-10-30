@@ -247,23 +247,6 @@ def test_sample_independent_misc_arguments() -> None:
         mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
-    def weights(i: int) -> np.array:
-        return np.asarray([i * 0.05 for _ in range(i)])
-
-    sampler = MOTPEMultiObjectiveSampler(weights=weights, seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
-
 
 def test_sample_independent_uniform_distributions() -> None:
     # Prepare sample from uniform distribution for cheking other distributions.

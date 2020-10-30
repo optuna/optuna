@@ -32,10 +32,6 @@ def default_gamma(x: int) -> int:
     return int(np.floor(0.1 * x))
 
 
-def _default_weights_above(x: int) -> np.ndarray:
-    return np.ones(x)
-
-
 @experimental("2.3.0")
 class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
@@ -125,7 +121,6 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         n_startup_trials: int = 10,
         n_ehvi_candidates: int = 24,
         gamma: Callable[[int], int] = default_gamma,
-        weights: Callable[[int], np.ndarray] = _default_weights_above,
         seed: Optional[int] = None,
     ) -> None:
 
@@ -137,7 +132,6 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
             n_startup_trials=n_startup_trials,
             n_ei_candidates=n_ehvi_candidates,
             gamma=gamma,
-            weights=weights,
             seed=seed,
         )
         self._n_ehvi_candidates = n_ehvi_candidates
@@ -290,18 +284,16 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
                 "indices_below": indices_below.tolist(),
                 "indices_above": indices_above.tolist(),
             }
-            if self._weights is _default_weights_above:
-                weights_below = self._calculate_default_weights_below(lvals, indices_below)
-                attrs["weights_below"] = weights_below.tolist()
+            weights_below = self._calculate_weights_below(lvals, indices_below)
+            attrs["weights_below"] = weights_below.tolist()
             study._storage.set_trial_system_attr(trial._trial_id, _SPLITCACHE_KEY, attrs)
 
         below = cvals[indices_below]
-        if self._weights is _default_weights_above:
-            study._storage.set_trial_system_attr(
-                trial._trial_id,
-                _WEIGHTS_BELOW_KEY,
-                [w for w, v in zip(weights_below, below) if v is not None],
-            )
+        study._storage.set_trial_system_attr(
+            trial._trial_id,
+            _WEIGHTS_BELOW_KEY,
+            [w for w, v in zip(weights_below, below) if v is not None],
+        )
         below = np.asarray([v for v in below if v is not None], dtype=float)
         above = cvals[indices_above]
         above = np.asarray([v for v in above if v is not None], dtype=float)
@@ -405,15 +397,10 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
 
         weights_below: Callable[[int], np.ndarray]
 
-        if self._weights is _default_weights_above:
-
-            weights_below = lambda _: np.asarray(  # NOQA
-                study._storage.get_trial(trial._trial_id).system_attrs[_WEIGHTS_BELOW_KEY],
-                dtype=float,
-            )
-
-        else:
-            weights_below = self._weights
+        weights_below = lambda _: np.asarray(  # NOQA
+            study._storage.get_trial(trial._trial_id).system_attrs[_WEIGHTS_BELOW_KEY],
+            dtype=float,
+        )
 
         parzen_estimator_parameters_below = _ParzenEstimatorParameters(
             self._parzen_estimator_parameters.consider_prior,
@@ -480,12 +467,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         upper = len(choices)
         size = (self._n_ehvi_candidates,)
 
-        if self._weights is _default_weights_above:
-            weights_below = study._storage.get_trial(trial._trial_id).system_attrs[
-                _WEIGHTS_BELOW_KEY
-            ]
-        else:
-            weights_below = self._weights(len(below))
+        weights_below = study._storage.get_trial(trial._trial_id).system_attrs[_WEIGHTS_BELOW_KEY]
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
         weighted_below = counts_below + self._prior_weight
         weighted_below /= weighted_below.sum()
@@ -550,7 +532,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
 
         return np.asarray(selected_indices, dtype=int)
 
-    def _calculate_default_weights_below(
+    def _calculate_weights_below(
         self,
         lvals: np.ndarray,
         indices_below: np.ndarray,
