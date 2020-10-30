@@ -10,6 +10,7 @@ with try_import() as _imports:  # NOQA
     from matplotlib import cm  # NOQA
     from matplotlib import pyplot as plt  # NOQA
     from matplotlib.axes._axes import Axes  # NOQA
+    from matplotlib.collections import LineCollection  # NOQA
     from matplotlib.patches import Rectangle  # NOQA
 
     # TODO(ytknzw): Set precise version.
