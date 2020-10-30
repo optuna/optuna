@@ -286,10 +286,10 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
 
             indices_above = np.setdiff1d(indices, indices_below)
 
-            attrs = {"indices_below": indices_below, "indices_above": indices_above}
+            attrs = {"indices_below": indices_below.tolist(), "indices_above": indices_above.tolist()}
             if self._weights is _default_weights_above:
                 weights_below = self._calculate_default_weights_below(lvals, indices_below)
-                attrs["weights_below"] = weights_below
+                attrs["weights_below"] = weights_below.tolist()
             study._storage.set_trial_system_attr(trial._trial_id, _SPLITCACHE_KEY, attrs)
 
         below = cvals[indices_below]
@@ -297,9 +297,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
             study._storage.set_trial_system_attr(
                 trial._trial_id,
                 _WEIGHTS_BELOW_KEY,
-                lambda _: np.asarray(
-                    [w for w, v in zip(weights_below, below) if v is not None], dtype=float
-                ),
+                [w for w, v in zip(weights_below, below) if v is not None],
             )
         below = np.asarray([v for v in below if v is not None], dtype=float)
         above = cvals[indices_above]
@@ -402,9 +400,9 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
 
         size = (self._n_ehvi_candidates,)
         if self._weights is _default_weights_above:
-            weights_below = study._storage.get_trial(trial._trial_id).system_attrs[
+            weights_below = lambda _: np.asarray(study._storage.get_trial(trial._trial_id).system_attrs[
                 _WEIGHTS_BELOW_KEY
-            ]
+            ], dtype=float)
         else:
             weights_below = self._weights
         parzen_estimator_parameters_below = _ParzenEstimatorParameters(
@@ -475,7 +473,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         if self._weights is _default_weights_above:
             weights_below = study._storage.get_trial(trial._trial_id).system_attrs[
                 _WEIGHTS_BELOW_KEY
-            ](len(below))
+            ]
         else:
             weights_below = self._weights(len(below))
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
