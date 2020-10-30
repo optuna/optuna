@@ -286,7 +286,10 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
 
             indices_above = np.setdiff1d(indices, indices_below)
 
-            attrs = {"indices_below": indices_below.tolist(), "indices_above": indices_above.tolist()}
+            attrs = {
+                "indices_below": indices_below.tolist(),
+                "indices_above": indices_above.tolist(),
+            }
             if self._weights is _default_weights_above:
                 weights_below = self._calculate_default_weights_below(lvals, indices_below)
                 attrs["weights_below"] = weights_below.tolist()
@@ -400,9 +403,10 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
 
         size = (self._n_ehvi_candidates,)
         if self._weights is _default_weights_above:
-            weights_below = lambda _: np.asarray(study._storage.get_trial(trial._trial_id).system_attrs[
-                _WEIGHTS_BELOW_KEY
-            ], dtype=float)
+            weights_below = lambda _: np.asarray(
+                study._storage.get_trial(trial._trial_id).system_attrs[_WEIGHTS_BELOW_KEY],
+                dtype=float,
+            )
         else:
             weights_below = self._weights
         parzen_estimator_parameters_below = _ParzenEstimatorParameters(
