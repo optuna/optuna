@@ -20,7 +20,6 @@ from optuna.multi_objective.samplers._random import RandomMultiObjectiveSampler
 from optuna.samplers import TPESampler
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
-from optuna.samplers._tpe.sampler import default_weights
 from optuna.study import StudyDirection
 
 
@@ -29,9 +28,12 @@ _SPLITCACHE_KEY = "multi_objective:motpe:splitcache"
 _WEIGHTS_BELOW_KEY = "multi_objective:motpe:weights_below"
 
 
-def default_gamma(x: int) -> int:
+def _default_gamma(x: int) -> int:
     return int(np.floor(0.1 * x))
 
+
+def _default_weights_above(x: int) -> np.ndarray:
+    return np.ones(x)
 
 @experimental("2.3.0")
 class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
@@ -121,8 +123,8 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         consider_endpoints: bool = True,
         n_startup_trials: int = 10,
         n_ehvi_candidates: int = 24,
-        gamma: Callable[[int], int] = default_gamma,
-        weights_above: Callable[[int], np.ndarray] = default_weights,
+        gamma: Callable[[int], int] = _default_gamma,
+        weights_above: Callable[[int], np.ndarray] = _default_weights_above,
         seed: Optional[int] = None,
     ) -> None:
 
