@@ -77,13 +77,14 @@ def test_out_of_the_range(fixed_y: int) -> None:
 def test_partial_fixed_experimental_warning() -> None:
     study = optuna.create_study()
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
-        optuna.samplers.PartialFixedSampler(fixed_params=None, base_sampler=study.sampler)
+        optuna.samplers.PartialFixedSampler(fixed_params={"x": 0}, base_sampler=study.sampler)
 
 
 def test_reseed_rng() -> None:
+    study = optuna.create_study()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = PartialFixedSampler(fixed_params=None, base_sampler=RandomSampler)
+        sampler = PartialFixedSampler(fixed_params={"x": 0}, base_sampler=study.sampler)
     original_seed = sampler._rng.seed
 
     with patch.object(sampler, "reseed_rng", wraps=sampler.reseed_rng) as mock_object:
