@@ -37,7 +37,8 @@ If you choose to write some code, we have some conventions as follows.
 
 ### Checking the Format, Coding Style, and Type Hints
 
-Code is formatted with [black](https://github.com/psf/black).
+Code is formatted with [black](https://github.com/psf/black),
+and docstrings are formatted with [blackdoc](https://github.com/keewis/blackdoc).
 Coding style is checked with [flake8](http://flake8.pycqa.org) and [isort](https://pycqa.github.io/isort/),
 and additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked with [mypy](http://mypy-lang.org/).

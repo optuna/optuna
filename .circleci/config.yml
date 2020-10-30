@@ -63,6 +63,12 @@ jobs:
             . venv/bin/activate
             mypy .
 
+      - run:
+          name: blackdoc
+          command: |
+            . venv/bin/activate
+            blackdoc optuna --check
+
   document:
     docker:
       - image: readthedocs/build:latest
