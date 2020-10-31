@@ -47,6 +47,20 @@ jobs:
         wget http://ml4aad.org/wp-content/uploads/2019/01/fcnet_tabular_benchmarks.tar.gz
         tar xf fcnet_tabular_benchmarks.tar.gz
 
+    - name: Cache nasbench dataset
+      id: cache-nasbench-dataset
+      uses: actions/cache@v2
+      with:
+        path: ./nasbench_full.bin
+        key: nasbench-dataset
+
+    # Ref: https://github.com/sile/kurobako/wiki/NASBench
+    - name: Download nasbench dataset
+      if: steps.cache-nasbench-dataset.outputs.cache-hit != 'true'
+      run: |
+        curl -L $(./kurobako dataset nasbench url) -o nasbench_full.tfrecord
+        ./kurobako dataset nasbench convert nasbench_full.tfrecord nasbench_full.bin
+
     # TODO: Discuss the benchmark task-solver-pruner configuration
     - name: Run Benchmark
       run: |
