@@ -5,10 +5,12 @@ on:
   pull_request: {}
 
 jobs:
-  hpobench-protein:
+  benchmark:
 
     runs-on: ubuntu-18.04
     container: docker://dvcorg/cml-py3:latest
+
+    if: github.repository == 'optuna/optuna'
 
     steps:
     - uses: actions/checkout@v2
@@ -56,14 +58,14 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: hpobench-naval-report
+        name: benchmark-report
         path: |
           report.md
           images/**/*.png
 
     - uses: actions/download-artifact@v2
       with:
-        name: hpobench-naval-report
+        name: benchmark-report
         path: |
           report.md
           images/**/*.png
