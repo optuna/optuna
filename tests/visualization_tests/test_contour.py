@@ -17,6 +17,7 @@ from optuna.trial import Trial
 from optuna.visualization import plot_contour
 from optuna.visualization._contour import _generate_contour_subplot
 
+
 RANGE_TYPE = Union[Tuple[str, str], Tuple[float, float]]
 
 
