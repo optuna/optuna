@@ -5,6 +5,8 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+from packaging import version
+
 from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -109,14 +111,22 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
         min_value = min(values)
         max_value = max(values)
 
+        if _is_categorical(trials, p_name):
+            # For numeric values, plotly does not automatically plot as "category" type.
+            update_category_axes[p_name] = any([str(v).isnumeric() for v in set(values)])
+
+            # Plotly uses indices instead of raw values to generate contours, but the raw values
+            # are used to calculate ranges since plotly==4.12.0.
+            # See https://github.com/optuna/optuna/pull/1944#issuecomment-716968285.
+            # TODO (yanase): Remove this if-clause after resolving the error.
+            if version.parse(plotly.__version__) >= version.parse("4.12.0"):
+                min_value = 0
+                max_value = len(set(values)) - 1
+
         if _is_log_scale(trials, p_name):
             padding = (math.log10(max_value) - math.log10(min_value)) * padding_ratio
             min_value = math.pow(10, math.log10(min_value) - padding)
             max_value = math.pow(10, math.log10(max_value) + padding)
-
-        elif _is_categorical(trials, p_name):
-            # For numeric values, plotly does not automatically plot as "category" type.
-            update_category_axes[p_name] = any([str(v).isnumeric() for v in set(values)])
 
         else:
             padding = (max_value - min_value) * padding_ratio
