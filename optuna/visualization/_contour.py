@@ -117,7 +117,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
 
             # Plotly uses indices instead of raw values to generate contours, but the raw values
             # are used to calculate ranges since plotly==4.12.0.
-            # See https://github.com/optuna/optuna/pull/1944#issuecomment-716968285.
+            # See https://github.com/optuna/optuna/issues/1967.
             # TODO (yanase): Remove this if-clause after resolving the error.
             if version.parse(plotly.__version__) >= version.parse("4.12.0"):
                 min_value = 0
