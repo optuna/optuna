@@ -68,23 +68,51 @@ class _LgbStepObjective:
     ) -> None:
         self.direction = direction
         self.train_set = train_set
-
-        self.train_kwargs = copy.deepcopy(train_kwargs)
-        callbacks = train_kwargs.pop("callbacks", None) or []
-        self.train_kwargs["callbacks"] = callbacks + [self._extract_first_metric_info()]
+        self.train_kwargs = train_kwargs
+        self.first_dataset: str = None
+        self.first_metric: str = None
 
     def __call__(self, trial: Trial, params: Dict[str, Any]) -> float:
-        booster = lgb.train(params, self.train_set, **self.train_kwargs)
+        train_kwargs = copy.copy(self.train_kwargs)
+        train_kwargs = self._add_first_metric_cb(train_kwargs)
+
+        valid_sets = self.train_kwargs.get("valid_sets", None)
+        if valid_sets:
+            train_set, train_kwargs["valid_sets"] = self._copy_datasets(self.train_set, valid_sets)
+        else:
+            train_set = copy.copy(self.train_set)
+
+        booster = lgb.train(params, train_set, **train_kwargs)
         self._serialize_booster(booster, trial)
         score = booster.best_score[self.first_dataset][self.first_metric]
         return score
+
+    def _copy_datasets(
+        self, train_set: "lgb.Dataset", valid_sets: "ValidSet"
+    ) -> Tuple["lgb.Dataset", "ValidSet"]:
+        copied_train_set = copy.copy(train_set)
+
+        if isinstance(valid_sets, lgb.Dataset):
+            valid_sets = [valid_sets]
+
+        # lgb.train finds train sets in valid_sets with the `is` operator.
+        # We need to make sure to keep the same reference for all train sets when we copy.
+        copied_valid_sets = []
+        for valid_set in valid_sets:
+            if valid_set is self.train_set:
+                copied_valid_set = copied_train_set
+            else:
+                copied_valid_set = copy.copy(valid_set)
+            copied_valid_sets.append(copied_valid_set)
+
+        return copied_train_set, copied_valid_sets
 
     def _serialize_booster(self, booster: "lgb.Booster", trial: Trial) -> None:
         serialized_model = booster.model_to_string()
         trial.set_system_attr(_BOOSTER_KEY, serialized_model)
         trial.set_system_attr(_BEST_ITERATION_KEY, booster.best_iteration)
 
-    def _extract_first_metric_info(self) -> Callable[["lgb.callback.CallbackEnv"], None]:
+    def _add_first_metric_cb(self, train_kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """Retrieve the first metric of the first dataset, in the order defined by LightGBM.
 
         Note:
@@ -99,25 +127,39 @@ class _LgbStepObjective:
         """
 
         def _callback(env: "lgb.callback.CallbackEnv") -> None:
-            dataset_name, eval_name, score, is_higher_better, *_ = env.evaluation_result_list[0]
-            self.first_dataset = dataset_name
+            dataset_name, eval_name, _, higher_better, *_ = env.evaluation_result_list[0]
             # split is needed for "<dataset type> <metric>" case (e.g. "train l1")
             self.first_metric = eval_name.split(" ")[-1]
 
-            direction = StudyDirection.MAXIMIZE if is_higher_better else StudyDirection.MINIMIZE
+            direction = StudyDirection.MAXIMIZE if higher_better else StudyDirection.MINIMIZE
             if direction != self.direction:
                 raise ValueError(
                     f"Study direction is inconsistent with the metric '{self.first_metric}'. "
                     + f"Please set '{direction.name.lower()}' as the direction."
                 )
 
+            # lgb.train: find first non-training dataset, if none defaults to first dataset
+            self.first_dataset = dataset_name
+            for dataset_name, eval_name, _, higher_better, *_ in env.evaluation_result_list:
+                if dataset_name != getattr(env.model, "_train_data_name", None):
+                    self.first_dataset = dataset_name
+                    break
+
         _callback.order = 99  # type: ignore
-        return _callback
+
+        callbacks = train_kwargs.pop("callbacks", None) or []
+        train_kwargs["callbacks"] = callbacks + [_callback]
+
+        return train_kwargs
 
 
 class _LgbStepObjectiveCV(_LgbStepObjective):
     def __call__(self, trial: Trial, params: Dict[str, Any]) -> float:
-        cv_results = lgb.cv(params, self.train_set, **self.train_kwargs)
+        train_set = copy.copy(self.train_set)
+        train_kwargs = copy.copy(self.train_kwargs)
+        train_kwargs = self._add_first_metric_cb(train_kwargs)
+
+        cv_results = lgb.cv(params, train_set, **train_kwargs)
         metric_key = f"{self.first_metric}-mean"
 
         if "return_cvbooster" in self.train_kwargs:
@@ -328,7 +370,8 @@ class StepwiseLightGBMTuner(_BaseLGBTuner):
 
         if isinstance(valid_sets, Sequence) and len(valid_sets) > 1:
             self.logger.warning(
-                "Only the first dataset in 'valid_sets' will be used for the optimization."
+                "Detected multiple 'valid_sets', "
+                + "the first non-training dataset, if any, will be used for the optimization."
             )
 
 

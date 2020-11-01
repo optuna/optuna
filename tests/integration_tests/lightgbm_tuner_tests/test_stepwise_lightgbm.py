@@ -255,3 +255,31 @@ def test_multiple_valid_sets(
     actual = tuner.best_value
 
     assert np.isclose(actual, expected)
+
+
+def test_valid_sets_contain_train(
+    params: Dict[str, Any], train_kwargs: Dict[str, Any], dummy_steps: stepwise.StepListType
+) -> None:
+    X_train = np.zeros((80, 2))
+    y_train = np.zeros(X_train.shape[0])
+    X_test = np.ones((20, 2))
+    y_test = np.ones(X_test.shape[0])
+
+    train_set = lgb.Dataset(X_train, label=y_train)
+    val_set = train_set.create_valid(X_test, label=y_test, silent=True)
+
+    train_kwargs = {
+        "num_boost_round": 10,
+        "early_stopping_rounds": 2,
+        "verbose_eval": 1,
+        "valid_sets": train_set,
+    }
+    tuner = StepwiseLightGBMTuner(params, train_set, steps=dummy_steps, **train_kwargs)
+    tuner.optimize(n_trials=1)
+    assert tuner.best_value == 0  # model was optimized on training set
+
+    train_kwargs["valid_sets"] = [train_set, val_set, train_set]
+    tuner = StepwiseLightGBMTuner(params, train_set, steps=dummy_steps, **train_kwargs)
+    tuner.optimize(n_trials=1)
+
+    assert tuner.best_value > 0  # model was NOT optimized on training set
