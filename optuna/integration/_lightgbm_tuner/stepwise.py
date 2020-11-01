@@ -69,8 +69,6 @@ class _LgbStepObjective:
         self.direction = direction
         self.train_set = train_set
         self.train_kwargs = train_kwargs
-        self.first_dataset: str = None
-        self.first_metric: str = None
 
     def __call__(self, trial: Trial, params: Dict[str, Any]) -> float:
         train_kwargs = copy.copy(self.train_kwargs)
