@@ -111,6 +111,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         ),
         "experimental": ["redis"],
         "testing": [
+            "botorch",
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
             "bokeh<2.0.0",
@@ -152,6 +153,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
         ],
         "integration": [
+            "botorch",
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
