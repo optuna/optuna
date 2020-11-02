@@ -85,7 +85,7 @@ def test_reseed_rng() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = PartialFixedSampler(fixed_params={"x": 0}, base_sampler=study.sampler)
-    original_seed = sampler._base_sampler._rng.seed # type: ignore
+    original_seed = sampler._base_sampler._rng.seed  # type: ignore
 
     with patch.object(
         sampler._base_sampler, "reseed_rng", wraps=sampler._base_sampler.reseed_rng  # type: ignore
