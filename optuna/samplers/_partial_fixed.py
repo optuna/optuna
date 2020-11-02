@@ -2,8 +2,6 @@ from typing import Any
 from typing import Dict
 import warnings
 
-import numpy
-
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
@@ -37,7 +35,7 @@ class PartialFixedSampler(BaseSampler):
 
             best_params = study.best_params
             fixed_params = {"y": best_params["y"]}
-            partial_sampler = PartialFixedSampler(fixed_params, study.sampler)
+            partial_sampler = optuna.samplers.PartialFixedSampler(fixed_params, study.sampler)
 
             study.sampler = partial_sampler
             study.optimize(objective, n_trials=10)
@@ -47,11 +45,10 @@ class PartialFixedSampler(BaseSampler):
     def __init__(self, fixed_params: Dict[str, Any], base_sampler: BaseSampler) -> None:
         self._fixed_params = fixed_params
         self._base_sampler = base_sampler
-        self._rng = numpy.random.RandomState()
 
     def reseed_rng(self) -> None:
 
-        self._rng = numpy.random.RandomState()
+        self._rng = self._base_sampler.reseed_rng() # type: ignore
 
     def infer_relative_search_space(
         self,
