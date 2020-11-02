@@ -22,7 +22,8 @@ import argparse
 
 import numpy as np
 import mxnet as mx
-from mxnet import gluon, autograd
+from mxnet import autograd
+from mxnet import gluon
 from mxnet.gluon import nn
 
 import optuna
