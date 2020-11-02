@@ -48,7 +48,7 @@ class PartialFixedSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
 
-        self._rng = self._base_sampler.reseed_rng() # type: ignore
+        self._rng = self._base_sampler.reseed_rng()  # type: ignore
 
     def infer_relative_search_space(
         self,
