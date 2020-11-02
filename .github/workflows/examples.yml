@@ -47,9 +47,9 @@ jobs:
     - name: Run examples
       run: |
         if [ ${{ matrix.python-version }} = 3.8 ]; then
-          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai_.*|allennlp'
+          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastaiv1_.*|allennlp'
         else
-          IGNORES='chainermn_.*'
+          IGNORES='chainermn_.*|fastaiv1_.*'
         fi
 
         for file in `find examples -name '*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`
