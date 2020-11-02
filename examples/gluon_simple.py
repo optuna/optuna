@@ -20,13 +20,14 @@ from __future__ import print_function
 
 import argparse
 
-import numpy as np
 import mxnet as mx
 from mxnet import autograd
 from mxnet import gluon
 from mxnet.gluon import nn
+import numpy as np
 
 import optuna
+
 
 # Parse CLI arguments
 
