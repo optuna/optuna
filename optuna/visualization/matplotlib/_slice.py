@@ -140,7 +140,7 @@ def _generate_slice_subplot(
 
 
 def _calc_lim_with_padding(
-    values: List[Union[int, float]], padding_ratio: float, scale: str = None
+    values: List[Union[int, float]], padding_ratio: float, scale: Optional[str] = None
 ) -> Tuple[Union[int, float], Union[int, float]]:
     value_max = max(values)
     value_min = min(values)
