@@ -3,12 +3,8 @@ from collections import OrderedDict
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
-
-import numpy as np
 
 from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalDistribution
 from optuna.samplers import intersection_search_space
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -89,35 +85,6 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
         sorted(distributions.items(), key=lambda name_and_distribution: name_and_distribution[0])
     )
     return distributions
-
-
-def _get_study_data(
-    study: Study, distributions: Dict[str, BaseDistribution]
-) -> Tuple[np.ndarray, np.ndarray]:
-    trials = []
-    for trial in study.trials:
-        if trial.state != TrialState.COMPLETE:
-            continue
-        if any(name not in trial.params for name in distributions.keys()):
-            continue
-        trials.append(trial)
-
-    n_trials = len(trials)
-    n_params = len(distributions)
-
-    params = np.empty((n_trials, n_params), dtype=np.float64)
-    values = np.empty((n_trials,), dtype=np.float64)
-
-    for i, trial in enumerate(trials):
-        trial_params = trial.params
-        for j, (name, distribution) in enumerate(distributions.items()):
-            param = trial_params[name]
-            if isinstance(distribution, CategoricalDistribution):
-                param = distribution.to_internal_repr(param)
-            params[i, j] = param
-        values[i] = trial.value
-
-    return params, values
 
 
 def _check_evaluate_args(study: Study, params: Optional[List[str]]) -> None:
