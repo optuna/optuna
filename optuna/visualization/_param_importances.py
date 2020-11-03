@@ -22,15 +22,15 @@ if _imports.is_successful():
 
     from optuna.visualization._plotly_imports import go
 
-    Blues = plotly.colors.sequential.Blues
+    D3 = plotly.colors.sequential.D3
 
     _distribution_colors = {
-        UniformDistribution: Blues[-1],
-        LogUniformDistribution: Blues[-1],
-        DiscreteUniformDistribution: Blues[-1],
-        IntUniformDistribution: Blues[-2],
-        IntLogUniformDistribution: Blues[-2],
-        CategoricalDistribution: Blues[-4],
+        UniformDistribution: D3[0],
+        LogUniformDistribution: D3[1],
+        DiscreteUniformDistribution: D3[2],
+        IntUniformDistribution: D3[3],
+        IntLogUniformDistribution: D3[4],
+        CategoricalDistribution: D3[5],
     }
 
 logger = get_logger(__name__)

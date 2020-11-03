@@ -27,14 +27,14 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Rectangle
 
     # Color definitions.
-    cmap = cm.get_cmap("tab20c")
+    cmap = cm.get_cmap("tab10")
     _distribution_colors = {
         UniformDistribution: cmap(0),
-        LogUniformDistribution: cmap(0),
-        DiscreteUniformDistribution: cmap(0),
-        IntUniformDistribution: cmap(1),
-        IntLogUniformDistribution: cmap(1),
-        CategoricalDistribution: cmap(3),
+        LogUniformDistribution: cmap(1),
+        DiscreteUniformDistribution: cmap(2),
+        IntUniformDistribution: cmap(3),
+        IntLogUniformDistribution: cmap(4),
+        CategoricalDistribution: cmap(5),
     }
     _legend_elements = [
         Rectangle([0, 0], 0, 0, facecolor=cmap(0), label="Uniform Distribution"),
