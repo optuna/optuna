@@ -11,6 +11,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 from optuna.visualization.matplotlib._utils import _is_log_scale
+from optuna.visualization.matplotlib._utils import _is_categorical
 
 
 if _imports.is_successful():
@@ -117,6 +118,7 @@ def _generate_slice_subplot(
     x_values = []
     y_values = []
     trial_numbers = []
+    scale = None
     for t, obj_v in zip(trials, obj_values):
         if param in t.params:
             x_values.append(t.params[param])
@@ -125,11 +127,12 @@ def _generate_slice_subplot(
     ax.set(xlabel=param, ylabel="Objective Value")
     if _is_log_scale(trials, param):
         ax.set_xscale("log")
-        xlim = _calc_lim_with_padding(x_values, padding_ratio, True)
-        ax.set_xlim(xlim[0], xlim[1])
-    else:
-        xlim = _calc_lim_with_padding(x_values, padding_ratio)
-        ax.set_xlim(xlim[0], xlim[1])
+        scale = "log"
+    elif _is_categorical(trials, param):
+        x_values = [str(x) for x in x_values]
+        scale = "categorical"
+    xlim = _calc_lim_with_padding(x_values, padding_ratio, scale)
+    ax.set_xlim(xlim[0], xlim[1])
     sc = ax.scatter(x_values, y_values, c=trial_numbers, cmap=cmap, edgecolors="grey")
     ax.label_outer()
 
@@ -137,16 +140,20 @@ def _generate_slice_subplot(
 
 
 def _calc_lim_with_padding(
-    values: List[Union[int, float]], padding_ratio: float, is_log_scale: bool = False
+    values: List[Union[int, float]], padding_ratio: float, scale: str = None
 ) -> Tuple[Union[int, float], Union[int, float]]:
     value_max = max(values)
     value_min = min(values)
-    if is_log_scale:
+    if scale == "log":
         padding = (math.log10(value_max) - math.log10(value_min)) * padding_ratio
         return (
             math.pow(10, math.log10(value_min) - padding),
             math.pow(10, math.log10(value_max) + padding),
         )
+    elif scale == "categorical":
+        width = len(set(values)) - 1
+        padding = width * padding_ratio
+        return -padding, width + padding
     else:
         padding = (value_max - value_min) * padding_ratio
         return value_min - padding, value_max + padding
