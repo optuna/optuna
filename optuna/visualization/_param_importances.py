@@ -22,7 +22,7 @@ if _imports.is_successful():
 
     from optuna.visualization._plotly_imports import go
 
-    D3 = plotly.colors.sequential.D3
+    D3 = plotly.colors.qualitative.D3
 
     _distribution_colors = {
         UniformDistribution: D3[0],
