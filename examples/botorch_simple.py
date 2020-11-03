@@ -1,55 +1,30 @@
-import botorch
-from botorch.acquisition import UpperConfidenceBound
-from botorch.fit import fit_gpytorch_model
-from botorch.models import SingleTaskGP
-from botorch.optim import optimize_acqf
 from botorch.test_functions import Hartmann
-from gpytorch.mlls import ExactMarginalLogLikelihood
 import torch
 
 import optuna
+from optuna.trial import Trial
 from optuna.samplers import RandomSampler
 
 
 # Hartmann minimization objective function.
-obj = Hartmann(dim=3)
+obj = Hartmann(dim=6)
 
 
-def objective(trial):
-    xs = [trial.suggest_float(f"x{i}", 0.00001, 1, log=True) for i in range(obj.dim)]
-    #xs = [trial.suggest_float(f"x{i}", 1., 1.) for i in range(obj.dim)]
+def objective(trial: Trial) -> float:
+    xs = [trial.suggest_float(f"x{i}", 0, 1) for i in range(obj.dim)]
     return obj(torch.tensor(xs)).item()
 
-'''
-def optimize_func(
-    train_x: torch.Tensor, train_obj: torch.Tensor, bounds: torch.Tensor
-) -> torch.Tensor:
-    # Input shapes are as follows.
-    #
-    # `train_x.shape`: (n_trials, n_params)
-    # `train_obj.shape`: (n_trials, 1), 1 is the output dimension
-    # `bounds.shape`: (n_params, 2), 2 is for low and high.
-    assert all(isinstance(t, torch.Tensor) for t in [train_x, train_obj, bounds])
-    assert train_x.ndim == 2
-    assert train_x.shape[1] == obj.dim
-    assert train_obj.ndim == 2
-    assert train_obj.shape[0] == train_x.shape[0]
-    assert bounds.shape == (2, obj.dim)
 
-    print(bounds)
-
-    # Initialize and fit GP.
-    model = SingleTaskGP(train_x, train_obj)
-    mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
-
-    # Optimize acquisition function.
-    acqf = UpperConfidenceBound(model, beta=0.1)
-    candidates, _ = optimize_acqf(acqf, bounds=bounds, q=1, num_restarts=5, raw_samples=40)
-
-    return candidates
-'''
-
+# def objective(trial: Trial) -> float:
+#     x0 = trial.suggest_float("x0", 0, 2)
+#     x1 = trial.suggest_float("x1", 1, 2, log=True)
+#     x2 = trial.suggest_float("x2", 0, 1, step=0.2)
+#     x3 = trial.suggest_int("x3", 1, 3)
+#     x4 = trial.suggest_int("x4", 1, 10, log=True)
+#     x5 = trial.suggest_int("x5", 0, 10, step=2)
+#     x6 = float(trial.suggest_categorical("x6", [2, 4, 8]))
+#
+#     return x0 + x1 + x2 + x3 + x4 + x5 + x6
 
 
 if __name__ == "__main__":
@@ -71,5 +46,5 @@ if __name__ == "__main__":
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
 
-    #optuna.visualization.plot_optimization_history(study).show()
-    optuna.visualization.plot_slice(study).show()
+    # optuna.visualization.plot_slice(study).show()
+    optuna.visualization.plot_optimization_history(study).show()
