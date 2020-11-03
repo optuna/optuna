@@ -10,8 +10,8 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
-from optuna.visualization.matplotlib._utils import _is_log_scale
 from optuna.visualization.matplotlib._utils import _is_categorical
+from optuna.visualization.matplotlib._utils import _is_log_scale
 
 
 if _imports.is_successful():
