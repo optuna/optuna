@@ -58,7 +58,6 @@ class _Transform:
         for distribution_idx, distribution in enumerate(search_space.values()):
             bounds[distribution_idx] = self._transform_distribution_bounds(distribution)
 
-
         bounds_is_categorical = []
         for distribution in search_space.values():
             if isinstance(distribution, CategoricalDistribution):
