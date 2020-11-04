@@ -5,7 +5,6 @@ import numpy
 import pytest
 
 import optuna
-from optuna._transform import _CategoricalOneHotEncoder
 from optuna._transform import _Transform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
@@ -186,13 +185,13 @@ def test_transform_fit_shapes_dtypes_values_categorical_with_other_distribution(
 
     for i, (low, high) in enumerate(trans.bounds):
         # Categorical one-hot encodings are placed before any other distributions.
-        if i < n_tot_choices:
-            assert low == 0.0
-            assert high == 1.0
-        elif i == n_tot_choices:
+        if i == 0:
             assert low == search_space["x0"].low  # type: ignore
             assert high == search_space["x0"].high  # type: ignore
-        elif i == n_tot_choices + 1:
+        elif i in (1, 2, 3, 4):
+            assert low == 0.0
+            assert high == 1.0
+        elif i == 5:
             expected_low = search_space["x2"].low  # type: ignore
             expected_high = search_space["x2"].high  # type: ignore
             if transform_log:
@@ -200,22 +199,27 @@ def test_transform_fit_shapes_dtypes_values_categorical_with_other_distribution(
                 expected_high = math.log(expected_high)
             assert low == expected_low
             assert high == expected_high
+        elif i in (6, 7):
+            assert low == 0.0
+            assert high == 1.0
         else:
             assert False
 
     for params in trans.params:
         for i, param in enumerate(params):
-            if i < n_tot_choices:
-                assert 0.0 <= param <= 1.0
-            elif i == n_tot_choices:
+            if i == 0:
                 assert search_space["x0"].low <= param <= search_space["x0"].high  # type: ignore
-            elif i == n_tot_choices + 1:
+            elif i in (1, 2, 3, 4):
+                assert 0.0 <= param <= 1.0
+            elif i == 5:
                 expected_low = search_space["x2"].low  # type: ignore
                 expected_high = search_space["x2"].high  # type: ignore
                 if transform_log:
                     expected_low = math.log(expected_low)
                     expected_high = math.log(expected_high)
                 assert expected_low <= param <= expected_high
+            elif i in (6, 7):
+                assert 0.0 <= param <= 1.0
             else:
                 assert False
 
@@ -263,47 +267,3 @@ def test_transform_untransform_params(transform_log: bool) -> None:
     expected_params = study.best_params
     for name in search_space.keys():
         assert params[name] == expected_params[name]
-
-
-def test_categorical_one_hot_encoder() -> None:
-    # Create test data with 5 columns with the following types of parameters.
-    # 0: Numerical
-    # 1: Categorical (3 categories)
-    # 2: Numerical
-    # 3: Caterogical (4 categories)
-    # 4: Numerical
-    params = numpy.array(
-        [[1.0, 0.0, 1.0, 3.0, 2.0], [2.0, 1.0, 2.0, 2.0, 3.0], [3.0, 2.0, 1.0, 2.0, 0.0]],
-        dtype=numpy.float64,
-    )
-    bounds = numpy.array(
-        [[1.0, 4.0], [0.0, 3.0], [1.0, 3], [0.0, 4.0], [0.0, 4.0]], dtype=numpy.float64
-    )
-    bounds_is_categorical = [False, True, False, True, False]
-
-    encoder = _CategoricalOneHotEncoder()
-    params, bounds = encoder.fit_transform(params, bounds, bounds_is_categorical)
-
-    assert params.shape == (3, 10)
-    assert params[:, :7].min() == 0.0  # First 3 + 4 columns are one-hot encoded categorical.
-    assert params[:, :7].max() == 1.0
-
-    numpy.testing.assert_array_equal(
-        bounds,
-        numpy.array(
-            [[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [1, 4], [1, 3], [0, 4]],
-            dtype=numpy.float64,
-        ),
-    )
-
-    cols_to_encoded_cols = encoder.cols_to_encoded_cols
-    assert cols_to_encoded_cols is not None  # Encoder is fitted.
-    expected_cols_to_encoded_cols = [
-        [7],
-        [0, 1, 2],
-        [8],
-        [3, 4, 5, 6],
-        [9],
-    ]
-    for actual, expected in zip(cols_to_encoded_cols, expected_cols_to_encoded_cols):
-        numpy.testing.assert_array_equal(actual, expected)
