@@ -108,13 +108,3 @@ class PartialFixedSampler(BaseSampler):
                     f"for distribution {param_distribution}."
                 )
             return param_value
-
-    @property
-    def fixed_params(self) -> Dict[str, Any]:
-        """Return fixed parameters.
-
-        Returns:
-            A dictionary containing fixed parameters.
-        """
-
-        return self._fixed_params
