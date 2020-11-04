@@ -36,11 +36,11 @@ class FastAIV2PruningCallback(TrackerCallback):
         .. code::
 
             learn = cnn_learner(dls, resnet18, metrics=[error_rate])
-            learn.fit(n_epochs, cbs=[FastAIPruningCallback(trial)]) # Monitor "valid_loss"
+            learn.fit(n_epochs, cbs=[FastAIPruningCallback(trial)])  # Monitor "valid_loss"
             learn.fit_one_cycle(
                 n_epochs,
                 lr_max,
-                cbs=[FastAIPruningCallback(trial, monitor="error_rate")], # Monitor "error_rate"
+                cbs=[FastAIPruningCallback(trial, monitor="error_rate")],  # Monitor "error_rate"
             )
 
 
