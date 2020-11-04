@@ -13,10 +13,7 @@ BATCHSIZE = 128
 LOG_INTERVAL = 100
 
 
-# define network
-
-
-def network(trial):
+def define_model(trial):
     net = nn.Sequential()
     n_layers = trial.suggest_int("n_layers", 1, 3)
     for i in range(n_layers):
@@ -26,18 +23,12 @@ def network(trial):
     return net
 
 
-# data
-
-
-def transformer(data, label):
+def transform(data, label):
     data = data.reshape((-1,)).astype(np.float32) / 255
     return data, label
 
 
-# train
-
-
-def test(ctx, val_data, net):
+def validate(ctx, val_data, net):
     metric = mx.metric.Accuracy()
     for data, label in val_data:
         data = data.as_in_context(ctx)
@@ -55,18 +46,19 @@ def objective(trial):
         ctx = mx.cpu()
 
     train_data = gluon.data.DataLoader(
-        gluon.data.vision.MNIST("./data", train=True).transform(transformer),
+        gluon.data.vision.MNIST("./data", train=True).transform(transform),
         shuffle=True,
+        batch_size=BATCHSIZE,
         last_batch="discard",
     )
 
     val_data = gluon.data.DataLoader(
-        gluon.data.vision.MNIST("./data", train=False).transform(transformer),
+        gluon.data.vision.MNIST("./data", train=False).transform(transform),
         batch_size=BATCHSIZE,
         shuffle=False,
     )
 
-    net = network(trial)
+    net = define_model(trial)
 
     # Collect all parameters from net and its children, then initialize them.
     net.initialize(mx.init.Xavier(magnitude=2.24), ctx=ctx)
@@ -76,12 +68,13 @@ def objective(trial):
     trainer = gluon.Trainer(net.collect_params(), optimizer_name, {"learning_rate": lr})
     metric = mx.metric.Accuracy()
     loss = gluon.loss.SoftmaxCrossEntropyLoss()
+    val_acc = 0
 
-    for epoch in ranges(EPOCHS):
-        # reset data iterator and metric at beginning of epoch.
+    for epoch in range(EPOCHS):
+        # Reset data iterator and metric at beginning of epoch.
         metric.reset()
         for i, (data, label) in enumerate(train_data):
-            # Copy data to ctx if necessary
+            # Copy data to ctx if necessary.
             data = data.as_in_context(ctx)
             label = label.as_in_context(ctx)
             # Start recording computation graph with record() section.
@@ -90,20 +83,20 @@ def objective(trial):
                 output = net(data)
                 L = loss(output, label)
                 L.backward()
-            # take a gradient step with batch_size equal to data.shape[0]
+            # Take a gradient step with batch_size equal to data.shape[0].
             trainer.step(data.shape[0])
-            # update metric at last.
+            # Update metric at last.
             metric.update([label], [output])
 
             if i % LOG_INTERVAL == 0 and i > 0:
                 name, acc = metric.get()
-                print("[Epoch %d Batch %d] Training: %s=%f" % (epoch, i, name, acc))
+                print(f"[Epoch {epoch} Batch {i}] Training: {name}={acc}")
 
         name, acc = metric.get()
-        print("[Epoch %d] Training: %s=%f" % (epoch, name, acc))
+        print(f"[Epoch {epoch}] Training: {name}={acc}")
 
-        name, val_acc = test(ctx, val_data, net)
-        print("[Epoch %d] Validation: %s=%f" % (epoch, name, val_acc))
+        name, val_acc = validate(ctx, val_data, net)
+        print(f"[Epoch {epoch}] Validation: {name}={val_acc}")
 
         trial.report(val_acc, epoch)
 
