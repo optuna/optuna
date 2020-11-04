@@ -1,5 +1,6 @@
 import collections
 from typing import Any
+from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Set
@@ -42,7 +43,7 @@ def _trials_dataframe(
     # column_agg is an aggregator of column names.
     # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
     # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
-    column_agg: Dict[str, Set] = collections.defaultdict(set)
+    column_agg: DefaultDict[str, Set] = collections.defaultdict(set)
     non_nested_attr = ""
 
     def _create_record_and_aggregate_column(
