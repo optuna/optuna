@@ -47,6 +47,7 @@ class _Transform:
         params = numpy.empty((n_trials, n_params), dtype=numpy.float64)
         values = numpy.empty((n_trials,), dtype=numpy.float64)
         bounds = numpy.empty((n_params, 2), dtype=numpy.float64)
+        bounds_is_categorical: List[bool] = []
 
         for trial_idx, trial in enumerate(trials):
             for distribution_idx, (name, distribution) in enumerate(search_space.items()):
@@ -57,13 +58,7 @@ class _Transform:
 
         for distribution_idx, distribution in enumerate(search_space.values()):
             bounds[distribution_idx] = self._transform_distribution_bounds(distribution)
-
-        bounds_is_categorical = []
-        for distribution in search_space.values():
-            if isinstance(distribution, CategoricalDistribution):
-                bounds_is_categorical.append(True)
-            else:
-                bounds_is_categorical.append(False)
+            bounds_is_categorical.append(isinstance(distribution, CategoricalDistribution))
 
         params, bounds = self._encoder.fit_transform(params, bounds, bounds_is_categorical)
 
