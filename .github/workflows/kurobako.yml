@@ -93,4 +93,4 @@ jobs:
           echo $file
           cml-publish $file --md >> report.md
         done
-        cml-send-comment report.md
+        cml-send-github-check report.md
