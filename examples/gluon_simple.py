@@ -1,5 +1,3 @@
-import argparse
-
 import mxnet as mx
 from mxnet import autograd
 from mxnet import gluon
@@ -9,12 +7,9 @@ import numpy as np
 import optuna
 
 
-# Parse CLI arguments.
-
 CUDA = False
 EPOCHS = 10
 BATCHSIZE = 128
-DEVICE = torch.device("cpu")
 LOG_INTERVAL = 100
 
 
