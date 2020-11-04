@@ -126,11 +126,8 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "Axes
 
 
 def _set_cmap(study: Study) -> "Colormap":
-    cmap = plt.get_cmap("Blues")
-    if study.direction == StudyDirection.MINIMIZE:
-        cmap = plt.get_cmap("Blues_r")
-
-    return cmap
+    cmap = "Blues_r" if study.direction == StudyDirection.MINIMIZE else "Blues"
+    return plt.get_cmap(cmap)
 
 
 def _calculate_griddata(
