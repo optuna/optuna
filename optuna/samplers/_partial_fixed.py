@@ -13,7 +13,7 @@ from optuna.trial import FrozenTrial
 class PartialFixedSampler(BaseSampler):
     """Sampler that can sample parameters with fixed parameters.
 
-        .. versionadded:: 2.3.0
+        .. versionadded:: 2.4.0
 
     Example:
 
