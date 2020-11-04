@@ -9,7 +9,7 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 
 
-@experimental("2.3.0")
+@experimental("2.4.0")
 class PartialFixedSampler(BaseSampler):
     """Sampler that can sample parameters with fixed parameters.
 
