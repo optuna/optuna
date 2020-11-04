@@ -40,6 +40,14 @@ class PartialFixedSampler(BaseSampler):
             study.sampler = partial_sampler
             study.optimize(objective, n_trials=10)
 
+    Args:
+
+        fixed_params:
+            A dictionary of parameters to be fixed.
+
+        base_sampler:
+            A sampler which samples unfixed parameters.
+
     """
 
     def __init__(self, fixed_params: Dict[str, Any], base_sampler: BaseSampler) -> None:
@@ -50,9 +58,7 @@ class PartialFixedSampler(BaseSampler):
         self._base_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self,
-        study: Study,
-        trial: FrozenTrial,
+        self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
 
         search_space = self._base_sampler.infer_relative_search_space(study, trial)
