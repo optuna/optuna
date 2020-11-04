@@ -10,5 +10,6 @@ optuna.samplers
    optuna.samplers.RandomSampler
    optuna.samplers.TPESampler
    optuna.samplers.CmaEsSampler
+   optuna.samplers.PartialFixedSampler
    optuna.samplers.IntersectionSearchSpace
    optuna.samplers.intersection_search_space
