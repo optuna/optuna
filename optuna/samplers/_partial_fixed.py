@@ -104,8 +104,8 @@ class PartialFixedSampler(BaseSampler):
 
             if not contained:
                 warnings.warn(
-                    "Fixed parameter '{}' with value {} is out of range "
-                    "for distribution {}.".format(param_name, param_value, param_distribution)
+                    f"Fixed parameter '{param_name}' with value {param_value} is out of range "
+                    f"for distribution {param_distribution}."
                 )
             return param_value
 
