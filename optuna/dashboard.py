@@ -2,6 +2,7 @@ import collections
 import threading
 import time
 from typing import Any
+from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -99,7 +100,7 @@ if _imports.is_successful():
 
         def update(self, new_trials: List[optuna.trial.FrozenTrial]) -> None:
 
-            stream_dict: Dict[str, List[Any]] = collections.defaultdict(list)
+            stream_dict: DefaultDict[str, List[Any]] = collections.defaultdict(list)
 
             for trial in new_trials:
                 if trial.state != optuna.trial.TrialState.COMPLETE:

@@ -150,7 +150,7 @@ class TestBaseTuner(object):
             tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert tuner.higher_is_better()
 
-        for metric in ["rmsle", "rmse", "binary_logloss"]:
+        for metric in ["rmsle", "rmse", "binary_logloss", "mape"]:
             tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert not tuner.higher_is_better()
 

@@ -30,6 +30,7 @@ This page contains a list of example codes written with Optuna.
 * [AllenNLP](./allennlp/allennlp_simple.py)
 * [AllenNLP (Jsonnet)](./allennlp/allennlp_jsonnet.py)
 * [SKORCH](./skorch_simple.py)
+* [RAPIDS](./rapids_simple.py)
 
 ### An example where an objective function uses additional arguments
 

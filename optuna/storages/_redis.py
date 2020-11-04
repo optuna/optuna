@@ -48,7 +48,7 @@ class RedisStorage(BaseStorage):
 
 
             storage = optuna.storages.RedisStorage(
-                url='redis://passwd@localhost:port/db',
+                url="redis://passwd@localhost:port/db",
             )
 
             study = optuna.create_study(storage=storage)
