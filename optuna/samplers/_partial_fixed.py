@@ -11,7 +11,7 @@ from optuna.trial import FrozenTrial
 
 @experimental("2.4.0")
 class PartialFixedSampler(BaseSampler):
-    """Sampler that can sample parameters with fixed parameters.
+    """Sampler with partially fixed parameters.
 
         .. versionadded:: 2.4.0
 
