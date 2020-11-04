@@ -365,9 +365,10 @@ def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> Non
     study = optuna.create_study(sampler=sampler_class())
 
     def objective(trial: Trial) -> float:
-        x = trial.suggest_uniform("x", -1, 1)
+        x = trial.suggest_float("x", -1, 1)
         y = trial.suggest_int("y", -1, 1)
-        return x + y
+        z = trial.suggest_float("z", -1, 1)
+        return x + y + z
 
     # First trial.
     study.optimize(objective, n_trials=1)
