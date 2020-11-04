@@ -1,6 +1,3 @@
-# pylint: skip-file
-from __future__ import print_function
-
 import argparse
 
 import mxnet as mx
@@ -12,27 +9,13 @@ import numpy as np
 import optuna
 
 
-# Parse CLI arguments
+# Parse CLI arguments.
 
-parser = argparse.ArgumentParser(description="MXNet Gluon MNIST Example")
-parser.add_argument(
-    "--batch-size",
-    type=int,
-    default=100,
-    help="batch size for training and testing (default: 100)",
-)
-parser.add_argument(
-    "--epochs", type=int, default=10, help="number of epochs to train (default: 10)"
-)
-parser.add_argument("--cuda", action="store_true", default=False, help="Train on GPU with CUDA")
-parser.add_argument(
-    "--log-interval",
-    type=int,
-    default=100,
-    metavar="N",
-    help="how many batches to wait before logging training status",
-)
-opt = parser.parse_args()
+CUDA = False
+EPOCHS = 10
+BATCHSIZE = 128
+DEVICE = torch.device("cpu")
+LOG_INTERVAL = 100
 
 
 # define network
@@ -71,22 +54,20 @@ def test(ctx, val_data, net):
 
 
 def objective(trial):
-    if opt.cuda:
+    if CUDA:
         ctx = mx.gpu(0)
     else:
         ctx = mx.cpu()
-    epochs = opt.epochs
 
     train_data = gluon.data.DataLoader(
         gluon.data.vision.MNIST("./data", train=True).transform(transformer),
-        batch_size=opt.batch_size,
         shuffle=True,
         last_batch="discard",
     )
 
     val_data = gluon.data.DataLoader(
         gluon.data.vision.MNIST("./data", train=False).transform(transformer),
-        batch_size=opt.batch_size,
+        batch_size=BATCHSIZE,
         shuffle=False,
     )
 
@@ -101,8 +82,8 @@ def objective(trial):
     metric = mx.metric.Accuracy()
     loss = gluon.loss.SoftmaxCrossEntropyLoss()
 
-    for epoch in range(epochs):
-        # reset data iterator and metric at begining of epoch.
+    for epoch in ranges(EPOCHS):
+        # reset data iterator and metric at beginning of epoch.
         metric.reset()
         for i, (data, label) in enumerate(train_data):
             # Copy data to ctx if necessary
@@ -119,7 +100,7 @@ def objective(trial):
             # update metric at last.
             metric.update([label], [output])
 
-            if i % opt.log_interval == 0 and i > 0:
+            if i % LOG_INTERVAL == 0 and i > 0:
                 name, acc = metric.get()
                 print("[Epoch %d Batch %d] Training: %s=%f" % (epoch, i, name, acc))
 
@@ -142,7 +123,7 @@ def objective(trial):
 
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=100, timeout=6000)
+    study.optimize(objective, n_trials=100, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
 
