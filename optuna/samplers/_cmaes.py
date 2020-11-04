@@ -68,7 +68,7 @@ class CmaEsSampler(BaseSampler):
       <http://www.cmap.polytechnique.fr/~nikolaus.hansen/cec2005ipopcmaes.pdf>`_
 
     .. seealso::
-        You can also use :class:`optuna.integration.CmaEsSampler` which is a sampler using cma
+        You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
         library as the backend.
 
     Args:
@@ -142,6 +142,10 @@ class CmaEsSampler(BaseSampler):
                 to set this flag :obj:`True` when the :class:`~optuna.pruners.HyperbandPruner` is
                 used. Please see `the benchmark result
                 <https://github.com/optuna/optuna/pull/1229>`_ for the details.
+
+    Raises:
+        ValueError:
+            If ``restart_strategy`` is not 'ipop' or :obj:`None`.
     """
 
     def __init__(
@@ -200,7 +204,7 @@ class CmaEsSampler(BaseSampler):
     def infer_relative_search_space(
         self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial"
     ) -> Dict[str, BaseDistribution]:
-        search_space = {}  # type: Dict[str, BaseDistribution]
+        search_space: Dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
                 # `cma` cannot handle distributions that contain just a single value, so we skip
@@ -280,7 +284,7 @@ class CmaEsSampler(BaseSampler):
             if optimizer.generation == t.system_attrs.get(generation_attr_key, -1)
         ]
         if len(solution_trials) >= optimizer.population_size:
-            solutions = []  # type: List[Tuple[np.ndarray, float]]
+            solutions: List[Tuple[np.ndarray, float]] = []
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
                 x = np.array(
@@ -339,7 +343,7 @@ class CmaEsSampler(BaseSampler):
             if optimizer_str is None:
                 optimizer_str = _concat_optimizer_attrs(optimizer_attrs)
 
-            n_restarts = trial.system_attrs.get("cma:n_restarts", 0)  # type: int
+            n_restarts: int = trial.system_attrs.get("cma:n_restarts", 0)
             return pickle.loads(bytes.fromhex(optimizer_str)), n_restarts
         return None, 0
 

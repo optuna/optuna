@@ -1,33 +1,24 @@
-import collections
 import copy
-import datetime
-import gc
-import math
 import threading
 from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import Union
-import warnings
-
-import joblib
-from joblib import delayed
-from joblib import Parallel
 
 from optuna import exceptions
 from optuna import logging
-from optuna import progress_bar as pbar_module
 from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
+from optuna._dataframe import _trials_dataframe
+from optuna._dataframe import pd
 from optuna._experimental import experimental
-from optuna._imports import try_import
+from optuna._optimize import _optimize
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
 from optuna.trial import create_trial
@@ -37,9 +28,6 @@ from optuna.trial import TrialState
 
 ObjectiveFuncType = Callable[[trial_module.Trial], float]
 
-with try_import() as _pandas_imports:
-    # `trials_dataframe` is disabled if pandas is not available.
-    import pandas as pd  # NOQA
 
 _logger = logging.get_logger(__name__)
 
@@ -315,74 +303,17 @@ class Study(BaseStudy):
             RuntimeError:
                 If nested invocation of this method occurs.
         """
-
-        if not isinstance(catch, tuple):
-            raise TypeError(
-                "The catch argument is of type '{}' but must be a tuple.".format(
-                    type(catch).__name__
-                )
-            )
-
-        if not self._optimize_lock.acquire(False):
-            raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
-
-        # TODO(crcrpar): Make progress bar work when n_jobs != 1.
-        self._progress_bar = pbar_module._ProgressBar(
-            show_progress_bar and n_jobs == 1, n_trials, timeout
+        _optimize(
+            study=self,
+            func=func,
+            n_trials=n_trials,
+            timeout=timeout,
+            n_jobs=n_jobs,
+            catch=catch,
+            callbacks=callbacks,
+            gc_after_trial=gc_after_trial,
+            show_progress_bar=show_progress_bar,
         )
-
-        self._stop_flag = False
-
-        try:
-            if n_jobs == 1:
-                self._optimize_sequential(
-                    func, n_trials, timeout, catch, callbacks, gc_after_trial, None
-                )
-            else:
-                if show_progress_bar:
-                    msg = "Progress bar only supports serial execution (`n_jobs=1`)."
-                    warnings.warn(msg)
-
-                time_start = datetime.datetime.now()
-
-                def _should_stop() -> bool:
-                    if self._stop_flag:
-                        return True
-
-                    if timeout is not None:
-                        # This is needed for mypy.
-                        t = timeout  # type: float
-                        return (datetime.datetime.now() - time_start).total_seconds() > t
-
-                    return False
-
-                if n_trials is not None:
-                    _iter = iter(range(n_trials))
-                else:
-                    _iter = iter(_should_stop, True)
-
-                with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
-                    if not isinstance(
-                        parallel._backend, joblib.parallel.ThreadingBackend
-                    ) and isinstance(self._storage, storages.InMemoryStorage):
-                        msg = (
-                            "The default storage cannot be shared by multiple processes. "
-                            "Please use an RDB (RDBStorage) when you use joblib for "
-                            "multi-processing. The usage of RDBStorage can be found in "
-                            "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html."
-                        )
-                        warnings.warn(msg, UserWarning)
-
-                    parallel(
-                        delayed(self._reseed_and_optimize_sequential)(
-                            func, 1, timeout, catch, callbacks, gc_after_trial, time_start
-                        )
-                        for _ in _iter
-                    )
-        finally:
-            self._optimize_lock.release()
-            self._progress_bar.close()
-            del self._progress_bar
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
@@ -495,65 +426,7 @@ class Study(BaseStudy):
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
         """
-
-        _pandas_imports.check()
-
-        trials = self.get_trials(deepcopy=False)
-
-        # If no trials, return an empty dataframe.
-        if not len(trials):
-            return pd.DataFrame()
-
-        assert all(isinstance(trial, FrozenTrial) for trial in trials)
-        attrs_to_df_columns = collections.OrderedDict()  # type: Dict[str, str]
-        for attr in attrs:
-            if attr.startswith("_"):
-                # Python conventional underscores are omitted in the dataframe.
-                df_column = attr[1:]
-            else:
-                df_column = attr
-            attrs_to_df_columns[attr] = df_column
-
-        # column_agg is an aggregator of column names.
-        # Keys of column agg are attributes of `FrozenTrial` such as 'trial_id' and 'params'.
-        # Values are dataframe columns such as ('trial_id', '') and ('params', 'n_layers').
-        column_agg = collections.defaultdict(set)  # type: Dict[str, Set]
-        non_nested_attr = ""
-
-        def _create_record_and_aggregate_column(trial: FrozenTrial) -> Dict[Tuple[str, str], Any]:
-
-            record = {}
-            for attr, df_column in attrs_to_df_columns.items():
-                value = getattr(trial, attr)
-                if isinstance(value, TrialState):
-                    # Convert TrialState to str and remove the common prefix.
-                    value = str(value).split(".")[-1]
-                if isinstance(value, dict):
-                    for nested_attr, nested_value in value.items():
-                        record[(df_column, nested_attr)] = nested_value
-                        column_agg[attr].add((df_column, nested_attr))
-                else:
-                    record[(df_column, non_nested_attr)] = value
-                    column_agg[attr].add((df_column, non_nested_attr))
-            return record
-
-        records = list([_create_record_and_aggregate_column(trial) for trial in trials])
-
-        columns = sum(
-            (sorted(column_agg[k]) for k in attrs if k in column_agg), []
-        )  # type: List[Tuple[str, str]]
-
-        df = pd.DataFrame(records, columns=pd.MultiIndex.from_tuples(columns))
-
-        if not multi_index:
-            # Flatten the `MultiIndex` columns where names are concatenated with underscores.
-            # Filtering is required to omit non-nested columns avoiding unwanted trailing
-            # underscores.
-            df.columns = [
-                "_".join(filter(lambda c: c, map(lambda c: str(c), col))) for col in columns
-            ]
-
-        return df
+        return _trials_dataframe(self, attrs, multi_index)
 
     def stop(self) -> None:
 
@@ -698,58 +571,6 @@ class Study(BaseStudy):
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
-    def _reseed_and_optimize_sequential(
-        self,
-        func: ObjectiveFuncType,
-        n_trials: Optional[int],
-        timeout: Optional[float],
-        catch: Tuple[Type[Exception], ...],
-        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]],
-        gc_after_trial: bool,
-        time_start: Optional[datetime.datetime],
-    ) -> None:
-
-        self.sampler.reseed_rng()
-        self._optimize_sequential(
-            func, n_trials, timeout, catch, callbacks, gc_after_trial, time_start
-        )
-
-    def _optimize_sequential(
-        self,
-        func: ObjectiveFuncType,
-        n_trials: Optional[int],
-        timeout: Optional[float],
-        catch: Tuple[Type[Exception], ...],
-        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]],
-        gc_after_trial: bool,
-        time_start: Optional[datetime.datetime],
-    ) -> None:
-
-        i_trial = 0
-
-        if time_start is None:
-            time_start = datetime.datetime.now()
-
-        while True:
-            if self._stop_flag:
-                break
-
-            if n_trials is not None:
-                if i_trial >= n_trials:
-                    break
-                i_trial += 1
-
-            if timeout is not None:
-                elapsed_seconds = (datetime.datetime.now() - time_start).total_seconds()
-                if elapsed_seconds >= timeout:
-                    break
-
-            self._run_trial_and_callbacks(func, catch, callbacks, gc_after_trial)
-
-            self._progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
-
-        self._storage.remove_session()
-
     def _pop_waiting_trial_id(self) -> Optional[int]:
 
         # TODO(c-bata): Reduce database query counts for extracting waiting trials.
@@ -765,103 +586,25 @@ class Study(BaseStudy):
 
         return None
 
-    def _run_trial_and_callbacks(
-        self,
-        func: ObjectiveFuncType,
-        catch: Tuple[Type[Exception], ...],
-        callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]],
-        gc_after_trial: bool,
-    ) -> None:
-
-        trial = self._run_trial(func, catch, gc_after_trial)
-        if callbacks is not None:
-            frozen_trial = copy.deepcopy(self._storage.get_trial(trial._trial_id))
-            for callback in callbacks:
-                callback(self, frozen_trial)
-
-    def _run_trial(
-        self,
-        func: ObjectiveFuncType,
-        catch: Tuple[Type[Exception], ...],
-        gc_after_trial: bool,
-    ) -> trial_module.Trial:
-
+    def _ask(self) -> trial_module.Trial:
         # Sync storage once at the beginning of the objective evaluation.
         self._storage.read_trials_from_remote_storage(self._study_id)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
             trial_id = self._storage.create_new_trial(self._study_id)
-        trial = trial_module.Trial(self, trial_id)
-        trial_number = trial.number
+        return trial_module.Trial(self, trial_id)
 
-        try:
-            result = func(trial)
-        except exceptions.TrialPruned as e:
-            message = "Trial {} pruned. {}".format(trial_number, str(e))
-            _logger.info(message)
+    def _tell(self, trial: trial_module.Trial, state: TrialState, value: Optional[float]) -> None:
+        if state == TrialState.COMPLETE:
+            assert value is not None
+        if value is not None:
+            self._storage.set_trial_value(trial._trial_id, value)
+        self._storage.set_trial_state(trial._trial_id, state)
 
-            # Register the last intermediate value if present as the value of the trial.
-            # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
-            frozen_trial = self._storage.get_trial(trial_id)
-            last_step = frozen_trial.last_step
-            if last_step is not None:
-                self._storage.set_trial_value(
-                    trial_id, frozen_trial.intermediate_values[last_step]
-                )
-            self._storage.set_trial_state(trial_id, TrialState.PRUNED)
-            return trial
-        except Exception as e:
-            message = "Trial {} failed because of the following error: {}".format(
-                trial_number, repr(e)
-            )
-            _logger.warning(message, exc_info=True)
-            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-            self._storage.set_trial_state(trial_id, TrialState.FAIL)
-
-            if isinstance(e, catch):
-                return trial
-            raise
-        finally:
-            # The following line mitigates memory problems that can be occurred in some
-            # environments (e.g., services that use computing containers such as CircleCI).
-            # Please refer to the following PR for further details:
-            # https://github.com/optuna/optuna/pull/325.
-            if gc_after_trial:
-                gc.collect()
-
-        try:
-            result = float(result)
-        except (
-            ValueError,
-            TypeError,
-        ):
-            message = (
-                "Trial {} failed, because the returned value from the "
-                "objective function cannot be cast to float. Returned value is: "
-                "{}".format(trial_number, repr(result))
-            )
-            _logger.warning(message)
-            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-            self._storage.set_trial_state(trial_id, TrialState.FAIL)
-            return trial
-
-        if math.isnan(result):
-            message = "Trial {} failed, because the objective function returned {}.".format(
-                trial_number, result
-            )
-            _logger.warning(message)
-            self._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-            self._storage.set_trial_state(trial_id, TrialState.FAIL)
-            return trial
-
-        self._storage.set_trial_value(trial_id, result)
-        self._storage.set_trial_state(trial_id, TrialState.COMPLETE)
-        self._log_completed_trial(trial, result)
-
-        return trial
-
-    def _log_completed_trial(self, trial: trial_module.Trial, result: float) -> None:
+    def _log_completed_trial(self, trial: trial_module.Trial, value: float) -> None:
+        # This method is overwritten by `MultiObjectiveStudy` using `types.MethodType` so one must
+        # be careful modifying this method, e.g. making this a free function.
 
         if not _logger.isEnabledFor(logging.INFO):
             return
@@ -869,7 +612,7 @@ class Study(BaseStudy):
         _logger.info(
             "Trial {} finished with value: {} and parameters: {}. "
             "Best is trial {} with value: {}.".format(
-                trial.number, result, trial.params, self.best_trial.number, self.best_value
+                trial.number, value, trial.params, self.best_trial.number, self.best_value
             )
         )
 
@@ -939,6 +682,10 @@ def create_study(
 
     Returns:
         A :class:`~optuna.study.Study` object.
+
+    Raises:
+        ValueError:
+            If ``direction`` is neither 'minimize' nor 'maximize'.
 
     See also:
         :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.

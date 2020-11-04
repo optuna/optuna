@@ -18,6 +18,7 @@ This page contains a list of example codes written with Optuna.
 * [LightGBM Tuner](./lightgbm_tuner_simple.py)
 * [CatBoost](./catboost_simple.py)
 * [MXNet](./mxnet_simple.py)
+* [Gluon](./gluon_simple.py)
 * [PyTorch](./pytorch_simple.py)
 * [PyTorch Ignite](./pytorch_ignite_simple.py)
 * [PyTorch Lightning](./pytorch_lightning_simple.py)
@@ -29,6 +30,7 @@ This page contains a list of example codes written with Optuna.
 * [AllenNLP](./allennlp/allennlp_simple.py)
 * [AllenNLP (Jsonnet)](./allennlp/allennlp_jsonnet.py)
 * [SKORCH](./skorch_simple.py)
+* [RAPIDS](./rapids_simple.py)
 
 ### An example where an objective function uses additional arguments
 
@@ -77,7 +79,9 @@ In addition, integration modules are available for the following libraries, prov
 ### External projects using Optuna
 
 * [Allegro Trains](https://github.com/allegroai/trains)
+* [BBO-Rietveld: Automated crystal structure refinement](https://github.com/quantumbeam/BBO-Rietveld)
 * [Catalyst](https://github.com/catalyst-team/catalyst)
+* [CuPy](https://github.com/cupy/cupy)
 * [Mozilla Voice STT](https://github.com/mozilla/DeepSpeech)
 * [neptune.ai](https://neptune.ai)
 * [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)

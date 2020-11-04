@@ -69,7 +69,7 @@ class TestOptunaObjective(object):
     def test_call(self) -> None:
 
         target_param_names = ["lambda_l1"]
-        lgbm_params = {}  # type: Dict[str, Any]
+        lgbm_params: Dict[str, Any] = {}
         train_set = lgb.Dataset(None)
         val_set = lgb.Dataset(None)
 
@@ -95,9 +95,9 @@ class TestOptunaObjective(object):
 class TestOptunaObjectiveCV(object):
     def test_call(self) -> None:
         target_param_names = ["lambda_l1"]
-        lgbm_params = {}  # type: Dict[str, Any]
+        lgbm_params: Dict[str, Any] = {}
         train_set = lgb.Dataset(None)
-        lgbm_kwargs = {}  # type: Dict[str, Any]
+        lgbm_kwargs: Dict[str, Any] = {}
         best_score = -np.inf
 
         with turnoff_cv():
@@ -150,7 +150,7 @@ class TestBaseTuner(object):
             tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert tuner.higher_is_better()
 
-        for metric in ["rmsle", "rmse", "binary_logloss"]:
+        for metric in ["rmsle", "rmse", "binary_logloss", "mape"]:
             tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert not tuner.higher_is_better()
 
@@ -245,7 +245,7 @@ class TestBaseTuner(object):
         self, metric: str, eval_at_param: Dict[str, Union[int, List[int]]], expected: str
     ) -> None:
 
-        params = {"metric": metric}  # type: Dict[str, Union[str, int, List[int]]]
+        params: Dict[str, Union[str, int, List[int]]] = {"metric": metric}
         params.update(eval_at_param)
         tuner = _BaseTuner(lgbm_params=params)
         assert tuner._metric_with_eval_at(metric) == expected
@@ -285,7 +285,7 @@ class TestLightGBMTuner(object):
 
     def test_no_eval_set_args(self) -> None:
 
-        params = {}  # type: Dict[str, Any]
+        params: Dict[str, Any] = {}
         train_set = lgb.Dataset(None)
         with pytest.raises(ValueError) as excinfo:
             lgb.LightGBMTuner(params, train_set, num_boost_round=5, early_stopping_rounds=2)
@@ -303,7 +303,7 @@ class TestLightGBMTuner(object):
     )
     def test_inconsistent_study_direction(self, metric: str, study_direction: str) -> None:
 
-        params = {}  # type: Dict[str, Any]
+        params: Dict[str, Any] = {}
         if metric is not None:
             params["metric"] = metric
         train_set = lgb.Dataset(None)
@@ -331,7 +331,7 @@ class TestLightGBMTuner(object):
 
     def test__parse_args_wrapper_args(self) -> None:
 
-        params = {}  # type: Dict[str, Any]
+        params: Dict[str, Any] = {}
         train_set = lgb.Dataset(None)
         val_set = lgb.Dataset(None)
         kwargs = dict(
@@ -436,10 +436,10 @@ class TestLightGBMTuner(object):
 
     def test_tune_num_leaves_negative_max_depth(self) -> None:
 
-        params = {
+        params: Dict[str, Any] = {
             "metric": "binary_logloss",
             "max_depth": -1,
-        }  # type: Dict[str, Any]
+        }
         X_trn = np.random.uniform(10, size=(10, 5))
         y_trn = np.random.randint(2, size=10)
         train_dataset = lgb.Dataset(X_trn, label=y_trn)
@@ -511,7 +511,7 @@ class TestLightGBMTuner(object):
 
     def test_when_a_step_does_not_improve_best_score(self) -> None:
 
-        params = {}  # type: Dict
+        params: Dict = {}
         valid_data = np.zeros((10, 10))
         valid_sets = lgb.Dataset(valid_data)
 
@@ -533,7 +533,7 @@ class TestLightGBMTuner(object):
             tuner.tune_num_leaves()
 
     def test_resume_run(self) -> None:
-        params = {"verbose": -1}  # type: Dict
+        params: Dict = {"verbose": -1}
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
@@ -566,7 +566,7 @@ class TestLightGBMTuner(object):
         optuna.logging._reset_library_root_logger()
         optuna.logging.set_verbosity(optuna.logging.INFO)
 
-        params = {"verbose": -1}  # type: Dict
+        params: Dict = {"verbose": -1}
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
@@ -589,7 +589,7 @@ class TestLightGBMTuner(object):
 
     @pytest.mark.parametrize("show_progress_bar, expected", [(True, 6), (False, 0)])
     def test_run_show_progress_bar(self, show_progress_bar: bool, expected: int) -> None:
-        params = {"verbose": -1}  # type: Dict
+        params: Dict = {"verbose": -1}
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
@@ -612,7 +612,7 @@ class TestLightGBMTuner(object):
     def test_get_best_booster(self) -> None:
         unexpected_value = 20  # out of scope.
 
-        params = {"verbose": -1, "lambda_l1": unexpected_value}  # type: Dict
+        params: Dict = {"verbose": -1, "lambda_l1": unexpected_value}
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
@@ -638,7 +638,7 @@ class TestLightGBMTuner(object):
             tuner2.get_best_booster()
 
     def test_best_booster_with_model_dir(self) -> None:
-        params = {"verbose": -1}  # type: Dict
+        params: Dict = {"verbose": -1}
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
@@ -697,7 +697,7 @@ class TestLightGBMTuner(object):
         assert study.best_trial.value == overall_best
 
     def test_optuna_callback(self) -> None:
-        params = {"verbose": -1}  # type: Dict[str, Any]
+        params: Dict[str, Any] = {"verbose": -1}
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         callback_mock = mock.MagicMock()
@@ -723,9 +723,7 @@ class TestLightGBMTunerCV(object):
     ) -> LightGBMTunerCV:
 
         # Required keyword arguments.
-        kwargs = dict(
-            num_boost_round=5, early_stopping_rounds=2, study=study
-        )  # type: Dict[str, Any]
+        kwargs: Dict[str, Any] = dict(num_boost_round=5, early_stopping_rounds=2, study=study)
         kwargs.update(kwargs_options)
 
         runner = LightGBMTunerCV(params, train_set, **kwargs)
@@ -747,7 +745,7 @@ class TestLightGBMTunerCV(object):
     )
     def test_inconsistent_study_direction(self, metric: str, study_direction: str) -> None:
 
-        params = {}  # type: Dict[str, Any]
+        params: Dict[str, Any] = {}
         if metric is not None:
             params["metric"] = metric
         train_set = lgb.Dataset(None)
@@ -844,7 +842,7 @@ class TestLightGBMTunerCV(object):
             assert len(runner.study.trials) == 5
 
     def test_resume_run(self) -> None:
-        params = {"verbose": -1}  # type: Dict
+        params: Dict = {"verbose": -1}
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
@@ -877,7 +875,7 @@ class TestLightGBMTunerCV(object):
         optuna.logging._reset_library_root_logger()
         optuna.logging.set_verbosity(optuna.logging.INFO)
 
-        params = {"verbose": -1}  # type: Dict
+        params: Dict = {"verbose": -1}
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
@@ -895,7 +893,7 @@ class TestLightGBMTunerCV(object):
 
     @pytest.mark.parametrize("show_progress_bar, expected", [(True, 6), (False, 0)])
     def test_run_show_progress_bar(self, show_progress_bar: bool, expected: int) -> None:
-        params = {"verbose": -1}  # type: Dict
+        params: Dict = {"verbose": -1}
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
@@ -911,7 +909,7 @@ class TestLightGBMTunerCV(object):
         assert mock_tqdm.call_count == expected
 
     def test_optuna_callback(self) -> None:
-        params = {"verbose": -1}  # type: Dict[str, Any]
+        params: Dict[str, Any] = {"verbose": -1}
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         callback_mock = mock.MagicMock()
@@ -923,3 +921,62 @@ class TestLightGBMTunerCV(object):
             tuner._tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
 
         assert callback_mock.call_count == 10
+
+    def test_get_best_booster(self) -> None:
+        unexpected_value = 20  # out of scope.
+
+        params: Dict = {"verbose": -1, "lambda_l1": unexpected_value}
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+        study = optuna.create_study()
+
+        with TemporaryDirectory() as tmpdir:
+            tuner = LightGBMTunerCV(
+                params, dataset, study=study, model_dir=tmpdir, return_cvbooster=True
+            )
+
+            with pytest.raises(ValueError):
+                tuner.get_best_booster()
+
+            with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+                tuner.tune_regularization_factors()
+
+            best_boosters = tuner.get_best_booster().boosters
+            for booster in best_boosters:
+                assert booster.params["lambda_l1"] != unexpected_value
+
+            tuner2 = LightGBMTunerCV(
+                params, dataset, study=study, model_dir=tmpdir, return_cvbooster=True
+            )
+            best_boosters2 = tuner2.get_best_booster().boosters
+            for booster, booster2 in zip(best_boosters, best_boosters2):
+                assert booster.params == booster2.params
+
+    def test_get_best_booster_with_error(self) -> None:
+        params: Dict = {"verbose": -1}
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+        study = optuna.create_study()
+
+        tuner = LightGBMTunerCV(
+            params, dataset, study=study, model_dir=None, return_cvbooster=True
+        )
+        # No trial is completed yet.
+        with pytest.raises(ValueError):
+            tuner.get_best_booster()
+
+        with mock.patch.object(_OptunaObjectiveCV, "_get_cv_scores", return_value=[1.0]):
+            tuner.tune_regularization_factors()
+
+        tuner2 = LightGBMTunerCV(
+            params, dataset, study=study, model_dir=None, return_cvbooster=True
+        )
+        # Resumed the study does not have the best booster.
+        with pytest.raises(ValueError):
+            tuner2.get_best_booster()
+
+        with TemporaryDirectory() as tmpdir:
+            tuner3 = LightGBMTunerCV(
+                params, dataset, study=study, model_dir=tmpdir, return_cvbooster=True
+            )
+            # The booster was not saved hence not found in the `model_dir`.
+            with pytest.raises(ValueError):
+                tuner3.get_best_booster()

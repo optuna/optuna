@@ -33,7 +33,7 @@ MAX_VERSION_LENGTH = 256
 
 NOT_FOUND_MSG = "Record does not exist."
 
-BaseModel = declarative_base()  # type: Any
+BaseModel: Any = declarative_base()
 
 
 class StudyModel(BaseModel):
@@ -89,7 +89,7 @@ class StudyModel(BaseModel):
 
 class StudyUserAttributeModel(BaseModel):
     __tablename__ = "study_user_attributes"
-    __table_args__ = (UniqueConstraint("study_id", "key"),)  # type: Any
+    __table_args__: Any = (UniqueConstraint("study_id", "key"),)
     study_user_attribute_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
@@ -123,7 +123,7 @@ class StudyUserAttributeModel(BaseModel):
 
 class StudySystemAttributeModel(BaseModel):
     __tablename__ = "study_system_attributes"
-    __table_args__ = (UniqueConstraint("study_id", "key"),)  # type: Any
+    __table_args__: Any = (UniqueConstraint("study_id", "key"),)
     study_system_attribute_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
@@ -277,7 +277,7 @@ class TrialModel(BaseModel):
 
 class TrialUserAttributeModel(BaseModel):
     __tablename__ = "trial_user_attributes"
-    __table_args__ = (UniqueConstraint("trial_id", "key"),)  # type: Any
+    __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
     trial_user_attribute_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
@@ -334,7 +334,7 @@ class TrialUserAttributeModel(BaseModel):
 
 class TrialSystemAttributeModel(BaseModel):
     __tablename__ = "trial_system_attributes"
-    __table_args__ = (UniqueConstraint("trial_id", "key"),)  # type: Any
+    __table_args__: Any = (UniqueConstraint("trial_id", "key"),)
     trial_system_attribute_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
@@ -391,7 +391,7 @@ class TrialSystemAttributeModel(BaseModel):
 
 class TrialParamModel(BaseModel):
     __tablename__ = "trial_params"
-    __table_args__ = (UniqueConstraint("trial_id", "param_name"),)  # type: Any
+    __table_args__: Any = (UniqueConstraint("trial_id", "param_name"),)
     param_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     param_name = Column(String(MAX_INDEXED_STRING_LENGTH))
@@ -476,7 +476,7 @@ class TrialParamModel(BaseModel):
 
 class TrialValueModel(BaseModel):
     __tablename__ = "trial_values"
-    __table_args__ = (UniqueConstraint("trial_id", "step"),)  # type: Any
+    __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
     trial_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     step = Column(Integer)
@@ -525,7 +525,7 @@ class TrialValueModel(BaseModel):
 class VersionInfoModel(BaseModel):
     __tablename__ = "version_info"
     # setting check constraint to ensure the number of rows is at most 1
-    __table_args__ = (CheckConstraint("version_info_id=1"),)  # type: Any
+    __table_args__: Any = (CheckConstraint("version_info_id=1"),)
     version_info_id = Column(Integer, primary_key=True, autoincrement=False, default=1)
     schema_version = Column(Integer)
     library_version = Column(String(MAX_VERSION_LENGTH))

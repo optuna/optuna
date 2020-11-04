@@ -71,10 +71,14 @@ class Net(nn.Module):
         self.layers.append(nn.Linear(input_dim, CLASSES))
 
         # Assigning the layers as class variables (PyTorch requirement).
+        # Parameters of a layer are returned when calling model.parameters(),
+        # only if the layer is a class variable. Thus, assigning as class
+        # variable is necessary to make the layer parameters trainable.
         for idx, layer in enumerate(self.layers):
             setattr(self, "fc{}".format(idx), layer)
 
-        # Assigning the dropouts as class variables (PyTorch requirement).
+        # Assigning the dropouts as class variables (PyTorch requirement), for
+        # the same reason as above.
         for idx, dropout in enumerate(self.dropouts):
             setattr(self, "drop{}".format(idx), dropout)
 
@@ -145,8 +149,7 @@ def objective(trial):
         checkpoint_callback=checkpoint_callback,
         max_epochs=EPOCHS,
         gpus=1 if torch.cuda.is_available() else None,
-        callbacks=[metrics_callback],
-        early_stop_callback=PyTorchLightningPruningCallback(trial, monitor="val_acc"),
+        callbacks=[metrics_callback, PyTorchLightningPruningCallback(trial, monitor="val_acc")],
     )
 
     model = LightningNet(trial)

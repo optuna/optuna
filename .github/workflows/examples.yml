@@ -5,7 +5,7 @@ on:
     - cron: '0 15 * * *'
 
 jobs:
-  build:
+  examples:
 
     runs-on: ubuntu-latest
     strategy:
@@ -46,11 +46,10 @@ jobs:
         pip install --progress-bar off $(ls dist/*.tar.gz)[example] -f https://download.pytorch.org/whl/torch_stable.html
     - name: Run examples
       run: |
-        # TODO(hvy): Stop ignoring allennlp_jsonnet.py when https://github.com/optuna/optuna/issues/1526 is resolved.
         if [ ${{ matrix.python-version }} = 3.8 ]; then
-          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai_.*|allennlp'
+          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai_.*|allennlp|rapids_.*'
         else
-          IGNORES='chainermn_.*|allennlp_jsonnet.py'
+          IGNORES='chainermn_.*|rapids_.*'
         fi
 
         for file in `find examples -name '*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`

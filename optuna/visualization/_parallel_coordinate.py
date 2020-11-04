@@ -45,7 +45,7 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
 
         .. raw:: html
 
-            <iframe src="../../_static/plot_parallel_coordinate.html"
+            <iframe src="../../../_static/plot_parallel_coordinate.html"
              width="100%" height="500px" frameborder="0">
             </iframe>
 
@@ -82,13 +82,13 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
-    dims = [
+    dims: List[Dict[str, Any]] = [
         {
             "label": "Objective Value",
             "values": tuple([t.value for t in trials]),
             "range": (min([t.value for t in trials]), max([t.value for t in trials])),
         }
-    ]  # type: List[Dict[str, Any]]
+    ]
     for p_name in sorted_params:
         values = []
         for t in trials:
@@ -98,7 +98,7 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
         try:
             tuple(map(float, values))
         except (TypeError, ValueError):
-            vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
+            vocab: DefaultDict[str, int] = defaultdict(lambda: len(vocab))
             values = [vocab[v] for v in values]
             is_categorical = True
         dim = {

@@ -3,7 +3,6 @@ from datetime import datetime
 import json
 import logging
 import os
-import sys
 from typing import Any
 from typing import Dict
 from typing import List
@@ -356,14 +355,14 @@ class RDBStorage(BaseStorage):
         study_summary = study_summary_stmt.all()
         study_summaries = []
         for study in study_summary:
-            best_trial = None  # type: Optional[models.TrialModel]
+            best_trial: Optional[models.TrialModel] = None
             try:
                 if study.direction == StudyDirection.MAXIMIZE:
                     best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
                 else:
                     best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
             except ValueError:
-                best_trial_frozen = None  # type: Optional[FrozenTrial]
+                best_trial_frozen: Optional[FrozenTrial] = None
             if best_trial:
                 params = (
                     session.query(
@@ -1096,9 +1095,7 @@ class RDBStorage(BaseStorage):
                 "This typically happens due to invalid data in the commit, "
                 "e.g. exceeding max length."
             )
-            raise optuna.exceptions.StorageInternalError(message).with_traceback(
-                sys.exc_info()[2]
-            ) from e
+            raise optuna.exceptions.StorageInternalError(message) from e
 
     def remove_session(self) -> None:
         """Removes the current session.

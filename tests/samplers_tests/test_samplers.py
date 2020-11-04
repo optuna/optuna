@@ -233,11 +233,11 @@ class FixedSampler(BaseSampler):
 
 def test_sample_relative() -> None:
 
-    relative_search_space = {
+    relative_search_space: Dict[str, BaseDistribution] = {
         "a": UniformDistribution(low=0, high=5),
         "b": CategoricalDistribution(choices=("foo", "bar", "baz")),
         "c": IntUniformDistribution(low=20, high=50),  # Not exist in `relative_params`.
-    }  # type: Dict[str, BaseDistribution]
+    }
     relative_params = {
         "a": 3.2,
         "b": "baz",

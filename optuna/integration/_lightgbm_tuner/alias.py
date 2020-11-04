@@ -3,7 +3,7 @@ from typing import Dict
 from typing import List  # NOQA
 
 
-_ALIAS_GROUP_LIST = [
+_ALIAS_GROUP_LIST: List[Dict[str, Any]] = [
     {"param_name": "bagging_fraction", "alias_names": ["sub_row", "subsample", "bagging"]},
     {"param_name": "learning_rate", "alias_names": ["shrinkage_rate", "eta"]},
     {
@@ -24,7 +24,7 @@ _ALIAS_GROUP_LIST = [
     {"param_name": "lambda_l1", "alias_names": ["reg_alpha"]},
     {"param_name": "lambda_l2", "alias_names": ["reg_lambda", "lambda"]},
     {"param_name": "min_gain_to_split", "alias_names": ["min_split_gain"]},
-]  # type: List[Dict[str, Any]]
+]
 
 
 def _handling_alias_parameters(lgbm_params: Dict[str, Any]) -> None:
@@ -40,7 +40,7 @@ def _handling_alias_parameters(lgbm_params: Dict[str, Any]) -> None:
                 del lgbm_params[alias_name]
 
 
-_ALIAS_METRIC_LIST = [
+_ALIAS_METRIC_LIST: List[Dict[str, Any]] = [
     # The list `alias_names` do not include the `metric_name` itself.
     {
         "metric_name": "ndcg",
@@ -101,7 +101,7 @@ _ALIAS_METRIC_LIST = [
         "metric_name": "rmse",
         "alias_names": ["l2_root", "root_mean_squared_error"],
     },
-]  # type: List[Dict[str, Any]]
+]
 
 
 def _handling_alias_metrics(lgbm_params: Dict[str, Any]) -> None:
