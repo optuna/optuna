@@ -8,8 +8,11 @@ jobs:
   benchmark:
 
     runs-on: ubuntu-18.04
-    container: docker://dvcorg/cml-py3:latest
     timeout-minutes: 30
+
+    strategy:
+      matrix:
+        problem: [hpobench-protein, nasbench]
 
     if: github.repository == 'optuna/optuna'
 
@@ -21,10 +24,15 @@ jobs:
         sudo apt update
         sudo apt -y install gnuplot
 
+    - name: Cache Python libraries
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-${{ hashFiles('**/setup.py') }}-v1
+
     - name: Install optuna & kurobako-py
       run: |
         python setup.py install
-        pip install --no-cache-dir kurobako
+        pip install kurobako
 
     - name: Cache kurobako CLI
       id: cache-kurobako
@@ -67,10 +75,9 @@ jobs:
         curl -L $(./kurobako dataset nasbench url) -o nasbench_full.tfrecord
         ./kurobako dataset nasbench convert nasbench_full.tfrecord nasbench_full.bin
 
-    # TODO: Discuss the benchmark task-solver-pruner configuration
     - name: Run Benchmark
       run: |
-        python run_kurobako.py --name "CI" --kurobako-path "." --input-dir "." --output-dir "out" --problem-list "nasbench" "hpobench-protein" --plot
+        python run_kurobako.py --name "CI" --kurobako-path "." --input-dir "." --output-dir "out" --problem-list "hpobench-naval" "nasbench" --plot
 
     - uses: actions/upload-artifact@v2
       with:
