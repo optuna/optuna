@@ -9,6 +9,7 @@ jobs:
 
     runs-on: ubuntu-18.04
     container: docker://dvcorg/cml-py3:latest
+    timeout-minutes: 30
 
     if: github.repository == 'optuna/optuna'
 
@@ -19,6 +20,11 @@ jobs:
       run: |
         sudo apt update
         sudo apt -y install gnuplot
+
+    - name: Install optuna & kurobako-py
+      run: |
+        python setup.py install
+        pip install --no-cache-dir kurobako
 
     - name: Cache kurobako CLI
       id: cache-kurobako
@@ -64,33 +70,29 @@ jobs:
     # TODO: Discuss the benchmark task-solver-pruner configuration
     - name: Run Benchmark
       run: |
-        ./kurobako solver random | tee solver.json
-        ./kurobako problem hpobench ./fcnet_tabular_benchmarks/fcnet_protein_structure_data.hdf5 | tee problem.json
-        ./kurobako studies --solvers $(cat solver.json) --problems $(cat problem.json) | ./kurobako run > report.json
-        cat report.json | ./kurobako report > report.md
-        cat report.json | ./kurobako plot curve --errorbar
+        python run_kurobako.py --name "CI" --kurobako-path "." --input-dir "." --output-dir "out" --problem-list "nasbench" "hpobench-protein" --plot
 
     - uses: actions/upload-artifact@v2
       with:
         name: benchmark-report
         path: |
-          report.md
-          images/**/*.png
+          out/report/CI/report_CI.md
+          out/**/*.png
 
     - uses: actions/download-artifact@v2
       with:
         name: benchmark-report
         path: |
-          report.md
-          images/**/*.png
+          out/report/CI/report_CI.md
+          out/**/*.png
 
     - name: cml_run
       env:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        for file in `find images -name '*.png'`
+        for file in `find out -type f -name '*.png'`
         do
           echo $file
-          cml-publish $file --md >> report.md
+          cml-publish $file --md >> out/report/CI/report_CI.md
         done
-        cml-send-github-check report.md
+        cml-send-github-check out/report/CI/report_CI.md
