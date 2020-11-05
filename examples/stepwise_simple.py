@@ -1,5 +1,7 @@
 import optuna
 import optuna.samplers._stepwise
+from optuna.samplers._stepwise import Step
+from optuna.samplers._stepwise import StepwiseSampler
 
 
 def objective(trial):
@@ -22,18 +24,21 @@ def search_z(params):
 
 
 def search_x_y(params):
-    return {"x": optuna.distributions.UniformDistribution(0, 100), "y": optuna.distributions.UniformDistribution(0, 100)}
+    return {
+        "x": optuna.distributions.UniformDistribution(0, 100),
+        "y": optuna.distributions.UniformDistribution(0, 100),
+    }
 
 
 steps = [
-    optuna.samplers._stepwise.Step(search_x_y, optuna.samplers.CmaEsSampler(), n_trials=25),
-    optuna.samplers._stepwise.Step(search_x, optuna.samplers.TPESampler(), n_trials=50),
-    optuna.samplers._stepwise.Step(search_y, optuna.samplers.RandomSampler(), n_trials=25),
-    optuna.samplers._stepwise.Step(search_z, optuna.samplers.TPESampler(), n_trials=25),
-    optuna.samplers._stepwise.Step(search_x_y, optuna.samplers.CmaEsSampler(), n_trials=25),
+    Step(search_x_y, lambda _: optuna.samplers.CmaEsSampler(), n_trials=25),
+    Step(search_x, lambda _: optuna.samplers.TPESampler(), n_trials=50),
+    Step(search_y, lambda _: optuna.samplers.RandomSampler(), n_trials=25),
+    Step(search_z, lambda _: optuna.samplers.TPESampler(), n_trials=25),
+    Step(search_x_y, lambda _: optuna.samplers.CmaEsSampler(), n_trials=25),
 ]
 
-sampler = optuna.samplers._stepwise.StepwiseSampler(steps=steps, default_params={"x": 0, "y": 0, "z": 0})
+sampler = StepwiseSampler(steps=steps, default_params={"x": 0, "y": 0, "z": 0})
 study = optuna.create_study(sampler=sampler)
 study.optimize(objective, n_jobs=2)
 
