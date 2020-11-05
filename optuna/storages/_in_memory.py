@@ -5,6 +5,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 import uuid
 
@@ -77,13 +78,13 @@ class InMemoryStorage(BaseStorage):
             del self._study_name_to_id[study_name]
             del self._studies[study_id]
 
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
+    def set_study_direction(self, study_id: int, direction: Sequence[StudyDirection]) -> None:
 
         with self._lock:
             self._check_study_id(study_id)
 
             study = self._studies[study_id]
-            if study.direction != StudyDirection.NOT_SET and study.direction != direction:
+            if study.direction[0] != StudyDirection.NOT_SET and study.direction != direction:
                 raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
                         study.direction, direction
@@ -126,7 +127,7 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].name
 
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_direction(self, study_id: int) -> Sequence[StudyDirection]:
 
         with self._lock:
             self._check_study_id(study_id)
@@ -273,6 +274,10 @@ class InMemoryStorage(BaseStorage):
             best_trial_id = self._studies[study_id].best_trial_id
             if best_trial_id is None:
                 raise ValueError("No trials are completed yet.")
+            elif len(self._studies[study_id].direction) > 1:
+                raise ValueError(
+                    "Best trial can be obtained only for single-objective optimization."
+                )
             return self.get_trial(best_trial_id)
 
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
@@ -283,7 +288,7 @@ class InMemoryStorage(BaseStorage):
             distribution = trial.distributions[param_name]
             return distribution.to_internal_repr(trial.params[param_name])
 
-    def set_trial_value(self, trial_id: int, value: float) -> None:
+    def set_trial_value(self, trial_id: int, value: Sequence[float]) -> None:
 
         with self._lock:
             trial = self._get_trial(trial_id)
@@ -306,17 +311,23 @@ class InMemoryStorage(BaseStorage):
         if best_trial_id is None:
             self._studies[study_id].best_trial_id = trial_id
             return
+
+        direction = self.get_study_direction(study_id)
+        if len(direction) > 1:
+            return
+        direction = direction[0]
+
         best_trial = self._get_trial(best_trial_id)
         assert best_trial is not None
-        best_value = best_trial.value
-        new_value = trial.value
-        if best_value is None:
+        if best_trial.value is None:
             self._studies[study_id].best_trial_id = trial_id
             return
         # Complete trials do not have `None` values.
-        assert new_value is not None
+        assert trial.value is not None
+        best_value = best_trial.value[0]
+        new_value = trial.value[0]
 
-        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+        if direction == StudyDirection.MAXIMIZE:
             if best_value < new_value:
                 self._studies[study_id].best_trial_id = trial_id
         else:
@@ -324,7 +335,7 @@ class InMemoryStorage(BaseStorage):
                 self._studies[study_id].best_trial_id = trial_id
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: Sequence[float]
     ) -> None:
 
         with self._lock:
@@ -419,5 +430,5 @@ class _StudyInfo:
         self.user_attrs: Dict[str, Any] = {}
         self.system_attrs: Dict[str, Any] = {}
         self.name: str = name
-        self.direction = StudyDirection.NOT_SET
+        self.direction = (StudyDirection.NOT_SET,)
         self.best_trial_id: Optional[int] = None

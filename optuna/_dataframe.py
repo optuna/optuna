@@ -21,7 +21,7 @@ if not _imports.is_successful():
 
 
 def _trials_dataframe(
-    study: "optuna.Study", attrs: Tuple[str, ...], multi_index: bool
+    study: "optuna.study.BaseStudy", attrs: Tuple[str, ...], multi_index: bool
 ) -> "pd.DataFrame":
     _imports.check()
 

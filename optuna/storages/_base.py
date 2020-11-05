@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
@@ -162,14 +163,15 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
+    def set_study_direction(self, study_id: int, direction: Sequence[StudyDirection]) -> None:
         """Register an optimization problem direction to a study.
 
         Args:
             study_id:
                 ID of the study.
             direction:
-                Either :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
+                A sequence of direction whose element is either
+                :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
                 :obj:`~optuna.study.StudyDirection.MINIMIZE`.
 
         Raises:
@@ -235,7 +237,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_direction(self, study_id: int) -> Sequence[StudyDirection]:
         """Read whether a study maximizes or minimizes an objective.
 
         Args:
@@ -414,7 +416,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_value(self, trial_id: int, value: float) -> None:
+    def set_trial_value(self, trial_id: int, value: Sequence[float]) -> None:
         """Set a return value of an objective function.
 
         This method overwrites any existing trial value.
@@ -435,7 +437,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: Sequence[float]
     ) -> None:
         """Report an intermediate value of an objective function.
 
@@ -564,6 +566,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     def get_best_trial(self, study_id: int) -> FrozenTrial:
         """Return the trial with the best value in a study.
 
+        This method is valid only when the single-objective optimization.
+
         Args:
             study_id:
                 ID of the study.
@@ -576,6 +580,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 If no study with the matching ``study_id`` exists.
             :exc:`ValueError`:
                 If no trials have been completed.
+                Or, the problem is multi-objective optimization.
         """
         all_trials = self.get_all_trials(study_id, deepcopy=False)
         all_trials = [t for t in all_trials if t.state is TrialState.COMPLETE]
@@ -583,7 +588,12 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         if len(all_trials) == 0:
             raise ValueError("No trials are completed yet.")
 
-        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+        direction = self.get_study_direction(study_id)
+        if len(direction) > 1:
+            raise ValueError("Best trial can be obtained only for single-objective optimization.")
+        direction = direction[0]
+
+        if direction == StudyDirection.MAXIMIZE:
             best_trial = max(all_trials, key=lambda t: t.value)
         else:
             best_trial = min(all_trials, key=lambda t: t.value)

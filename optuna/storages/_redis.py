@@ -1,10 +1,11 @@
 import copy
 from datetime import datetime
 import pickle
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Sequence
 
 import optuna
 from optuna import distributions
@@ -166,7 +167,7 @@ class RedisStorage(BaseStorage):
 
         return "study_id:{:010d}:direction".format(study_id)
 
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
+    def set_study_direction(self, study_id: int, direction: Sequence[StudyDirection]) -> None:
 
         self._check_study_id(study_id)
 
@@ -174,7 +175,7 @@ class RedisStorage(BaseStorage):
             direction_pkl = self._redis.get(self._key_study_direction(study_id))
             assert direction_pkl is not None
             current_direction = pickle.loads(direction_pkl)
-            if current_direction != StudyDirection.NOT_SET and current_direction != direction:
+            if current_direction[0] != StudyDirection.NOT_SET and current_direction != direction:
                 raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
                         current_direction, direction
@@ -229,7 +230,7 @@ class RedisStorage(BaseStorage):
             raise KeyError("No such study: {}.".format(study_id))
         return pickle.loads(study_name_pkl)
 
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_direction(self, study_id: int) -> Sequence[StudyDirection]:
 
         direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
         if direction_pkl is None:
@@ -406,7 +407,14 @@ class RedisStorage(BaseStorage):
             if len(all_trials) == 0:
                 raise ValueError("No trials are completed yet.")
 
-            if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+            direction = self.get_study_direction(study_id)
+            if len(direction) > 1:
+                raise ValueError(
+                    "Best trial can be obtained only for single-objective optimization."
+                )
+            direction = direction[0]
+
+            if direction == StudyDirection.MAXIMIZE:
                 best_trial = max(all_trials, key=lambda t: t.value)
             else:
                 best_trial = min(all_trials, key=lambda t: t.value)
@@ -436,7 +444,7 @@ class RedisStorage(BaseStorage):
         distribution = self.get_trial(trial_id).distributions[param_name]
         return distribution.to_internal_repr(self.get_trial(trial_id).params[param_name])
 
-    def set_trial_value(self, trial_id: int, value: float) -> None:
+    def set_trial_value(self, trial_id: int, value: Sequence[float]) -> None:
 
         self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
@@ -455,16 +463,18 @@ class RedisStorage(BaseStorage):
             self._set_best_trial(study_id, trial_id)
             return
 
+        direction = self.get_study_direction(study_id)
+        if len(direction) > 1:
+            return
+        direction = direction[0]
+
         best_value_or_none = self.get_best_trial(study_id).value
         assert best_value_or_none is not None
         assert trial.value is not None
-        best_value = float(best_value_or_none)
-        new_value = float(trial.value)
+        best_value = float(best_value_or_none[0])
+        new_value = float(trial.value[0])
 
-        # Complete trials do not have `None` values.
-        assert new_value is not None
-
-        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+        if direction == StudyDirection.MAXIMIZE:
             if new_value > best_value:
                 self._set_best_trial(study_id, trial_id)
         else:
@@ -474,7 +484,7 @@ class RedisStorage(BaseStorage):
         return
 
     def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: float
+        self, trial_id: int, step: int, intermediate_value: Sequence[float]
     ) -> None:
 
         self._check_trial_id(trial_id)

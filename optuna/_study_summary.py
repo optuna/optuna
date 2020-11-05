@@ -2,6 +2,8 @@ import datetime
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import Sequence
+from typing import Union
 
 from optuna import logging
 from optuna import trial
@@ -20,7 +22,7 @@ class StudySummary(object):
         study_name:
             Name of the :class:`~optuna.study.Study`.
         direction:
-            :class:`~optuna.study.StudyDirection` of the :class:`~optuna.study.Study`.
+            A :class:`~optuna.study.StudyDirection` or a sequence of such values.
         best_trial:
             :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
         user_attrs:
@@ -39,7 +41,7 @@ class StudySummary(object):
     def __init__(
         self,
         study_name: str,
-        direction: StudyDirection,
+        direction: Union[StudyDirection, Sequence[StudyDirection]],
         best_trial: Optional[trial.FrozenTrial],
         user_attrs: Dict[str, Any],
         system_attrs: Dict[str, Any],
@@ -49,7 +51,10 @@ class StudySummary(object):
     ):
 
         self.study_name = study_name
-        self.direction = direction
+        if isinstance(direction, Sequence):
+            self.direction = tuple(direction)
+        else:
+            self.direction = direction
         self.best_trial = best_trial
         self.user_attrs = user_attrs
         self.system_attrs = system_attrs

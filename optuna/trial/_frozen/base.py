@@ -7,7 +7,6 @@ from typing import Union
 
 from optuna import distributions
 from optuna import logging
-from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -24,122 +23,31 @@ _logger = logging.get_logger(__name__)
 CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
-class FrozenTrial(BaseTrial):
-    """Status and results of a :class:`~optuna.trial.Trial`.
-
-    This object has the same methods as :class:`~optuna.trial.Trial`, and it suggests best
-    parameter values among performed trials. In contrast to :class:`~optuna.trial.Trial`,
-    :class:`~optuna.trial.FrozenTrial` does not depend on :class:`~optuna.study.Study`, and it is
-    useful for deploying optimization results.
-
-    Example:
-
-        Re-evaluate an objective function with parameter values optimized study.
-
-        .. testcode::
-
-            import optuna
-
-
-            def objective(trial):
-                x = trial.suggest_uniform("x", -1, 1)
-                return x ** 2
-
-
-            study = optuna.create_study()
-            study.optimize(objective, n_trials=3)
-
-            assert objective(study.best_trial) == study.best_value
-
-    .. note::
-        Attributes are set in :func:`optuna.Study.optimize`,
-        but several attributes can be updated after the optimization.
-        That means such attributes are overwritten by the re-evaluation
-        if your objective updates attributes of :class:`~optuna.trial.Trial`.
-
-
-        Example:
-
-            Overwritten attributes.
-
-            .. testcode::
-
-                import copy
-                import datetime
-
-                import optuna
-
-
-                def objective(trial):
-                    x = trial.suggest_uniform("x", -1, 1)
-
-                    # this user attribute always differs
-                    trial.set_user_attr("evaluation time", datetime.datetime.now())
-
-                    return x ** 2
-
-
-                study = optuna.create_study()
-                study.optimize(objective, n_trials=3)
-
-                best_trial = study.best_trial
-                best_trial_copy = copy.deepcopy(best_trial)
-
-                # re-evaluate
-                objective(best_trial)
-
-                # the user attribute is overwritten by re-evaluation
-                assert best_trial.user_attrs != best_trial_copy.user_attrs
-
-    .. note::
-        Please refer to :class:`~optuna.trial.Trial` for details of methods and properties.
-
-
-    Attributes:
-        number:
-            Unique and consecutive number of :class:`~optuna.trial.Trial` for each
-            :class:`~optuna.study.Study`. Note that this field uses zero-based numbering.
-        state:
-            :class:`TrialState` of the :class:`~optuna.trial.Trial`.
-        value:
-            Objective value of the :class:`~optuna.trial.Trial`.
-        datetime_start:
-            Datetime where the :class:`~optuna.trial.Trial` started.
-        datetime_complete:
-            Datetime where the :class:`~optuna.trial.Trial` finished.
-        params:
-            Dictionary that contains suggested parameters.
-        user_attrs:
-            Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
-            :func:`optuna.trial.Trial.set_user_attr`.
-        intermediate_values:
-            Intermediate objective values set with :func:`optuna.trial.Trial.report`.
-    """
-
+class BaseFrozenTrial(BaseTrial):
     def __init__(
         self,
         number: int,
         state: TrialState,
-        value: Optional[float],
+        value: Optional[Union[float, Sequence[float]]],
         datetime_start: Optional[datetime.datetime],
         datetime_complete: Optional[datetime.datetime],
         params: Dict[str, Any],
         distributions: Dict[str, BaseDistribution],
         user_attrs: Dict[str, Any],
         system_attrs: Dict[str, Any],
-        intermediate_values: Dict[int, float],
+        intermediate_values: Dict[int, Union[float, Sequence[float]]],
         trial_id: int,
     ) -> None:
 
         self._number = number
         self.state = state
-        self.value = value
+        self._value = value
         self._datetime_start = datetime_start
         self.datetime_complete = datetime_complete
         self._params = params
         self._user_attrs = user_attrs
         self._system_attrs = system_attrs
-        self.intermediate_values = intermediate_values
+        self._intermediate_values = intermediate_values
         self._distributions = distributions
         self._trial_id = trial_id
 
@@ -161,20 +69,20 @@ class FrozenTrial(BaseTrial):
 
     def __eq__(self, other: Any) -> bool:
 
-        if not isinstance(other, FrozenTrial):
+        if not isinstance(other, BaseFrozenTrial):
             return NotImplemented
         return other.__dict__ == self.__dict__
 
     def __lt__(self, other: Any) -> bool:
 
-        if not isinstance(other, FrozenTrial):
+        if not isinstance(other, BaseFrozenTrial):
             return NotImplemented
 
         return self.number < other.number
 
     def __le__(self, other: Any) -> bool:
 
-        if not isinstance(other, FrozenTrial):
+        if not isinstance(other, BaseFrozenTrial):
             return NotImplemented
 
         return self.number <= other.number
@@ -424,10 +332,10 @@ class FrozenTrial(BaseTrial):
             The maximum step of intermediates.
         """
 
-        if len(self.intermediate_values) == 0:
+        if len(self._intermediate_values) == 0:
             return None
         else:
-            return max(self.intermediate_values.keys())
+            return max(self._intermediate_values.keys())
 
     @property
     def duration(self) -> Optional[datetime.timedelta]:
@@ -441,100 +349,3 @@ class FrozenTrial(BaseTrial):
             return self.datetime_complete - self.datetime_start
         else:
             return None
-
-
-@experimental("2.0.0")
-def create_trial(
-    *,
-    state: Optional[TrialState] = None,
-    value: Optional[float] = None,
-    params: Optional[Dict[str, Any]] = None,
-    distributions: Optional[Dict[str, BaseDistribution]] = None,
-    user_attrs: Optional[Dict[str, Any]] = None,
-    system_attrs: Optional[Dict[str, Any]] = None,
-    intermediate_values: Optional[Dict[int, float]] = None
-) -> FrozenTrial:
-    """Create a new :class:`~optuna.trial.FrozenTrial`.
-
-    Example:
-
-        .. testcode::
-
-            import optuna
-            from optuna.distributions import CategoricalDistribution
-            from optuna.distributions import UniformDistribution
-
-            trial = optuna.trial.create_trial(
-                params={"x": 1.0, "y": 0},
-                distributions={
-                    "x": UniformDistribution(0, 10),
-                    "y": CategoricalDistribution([-1, 0, 1]),
-                },
-                value=5.0,
-            )
-
-            assert isinstance(trial, optuna.trial.FrozenTrial)
-            assert trial.value == 5.0
-            assert trial.params == {"x": 1.0, "y": 0}
-
-    .. seealso::
-
-        See :func:`~optuna.study.Study.add_trial` for how this function can be used to create a
-        study from existing trials.
-
-    .. note::
-
-        Please note that this is a low-level API. In general, trials that are passed to objective
-        functions are created inside :func:`~optuna.study.Study.optimize`.
-
-    Args:
-        state:
-            Trial state.
-        value:
-            Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
-        params:
-            Dictionary with suggested parameters of the trial.
-        distributions:
-            Dictionary with parameter distributions of the trial.
-        user_attrs:
-            Dictionary with user attributes.
-        system_attrs:
-            Dictionary with system attributes. Should not have to be used for most users.
-        intermediate_values:
-            Dictionary with intermediate objective values of the trial.
-
-    Returns:
-        Created trial.
-
-    """
-
-    params = params or {}
-    distributions = distributions or {}
-    user_attrs = user_attrs or {}
-    system_attrs = system_attrs or {}
-    intermediate_values = intermediate_values or {}
-    state = state or TrialState.COMPLETE
-
-    datetime_start = datetime.datetime.now()
-    if state.is_finished():
-        datetime_complete: Optional[datetime.datetime] = datetime_start
-    else:
-        datetime_complete = None
-
-    trial = FrozenTrial(
-        number=-1,
-        trial_id=-1,
-        state=state,
-        value=value,
-        datetime_start=datetime_start,
-        datetime_complete=datetime_complete,
-        params=params,
-        distributions=distributions,
-        user_attrs=user_attrs,
-        system_attrs=system_attrs,
-        intermediate_values=intermediate_values,
-    )
-
-    trial._validate()
-
-    return trial

@@ -5,8 +5,10 @@ import math
 from typing import Callable
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Type
+from typing import Union
 import warnings
 
 import joblib
@@ -27,7 +29,7 @@ _logger = logging.get_logger(__name__)
 
 
 def _optimize(
-    study: "optuna.Study",
+    study: "optuna.study.BaseStudy",
     func: "optuna.study.ObjectiveFuncType",
     n_trials: Optional[int] = None,
     timeout: Optional[float] = None,
@@ -119,7 +121,7 @@ def _optimize(
 
 
 def _optimize_sequential(
-    study: "optuna.Study",
+    study: "optuna.study.BaseStudy",
     func: "optuna.study.ObjectiveFuncType",
     n_trials: Optional[int],
     timeout: Optional[float],
@@ -176,7 +178,7 @@ def _optimize_sequential(
 
 
 def _run_trial(
-    study: "optuna.Study",
+    study: "optuna.study.BaseStudy",
     func: "optuna.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.Trial:
@@ -188,6 +190,7 @@ def _run_trial(
     try:
         value = func(trial)
     except exceptions.TrialPruned as e:
+        # TODO(mamu): Handle multi-objective cases.
         # Register the last intermediate value if present as the value of the trial.
         # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
         frozen_trial = study._storage.get_trial(trial_id)
@@ -210,31 +213,74 @@ def _run_trial(
             return trial
         raise
 
+    checked_value, failure_message = _check_value(study._n_objectives, value, trial)
+
+    if failure_message is None:
+        assert checked_value is not None
+        study._storage.set_trial_value(trial_id, checked_value)
+        study._storage.set_trial_state(trial_id, TrialState.COMPLETE)
+        study._log_completed_trial(trial, checked_value)
+    else:
+        study._storage.set_trial_system_attr(trial_id, "fail_reason", failure_message)
+        study._storage.set_trial_state(trial_id, TrialState.FAIL)
+        _logger.warning(failure_message)
+
+    return trial
+
+
+def _check_value(
+    n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
+) -> Tuple[Optional[Union[float, Sequence[float]]], Optional[str]]:
+    value: Optional[Union[float, Sequence[float]]] = None
+    failure_message = None
+
+    trial_number = trial.number
+    if isinstance(original_value, Sequence):
+        if n_objectives != len(original_value):
+            failure_message = (
+                "Trial {} failed, because the number of the values {} is did not match the "
+                "number of the objectives {}.".format(
+                    trial_number, len(original_value), n_objectives
+                )
+            )
+        else:
+            value = []
+            for v in original_value:
+                checked_v, failure_message = _check_single_value(v, trial)
+                if failure_message is not None:
+                    # `value` is assumed to be ignored on failure so we can set it to any value.
+                    value = None
+                    continue
+                else:
+                    assert isinstance(value, list)
+                    value.append(checked_v)
+    else:
+        value, failure_message = _check_single_value(original_value, trial)
+
+    return value, failure_message
+
+
+def _check_single_value(
+    original_value: float, trial: trial_module.Trial
+) -> Tuple[Optional[float], Optional[str]]:
+    value = None
+    failure_message = None
+
     try:
-        value = float(value)
+        value = float(original_value)
     except (
         ValueError,
         TypeError,
     ):
-        message = (
+        failure_message = (
             "Trial {} failed, because the returned value from the "
             "objective function cannot be cast to float. Returned value is: "
-            "{}".format(trial_number, repr(value))
+            "{}".format(trial.number, repr(original_value))
         )
-        study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-        study._tell(trial, TrialState.FAIL, None)
-        _logger.warning(message)
-        return trial
 
-    if math.isnan(value):
-        message = "Trial {} failed, because the objective function returned {}.".format(
-            trial_number, value
+    if value is not None and math.isnan(value):
+        failure_message = "Trial {} failed, because the objective function returned {}.".format(
+            trial.number, original_value
         )
-        study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
-        study._tell(trial, TrialState.FAIL, None)
-        _logger.warning(message)
-        return trial
 
-    study._tell(trial, TrialState.COMPLETE, value)
-    study._log_completed_trial(trial, value)
-    return trial
+    return value, failure_message
