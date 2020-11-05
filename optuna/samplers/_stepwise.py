@@ -45,13 +45,21 @@ class StepwiseSampler(optuna.samplers.BaseSampler):
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
 
-        return {}
+        step = self._get_step(study, trial)
+        search_space = step.get_search_space(self._get_default_params(study))
+        if len(search_space) < 2:
+            return {}
+        return search_space
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
 
-        return {}
+        if len(search_space) < 2:
+            return {}
+
+        step = self._get_step(study, trial)
+        return step._sampler.sample_relative(study, trial, search_space)
 
     def sample_independent(
         self,
