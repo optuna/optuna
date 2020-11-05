@@ -234,6 +234,7 @@ class TPESampler(BaseSampler):
 
         param_names = list(search_space.keys())
         values, scores = _get_multivariate_observation_pairs(study, param_names)
+        values, scores = _filter_out_multivariate_observation_pairs(values, scores, search_space)
 
         # If the number of samples is insufficient, we run random trial.
         n = len(scores)
@@ -270,6 +271,7 @@ class TPESampler(BaseSampler):
     ) -> Any:
 
         values, scores = _get_observation_pairs(study, param_name)
+        values, scores = _filter_out_observation_pairs(values, scores, param_distribution)
 
         n = len(values)
 
@@ -829,3 +831,40 @@ def _get_multivariate_observation_pairs(
             values[param_name].append(param_value)
 
     return values, scores
+
+
+def _filter_out_observation_pairs(
+    values: List[Optional[float]],
+    scores: List[Tuple[float, float]],
+    distribution: BaseDistribution,
+) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]:
+    ret_values = []
+    ret_scores = []
+    for value, score in zip(values, scores):
+        if value is None or distribution._contains(value):
+            ret_values.append(value)
+            ret_scores.append(score)
+    return ret_values, ret_scores
+
+
+def _filter_out_multivariate_observation_pairs(
+    values: Dict[str, List[Optional[float]]],
+    scores: List[Tuple[float, float]],
+    search_space: Dict[str, BaseDistribution],
+) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, float]]]:
+    ret_values: Dict[str, List[Optional[float]]] = {name: [] for name in values}
+    ret_scores = []
+    includes = [True for _ in range(len(scores))]
+    for name, distribution in search_space.items():
+        for i, value in enumerate(values[name]):
+            if value is not None and distribution._contains(value):
+                continue
+            includes[i] = False
+    for name in search_space:
+        for include, value in zip(includes, values[name]):
+            if include:
+                ret_values[name].append(value)
+    for include, score in zip(includes, scores):
+        if include:
+            ret_scores.append(score)
+    return ret_values, ret_scores
