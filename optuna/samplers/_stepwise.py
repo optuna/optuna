@@ -24,7 +24,8 @@ class StepwiseSampler(optuna.samplers.BaseSampler):
         self.default_params = default_params
 
     def reseed_rng(self) -> None:
-        pass
+        for step in self.steps:
+            step._sampler.reseed_rng()
 
     def _get_step(self, study, trial) -> Step:
         number = trial.number

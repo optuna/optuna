@@ -1,4 +1,3 @@
-from optuna.samplers._tpe.sampler import default_gamma
 import optuna
 import optuna.samplers._stepwise
 
@@ -21,6 +20,7 @@ def search_y(params):
 def search_z(params):
     return {"z": optuna.distributions.UniformDistribution(0, 100)}
 
+
 def search_x_y(params):
     return {"x": optuna.distributions.UniformDistribution(0, 100), "y": optuna.distributions.UniformDistribution(0, 100)}
 
@@ -35,7 +35,7 @@ steps = [
 
 sampler = optuna.samplers._stepwise.StepwiseSampler(steps=steps, default_params={"x": 0, "y": 0, "z": 0})
 study = optuna.create_study(sampler=sampler)
-study.optimize(objective)
+study.optimize(objective, n_jobs=2)
 
 print(study.best_trial)
 print(study.trials_dataframe(["number", "value", "params"]))
