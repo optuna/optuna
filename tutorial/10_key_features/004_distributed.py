@@ -8,8 +8,9 @@ It's straightforward to parallelize ``optuna.optimize()``.
 
 If you want to manually execute Optuna optimization:
 
-    1. create a study
-    2. share the study among multiple nodes and processes
+    1. start an RDB server (this example uses MySQL)
+    2. create a study with `--storage` argument
+    3. share the study among multiple nodes and processes
 
 Of course, you can use Kubernetes as in `the kubernetes examples <https://github.com/optuna/optuna/tree/master/examples/kubernetes>`_.
 
@@ -26,9 +27,11 @@ Create a Study
 You can create a study using ``optuna create-study`` command.
 Alternatively, in Python script you can use :func:`optuna.create_study`.
 
+
 .. code-block:: bash
 
-    $ optuna create-study --study-name "distributed-example" --storage "mysql:///example.db"
+    $ mysql -u root -e "CREATE DATABASE IF NOT EXISTS example"
+    $ optuna create-study --study-name "distributed-example" --storage "mysql://root@localhost/example"
     [I 2020-07-21 13:43:39,642] A new study created with name: distributed-example
 
 
@@ -38,12 +41,13 @@ Then, write an optimization script. Let's assume that ``foo.py`` contains the fo
 
     import optuna
 
+
     def objective(trial):
         x = trial.suggest_uniform('x', -10, 10)
         return (x - 2) ** 2
 
     if __name__ == '__main__':
-        study = optuna.load_study(study_name="distributed-example", storage="mysql:///example.db")
+        study = optuna.load_study(study_name="distributed-example", storage="mysql://root@localhost/example")
         study.optimize(objective, n_trials=100)
 
 

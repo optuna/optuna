@@ -10,8 +10,9 @@ This tutorial walks you through this module by visualizing the history of multi-
 """
 
 ###################################################################################################
-import os
+import random
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -19,18 +20,28 @@ import torchvision
 
 import optuna
 from optuna.visualization import plot_contour
+from optuna.visualization import plot_edf
 from optuna.visualization import plot_intermediate_values
 from optuna.visualization import plot_optimization_history
 from optuna.visualization import plot_parallel_coordinate
 from optuna.visualization import plot_param_importances
 from optuna.visualization import plot_slice
 
+SEED = 42
 BATCH_SIZE = 256
-DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+DEVICE = torch.device("cpu")
+if torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 DIR = ".."
 # Reduce the number of samples for faster build.
 N_TRAIN_SAMPLES = BATCH_SIZE * 30
 N_VALID_SAMPLES = BATCH_SIZE * 10
+
+random.seed(SEED)
+np.random.seed(SEED)
+torch.manual_seed(SEED)
 
 ###################################################################################################
 # Before defining the objective function, prepare some utility functions for training.
@@ -116,21 +127,25 @@ def objective(trial):
 
 ###################################################################################################
 # Run hyperparameter optimization with :class:`optuna.pruners.MedianPruner`.
-study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
+study = optuna.create_study(
+    direction="maximize",
+    sampler=optuna.samplers.TPESampler(seed=SEED),
+    pruner=optuna.pruners.MedianPruner(),
+)
 study.optimize(objective, n_trials=100, timeout=600)
 
 ###################################################################################################
 # Plot functions
 # --------------
-# Visualize the optimization history.
+# Visualize the optimization history. See :func:`~optuna.visualization.plot_optimization_history` for the details.
 plot_optimization_history(study)
 
 ###################################################################################################
-# Visualize the learning curves of the trials.
+# Visualize the learning curves of the trials. See :func:`~optuna.visualization.plot_intermediate_values` for the details.
 plot_intermediate_values(study)
 
 ###################################################################################################
-# Visualize high-dimensional parameter relationships.
+# Visualize high-dimensional parameter relationships. See :func:`~optuna.visualization.plot_parallel_coordinate` for the details.
 plot_parallel_coordinate(study)
 
 ###################################################################################################
@@ -138,7 +153,7 @@ plot_parallel_coordinate(study)
 plot_parallel_coordinate(study, params=["lr_init", "n_units_l0"])
 
 ###################################################################################################
-# Visualize hyperparameter relationships.
+# Visualize hyperparameter relationships. See :func:`~optuna.visualization.plot_contour` for the details.
 plot_contour(study)
 
 ###################################################################################################
@@ -146,7 +161,7 @@ plot_contour(study)
 plot_contour(study, params=["n_units_l0", "n_units_l1"])
 
 ###################################################################################################
-# Visualize individual hyperparameters as slice plot.
+# Visualize individual hyperparameters as slice plot. See :func:`~optuna.visualization.plot_slice` for the details.
 plot_slice(study)
 
 ###################################################################################################
@@ -154,5 +169,9 @@ plot_slice(study)
 plot_slice(study, params=["n_units_l0", "n_units_l1"])
 
 ###################################################################################################
-# Visualize parameter importances.
+# Visualize parameter importances. See :func:`~optuna.visualization.plot_param_importances` for the details.
 plot_param_importances(study)
+
+###################################################################################################
+# Visualize empirical distribution function. See :func:`~optuna.visualization.plot_edf` for the details.
+plot_edf(study)
