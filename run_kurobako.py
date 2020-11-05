@@ -97,7 +97,9 @@ def _run_kurobako(args: argparse.Namespace) -> None:
         dataset_list: List[str] = []
         if problem.startswith(HPOBENCH):
             if problem == HPOBENCH:
-                dataset_list = [os.path.join(args.input_dir, fn) for fn in HPOBENCH_FNS]
+                dataset_list = [
+                    os.path.join(args.input_dir, fn) for fn in HPOBENCH_FNS_DICT.values()
+                ]
             else:
                 problem, key = problem.split("-")
                 dataset_list = [os.path.join(args.input_dir, HPOBENCH_FNS_DICT[key])]
@@ -199,7 +201,8 @@ if __name__ == "__main__":
         "--kurobako-path",
         type=str,
         default="",
-        help='"If `kurobako` command is not in $PATH, specify the directory of `kurobako`. Default: =`""`',
+        help="If `kurobako` command is not in $PATH, "
+        'specify the directory of `kurobako`. Default: =`""`',
     )
     parser.add_argument("--input-dir", type=str, default="data")
     parser.add_argument("--output-dir", type=str, default="out")
