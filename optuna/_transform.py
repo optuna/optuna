@@ -193,7 +193,7 @@ def _untransform_single_param(
     d = distribution
 
     if isinstance(d, CategoricalDistribution):
-        # Select the highest rated one-hot enconding.
+        # Select the highest rated one-hot encoding.
         param = d.to_external_repr(trans_param.argmax())
     elif isinstance(d, UniformDistribution):
         param = float(trans_param.item())
