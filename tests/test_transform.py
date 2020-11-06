@@ -210,7 +210,6 @@ def test_transform_fit_shapes_dtypes_values_categorical_with_other_distribution(
     study.optimize(objective, n_trials=3)
 
     trans = _Transform(search_space, transform_log, transform_step)
-
     trans_params, trans_values = trans.transform(study.trials)
 
     n_tot_choices = len(search_space["x1"].choices)  # type: ignore
@@ -303,7 +302,7 @@ def test_transform_untransform_params(transform_log: bool, transform_step: bool)
     study = optuna.create_study()
     study.optimize(objective, n_trials=3)
 
-    trans = _Transform(search_space, transform_log)
+    trans = _Transform(search_space, transform_log, transform_step)
     params, values = trans.transform(study.trials)
 
     trial_number = values.argmin()
