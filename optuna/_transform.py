@@ -19,6 +19,41 @@ from optuna.trial import FrozenTrial
 
 
 class _Transform:
+    """Transform/untransform search spaces and trials to continuous uniform spaces and back.
+
+    The search space bounds, trial parameters and values are represented as `numpy.ndarray`s and
+    transformed into one continuous uniform space. Bounds and parameters associated with
+    categorical distributions are one-hot encoded. Trial parameters in this space can be
+    untransformed, or mapped back to the original space. This type of
+    transformation/untransformation is useful for e.g. implementing samplers without having to
+    condition on distribution types before sampling parameter values.
+
+    Args:
+        search_space:
+            The search space. If any transformations are to be applied, all trials are assumed
+            to hold parameter values for all of the distributions defined in this search space.
+        transform_log:
+            If :obj:`True`, apply log/exp operations to the bounds and parameters with
+            corresponding distributions in log space during transformation/untransformation.
+            Should always be :obj:`True` if any parameters are going to be sampled from the
+            transformed space.
+        transform_step:
+            If :obj:`True`, offset the lower and higher bounds by a half step each, increasing the
+            space by one step. This allows fair sampling for values close to the bounds.
+            Should always be :obj:`True` if any parameters are going to be sampled from the
+            transformed space.
+
+    Attributes:
+        bounds:
+            Constructed bounds from the given search space.
+
+    Note:
+        ``transform_log`` and ``transform_step`` are useful for constructing bounds and parameters
+        without any actual transformations by setting those arguments to :obj:`False`. This is
+        needed for e.g. the hyperparameter importance assessments.
+
+    """
+
     def __init__(
         self,
         search_space: Dict[str, BaseDistribution],
@@ -45,9 +80,32 @@ class _Transform:
         return self._bounds
 
     def transform(self, trials: List[FrozenTrial]) -> Tuple[numpy.ndarray, numpy.ndarray]:
+        """Transform trial parameters and values.
+
+        Args:
+            trials:
+                List of trials to transform.
+
+        Returns:
+            A tuple of two `numpy.ndarray`s. The first item holds the transformed trial
+            parameters. The second item holds the trial values.
+
+        """
         return _transform_params_and_values(trials, self._search_space, self._transform_log)
 
     def untransform_single_params(self, trans_single_params: numpy.ndarray) -> Dict[str, Any]:
+        """Untransform a single parameter configuration.
+
+        Args:
+            trans_single_params:
+                A 1-dimensional `numpy.ndarray` in the transformed space corresponding to a
+                single parameter configuration.
+
+        Returns:
+            A dictionary of an untransformed parameter configuration. Keys are parameter names.
+            Values are untransformed parameter values.
+
+        """
         assert trans_single_params.shape == (self._bounds.shape[0],)
 
         params = {}
