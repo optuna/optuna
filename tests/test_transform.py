@@ -34,6 +34,7 @@ def suggest(trial: Trial, name: str, distribution: BaseDistribution) -> Any:
 
 
 @pytest.mark.parametrize("transform_log", [True, False])
+@pytest.mark.parametrize("transform_step", [True, False])
 @pytest.mark.parametrize(
     "distribution",
     [
@@ -47,7 +48,11 @@ def suggest(trial: Trial, name: str, distribution: BaseDistribution) -> Any:
         CategoricalDistribution(["foo", "bar", "baz"]),
     ],
 )
-def test_transform_fit_shapes_dtypes(transform_log: bool, distribution: BaseDistribution) -> None:
+def test_transform_fit_shapes_dtypes(
+    transform_log: bool,
+    transform_step: bool,
+    distribution: BaseDistribution,
+) -> None:
     def objective(trial: Trial) -> float:
         value = suggest(trial, "x0", distribution)
         if isinstance(distribution, CategoricalDistribution):
@@ -57,7 +62,7 @@ def test_transform_fit_shapes_dtypes(transform_log: bool, distribution: BaseDist
     study = optuna.create_study()
     study.optimize(objective, n_trials=3)
 
-    trans = _Transform({"x0": distribution}, transform_log)
+    trans = _Transform({"x0": distribution}, transform_log, transform_step)
     trans_params, trans_values = trans.transform(study.trials)
 
     if isinstance(distribution, CategoricalDistribution):
@@ -75,6 +80,7 @@ def test_transform_fit_shapes_dtypes(transform_log: bool, distribution: BaseDist
 
 
 @pytest.mark.parametrize("transform_log", [True, False])
+@pytest.mark.parametrize("transform_step", [True, False])
 @pytest.mark.parametrize(
     "distribution",
     [
@@ -87,7 +93,9 @@ def test_transform_fit_shapes_dtypes(transform_log: bool, distribution: BaseDist
     ],
 )
 def test_transform_fit_values_numerical(
-    transform_log: bool, distribution: BaseDistribution
+    transform_log: bool,
+    transform_step: bool,
+    distribution: BaseDistribution,
 ) -> None:
     def objective(trial: Trial) -> float:
         return float(suggest(trial, "x0", distribution))
@@ -95,7 +103,7 @@ def test_transform_fit_values_numerical(
     study = optuna.create_study()
     study.optimize(objective, n_trials=3)
 
-    trans = _Transform({"x0": distribution}, transform_log)
+    trans = _Transform({"x0": distribution}, transform_log, transform_step)
 
     expected_low = distribution.low  # type: ignore
     expected_high = distribution.high  # type: ignore
@@ -105,17 +113,20 @@ def test_transform_fit_values_numerical(
             expected_low = math.log(expected_low)
             expected_high = math.log(expected_high)
     elif isinstance(distribution, DiscreteUniformDistribution):
-        half_step = 0.5 * distribution.q
-        expected_low -= half_step
-        expected_high += half_step
+        if transform_step:
+            half_step = 0.5 * distribution.q
+            expected_low -= half_step
+            expected_high += half_step
     elif isinstance(distribution, IntUniformDistribution):
-        half_step = 0.5 * distribution.step
-        expected_low -= half_step
-        expected_high += half_step
+        if transform_step:
+            half_step = 0.5 * distribution.step
+            expected_low -= half_step
+            expected_high += half_step
     elif isinstance(distribution, IntLogUniformDistribution):
-        half_step = 0.5
-        expected_low -= half_step
-        expected_high += half_step
+        if transform_step:
+            half_step = 0.5
+            expected_low -= half_step
+            expected_high += half_step
         if transform_log:
             expected_low = math.log(expected_low)
             expected_high = math.log(expected_high)
@@ -139,6 +150,7 @@ def test_transform_fit_values_numerical(
 
 
 @pytest.mark.parametrize("transform_log", [True, False])
+@pytest.mark.parametrize("transform_step", [True, False])
 @pytest.mark.parametrize(
     "distribution",
     [
@@ -147,7 +159,9 @@ def test_transform_fit_values_numerical(
     ],
 )
 def test_transform_fit_values_categorical(
-    transform_log: bool, distribution: CategoricalDistribution
+    transform_log: bool,
+    transform_step: bool,
+    distribution: CategoricalDistribution,
 ) -> None:
     def objective(trial: Trial) -> float:
         return float(distribution.choices.index(suggest(trial, "x0", distribution)))
@@ -155,7 +169,7 @@ def test_transform_fit_values_categorical(
     study = optuna.create_study()
     study.optimize(objective, n_trials=3)
 
-    trans = _Transform({"x0": distribution}, transform_log)
+    trans = _Transform({"x0": distribution}, transform_log, transform_step)
 
     for bound in trans.bounds:
         assert bound[0] == 0.0
@@ -172,8 +186,9 @@ def test_transform_fit_values_categorical(
 
 
 @pytest.mark.parametrize("transform_log", [True, False])
+@pytest.mark.parametrize("transform_step", [True, False])
 def test_transform_fit_shapes_dtypes_values_categorical_with_other_distribution(
-    transform_log: bool,
+    transform_log: bool, transform_step: bool
 ) -> None:
     search_space = {
         "x0": DiscreteUniformDistribution(0, 1, q=0.2),
@@ -194,7 +209,7 @@ def test_transform_fit_shapes_dtypes_values_categorical_with_other_distribution(
     study = optuna.create_study()
     study.optimize(objective, n_trials=3)
 
-    trans = _Transform(search_space, transform_log)
+    trans = _Transform(search_space, transform_log, transform_step)
 
     trans_params, trans_values = trans.transform(study.trials)
 
@@ -205,18 +220,25 @@ def test_transform_fit_shapes_dtypes_values_categorical_with_other_distribution(
     assert trans.bounds.shape == (n_tot_choices + 2, 2)
 
     for i, (low, high) in enumerate(trans.bounds):
-        # Categorical one-hot encodings are placed before any other distributions.
         if i == 0:
-            half_step = 0.5 * 0.2
-            assert low == search_space["x0"].low - half_step  # type: ignore
-            assert high == search_space["x0"].high + half_step  # type: ignore
+            expected_low = search_space["x0"].low  # type: ignore
+            expected_high = search_space["x0"].high  # type: ignore
+            if transform_step:
+                half_step = 0.5 * 0.2
+                expected_low -= half_step
+                expected_high += half_step
+            assert low == expected_low
+            assert high == expected_high
         elif i in (1, 2, 3, 4):
             assert low == 0.0
             assert high == 1.0
         elif i == 5:
-            half_step = 0.5
-            expected_low = search_space["x2"].low - half_step  # type: ignore
-            expected_high = search_space["x2"].high + half_step  # type: ignore
+            expected_low = search_space["x2"].low  # type: ignore
+            expected_high = search_space["x2"].high  # type: ignore
+            if transform_step:
+                half_step = 0.5
+                expected_low -= half_step
+                expected_high += half_step
             if transform_log:
                 expected_low = math.log(expected_low)
                 expected_high = math.log(expected_high)
@@ -251,7 +273,8 @@ def test_transform_fit_shapes_dtypes_values_categorical_with_other_distribution(
 
 
 @pytest.mark.parametrize("transform_log", [True, False])
-def test_transform_untransform_params(transform_log: bool) -> None:
+@pytest.mark.parametrize("transform_step", [True, False])
+def test_transform_untransform_params(transform_log: bool, transform_step: bool) -> None:
     search_space = {
         "x0": DiscreteUniformDistribution(0, 1, q=0.2),
         "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
