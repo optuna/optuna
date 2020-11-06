@@ -37,7 +37,7 @@ class _Transform:
         return self._bounds
 
     def transform(self, trials: List[FrozenTrial]) -> Tuple[numpy.ndarray, numpy.ndarray]:
-        return _transform_params(trials, self._search_space, self._transform_log)
+        return _transform_params_and_values(trials, self._search_space, self._transform_log)
 
     def untransform_single_params(self, trans_single_params: numpy.ndarray) -> Dict[str, Any]:
         assert trans_single_params.shape == (self._bounds.shape[0],)
@@ -126,7 +126,7 @@ def _transform_bounds(
     return bounds, column_to_encoded_columns
 
 
-def _transform_params(
+def _transform_params_and_values(
     trials: List[FrozenTrial], search_space: Dict[str, BaseDistribution], transform_log: bool
 ) -> Tuple[numpy.ndarray, numpy.ndarray]:
     assert len(trials) > 0, "Cannot transform if no trials are given."
