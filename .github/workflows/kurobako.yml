@@ -79,7 +79,7 @@ jobs:
 
     - name: Run Benchmark
       run: |
-        python run_kurobako.py --name "CI" --kurobako-path "." --input-dir "." --output-dir "out" --problem-list "hpobench-naval" "nasbench" --plot
+        python run_kurobako.py --name "CI" --kurobako-path "." --input-dir "." --output-dir "out" --problem-list ${{ matrix.problem }} --plot
 
     - uses: actions/upload-artifact@v2
       with:
