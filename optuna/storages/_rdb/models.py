@@ -545,7 +545,7 @@ class TrialValueModel(BaseModel):
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
             .filter(cls.objective_id == objective_id)
-            .one_by_none()
+            .one_or_none()
         )
 
         return trial_value

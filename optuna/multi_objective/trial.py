@@ -10,6 +10,7 @@ from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
+from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -40,6 +41,7 @@ class MultiObjectiveTrial(object):
 
         # TODO(ohta): Optimize the code below to eliminate the `MultiObjectiveStudy` construction.
         # See also: https://github.com/optuna/optuna/pull/1054/files#r407982636
+        assert isinstance(trial.study, Study)
         self._n_objectives = multi_objective.study.MultiObjectiveStudy(trial.study).n_objectives
 
     def suggest_float(

@@ -35,7 +35,7 @@ def _optimize(
     timeout: Optional[float] = None,
     n_jobs: int = 1,
     catch: Tuple[Type[Exception], ...] = (),
-    callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]] = None,
+    callbacks: Optional[List[Callable[["optuna.study.BaseStudy", FrozenTrial], None]]] = None,
     gc_after_trial: bool = False,
     show_progress_bar: bool = False,
 ) -> None:
@@ -126,7 +126,7 @@ def _optimize_sequential(
     n_trials: Optional[int],
     timeout: Optional[float],
     catch: Tuple[Type[Exception], ...],
-    callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]],
+    callbacks: Optional[List[Callable[["optuna.study.BaseStudy", FrozenTrial], None]]],
     gc_after_trial: bool,
     reseed_sampler_rng: bool,
     time_start: Optional[datetime.datetime],
@@ -230,8 +230,8 @@ def _run_trial(
 
 def _check_value(
     n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
-) -> Tuple[Optional[Union[float, Sequence[float]]], Optional[str]]:
-    value: Optional[Union[float, Sequence[float]]] = None
+) -> Tuple[Optional[Sequence[float]], Optional[str]]:
+    value: Optional[Sequence[float]] = None
     failure_message = None
 
     trial_number = trial.number
@@ -255,7 +255,11 @@ def _check_value(
                     assert isinstance(value, list)
                     value.append(checked_v)
     else:
-        value, failure_message = _check_single_value(original_value, trial)
+        _value, failure_message = _check_single_value(original_value, trial)
+        if _value is None:
+            value = _value
+        else:
+            value = [_value]
 
     return value, failure_message
 

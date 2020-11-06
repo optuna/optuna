@@ -152,7 +152,8 @@ class RDBStorage(BaseStorage):
         if study_name is None:
             study_name = self._create_unique_study_name(session)
 
-        study = models.StudyModel(study_name=study_name, direction=StudyDirection.NOT_SET)
+        direction = models.StudyDirectionModel(direction=StudyDirection.NOT_SET)
+        study = models.StudyModel(study_name=study_name, direction=[direction])
         session.add(study)
         if not self._commit_with_integrity_check(session):
             raise optuna.exceptions.DuplicatedStudyError(
@@ -208,6 +209,10 @@ class RDBStorage(BaseStorage):
                     current_direction, direction
                 )
             )
+
+        session.query(models.StudyDirectionModel).filter(
+            models.StudyDirectionModel.study_id == study_id
+        ).delete()
 
         for objective_id, d in enumerate(direction):
             direction_model = models.StudyDirectionModel(
@@ -384,6 +389,12 @@ class RDBStorage(BaseStorage):
             except ValueError:
                 best_trial_frozen: Optional[FrozenTrial] = None
             if best_trial:
+                value = (
+                    session.query(models.TrialValueModel)
+                    .filter(models.TrialValueModel.trial_id == best_trial.trial_id)
+                    .filter(models.TrialValueModel.objective_id == 0)
+                    .one_or_none()
+                )
                 params = (
                     session.query(
                         models.TrialParamModel.param_name,
@@ -405,13 +416,13 @@ class RDBStorage(BaseStorage):
                 system_attrs = session.query(models.TrialSystemAttributeModel).filter(
                     models.TrialSystemAttributeModel.trial_id == best_trial.trial_id
                 )
-                intermediate = session.query(models.TrialValueModel).filter(
-                    models.TrialValueModel.trial_id == best_trial.trial_id
+                intermediate = session.query(models.TrialIntermediateValueModel).filter(
+                    models.TrialIntermediateValueModel.trial_id == best_trial.trial_id
                 )
                 best_trial_frozen = FrozenTrial(
                     best_trial.number,
                     TrialState.COMPLETE,
-                    best_trial.value,
+                    value.value,
                     best_trial.datetime_start,
                     best_trial.datetime_complete,
                     param_dict,
@@ -529,7 +540,6 @@ class RDBStorage(BaseStorage):
                 study_id=study_id,
                 number=None,
                 state=temp_state,
-                value=template_trial.value,
                 datetime_start=template_trial.datetime_start,
                 datetime_complete=template_trial.datetime_complete,
             )
@@ -544,8 +554,16 @@ class RDBStorage(BaseStorage):
         session.flush()
 
         if template_trial is not None:
-            for objective_id, value in enumerate(template_trial.value):
-                self._set_trial_value_without_commit(session, trial.trial_id, objective_id, value)
+            if isinstance(template_trial.value, Sequence):
+                for objective_id, value in enumerate(template_trial.value):
+                    self._set_trial_value_without_commit(
+                        session, trial.trial_id, objective_id, value
+                    )
+            else:
+                self._set_trial_value_without_commit(
+                    session, trial.trial_id, 0, template_trial.value
+                )
+
             for param_name, param_value in template_trial.params.items():
                 distribution = template_trial.distributions[param_name]
                 param_value_in_internal_repr = distribution.to_internal_repr(param_value)
@@ -559,10 +577,15 @@ class RDBStorage(BaseStorage):
             for key, value in template_trial.system_attrs.items():
                 self._set_trial_system_attr_without_commit(session, trial.trial_id, key, value)
 
-            for step, intermediate_values in template_trial.intermediate_values.items():
-                for objective_id, intermediate_value in enumerate(intermediate_values):
+            for step, intermediate_value in template_trial.intermediate_values.items():
+                if isinstance(intermediate_value, Sequence):
+                    for objective_id, v in enumerate(intermediate_value):
+                        self._set_trial_intermediate_value_without_commit(
+                            session, trial.trial_id, step, objective_id, v
+                        )
+                else:
                     self._set_trial_intermediate_value_without_commit(
-                        session, trial.trial_id, step, objective_id, intermediate_value
+                        session, trial.trial_id, step, 0, intermediate_value
                     )
 
             trial.state = template_trial.state
@@ -653,7 +676,7 @@ class RDBStorage(BaseStorage):
                     session.add(value_dict[objective_id])
                 else:
                     trial_model.values.extend(
-                        models.TrialValueModel(objective_id=objective_id, value=v)
+                        [models.TrialValueModel(objective_id=objective_id, value=v)]
                     )
 
         if user_attrs:
@@ -704,10 +727,12 @@ class RDBStorage(BaseStorage):
                         value_dict[(s, objective_id)].value = v
                         session.add(value_dict[(s, objective_id)])
                     else:
-                        trial_model.values.extend(
-                            models.TrialIntermediateValueModel(
-                                step=s, objective_id=objective_id, value=v
-                            )
+                        trial_model.intermediate_values.extend(
+                            [
+                                models.TrialIntermediateValueModel(
+                                    step=s, objective_id=objective_id, value=v
+                                )
+                            ]
                         )
         if params and distributions_:
             trial_param = (
@@ -1070,17 +1095,18 @@ class RDBStorage(BaseStorage):
     @staticmethod
     def _build_frozen_trial_from_trial_model(trial: models.TrialModel) -> FrozenTrial:
 
-        n_objectives = len(trial.values)
-
         value: Optional[Sequence[float]]
         if trial.values:
-            value = [0 for _ in range(n_objectives)]
+            value = [0 for _ in range(len(trial.values))]
             for value_model in trial.values:
                 value[value_model.objective_id] = value_model.value
         else:
             value = None
 
-        intermediate_values: Dict[int, Sequence[float]] = {}
+        intermediate_values: Dict[int, List[float]] = {}
+        n_objectives = -1
+        for value_model in trial.intermediate_values:
+            n_objectives = max(n_objectives, value_model.objective_id + 1)
         for value_model in trial.intermediate_values:
             if value_model.step not in intermediate_values:
                 intermediate_values[value_model.step] = [0 for _ in range(n_objectives)]
@@ -1115,6 +1141,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         direction = self.get_study_direction(study_id)
+        print(direction)
         if len(direction) > 1:
             raise ValueError("Best trial can be obtained only for single-objective optimization.")
         direction = direction[0]

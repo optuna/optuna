@@ -5,7 +5,9 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
+from typing import Union
 from unittest.mock import patch
 
 import pytest
@@ -192,17 +194,30 @@ def test_set_and_get_study_direction(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
 
         for target, opposite in [
-            (StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE),
-            (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE),
+            ((StudyDirection.MINIMIZE,), (StudyDirection.MAXIMIZE,)),
+            ((StudyDirection.MAXIMIZE,), (StudyDirection.MINIMIZE,)),
+            (
+                (StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE),
+                (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE),
+            ),
+            (
+                [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE],
+                [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE],
+            ),
         ]:
-
             study_id = storage.create_new_study()
 
-            def check_set_and_get(direction: StudyDirection) -> None:
+            def check_set_and_get(direction: Sequence[StudyDirection]) -> None:
                 storage.set_study_direction(study_id, direction)
-                assert storage.get_study_direction(study_id) == direction
+                got_direction = storage.get_study_direction(study_id)
 
-            assert storage.get_study_direction(study_id) == StudyDirection.NOT_SET
+                assert got_direction == tuple(
+                    direction
+                ), "Direction of a study should be a tuple of `StudyDirection` objects."
+
+            direction = storage.get_study_direction(study_id)
+            assert len(direction) == 1
+            assert direction[0] == StudyDirection.NOT_SET
 
             # Test setting value.
             check_set_and_get(target)
@@ -216,7 +231,7 @@ def test_set_and_get_study_direction(storage_mode: str) -> None:
 
             # Test overwriting value to the not set.
             with pytest.raises(ValueError):
-                storage.set_study_direction(study_id, StudyDirection.NOT_SET)
+                storage.set_study_direction(study_id, (StudyDirection.NOT_SET,))
 
             # Test non-existent study.
             with pytest.raises(KeyError):
@@ -224,7 +239,7 @@ def test_set_and_get_study_direction(storage_mode: str) -> None:
 
             # Test non-existent study is checked before directions.
             with pytest.raises(KeyError):
-                storage.set_study_direction(study_id + 1, StudyDirection.NOT_SET)
+                storage.set_study_direction(study_id + 1, (StudyDirection.NOT_SET,))
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -445,7 +460,7 @@ def test_set_trial_state(storage_mode: str) -> None:
                 continue
             assert storage.get_trial(trial_id).state == TrialState.RUNNING
             if state.is_finished():
-                storage.set_trial_value(trial_id, 0.0)
+                storage.set_trial_value(trial_id, (0.0,))
             storage.set_trial_state(trial_id, state)
             assert storage.get_trial(trial_id).state == state
             if state.is_finished():
@@ -457,7 +472,7 @@ def test_set_trial_state(storage_mode: str) -> None:
             if not state.is_finished():
                 continue
             trial_id = storage.create_new_trial(study_id)
-            storage.set_trial_value(trial_id, 0.0)
+            storage.set_trial_value(trial_id, (0.0,))
             storage.set_trial_state(trial_id, state)
             for state2 in ALL_STATES:
                 # Cannot update states of finished trials.
@@ -574,27 +589,33 @@ def test_set_trial_value(storage_mode: str) -> None:
         trial_id_1 = storage.create_new_trial(study_id)
         trial_id_2 = storage.create_new_trial(study_id)
         trial_id_3 = storage.create_new_trial(storage.create_new_study())
+        trial_id_4 = storage.create_new_trial(study_id)
+        trial_id_5 = storage.create_new_trial(study_id)
 
         # Test setting new value.
-        storage.set_trial_value(trial_id_1, 0.5)
-        storage.set_trial_value(trial_id_3, float("inf"))
+        storage.set_trial_value(trial_id_1, (0.5,))
+        storage.set_trial_value(trial_id_3, (float("inf"),))
+        storage.set_trial_value(trial_id_4, (0.1, 0.2, 0.3))
+        storage.set_trial_value(trial_id_5, [0.1, 0.2, 0.3])
 
         assert storage.get_trial(trial_id_1).value == 0.5
         assert storage.get_trial(trial_id_2).value is None
         assert storage.get_trial(trial_id_3).value == float("inf")
+        assert storage.get_trial(trial_id_4).value == (0.1, 0.2, 0.3)
+        assert storage.get_trial(trial_id_5).value == (0.1, 0.2, 0.3)
 
         # Values can be overwritten.
-        storage.set_trial_value(trial_id_1, 0.2)
+        storage.set_trial_value(trial_id_1, (0.2,))
         assert storage.get_trial(trial_id_1).value == 0.2
 
-        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3) + 1
+        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3, trial_id_4, trial_id_5) + 1
         with pytest.raises(KeyError):
-            storage.set_trial_value(non_existent_trial_id, 1)
+            storage.set_trial_value(non_existent_trial_id, (1,))
 
         storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
         # Cannot change values of finished trials.
         with pytest.raises(RuntimeError):
-            storage.set_trial_value(trial_id_1, 1)
+            storage.set_trial_value(trial_id_1, (1,))
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -607,30 +628,36 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         trial_id_1 = storage.create_new_trial(study_id)
         trial_id_2 = storage.create_new_trial(study_id)
         trial_id_3 = storage.create_new_trial(storage.create_new_study())
+        trial_id_4 = storage.create_new_trial(study_id)
+        trial_id_5 = storage.create_new_trial(study_id)
 
         # Test setting new values.
-        storage.set_trial_intermediate_value(trial_id_1, 0, 0.3)
-        storage.set_trial_intermediate_value(trial_id_1, 2, 0.4)
-        storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
-        storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
-        storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
+        storage.set_trial_intermediate_value(trial_id_1, 0, (0.3,))
+        storage.set_trial_intermediate_value(trial_id_1, 2, (0.4,))
+        storage.set_trial_intermediate_value(trial_id_3, 0, (0.1,))
+        storage.set_trial_intermediate_value(trial_id_3, 1, (0.4,))
+        storage.set_trial_intermediate_value(trial_id_3, 2, (0.5,))
+        storage.set_trial_intermediate_value(trial_id_4, 0, (0.1, 0.2, 0.3))
+        storage.set_trial_intermediate_value(trial_id_5, 0, [0.1, 0.2, 0.3])
 
         assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
         assert storage.get_trial(trial_id_2).intermediate_values == {}
         assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
+        assert storage.get_trial(trial_id_4).intermediate_values == {0: (0.1, 0.2, 0.3)}
+        assert storage.get_trial(trial_id_5).intermediate_values == {0: (0.1, 0.2, 0.3)}
 
         # Test setting existing step.
-        storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
+        storage.set_trial_intermediate_value(trial_id_1, 0, (0.2,))
         assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.2, 2: 0.4}
 
-        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3) + 1
+        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3, trial_id_4, trial_id_5) + 1
         with pytest.raises(KeyError):
-            storage.set_trial_intermediate_value(non_existent_trial_id, 0, 0.2)
+            storage.set_trial_intermediate_value(non_existent_trial_id, 0, (0.2,))
 
         storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
         # Cannot change values of finished trials.
         with pytest.raises(RuntimeError):
-            storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
+            storage.set_trial_intermediate_value(trial_id_1, 0, (0.2,))
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -773,6 +800,12 @@ def test_get_trial(storage_mode: str) -> None:
         for _, expected_trials in study_to_trials.items():
             for expected_trial in expected_trials.values():
                 trial = storage.get_trial(expected_trial._trial_id)
+                for k, x, y in zip(
+                    trial.__dict__.keys(),
+                    trial.__dict__.values(),
+                    expected_trial.__dict__.values(),
+                ):
+                    print(f"{k}: {x}, {y}")
                 assert trial == expected_trial
 
         non_existent_trial_id = (
@@ -839,7 +872,7 @@ def test_get_n_trials_state_option(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study()
-        storage.set_study_direction(study_id, StudyDirection.MAXIMIZE)
+        storage.set_study_direction(study_id, (StudyDirection.MAXIMIZE,))
         generator = random.Random(51)
 
         states = [
@@ -874,7 +907,7 @@ def test_get_best_trial(storage_mode: str) -> None:
         with pytest.raises(KeyError):
             storage.get_best_trial(study_id + 1)
 
-        storage.set_study_direction(study_id, StudyDirection.MAXIMIZE)
+        storage.set_study_direction(study_id, (StudyDirection.MAXIMIZE,))
         generator = random.Random(51)
         for i in range(3):
             template_trial = _generate_trial(generator)
@@ -899,7 +932,7 @@ def _setup_studies(
         study_id = storage.create_new_study(study_name=study_name)
         if direction is None:
             direction = generator.choice([StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
-        storage.set_study_direction(study_id, direction)
+        storage.set_study_direction(study_id, (direction,))
         best_trial = None
         trials = {}
         datetime_start = None
@@ -956,7 +989,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     distributions = {}
     user_attrs = {}
     system_attrs = {}
-    intermediate_values = {}
+    intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
     for key, (value, dist) in example_params.items():
         if generator.choice([True, False]):
             params[key] = value
@@ -982,3 +1015,20 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
         intermediate_values=intermediate_values,
         trial_id=0,  # dummy
     )
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+
+        storage.set_study_direction(study_id, (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE))
+        generator = random.Random(51)
+        for i in range(3):
+            template_trial = _generate_trial(generator)
+            template_trial.state = TrialState.COMPLETE
+            template_trial.value = [i, i + 1]
+            storage.create_new_trial(study_id, template_trial=template_trial)
+        with pytest.raises(ValueError):
+            storage.get_best_trial(study_id)

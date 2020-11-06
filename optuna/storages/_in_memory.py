@@ -131,7 +131,7 @@ class InMemoryStorage(BaseStorage):
 
         with self._lock:
             self._check_study_id(study_id)
-            return self._studies[study_id].direction
+            return tuple(self._studies[study_id].direction)
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -324,8 +324,8 @@ class InMemoryStorage(BaseStorage):
             return
         # Complete trials do not have `None` values.
         assert trial.value is not None
-        best_value = best_trial.value[0]
-        new_value = trial.value[0]
+        best_value = best_trial.value
+        new_value = trial.value
 
         if direction == StudyDirection.MAXIMIZE:
             if best_value < new_value:
@@ -343,8 +343,9 @@ class InMemoryStorage(BaseStorage):
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial = copy.copy(trial)
-            trial.intermediate_values = copy.copy(trial.intermediate_values)
-            trial.intermediate_values[step] = intermediate_value
+            intermediate_values = copy.copy(trial.intermediate_values)
+            intermediate_values[step] = intermediate_value
+            trial.intermediate_values = intermediate_values
             self._set_trial(trial_id, trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:

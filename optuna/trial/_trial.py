@@ -44,7 +44,7 @@ class Trial(BaseTrial):
 
     """
 
-    def __init__(self, study: "optuna.study.Study", trial_id: int) -> None:
+    def __init__(self, study: "optuna.study.BaseStudy", trial_id: int) -> None:
 
         self.study = study
         self._trial_id = trial_id
@@ -59,7 +59,11 @@ class Trial(BaseTrial):
 
         trial = self.storage.get_trial(self._trial_id)
 
-        study = pruners._filter_study(self.study, trial)
+        study: optuna.study.BaseStudy
+        if isinstance(self.study, optuna.Study):
+            study = pruners._filter_study(self.study, trial)
+        else:
+            study = self.study
 
         self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
         self.relative_params = self.study.sampler.sample_relative(
@@ -576,7 +580,7 @@ class Trial(BaseTrial):
             # See https://github.com/optuna/optuna/issues/852.
             return
 
-        self.storage.set_trial_intermediate_value(self._trial_id, step, value)
+        self.storage.set_trial_intermediate_value(self._trial_id, step, (value,))
 
     def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.
@@ -596,10 +600,17 @@ class Trial(BaseTrial):
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
+
+            .. note::
+                If the problem is the multi-objective optimization, :obj:`False` is always
+                returned.
         """
 
         trial = self.study._storage.get_trial(self._trial_id)
-        return self.study.pruner.prune(self.study, trial)
+        if isinstance(self.study, optuna.Study):
+            return self.study.pruner.prune(self.study, trial)
+        else:
+            return False
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set user attributes to the trial.
@@ -688,7 +699,11 @@ class Trial(BaseTrial):
             elif self._is_relative_param(name, distribution):
                 param_value = self.relative_params[name]
             else:
-                study = pruners._filter_study(self.study, trial)
+                study: optuna.study.BaseStudy
+                if isinstance(self.study, optuna.Study):
+                    study = pruners._filter_study(self.study, trial)
+                else:
+                    study = self.study
                 param_value = self.study.sampler.sample_independent(
                     study, trial, name, distribution
                 )

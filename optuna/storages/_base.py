@@ -588,10 +588,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         if len(all_trials) == 0:
             raise ValueError("No trials are completed yet.")
 
-        direction = self.get_study_direction(study_id)
-        if len(direction) > 1:
+        _direction = self.get_study_direction(study_id)
+        if len(_direction) > 1:
             raise ValueError("Best trial can be obtained only for single-objective optimization.")
-        direction = direction[0]
+        direction = _direction[0]
 
         if direction == StudyDirection.MAXIMIZE:
             best_trial = max(all_trials, key=lambda t: t.value)

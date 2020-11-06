@@ -54,7 +54,7 @@ def test_cached_set() -> None:
     with patch.object(
         base_storage, "_update_trial", return_value=True
     ) as update_mock, patch.object(base_storage, "set_trial_value", return_value=None) as set_mock:
-        storage.set_trial_value(trial_id, 0.3)
+        storage.set_trial_value(trial_id, (0.3,))
         assert update_mock.call_count == 0
         assert set_mock.call_count == 0
 
@@ -89,7 +89,7 @@ def test_uncached_set() -> None:
     ) as update_mock, patch.object(
         base_storage, "set_trial_intermediate_value", return_value=None
     ) as set_mock:
-        storage.set_trial_intermediate_value(trial_id, 3, 0.3)
+        storage.set_trial_intermediate_value(trial_id, 3, (0.3,))
         assert update_mock.call_count == 1
         assert set_mock.call_count == 0
 

@@ -147,14 +147,14 @@ class _CachedStorage(BaseStorage):
             if study_id in self._studies:
                 direction = self._studies[study_id].direction
                 if len(direction) > 1 or direction[0] != StudyDirection.NOT_SET:
-                    return direction
+                    return tuple(direction)
 
         direction = self._backend.get_study_direction(study_id)
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             self._studies[study_id].direction = direction
-        return direction
+        return tuple(direction)
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 

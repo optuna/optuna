@@ -92,7 +92,7 @@ class RedisStorage(BaseStorage):
             pipe.set("study_id:{:010d}:study_name".format(study_id), pickle.dumps(study_name))
             pipe.set(
                 "study_id:{:010d}:direction".format(study_id),
-                pickle.dumps(StudyDirection.NOT_SET),
+                pickle.dumps((StudyDirection.NOT_SET,)),
             )
 
             study_summary = StudySummary(
@@ -235,7 +235,7 @@ class RedisStorage(BaseStorage):
         direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
         if direction_pkl is None:
             raise KeyError("No such study: {}.".format(study_id))
-        return pickle.loads(direction_pkl)
+        return tuple(pickle.loads(direction_pkl))
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -459,20 +459,21 @@ class RedisStorage(BaseStorage):
         if trial.state != TrialState.COMPLETE:
             return
         study_id = self.get_study_id_from_trial_id(trial_id)
-        if not self._redis.exists("study_id:{:010d}:best_trial_id".format(study_id)):
-            self._set_best_trial(study_id, trial_id)
-            return
 
         direction = self.get_study_direction(study_id)
         if len(direction) > 1:
             return
         direction = direction[0]
 
+        if not self._redis.exists("study_id:{:010d}:best_trial_id".format(study_id)):
+            self._set_best_trial(study_id, trial_id)
+            return
+
         best_value_or_none = self.get_best_trial(study_id).value
         assert best_value_or_none is not None
         assert trial.value is not None
-        best_value = float(best_value_or_none[0])
-        new_value = float(trial.value[0])
+        best_value = float(best_value_or_none)
+        new_value = float(trial.value)
 
         if direction == StudyDirection.MAXIMIZE:
             if new_value > best_value:
@@ -490,7 +491,9 @@ class RedisStorage(BaseStorage):
         self._check_trial_id(trial_id)
         frozen_trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, frozen_trial.state)
-        frozen_trial.intermediate_values[step] = intermediate_value
+        intermediate_values = copy.copy(frozen_trial.intermediate_values)
+        intermediate_values[step] = intermediate_value
+        frozen_trial.intermediate_values = intermediate_values
         self._set_trial(trial_id, frozen_trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:

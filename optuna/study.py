@@ -593,6 +593,7 @@ class Study(BaseStudy):
     @property
     def best_params(self) -> Dict[str, Any]:
         """Return parameters of the best trial in the study.
+
         Returns:
             A dictionary containing parameters of the best trial.
         """
@@ -602,6 +603,7 @@ class Study(BaseStudy):
     @property
     def best_value(self) -> float:
         """Return the best objective value in the study.
+
         Returns:
             A float representing the best objective value.
         """
@@ -620,6 +622,7 @@ class Study(BaseStudy):
     @property
     def best_trial(self) -> FrozenTrial:
         """Return the best trial in the study.
+
         Returns:
             A :class:`~optuna.FrozenTrial` object of the best trial.
         """
@@ -629,6 +632,7 @@ class Study(BaseStudy):
     @property
     def direction(self) -> StudyDirection:
         """Return the direction of the study.
+
         Returns:
             A :class:`~optuna.study.StudyDirection` object.
         """
@@ -680,6 +684,7 @@ class MultiObjectiveStudy(BaseStudy):
 
     def get_best_trials(self) -> List[FrozenTrial]:
         """Return trials located at the pareto front in the study.
+
         A trial is located at the pareto front if there are no trials that dominate the trial.
         It's called that a trial ``t0`` dominates another trial ``t1`` if
         ``all(v0 <= v1) for v0, v1 in zip(t0.values, t1.values)`` and
@@ -693,6 +698,7 @@ class MultiObjectiveStudy(BaseStudy):
     @property
     def directions(self) -> Sequence[StudyDirection]:
         """Return the direction of the study.
+
         Returns:
             A sequence of :class:`~optuna.study.StudyDirection` objects.
         """
@@ -822,10 +828,10 @@ def create_study(
         study = MultiObjectiveStudy(
             study_name=study_name, storage=storage, sampler=sampler, pruner=pruner
         )
+        study._storage.set_study_direction(study_id, direction_obj)
     else:
         study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
-
-    study._storage.set_study_direction(study_id, direction_obj)
+        study._storage.set_study_direction(study_id, (direction_obj,))
 
     return study
 

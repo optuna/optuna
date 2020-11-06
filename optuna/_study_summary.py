@@ -51,10 +51,7 @@ class StudySummary(object):
     ):
 
         self.study_name = study_name
-        if isinstance(direction, Sequence):
-            self.direction = tuple(direction)
-        else:
-            self.direction = direction
+        self.direction = direction
         self.best_trial = best_trial
         self.user_attrs = user_attrs
         self.system_attrs = system_attrs
@@ -82,3 +79,20 @@ class StudySummary(object):
             return NotImplemented
 
         return self._study_id <= other._study_id
+
+    @property
+    def direction(self) -> Union[StudyDirection, Sequence[StudyDirection]]:
+
+        return self._direction
+
+    @direction.setter
+    def direction(self, d: Union[StudyDirection, Sequence[StudyDirection]]) -> None:
+
+        self._direction: Union[StudyDirection, Sequence[StudyDirection]]
+        if isinstance(d, Sequence):
+            if len(tuple(d)) == 1:
+                self._direction = tuple(d)[0]
+            else:
+                self._direction = tuple(d)
+        else:
+            self._direction = d

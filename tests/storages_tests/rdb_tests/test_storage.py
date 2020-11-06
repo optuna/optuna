@@ -4,6 +4,8 @@ import tempfile
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import Sequence
+from typing import Union
 from unittest.mock import patch
 
 import pytest
@@ -171,8 +173,16 @@ def test_upgrade() -> None:
             {"state": TrialState.COMPLETE, "datetime_complete": None},
             {"state": TrialState.COMPLETE},
         ),
-        ({"value": 1.1}, {"value": 1.1}),
-        ({"intermediate_values": {1: 2.3, 3: 2.5}}, {"intermediate_values": {1: 2.3, 3: 2.5}}),
+        ({"value": 1.1}, {"value": (1.1,)}),
+        ({"value": (1.1, 2.2)}, {"value": (1.1, 2.2)}),
+        (
+            {"intermediate_values": {1: 2.3, 3: 2.5}},
+            {"intermediate_values": {1: (2.3,), 3: (2.5,)}},
+        ),
+        (
+            {"intermediate_values": {1: (2.3, 2.4), 3: (2.5, 2.6)}},
+            {"intermediate_values": {1: (2.3, 2.4), 3: (2.5, 2.6)}},
+        ),
         (
             {
                 "params": {"paramA": 3, "paramB": "bar"},
@@ -219,21 +229,33 @@ def test_update_trial(fields_to_modify: Dict[str, Any], kwargs: Dict[str, Any]) 
                 assert getattr(trial_after_update, key) == value
 
 
-def test_update_trial_second_write() -> None:
+@pytest.mark.parametrize(
+    "value1, value2, intermediate_values1, intermediate_values2",
+    [
+        ((0.1,), (1.1,), {3: (1.2,), 5: (9.2,)}, {3: (2.3,), 7: (3.3,)}),
+        ((0.1, 0.2), (1.1, 1.2), {3: (1.2, 1.3), 5: (9.2, 9.3)}, {3: (2.3, 2.4), 7: (3.3, 3.4)}),
+    ],
+)
+def test_update_trial_second_write(
+    value1: Union[float, Sequence[float]],
+    value2: Union[float, Sequence[float]],
+    intermediate_values1: Dict[int, Union[float, Sequence[float]]],
+    intermediate_values2: Dict[int, Union[float, Sequence[float]]],
+) -> None:
 
     storage = create_test_storage()
     study_id = storage.create_new_study()
     template = FrozenTrial(
         number=1,
         state=TrialState.RUNNING,
-        value=0.1,
+        value=value1,
         datetime_start=None,
         datetime_complete=None,
         params={"paramA": 0.1, "paramB": 1.1},
         distributions={"paramA": UniformDistribution(0, 1), "paramB": UniformDistribution(0, 2)},
         user_attrs={"userA": 2, "userB": 3},
         system_attrs={"sysA": 4, "sysB": 5},
-        intermediate_values={3: 1.2, 5: 9.2},
+        intermediate_values=intermediate_values1,
         trial_id=1,
     )
     trial_id = storage.create_new_trial(study_id, template)
@@ -241,21 +263,35 @@ def test_update_trial_second_write() -> None:
     storage._update_trial(
         trial_id,
         state=None,
-        value=1.1,
-        intermediate_values={3: 2.3, 7: 3.3},
+        value=value2,
+        intermediate_values=intermediate_values2,
         params={"paramA": 0.2, "paramC": 2.3},
         distributions_={"paramA": UniformDistribution(0, 1), "paramC": UniformDistribution(0, 4)},
         user_attrs={"userA": 1, "userC": "attr"},
         system_attrs={"sysA": 6, "sysC": 8},
     )
     trial_after_update = storage.get_trial(trial_id)
+
+    if isinstance(value2, Sequence) and len(value2) == 1:
+        value2 = value2[0]
+
+    expected_intermediate_values = {}
+    for k, v in intermediate_values1.items():
+        if isinstance(v, Sequence) and len(v) == 1:
+            v = v[0]
+        expected_intermediate_values[k] = v
+    for k, v in intermediate_values2.items():
+        if isinstance(v, Sequence) and len(v) == 1:
+            v = v[0]
+        expected_intermediate_values[k] = v
+
     expected_attrs = {
         "_trial_id": trial_before_update._trial_id,
         "number": trial_before_update.number,
         "state": TrialState.RUNNING,
-        "value": 1.1,
+        "value": value2,
         "params": {"paramA": 0.2, "paramB": 1.1, "paramC": 2.3},
-        "intermediate_values": {3: 2.3, 5: 9.2, 7: 3.3},
+        "intermediate_values": expected_intermediate_values,
         "_distributions": {
             "paramA": UniformDistribution(0, 1),
             "paramB": UniformDistribution(0, 2),
