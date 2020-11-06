@@ -195,24 +195,37 @@ def _untransform_single_param(
     if isinstance(d, CategoricalDistribution):
         # Select the highest rated one-hot encoding.
         param = d.to_external_repr(trans_param.argmax())
-    elif isinstance(d, UniformDistribution):
-        param = float(trans_param.item())
-    elif isinstance(d, LogUniformDistribution):
-        param = math.exp(trans_param) if transform_log else float(trans_param)
-    elif isinstance(d, DiscreteUniformDistribution):
-        # v may slightly exceed range due to round-off errors.
-        param = float(
-            min(max(numpy.round((trans_param - d.low) / d.q) * d.q + d.low, d.low), d.high)
-        )
-    elif isinstance(d, IntUniformDistribution):
-        param = int(numpy.round((trans_param - d.low) / d.step) * d.step + d.low)
-    elif isinstance(d, IntLogUniformDistribution):
-        if transform_log:
-            param = math.exp(trans_param)
-            v = numpy.round(param)
-            param = int(min(max(v, d.low), d.high))
+    elif isinstance(
+        d,
+        (
+            UniformDistribution,
+            LogUniformDistribution,
+            DiscreteUniformDistribution,
+            IntUniformDistribution,
+            IntLogUniformDistribution,
+        ),
+    ):
+        trans_param = trans_param.item()
+        assert isinstance(trans_param, float)
+
+        if isinstance(d, UniformDistribution):
+            param = trans_param
+        elif isinstance(d, LogUniformDistribution):
+            param = math.exp(trans_param) if transform_log else trans_param
+        elif isinstance(d, DiscreteUniformDistribution):
+            # Clip since result may slightly exceed range due to round-off errors.
+            param = float(
+                min(max(numpy.round((trans_param - d.low) / d.q) * d.q + d.low, d.low), d.high)
+            )
+        elif isinstance(d, IntUniformDistribution):
+            param = int(numpy.round((trans_param - d.low) / d.step) * d.step + d.low)
+        elif isinstance(d, IntLogUniformDistribution):
+            if transform_log:
+                param = int(min(max(numpy.round(math.exp(trans_param)), d.low), d.high))
+            else:
+                param = int(trans_param)
         else:
-            param = int(trans_param)
+            assert False
     else:
         assert False
 
