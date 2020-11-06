@@ -22,14 +22,10 @@ class _Transform:
         search_space: Dict[str, BaseDistribution],
         transform_log: bool = True,
     ) -> None:
-        # TODO(hvy): Introduce `one_hot: bool` parameter to control whether categorical should be
-        # one-hot encoded. This could be useful for making this class more general and usable from
-        # e.g. the `RandomSampler`, where we don't necessarily have to one-hot encode.
         assert len(search_space) > 0, "Cannot transform if no distributions are given."
 
         self._search_space = search_space
         self._transform_log = transform_log
-
         self._bounds, self._column_to_encoded_columns = self._transform_bounds(search_space)
 
     @property
@@ -53,7 +49,7 @@ class _Transform:
             for name, distribution in self._search_space.items():
                 param = trial.params[name]
                 if isinstance(distribution, CategoricalDistribution):
-                    choice_idx = int(self._transform_param(param, distribution))
+                    choice_idx = distribution.to_internal_repr(param)
                     trans_params[trial_idx, bound_idx + choice_idx] = 1
                     bound_idx += len(distribution.choices)
                 else:
@@ -86,14 +82,14 @@ class _Transform:
         column_to_encoded_columns: List[numpy.ndarray] = []
 
         bound_idx = 0
-        for distribution in search_space.values():
-            if isinstance(distribution, CategoricalDistribution):
-                n_choices = len(distribution.choices)
-                bounds[bound_idx : bound_idx + n_choices] = [0, 1]
+        for d in search_space.values():
+            if isinstance(d, CategoricalDistribution):
+                n_choices = len(d.choices)
+                bounds[bound_idx : bound_idx + n_choices] = (0, 1)
                 column_to_encoded_columns.append(numpy.arange(bound_idx, bound_idx + n_choices))
                 bound_idx += n_choices
             elif isinstance(
-                distribution,
+                d,
                 (
                     UniformDistribution,
                     LogUniformDistribution,
@@ -102,9 +98,42 @@ class _Transform:
                     IntLogUniformDistribution,
                 ),
             ):
-                bounds[bound_idx] = self._transform_distribution_bounds(distribution)
+                if isinstance(d, UniformDistribution):
+                    b = (
+                        self._transform_param(d.low, d),
+                        self._transform_param(d.high, d),
+                    )
+                elif isinstance(d, LogUniformDistribution):
+                    b = (
+                        self._transform_param(d.low, d),
+                        self._transform_param(d.high, d),
+                    )
+                elif isinstance(d, DiscreteUniformDistribution):
+                    half_step = 0.5 * d.q
+                    b = (
+                        self._transform_param(d.low, d) - half_step,
+                        self._transform_param(d.high, d) + half_step,
+                    )
+                elif isinstance(d, IntUniformDistribution):
+                    half_step = 0.5 * d.step
+                    b = (
+                        self._transform_param(d.low, d) - half_step,
+                        self._transform_param(d.high, d) + half_step,
+                    )
+                elif isinstance(d, IntLogUniformDistribution):
+                    b = (
+                        self._transform_param(d.low - 0.5, d),
+                        self._transform_param(d.high + 0.5, d),
+                    )
+                else:
+                    assert False
+
+                bounds[bound_idx] = b
                 column_to_encoded_columns.append(numpy.atleast_1d(bound_idx))
                 bound_idx += 1
+            else:
+                assert False
+
         assert bound_idx == n_bounds
 
         return bounds, column_to_encoded_columns
@@ -112,7 +141,7 @@ class _Transform:
     def _transform_param(self, param: Any, distribution: BaseDistribution) -> float:
         d = distribution
         if isinstance(d, CategoricalDistribution):
-            trans_param = float(d.to_internal_repr(param))
+            assert False
         elif isinstance(d, UniformDistribution):
             trans_param = float(param)
         elif isinstance(d, LogUniformDistribution):
@@ -127,31 +156,6 @@ class _Transform:
             assert False
         return trans_param
 
-    def _transform_distribution_bounds(
-        self, distribution: BaseDistribution
-    ) -> Tuple[float, float]:
-        if isinstance(distribution, CategoricalDistribution):
-            bounds = (0.0, float(len(distribution.choices)))
-        elif isinstance(
-            distribution,
-            (
-                UniformDistribution,
-                LogUniformDistribution,
-                DiscreteUniformDistribution,
-                IntUniformDistribution,
-                IntLogUniformDistribution,
-            ),
-        ):
-            # TODO(hvy): Allow subtracting eps from high to use this class from `CmaEsSampler`.
-            # TODO(hvy): Subtract 0.5 * steps for distributions with steps.
-            bounds = (
-                self._transform_param(distribution.low, distribution),
-                self._transform_param(distribution.high, distribution),
-            )
-        else:
-            assert False
-        return bounds
-
     def _untransform_single_param(
         self, trans_param: numpy.ndarray, distribution: BaseDistribution
     ) -> Any:
@@ -164,13 +168,12 @@ class _Transform:
         elif isinstance(d, LogUniformDistribution):
             param = math.exp(trans_param) if self._transform_log else float(trans_param)
         elif isinstance(d, DiscreteUniformDistribution):
-            v = numpy.round(trans_param / d.q) * d.q + d.low
             # v may slightly exceed range due to round-off errors.
-            param = float(min(max(v, d.low), d.high))
+            param = float(
+                min(max(numpy.round((trans_param - d.low) / d.q) * d.q + d.low, d.low), d.high)
+            )
         elif isinstance(d, IntUniformDistribution):
-            r = numpy.round((trans_param - d.low) / d.step)
-            v = r * d.step + d.low
-            param = int(v)
+            param = int(numpy.round((trans_param - d.low) / d.step) * d.step + d.low)
         elif isinstance(d, IntLogUniformDistribution):
             if self._transform_log:
                 param = math.exp(trans_param)

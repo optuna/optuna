@@ -100,11 +100,25 @@ def test_transform_fit_values_numerical(
     expected_low = distribution.low  # type: ignore
     expected_high = distribution.high  # type: ignore
 
-    if transform_log and isinstance(
-        distribution, (IntLogUniformDistribution, LogUniformDistribution)
-    ):
-        expected_low = math.log(expected_low)
-        expected_high = math.log(expected_high)
+    if isinstance(distribution, LogUniformDistribution):
+        if transform_log:
+            expected_low = math.log(expected_low)
+            expected_high = math.log(expected_high)
+    elif isinstance(distribution, DiscreteUniformDistribution):
+        half_step = 0.5 * distribution.q
+        expected_low -= half_step
+        expected_high += half_step
+    elif isinstance(distribution, IntUniformDistribution):
+        half_step = 0.5 * distribution.step
+        expected_low -= half_step
+        expected_high += half_step
+    elif isinstance(distribution, IntLogUniformDistribution):
+        half_step = 0.5
+        expected_low -= half_step
+        expected_high += half_step
+        if transform_log:
+            expected_low = math.log(expected_low)
+            expected_high = math.log(expected_high)
 
     for bound in trans.bounds:
         assert bound[0] == expected_low
@@ -193,14 +207,16 @@ def test_transform_fit_shapes_dtypes_values_categorical_with_other_distribution(
     for i, (low, high) in enumerate(trans.bounds):
         # Categorical one-hot encodings are placed before any other distributions.
         if i == 0:
-            assert low == search_space["x0"].low  # type: ignore
-            assert high == search_space["x0"].high  # type: ignore
+            half_step = 0.5 * 0.2
+            assert low == search_space["x0"].low - half_step  # type: ignore
+            assert high == search_space["x0"].high + half_step  # type: ignore
         elif i in (1, 2, 3, 4):
             assert low == 0.0
             assert high == 1.0
         elif i == 5:
-            expected_low = search_space["x2"].low  # type: ignore
-            expected_high = search_space["x2"].high  # type: ignore
+            half_step = 0.5
+            expected_low = search_space["x2"].low - half_step  # type: ignore
+            expected_high = search_space["x2"].high + half_step  # type: ignore
             if transform_log:
                 expected_low = math.log(expected_low)
                 expected_high = math.log(expected_high)
