@@ -25,6 +25,7 @@ jobs:
         sudo apt -y install gnuplot
 
     - name: Cache Python libraries
+      uses: actions/cache@v2
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-${{ hashFiles('**/setup.py') }}-v1
