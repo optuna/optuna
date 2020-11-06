@@ -57,7 +57,8 @@ def test_transform_fit_shapes_dtypes(transform_log: bool, distribution: BaseDist
     study = optuna.create_study()
     study.optimize(objective, n_trials=3)
 
-    trans = _Transform(study.trials, {"x0": distribution}, transform_log)
+    trans = _Transform({"x0": distribution}, transform_log)
+    trans_params, trans_values = trans.transform(study.trials)
 
     if isinstance(distribution, CategoricalDistribution):
         expected_bounds_shape = (len(distribution.choices), 2)
@@ -67,10 +68,10 @@ def test_transform_fit_shapes_dtypes(transform_log: bool, distribution: BaseDist
         expected_params_shape = (3, 1)
     assert trans.bounds.shape == expected_bounds_shape
     assert trans.bounds.dtype == numpy.float64
-    assert trans.params.shape == expected_params_shape
-    assert trans.params.dtype == numpy.float64
-    assert trans.values.shape == (3,)
-    assert trans.values.dtype == numpy.float64
+    assert trans_params.shape == expected_params_shape
+    assert trans_params.dtype == numpy.float64
+    assert trans_values.shape == (3,)
+    assert trans_values.dtype == numpy.float64
 
 
 @pytest.mark.parametrize("transform_log", [True, False])
@@ -94,7 +95,7 @@ def test_transform_fit_values_numerical(
     study = optuna.create_study()
     study.optimize(objective, n_trials=3)
 
-    trans = _Transform(study.trials, {"x0": distribution}, transform_log)
+    trans = _Transform({"x0": distribution}, transform_log)
 
     expected_low = distribution.low  # type: ignore
     expected_high = distribution.high  # type: ignore
@@ -109,7 +110,9 @@ def test_transform_fit_values_numerical(
         assert bound[0] == expected_low
         assert bound[1] == expected_high
 
-    for params in trans.params:
+    trans_params, trans_values = trans.transform(study.trials)
+
+    for params in trans_params:
         for param in params:
             if isinstance(distribution, (IntUniformDistribution, IntLogUniformDistribution)):
                 assert expected_low <= param <= expected_high
@@ -117,7 +120,7 @@ def test_transform_fit_values_numerical(
                 # TODO(hvy): Change second `<=` to `<` when `suggest_float` is fixed.
                 assert expected_low <= param <= expected_high
 
-    for value, trial in zip(trans.values, study.trials):
+    for value, trial in zip(trans_values, study.trials):
         assert value == trial.value
 
 
@@ -138,17 +141,19 @@ def test_transform_fit_values_categorical(
     study = optuna.create_study()
     study.optimize(objective, n_trials=3)
 
-    trans = _Transform(study.trials, {"x0": distribution}, transform_log)
+    trans = _Transform({"x0": distribution}, transform_log)
 
     for bound in trans.bounds:
         assert bound[0] == 0.0
         assert bound[1] == 1.0
 
-    for params in trans.params:
+    trans_params, trans_values = trans.transform(study.trials)
+
+    for params in trans_params:
         for param in params:
             assert 0.0 <= param <= 1.0
 
-    for value, trial in zip(trans.values, study.trials):
+    for value, trial in zip(trans_values, study.trials):
         assert value == trial.value
 
 
@@ -175,12 +180,14 @@ def test_transform_fit_shapes_dtypes_values_categorical_with_other_distribution(
     study = optuna.create_study()
     study.optimize(objective, n_trials=3)
 
-    trans = _Transform(study.trials, search_space, transform_log)
+    trans = _Transform(search_space, transform_log)
+
+    trans_params, trans_values = trans.transform(study.trials)
 
     n_tot_choices = len(search_space["x1"].choices)  # type: ignore
     n_tot_choices += len(search_space["x3"].choices)  # type: ignore
-    assert trans.params.shape == (3, n_tot_choices + 2)
-    assert trans.values.shape == (3,)
+    assert trans_params.shape == (3, n_tot_choices + 2)
+    assert trans_values.shape == (3,)
     assert trans.bounds.shape == (n_tot_choices + 2, 2)
 
     for i, (low, high) in enumerate(trans.bounds):
@@ -205,7 +212,7 @@ def test_transform_fit_shapes_dtypes_values_categorical_with_other_distribution(
         else:
             assert False
 
-    for params in trans.params:
+    for params in trans_params:
         for i, param in enumerate(params):
             if i == 0:
                 assert search_space["x0"].low <= param <= search_space["x0"].high  # type: ignore
@@ -223,7 +230,7 @@ def test_transform_fit_shapes_dtypes_values_categorical_with_other_distribution(
             else:
                 assert False
 
-    for value, trial in zip(trans.values, study.trials):
+    for value, trial in zip(trans_values, study.trials):
         assert value == trial.value
 
 
@@ -256,13 +263,13 @@ def test_transform_untransform_params(transform_log: bool) -> None:
 
     study = optuna.create_study()
     study.optimize(objective, n_trials=3)
-    trials = study.trials
 
-    trans = _Transform(trials, search_space, transform_log)
+    trans = _Transform(search_space, transform_log)
+    params, values = trans.transform(study.trials)
 
-    trial_number = trans.values.argmin()
-    next_trans_params = trans.params[trial_number]
-    params = trans.untransform(next_trans_params)
+    trial_number = values.argmin()
+    next_trans_params = params[trial_number]
+    params = trans.untransform_single_params(next_trans_params)
 
     expected_params = study.best_params
     for name in search_space.keys():
