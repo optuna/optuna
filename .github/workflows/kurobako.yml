@@ -14,6 +14,8 @@ jobs:
     strategy:
       matrix:
         problem: [hpobench-protein, nasbench]
+        sampler: [RandomSampler, TPESampler]
+        pruner: [MedianPruner, HyperbandPruner, NopPruner]
 
     if: github.repository == 'optuna/optuna'
 
@@ -79,7 +81,7 @@ jobs:
 
     - name: Run Benchmark
       run: |
-        python run_kurobako.py --name "CI" --kurobako-path "." --input-dir "." --output-dir "out" --problem-list ${{ matrix.problem }} --plot
+        python run_kurobako.py --name "CI" --kurobako-path "." --input-dir "." --output-dir "out" --sampler-list ${{ matrix.sampler }} --pruner-list ${{ matrix.pruner }} --problem-list ${{ matrix.problem }} --plot
 
     - uses: actions/upload-artifact@v2
       with:
