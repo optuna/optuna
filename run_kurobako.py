@@ -60,9 +60,11 @@ def _get_invalid_pruners(pruner_list: List[str]) -> List[str]:
 
 def _run_kurobako(args: argparse.Namespace) -> None:
 
-    kurobako_cmd = (
-        os.path.join(args.kurobako_path, "kurobako") if args.kurobako_path else "kurobako"
-    )
+    kurobako_cmd = "kurobako"
+    if args.kurobako_path:
+        kurobako_cmd = os.path.join(args.kurobako_path, "kurobako")
+        kurobako_cmd = os.path.abspath(kurobako_cmd)
+
     subprocess.check_call(f"{kurobako_cmd} --version", shell=True)
 
     if not (os.path.exists(args.input_dir) and os.path.isdir(args.input_dir)):
