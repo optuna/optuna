@@ -26,7 +26,7 @@ def plot_slice(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
 
         The following code snippet shows how to plot the parameter relationship as slice plot.
 
-        .. testcode::
+        .. plotly::
 
             import optuna
 
@@ -41,12 +41,6 @@ def plot_slice(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
             study.optimize(objective, n_trials=10)
 
             optuna.visualization.plot_slice(study, params=["x", "y"])
-
-        .. raw:: html
-
-            <iframe src="../../../_static/plot_slice.html"
-                width="100%" height="500px" frameborder="0">
-            </iframe>
 
     Args:
         study:
