@@ -1,3 +1,5 @@
+from collections import defaultdict
+from typing import DefaultDict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -13,6 +15,7 @@ from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
+from optuna.visualization.matplotlib._utils import _is_categorical
 from optuna.visualization.matplotlib._utils import _is_log_scale
 
 
@@ -130,8 +133,24 @@ def _set_cmap(study: Study) -> "Colormap":
     return plt.get_cmap(cmap)
 
 
+def _convert_categorical2int(values: List[str]) -> Tuple[List[int], List[str], List[int]]:
+    vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
+    [vocab[v] for v in sorted(values)]
+    values_converted = [vocab[v] for v in values]
+    vocab_item_sorted = sorted(vocab.items(), key=lambda x: x[1])
+    cat_param_labels = [v[0] for v in vocab_item_sorted]
+    cat_param_pos = [v[1] for v in vocab_item_sorted]
+
+    return values_converted, cat_param_labels, cat_param_pos
+
+
 def _calculate_griddata(
-    trials: List[FrozenTrial], x_param: str, y_param: str, contour_point_num: int
+    trials: List[FrozenTrial],
+    x_param: str,
+    x_indices: List[Union[str, int, float]],
+    y_param: str,
+    y_indices: List[Union[str, int, float]],
+    contour_point_num: int,
 ) -> Tuple[
     np.ndarray,
     np.ndarray,
@@ -140,6 +159,12 @@ def _calculate_griddata(
     List[Union[int, float]],
     List[Union[int, float]],
     List[Union[int, float]],
+    List[int],
+    List[str],
+    List[int],
+    List[str],
+    int,
+    int,
 ]:
 
     # Extract values for x, y, z axes from each trail.
@@ -160,6 +185,50 @@ def _calculate_griddata(
                 "Trial{} has COMPLETE state, but its value is non-numeric.".format(trial.number)
             )
         z_values.append(value)
+
+    # Return empty values when x or y has no value.
+    if len(x_values) == 0 or len(y_values) == 0:
+        return (
+            np.array([]),
+            np.array([]),
+            np.array([]),
+            x_values,
+            y_values,
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            0,
+            0,
+        )
+
+    # Add dummy values for grid data calculation when a parameter has one unique value.
+    x_values_dummy = []
+    y_values_dummy = []
+    if len(set(x_values)) == 1:
+        x_values_dummy = [x for x in x_indices if x not in x_values]
+        x_values = x_values + x_values_dummy * len(x_values)
+        y_values = y_values + (y_values * len(x_values_dummy))
+        z_values = z_values + (z_values * len(x_values_dummy))
+    if len(set(y_values)) == 1:
+        y_values_dummy = [y for y in y_indices if y not in y_values]
+        y_values = y_values + y_values_dummy * len(y_values)
+        x_values = x_values + (x_values * len(y_values_dummy))
+        z_values = z_values + (z_values * len(y_values_dummy))
+
+    # Convert categorical values to int.
+    cat_param_labels_x = []  # type: List[str]
+    cat_param_pos_x = []  # type: List[int]
+    cat_param_labels_y = []  # type: List[str]
+    cat_param_pos_y = []  # type: List[int]
+    if _is_categorical(trials, x_param):
+        x_values = [str(x) for x in x_values]
+        (x_values, cat_param_labels_x, cat_param_pos_x,) = _convert_categorical2int(x_values)
+    if _is_categorical(trials, y_param):
+        y_values = [str(y) for y in y_values]
+        (y_values, cat_param_labels_y, cat_param_pos_y,) = _convert_categorical2int(y_values)
 
     # Calculate min and max of x and y.
     x_values_min = min(x_values)
@@ -199,6 +268,12 @@ def _calculate_griddata(
         y_values,
         [x_values_min, x_values_max],
         [y_values_min, y_values_max],
+        cat_param_pos_x,
+        cat_param_labels_x,
+        cat_param_pos_y,
+        cat_param_labels_y,
+        len(x_values_dummy),
+        len(y_values_dummy),
     )
 
 
@@ -220,22 +295,55 @@ def _generate_contour_subplot(
         _logger.warning("Param {} unique value length is less than 2.".format(y_param))
         return ax
 
-    xi, yi, zi, x_values, y_values, x_values_range, y_values_range = _calculate_griddata(
-        trials, x_param, y_param, contour_point_num
-    )
-    ax.set_xlim(x_values_range[0], x_values_range[1])
-    ax.set_ylim(y_values_range[0], y_values_range[1])
-    ax.set(xlabel=x_param, ylabel=y_param)
-    if _is_log_scale(trials, x_param):
-        ax.set_xscale("log")
-    if _is_log_scale(trials, y_param):
-        ax.set_yscale("log")
+    (
+        xi,
+        yi,
+        zi,
+        x_values,
+        y_values,
+        x_values_range,
+        y_values_range,
+        x_cat_param_pos,
+        x_cat_param_label,
+        y_cat_param_pos,
+        y_cat_param_label,
+        x_values_added_count,
+        y_values_added_count,
+    ) = _calculate_griddata(trials, x_param, x_indices, y_param, y_indices, contour_point_num)
     cs = None
-    if x_param != y_param:
-        # Contour the gridded data.
-        ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k")
-        cs = ax.contourf(xi, yi, zi, 15, cmap=cmap)
-        # Plot data points.
-        ax.scatter(x_values, y_values, marker="o", c="black", s=20, edgecolors="grey")
+    ax.set(xlabel=x_param, ylabel=y_param)
+    if len(zi) > 0:
+        ax.set_xlim(x_values_range[0], x_values_range[1])
+        ax.set_ylim(y_values_range[0], y_values_range[1])
+        ax.set(xlabel=x_param, ylabel=y_param)
+        if _is_log_scale(trials, x_param):
+            ax.set_xscale("log")
+        if _is_log_scale(trials, y_param):
+            ax.set_yscale("log")
+        if x_param != y_param:
+            # Contour the gridded data.
+            ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k")
+            cs = ax.contourf(xi, yi, zi, 15, cmap=cmap)
+            # Plot data points.
+            if x_values_added_count > 0:
+                x_org_len = int(len(x_values) / (x_values_added_count + 1))
+                y_org_len = int(len(y_values) / (x_values_added_count + 1))
+            elif y_values_added_count > 0:
+                x_org_len = int(len(x_values) / (y_values_added_count + 1))
+                y_org_len = int(len(y_values) / (y_values_added_count + 1))
+            ax.scatter(
+                x_values[:x_org_len],
+                y_values[:y_org_len],
+                marker="o",
+                c="black",
+                s=20,
+                edgecolors="grey",
+            )
+    if x_cat_param_pos:
+        ax.set_xticks(x_cat_param_pos)
+        ax.set_xticklabels(x_cat_param_label)
+    if y_cat_param_pos:
+        ax.set_yticks(y_cat_param_pos)
+        ax.set_yticklabels(y_cat_param_label)
     ax.label_outer()
     return cs
