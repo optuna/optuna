@@ -106,26 +106,20 @@ circleci build --job <job_name>
 
 You can run the following jobs.
 
-- `tests-python36`
-  - Runs unit tests under Python 3.6
-- `tests-python37`
-  - Runs unit tests under Python 3.7
-- `tests-python38`
-  - Runs unit tests under Python 3.8
+- `tests-rdbstorate`
+  - Runs unit tests of `RDBStorage`
 - `document`
   - Checks documentation build
 - `doctest`
   - Checks doctest validity
-- `codecov`
-  - Checks unit test code coverage
 
 #### Example
 
-The following `circleci` job runs all unit tests in Python 3.7:
+The following `circleci` job runs all unit tests of RDB storage:
 Note that this job will download several hundred megabytes of data to install all the packages required for testing, and take several tens of minutes to complete all tests.
 
 ```bash
-circleci build --job tests-python37
+circleci build --job tests-rdbstorage
 ```
 
 ## Creating a Pull Request
