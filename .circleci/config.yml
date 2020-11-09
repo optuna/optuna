@@ -67,7 +67,7 @@ jobs:
           name: blackdoc
           command: |
             . venv/bin/activate
-            blackdoc optuna --check
+            blackdoc . --check
 
   document:
     docker:
