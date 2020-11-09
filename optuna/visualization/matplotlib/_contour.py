@@ -315,8 +315,8 @@ def _generate_contour_subplot(
         x_cat_param_label,
         y_cat_param_pos,
         y_cat_param_label,
-        x_values_added_count,
-        y_values_added_count,
+        x_values_dummy_count,
+        y_values_dummy_count,
     ) = _calculate_griddata(trials, x_param, x_indices, y_param, y_indices, contour_point_num)
     cs = None
     ax.set(xlabel=x_param, ylabel=y_param)
@@ -333,12 +333,15 @@ def _generate_contour_subplot(
             ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k")
             cs = ax.contourf(xi, yi, zi, 15, cmap=cmap)
             # Plot data points.
-            if x_values_added_count > 0:
-                x_org_len = int(len(x_values) / (x_values_added_count + 1))
-                y_org_len = int(len(y_values) / (x_values_added_count + 1))
-            elif y_values_added_count > 0:
-                x_org_len = int(len(x_values) / (y_values_added_count + 1))
-                y_org_len = int(len(y_values) / (y_values_added_count + 1))
+            if x_values_dummy_count > 0:
+                x_org_len = int(len(x_values) / (x_values_dummy_count + 1))
+                y_org_len = int(len(y_values) / (x_values_dummy_count + 1))
+            elif y_values_dummy_count > 0:
+                x_org_len = int(len(x_values) / (y_values_dummy_count + 1))
+                y_org_len = int(len(y_values) / (y_values_dummy_count + 1))
+            else:
+                x_org_len = len(x_values)
+                y_org_len = len(x_values)
             ax.scatter(
                 x_values[:x_org_len],
                 y_values[:y_org_len],
