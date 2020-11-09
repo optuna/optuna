@@ -99,8 +99,10 @@ def _get_non_pareto_front_trials(
 
 
 def _get_pareto_front_2d(
-    study: MultiObjectiveStudy, names: Optional[List[str]], include_dominated_trials: bool = False,
-    axis_order: Optional[List[int]] = None
+    study: MultiObjectiveStudy,
+    names: Optional[List[str]],
+    include_dominated_trials: bool = False,
+    axis_order: Optional[List[int]] = None,
 ) -> "go.Figure":
     if names is None:
         names = ["Objective 0", "Objective 1"]
@@ -135,14 +137,16 @@ def _get_pareto_front_2d(
     layout = go.Layout(
         title="Pareto-front Plot",
         xaxis_title=names[axis_order[0]],
-        yaxis_title=names[axis_order[1]]
+        yaxis_title=names[axis_order[1]],
     )
     return go.Figure(data=data, layout=layout)
 
 
 def _get_pareto_front_3d(
-    study: MultiObjectiveStudy, names: Optional[List[str]], include_dominated_trials: bool = False,
-    axis_order: Optional[List[int]] = None
+    study: MultiObjectiveStudy,
+    names: Optional[List[str]],
+    include_dominated_trials: bool = False,
+    axis_order: Optional[List[int]] = None,
 ) -> "go.Figure":
     if names is None:
         names = ["Objective 0", "Objective 1", "Objective 2"]
@@ -180,7 +184,7 @@ def _get_pareto_front_3d(
         scene={
             "xaxis_title": names[axis_order[0]],
             "yaxis_title": names[axis_order[1]],
-            "zaxis_title": names[axis_order[2]]
+            "zaxis_title": names[axis_order[2]],
         },
     )
     return go.Figure(data=data, layout=layout)
