@@ -16,4 +16,5 @@ optuna.visualization.matplotlib
     optuna.visualization.matplotlib.plot_optimization_history
     optuna.visualization.matplotlib.plot_parallel_coordinate
     optuna.visualization.matplotlib.plot_param_importances
+    optuna.visualization.matplotlib.plot_slice
     optuna.visualization.matplotlib.is_available

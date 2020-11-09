@@ -54,6 +54,7 @@ extensions = [
     'cliff.sphinxext',
     'sphinx_gallery.gen_gallery',
     'matplotlib.sphinxext.plot_directive',
+    'sphinx_plotly_directive',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -193,3 +194,9 @@ plot_include_source = True
 plot_formats = [("png", 90)]
 plot_html_show_formats = False
 plot_html_show_source_link = False
+
+# sphinx plotly directive
+plotly_include_source = True
+plotly_formats = ["html"]
+plotly_html_show_formats = False
+plotly_html_show_source_link = False

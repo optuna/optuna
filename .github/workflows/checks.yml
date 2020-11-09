@@ -31,4 +31,4 @@ jobs:
     - name: mypy 
       run: mypy .
     - name: blackdoc
-      run: blackdoc optuna --check
+      run: blackdoc . --check

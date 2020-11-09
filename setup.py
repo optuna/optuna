@@ -69,6 +69,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
             "sphinx_rtd_theme<0.5.0",
             "sphinx-gallery",
+            "sphinx-plotly-directive",
             "pillow",
             "matplotlib",
             "scikit-learn",
