@@ -1,9 +1,8 @@
-import pytest
-
+import itertools
 from typing import List
 from typing import Optional
 
-import itertools
+import pytest
 
 import optuna
 from optuna.multi_objective.visualization import plot_pareto_front
