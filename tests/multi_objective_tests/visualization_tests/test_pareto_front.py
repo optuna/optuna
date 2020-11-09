@@ -38,7 +38,7 @@ def test_plot_pareto_front_2d(
     assert len(figure.data) == 1
     if include_dominated_trials:
         # The last elements come from dominated trial that is enqueued firstly.
-        data = [(1, 0, 1), (0, 1, 1)]
+        data = [(1, 0, 1), (0, 1, 1)]  # type: ignore
         if axis_order is None:
             assert figure.data[0]["x"] == data[0]
             assert figure.data[0]["y"] == data[1]
@@ -46,7 +46,7 @@ def test_plot_pareto_front_2d(
             assert figure.data[0]["x"] == data[axis_order[0]]
             assert figure.data[0]["y"] == data[axis_order[1]]
     else:
-        data = [(1, 0), (0, 1)]
+        data = [(1, 0), (0, 1)]  # type: ignore
         if axis_order is None:
             assert figure.data[0]["x"] == data[0]
             assert figure.data[0]["y"] == data[1]
@@ -93,7 +93,7 @@ def test_plot_pareto_front_2d(
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
-@pytest.mark.parametrize("axis_order", [None] + list(itertools.permutations(range(3), 3)))
+@pytest.mark.parametrize("axis_order", [None] + list(itertools.permutations(range(3), 3)))  # type: ignore
 def test_plot_pareto_front_3d(
     include_dominated_trials: bool, axis_order: Optional[List[int]]
 ) -> None:
@@ -126,7 +126,7 @@ def test_plot_pareto_front_3d(
     assert len(figure.data) == 1
     if include_dominated_trials:
         # The last elements come from dominated trial that is enqueued firstly.
-        data = [(1, 1, 1), (0, 1, 1), (1, 0, 1)]
+        data = [(1, 1, 1), (0, 1, 1), (1, 0, 1)]  # type: ignore
         if axis_order is None:
             assert figure.data[0]["x"] == data[0]
             assert figure.data[0]["y"] == data[1]
@@ -136,7 +136,7 @@ def test_plot_pareto_front_3d(
             assert figure.data[0]["y"] == data[axis_order[1]]
             assert figure.data[0]["z"] == data[axis_order[2]]
     else:
-        data = [(1, 1), (0, 1), (1, 0)]
+        data = [(1, 1), (0, 1), (1, 0)]  # type: ignore
         if axis_order is None:
             assert figure.data[0]["x"] == data[0]
             assert figure.data[0]["y"] == data[1]
