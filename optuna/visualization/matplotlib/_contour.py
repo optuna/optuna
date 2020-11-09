@@ -225,10 +225,18 @@ def _calculate_griddata(
     cat_param_pos_y = []  # type: List[int]
     if _is_categorical(trials, x_param):
         x_values = [str(x) for x in x_values]
-        (x_values, cat_param_labels_x, cat_param_pos_x,) = _convert_categorical2int(x_values)
+        (
+            x_values,
+            cat_param_labels_x,
+            cat_param_pos_x,
+        ) = _convert_categorical2int(x_values)
     if _is_categorical(trials, y_param):
         y_values = [str(y) for y in y_values]
-        (y_values, cat_param_labels_y, cat_param_pos_y,) = _convert_categorical2int(y_values)
+        (
+            y_values,
+            cat_param_labels_y,
+            cat_param_pos_y,
+        ) = _convert_categorical2int(y_values)
 
     # Calculate min and max of x and y.
     x_values_min = min(x_values)
