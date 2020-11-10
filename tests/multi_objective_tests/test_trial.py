@@ -153,10 +153,10 @@ def test_dominates() -> None:
         n_objectives = len(values)
         trial = optuna.trial.FrozenTrial(
             state=state,
-            intermediate_values={i: v for i, v in enumerate(values)},
+            step_to_values={i: (v,) for i, v in enumerate(values)},
             # The following attributes aren't used in this test case.
             number=0,
-            value=None,
+            values=None,
             datetime_start=None,
             datetime_complete=None,
             params={},

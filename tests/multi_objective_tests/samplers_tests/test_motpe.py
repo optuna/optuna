@@ -627,14 +627,14 @@ def frozen_trial_factory(
         number=number,
         trial_id=number,
         state=optuna.trial.TrialState.COMPLETE,
-        value=None,
+        values=None,
         datetime_start=None,
         datetime_complete=None,
         params={"param-a": value},
         distributions={"param-a": dist},
         user_attrs={},
         system_attrs={},
-        intermediate_values={i: v for i, v in enumerate(values)},
+        step_to_values={i: (v,) for i, v in enumerate(values)},
     )
     return trial
 

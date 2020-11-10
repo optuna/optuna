@@ -151,7 +151,7 @@ class SuccessiveHalvingPruner(BasePruner):
             return False
 
         rung = _get_current_rung(trial)
-        value = trial.intermediate_values[step]
+        value = trial.step_to_value[step]
         trials: Optional[List["optuna.trial.FrozenTrial"]] = None
 
         assert not isinstance(value, Sequence)

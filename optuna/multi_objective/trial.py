@@ -239,7 +239,12 @@ class MultiObjectiveTrial(object):
 
     def _get_values(self) -> List[Optional[float]]:
         trial = self._trial.study._storage.get_trial(self._trial._trial_id)
-        return [trial.intermediate_values.get(i) for i in range(self._n_objectives)]
+        values = []
+        for i in range(self._n_objectives):
+            v = trial.intermediate_values.get(i)
+            assert v is None or isinstance(v, float)
+            values.append(v)
+        return values
 
 
 @experimental("1.4.0")

@@ -329,8 +329,8 @@ class RedisStorage(BaseStorage):
             distributions={},
             user_attrs={},
             system_attrs={},
-            value=None,
-            intermediate_values={},
+            values=None,
+            step_to_values={},
             datetime_start=datetime.now(),
             datetime_complete=None,
         )
@@ -444,13 +444,13 @@ class RedisStorage(BaseStorage):
         distribution = self.get_trial(trial_id).distributions[param_name]
         return distribution.to_internal_repr(self.get_trial(trial_id).params[param_name])
 
-    def set_trial_value(self, trial_id: int, value: Sequence[float]) -> None:
+    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
         self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial.value = value
+        trial.values = values
         self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
     def _update_cache(self, trial_id: int) -> None:
@@ -484,16 +484,14 @@ class RedisStorage(BaseStorage):
 
         return
 
-    def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: Sequence[float]
-    ) -> None:
+    def set_trial_step_to_values(self, trial_id: int, step: int, values: Sequence[float]) -> None:
 
         self._check_trial_id(trial_id)
         frozen_trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, frozen_trial.state)
-        intermediate_values = copy.copy(frozen_trial.intermediate_values)
-        intermediate_values[step] = intermediate_value
-        frozen_trial.intermediate_values = intermediate_values
+        step_to_values = copy.copy(frozen_trial.step_to_values)
+        step_to_values[step] = values
+        frozen_trial.step_to_values = step_to_values
         self._set_trial(trial_id, frozen_trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:

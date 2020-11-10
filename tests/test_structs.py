@@ -17,14 +17,14 @@ def test_frozen_trial_deprecated() -> None:
             number=0,
             trial_id=0,
             state=TrialState.COMPLETE,
-            value=0.2,
+            values=(0.2,),
             datetime_start=datetime.datetime.now(),
             datetime_complete=datetime.datetime.now(),
             params={"x": 10},
             distributions={"x": UniformDistribution(5, 12)},
             user_attrs={},
             system_attrs={},
-            intermediate_values={},
+            step_to_values={},
         )
 
 

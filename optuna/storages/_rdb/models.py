@@ -572,25 +572,25 @@ class TrialValueModel(BaseModel):
         return session.query(cls).all()
 
 
-class TrialIntermediateValueModel(BaseModel):
-    __tablename__ = "trial_intermediate_values"
+class TrialStepToValueModel(BaseModel):
+    __tablename__ = "trial_step_to_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step", "objective_id"),)
-    trial_intermediate_value_id = Column(Integer, primary_key=True)
+    trial_step_to_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     objective_id = Column(Integer)
     step = Column(Integer)
     value = Column(Float)
 
     trial = orm.relationship(
-        TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
+        TrialModel, backref=orm.backref("step_to_values", cascade="all, delete-orphan")
     )
 
     @classmethod
     def find_by_trial_and_objective_id_and_step(
         cls, trial: TrialModel, step: int, objective_id: int, session: orm.Session
-    ) -> Optional["TrialIntermediateValueModel"]:
+    ) -> Optional["TrialStepToValueModel"]:
 
-        trial_intermediate_value = (
+        trial_step_to_value = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
             .filter(cls.objective_id == objective_id)
@@ -598,12 +598,10 @@ class TrialIntermediateValueModel(BaseModel):
             .one_or_none()
         )
 
-        return trial_intermediate_value
+        return trial_step_to_value
 
     @classmethod
-    def where_study(
-        cls, study: StudyModel, session: orm.Session
-    ) -> List["TrialIntermediateValueModel"]:
+    def where_study(cls, study: StudyModel, session: orm.Session) -> List["TrialStepToValueModel"]:
 
         trial_values = (
             session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
@@ -612,16 +610,14 @@ class TrialIntermediateValueModel(BaseModel):
         return trial_values
 
     @classmethod
-    def where_trial(
-        cls, trial: TrialModel, session: orm.Session
-    ) -> List["TrialIntermediateValueModel"]:
+    def where_trial(cls, trial: TrialModel, session: orm.Session) -> List["TrialStepToValueModel"]:
 
         trial_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
 
         return trial_values
 
     @classmethod
-    def all(cls, session: orm.Session) -> List["TrialIntermediateValueModel"]:
+    def all(cls, session: orm.Session) -> List["TrialStepToValueModel"]:
 
         return session.query(cls).all()
 

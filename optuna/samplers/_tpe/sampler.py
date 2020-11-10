@@ -771,8 +771,8 @@ def _get_observation_pairs(
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
-            if len(trial.intermediate_values) > 0:
-                step, intermediate_value = max(trial.intermediate_values.items())
+            if len(trial.step_to_value) > 0:
+                step, intermediate_value = max(trial.step_to_value.items())
                 if math.isnan(intermediate_value):
                     score = (-step, float("inf"))
                 else:
@@ -810,8 +810,8 @@ def _get_multivariate_observation_pairs(
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
-            if len(trial.intermediate_values) > 0:
-                step, intermediate_value = max(trial.intermediate_values.items())
+            if len(trial.step_to_value) > 0:
+                step, intermediate_value = max(trial.step_to_value.items())
                 if math.isnan(intermediate_value):
                     score = (-step, float("inf"))
                 else:

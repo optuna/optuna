@@ -785,14 +785,14 @@ def _create_frozen_trial() -> FrozenTrial:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
         distributions={"x": UniformDistribution(5, 12)},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
 
 
@@ -802,14 +802,14 @@ def test_frozen_trial_repr() -> None:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
         distributions={"x": UniformDistribution(5, 12)},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
 
     assert trial == eval(repr(trial))
@@ -847,14 +847,14 @@ def test_frozen_trial_suggest_float() -> None:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 0.2},
         distributions={"x": UniformDistribution(0.0, 1.0)},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
 
     assert trial.suggest_float("x", 0.0, 1.0) == 0.2
@@ -872,14 +872,14 @@ def test_frozen_trial_suggest_uniform() -> None:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 0.2},
         distributions={"x": UniformDistribution(0.0, 1.0)},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
 
     assert trial.suggest_uniform("x", 0.0, 1.0) == 0.2
@@ -894,14 +894,14 @@ def test_frozen_trial_suggest_loguniform() -> None:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 0.99},
         distributions={"x": LogUniformDistribution(0.1, 1.0)},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
     assert trial.suggest_loguniform("x", 0.1, 1.0) == 0.99
 
@@ -915,14 +915,14 @@ def test_frozen_trial_suggest_discrete_uniform() -> None:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 0.9},
         distributions={"x": DiscreteUniformDistribution(0.0, 1.0, q=0.1)},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
     assert trial.suggest_discrete_uniform("x", 0.0, 1.0, 0.1) == 0.9
 
@@ -936,14 +936,14 @@ def test_frozen_trial_suggest_int() -> None:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 1},
         distributions={"x": IntUniformDistribution(0, 10)},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
 
     assert trial.suggest_int("x", 0, 10) == 1
@@ -958,14 +958,14 @@ def test_frozen_trial_suggest_int_log() -> None:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 1},
         distributions={"x": IntLogUniformDistribution(1, 10)},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
 
     assert trial.suggest_int("x", 1, 10, log=True) == 1
@@ -984,14 +984,14 @@ def test_frozen_trial_suggest_categorical() -> None:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 1},
         distributions={"x": CategoricalDistribution((0, 1, 2, 3))},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
     assert trial.suggest_categorical("x", (0, 1, 2, 3)) == 1
 
@@ -1003,14 +1003,14 @@ def test_frozen_trial_suggest_categorical() -> None:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": "baz"},
         distributions={"x": CategoricalDistribution(("foo", "bar", "baz"))},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
     assert trial.suggest_categorical("x", ("foo", "bar", "baz")) == "baz"
 
@@ -1062,13 +1062,16 @@ def test_frozen_trial_set_value() -> None:
     trial.value = 0.1
     assert trial.value == 0.1
 
-    trial = _create_frozen_trial()
-    trial.value = (0.1, 0.2)
-    assert trial.value == (0.1, 0.2)
+
+def test_frozen_trial_set_values() -> None:
 
     trial = _create_frozen_trial()
-    trial.value = [0.1, 0.2]
-    assert trial.value == (0.1, 0.2)
+    trial.values = (0.1, 0.2)
+    assert trial.values == (0.1, 0.2)
+
+    trial = _create_frozen_trial()
+    trial.values = [0.1, 0.2]
+    assert trial.values == (0.1, 0.2)
 
 
 def test_frozen_trial_validate() -> None:
@@ -1146,14 +1149,14 @@ def test_frozen_trial_params() -> None:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params=params,
         distributions={"x": UniformDistribution(0, 10)},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
 
     assert trial.suggest_uniform("x", 0, 10) == 1
@@ -1172,14 +1175,14 @@ def test_frozen_trial_distributions() -> None:
         number=0,
         trial_id=0,
         state=TrialState.COMPLETE,
-        value=0.2,
+        values=(0.2,),
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 1},
         distributions=dict(distributions),
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
     )
     assert trial.distributions == distributions
 
@@ -1208,6 +1211,45 @@ def test_frozen_trial_system_attrs() -> None:
     assert trial.system_attrs == system_attrs
 
 
+def test_frozen_called_single_methods_when_multi() -> None:
+
+    state = TrialState.COMPLETE
+    values = (0.2, 0.3)
+    params = {"x": 10}
+    distributions = {"x": UniformDistribution(5, 12)}
+    user_attrs = {"foo": "bar"}
+    system_attrs = {"baz": "qux"}
+    step_to_values = {0: (0.0, 1.0), 1: (0.1, 0.11), 2: (0.1, 1.1)}
+
+    trial = create_trial(
+        state=state,
+        values=values,
+        params=params,
+        distributions=distributions,
+        user_attrs=user_attrs,
+        system_attrs=system_attrs,
+        step_to_values=step_to_values,
+    )
+
+    with pytest.raises(RuntimeError):
+        trial.value
+
+    with pytest.raises(RuntimeError):
+        trial.intermediate_values
+
+    with pytest.raises(RuntimeError):
+        trial.step_to_value
+
+    with pytest.raises(RuntimeError):
+        trial.value = 0.1
+
+    with pytest.raises(RuntimeError):
+        trial.intermediate_values = {0: 0.1}
+
+    with pytest.raises(RuntimeError):
+        trial.step_to_value = {0: 0.1}
+
+
 # TODO(hvy): Write exhaustive test include invalid combinations when feature is no longer
 # experimental.
 @pytest.mark.parametrize("state", [None, TrialState.COMPLETE, TrialState.FAIL])
@@ -1217,7 +1259,7 @@ def test_create_trial(state: TrialState) -> None:
     distributions = {"x": UniformDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
-    intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
+    step_to_value = {0: 0.0, 1: 0.1, 2: 0.1}
 
     trial = create_trial(
         state=state,
@@ -1226,7 +1268,7 @@ def test_create_trial(state: TrialState) -> None:
         distributions=distributions,
         user_attrs=user_attrs,
         system_attrs=system_attrs,
-        intermediate_values=intermediate_values,
+        step_to_value=step_to_value,
     )
 
     assert isinstance(trial, FrozenTrial)
@@ -1236,7 +1278,7 @@ def test_create_trial(state: TrialState) -> None:
     assert trial.distributions == distributions
     assert trial.user_attrs == user_attrs
     assert trial.system_attrs == system_attrs
-    assert trial.intermediate_values == intermediate_values
+    assert trial.step_to_value == step_to_value
     assert trial.datetime_start is not None
     assert (trial.datetime_complete is not None) == (state is None or state.is_finished())
 

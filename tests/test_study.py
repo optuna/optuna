@@ -92,15 +92,13 @@ def check_frozen_trial(frozen_trial: optuna.trial.FrozenTrial) -> None:
         check_value(frozen_trial.value)
 
 
-def check_study(study: optuna.study.BaseStudy) -> None:
+def check_study(study: optuna.Study) -> None:
 
     for trial in study.trials:
         check_frozen_trial(trial)
 
-    if isinstance(study, optuna.MultiObjectiveStudy):
+    if study._n_objectives > 1:
         return
-
-    assert isinstance(study, optuna.Study)
 
     complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
     if len(complete_trials) == 0:
@@ -475,7 +473,7 @@ def test_study_trials_dataframe_with_no_trials() -> None:
             "user_attrs",
             "system_attrs",
             "state",
-            "intermediate_values",
+            "step_to_value",
             "_trial_id",
             "distributions",
         ),
@@ -514,7 +512,7 @@ def test_trials_dataframe(storage_mode: str, attrs: Tuple[str, ...], multi_index
         #   distributions: 2
         #   user_attrs: 1
         #   system_attrs: 1
-        #   intermediate_values: 1
+        #   step_to_value: 1
         expected_n_columns = len(attrs)
         if "params" in attrs:
             expected_n_columns += 1
@@ -1010,12 +1008,10 @@ def test_log_completed_trial_skip_storage_access() -> None:
 
 def test_create_study_with_multi_objectives() -> None:
     study = optuna.create_study(direction=["maximize"])
-    assert isinstance(study, optuna.Study)
     assert study._n_objectives == 1
     assert study.direction == StudyDirection.MAXIMIZE
 
     study = optuna.create_study(direction=["maximize", "minimize"])
-    assert isinstance(study, optuna.MultiObjectiveStudy)
     assert study._n_objectives == 2
     assert study.directions == (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE)
 
@@ -1038,31 +1034,29 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
 
     print(study.trials)
     for trial in study.trials:
-        assert isinstance(trial.value, Sequence)
-        assert len(trial.value) == n_objectives
+        assert len(trial.values) == n_objectives
 
 
 def test_pareto_front() -> None:
     study = optuna.create_study(direction=["minimize", "maximize"])
-    assert isinstance(study, optuna.MultiObjectiveStudy)
-    assert {tuple(t.value) for t in study.get_best_trials()} == set()
+    assert {t.values for t in study.best_trials} == set()
 
     study.optimize(lambda t: [2, 2], n_trials=1)
-    assert {tuple(t.value) for t in study.get_best_trials()} == {(2, 2)}
+    assert {t.values for t in study.best_trials} == {(2, 2)}
 
     study.optimize(lambda t: [1, 1], n_trials=1)
-    assert {tuple(t.value) for t in study.get_best_trials()} == {(1, 1), (2, 2)}
+    assert {t.values for t in study.best_trials} == {(1, 1), (2, 2)}
 
     study.optimize(lambda t: [3, 1], n_trials=1)
-    assert {tuple(t.value) for t in study.get_best_trials()} == {(1, 1), (2, 2)}
+    assert {t.values for t in study.best_trials} == {(1, 1), (2, 2)}
 
     study.optimize(lambda t: [1, 3], n_trials=1)
-    assert {tuple(t.value) for t in study.get_best_trials()} == {(1, 3)}
-    assert len(study.get_best_trials()) == 1
+    assert {t.values for t in study.best_trials} == {(1, 3)}
+    assert len(study.best_trials) == 1
 
     study.optimize(lambda t: [1, 3], n_trials=1)  # The trial result is the same as the above one.
-    assert {tuple(t.value) for t in study.get_best_trials()} == {(1, 3)}
-    assert len(study.get_best_trials()) == 2
+    assert {t.values for t in study.best_trials} == {(1, 3)}
+    assert len(study.best_trials) == 2
 
 
 def test_callbacks_with_multi_objectives() -> None:

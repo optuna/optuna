@@ -3,7 +3,7 @@ from typing import Any
 from typing import Dict
 
 from optuna.distributions import BaseDistribution
-from optuna.study import BaseStudy
+from optuna.study import Study
 from optuna.trial import FrozenTrial
 
 
@@ -41,7 +41,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def infer_relative_search_space(
-        self, study: BaseStudy, trial: FrozenTrial
+        self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         """Infer the search space that will be used by relative sampling in the target trial.
 
@@ -69,7 +69,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def sample_relative(
-        self, study: BaseStudy, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
         """Sample parameters in a given search space.
 
@@ -102,7 +102,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def sample_independent(
         self,
-        study: BaseStudy,
+        study: Study,
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -140,7 +140,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
     def reseed_rng(self) -> None:
         """Reseed sampler's random number generator.
 
-        This method is called by the :class:`~optuna.study.BaseStudy` instance if trials are executed
+        This method is called by the :class:`~optuna.study.Study` instance if trials are executed
         in parallel with the option ``n_jobs>1``. In that case, the sampler instance will be
         replicated including the state of the random number generator, and they may suggest the
         same values. To prevent this issue, this method assigns a different seed to each random

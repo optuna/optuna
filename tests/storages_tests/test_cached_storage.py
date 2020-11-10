@@ -13,14 +13,14 @@ def test_create_trial() -> None:
     frozen_trial = optuna.trial.FrozenTrial(
         number=1,
         state=TrialState.RUNNING,
-        value=None,
+        values=None,
         datetime_start=None,
         datetime_complete=None,
         params={},
         distributions={},
         user_attrs={},
         system_attrs={},
-        intermediate_values={},
+        step_to_values={},
         trial_id=1,
     )
     with patch.object(base_storage, "_create_new_trial", return_value=frozen_trial):
@@ -53,8 +53,10 @@ def test_cached_set() -> None:
     trial_id = storage.create_new_trial(study_id)
     with patch.object(
         base_storage, "_update_trial", return_value=True
-    ) as update_mock, patch.object(base_storage, "set_trial_value", return_value=None) as set_mock:
-        storage.set_trial_value(trial_id, (0.3,))
+    ) as update_mock, patch.object(
+        base_storage, "set_trial_values", return_value=None
+    ) as set_mock:
+        storage.set_trial_values(trial_id, (0.3,))
         assert update_mock.call_count == 0
         assert set_mock.call_count == 0
 
@@ -64,7 +66,7 @@ def test_uncached_set() -> None:
     """Test CachedStorage does flush to persistent storages.
 
     The CachedStorage flushes modifications of trials to a persistent storage when
-    it modifies either intermediate_values, state, user_attrs, or system_attrs.
+    it modifies either step_to_value, state, user_attrs, or system_attrs.
 
     """
 
@@ -87,9 +89,9 @@ def test_uncached_set() -> None:
     with patch.object(
         base_storage, "_update_trial", return_value=True
     ) as update_mock, patch.object(
-        base_storage, "set_trial_intermediate_value", return_value=None
+        base_storage, "set_trial_step_to_values", return_value=None
     ) as set_mock:
-        storage.set_trial_intermediate_value(trial_id, 3, (0.3,))
+        storage.set_trial_step_to_values(trial_id, 3, (0.3,))
         assert update_mock.call_count == 1
         assert set_mock.call_count == 0
 

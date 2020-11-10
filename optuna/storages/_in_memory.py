@@ -199,8 +199,8 @@ class InMemoryStorage(BaseStorage):
             distributions={},
             user_attrs={},
             system_attrs={},
-            value=None,
-            intermediate_values={},
+            values=None,
+            step_to_values={},
             datetime_start=datetime.now(),
             datetime_complete=None,
         )
@@ -288,7 +288,7 @@ class InMemoryStorage(BaseStorage):
             distribution = trial.distributions[param_name]
             return distribution.to_internal_repr(trial.params[param_name])
 
-    def set_trial_value(self, trial_id: int, value: Sequence[float]) -> None:
+    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
         with self._lock:
             trial = self._get_trial(trial_id)
@@ -297,7 +297,7 @@ class InMemoryStorage(BaseStorage):
             trial = copy.copy(trial)
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            trial.value = value
+            trial.values = values
             self._set_trial(trial_id, trial)
 
     def _update_cache(self, trial_id: int, study_id: int) -> None:
@@ -334,18 +334,16 @@ class InMemoryStorage(BaseStorage):
             if best_value > new_value:
                 self._studies[study_id].best_trial_id = trial_id
 
-    def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: Sequence[float]
-    ) -> None:
+    def set_trial_step_to_values(self, trial_id: int, step: int, values: Sequence[float]) -> None:
 
         with self._lock:
             trial = self._get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial = copy.copy(trial)
-            intermediate_values = copy.copy(trial.intermediate_values)
-            intermediate_values[step] = intermediate_value
-            trial.intermediate_values = intermediate_values
+            step_to_values = copy.copy(trial.step_to_values)
+            step_to_values[step] = values
+            trial.step_to_values = step_to_values
             self._set_trial(trial_id, trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:

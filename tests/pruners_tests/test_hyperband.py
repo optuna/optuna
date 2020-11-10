@@ -17,7 +17,7 @@ N_REPORTS = 10
 EXPECTED_N_TRIALS_PER_BRACKET = 10
 
 
-def test_hyperband_pruner_intermediate_values() -> None:
+def test_hyperband_pruner_step_to_value() -> None:
     pruner = optuna.pruners.HyperbandPruner(
         min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
     )

@@ -335,13 +335,13 @@ def _create_frozen_trial(
 
     return FrozenTrial(
         number=number,
-        value=1.0,
+        values=(1.0,),
         state=state,
         user_attrs={},
         system_attrs={},
         params=params,
         distributions=param_distributions,
-        intermediate_values={},
+        step_to_values={},
         datetime_start=None,
         datetime_complete=None,
         trial_id=number,

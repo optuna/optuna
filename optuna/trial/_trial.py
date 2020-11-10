@@ -572,15 +572,15 @@ class Trial(BaseTrial):
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
-        intermediate_values = self.storage.get_trial(self._trial_id).intermediate_values
+        step_to_value = self.storage.get_trial(self._trial_id).step_to_value
 
-        if step in intermediate_values:
+        if step in step_to_value:
             # Do nothing if already reported.
             # TODO(hvy): Consider raising a warning or an error.
             # See https://github.com/optuna/optuna/issues/852.
             return
 
-        self.storage.set_trial_intermediate_value(self._trial_id, step, (value,))
+        self.storage.set_trial_step_to_values(self._trial_id, step, (value,))
 
     def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.

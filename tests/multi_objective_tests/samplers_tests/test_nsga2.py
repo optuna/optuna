@@ -204,13 +204,13 @@ def _create_frozen_trial(
         number=number,
         trial_id=number,
         state=optuna.trial.TrialState.COMPLETE,
-        value=None,
+        values=None,
         datetime_start=None,
         datetime_complete=None,
         params={},
         distributions={},
         user_attrs={},
         system_attrs={},
-        intermediate_values={i: v for i, v in enumerate(values)},
+        step_to_values={i: (v,) for i, v in enumerate(values)},
     )
     return multi_objective.trial.FrozenMultiObjectiveTrial(len(values), trial)

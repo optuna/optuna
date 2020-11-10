@@ -122,11 +122,11 @@ class ThresholdPruner(BasePruner):
             return False
 
         if not _is_first_in_interval_step(
-            step, trial.intermediate_values.keys(), n_warmup_steps, self._interval_steps
+            step, trial.step_to_value.keys(), n_warmup_steps, self._interval_steps
         ):
             return False
 
-        latest_value = trial.intermediate_values[step]
+        latest_value = trial.step_to_value[step]
         if math.isnan(latest_value):
             return True
 

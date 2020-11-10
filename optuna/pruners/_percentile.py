@@ -15,7 +15,7 @@ def _get_best_intermediate_result_over_steps(
     trial: "optuna.trial.FrozenTrial", direction: StudyDirection
 ) -> float:
 
-    values = np.array(list(trial.intermediate_values.values()), np.float)
+    values = np.array(list(trial.step_to_value.values()), np.float)
     if direction == StudyDirection.MAXIMIZE:
         return np.nanmax(values)
     return np.nanmin(values)
@@ -33,11 +33,9 @@ def _get_percentile_intermediate_result_over_trials(
     if len(completed_trials) == 0:
         raise ValueError("No trials have been completed.")
 
-    intermediate_values = [
-        t.intermediate_values[step] for t in completed_trials if step in t.intermediate_values
-    ]
+    step_to_value = [t.step_to_value[step] for t in completed_trials if step in t.step_to_value]
 
-    if not intermediate_values:
+    if not step_to_value:
         return math.nan
 
     if direction == StudyDirection.MAXIMIZE:
@@ -45,7 +43,7 @@ def _get_percentile_intermediate_result_over_trials(
 
     return float(
         np.nanpercentile(
-            np.array(intermediate_values, np.float),
+            np.array(step_to_value, np.float),
             percentile,
         )
     )
@@ -181,7 +179,7 @@ class PercentilePruner(BasePruner):
             return False
 
         if not _is_first_in_interval_step(
-            step, trial.intermediate_values.keys(), n_warmup_steps, self._interval_steps
+            step, trial.step_to_value.keys(), n_warmup_steps, self._interval_steps
         ):
             return False
 

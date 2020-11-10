@@ -63,7 +63,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     Then, any reads on any attributes of `T` are guaranteed to return the same or
     more recent values than any writes by `P` on the attribute before `P` updated
     the `state` attribute of `T`.
-    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+    The same applies for `user_attrs', 'system_attrs' and 'step_to_value` attributes.
 
     .. note::
 
@@ -78,7 +78,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     of `Study` and writes on `state` of `Trial` are guaranteed to be persistent.
     Additionally, any preceding writes on any attributes of `Trial` are guaranteed to
     be written into a persistent storage before writes on `state` of `Trial` succeed.
-    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+    The same applies for `user_attrs', 'system_attrs' and 'step_to_value` attributes.
 
     .. note::
 
@@ -416,7 +416,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_value(self, trial_id: int, value: Sequence[float]) -> None:
+    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
         """Set a return value of an objective function.
 
         This method overwrites any existing trial value.
@@ -424,7 +424,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         Args:
             trial_id:
                 ID of the trial.
-            value:
+            values:
                 Value of the objective function.
 
         Raises:
@@ -436,9 +436,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: Sequence[float]
-    ) -> None:
+    def set_trial_step_to_values(self, trial_id: int, step: int, values: Sequence[float]) -> None:
         """Report an intermediate value of an objective function.
 
         This method overwrites any existing intermediate value associated with the given step.
@@ -448,7 +446,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 ID of the trial.
             step:
                 Step of the trial (e.g., the epoch when training a neural network).
-            intermediate_value:
+            values:
                 Intermediate value corresponding to the step.
 
         Raises:

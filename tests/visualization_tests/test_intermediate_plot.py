@@ -11,9 +11,9 @@ def test_plot_intermediate_values() -> None:
     figure = plot_intermediate_values(study)
     assert not figure.data
 
-    def objective(trial: Trial, report_intermediate_values: bool) -> float:
+    def objective(trial: Trial, report_step_to_value: bool) -> float:
 
-        if report_intermediate_values:
+        if report_step_to_value:
             trial.report(1.0, step=0)
             trial.report(2.0, step=1)
         return 0.0

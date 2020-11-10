@@ -21,8 +21,8 @@ from optuna.trial import TrialState
 class _TrialUpdate:
     def __init__(self) -> None:
         self.state: Optional[TrialState] = None
-        self.value: Optional[Sequence[float]] = None
-        self.intermediate_values: Dict[int, Sequence[float]] = {}
+        self.values: Optional[Sequence[float]] = None
+        self.step_to_values: Dict[int, Sequence[float]] = {}
         self.user_attrs: Dict[str, Any] = {}
         self.system_attrs: Dict[str, Any] = {}
         self.params: Dict[str, Any] = {}
@@ -271,36 +271,34 @@ class _CachedStorage(BaseStorage):
         trial = self.get_trial(trial_id)
         return trial.distributions[param_name].to_internal_repr(trial.params[param_name])
 
-    def set_trial_value(self, trial_id: int, value: Sequence[float]) -> None:
+    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
-                cached_trial.value = value
-                updates.value = value
+                cached_trial.values = values
+                updates.values = values
                 return
 
-        self._backend._update_trial(trial_id, value=value)
+        self._backend._update_trial(trial_id, values=values)
 
-    def set_trial_intermediate_value(
-        self, trial_id: int, step: int, intermediate_value: Sequence[float]
-    ) -> None:
+    def set_trial_step_to_values(self, trial_id: int, step: int, values: Sequence[float]) -> None:
 
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
-                intermediate_values = copy.copy(cached_trial.intermediate_values)
-                intermediate_values[step] = intermediate_value
-                cached_trial.intermediate_values = intermediate_values
-                updates.intermediate_values[step] = intermediate_value
+                step_to_values = copy.copy(cached_trial.step_to_values)
+                step_to_values[step] = values
+                cached_trial.step_to_values = step_to_values
+                updates.step_to_values[step] = values
                 self._flush_trial(trial_id)
                 return
 
-        self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
+        self._backend.set_trial_step_to_values(trial_id, step, values)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -397,8 +395,8 @@ class _CachedStorage(BaseStorage):
         del study.updates[number]
         return self._backend._update_trial(
             trial_id=trial_id,
-            value=updates.value,
-            intermediate_values=updates.intermediate_values,
+            values=updates.values,
+            step_to_values=updates.step_to_values,
             state=updates.state,
             params=updates.params,
             distributions_=updates.distributions,

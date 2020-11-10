@@ -327,7 +327,7 @@ def test_create_new_trial(storage_mode: str) -> None:
         assert {t.number for t in trials} == set(range(idx + 1))
         assert all(t.state == TrialState.RUNNING for t in trials)
         assert all(t.params == {} for t in trials)
-        assert all(t.intermediate_values == {} for t in trials)
+        assert all(t.step_to_value == {} for t in trials)
         assert all(t.user_attrs == {} for t in trials)
         assert all(t.system_attrs == {} for t in trials)
         assert all(
@@ -379,14 +379,14 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
     complete_time = datetime.now()
     template_trial = FrozenTrial(
         state=TrialState.COMPLETE,
-        value=10000,
+        values=(10000,),
         datetime_start=start_time,
         datetime_complete=complete_time,
         params={"x": 0.5},
         distributions={"x": UniformDistribution(0, 1)},
         user_attrs={"foo": "bar"},
         system_attrs={"baz": 123},
-        intermediate_values={1: 10, 2: 100, 3: 1000},
+        step_to_values={1: (10,), 2: (100,), 3: (1000,)},
         number=55,  # This entry is ignored.
         trial_id=-1,  # dummy value (unused).
     )
@@ -399,7 +399,7 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
         assert all(t.state == template_trial.state for t in trials)
         assert all(t.params == template_trial.params for t in trials)
         assert all(t.distributions == template_trial.distributions for t in trials)
-        assert all(t.intermediate_values == template_trial.intermediate_values for t in trials)
+        assert all(t.step_to_value == template_trial.step_to_value for t in trials)
         assert all(t.user_attrs == template_trial.user_attrs for t in trials)
         assert all(t.system_attrs == template_trial.system_attrs for t in trials)
         assert all(t.datetime_start == template_trial.datetime_start for t in trials)
@@ -460,7 +460,7 @@ def test_set_trial_state(storage_mode: str) -> None:
                 continue
             assert storage.get_trial(trial_id).state == TrialState.RUNNING
             if state.is_finished():
-                storage.set_trial_value(trial_id, (0.0,))
+                storage.set_trial_values(trial_id, (0.0,))
             storage.set_trial_state(trial_id, state)
             assert storage.get_trial(trial_id).state == state
             if state.is_finished():
@@ -472,7 +472,7 @@ def test_set_trial_state(storage_mode: str) -> None:
             if not state.is_finished():
                 continue
             trial_id = storage.create_new_trial(study_id)
-            storage.set_trial_value(trial_id, (0.0,))
+            storage.set_trial_values(trial_id, (0.0,))
             storage.set_trial_state(trial_id, state)
             for state2 in ALL_STATES:
                 # Cannot update states of finished trials.
@@ -580,7 +580,7 @@ def test_set_trial_param(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_set_trial_value(storage_mode: str) -> None:
+def test_set_trial_values(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
 
@@ -593,33 +593,33 @@ def test_set_trial_value(storage_mode: str) -> None:
         trial_id_5 = storage.create_new_trial(study_id)
 
         # Test setting new value.
-        storage.set_trial_value(trial_id_1, (0.5,))
-        storage.set_trial_value(trial_id_3, (float("inf"),))
-        storage.set_trial_value(trial_id_4, (0.1, 0.2, 0.3))
-        storage.set_trial_value(trial_id_5, [0.1, 0.2, 0.3])
+        storage.set_trial_values(trial_id_1, (0.5,))
+        storage.set_trial_values(trial_id_3, (float("inf"),))
+        storage.set_trial_values(trial_id_4, (0.1, 0.2, 0.3))
+        storage.set_trial_values(trial_id_5, [0.1, 0.2, 0.3])
 
         assert storage.get_trial(trial_id_1).value == 0.5
         assert storage.get_trial(trial_id_2).value is None
         assert storage.get_trial(trial_id_3).value == float("inf")
-        assert storage.get_trial(trial_id_4).value == (0.1, 0.2, 0.3)
-        assert storage.get_trial(trial_id_5).value == (0.1, 0.2, 0.3)
+        assert storage.get_trial(trial_id_4).values == (0.1, 0.2, 0.3)
+        assert storage.get_trial(trial_id_5).values == (0.1, 0.2, 0.3)
 
         # Values can be overwritten.
-        storage.set_trial_value(trial_id_1, (0.2,))
+        storage.set_trial_values(trial_id_1, (0.2,))
         assert storage.get_trial(trial_id_1).value == 0.2
 
         non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3, trial_id_4, trial_id_5) + 1
         with pytest.raises(KeyError):
-            storage.set_trial_value(non_existent_trial_id, (1,))
+            storage.set_trial_values(non_existent_trial_id, (1,))
 
         storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
         # Cannot change values of finished trials.
         with pytest.raises(RuntimeError):
-            storage.set_trial_value(trial_id_1, (1,))
+            storage.set_trial_values(trial_id_1, (1,))
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_set_trial_intermediate_value(storage_mode: str) -> None:
+def test_set_trial_step_to_values(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
 
@@ -632,32 +632,32 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         trial_id_5 = storage.create_new_trial(study_id)
 
         # Test setting new values.
-        storage.set_trial_intermediate_value(trial_id_1, 0, (0.3,))
-        storage.set_trial_intermediate_value(trial_id_1, 2, (0.4,))
-        storage.set_trial_intermediate_value(trial_id_3, 0, (0.1,))
-        storage.set_trial_intermediate_value(trial_id_3, 1, (0.4,))
-        storage.set_trial_intermediate_value(trial_id_3, 2, (0.5,))
-        storage.set_trial_intermediate_value(trial_id_4, 0, (0.1, 0.2, 0.3))
-        storage.set_trial_intermediate_value(trial_id_5, 0, [0.1, 0.2, 0.3])
+        storage.set_trial_step_to_values(trial_id_1, 0, (0.3,))
+        storage.set_trial_step_to_values(trial_id_1, 2, (0.4,))
+        storage.set_trial_step_to_values(trial_id_3, 0, (0.1,))
+        storage.set_trial_step_to_values(trial_id_3, 1, (0.4,))
+        storage.set_trial_step_to_values(trial_id_3, 2, (0.5,))
+        storage.set_trial_step_to_values(trial_id_4, 0, (0.1, 0.2, 0.3))
+        storage.set_trial_step_to_values(trial_id_5, 0, [0.1, 0.2, 0.3])
 
-        assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
-        assert storage.get_trial(trial_id_2).intermediate_values == {}
-        assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
-        assert storage.get_trial(trial_id_4).intermediate_values == {0: (0.1, 0.2, 0.3)}
-        assert storage.get_trial(trial_id_5).intermediate_values == {0: (0.1, 0.2, 0.3)}
+        assert storage.get_trial(trial_id_1).step_to_value == {0: 0.3, 2: 0.4}
+        assert storage.get_trial(trial_id_2).step_to_value == {}
+        assert storage.get_trial(trial_id_3).step_to_value == {0: 0.1, 1: 0.4, 2: 0.5}
+        assert storage.get_trial(trial_id_4).step_to_values == {0: (0.1, 0.2, 0.3)}
+        assert storage.get_trial(trial_id_5).step_to_values == {0: (0.1, 0.2, 0.3)}
 
         # Test setting existing step.
-        storage.set_trial_intermediate_value(trial_id_1, 0, (0.2,))
-        assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.2, 2: 0.4}
+        storage.set_trial_step_to_values(trial_id_1, 0, (0.2,))
+        assert storage.get_trial(trial_id_1).step_to_value == {0: 0.2, 2: 0.4}
 
         non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3, trial_id_4, trial_id_5) + 1
         with pytest.raises(KeyError):
-            storage.set_trial_intermediate_value(non_existent_trial_id, 0, (0.2,))
+            storage.set_trial_step_to_values(non_existent_trial_id, 0, (0.2,))
 
         storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
         # Cannot change values of finished trials.
         with pytest.raises(RuntimeError):
-            storage.set_trial_intermediate_value(trial_id_1, 0, (0.2,))
+            storage.set_trial_step_to_values(trial_id_1, 0, (0.2,))
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -825,6 +825,12 @@ def test_get_all_trials(storage_mode: str) -> None:
             trials = storage.get_all_trials(study_id)
             for trial in trials:
                 expected_trial = expected_trials[trial._trial_id]
+                for k, x, y in zip(
+                    trial.__dict__.keys(),
+                    trial.__dict__.values(),
+                    expected_trial.__dict__.values(),
+                ):
+                    print(f"{k}: {x} v.s. {y}")
                 assert trial == expected_trial
 
         non_existent_study_id = max(study_to_trials.keys()) + 1
@@ -989,7 +995,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     distributions = {}
     user_attrs = {}
     system_attrs = {}
-    intermediate_values: Dict[int, Union[float, Sequence[float]]] = {}
+    step_to_values: Dict[int, Sequence[float]] = {}
     for key, (value, dist) in example_params.items():
         if generator.choice([True, False]):
             params[key] = value
@@ -1001,18 +1007,18 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
             system_attrs["sys_" + key] = value
     for i in range(generator.randint(4, 10)):
         if generator.choice([True, False]):
-            intermediate_values[i] = generator.uniform(-10, 10)
+            step_to_values[i] = (generator.uniform(-10, 10),)
     return FrozenTrial(
         number=0,  # dummy
         state=state,
-        value=generator.uniform(-10, 10),
+        values=(generator.uniform(-10, 10),),
         datetime_start=datetime.now(),
         datetime_complete=datetime.now() if state.is_finished() else None,
         params=params,
         distributions=distributions,
         user_attrs=user_attrs,
         system_attrs=system_attrs,
-        intermediate_values=intermediate_values,
+        step_to_values=step_to_values,
         trial_id=0,  # dummy
     )
 
@@ -1028,7 +1034,7 @@ def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> N
         for i in range(3):
             template_trial = _generate_trial(generator)
             template_trial.state = TrialState.COMPLETE
-            template_trial.value = [i, i + 1]
+            template_trial.values = [i, i + 1]
             storage.create_new_trial(study_id, template_trial=template_trial)
         with pytest.raises(ValueError):
             storage.get_best_trial(study_id)

@@ -198,7 +198,7 @@ def _run_trial(
         study._tell(
             trial,
             TrialState.PRUNED,
-            None if last_step is None else frozen_trial.intermediate_values[last_step],
+            None if last_step is None else frozen_trial.step_to_values[last_step],
         )
         _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
         return trial
@@ -217,7 +217,7 @@ def _run_trial(
 
     if failure_message is None:
         assert checked_value is not None
-        study._storage.set_trial_value(trial_id, checked_value)
+        study._storage.set_trial_values(trial_id, checked_value)
         study._storage.set_trial_state(trial_id, TrialState.COMPLETE)
         study._log_completed_trial(trial, checked_value)
     else:
