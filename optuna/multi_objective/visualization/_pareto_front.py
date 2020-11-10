@@ -121,10 +121,15 @@ def _get_pareto_front_2d(
 
     if axis_order is None:
         axis_order = list(range(2))
-    elif max(axis_order) > 1:
-        _logger.warning("axis_order contains invalid index higher than 1")
-    elif min(axis_order) < 0:
-        _logger.warning("axis_order contains invalid index lower than 0")
+    else:
+        if len(axis_order) != 2:
+            raise ValueError(f"Size of `axis_order`. Expect: 2, Actual: {len(axis_order)}")
+        if (np.unique(axis_order).size != 2):
+            raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!")
+        if max(axis_order) > 1:
+            _logger.warning("axis_order contains invalid index higher than 1")
+        elif min(axis_order) < 0:
+            _logger.warning("axis_order contains invalid index lower than 0")
 
     data = go.Scatter(
         x=[t.values[axis_order[0]] for t in trials],
