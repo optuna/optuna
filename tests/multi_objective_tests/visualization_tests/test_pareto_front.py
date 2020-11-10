@@ -2,6 +2,7 @@ import itertools
 from typing import List
 from typing import Optional
 
+import numpy as np
 import pytest
 
 import optuna
@@ -228,3 +229,55 @@ def test_plot_pareto_front_unsupported_dimensions(include_dominated_trials: bool
         )
         study.optimize(lambda t: [0, 0, 0, 0], n_trials=1)
         plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
+
+
+@pytest.mark.parametrize("dimension", [2, 3])
+@pytest.mark.parametrize("include_dominated_trials", [False, True])
+def test_plot_pareto_front_invalid_axis_order(
+    dimension: int, include_dominated_trials: bool
+) -> None:
+    study = optuna.multi_objective.create_study(["minimize"] * dimension)
+
+    # Invalid: len(axis_order) != dimension
+    with pytest.raises(ValueError):
+        invalid_axis_order = list(range(dimension + 1))
+        assert len(invalid_axis_order) != dimension
+        plot_pareto_front(
+            study,
+            include_dominated_trials=include_dominated_trials,
+            axis_order=invalid_axis_order,
+        )
+
+    # Invalid: np.unique(axis_order).size != dimension
+    with pytest.raises(ValueError):
+        invalid_axis_order = list(range(dimension))
+        invalid_axis_order[1] = invalid_axis_order[0]
+        assert np.unique(invalid_axis_order).size != dimension
+        plot_pareto_front(
+            study,
+            include_dominated_trials=include_dominated_trials,
+            axis_order=invalid_axis_order,
+        )
+
+    # Invalid: max(axis_order) > (dimension - 1)
+    with pytest.raises(ValueError):
+        invalid_axis_order = list(range(dimension))
+        invalid_axis_order[-1] += 1
+        assert max(invalid_axis_order) > (dimension - 1)
+        plot_pareto_front(
+            study,
+            include_dominated_trials=include_dominated_trials,
+            axis_order=invalid_axis_order,
+        )
+
+    # Invalid: min(axis_order) < 0
+    with pytest.raises(ValueError):
+        study = optuna.multi_objective.create_study(["minimize", "minimize"])
+        invalid_axis_order = list(range(dimension))
+        invalid_axis_order[0] -= 1
+        assert min(invalid_axis_order) < 0
+        plot_pareto_front(
+            study,
+            include_dominated_trials=include_dominated_trials,
+            axis_order=invalid_axis_order,
+        )
