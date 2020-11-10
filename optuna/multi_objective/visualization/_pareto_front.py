@@ -2,6 +2,8 @@ import json
 from typing import List
 from typing import Optional
 
+import numpy as np
+
 import optuna
 from optuna import multi_objective
 from optuna._experimental import experimental
@@ -123,13 +125,21 @@ def _get_pareto_front_2d(
         axis_order = list(range(2))
     else:
         if len(axis_order) != 2:
-            raise ValueError(f"Size of `axis_order`. Expect: 2, Actual: {len(axis_order)}")
-        if (np.unique(axis_order).size != 2):
+            raise ValueError(
+                f"Size of `axis_order` {axis_order}. Expect: 2, Actual: {len(axis_order)}"
+            )
+        if np.unique(axis_order).size != 2:
             raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!")
         if max(axis_order) > 1:
-            _logger.warning("axis_order contains invalid index higher than 1")
-        elif min(axis_order) < 0:
-            _logger.warning("axis_order contains invalid index lower than 0")
+            raise ValueError(
+                f"Given `axis_order` {axis_order} contains invalid index {max(axis_order)} "
+                "higher than 1"
+            )
+        if min(axis_order) < 0:
+            raise ValueError(
+                f"Given `axis_order` {axis_order} contains invalid index {min(axis_order)} "
+                "lower than 0"
+            )
 
     data = go.Scatter(
         x=[t.values[axis_order[0]] for t in trials],
@@ -170,10 +180,23 @@ def _get_pareto_front_3d(
 
     if axis_order is None:
         axis_order = list(range(3))
-    elif max(axis_order) > 2:
-        _logger.warning("axis_order contains invalid index higher than 2")
-    elif min(axis_order) < 0:
-        _logger.warning("axis_order contains invalid index lower than 0")
+    else:
+        if len(axis_order) != 3:
+            raise ValueError(
+                f"Size of `axis_order` {axis_order}. Expect: 3, Actual: {len(axis_order)}"
+            )
+        if np.unique(axis_order).size != 3:
+            raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!")
+        if max(axis_order) > 2:
+            raise ValueError(
+                f"Given `axis_order` {axis_order} contains invalid index {max(axis_order)} "
+                "higher than 2"
+            )
+        if min(axis_order) < 0:
+            raise ValueError(
+                f"Given `axis_order` {axis_order} contains invalid index {min(axis_order)} "
+                "lower than 0"
+            )
 
     data = go.Scatter3d(
         x=[t.values[axis_order[0]] for t in trials],
