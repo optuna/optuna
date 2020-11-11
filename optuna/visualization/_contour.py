@@ -110,7 +110,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
 
         elif _is_categorical(trials, p_name):
             # For numeric values, plotly does not automatically plot as "category" type.
-            update_category_axes[p_name] = any([str(v).isnumeric() for v in set(values)])
+            update_category_axes[p_name] = any(str(v).isnumeric() for v in set(values))
 
         else:
             padding = (max_value - min_value) * padding_ratio

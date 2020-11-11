@@ -308,7 +308,7 @@ class _Optimizer(object):
                 # TODO(Yanase): Support one-hot representation.
                 lows.append(-0.5)
                 highs.append(len(dist.choices) - 0.5)
-            elif isinstance(dist, UniformDistribution) or isinstance(dist, LogUniformDistribution):
+            elif isinstance(dist, (UniformDistribution, LogUniformDistribution)):
                 lows.append(self._to_cma_params(search_space, param_name, dist.low))
                 highs.append(self._to_cma_params(search_space, param_name, dist.high) - _EPS)
             elif isinstance(dist, DiscreteUniformDistribution):

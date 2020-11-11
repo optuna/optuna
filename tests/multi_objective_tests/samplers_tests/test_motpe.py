@@ -634,7 +634,7 @@ def frozen_trial_factory(
         distributions={"param-a": dist},
         user_attrs={},
         system_attrs={},
-        intermediate_values={i: v for i, v in enumerate(values)},
+        intermediate_values=dict(enumerate(values)),
     )
     return trial
 

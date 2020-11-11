@@ -616,7 +616,7 @@ class TPESampler(BaseSampler):
 
         if size == (0,):
             return np.asarray([], dtype=float)
-        assert len(size)
+        assert size
 
         if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
             probabilities = probabilities[0]

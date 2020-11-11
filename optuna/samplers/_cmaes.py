@@ -253,7 +253,7 @@ class CmaEsSampler(BaseSampler):
 
         # TODO(c-bata): Remove `ordered_keys` by passing `ordered_dict=True`
         # to `intersection_search_space`.
-        ordered_keys = [key for key in search_space]
+        ordered_keys = list(search_space)
         ordered_keys.sort()
 
         optimizer, n_restarts = self._restore_optimizer(completed_trials)

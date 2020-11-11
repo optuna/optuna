@@ -65,7 +65,7 @@ def _trials_dataframe(
                 column_agg[attr].add((df_column, non_nested_attr))
         return record
 
-    records = list([_create_record_and_aggregate_column(trial) for trial in trials])
+    records = [_create_record_and_aggregate_column(trial) for trial in trials]
 
     columns: List[Tuple[str, str]] = sum(
         (sorted(column_agg[k]) for k in attrs if k in column_agg), []
