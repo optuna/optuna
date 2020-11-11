@@ -93,7 +93,7 @@ class LightGBMPruningCallback(object):
 
             if is_higher_better:
                 if (
-                    self._trial.storage.get_study_direction(self._trial.study._study_id)
+                    self._trial.storage.get_study_direction(self._trial.study._study_id)[0]
                     != optuna.study.StudyDirection.MAXIMIZE
                 ):
                     raise ValueError(
@@ -103,7 +103,7 @@ class LightGBMPruningCallback(object):
                     )
             else:
                 if (
-                    self._trial.storage.get_study_direction(self._trial.study._study_id)
+                    self._trial.storage.get_study_direction(self._trial.study._study_id)[0]
                     != optuna.study.StudyDirection.MINIMIZE
                 ):
                     raise ValueError(
