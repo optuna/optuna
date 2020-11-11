@@ -1,4 +1,4 @@
-name: Tests
+name: Coverage
 
 on:
   push:
@@ -9,12 +9,8 @@ on:
     - cron: '0 23 * * SUN-THU'
 
 jobs:
-  tests:
+  coverage:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: [3.6, 3.7, 3.8]
 
     services:
       redis:
@@ -32,20 +28,25 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Setup Python${{ matrix.python-version }}
+    - name: Setup Python3.7
       uses: actions/setup-python@v2
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: 3.7
 
     - name: Setup cache
       uses: actions/cache@v2
       env:
-        cache-name: test
+        cache-name: coverage
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+
+    - name: Setup environment
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install openmpi-bin libopenmpi-dev
 
     - name: Install
       run: |
@@ -59,12 +60,23 @@ jobs:
 
         pip install --progress-bar off .[tests]
         pip install --progress-bar off .[optional]
+        pip install --progress-bar off .[integration] -f https://download.pytorch.org/whl/torch_stable.html
+        pip install --progress-bar off .[codecov]
 
         # Required for samplers_tests/test_samplers.py.
-        # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional depenendencies and remove these installs.
+        # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
         pip install scikit-optimize
         pip install cma
 
     - name: Tests
       run: |
-        pytest tests --ignore tests/integration_tests
+        pytest --cov=optuna --cov-report=xml tests
+
+    - name: Tests MPI
+      run: |
+        mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+      env:
+        OMP_NUM_THREADS: 1
+
+    - name: Codecov
+      uses: codecov/codecov-actions@v1

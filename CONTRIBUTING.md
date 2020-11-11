@@ -92,11 +92,20 @@ pytest
 pytest tests/${TARGET_TEST_FILE_NAME}
 ```
 
+### Tips
+
+- `-v` / `--verbose` tells which test cases are running and which test cases are failed. 
+- `-k EXPRESSOPN` only run tests which match the given substring expression.
+
+See [pytest command-line options](https://docs.pytest.org/en/stable/reference.html#command-line-flags) for other options and further details.
+
 ## Continuous Integration and Local Verification
 
-CircleCI is used for continuous integration.
+We are now using GitHub Actions mainly and CircleCI is used only for `document` build and RDB storage tests.
 
 ### Local Verification
+
+#### CircleCI
 
 By installing the [`circleci`](https://circleci.com/docs/2.0/local-cli/) local CLI and Docker, you can run tests locally.
 
@@ -106,26 +115,37 @@ circleci build --job <job_name>
 
 You can run the following jobs.
 
-- `tests-python36`
-  - Runs unit tests under Python 3.6
-- `tests-python37`
-  - Runs unit tests under Python 3.7
-- `tests-python38`
-  - Runs unit tests under Python 3.8
 - `document`
   - Checks documentation build
-- `doctest`
-  - Checks doctest validity
-- `codecov`
-  - Checks unit test code coverage
+- `tests-rdbstorage`
+  - Checks unit tests for RDBStorage
 
-#### Example
 
-The following `circleci` job runs all unit tests in Python 3.7:
+The following `circleci` job runs all unit tests of `RDBStorage` with server:
 Note that this job will download several hundred megabytes of data to install all the packages required for testing, and take several tens of minutes to complete all tests.
 
 ```bash
-circleci build --job tests-python37
+circleci build --job tests-rdbstorage
+```
+
+#### GitHub Actions
+
+__This section is unofficial and unstable__
+
+With [nektors/act](https://github.com/nektos/act), it's possible to run jobs locally.  
+However, to use this CLI in this project, your `.git/config` must look like as follows:
+
+```
+[remote "origin"]
+    url = git@github.com:optuna/optuna.git  # https://github.com/optuna/optuna.git or whatever equivalent is OK
+```
+
+This is because most of our jobs only run `optuna/optuna` repository due to [the condition](https://github.com/optuna/optuna/blob/c9b6e68809bdd20e3f5b0c32b2e9ec64ab66ab66/.github/workflows/tests.yml#L28-L29).
+
+To run the `examples` and `tests` job locally, use the following commands:
+```bash
+$ act -W .github/workflows/examples.yml -j examples -P ubuntu-latest=nektos/act-environments-ubuntu:18.04 -v
+$ act -W .github/workflows/tests.yml -j tests ubuntu-latest=nektos/act-environments-ubuntu:18.04 -v
 ```
 
 ## Creating a Pull Request
