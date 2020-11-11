@@ -17,7 +17,7 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
 
         The following code snippet shows how to plot intermediate values.
 
-        .. testcode::
+        .. plotly::
 
             import optuna
 
@@ -51,12 +51,6 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
             study.optimize(objective, n_trials=16)
 
             optuna.visualization.plot_intermediate_values(study)
-
-        .. raw:: html
-
-            <iframe src="../../../_static/plot_intermediate_values.html"
-             width="100%" height="500px" frameborder="0">
-            </iframe>
 
     Args:
         study:

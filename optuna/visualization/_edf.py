@@ -37,7 +37,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
 
         The following code snippet shows how to plot EDF.
 
-        .. testcode::
+        .. plotly::
 
             import math
 
@@ -71,12 +71,6 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
             study2.optimize(lambda t: objective(t, 1, 3), n_trials=500)
 
             optuna.visualization.plot_edf([study0, study1, study2])
-
-        .. raw:: html
-
-            <iframe src="../../../_static/plot_edf.html"
-             width="100%" height="500px" frameborder="0">
-            </iframe>
 
     Args:
         study:

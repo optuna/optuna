@@ -118,8 +118,6 @@ You can run the following jobs.
   - Checks documentation build
 - `doctest`
   - Checks doctest validity
-- `codecov`
-  - Checks unit test code coverage
 
 #### Example
 
