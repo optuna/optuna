@@ -7,6 +7,15 @@ from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
 
 
+__all__ = [
+    "BaseStorage",
+    "_CachedStorage",
+    "InMemoryStorage",
+    "RDBStorage",
+    "RedisStorage",
+]
+
+
 def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
 
     if storage is None:
