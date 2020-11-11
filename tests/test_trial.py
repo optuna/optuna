@@ -475,7 +475,6 @@ def test_distributions(storage_init_func: Callable[[], storages.BaseStorage]) ->
     study = create_study(storage_init_func())
     study.optimize(objective, n_trials=1)
 
-    assert isinstance(study, optuna.Study)
     assert study.best_trial.distributions == {
         "a": UniformDistribution(low=0, high=10),
         "b": LogUniformDistribution(low=0.1, high=10),
@@ -830,7 +829,6 @@ def test_frozen_trial_sampling(storage_init_func: Callable[[], storages.BaseStor
         return a + b + c + d + e + f
 
     study = create_study(storage_init_func())
-    assert isinstance(study, optuna.Study)
     study.optimize(objective, n_trials=1)
 
     best_trial = study.best_trial

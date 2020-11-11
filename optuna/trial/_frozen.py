@@ -115,41 +115,39 @@ class FrozenTrial(BaseTrial):
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
             :func:`optuna.trial.Trial.set_user_attr`.
         intermediate_values:
-            Intermediate objective values with :func:`optuna.trial.Trial.report`.
+            Intermediate objective values set with :func:`optuna.trial.Trial.report`.
     """
 
     def __init__(
         self,
         number: int,
         state: TrialState,
-        value: Optional[float] = None,
-        datetime_start: Optional[datetime.datetime] = None,
-        datetime_complete: Optional[datetime.datetime] = None,
-        params: Optional[Dict[str, Any]] = None,
-        distributions: Optional[Dict[str, BaseDistribution]] = None,
-        user_attrs: Optional[Dict[str, Any]] = None,
-        system_attrs: Optional[Dict[str, Any]] = None,
-        intermediate_values: Optional[Dict[int, float]] = None,
-        trial_id: int = -1,
+        value: Optional[float],
+        datetime_start: Optional[datetime.datetime],
+        datetime_complete: Optional[datetime.datetime],
+        params: Dict[str, Any],
+        distributions: Dict[str, BaseDistribution],
+        user_attrs: Dict[str, Any],
+        system_attrs: Dict[str, Any],
+        intermediate_values: Dict[int, float],
+        trial_id: int,
         values: Optional[Sequence[float]] = None,
     ) -> None:
 
         self._number = number
         self.state = state
         self._values: Optional[Sequence[float]] = None
-        if value is not None and values is not None:
-            raise ValueError("Specify only one of `value` and `values`.")
-        elif value is not None:
+        if value is not None:
             self._values = (value,)
         elif values is not None:
             self._values = tuple(values)
         self._datetime_start = datetime_start
         self.datetime_complete = datetime_complete
-        self._params = params or {}
-        self._user_attrs = user_attrs or {}
-        self._system_attrs = system_attrs or {}
-        self.intermediate_values = intermediate_values or {}
-        self._distributions = distributions or {}
+        self._params = params
+        self._user_attrs = user_attrs
+        self._system_attrs = system_attrs
+        self.intermediate_values = intermediate_values
+        self._distributions = distributions
         self._trial_id = trial_id
 
     # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
@@ -202,7 +200,7 @@ class FrozenTrial(BaseTrial):
                     value=repr(getattr(self, field)),
                 )
                 for field in self._ordered_fields
-            ),
+            ) + ", value=None",
         )
 
     def suggest_float(
@@ -503,7 +501,7 @@ def create_trial(
     distributions: Optional[Dict[str, BaseDistribution]] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
     system_attrs: Optional[Dict[str, Any]] = None,
-    intermediate_values: Optional[Dict[int, float]] = None,
+    intermediate_values: Optional[Dict[int, float]] = None
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
 
@@ -544,8 +542,8 @@ def create_trial(
         value:
             Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
         values:
-            Trial objective value for the multi-objective optimization.
-            Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
+            Trial objective value for the multi-objective optimization. Must be specified for the
+            multi-objective optimization if ``state`` is :class:`TrialState.COMPLETE`.
         params:
             Dictionary with suggested parameters of the trial.
         distributions:
@@ -560,6 +558,8 @@ def create_trial(
     Returns:
         Created trial.
 
+    Raises:
+        If both `value` and `values` are specified.
     """
 
     _values: Optional[Sequence[float]]

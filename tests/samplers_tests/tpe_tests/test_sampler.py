@@ -829,7 +829,7 @@ def frozen_trial_factory(
     return optuna.trial.FrozenTrial(
         number=idx,
         state=state_fn(idx),
-        values=(target_fn(value),),
+        value=target_fn(value),
         datetime_start=None,
         datetime_complete=None,
         params={"param-a": value},

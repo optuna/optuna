@@ -17,7 +17,7 @@ def test_frozen_trial_deprecated() -> None:
             number=0,
             trial_id=0,
             state=TrialState.COMPLETE,
-            values=(0.2,),
+            value=0.2,
             datetime_start=datetime.datetime.now(),
             datetime_complete=datetime.datetime.now(),
             params={"x": 10},

@@ -174,10 +174,7 @@ def test_upgrade() -> None:
         ),
         ({"_values": (1.1,)}, {"values": (1.1,)}),
         ({"_values": (1.1, 2.2)}, {"values": (1.1, 2.2)}),
-        (
-            {"intermediate_values": {1: 2.3, 3: 2.5}},
-            {"intermediate_values": {1: 2.3, 3: 2.5}},
-        ),
+        ({"intermediate_values": {1: 2.3, 3: 2.5}}, {"intermediate_values": {1: 2.3, 3: 2.5}}),
         (
             {
                 "params": {"paramA": 3, "paramB": "bar"},

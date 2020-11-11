@@ -335,7 +335,7 @@ def _create_frozen_trial(
 
     return FrozenTrial(
         number=number,
-        values=(1.0,),
+        value=1.0,
         state=state,
         user_attrs={},
         system_attrs={},

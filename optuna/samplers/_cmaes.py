@@ -234,7 +234,6 @@ class CmaEsSampler(BaseSampler):
         trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
-        assert isinstance(study, optuna.Study)
         if len(search_space) == 0:
             return {}
 

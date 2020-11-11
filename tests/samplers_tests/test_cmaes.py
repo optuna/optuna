@@ -150,7 +150,7 @@ def _create_trials() -> List[FrozenTrial]:
     trials.append(
         FrozenTrial(
             number=0,
-            values=(1.0,),
+            value=1.0,
             state=optuna.trial.TrialState.COMPLETE,
             user_attrs={},
             system_attrs={},
@@ -165,7 +165,7 @@ def _create_trials() -> List[FrozenTrial]:
     trials.append(
         FrozenTrial(
             number=1,
-            values=None,
+            value=None,
             state=optuna.trial.TrialState.PRUNED,
             user_attrs={},
             system_attrs={},

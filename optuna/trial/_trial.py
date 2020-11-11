@@ -44,7 +44,7 @@ class Trial(BaseTrial):
 
     """
 
-    def __init__(self, study: "optuna.Study", trial_id: int) -> None:
+    def __init__(self, study: "optuna.study.Study", trial_id: int) -> None:
 
         self.study = study
         self._trial_id = trial_id
@@ -596,17 +596,10 @@ class Trial(BaseTrial):
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
-
-            .. note::
-                If the problem is the multi-objective optimization, :obj:`False` is always
-                returned.
         """
 
         trial = self.study._storage.get_trial(self._trial_id)
-        if isinstance(self.study, optuna.Study):
-            return self.study.pruner.prune(self.study, trial)
-        else:
-            return False
+        return self.study.pruner.prune(self.study, trial)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set user attributes to the trial.

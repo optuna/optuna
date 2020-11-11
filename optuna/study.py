@@ -98,9 +98,10 @@ class BaseStudy(object):
                 If the problem is the multi-objective optimization.
         """
 
-        assert (
-            self._n_objectives == 1
-        ), "The best trial of a `study` is only supported for single-objective optimization."
+        if self._n_objectives > 1:
+            raise RuntimeError(
+                "The best trial of a `study` is only supported for single-objective optimization."
+            )
 
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
@@ -125,7 +126,17 @@ class BaseStudy(object):
 
         Returns:
             A :class:`~optuna.study.StudyDirection` object.
+
+        Raises:
+            RuntimeError:
+                If the problem is the multi-objective optimization.
         """
+
+        if self._n_objectives > 1:
+            raise RuntimeError(
+                "The single direction of a `study` is only supported for single-objective "
+                "optimization."
+            )
 
         return self.directions[0]
 

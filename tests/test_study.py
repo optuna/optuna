@@ -9,9 +9,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
-from typing import Union
 from unittest.mock import Mock  # NOQA
 from unittest.mock import patch
 import uuid
@@ -77,12 +75,10 @@ def check_params(params: Dict[str, Any]) -> None:
     assert sorted(params.keys()) == ["x", "y", "z"]
 
 
-def check_value(value: Optional[Union[float, Sequence[float]]]) -> None:
+def check_value(value: Optional[float]) -> None:
 
-    if isinstance(value, float):
-        assert -1.0 <= value <= 12.0 ** 2 + 5.0 ** 2 + 1.0
-    else:
-        assert isinstance(value, Sequence)
+    assert isinstance(value, float)
+    assert -1.0 <= value <= 12.0 ** 2 + 5.0 ** 2 + 1.0
 
 
 def check_frozen_trial(frozen_trial: optuna.trial.FrozenTrial) -> None:
@@ -140,13 +136,11 @@ def test_optimize_with_direction() -> None:
 
     study = optuna.create_study(direction="minimize")
     study.optimize(func, n_trials=10)
-    assert isinstance(study, optuna.Study)
     assert study.direction == optuna.study.StudyDirection.MINIMIZE
     check_study(study)
 
     study = optuna.create_study(direction="maximize")
     study.optimize(func, n_trials=10)
-    assert isinstance(study, optuna.Study)
     assert study.direction == optuna.study.StudyDirection.MAXIMIZE
     check_study(study)
 
@@ -709,7 +703,6 @@ def test_add_trial(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = optuna.create_study(storage=storage)
-        assert isinstance(study, optuna.Study)
         assert len(study.trials) == 0
 
         trial = create_trial(value=0.8)

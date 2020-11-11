@@ -627,7 +627,7 @@ def frozen_trial_factory(
         number=number,
         trial_id=number,
         state=optuna.trial.TrialState.COMPLETE,
-        values=None,
+        value=None,
         datetime_start=None,
         datetime_complete=None,
         params={"param-a": value},

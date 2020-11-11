@@ -90,9 +90,10 @@ class StudySummary(object):
 
         self._direction: Union[StudyDirection, Sequence[StudyDirection]]
         if isinstance(d, Sequence):
-            if len(tuple(d)) == 1:
-                self._direction = tuple(d)[0]
+            d = tuple(d)
+            if len(d) == 1:
+                self._direction = d[0]
             else:
-                self._direction = tuple(d)
+                self._direction = d
         else:
             self._direction = d
