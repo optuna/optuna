@@ -200,7 +200,8 @@ class FrozenTrial(BaseTrial):
                     value=repr(getattr(self, field)),
                 )
                 for field in self._ordered_fields
-            ) + ", value=None",
+            )
+            + ", value=None",
         )
 
     def suggest_float(
