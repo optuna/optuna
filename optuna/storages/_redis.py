@@ -329,8 +329,8 @@ class RedisStorage(BaseStorage):
             distributions={},
             user_attrs={},
             system_attrs={},
-            values=None,
-            step_to_values={},
+            value=None,
+            intermediate_values={},
             datetime_start=datetime.now(),
             datetime_complete=None,
         )
@@ -407,12 +407,12 @@ class RedisStorage(BaseStorage):
             if len(all_trials) == 0:
                 raise ValueError("No trials are completed yet.")
 
-            direction = self.get_study_direction(study_id)
-            if len(direction) > 1:
+            _direction = self.get_study_direction(study_id)
+            if len(_direction) > 1:
                 raise ValueError(
                     "Best trial can be obtained only for single-objective optimization."
                 )
-            direction = direction[0]
+            direction = _direction[0]
 
             if direction == StudyDirection.MAXIMIZE:
                 best_trial = max(all_trials, key=lambda t: t.value)
@@ -460,10 +460,10 @@ class RedisStorage(BaseStorage):
             return
         study_id = self.get_study_id_from_trial_id(trial_id)
 
-        direction = self.get_study_direction(study_id)
-        if len(direction) > 1:
+        _direction = self.get_study_direction(study_id)
+        if len(_direction) > 1:
             return
-        direction = direction[0]
+        direction = _direction[0]
 
         if not self._redis.exists("study_id:{:010d}:best_trial_id".format(study_id)):
             self._set_best_trial(study_id, trial_id)
@@ -484,14 +484,16 @@ class RedisStorage(BaseStorage):
 
         return
 
-    def set_trial_step_to_values(self, trial_id: int, step: int, values: Sequence[float]) -> None:
+    def set_trial_intermediate_value(
+        self, trial_id: int, step: int, intermediate_value: float
+    ) -> None:
 
         self._check_trial_id(trial_id)
         frozen_trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, frozen_trial.state)
-        step_to_values = copy.copy(frozen_trial.step_to_values)
-        step_to_values[step] = values
-        frozen_trial.step_to_values = step_to_values
+        intermediate_values = copy.copy(frozen_trial.intermediate_values)
+        intermediate_values[step] = intermediate_value
+        frozen_trial.intermediate_values = intermediate_values
         self._set_trial(trial_id, frozen_trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:

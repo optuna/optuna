@@ -1,7 +1,6 @@
 import math
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Union
 
 import optuna
@@ -151,10 +150,8 @@ class SuccessiveHalvingPruner(BasePruner):
             return False
 
         rung = _get_current_rung(trial)
-        value = trial.step_to_value[step]
+        value = trial.intermediate_values[step]
         trials: Optional[List["optuna.trial.FrozenTrial"]] = None
-
-        assert not isinstance(value, Sequence)
 
         while True:
             if self._min_resource is None:

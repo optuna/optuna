@@ -23,7 +23,6 @@ from optuna.samplers import RandomSampler
 from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
-from optuna.study import BaseStudy
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -198,7 +197,7 @@ class TPESampler(BaseSampler):
         self._random_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self, study: BaseStudy, trial: FrozenTrial
+        self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
 
         if not self._multivariate:
@@ -229,7 +228,7 @@ class TPESampler(BaseSampler):
         )
 
     def sample_relative(
-        self, study: BaseStudy, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
 
         if search_space == {}:
@@ -266,7 +265,7 @@ class TPESampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: BaseStudy,
+        study: Study,
         trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
@@ -741,7 +740,7 @@ class TPESampler(BaseSampler):
 
 
 def _get_observation_pairs(
-    study: BaseStudy, param_name: str
+    study: Study, param_name: str
 ) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]:
     """Get observation pairs from the study.
 
@@ -760,7 +759,6 @@ def _get_observation_pairs(
     ``(-step, value)``).
     """
 
-    assert isinstance(study, Study)
     sign = 1
     if study.direction == StudyDirection.MAXIMIZE:
         sign = -1
@@ -771,8 +769,8 @@ def _get_observation_pairs(
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
-            if len(trial.step_to_value) > 0:
-                step, intermediate_value = max(trial.step_to_value.items())
+            if len(trial.intermediate_values) > 0:
+                step, intermediate_value = max(trial.intermediate_values.items())
                 if math.isnan(intermediate_value):
                     score = (-step, float("inf"))
                 else:
@@ -794,10 +792,9 @@ def _get_observation_pairs(
 
 
 def _get_multivariate_observation_pairs(
-    study: BaseStudy, param_names: List[str]
+    study: Study, param_names: List[str]
 ) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, float]]]:
 
-    assert isinstance(study, Study)
     sign = 1
     if study.direction == StudyDirection.MAXIMIZE:
         sign = -1
@@ -810,8 +807,8 @@ def _get_multivariate_observation_pairs(
         if trial.state is TrialState.COMPLETE and trial.value is not None:
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
-            if len(trial.step_to_value) > 0:
-                step, intermediate_value = max(trial.step_to_value.items())
+            if len(trial.intermediate_values) > 0:
+                step, intermediate_value = max(trial.intermediate_values.items())
                 if math.isnan(intermediate_value):
                     score = (-step, float("inf"))
                 else:

@@ -93,11 +93,11 @@ def _get_intermediate_plot(study: Study) -> "Axes":
     # Draw multiple line plots.
     traces = []
     for i, trial in enumerate(trials):
-        if trial.step_to_value:
-            sorted_step_to_value = sorted(trial.step_to_value.items())
+        if trial.intermediate_values:
+            sorted_intermediate_values = sorted(trial.intermediate_values.items())
             trace = ax.plot(
-                tuple((x for x, _ in sorted_step_to_value)),
-                tuple((y for _, y in sorted_step_to_value)),
+                tuple((x for x, _ in sorted_intermediate_values)),
+                tuple((y for _, y in sorted_intermediate_values)),
                 color=cmap(i),
                 alpha=0.7,
                 label="Trial{}".format(trial.number),

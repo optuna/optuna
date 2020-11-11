@@ -44,7 +44,7 @@ class Trial(BaseTrial):
 
     """
 
-    def __init__(self, study: "optuna.study.BaseStudy", trial_id: int) -> None:
+    def __init__(self, study: "optuna.Study", trial_id: int) -> None:
 
         self.study = study
         self._trial_id = trial_id
@@ -59,11 +59,7 @@ class Trial(BaseTrial):
 
         trial = self.storage.get_trial(self._trial_id)
 
-        study: optuna.study.BaseStudy
-        if isinstance(self.study, optuna.Study):
-            study = pruners._filter_study(self.study, trial)
-        else:
-            study = self.study
+        study = pruners._filter_study(self.study, trial)
 
         self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
         self.relative_params = self.study.sampler.sample_relative(
@@ -572,15 +568,15 @@ class Trial(BaseTrial):
         if step < 0:
             raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
 
-        step_to_value = self.storage.get_trial(self._trial_id).step_to_value
+        intermediate_values = self.storage.get_trial(self._trial_id).intermediate_values
 
-        if step in step_to_value:
+        if step in intermediate_values:
             # Do nothing if already reported.
             # TODO(hvy): Consider raising a warning or an error.
             # See https://github.com/optuna/optuna/issues/852.
             return
 
-        self.storage.set_trial_step_to_values(self._trial_id, step, (value,))
+        self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
     def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.
@@ -699,11 +695,7 @@ class Trial(BaseTrial):
             elif self._is_relative_param(name, distribution):
                 param_value = self.relative_params[name]
             else:
-                study: optuna.study.BaseStudy
-                if isinstance(self.study, optuna.Study):
-                    study = pruners._filter_study(self.study, trial)
-                else:
-                    study = self.study
+                study = pruners._filter_study(self.study, trial)
                 param_value = self.study.sampler.sample_independent(
                     study, trial, name, distribution
                 )

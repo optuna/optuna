@@ -78,19 +78,19 @@ class InMemoryStorage(BaseStorage):
             del self._study_name_to_id[study_name]
             del self._studies[study_id]
 
-    def set_study_direction(self, study_id: int, direction: Sequence[StudyDirection]) -> None:
+    def set_study_direction(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
 
         with self._lock:
             self._check_study_id(study_id)
 
             study = self._studies[study_id]
-            if study.direction[0] != StudyDirection.NOT_SET and study.direction != direction:
+            if study.directions[0] != StudyDirection.NOT_SET and study.directions != directions:
                 raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
-                        study.direction, direction
+                        study.directions, directions
                     )
                 )
-            study.direction = direction
+            study.directions = directions
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
@@ -131,7 +131,7 @@ class InMemoryStorage(BaseStorage):
 
         with self._lock:
             self._check_study_id(study_id)
-            return tuple(self._studies[study_id].direction)
+            return tuple(self._studies[study_id].directions)
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -154,7 +154,7 @@ class InMemoryStorage(BaseStorage):
         study = self._studies[study_id]
         return StudySummary(
             study_name=study.name,
-            direction=study.direction,
+            direction=study.directions,
             best_trial=copy.deepcopy(self._get_trial(study.best_trial_id))
             if study.best_trial_id is not None
             else None,
@@ -199,8 +199,8 @@ class InMemoryStorage(BaseStorage):
             distributions={},
             user_attrs={},
             system_attrs={},
-            values=None,
-            step_to_values={},
+            value=None,
+            intermediate_values={},
             datetime_start=datetime.now(),
             datetime_complete=None,
         )
@@ -274,7 +274,7 @@ class InMemoryStorage(BaseStorage):
             best_trial_id = self._studies[study_id].best_trial_id
             if best_trial_id is None:
                 raise ValueError("No trials are completed yet.")
-            elif len(self._studies[study_id].direction) > 1:
+            elif len(self._studies[study_id].directions) > 1:
                 raise ValueError(
                     "Best trial can be obtained only for single-objective optimization."
                 )
@@ -312,10 +312,10 @@ class InMemoryStorage(BaseStorage):
             self._studies[study_id].best_trial_id = trial_id
             return
 
-        direction = self.get_study_direction(study_id)
-        if len(direction) > 1:
+        _directions = self.get_study_direction(study_id)
+        if len(_directions) > 1:
             return
-        direction = direction[0]
+        directions = _directions[0]
 
         best_trial = self._get_trial(best_trial_id)
         assert best_trial is not None
@@ -327,23 +327,25 @@ class InMemoryStorage(BaseStorage):
         best_value = best_trial.value
         new_value = trial.value
 
-        if direction == StudyDirection.MAXIMIZE:
+        if directions == StudyDirection.MAXIMIZE:
             if best_value < new_value:
                 self._studies[study_id].best_trial_id = trial_id
         else:
             if best_value > new_value:
                 self._studies[study_id].best_trial_id = trial_id
 
-    def set_trial_step_to_values(self, trial_id: int, step: int, values: Sequence[float]) -> None:
+    def set_trial_intermediate_value(
+        self, trial_id: int, step: int, intermediate_value: float
+    ) -> None:
 
         with self._lock:
             trial = self._get_trial(trial_id)
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial = copy.copy(trial)
-            step_to_values = copy.copy(trial.step_to_values)
-            step_to_values[step] = values
-            trial.step_to_values = step_to_values
+            intermediate_values = copy.copy(trial.intermediate_values)
+            intermediate_values[step] = intermediate_value
+            trial.intermediate_values = intermediate_values
             self._set_trial(trial_id, trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
@@ -429,5 +431,5 @@ class _StudyInfo:
         self.user_attrs: Dict[str, Any] = {}
         self.system_attrs: Dict[str, Any] = {}
         self.name: str = name
-        self.direction = (StudyDirection.NOT_SET,)
+        self.directions: Sequence[StudyDirection] = (StudyDirection.NOT_SET,)
         self.best_trial_id: Optional[int] = None

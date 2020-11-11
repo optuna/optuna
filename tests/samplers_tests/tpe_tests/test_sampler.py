@@ -826,9 +826,6 @@ def frozen_trial_factory(
         value = random.random() * 99.0 + 1.0
     else:
         value = value_fn(idx)
-    step_to_values = {}
-    for s, v in interm_val_fn(idx):
-        step_to_values[s] = (v,)
     return optuna.trial.FrozenTrial(
         number=idx,
         state=state_fn(idx),
@@ -839,7 +836,7 @@ def frozen_trial_factory(
         distributions={"param-a": dist},
         user_attrs={},
         system_attrs={},
-        step_to_values=step_to_values,
+        intermediate_values=interm_val_fn(idx),
         trial_id=idx + 123,
     )
 

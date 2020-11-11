@@ -35,6 +35,9 @@ def _dominates(
     values0 = trial0.values
     values1 = trial1.values
 
+    assert values0 is not None
+    assert values1 is not None
+
     if len(values0) != len(values1):
         raise ValueError("Trials with different numbers of objectives cannot be compared.")
 

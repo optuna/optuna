@@ -29,13 +29,13 @@ _logger = logging.get_logger(__name__)
 
 
 def _optimize(
-    study: "optuna.study.BaseStudy",
+    study: "optuna.Study",
     func: "optuna.study.ObjectiveFuncType",
     n_trials: Optional[int] = None,
     timeout: Optional[float] = None,
     n_jobs: int = 1,
     catch: Tuple[Type[Exception], ...] = (),
-    callbacks: Optional[List[Callable[["optuna.study.BaseStudy", FrozenTrial], None]]] = None,
+    callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]] = None,
     gc_after_trial: bool = False,
     show_progress_bar: bool = False,
 ) -> None:
@@ -121,12 +121,12 @@ def _optimize(
 
 
 def _optimize_sequential(
-    study: "optuna.study.BaseStudy",
+    study: "optuna.Study",
     func: "optuna.study.ObjectiveFuncType",
     n_trials: Optional[int],
     timeout: Optional[float],
     catch: Tuple[Type[Exception], ...],
-    callbacks: Optional[List[Callable[["optuna.study.BaseStudy", FrozenTrial], None]]],
+    callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]],
     gc_after_trial: bool,
     reseed_sampler_rng: bool,
     time_start: Optional[datetime.datetime],
@@ -178,7 +178,7 @@ def _optimize_sequential(
 
 
 def _run_trial(
-    study: "optuna.study.BaseStudy",
+    study: "optuna.Study",
     func: "optuna.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.Trial:
@@ -198,7 +198,7 @@ def _run_trial(
         study._tell(
             trial,
             TrialState.PRUNED,
-            None if last_step is None else frozen_trial.step_to_values[last_step],
+            None if last_step is None else frozen_trial.intermediate_values[last_step],
         )
         _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
         return trial

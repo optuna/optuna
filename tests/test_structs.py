@@ -24,7 +24,7 @@ def test_frozen_trial_deprecated() -> None:
             distributions={"x": UniformDistribution(5, 12)},
             user_attrs={},
             system_attrs={},
-            step_to_values={},
+            intermediate_values={},
         )
 
 

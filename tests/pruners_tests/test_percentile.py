@@ -68,15 +68,15 @@ def test_percentile_pruner_with_one_trial() -> None:
 @pytest.mark.parametrize(
     "direction_value", [("minimize", [1, 2, 3, 4, 5], 2.1), ("maximize", [1, 2, 3, 4, 5], 3.9)]
 )
-def test_25_percentile_pruner_step_to_value(
+def test_25_percentile_pruner_intermediate_values(
     direction_value: Tuple[str, List[float], float]
 ) -> None:
 
-    direction, step_to_value, latest_value = direction_value
+    direction, intermediate_values, latest_value = direction_value
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
     study = optuna.study.create_study(direction=direction)
 
-    for v in step_to_value:
+    for v in intermediate_values:
         trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
         trial.report(v, 1)
         study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
@@ -90,7 +90,7 @@ def test_25_percentile_pruner_step_to_value(
     assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
 
 
-def test_25_percentile_pruner_step_to_value_nan() -> None:
+def test_25_percentile_pruner_intermediate_values_nan() -> None:
 
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
     study = optuna.study.create_study()
@@ -127,7 +127,7 @@ def test_get_best_intermediate_result_over_steps(
     else:
         study = optuna.study.create_study(direction="maximize")
 
-    # FrozenTrial.step_to_value has no elements.
+    # FrozenTrial.intermediate_values has no elements.
     trial_id_empty = study._storage.create_new_trial(study._study_id)
     trial_empty = study._storage.get_trial(trial_id_empty)
 
@@ -165,16 +165,16 @@ def test_get_best_intermediate_result_over_steps(
 
 
 def test_get_percentile_intermediate_result_over_trials() -> None:
-    def setup_study(trial_num: int, _step_to_value: List[List[float]]) -> Study:
+    def setup_study(trial_num: int, _intermediate_values: List[List[float]]) -> Study:
 
         _study = optuna.study.create_study(direction="minimize")
         trial_ids = [_study._storage.create_new_trial(_study._study_id) for _ in range(trial_num)]
 
-        for step, values in enumerate(_step_to_value):
+        for step, values in enumerate(_intermediate_values):
             # Study does not have any trials.
             with pytest.raises(ValueError):
                 _all_trials = _study._storage.get_all_trials(_study._study_id)
-                _direction = _study._storage.get_study_direction(_study._study_id)
+                _direction = _study.direction
                 _percentile._get_percentile_intermediate_result_over_trials(
                     _all_trials, _direction, step, 25
                 )
@@ -182,7 +182,7 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
             for i in range(trial_num):
                 trial_id = trial_ids[i]
                 value = values[i]
-                _study._storage.set_trial_step_to_values(trial_id, step, (value,))
+                _study._storage.set_trial_intermediate_value(trial_id, step, value)
 
         # Set trial states complete because this method ignores incomplete trials.
         for trial_id in trial_ids:
@@ -191,27 +191,27 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
         return _study
 
     # Input value has no NaNs but float values (step=0).
-    step_to_value = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]]
-    study = setup_study(9, step_to_value)
+    intermediate_values = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]]
+    study = setup_study(9, intermediate_values)
     all_trials = study._storage.get_all_trials(study._study_id)
-    direction = study._storage.get_study_direction(study._study_id)
+    direction = study.direction
     assert 0.3 == _percentile._get_percentile_intermediate_result_over_trials(
         all_trials, direction, 0, 25.0
     )
 
     # Input value has a float value and NaNs (step=1).
-    step_to_value.append(
+    intermediate_values.append(
         [0.1, 0.2, 0.3, 0.4, 0.5, float("nan"), float("nan"), float("nan"), float("nan")]
     )
-    study = setup_study(9, step_to_value)
+    study = setup_study(9, intermediate_values)
     all_trials = study._storage.get_all_trials(study._study_id)
-    direction = study._storage.get_study_direction(study._study_id)
+    direction = study.direction
     assert 0.2 == _percentile._get_percentile_intermediate_result_over_trials(
         all_trials, direction, 1, 25.0
     )
 
     # Input value has NaNs only (step=2).
-    step_to_value.append(
+    intermediate_values.append(
         [
             float("nan"),
             float("nan"),
@@ -224,9 +224,9 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
             float("nan"),
         ]
     )
-    study = setup_study(9, step_to_value)
+    study = setup_study(9, intermediate_values)
     all_trials = study._storage.get_all_trials(study._study_id)
-    direction = study._storage.get_study_direction(study._study_id)
+    direction = study.direction
     assert math.isnan(
         _percentile._get_percentile_intermediate_result_over_trials(all_trials, direction, 2, 75)
     )

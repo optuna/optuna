@@ -416,20 +416,20 @@ class RDBStorage(BaseStorage):
                 system_attrs = session.query(models.TrialSystemAttributeModel).filter(
                     models.TrialSystemAttributeModel.trial_id == best_trial.trial_id
                 )
-                intermediate = session.query(models.TrialStepToValueModel).filter(
-                    models.TrialStepToValueModel.trial_id == best_trial.trial_id
+                intermediate = session.query(models.TrialIntermediateValueModel).filter(
+                    models.TrialIntermediateValueModel.trial_id == best_trial.trial_id
                 )
                 best_trial_frozen = FrozenTrial(
                     best_trial.number,
                     TrialState.COMPLETE,
-                    (value.value,),
+                    value.value,
                     best_trial.datetime_start,
                     best_trial.datetime_complete,
                     param_dict,
                     param_distributions,
                     {i.key: json.loads(i.value_json) for i in user_attrs},
                     {i.key: json.loads(i.value_json) for i in system_attrs},
-                    {value.step: (value.value,) for value in intermediate},
+                    {value.step: value.value for value in intermediate},
                     best_trial.trial_id,
                 )
             user_attrs = session.query(models.StudyUserAttributeModel).filter(
@@ -511,6 +511,7 @@ class RDBStorage(BaseStorage):
             frozen = FrozenTrial(
                 number=trial.number,
                 state=trial.state,
+                value=None,
                 values=None,
                 datetime_start=trial.datetime_start,
                 datetime_complete=None,
@@ -518,7 +519,7 @@ class RDBStorage(BaseStorage):
                 distributions={},
                 user_attrs={},
                 system_attrs={},
-                step_to_values={},
+                intermediate_values={},
                 trial_id=trial.trial_id,
             )
 
@@ -577,11 +578,10 @@ class RDBStorage(BaseStorage):
             for key, value in template_trial.system_attrs.items():
                 self._set_trial_system_attr_without_commit(session, trial.trial_id, key, value)
 
-            for step, values in template_trial.step_to_values.items():
-                for objective_id, v in enumerate(values):
-                    self._set_trial_step_to_value_without_commit(
-                        session, trial.trial_id, step, objective_id, v
-                    )
+            for step, intermediate_value in template_trial.intermediate_values.items():
+                self._set_trial_intermediate_value_without_commit(
+                    session, trial.trial_id, step, intermediate_value
+                )
 
             trial.state = template_trial.state
 
@@ -595,7 +595,7 @@ class RDBStorage(BaseStorage):
         trial_id: int,
         state: Optional[TrialState] = None,
         values: Optional[Sequence[float]] = None,
-        step_to_values: Optional[Dict[int, Sequence[float]]] = None,
+        intermediate_values: Optional[Dict[int, float]] = None,
         params: Optional[Dict[str, Any]] = None,
         distributions_: Optional[Dict[str, distributions.BaseDistribution]] = None,
         user_attrs: Optional[Dict[str, Any]] = None,
@@ -611,7 +611,7 @@ class RDBStorage(BaseStorage):
                 New state. None when there are no changes.
             values:
                 New value. None when there are no changes.
-            step_to_values:
+            intermediate_values:
                 New intermediate values. None when there are no updates.
             params:
                 New parameter dictionary. None when there are no updates.
@@ -658,7 +658,7 @@ class RDBStorage(BaseStorage):
         if datetime_complete:
             trial_model.datetime_complete = datetime_complete
 
-        if values is not None:
+        if values:
             value_models = (
                 session.query(models.TrialValueModel)
                 .filter(models.TrialValueModel.trial_id == trial_id)
@@ -706,29 +706,22 @@ class RDBStorage(BaseStorage):
                 for k, v in system_attrs.items()
                 if k not in trial_system_attrs_dict
             )
-        if step_to_values:
+        if intermediate_values:
             value_models = (
-                session.query(models.TrialStepToValueModel)
-                .filter(models.TrialStepToValueModel.trial_id == trial_id)
+                session.query(models.TrialIntermediateValueModel)
+                .filter(models.TrialIntermediateValueModel.trial_id == trial_id)
                 .all()
             )
-            value_dict = {
-                (value_model.step, value_model.objective_id): value_model
-                for value_model in value_models
-            }
-            for s, vs in step_to_values.items():
-                for objective_id, v in enumerate(vs):
-                    if (s, objective_id) in value_dict:
-                        value_dict[(s, objective_id)].value = v
-                        session.add(value_dict[(s, objective_id)])
-                    else:
-                        trial_model.step_to_values.extend(
-                            [
-                                models.TrialStepToValueModel(
-                                    step=s, objective_id=objective_id, value=v
-                                )
-                            ]
-                        )
+            value_dict = {value_model.step: value_model for value_model in value_models}
+            for s, v in intermediate_values.items():
+                if s in value_dict:
+                    value_dict[s].value = v
+                    session.add(value_dict[s])
+            trial_model.intermediate_values.extend(
+                models.TrialIntermediateValueModel(step=s, value=v)
+                for s, v in intermediate_values.items()
+                if s not in value_dict
+            )
         if params and distributions_:
             trial_param = (
                 session.query(models.TrialParamModel)
@@ -913,37 +906,39 @@ class RDBStorage(BaseStorage):
         else:
             trial_value.value = value
 
-    def set_trial_step_to_values(self, trial_id: int, step: int, values: Sequence[float]) -> None:
+    def set_trial_intermediate_value(
+        self, trial_id: int, step: int, intermediate_value: float
+    ) -> None:
 
         session = self.scoped_session()
 
-        for objective_id, v in enumerate(values):
-            self._set_trial_step_to_value_without_commit(session, trial_id, step, objective_id, v)
+        self._set_trial_intermediate_value_without_commit(
+            session, trial_id, step, intermediate_value
+        )
 
         self._commit_with_integrity_check(session)
 
-    def _set_trial_step_to_value_without_commit(
+    def _set_trial_intermediate_value_without_commit(
         self,
         session: orm.Session,
         trial_id: int,
         step: int,
-        objective_id: int,
-        value: float,
+        intermediate_value: float,
     ) -> None:
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial_value = models.TrialStepToValueModel.find_by_trial_and_objective_id_and_step(
-            trial, step, objective_id, session
+        trial_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
+            trial, step, session
         )
         if trial_value is None:
-            trial_value = models.TrialStepToValueModel(
-                trial_id=trial_id, step=step, objective_id=objective_id, value=value
+            trial_value = models.TrialIntermediateValueModel(
+                trial_id=trial_id, step=step, value=intermediate_value
             )
             session.add(trial_value)
         else:
-            trial_value.value = value
+            trial_value.value = intermediate_value
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -1047,7 +1042,7 @@ class RDBStorage(BaseStorage):
                 .options(orm.selectinload(models.TrialModel.values))
                 .options(orm.selectinload(models.TrialModel.user_attributes))
                 .options(orm.selectinload(models.TrialModel.system_attributes))
-                .options(orm.selectinload(models.TrialModel.step_to_values))
+                .options(orm.selectinload(models.TrialModel.intermediate_values))
                 .filter(
                     models.TrialModel.trial_id.in_(trial_ids),
                     models.TrialModel.study_id == study_id,
@@ -1071,7 +1066,7 @@ class RDBStorage(BaseStorage):
                 .options(orm.selectinload(models.TrialModel.values))
                 .options(orm.selectinload(models.TrialModel.user_attributes))
                 .options(orm.selectinload(models.TrialModel.system_attributes))
-                .options(orm.selectinload(models.TrialModel.step_to_values))
+                .options(orm.selectinload(models.TrialModel.intermediate_values))
                 .filter(models.TrialModel.study_id == study_id)
                 .all()
             )
@@ -1094,18 +1089,10 @@ class RDBStorage(BaseStorage):
         else:
             values = None
 
-        step_to_values: Dict[int, List[float]] = {}
-        n_objectives = -1
-        for value_model in trial.step_to_values:
-            n_objectives = max(n_objectives, value_model.objective_id + 1)
-        for value_model in trial.step_to_values:
-            if value_model.step not in step_to_values:
-                step_to_values[value_model.step] = [0 for _ in range(n_objectives)]
-            step_to_values[value_model.step][value_model.objective_id] = value_model.value
-
         return FrozenTrial(
             number=trial.number,
             state=trial.state,
+            value=None,
             values=values,
             datetime_start=trial.datetime_start,
             datetime_complete=trial.datetime_complete,
@@ -1123,7 +1110,7 @@ class RDBStorage(BaseStorage):
             system_attrs={
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
-            step_to_values=step_to_values,
+            intermediate_values={value.step: value.value for value in trial.intermediate_values},
             trial_id=trial.trial_id,
         )
 

@@ -63,9 +63,9 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     )
 
     # Check intermediate values.
-    assert all(len(trial.step_to_value) == 2 for trial in trials)
-    assert all(trial.params["x"] == trial.step_to_value[0] for trial in trials)
-    assert all(trial.params["y"] == trial.step_to_value[1] for trial in trials)
+    assert all(len(trial.intermediate_values) == 2 for trial in trials)
+    assert all(trial.params["x"] == trial.intermediate_values[0] for trial in trials)
+    assert all(trial.params["y"] == trial.intermediate_values[1] for trial in trials)
 
     # Check attrs.
     assert all(

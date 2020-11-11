@@ -116,64 +116,54 @@ class FrozenTrial(BaseTrial):
             :func:`optuna.trial.Trial.set_user_attr`.
         intermediate_values:
             Intermediate objective values with :func:`optuna.trial.Trial.report`.
-
-            .. warning::
-                Deprecated in v2.4.0. This feature will be removed in the future. The removal of
-                this feature is currently scheduled for v4.0.0, but this schedule is subject to
-                change. See https://github.com/optuna/optuna/releases/tag/v2.4.0. This attribute is
-                renamed a :func:`optuna.trial.FrozenTrial.step_to_value. Please use it instead.
-        step_to_value:
-            A dictionary from the intermediate step to the intermediate objective value with
-            :func:`optuna.trial.Trial.report`.
-        step_to_values:
-            A dictionary from the intermediate step to the sequence of the intermediate objective
-            values with :func:`optuna.trial.Trial.report`.
     """
 
     def __init__(
         self,
         number: int,
         state: TrialState,
-        values: Optional[Sequence[float]],
-        datetime_start: Optional[datetime.datetime],
-        datetime_complete: Optional[datetime.datetime],
-        params: Dict[str, Any],
-        distributions: Dict[str, BaseDistribution],
-        user_attrs: Dict[str, Any],
-        system_attrs: Dict[str, Any],
-        step_to_values: Dict[int, Sequence[float]],
-        trial_id: int,
+        value: Optional[float] = None,
+        datetime_start: Optional[datetime.datetime] = None,
+        datetime_complete: Optional[datetime.datetime] = None,
+        params: Optional[Dict[str, Any]] = None,
+        distributions: Optional[Dict[str, BaseDistribution]] = None,
+        user_attrs: Optional[Dict[str, Any]] = None,
+        system_attrs: Optional[Dict[str, Any]] = None,
+        intermediate_values: Optional[Dict[int, float]] = None,
+        trial_id: int = -1,
+        values: Optional[Sequence[float]] = None,
     ) -> None:
 
         self._number = number
         self.state = state
-        if values is not None:
+        self._values: Optional[Sequence[float]] = None
+        if value is not None and values is not None:
+            raise ValueError("Specify only one of `value` and `values`.")
+        elif value is not None:
+            self._values = (value,)
+        elif values is not None:
             self._values = tuple(values)
-        else:
-            self._values = None
         self._datetime_start = datetime_start
         self.datetime_complete = datetime_complete
-        self._params = params
-        self._user_attrs = user_attrs
-        self._system_attrs = system_attrs
-        self._step_to_values = {}
-        for s, v in step_to_values.items():
-            self._step_to_values[s] = tuple(v)
-        self._distributions = distributions
+        self._params = params or {}
+        self._user_attrs = user_attrs or {}
+        self._system_attrs = system_attrs or {}
+        self.intermediate_values = intermediate_values or {}
+        self._distributions = distributions or {}
         self._trial_id = trial_id
 
     # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
     # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
     _ordered_fields = [
         "number",
-        "values",
+        "_values",
         "datetime_start",
         "datetime_complete",
         "params",
         "_distributions",
         "user_attrs",
         "system_attrs",
-        "step_to_values",
+        "intermediate_values",
         "_trial_id",
         "state",
     ]
@@ -446,54 +436,6 @@ class FrozenTrial(BaseTrial):
         self._params = params
 
     @property
-    def intermediate_values(self) -> Dict[int, float]:
-
-        return self.step_to_value
-
-    @intermediate_values.setter
-    def intermediate_values(self, value: Dict[int, float]) -> None:
-
-        self.step_to_value = value
-
-    @property
-    def step_to_value(self) -> Dict[int, float]:
-
-        value = {}
-        for s, v in self._step_to_values.items():
-            if len(v) > 1:
-                raise RuntimeError(
-                    "This attribute is not available for the multi-objective optimization."
-                )
-            value[s] = v[0]
-        return value
-
-    @step_to_value.setter
-    def step_to_value(self, value: Dict[int, float]) -> None:
-
-        for s, v in self._step_to_values.items():
-            if len(v) > 1:
-                raise RuntimeError(
-                    "This attribute is not available for the multi-objective optimization."
-                )
-
-        for s, v in value:
-            self._step_to_values[s] = (v,)
-
-    @property
-    def step_to_values(self) -> Dict[int, Sequence[float]]:
-
-        value = {}
-        for s, v in self._step_to_values.items():
-            value[s] = tuple(v)
-        return value
-
-    @step_to_values.setter
-    def step_to_values(self, value: Dict[int, Sequence[float]]) -> None:
-
-        for s, v in value.items():
-            self._step_to_values[s] = tuple(v)
-
-    @property
     def distributions(self) -> Dict[str, BaseDistribution]:
         """Dictionary that contains the distributions of :attr:`params`."""
 
@@ -532,10 +474,10 @@ class FrozenTrial(BaseTrial):
             The maximum step of intermediates.
         """
 
-        if len(self.step_to_values) == 0:
+        if len(self.intermediate_values) == 0:
             return None
         else:
-            return max(self.step_to_values.keys())
+            return max(self.intermediate_values.keys())
 
     @property
     def duration(self) -> Optional[datetime.timedelta]:
@@ -562,8 +504,6 @@ def create_trial(
     user_attrs: Optional[Dict[str, Any]] = None,
     system_attrs: Optional[Dict[str, Any]] = None,
     intermediate_values: Optional[Dict[int, float]] = None,
-    step_to_value: Optional[Dict[int, float]] = None,
-    step_to_values: Optional[Dict[int, Sequence[float]]] = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
 
@@ -617,22 +557,12 @@ def create_trial(
         intermediate_values:
             Dictionary with intermediate objective values of the trial.
 
-            .. warning::
-                Deprecated in v2.4.0. This feature will be removed in the future. The removal of
-                this feature is currently scheduled for v4.0.0, but this schedule is subject to
-                change. See https://github.com/optuna/optuna/releases/tag/v2.4.0. This argument is
-                renamed a `step_to_value`. Please use it instead.
-        step_to_value:
-            Dictionary with intermediate objective values of the trial.
-        step_to_values:
-            Dictionary with intermediate objective values of the trial for the multi-objective
-            optimization.
-
     Returns:
         Created trial.
 
     """
 
+    _values: Optional[Sequence[float]]
     if value is not None and values is not None:
         raise ValueError("Specify only one of `value` and `values`.")
     elif value is not None:
@@ -640,26 +570,11 @@ def create_trial(
     else:
         _values = values
 
-    _step_to_values = {}
-    if (
-        (intermediate_values is not None and step_to_values is not None)
-        or (step_to_value is not None and step_to_values is not None)
-        or (intermediate_values is not None and step_to_value is not None)
-    ):
-        raise ValueError("Specify only one of `value` and `values`.")
-    elif intermediate_values is not None:
-        for s, v in intermediate_values:
-            _step_to_values[s] = (v,)
-    elif step_to_value is not None:
-        for s, v in step_to_value.items():
-            _step_to_values[s] = (v,)
-    else:
-        _step_to_values = step_to_values or {}
-
     params = params or {}
     distributions = distributions or {}
     user_attrs = user_attrs or {}
     system_attrs = system_attrs or {}
+    intermediate_values = intermediate_values or {}
     state = state or TrialState.COMPLETE
 
     datetime_start = datetime.datetime.now()
@@ -672,6 +587,7 @@ def create_trial(
         number=-1,
         trial_id=-1,
         state=state,
+        value=None,
         values=_values,
         datetime_start=datetime_start,
         datetime_complete=datetime_complete,
@@ -679,7 +595,7 @@ def create_trial(
         distributions=distributions,
         user_attrs=user_attrs,
         system_attrs=system_attrs,
-        step_to_values=_step_to_values,
+        intermediate_values=intermediate_values,
     )
 
     trial._validate()

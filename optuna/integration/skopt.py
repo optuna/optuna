@@ -206,10 +206,10 @@ class SkoptSampler(BaseSampler):
                 complete_trials.append(t)
             elif (
                 t.state == TrialState.PRUNED
-                and len(t.step_to_values) > 0
+                and len(t.intermediate_values) > 0
                 and self._consider_pruned_trials
             ):
-                _, value = max(t.step_to_values.items())
+                _, value = max(t.intermediate_values.items())
                 if value is None:
                     continue
                 # We rewrite the value of the trial `t` for sampling, so we need a deepcopy.

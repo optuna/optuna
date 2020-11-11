@@ -341,7 +341,7 @@ def _create_frozen_trial(
         system_attrs={},
         params=params,
         distributions=param_distributions,
-        step_to_values={},
+        intermediate_values={},
         datetime_start=None,
         datetime_complete=None,
         trial_id=number,

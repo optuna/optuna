@@ -19,9 +19,9 @@ def test_median_pruner_with_one_trial() -> None:
 
 
 @pytest.mark.parametrize("direction_value", [("minimize", 2), ("maximize", 0.5)])
-def test_median_pruner_step_to_value(direction_value: Tuple[str, float]) -> None:
+def test_median_pruner_intermediate_values(direction_value: Tuple[str, float]) -> None:
 
-    direction, intermediate_value = direction_value
+    direction, intermediate_values = direction_value
     pruner = optuna.pruners.MedianPruner(0, 0)
     study = optuna.study.create_study(direction=direction)
 
@@ -33,12 +33,12 @@ def test_median_pruner_step_to_value(direction_value: Tuple[str, float]) -> None
     # A pruner is not activated if a trial has no intermediate values.
     assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
 
-    trial.report(intermediate_value, 1)
+    trial.report(intermediate_values, 1)
     # A pruner is activated if a trial has an intermediate value.
     assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
 
 
-def test_median_pruner_step_to_value_nan() -> None:
+def test_median_pruner_intermediate_values_nan() -> None:
 
     pruner = optuna.pruners.MedianPruner(0, 0)
     study = optuna.study.create_study()

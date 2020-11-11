@@ -634,7 +634,7 @@ def frozen_trial_factory(
         distributions={"param-a": dist},
         user_attrs={},
         system_attrs={},
-        step_to_values={i: (v,) for i, v in enumerate(values)},
+        intermediate_values={i: v for i, v in enumerate(values)},
     )
     return trial
 

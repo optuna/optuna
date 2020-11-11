@@ -6,9 +6,9 @@ import optuna
 
 
 @pytest.mark.parametrize("direction_value", [("minimize", 2), ("maximize", 0.5)])
-def test_successive_halving_pruner_step_to_value(direction_value: Tuple[str, float]) -> None:
+def test_successive_halving_pruner_intermediate_values(direction_value: Tuple[str, float]) -> None:
 
-    direction, intermediate_value = direction_value
+    direction, intermediate_values = direction_value
     pruner = optuna.pruners.SuccessiveHalvingPruner(
         min_resource=1, reduction_factor=2, min_early_stopping_rate=0
     )
@@ -24,7 +24,7 @@ def test_successive_halving_pruner_step_to_value(direction_value: Tuple[str, flo
     # A pruner is not activated if a trial has no intermediate values.
     assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
 
-    trial.report(intermediate_value, 1)
+    trial.report(intermediate_values, 1)
     # A pruner is activated if a trial has an intermediate value.
     assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
 

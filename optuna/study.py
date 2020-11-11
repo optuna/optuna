@@ -105,7 +105,6 @@ class BaseStudy(object):
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
 
     @property
-    @experimental("2.4.0")
     def best_trials(self) -> List[FrozenTrial]:
         """Return trials located at the pareto front in the study.
 
@@ -663,7 +662,10 @@ class Study(BaseStudy):
         if state == TrialState.COMPLETE:
             assert value is not None
         if value is not None:
-            self._storage.set_trial_values(trial._trial_id, value)
+            if isinstance(value, Sequence):
+                self._storage.set_trial_values(trial._trial_id, value)
+            else:
+                self._storage.set_trial_values(trial._trial_id, (value,))
         self._storage.set_trial_state(trial._trial_id, state)
 
     def _log_completed_trial(
@@ -765,7 +767,7 @@ def create_study(
 
     """
 
-    direction_obj: Tuple[StudyDirection]
+    direction_obj: Tuple[StudyDirection, ...]
     if isinstance(direction, str):
         direction_obj = (_get_study_direction(direction),)
     else:

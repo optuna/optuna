@@ -202,7 +202,7 @@ class CmaEsSampler(BaseSampler):
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
-        self, study: "optuna.study.BaseStudy", trial: "optuna.trial.FrozenTrial"
+        self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial"
     ) -> Dict[str, BaseDistribution]:
         search_space: Dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
@@ -230,7 +230,7 @@ class CmaEsSampler(BaseSampler):
 
     def sample_relative(
         self,
-        study: "optuna.study.BaseStudy",
+        study: "optuna.Study",
         trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
@@ -389,7 +389,7 @@ class CmaEsSampler(BaseSampler):
 
     def sample_independent(
         self,
-        study: "optuna.study.BaseStudy",
+        study: "optuna.Study",
         trial: "optuna.trial.FrozenTrial",
         param_name: str,
         param_distribution: BaseDistribution,
@@ -415,17 +415,17 @@ class CmaEsSampler(BaseSampler):
             )
         )
 
-    def _get_trials(self, study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
+    def _get_trials(self, study: "optuna.Study") -> List[FrozenTrial]:
         complete_trials = []
         for t in study.get_trials(deepcopy=False):
             if t.state == TrialState.COMPLETE:
                 complete_trials.append(t)
             elif (
                 t.state == TrialState.PRUNED
-                and len(t.step_to_value) > 0
+                and len(t.intermediate_values) > 0
                 and self._consider_pruned_trials
             ):
-                _, value = max(t.step_to_value.items())
+                _, value = max(t.intermediate_values.items())
                 if value is None:
                     continue
                 # We rewrite the value of the trial `t` for sampling, so we need a deepcopy.

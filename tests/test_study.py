@@ -473,7 +473,7 @@ def test_study_trials_dataframe_with_no_trials() -> None:
             "user_attrs",
             "system_attrs",
             "state",
-            "step_to_value",
+            "intermediate_values",
             "_trial_id",
             "distributions",
         ),
@@ -512,7 +512,7 @@ def test_trials_dataframe(storage_mode: str, attrs: Tuple[str, ...], multi_index
         #   distributions: 2
         #   user_attrs: 1
         #   system_attrs: 1
-        #   step_to_value: 1
+        #   intermediate_values: 1
         expected_n_columns = len(attrs)
         if "params" in attrs:
             expected_n_columns += 1
@@ -1032,8 +1032,8 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
 
     assert len(study.trials) == 10
 
-    print(study.trials)
     for trial in study.trials:
+        assert trial.values
         assert len(trial.values) == n_objectives
 
 
