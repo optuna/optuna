@@ -954,9 +954,11 @@ class RDBStorage(BaseStorage):
             .filter(models.TrialModel.study_id == study_id)
             .all()
         )
-        trial_ids = {trial_id_tuple[0]
+        trial_ids = {
+            trial_id_tuple[0]
             for trial_id_tuple in trial_ids
-            if trial_id_tuple[0] not in excluded_trial_ids}
+            if trial_id_tuple[0] not in excluded_trial_ids
+        }
         try:
             trial_models = (
                 session.query(models.TrialModel)
