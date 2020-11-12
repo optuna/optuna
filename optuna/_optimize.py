@@ -213,7 +213,7 @@ def _run_trial(
             return trial
         raise
 
-    checked_value, failure_message = _check_value(study._n_objectives, value, trial)
+    checked_value, failure_message = _check_value(len(study.directions), value, trial)
 
     if failure_message is None:
         assert checked_value is not None
@@ -231,35 +231,30 @@ def _run_trial(
 def _check_value(
     n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
 ) -> Tuple[Optional[Sequence[float]], Optional[str]]:
-    value: Optional[Sequence[float]] = None
-    failure_message = None
-
-    trial_number = trial.number
     if isinstance(original_value, Sequence):
         if n_objectives != len(original_value):
-            failure_message = (
+            return None, (
                 "Trial {} failed, because the number of the values {} is did not match the "
                 "number of the objectives {}.".format(
-                    trial_number, len(original_value), n_objectives
+                    trial.number, len(original_value), n_objectives
                 )
             )
         else:
-            value = []
-            for v in original_value:
-                checked_v, failure_message = _check_single_value(v, trial)
-                if failure_message is not None:
-                    # `value` is assumed to be ignored on failure so we can set it to any value.
-                    value = None
-                    continue
-                else:
-                    assert isinstance(value, list)
-                    value.append(checked_v)
+            _original_value = original_value
     else:
-        _value, failure_message = _check_single_value(original_value, trial)
-        if _value is None:
-            value = _value
+        _original_value = (original_value,)
+
+    value: Optional[Sequence[float]] = []
+    failure_message = None
+    for v in _original_value:
+        checked_v, failure_message = _check_single_value(v, trial)
+        if failure_message is not None:
+            # `value` is assumed to be ignored on failure so we can set it to any value.
+            value = None
+            continue
         else:
-            value = [_value]
+            assert isinstance(value, list)
+            value.append(checked_v)
 
     return value, failure_message
 

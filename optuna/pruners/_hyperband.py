@@ -255,7 +255,6 @@ class HyperbandPruner(BasePruner):
         class _BracketStudy(optuna.study.Study):
 
             _VALID_ATTRS = (
-                "_n_objectives",
                 "get_trials",
                 "directions",
                 "direction",

@@ -389,7 +389,6 @@ class FrozenTrial(BaseTrial):
     @value.setter
     def value(self, v: Optional[float]) -> None:
 
-        assert not isinstance(v, Sequence)
         if self._values is not None:
             if len(self._values) > 1:
                 raise RuntimeError(

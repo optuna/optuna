@@ -40,7 +40,7 @@ class _StudyInfo:
         self.updates: Dict[int, _TrialUpdate] = {}
         # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
-        self.direction: Sequence[StudyDirection] = [StudyDirection.NOT_SET]
+        self.directions: Sequence[StudyDirection] = [StudyDirection.NOT_SET]
         self.name: Optional[str] = None
 
 
@@ -90,21 +90,22 @@ class _CachedStorage(BaseStorage):
 
         self._backend.delete_study(study_id)
 
-    def set_study_direction(self, study_id: int, direction: Sequence[StudyDirection]) -> None:
+    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
 
         with self._lock:
             if study_id in self._studies:
-                current_direction = self._studies[study_id].direction
-                if direction == current_direction:
+                current_directions = self._studies[study_id].directions
+                if directions == current_directions:
                     return
                 elif (
-                    len(current_direction) == 1 and current_direction[0] == StudyDirection.NOT_SET
+                    len(current_directions) == 1
+                    and current_directions[0] == StudyDirection.NOT_SET
                 ):
-                    self._studies[study_id].direction = direction
-                    self._backend.set_study_direction(study_id, direction)
+                    self._studies[study_id].directions = directions
+                    self._backend.set_study_directions(study_id, directions)
                     return
 
-        self._backend.set_study_direction(study_id, direction)
+        self._backend.set_study_directions(study_id, directions)
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
@@ -141,20 +142,20 @@ class _CachedStorage(BaseStorage):
             self._studies[study_id].name = name
         return name
 
-    def get_study_direction(self, study_id: int) -> Sequence[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> Sequence[StudyDirection]:
 
         with self._lock:
             if study_id in self._studies:
-                direction = self._studies[study_id].direction
-                if len(direction) > 1 or direction[0] != StudyDirection.NOT_SET:
-                    return tuple(direction)
+                directions = self._studies[study_id].directions
+                if len(directions) > 1 or directions[0] != StudyDirection.NOT_SET:
+                    return tuple(directions)
 
-        direction = self._backend.get_study_direction(study_id)
+        directions = self._backend.get_study_directions(study_id)
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
-            self._studies[study_id].direction = direction
-        return tuple(direction)
+            self._studies[study_id].directions = directions
+        return tuple(directions)
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 

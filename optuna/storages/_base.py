@@ -163,13 +163,13 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_study_direction(self, study_id: int, direction: Sequence[StudyDirection]) -> None:
+    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
         """Register an optimization problem direction to a study.
 
         Args:
             study_id:
                 ID of the study.
-            direction:
+            directions:
                 A sequence of direction whose element is either
                 :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
                 :obj:`~optuna.study.StudyDirection.MINIMIZE`.
@@ -237,7 +237,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_direction(self, study_id: int) -> Sequence[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> Sequence[StudyDirection]:
         """Read whether a study maximizes or minimizes an objective.
 
         Args:
@@ -588,10 +588,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         if len(all_trials) == 0:
             raise ValueError("No trials are completed yet.")
 
-        _direction = self.get_study_direction(study_id)
-        if len(_direction) > 1:
+        _directions = self.get_study_directions(study_id)
+        if len(_directions) > 1:
             raise ValueError("Best trial can be obtained only for single-objective optimization.")
-        direction = _direction[0]
+        direction = _directions[0]
 
         if direction == StudyDirection.MAXIMIZE:
             best_trial = max(all_trials, key=lambda t: t.value)

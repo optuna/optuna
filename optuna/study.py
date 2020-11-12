@@ -21,7 +21,6 @@ from optuna._dataframe import pd
 from optuna._experimental import experimental
 from optuna._multi_objective_utils import _get_pareto_front_trials
 from optuna._optimize import _optimize
-from optuna._study_direction import _get_study_direction
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
 from optuna.trial import create_trial
@@ -40,20 +39,6 @@ class BaseStudy(object):
 
         self._study_id = study_id
         self._storage = storage
-
-    @property
-    def _n_objectives(self) -> int:
-        """Return the number of objectives.
-
-        Returns:
-            Number of objectives.
-        """
-
-        directions = self.directions
-
-        if isinstance(directions, Sequence):
-            return len(directions)
-        return 1
 
     @property
     def best_params(self) -> Dict[str, Any]:
@@ -98,7 +83,7 @@ class BaseStudy(object):
                 If the problem is the multi-objective optimization.
         """
 
-        if self._n_objectives > 1:
+        if len(self.directions) > 1:
             raise RuntimeError(
                 "The best trial of a `study` is only supported for single-objective optimization."
             )
@@ -132,7 +117,7 @@ class BaseStudy(object):
                 If the problem is the multi-objective optimization.
         """
 
-        if self._n_objectives > 1:
+        if len(self.directions) > 1:
             raise RuntimeError(
                 "The single direction of a `study` is only supported for single-objective "
                 "optimization."
@@ -148,7 +133,7 @@ class BaseStudy(object):
             A tuple of :class:`~optuna.study.StudyDirection` objects.
         """
 
-        return self._storage.get_study_direction(self._study_id)
+        return self._storage.get_study_directions(self._study_id)
 
     @property
     def trials(self) -> List[FrozenTrial]:
@@ -778,13 +763,20 @@ def create_study(
 
     """
 
-    direction_obj: Tuple[StudyDirection, ...]
     if isinstance(direction, str):
-        direction_obj = (_get_study_direction(direction),)
-    else:
-        if len(direction) < 1:
-            raise ValueError("The number of objectives must be greater than 0.")
-        direction_obj = tuple([_get_study_direction(d) for d in direction])
+        direction = (direction,)
+
+    if len(direction) < 1:
+        raise ValueError("The number of objectives must be greater than 0.")
+    elif any(d != "minimize" and d != "maximize" for d in direction):
+        raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
+
+    directions = tuple(
+        map(
+            lambda d: StudyDirection.MINIMIZE if d == "minimize" else StudyDirection.MAXIMIZE,
+            direction,
+        )
+    )
 
     storage = storages.get_storage(storage)
     try:
@@ -801,7 +793,7 @@ def create_study(
         else:
             raise
 
-    if sampler is None and len(direction_obj) > 1:
+    if sampler is None and len(directions) > 1:
         _logger.info(
             "Multi-objective optimization is set, but no sampler is specified. "
             "The sampler is set to `samplers.RandomSampler`."
@@ -811,7 +803,7 @@ def create_study(
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
-    study._storage.set_study_direction(study_id, direction_obj)
+    study._storage.set_study_directions(study_id, directions)
 
     return study
 

@@ -188,7 +188,7 @@ def test_get_study_id_from_trial_id(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_set_and_get_study_direction(storage_mode: str) -> None:
+def test_set_and_get_study_directions(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
 
@@ -207,14 +207,14 @@ def test_set_and_get_study_direction(storage_mode: str) -> None:
             study_id = storage.create_new_study()
 
             def check_set_and_get(direction: Sequence[StudyDirection]) -> None:
-                storage.set_study_direction(study_id, direction)
-                got_direction = storage.get_study_direction(study_id)
+                storage.set_study_directions(study_id, direction)
+                got_direction = storage.get_study_directions(study_id)
 
                 assert got_direction == tuple(
                     direction
                 ), "Direction of a study should be a tuple of `StudyDirection` objects."
 
-            direction = storage.get_study_direction(study_id)
+            direction = storage.get_study_directions(study_id)
             assert len(direction) == 1
             assert direction[0] == StudyDirection.NOT_SET
 
@@ -222,23 +222,23 @@ def test_set_and_get_study_direction(storage_mode: str) -> None:
             check_set_and_get(target)
 
             # Test overwriting value to the same direction.
-            storage.set_study_direction(study_id, target)
+            storage.set_study_directions(study_id, target)
 
             # Test overwriting value to the opposite direction.
             with pytest.raises(ValueError):
-                storage.set_study_direction(study_id, opposite)
+                storage.set_study_directions(study_id, opposite)
 
             # Test overwriting value to the not set.
             with pytest.raises(ValueError):
-                storage.set_study_direction(study_id, (StudyDirection.NOT_SET,))
+                storage.set_study_directions(study_id, (StudyDirection.NOT_SET,))
 
             # Test non-existent study.
             with pytest.raises(KeyError):
-                storage.set_study_direction(study_id + 1, opposite)
+                storage.set_study_directions(study_id + 1, opposite)
 
             # Test non-existent study is checked before directions.
             with pytest.raises(KeyError):
-                storage.set_study_direction(study_id + 1, (StudyDirection.NOT_SET,))
+                storage.set_study_directions(study_id + 1, (StudyDirection.NOT_SET,))
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -871,7 +871,7 @@ def test_get_n_trials_state_option(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study()
-        storage.set_study_direction(study_id, (StudyDirection.MAXIMIZE,))
+        storage.set_study_directions(study_id, (StudyDirection.MAXIMIZE,))
         generator = random.Random(51)
 
         states = [
@@ -906,7 +906,7 @@ def test_get_best_trial(storage_mode: str) -> None:
         with pytest.raises(KeyError):
             storage.get_best_trial(study_id + 1)
 
-        storage.set_study_direction(study_id, (StudyDirection.MAXIMIZE,))
+        storage.set_study_directions(study_id, (StudyDirection.MAXIMIZE,))
         generator = random.Random(51)
         for i in range(3):
             template_trial = _generate_trial(generator)
@@ -931,7 +931,7 @@ def _setup_studies(
         study_id = storage.create_new_study(study_name=study_name)
         if direction is None:
             direction = generator.choice([StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
-        storage.set_study_direction(study_id, (direction,))
+        storage.set_study_directions(study_id, (direction,))
         best_trial = None
         trials = {}
         datetime_start = None
@@ -1022,7 +1022,7 @@ def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> N
     with StorageSupplier(storage_mode) as storage:
         study_id = storage.create_new_study()
 
-        storage.set_study_direction(study_id, (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE))
+        storage.set_study_directions(study_id, (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE))
         generator = random.Random(51)
         for i in range(3):
             template_trial = _generate_trial(generator)

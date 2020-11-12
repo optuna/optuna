@@ -4,12 +4,11 @@ from typing import Sequence
 
 import optuna
 from optuna._study_direction import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-def _get_pareto_front_trials(
-    study: "optuna.study.BaseStudy",
-) -> List["optuna.trial.FrozenTrial"]:
+def _get_pareto_front_trials(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
     pareto_front = []
     trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
@@ -28,9 +27,7 @@ def _get_pareto_front_trials(
 
 
 def _dominates(
-    trial0: "optuna.trial.FrozenTrial",
-    trial1: "optuna.trial.FrozenTrial",
-    directions: Sequence[StudyDirection],
+    trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection]
 ) -> bool:
     values0 = trial0.values
     values1 = trial1.values
@@ -58,7 +55,7 @@ def _dominates(
     if normalized_values0 == normalized_values1:
         return False
 
-    return all([v0 <= v1 for v0, v1 in zip(normalized_values0, normalized_values1)])
+    return all(v0 <= v1 for v0, v1 in zip(normalized_values0, normalized_values1))
 
 
 def _normalize_value(value: Optional[float], direction: StudyDirection) -> float:

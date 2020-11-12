@@ -16,7 +16,6 @@ import types
 from typing import Any
 from typing import Dict
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 import warnings
 
@@ -166,11 +165,7 @@ class _Studies(Lister):
                 if s.datetime_start is not None
                 else None
             )
-            if isinstance(s.direction, Sequence):
-                directions = tuple([d.name for d in s.direction])
-            else:
-                directions = (s.direction.name,)
-            row = (s.study_name, directions, s.n_trials, start)
+            row = (s.study_name, tuple(d.name for d in s.directions), s.n_trials, start)
             rows.append(row)
 
         return self._study_list_header, tuple(rows)

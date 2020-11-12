@@ -189,24 +189,24 @@ class RDBStorage(BaseStorage):
         return study_name
 
     # TODO(sano): Prevent simultaneously setting different direction in distributed environments.
-    def set_study_direction(self, study_id: int, direction: Sequence[StudyDirection]) -> None:
+    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
 
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
-        direction = tuple(direction)
-        current_direction = tuple(
+        directions = tuple(directions)
+        current_directions = tuple(
             [d.direction for d in models.StudyDirectionModel.where_study(study, session)]
         )
 
         if (
-            len(current_direction) > 0
-            and current_direction[0] != StudyDirection.NOT_SET
-            and current_direction != direction
+            len(current_directions) > 0
+            and current_directions[0] != StudyDirection.NOT_SET
+            and current_directions != directions
         ):
             raise ValueError(
                 "Cannot overwrite study direction from {} to {}.".format(
-                    current_direction, direction
+                    current_directions, directions
                 )
             )
 
@@ -214,7 +214,7 @@ class RDBStorage(BaseStorage):
             models.StudyDirectionModel.study_id == study_id
         ).delete()
 
-        for objective_id, d in enumerate(direction):
+        for objective_id, d in enumerate(directions):
             direction_model = models.StudyDirectionModel(
                 study_id=study_id, objective_id=objective_id, direction=d
             )
@@ -284,7 +284,7 @@ class RDBStorage(BaseStorage):
 
         return study.study_name
 
-    def get_study_direction(self, study_id: int) -> Sequence[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> Sequence[StudyDirection]:
 
         session = self.scoped_session()
 
@@ -374,15 +374,15 @@ class RDBStorage(BaseStorage):
         study_summary = study_summary_stmt.all()
         study_summaries = []
         for study in study_summary:
-            direction = tuple(
-                [d.direction for d in models.StudyDirectionModel.where_study(study, session)]
-            )
+            directions = [
+                d.direction for d in models.StudyDirectionModel.where_study(study, session)
+            ]
 
             best_trial: Optional[models.TrialModel] = None
             try:
-                if len(direction) > 1:
+                if len(directions) > 1:
                     raise ValueError
-                elif direction[0] == StudyDirection.MAXIMIZE:
+                elif directions[0] == StudyDirection.MAXIMIZE:
                     best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
                 else:
                     best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
@@ -441,7 +441,8 @@ class RDBStorage(BaseStorage):
             study_summaries.append(
                 StudySummary(
                     study_name=study.study_name,
-                    direction=direction,
+                    direction=None,
+                    directions=directions,
                     best_trial=best_trial_frozen,
                     user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
                     system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
@@ -1118,7 +1119,7 @@ class RDBStorage(BaseStorage):
 
         session = self.scoped_session()
 
-        _direction = self.get_study_direction(study_id)
+        _direction = self.get_study_directions(study_id)
         if len(_direction) > 1:
             raise ValueError("Best trial can be obtained only for single-objective optimization.")
         direction = _direction[0]

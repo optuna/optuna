@@ -78,7 +78,7 @@ class InMemoryStorage(BaseStorage):
             del self._study_name_to_id[study_name]
             del self._studies[study_id]
 
-    def set_study_direction(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
+    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
 
         with self._lock:
             self._check_study_id(study_id)
@@ -127,7 +127,7 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].name
 
-    def get_study_direction(self, study_id: int) -> Sequence[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> Sequence[StudyDirection]:
 
         with self._lock:
             self._check_study_id(study_id)
@@ -154,7 +154,8 @@ class InMemoryStorage(BaseStorage):
         study = self._studies[study_id]
         return StudySummary(
             study_name=study.name,
-            direction=study.directions,
+            direction=None,
+            directions=study.directions,
             best_trial=copy.deepcopy(self._get_trial(study.best_trial_id))
             if study.best_trial_id is not None
             else None,
@@ -312,7 +313,7 @@ class InMemoryStorage(BaseStorage):
             self._studies[study_id].best_trial_id = trial_id
             return
 
-        _directions = self.get_study_direction(study_id)
+        _directions = self.get_study_directions(study_id)
         if len(_directions) > 1:
             return
         directions = _directions[0]

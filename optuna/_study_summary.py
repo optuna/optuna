@@ -3,7 +3,6 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import Union
 
 from optuna import logging
 from optuna import trial
@@ -22,7 +21,12 @@ class StudySummary(object):
         study_name:
             Name of the :class:`~optuna.study.Study`.
         direction:
-            A :class:`~optuna.study.StudyDirection` or a sequence of such values.
+            :class:`~optuna.study.StudyDirection` of the :class:`~optuna.study.Study`.
+
+            .. note::
+                This attribute is only available for the single-objective optimization.
+        directions:
+            A sequence of :class:`~optuna.study.StudyDirection` objects.
         best_trial:
             :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
         user_attrs:
@@ -41,17 +45,25 @@ class StudySummary(object):
     def __init__(
         self,
         study_name: str,
-        direction: Union[StudyDirection, Sequence[StudyDirection]],
+        direction: Optional[StudyDirection],
         best_trial: Optional[trial.FrozenTrial],
         user_attrs: Dict[str, Any],
         system_attrs: Dict[str, Any],
         n_trials: int,
         datetime_start: Optional[datetime.datetime],
         study_id: int,
+        directions: Optional[Sequence[StudyDirection]] = None,
     ):
 
         self.study_name = study_name
-        self.direction = direction
+        if direction is None and directions is None:
+            raise ValueError("Specify only one of `direction` and `directions`")
+        elif directions is not None:
+            self._directions = tuple(directions)
+        elif direction is not None:
+            self._directions = (direction,)
+        else:
+            raise ValueError("Specify at least one of `direction` and `directions`")
         self.best_trial = best_trial
         self.user_attrs = user_attrs
         self.system_attrs = system_attrs
@@ -81,19 +93,31 @@ class StudySummary(object):
         return self._study_id <= other._study_id
 
     @property
-    def direction(self) -> Union[StudyDirection, Sequence[StudyDirection]]:
+    def direction(self) -> StudyDirection:
 
-        return self._direction
+        if len(self._directions) > 1:
+            raise RuntimeError(
+                "This attribute is not available for the multi-objective optimization."
+            )
+
+        return self._directions[0]
 
     @direction.setter
-    def direction(self, d: Union[StudyDirection, Sequence[StudyDirection]]) -> None:
+    def direction(self, d: StudyDirection) -> None:
 
-        self._direction: Union[StudyDirection, Sequence[StudyDirection]]
-        if isinstance(d, Sequence):
-            d = tuple(d)
-            if len(d) == 1:
-                self._direction = d[0]
-            else:
-                self._direction = d
-        else:
-            self._direction = d
+        if len(self._directions) > 1:
+            raise RuntimeError(
+                "This attribute is not available for the multi-objective optimization."
+            )
+
+        self._directions = (d,)
+
+    @property
+    def directions(self) -> Sequence[StudyDirection]:
+
+        return tuple(self._directions)
+
+    @directions.setter
+    def directions(self, d: Sequence[StudyDirection]) -> None:
+
+        self._directions = tuple(d)

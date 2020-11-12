@@ -167,26 +167,29 @@ class RedisStorage(BaseStorage):
 
         return "study_id:{:010d}:direction".format(study_id)
 
-    def set_study_direction(self, study_id: int, direction: Sequence[StudyDirection]) -> None:
+    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
 
         self._check_study_id(study_id)
 
         if self._redis.exists(self._key_study_direction(study_id)):
             direction_pkl = self._redis.get(self._key_study_direction(study_id))
             assert direction_pkl is not None
-            current_direction = pickle.loads(direction_pkl)
-            if current_direction[0] != StudyDirection.NOT_SET and current_direction != direction:
+            current_directions = pickle.loads(direction_pkl)
+            if (
+                current_directions[0] != StudyDirection.NOT_SET
+                and current_directions != directions
+            ):
                 raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
-                        current_direction, direction
+                        current_directions, directions
                     )
                 )
 
         with self._redis.pipeline() as pipe:
             pipe.multi()
-            pipe.set(self._key_study_direction(study_id), pickle.dumps(direction))
+            pipe.set(self._key_study_direction(study_id), pickle.dumps(directions))
             study_summary = self._get_study_summary(study_id)
-            study_summary.direction = direction
+            study_summary.directions = directions
             pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
             pipe.execute()
 
@@ -230,7 +233,7 @@ class RedisStorage(BaseStorage):
             raise KeyError("No such study: {}.".format(study_id))
         return pickle.loads(study_name_pkl)
 
-    def get_study_direction(self, study_id: int) -> Sequence[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> Sequence[StudyDirection]:
 
         direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
         if direction_pkl is None:
@@ -407,7 +410,7 @@ class RedisStorage(BaseStorage):
             if len(all_trials) == 0:
                 raise ValueError("No trials are completed yet.")
 
-            _direction = self.get_study_direction(study_id)
+            _direction = self.get_study_directions(study_id)
             if len(_direction) > 1:
                 raise ValueError(
                     "Best trial can be obtained only for single-objective optimization."
@@ -460,7 +463,7 @@ class RedisStorage(BaseStorage):
             return
         study_id = self.get_study_id_from_trial_id(trial_id)
 
-        _direction = self.get_study_direction(study_id)
+        _direction = self.get_study_directions(study_id)
         if len(_direction) > 1:
             return
         direction = _direction[0]

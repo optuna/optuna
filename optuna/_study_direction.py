@@ -16,12 +16,3 @@ class StudyDirection(enum.Enum):
     NOT_SET = 0
     MINIMIZE = 1
     MAXIMIZE = 2
-
-
-def _get_study_direction(direction: str) -> StudyDirection:
-    if direction == "minimize":
-        return StudyDirection.MINIMIZE
-    elif direction == "maximize":
-        return StudyDirection.MAXIMIZE
-    else:
-        raise ValueError("Please set either 'minimize' or 'maximize' to direction.")

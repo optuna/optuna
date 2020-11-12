@@ -93,7 +93,7 @@ def check_study(study: optuna.Study) -> None:
     for trial in study.trials:
         check_frozen_trial(trial)
 
-    if study._n_objectives > 1:
+    if len(study.directions) > 1:
         return
 
     complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
@@ -1001,11 +1001,9 @@ def test_log_completed_trial_skip_storage_access() -> None:
 
 def test_create_study_with_multi_objectives() -> None:
     study = optuna.create_study(direction=["maximize"])
-    assert study._n_objectives == 1
     assert study.direction == StudyDirection.MAXIMIZE
 
     study = optuna.create_study(direction=["maximize", "minimize"])
-    assert study._n_objectives == 2
     assert study.directions == (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE)
 
     with pytest.raises(ValueError):
