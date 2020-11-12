@@ -4,6 +4,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Tuple
+from typing import Union
 
 import numpy
 
@@ -66,7 +67,7 @@ class _SearchSpaceTransform:
         # order will be guaranteed.
         search_space = OrderedDict(search_space)
 
-        bounds, column_to_encoded_columns = _transform_bounds(
+        bounds, column_to_encoded_columns = _transform_search_space(
             search_space, transform_log, transform_step
         )
 
@@ -103,7 +104,7 @@ class _SearchSpaceTransform:
                 trans_params[bound_idx + choice_idx] = 1
                 bound_idx += len(distribution.choices)
             else:
-                trans_params[bound_idx] = _transform_param(
+                trans_params[bound_idx] = _transform_numerical_param(
                     param, distribution, self._transform_log
                 )
                 bound_idx += 1
@@ -136,14 +137,16 @@ class _SearchSpaceTransform:
                 # Select the highest rated one-hot encoding.
                 param = distribution.to_external_repr(trans_param.argmax())
             else:
-                param = _untransform_param(trans_param.item(), distribution, self._transform_log)
+                param = _untransform_numerical_param(
+                    trans_param.item(), distribution, self._transform_log
+                )
 
             params[name] = param
 
         return params
 
 
-def _transform_bounds(
+def _transform_search_space(
     search_space: Dict[str, BaseDistribution], transform_log: bool, transform_step: bool
 ) -> Tuple[numpy.ndarray, List[numpy.ndarray]]:
     assert len(search_space) > 0, "Cannot transform if no distributions are given."
@@ -176,31 +179,31 @@ def _transform_bounds(
         ):
             if isinstance(d, UniformDistribution):
                 bds = (
-                    _transform_param(d.low, d, transform_log),
-                    _transform_param(d.high, d, transform_log),
+                    _transform_numerical_param(d.low, d, transform_log),
+                    _transform_numerical_param(d.high, d, transform_log),
                 )
             elif isinstance(d, LogUniformDistribution):
                 bds = (
-                    _transform_param(d.low, d, transform_log),
-                    _transform_param(d.high, d, transform_log),
+                    _transform_numerical_param(d.low, d, transform_log),
+                    _transform_numerical_param(d.high, d, transform_log),
                 )
             elif isinstance(d, DiscreteUniformDistribution):
                 half_step = 0.5 * d.q if transform_step else 0.0
                 bds = (
-                    _transform_param(d.low, d, transform_log) - half_step,
-                    _transform_param(d.high, d, transform_log) + half_step,
+                    _transform_numerical_param(d.low, d, transform_log) - half_step,
+                    _transform_numerical_param(d.high, d, transform_log) + half_step,
                 )
             elif isinstance(d, IntUniformDistribution):
                 half_step = 0.5 * d.step if transform_step else 0.0
                 bds = (
-                    _transform_param(d.low, d, transform_log) - half_step,
-                    _transform_param(d.high, d, transform_log) + half_step,
+                    _transform_numerical_param(d.low, d, transform_log) - half_step,
+                    _transform_numerical_param(d.high, d, transform_log) + half_step,
                 )
             elif isinstance(d, IntLogUniformDistribution):
                 half_step = 0.5 if transform_step else 0.0
                 bds = (
-                    _transform_param(d.low - half_step, d, transform_log),
-                    _transform_param(d.high + half_step, d, transform_log),
+                    _transform_numerical_param(d.low - half_step, d, transform_log),
+                    _transform_numerical_param(d.high + half_step, d, transform_log),
                 )
             else:
                 assert False, "Should not reach. Unexpected distribution."
@@ -216,7 +219,9 @@ def _transform_bounds(
     return bounds, column_to_encoded_columns
 
 
-def _transform_param(param: Any, distribution: BaseDistribution, transform_log: bool) -> float:
+def _transform_numerical_param(
+    param: Union[int, float], distribution: BaseDistribution, transform_log: bool
+) -> float:
     d = distribution
 
     if isinstance(d, CategoricalDistribution):
@@ -237,9 +242,9 @@ def _transform_param(param: Any, distribution: BaseDistribution, transform_log: 
     return trans_param
 
 
-def _untransform_param(
+def _untransform_numerical_param(
     trans_param: float, distribution: BaseDistribution, transform_log: bool
-) -> Any:
+) -> Union[int, float]:
     d = distribution
 
     if isinstance(d, CategoricalDistribution):
