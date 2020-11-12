@@ -137,7 +137,9 @@ class FrozenTrial(BaseTrial):
         self._number = number
         self.state = state
         self._values: Optional[Sequence[float]] = None
-        if value is not None:
+        if value is not None and values is not None:
+            raise ValueError("Specify only one of `value` and `values`.")
+        elif value is not None:
             self._values = (value,)
         elif values is not None:
             self._values = tuple(values)
