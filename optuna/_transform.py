@@ -94,17 +94,13 @@ class _Transform:
             configuration.
 
         """
-        n_bounds = sum(
-            len(d.choices) if isinstance(d, CategoricalDistribution) else 1
-            for d in self._search_space.values()
-        )
-
-        trans_params = numpy.zeros(n_bounds, dtype=numpy.float64)
+        trans_params = numpy.zeros(self._bounds.shape[0], dtype=numpy.float64)
 
         bound_idx = 0
         for name, distribution in self._search_space.items():
             assert name in params, "Parameter configuration must contain all distributions."
             param = params[name]
+
             if isinstance(distribution, CategoricalDistribution):
                 choice_idx = distribution.to_internal_repr(param)
                 trans_params[bound_idx + choice_idx] = 1
