@@ -32,7 +32,7 @@ _logger = get_logger(__name__)
 def plot_contour(study: Study, params: Optional[List[str]] = None) -> "Axes":
     """Plot the parameter relationship as contour plot in a study with Matplotlib.
 
-    Note that, If a parameter contains missing values, a trial with missing values is not plotted.
+    Note that, if a parameter contains missing values, a trial with missing values is not plotted.
 
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_contour` for an example.
