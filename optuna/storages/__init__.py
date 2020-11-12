@@ -9,10 +9,10 @@ from optuna.storages._redis import RedisStorage
 
 __all__ = [
     "BaseStorage",
-    "_CachedStorage",
     "InMemoryStorage",
     "RDBStorage",
     "RedisStorage",
+    "_CachedStorage",
 ]
 
 

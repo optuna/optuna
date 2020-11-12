@@ -28,10 +28,20 @@ from optuna.version import __version__
 
 
 __all__ = [
+    "Study",
+    "TYPE_CHECKING",
+    "Trial",
+    "TrialPruned",
+    "__version__",
+    "create_study",
+    "create_trial",
+    "delete_study",
     "distributions",
     "exceptions",
+    "get_all_study_summaries",
     "importance",
     "integration",
+    "load_study",
     "logging",
     "multi_objective",
     "pruners",
@@ -41,16 +51,6 @@ __all__ = [
     "trial",
     "version",
     "visualization",
-    "TrialPruned",
-    "create_study",
-    "delete_study",
-    "get_all_study_summaries",
-    "load_study",
-    "Study",
-    "create_trial",
-    "Trial",
-    "TYPE_CHECKING",
-    "__version__",
 ]
 
 

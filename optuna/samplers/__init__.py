@@ -12,9 +12,9 @@ __all__ = [
     "BaseSampler",
     "CmaEsSampler",
     "GridSampler",
+    "IntersectionSearchSpace",
     "PartialFixedSampler",
     "RandomSampler",
-    "intersection_search_space",
-    "IntersectionSearchSpace",
     "TPESampler",
+    "intersection_search_space",
 ]

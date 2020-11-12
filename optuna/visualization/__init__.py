@@ -10,6 +10,7 @@ from optuna.visualization._utils import is_available
 
 
 __all__ = [
+    "is_available",
     "matplotlib",
     "plot_contour",
     "plot_edf",
@@ -18,5 +19,4 @@ __all__ = [
     "plot_parallel_coordinate",
     "plot_param_importances",
     "plot_slice",
-    "is_available",
 ]

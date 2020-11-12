@@ -6,4 +6,11 @@ from optuna.trial._state import TrialState  # NOQA
 from optuna.trial._trial import Trial  # NOQA
 
 
-__all__ = ["BaseTrial", "FixedTrial", "create_trial", "FrozenTrial", "TrialState", "Trial"]
+__all__ = [
+    "BaseTrial",
+    "FixedTrial",
+    "FrozenTrial",
+    "Trial",
+    "TrialState",
+    "create_trial",
+]
