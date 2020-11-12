@@ -4,7 +4,7 @@ from typing import Any
 import numpy
 import pytest
 
-from optuna._transform import _Transform
+from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -29,13 +29,13 @@ from optuna.distributions import UniformDistribution
         ("bar", CategoricalDistribution(["foo", "bar", "baz"])),
     ],
 )
-def test_transform_shapes_dtypes(
+def test_search_space_transform_shapes_dtypes(
     transform_log: bool,
     transform_step: bool,
     param: Any,
     distribution: BaseDistribution,
 ) -> None:
-    trans = _Transform({"x0": distribution}, transform_log, transform_step)
+    trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)
     trans_params = trans.transform({"x0": param})
 
     if isinstance(distribution, CategoricalDistribution):
@@ -63,13 +63,13 @@ def test_transform_shapes_dtypes(
         (0.2, DiscreteUniformDistribution(0, 1, q=0.2)),
     ],
 )
-def test_transform_numerical(
+def test_search_space_transform_numerical(
     transform_log: bool,
     transform_step: bool,
     param: Any,
     distribution: BaseDistribution,
 ) -> None:
-    trans = _Transform({"x0": distribution}, transform_log, transform_step)
+    trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)
 
     expected_low = distribution.low  # type: ignore
     expected_high = distribution.high  # type: ignore
@@ -120,13 +120,13 @@ def test_transform_numerical(
         ("bar", CategoricalDistribution(["foo", "bar", "baz"])),
     ],
 )
-def test_transform_fit_values_categorical(
+def test_search_space_transform_values_categorical(
     transform_log: bool,
     transform_step: bool,
     param: Any,
     distribution: CategoricalDistribution,
 ) -> None:
-    trans = _Transform({"x0": distribution}, transform_log, transform_step)
+    trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)
 
     for bound in trans.bounds:
         assert bound[0] == 0.0
@@ -140,7 +140,7 @@ def test_transform_fit_values_categorical(
 
 @pytest.mark.parametrize("transform_log", [True, False])
 @pytest.mark.parametrize("transform_step", [True, False])
-def test_transform_shapes_dtypes_values_categorical_with_other_distribution(
+def test_search_space_transform_shapes_dtypes_values_categorical_with_other_distribution(
     transform_log: bool, transform_step: bool
 ) -> None:
     search_space = {
@@ -156,7 +156,7 @@ def test_transform_shapes_dtypes_values_categorical_with_other_distribution(
         "x3": "quux",
     }
 
-    trans = _Transform(search_space, transform_log, transform_step)
+    trans = _SearchSpaceTransform(search_space, transform_log, transform_step)
 
     trans_params = trans.transform(params)
 
@@ -216,7 +216,9 @@ def test_transform_shapes_dtypes_values_categorical_with_other_distribution(
 
 @pytest.mark.parametrize("transform_log", [True, False])
 @pytest.mark.parametrize("transform_step", [True, False])
-def test_transform_untransform_params(transform_log: bool, transform_step: bool) -> None:
+def test_search_space_transform_untransform_params(
+    transform_log: bool, transform_step: bool
+) -> None:
     search_space = {
         "x0": DiscreteUniformDistribution(0, 1, q=0.2),
         "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
@@ -238,7 +240,7 @@ def test_transform_untransform_params(transform_log: bool, transform_step: bool)
         "x7": "corge",
     }
 
-    trans = _Transform(search_space, transform_log, transform_step)
+    trans = _SearchSpaceTransform(search_space, transform_log, transform_step)
 
     trans_params = trans.transform(params)
 
