@@ -200,13 +200,13 @@ def _transform_bounds(
                     _transform_param(d.high + half_step, d, transform_log),
                 )
             else:
-                assert False
+                assert False, "Should not reach. Unexpected distribution."
 
             bounds[bound_idx] = bds
             column_to_encoded_columns.append(numpy.atleast_1d(bound_idx))
             bound_idx += 1
         else:
-            assert False
+            assert False, "Should not reach. Unexpected distribution."
 
     assert bound_idx == n_bounds
 
@@ -217,7 +217,7 @@ def _transform_param(param: Any, distribution: BaseDistribution, transform_log: 
     d = distribution
 
     if isinstance(d, CategoricalDistribution):
-        assert False
+        assert False, "Should not reach. Should be one-hot encoded."
     elif isinstance(d, UniformDistribution):
         trans_param = float(param)
     elif isinstance(d, LogUniformDistribution):
@@ -229,7 +229,7 @@ def _transform_param(param: Any, distribution: BaseDistribution, transform_log: 
     elif isinstance(d, IntLogUniformDistribution):
         trans_param = math.log(param) if transform_log else float(param)
     else:
-        assert False
+        assert False, "Should not reach. Unexpected distribution."
 
     return trans_param
 
@@ -272,8 +272,8 @@ def _untransform_param(
             else:
                 param = int(trans_param)
         else:
-            assert False
+            assert False, "Should not reach. Unexpected distribution."
     else:
-        assert False
+        assert False, "Should not reach. Unexpected distribution."
 
     return param
