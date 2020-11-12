@@ -1,6 +1,5 @@
 from collections import OrderedDict
 import math
-import sys
 from typing import Any
 from typing import Dict
 from typing import List
@@ -63,11 +62,9 @@ class _Transform:
         transform_log: bool = True,
         transform_step: bool = True,
     ) -> None:
-        # In Python 3.6, dictionary orders are not guaranteed. The order must be fixed throughout
-        # since the columns in the transformed representation must be correctly mapped back to the
-        # parameters and distributions.
-        if sys.version_info.major == 3 and sys.version_info.minor < 7:
-            search_space = OrderedDict(search_space)
+        # TODO(hvy): Avoid casting to `OrderedDict` when Python 3.6 is no longer supported since
+        # order will be guaranteed.
+        search_space = OrderedDict(search_space)
 
         bounds, column_to_encoded_columns = _transform_bounds(
             search_space, transform_log, transform_step
