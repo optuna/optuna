@@ -127,11 +127,18 @@ class _Transform:
 
         params = {}
 
-        for i, (name, distribution) in enumerate(self._search_space.items()):
-            trans_single_param = trans_params[self._column_to_encoded_columns[i]]
-            params[name] = _untransform_param(
-                trans_single_param, distribution, self._transform_log
-            )
+        for (name, distribution), encoded_columns in zip(
+            self._search_space.items(), self._column_to_encoded_columns
+        ):
+            trans_param = trans_params[encoded_columns]
+
+            if isinstance(distribution, CategoricalDistribution):
+                # Select the highest rated one-hot encoding.
+                param = distribution.to_external_repr(trans_param.argmax())
+            else:
+                param = _untransform_param(trans_param.item(), distribution, self._transform_log)
+
+            params[name] = param
 
         return params
 
@@ -231,44 +238,28 @@ def _transform_param(param: Any, distribution: BaseDistribution, transform_log: 
 
 
 def _untransform_param(
-    trans_param: numpy.ndarray, distribution: BaseDistribution, transform_log: bool
+    trans_param: float, distribution: BaseDistribution, transform_log: bool
 ) -> Any:
     d = distribution
 
     if isinstance(d, CategoricalDistribution):
-        # Select the highest rated one-hot encoding.
-        param = d.to_external_repr(trans_param.argmax())
-    elif isinstance(
-        d,
-        (
-            UniformDistribution,
-            LogUniformDistribution,
-            DiscreteUniformDistribution,
-            IntUniformDistribution,
-            IntLogUniformDistribution,
-        ),
-    ):
-        trans_param = trans_param.item()
-        assert isinstance(trans_param, float)
-
-        if isinstance(d, UniformDistribution):
-            param = trans_param
-        elif isinstance(d, LogUniformDistribution):
-            param = math.exp(trans_param) if transform_log else trans_param
-        elif isinstance(d, DiscreteUniformDistribution):
-            # Clip since result may slightly exceed range due to round-off errors.
-            param = float(
-                min(max(numpy.round((trans_param - d.low) / d.q) * d.q + d.low, d.low), d.high)
-            )
-        elif isinstance(d, IntUniformDistribution):
-            param = int(numpy.round((trans_param - d.low) / d.step) * d.step + d.low)
-        elif isinstance(d, IntLogUniformDistribution):
-            if transform_log:
-                param = int(min(max(numpy.round(math.exp(trans_param)), d.low), d.high))
-            else:
-                param = int(trans_param)
+        assert False, "Should not reach. Should be one-hot encoded."
+    elif isinstance(d, UniformDistribution):
+        param = trans_param
+    elif isinstance(d, LogUniformDistribution):
+        param = math.exp(trans_param) if transform_log else trans_param
+    elif isinstance(d, DiscreteUniformDistribution):
+        # Clip since result may slightly exceed range due to round-off errors.
+        param = float(
+            min(max(numpy.round((trans_param - d.low) / d.q) * d.q + d.low, d.low), d.high)
+        )
+    elif isinstance(d, IntUniformDistribution):
+        param = int(numpy.round((trans_param - d.low) / d.step) * d.step + d.low)
+    elif isinstance(d, IntLogUniformDistribution):
+        if transform_log:
+            param = int(min(max(numpy.round(math.exp(trans_param)), d.low), d.high))
         else:
-            assert False, "Should not reach. Unexpected distribution."
+            param = int(trans_param)
     else:
         assert False, "Should not reach. Unexpected distribution."
 
