@@ -17,7 +17,7 @@ from optuna.distributions import UniformDistribution
 
 
 class _SearchSpaceTransform:
-    """Transform a search space and parameter configurations to continuous spaces.
+    """Transform a search space and parameter configurations to continuous space.
 
     The search space bounds and parameter configurations are represented as ``numpy.ndarray``s and
     transformed into continuous space. Bounds and parameters associated with categorical
