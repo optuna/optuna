@@ -18,12 +18,12 @@ from optuna.distributions import UniformDistribution
 
 
 class _Transform:
-    """Transform search spaces and parameter configurations to continuous uniform spaces.
+    """Transform a search space and parameter configurations to continuous spaces.
 
     The search space bounds and parameter configurations are represented as ``numpy.ndarray``s and
-    transformed into continuous uniform spaces. Bounds and parameters associated with
-    categorical distributions are one-hot encoded. Parameter configurations in this space can
-    additionally be untransformed, or mapped back to the original space. This type of
+    transformed into continuous space. Bounds and parameters associated with categorical
+    distributions are one-hot encoded. Parameter configurations in this space can additionally be
+    untransformed, or mapped back to the original space. This type of
     transformation/untransformation is useful for e.g. implementing samplers without having to
     condition on distribution types before sampling parameter values.
 
@@ -31,7 +31,7 @@ class _Transform:
         search_space:
             The search space. If any transformations are to be applied, parameter configurations
             are assumed to hold parameter values for all of the distributions defined in this
-            search space.
+            search space. Otherwise, assertion failures will be raised.
         transform_log:
             If :obj:`True`, apply log/exp operations to the bounds and parameters with
             corresponding distributions in log space during transformation/untransformation.
@@ -46,6 +46,9 @@ class _Transform:
     Attributes:
         bounds:
             Constructed bounds from the given search space.
+
+    Note:
+        Parameter values are not scaled to the unit cube.
 
     Note:
         ``transform_log`` and ``transform_step`` are useful for constructing bounds and parameters
@@ -80,7 +83,7 @@ class _Transform:
         return self._bounds
 
     def transform(self, params: Dict[str, Any]) -> numpy.ndarray:
-        """Transform a parameter configuration.
+        """Transform a parameter configuration from actual values to continuous space.
 
         Args:
             params:
@@ -115,7 +118,7 @@ class _Transform:
         return trans_params
 
     def untransform(self, trans_params: numpy.ndarray) -> Dict[str, Any]:
-        """Untransform a parameter configuration.
+        """Untransform a parameter configuration from continuous space to actual values.
 
         Args:
             trans_params:
