@@ -15,23 +15,23 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.trial import FrozenTrial
 
 
 class _Transform:
-    """Transform/untransform search spaces and trials to continuous uniform spaces and back.
+    """Transform search spaces and parameter configurations to continuous uniform spaces.
 
-    The search space bounds, trial parameters and values are represented as `numpy.ndarray`s and
-    transformed into one continuous uniform space. Bounds and parameters associated with
-    categorical distributions are one-hot encoded. Trial parameters in this space can be
-    untransformed, or mapped back to the original space. This type of
+    The search space bounds and parameter configurations are represented as ``numpy.ndarray``s and
+    transformed into continuous uniform spaces. Bounds and parameters associated with
+    categorical distributions are one-hot encoded. Parameter configurations in this space can
+    additionally be untransformed, or mapped back to the original space. This type of
     transformation/untransformation is useful for e.g. implementing samplers without having to
     condition on distribution types before sampling parameter values.
 
     Args:
         search_space:
-            The search space. If any transformations are to be applied, all trials are assumed
-            to hold parameter values for all of the distributions defined in this search space.
+            The search space. If any transformations are to be applied, parameter configurations
+            are assumed to hold parameter values for all of the distributions defined in this
+            search space.
         transform_log:
             If :obj:`True`, apply log/exp operations to the bounds and parameters with
             corresponding distributions in log space during transformation/untransformation.
@@ -79,40 +79,61 @@ class _Transform:
     def bounds(self) -> numpy.ndarray:
         return self._bounds
 
-    def transform(self, trials: List[FrozenTrial]) -> Tuple[numpy.ndarray, numpy.ndarray]:
-        """Transform trial parameters and values.
+    def transform(self, params: Dict[str, Any]) -> numpy.ndarray:
+        """Transform a parameter configuration.
 
         Args:
-            trials:
-                List of trials to transform.
+            params:
+                A parameter configuration to transform.
 
         Returns:
-            A tuple of two `numpy.ndarray`s. The first item holds the transformed trial
-            parameters. The second item holds the trial values.
+            An 1-dimenstional ``numpy.ndarray`` holding the transformed parameters in the
+            configuration.
 
         """
-        return _transform_params_and_values(trials, self._search_space, self._transform_log)
+        n_bounds = sum(
+            len(d.choices) if isinstance(d, CategoricalDistribution) else 1
+            for d in self._search_space.values()
+        )
 
-    def untransform_single_params(self, trans_single_params: numpy.ndarray) -> Dict[str, Any]:
-        """Untransform a single parameter configuration.
+        trans_params = numpy.zeros(n_bounds, dtype=numpy.float64)
+
+        bound_idx = 0
+        for name, distribution in self._search_space.items():
+            assert name in params, "Parameter configuration must contain all distributions."
+            param = params[name]
+            if isinstance(distribution, CategoricalDistribution):
+                choice_idx = distribution.to_internal_repr(param)
+                trans_params[bound_idx + choice_idx] = 1
+                bound_idx += len(distribution.choices)
+            else:
+                trans_params[bound_idx] = _transform_param(
+                    param, distribution, self._transform_log
+                )
+                bound_idx += 1
+
+        return trans_params
+
+    def untransform(self, trans_params: numpy.ndarray) -> Dict[str, Any]:
+        """Untransform a parameter configuration.
 
         Args:
-            trans_single_params:
-                A 1-dimensional `numpy.ndarray` in the transformed space corresponding to a
-                single parameter configuration.
+            trans_params:
+                A 1-dimensional ``numpy.ndarray`` in the transformed space corresponding to a
+                parameter configuration.
 
         Returns:
             A dictionary of an untransformed parameter configuration. Keys are parameter names.
             Values are untransformed parameter values.
 
         """
-        assert trans_single_params.shape == (self._bounds.shape[0],)
+        assert trans_params.shape == (self._bounds.shape[0],)
 
         params = {}
 
         for i, (name, distribution) in enumerate(self._search_space.items()):
-            trans_single_param = trans_single_params[self._column_to_encoded_columns[i]]
-            params[name] = _untransform_single_param(
+            trans_single_param = trans_params[self._column_to_encoded_columns[i]]
+            params[name] = _untransform_param(
                 trans_single_param, distribution, self._transform_log
             )
 
@@ -137,7 +158,7 @@ def _transform_bounds(
         d = distribution
         if isinstance(d, CategoricalDistribution):
             n_choices = len(d.choices)
-            bounds[bound_idx : bound_idx + n_choices] = (0, 1)  # Broadcasted across all choices.
+            bounds[bound_idx : bound_idx + n_choices] = (0, 1)  # Broadcast across all choices.
             column_to_encoded_columns.append(numpy.arange(bound_idx, bound_idx + n_choices))
             bound_idx += n_choices
         elif isinstance(
@@ -192,38 +213,6 @@ def _transform_bounds(
     return bounds, column_to_encoded_columns
 
 
-def _transform_params_and_values(
-    trials: List[FrozenTrial], search_space: Dict[str, BaseDistribution], transform_log: bool
-) -> Tuple[numpy.ndarray, numpy.ndarray]:
-    assert len(trials) > 0, "Cannot transform if no trials are given."
-
-    n_trials = len(trials)
-    n_bounds = sum(
-        len(d.choices) if isinstance(d, CategoricalDistribution) else 1
-        for d in search_space.values()
-    )
-
-    trans_params = numpy.zeros((n_trials, n_bounds), dtype=numpy.float64)
-    trans_values = numpy.empty((n_trials,), dtype=numpy.float64)
-
-    for trial_idx, trial in enumerate(trials):
-        bound_idx = 0
-        for name, distribution in search_space.items():
-            param = trial.params[name]
-            if isinstance(distribution, CategoricalDistribution):
-                choice_idx = distribution.to_internal_repr(param)
-                trans_params[trial_idx, bound_idx + choice_idx] = 1
-                bound_idx += len(distribution.choices)
-            else:
-                trans_params[trial_idx, bound_idx] = _transform_param(
-                    param, distribution, transform_log
-                )
-                bound_idx += 1
-        trans_values[trial_idx] = trial.value
-
-    return trans_params, trans_values
-
-
 def _transform_param(param: Any, distribution: BaseDistribution, transform_log: bool) -> float:
     d = distribution
 
@@ -245,7 +234,7 @@ def _transform_param(param: Any, distribution: BaseDistribution, transform_log: 
     return trans_param
 
 
-def _untransform_single_param(
+def _untransform_param(
     trans_param: numpy.ndarray, distribution: BaseDistribution, transform_log: bool
 ) -> Any:
     d = distribution
