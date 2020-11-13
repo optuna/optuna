@@ -171,7 +171,8 @@ def _optimize_sequential(
                     callback(study, frozen_trial)
                 except Exception as e:
                     _logger.error(
-                        f"Exception raised while callback execution! Exception: {e} Callback: {callback}",
+                        "Exception raised while callback execution! "
+                        f"Exception: {e} Callback: {callback}",
                         exc_info=True,
                     )
 
