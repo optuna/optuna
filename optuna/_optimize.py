@@ -167,7 +167,13 @@ def _optimize_sequential(
         if callbacks is not None:
             frozen_trial = copy.deepcopy(study._storage.get_trial(trial._trial_id))
             for callback in callbacks:
-                callback(study, frozen_trial)
+                try:
+                    callback(study, frozen_trial)
+                except Exception as e:
+                    _logger.error(
+                        f"Exception raised while callback execution! Exception: {e} Callback: {callback}",
+                        exc_info=True,
+                    )
 
         if progress_bar is not None:
             progress_bar.update((datetime.datetime.now() - time_start).total_seconds())
