@@ -56,7 +56,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
                 return ackley(x, y)
 
 
-            sampler = optuna.samplers.RandomSampler()
+            sampler = optuna.samplers.RandomSampler(seed=10)
 
             # Widest search space.
             study0 = optuna.create_study(study_name="x=[0,5), y=[0,5)", sampler=sampler)

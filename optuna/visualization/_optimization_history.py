@@ -29,6 +29,7 @@ def plot_optimization_history(study: Study) -> "go.Figure":
                 return x ** 2 + y
 
 
+            sampler = optuna.samplers.TPESampler(seed=10)
             study = optuna.create_study()
             study.optimize(objective, n_trials=10)
 

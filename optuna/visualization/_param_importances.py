@@ -58,8 +58,8 @@ def plot_param_importances(
                 z = trial.suggest_float("z", 0.0, 1.5)
                 return x ** 2 + y ** 3 - z ** 4
 
-
-            study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
+            sampler = optuna.samplers.RandomSampler(seed=10)
+            study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=100)
 
             optuna.visualization.plot_param_importances(study)
