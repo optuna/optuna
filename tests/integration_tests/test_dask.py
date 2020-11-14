@@ -1,7 +1,10 @@
 from contextlib import contextmanager
 import tempfile
+from typing import Iterator
 
 from distributed import Client
+from distributed import Scheduler
+from distributed import Worker
 from distributed.utils_test import gen_cluster
 import joblib
 import numpy as np
@@ -10,13 +13,14 @@ import pytest
 import optuna
 from optuna.integration.dask import DaskStorage
 from optuna.integration.dask import OptunaSchedulerExtension
+from optuna.trial import Trial
 
 
 STORAGE_MODES = ["inmemory", "sqlite"]
 
 
 @contextmanager
-def get_storage_url(specifier):
+def get_storage_url(specifier: str) -> Iterator:
     tmpfile = None
     try:
         if specifier == "inmemory":
@@ -35,13 +39,15 @@ def get_storage_url(specifier):
             tmpfile.close()
 
 
-def objective(trial):
+def objective(trial: Trial) -> float:
     x = trial.suggest_uniform("x", -10, 10)
     return (x - 2) ** 2
 
 
 @gen_cluster(client=True)
-async def test_daskstorage_registers_extension(c, s, a, b):
+async def test_daskstorage_registers_extension(
+    c: Client, s: Scheduler, a: Worker, b: Worker
+) -> None:
     assert "optuna" not in s.extensions
     await DaskStorage()
     assert "optuna" in s.extensions
@@ -49,7 +55,7 @@ async def test_daskstorage_registers_extension(c, s, a, b):
 
 
 @gen_cluster(client=True)
-async def test_name(c, s, a, b):
+async def test_name(c: Client, s: Scheduler, a: Worker, b: Worker) -> None:
     await DaskStorage(name="foo")
     ext = s.extensions["optuna"]
     assert len(ext.storages) == 1
@@ -61,7 +67,7 @@ async def test_name(c, s, a, b):
 
 
 @gen_cluster(client=True)
-async def test_name_unique(c, s, a, b):
+async def test_name_unique(c: Client, s: Scheduler, a: Worker, b: Worker) -> None:
     s1 = await DaskStorage()
     s2 = await DaskStorage()
     assert s1.name != s2.name
@@ -69,7 +75,7 @@ async def test_name_unique(c, s, a, b):
 
 @pytest.mark.parametrize("storage_specifier", STORAGE_MODES)
 @pytest.mark.parametrize("processes", [True, False])
-def test_optuna_joblib_backend(storage_specifier, processes):
+def test_optuna_joblib_backend(storage_specifier: str, processes: bool) -> None:
     with Client(processes=processes):
         with get_storage_url(storage_specifier) as url:
             storage = DaskStorage(url)
@@ -80,7 +86,7 @@ def test_optuna_joblib_backend(storage_specifier, processes):
 
 
 @pytest.mark.parametrize("storage_specifier", STORAGE_MODES)
-def test_get_base_storage(storage_specifier):
+def test_get_base_storage(storage_specifier: str) -> None:
     with Client():
         with get_storage_url(storage_specifier) as url:
             dask_storage = DaskStorage(url)
@@ -91,7 +97,7 @@ def test_get_base_storage(storage_specifier):
 
 @pytest.mark.parametrize("processes", [True, False])
 @pytest.mark.parametrize("direction", ["maximize", "minimize"])
-def test_study_direction_best_value(processes, direction):
+def test_study_direction_best_value(processes: bool, direction: str) -> None:
     # Regression test for https://github.com/jrbourbeau/dask-optuna/issues/15
     pytest.importorskip("pandas")
     with Client(processes=processes):
