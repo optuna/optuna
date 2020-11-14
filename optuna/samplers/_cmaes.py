@@ -406,6 +406,7 @@ class CmaEsSampler(BaseSampler):
         _logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
             "by using `{}` instead of `CmaEsSampler` "
+            "because it does not support `CategoricalDistribution`"
             "(optimization performance may be degraded). "
             "You can suppress this warning by setting `warn_independent_sampling` "
             "to `False` in the constructor of `CmaEsSampler`, "
