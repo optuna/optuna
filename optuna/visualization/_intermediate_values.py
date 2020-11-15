@@ -46,6 +46,7 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
 
                 return y
 
+
             sampler = optuna.samplers.TPESampler(seed=10)
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=16)
