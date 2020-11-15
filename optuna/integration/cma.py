@@ -277,8 +277,8 @@ class PyCmaSampler(BaseSampler):
         _logger.warning(
             "The parameter '{}' in trial#{} is sampled independently "
             "by using `{}` instead of `PyCmaSampler` "
-            "because it does not support `CategoricalDistribution`"
             "(optimization performance may be degraded). "
+            "`PyCmaSampler` does not support dynamic search space or `CategoricalDistribution`. "
             "You can suppress this warning by setting `warn_independent_sampling` "
             "to `False` in the constructor of `PyCmaSampler`, "
             "if this independent sampling is intended behavior.".format(
