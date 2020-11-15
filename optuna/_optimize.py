@@ -36,6 +36,7 @@ def _optimize(
     callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]] = None,
     gc_after_trial: bool = False,
     show_progress_bar: bool = False,
+    catch_callback_errors: bool = False,
 ) -> None:
     if not isinstance(catch, tuple):
         raise TypeError(
@@ -63,6 +64,7 @@ def _optimize(
                 reseed_sampler_rng=False,
                 time_start=None,
                 progress_bar=progress_bar,
+                catch_callback_errors=catch_callback_errors,
             )
         else:
             if show_progress_bar:
@@ -129,6 +131,7 @@ def _optimize_sequential(
     reseed_sampler_rng: bool,
     time_start: Optional[datetime.datetime],
     progress_bar: Optional[pbar_module._ProgressBar],
+    catch_callback_errors: bool = False,
 ) -> None:
     if reseed_sampler_rng:
         study.sampler.reseed_rng()
@@ -170,6 +173,8 @@ def _optimize_sequential(
                 try:
                     callback(study, frozen_trial)
                 except Exception as e:
+                    if not catch_callback_errors:
+                        raise
                     _logger.error(
                         "Exception raised while callback execution! "
                         f"Exception: {e} Callback: {callback}",

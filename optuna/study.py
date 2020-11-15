@@ -235,6 +235,7 @@ class Study(BaseStudy):
         callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
+        catch_callback_errors: bool = False,
     ) -> None:
         """Optimize an objective function.
 
@@ -313,6 +314,7 @@ class Study(BaseStudy):
             callbacks=callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
+            catch_callback_errors=catch_callback_errors,
         )
 
     def set_user_attr(self, key: str, value: Any) -> None:
