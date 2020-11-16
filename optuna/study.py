@@ -19,7 +19,7 @@ from optuna import trial as trial_module
 from optuna._dataframe import _trials_dataframe
 from optuna._dataframe import pd
 from optuna._experimental import experimental
-from optuna._multi_objective_utils import _get_pareto_front_trials
+from optuna._multi_objective import _get_pareto_front_trials
 from optuna._optimize import _optimize
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
@@ -49,7 +49,7 @@ class BaseStudy(object):
 
         Raises:
             RuntimeError:
-                If the problem is the multi-objective optimization.
+                If the study has more than one direction.
         """
 
         return self.best_trial.params
@@ -63,7 +63,7 @@ class BaseStudy(object):
 
         Raises:
             RuntimeError:
-                If the problem is the multi-objective optimization.
+                If the study has more than one direction.
         """
 
         best_value = self.best_trial.value
@@ -80,7 +80,7 @@ class BaseStudy(object):
 
         Raises:
             RuntimeError:
-                If the problem is the multi-objective optimization.
+                If the study has more than one direction.
         """
 
         if len(self.directions) > 1:
@@ -114,7 +114,7 @@ class BaseStudy(object):
 
         Raises:
             RuntimeError:
-                If the problem is the multi-objective optimization.
+                If the study has more than one direction.
         """
 
         if len(self.directions) > 1:
@@ -650,18 +650,12 @@ class Study(BaseStudy):
         return trial_module.Trial(self, trial_id)
 
     def _tell(
-        self,
-        trial: trial_module.Trial,
-        state: TrialState,
-        value: Optional[Union[float, Sequence[float]]],
+        self, trial: trial_module.Trial, state: TrialState, values: Optional[Sequence[float]]
     ) -> None:
         if state == TrialState.COMPLETE:
-            assert value is not None
-        if value is not None:
-            if isinstance(value, Sequence):
-                self._storage.set_trial_values(trial._trial_id, value)
-            else:
-                self._storage.set_trial_values(trial._trial_id, (value,))
+            assert values is not None
+        if values is not None:
+            self._storage.set_trial_values(trial._trial_id, values)
         self._storage.set_trial_state(trial._trial_id, state)
 
     def _log_completed_trial(
@@ -671,17 +665,17 @@ class Study(BaseStudy):
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        if isinstance(value, float):
+        if isinstance(value, Sequence):
             _logger.info(
-                "Trial {} finished with value: {} and parameters: {}. "
-                "Best is trial {} with value: {}.".format(
-                    trial.number, value, trial.params, self.best_trial.number, self.best_value
+                "Trial {} finished with value: {} and parameters: {}. ".format(
+                    trial.number, value, trial.params
                 )
             )
         else:
             _logger.info(
-                "Trial {} finished with value: {} and parameters: {}. ".format(
-                    trial.number, value, trial.params
+                "Trial {} finished with value: {} and parameters: {}. "
+                "Best is trial {} with value: {}.".format(
+                    trial.number, value, trial.params, self.best_trial.number, self.best_value
                 )
             )
 
@@ -691,8 +685,9 @@ def create_study(
     sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
     study_name: Optional[str] = None,
-    direction: Union[str, Sequence[str]] = "minimize",
+    direction: Optional[str] = None,
     load_if_exists: bool = False,
+    directions: Optional[Sequence[str]] = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
@@ -742,6 +737,8 @@ def create_study(
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization.
+        directions:
+            A sequence of directions during multi-objective optimization.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
@@ -754,27 +751,37 @@ def create_study(
 
     Raises:
         ValueError:
-            If ``direction`` is neither 'minimize' nor 'maximize' when it is a string. Or, when
-            ``direction`` is a sequence of strings, if the element of ``direction`` is neither
-            `minimize` nor `maximize`.
+            If ``direction`` is neither 'minimize' nor 'maximize' when it is a string.
+            Or, if the element of ``directions`` is neither `minimize` nor `maximize`.
+            Or, if both ``direction`` and ``directions`` are specified.
 
     See also:
         :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
 
     """
 
-    if isinstance(direction, str):
-        direction = (direction,)
+    if direction is None and directions is None:
+        directions = ("minimize",)
+        _logger.info(
+            "None of `direction` and `directions` are specified. The direction of the study is "
+            'set to "minimize".'
+        )
+    elif direction is not None:
+        directions = (direction,)
+    elif directions is not None:
+        directions = tuple(directions)
+    else:
+        raise ValueError("Specify only one of `direction` and `directions`.")
 
-    if len(direction) < 1:
+    if len(directions) < 1:
         raise ValueError("The number of objectives must be greater than 0.")
-    elif any(d != "minimize" and d != "maximize" for d in direction):
+    elif any(d != "minimize" and d != "maximize" for d in directions):
         raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
 
-    directions = tuple(
+    direction_objects = tuple(
         map(
             lambda d: StudyDirection.MINIMIZE if d == "minimize" else StudyDirection.MAXIMIZE,
-            direction,
+            directions,
         )
     )
 
@@ -793,7 +800,7 @@ def create_study(
         else:
             raise
 
-    if sampler is None and len(directions) > 1:
+    if sampler is None and len(direction_objects) > 1:
         _logger.info(
             "Multi-objective optimization is set, but no sampler is specified. "
             "The sampler is set to `samplers.RandomSampler`."
@@ -803,7 +810,7 @@ def create_study(
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
-    study._storage.set_study_directions(study_id, directions)
+    study._storage.set_study_directions(study_id, direction_objects)
 
     return study
 

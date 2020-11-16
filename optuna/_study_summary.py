@@ -24,7 +24,7 @@ class StudySummary(object):
             :class:`~optuna.study.StudyDirection` of the :class:`~optuna.study.Study`.
 
             .. note::
-                This attribute is only available for the single-objective optimization.
+                This attribute is only available during single-objective optimization.
         directions:
             A sequence of :class:`~optuna.study.StudyDirection` objects.
         best_trial:
@@ -57,13 +57,13 @@ class StudySummary(object):
 
         self.study_name = study_name
         if direction is None and directions is None:
-            raise ValueError("Specify only one of `direction` and `directions`")
+            raise ValueError("Specify one of `direction` and `directions`.")
         elif directions is not None:
             self._directions = tuple(directions)
         elif direction is not None:
             self._directions = (direction,)
         else:
-            raise ValueError("Specify at least one of `direction` and `directions`")
+            raise ValueError("Specify only one of `direction` and `directions`.")
         self.best_trial = best_trial
         self.user_attrs = user_attrs
         self.system_attrs = system_attrs
@@ -97,7 +97,7 @@ class StudySummary(object):
 
         if len(self._directions) > 1:
             raise RuntimeError(
-                "This attribute is not available for the multi-objective optimization."
+                "This attribute is not available during multi-objective optimization."
             )
 
         return self._directions[0]
@@ -107,7 +107,7 @@ class StudySummary(object):
 
         if len(self._directions) > 1:
             raise RuntimeError(
-                "This attribute is not available for the multi-objective optimization."
+                "This attribute is not available during multi-objective optimization."
             )
 
         self._directions = (d,)
@@ -115,7 +115,7 @@ class StudySummary(object):
     @property
     def directions(self) -> Sequence[StudyDirection]:
 
-        return tuple(self._directions)
+        return self._directions
 
     @directions.setter
     def directions(self, d: Sequence[StudyDirection]) -> None:

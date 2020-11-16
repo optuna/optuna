@@ -1000,21 +1000,21 @@ def test_log_completed_trial_skip_storage_access() -> None:
 
 
 def test_create_study_with_multi_objectives() -> None:
-    study = optuna.create_study(direction=["maximize"])
+    study = optuna.create_study(directions=["maximize"])
     assert study.direction == StudyDirection.MAXIMIZE
 
-    study = optuna.create_study(direction=["maximize", "minimize"])
+    study = optuna.create_study(directions=["maximize", "minimize"])
     assert study.directions == (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE)
 
     with pytest.raises(ValueError):
         # Empty `direction` isn't allowed.
-        _ = optuna.create_study(direction=[])
+        _ = optuna.create_study(directions=[])
 
 
 @pytest.mark.parametrize("n_objectives", [2, 3])
 def test_optimize_with_multi_objectives(n_objectives: int) -> None:
-    direction = ["minimize" for _ in range(n_objectives)]
-    study = optuna.create_study(direction=direction)
+    directions = ["minimize" for _ in range(n_objectives)]
+    study = optuna.create_study(directions=directions)
 
     def objective(trial: optuna.trial.Trial) -> List[float]:
         return [trial.suggest_uniform("v{}".format(i), 0, 5) for i in range(n_objectives)]
@@ -1029,7 +1029,7 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
 
 
 def test_pareto_front() -> None:
-    study = optuna.create_study(direction=["minimize", "maximize"])
+    study = optuna.create_study(directions=["minimize", "maximize"])
     assert {t.values for t in study.best_trials} == set()
 
     study.optimize(lambda t: [2, 2], n_trials=1)
@@ -1051,7 +1051,7 @@ def test_pareto_front() -> None:
 
 
 def test_callbacks_with_multi_objectives() -> None:
-    study = optuna.create_study(direction=["minimize", "maximize"])
+    study = optuna.create_study(directions=["minimize", "maximize"])
 
     def objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
         x = trial.suggest_float("x", 0, 10)

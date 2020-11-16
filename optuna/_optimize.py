@@ -188,7 +188,7 @@ def _run_trial(
     trial_number = trial.number
 
     try:
-        value = func(trial)
+        value_or_values = func(trial)
     except exceptions.TrialPruned as e:
         # TODO(mamu): Handle multi-objective cases.
         # Register the last intermediate value if present as the value of the trial.
@@ -198,7 +198,7 @@ def _run_trial(
         study._tell(
             trial,
             TrialState.PRUNED,
-            None if last_step is None else frozen_trial.intermediate_values[last_step],
+            None if last_step is None else (frozen_trial.intermediate_values[last_step],),
         )
         _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
         return trial
@@ -213,13 +213,15 @@ def _run_trial(
             return trial
         raise
 
-    checked_value, failure_message = _check_value(len(study.directions), value, trial)
+    checked_values, failure_message = _check_and_convert_to_values(
+        len(study.directions), value_or_values, trial
+    )
 
     if failure_message is None:
-        assert checked_value is not None
-        study._storage.set_trial_values(trial_id, checked_value)
+        assert checked_values is not None
+        study._storage.set_trial_values(trial_id, checked_values)
         study._storage.set_trial_state(trial_id, TrialState.COMPLETE)
-        study._log_completed_trial(trial, checked_value)
+        study._log_completed_trial(trial, checked_values)
     else:
         study._storage.set_trial_system_attr(trial_id, "fail_reason", failure_message)
         study._storage.set_trial_state(trial_id, TrialState.FAIL)
@@ -228,7 +230,7 @@ def _run_trial(
     return trial
 
 
-def _check_value(
+def _check_and_convert_to_values(
     n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
 ) -> Tuple[Optional[Sequence[float]], Optional[str]]:
     if isinstance(original_value, Sequence):
@@ -240,23 +242,22 @@ def _check_value(
                 )
             )
         else:
-            _original_value = original_value
+            _original_values = original_value
     else:
-        _original_value = (original_value,)
+        _original_values = (original_value,)
 
-    value: Optional[Sequence[float]] = []
-    failure_message = None
-    for v in _original_value:
+    _checked_values = []
+    for v in _original_values:
         checked_v, failure_message = _check_single_value(v, trial)
         if failure_message is not None:
             # `value` is assumed to be ignored on failure so we can set it to any value.
-            value = None
-            continue
+            return None, failure_message
+        elif isinstance(checked_v, float):
+            _checked_values.append(checked_v)
         else:
-            assert isinstance(value, list)
-            value.append(checked_v)
+            assert False
 
-    return value, failure_message
+    return _checked_values, None
 
 
 def _check_single_value(
@@ -278,6 +279,7 @@ def _check_single_value(
         )
 
     if value is not None and math.isnan(value):
+        value = None
         failure_message = "Trial {} failed, because the objective function returned {}.".format(
             trial.number, original_value
         )

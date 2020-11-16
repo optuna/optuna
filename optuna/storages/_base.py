@@ -566,7 +566,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     def get_best_trial(self, study_id: int) -> FrozenTrial:
         """Return the trial with the best value in a study.
 
-        This method is valid only when the single-objective optimization.
+        This method is valid only during single-objective optimization.
 
         Args:
             study_id:
@@ -578,9 +578,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         Raises:
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
+            :exec:`RuntimeError`:
+                If the study has more than one direction.
             :exc:`ValueError`:
                 If no trials have been completed.
-                Or, the problem is multi-objective optimization.
         """
         all_trials = self.get_all_trials(study_id, deepcopy=False)
         all_trials = [t for t in all_trials if t.state is TrialState.COMPLETE]
@@ -588,10 +589,12 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         if len(all_trials) == 0:
             raise ValueError("No trials are completed yet.")
 
-        _directions = self.get_study_directions(study_id)
-        if len(_directions) > 1:
-            raise ValueError("Best trial can be obtained only for single-objective optimization.")
-        direction = _directions[0]
+        directions = self.get_study_directions(study_id)
+        if len(directions) > 1:
+            raise RuntimeError(
+                "Best trial can be obtained only for single-objective optimization."
+            )
+        direction = directions[0]
 
         if direction == StudyDirection.MAXIMIZE:
             best_trial = max(all_trials, key=lambda t: t.value)

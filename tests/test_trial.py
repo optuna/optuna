@@ -1270,7 +1270,7 @@ def test_create_trial(state: TrialState) -> None:
 
 
 def test_suggest_with_multi_objectives() -> None:
-    study = optuna.create_study(direction=["maximize", "maximize"])
+    study = optuna.create_study(directions=["maximize", "maximize"])
 
     def objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
         p0 = trial.suggest_float("p0", -10, 10)
@@ -1290,7 +1290,7 @@ def test_suggest_with_multi_objectives() -> None:
 
 
 def test_number_with_multi_objectives() -> None:
-    study = optuna.create_study(direction=["maximize", "minimize", "maximize"])
+    study = optuna.create_study(directions=["maximize", "minimize", "maximize"])
 
     def objective(trial: optuna.trial.Trial, number: int) -> List[float]:
         assert trial.number == number
@@ -1304,7 +1304,7 @@ def test_number_with_multi_objectives() -> None:
 
 
 def test_user_attrs_with_multi_objectives() -> None:
-    study = optuna.create_study(direction=["maximize", "minimize", "maximize"])
+    study = optuna.create_study(directions=["maximize", "minimize", "maximize"])
 
     def objective(trial: optuna.trial.Trial) -> List[float]:
         trial.set_user_attr("foo", "bar")
@@ -1324,7 +1324,7 @@ def test_user_attrs_with_multi_objectives() -> None:
 
 
 def test_system_attrs_with_multi_objectives() -> None:
-    study = optuna.create_study(direction=["maximize", "minimize", "maximize"])
+    study = optuna.create_study(directions=["maximize", "minimize", "maximize"])
 
     def objective(trial: optuna.trial.Trial) -> List[float]:
         trial.set_system_attr("foo", "bar")
@@ -1337,7 +1337,7 @@ def test_system_attrs_with_multi_objectives() -> None:
 
 
 def test_params_and_distributions_with_multi_objectives() -> None:
-    study = optuna.create_study(direction=["maximize", "minimize", "maximize"])
+    study = optuna.create_study(directions=["maximize", "minimize", "maximize"])
 
     def objective(trial: optuna.trial.Trial) -> List[float]:
         x = trial.suggest_uniform("x", 0, 10)
@@ -1357,7 +1357,7 @@ def test_params_and_distributions_with_multi_objectives() -> None:
 
 
 def test_datetime_with_multi_objectives() -> None:
-    study = optuna.create_study(direction=["maximize", "minimize", "maximize"])
+    study = optuna.create_study(directions=["maximize", "minimize", "maximize"])
 
     def objective(trial: optuna.trial.Trial) -> List[float]:
         assert isinstance(trial.datetime_start, datetime.datetime)
