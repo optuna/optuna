@@ -10,7 +10,11 @@ optuna.visualization.matplotlib
     :toctree: generated/
     :nosignatures:
 
+    optuna.visualization.matplotlib.plot_contour
     optuna.visualization.matplotlib.plot_edf
     optuna.visualization.matplotlib.plot_intermediate_values
     optuna.visualization.matplotlib.plot_optimization_history
+    optuna.visualization.matplotlib.plot_parallel_coordinate
+    optuna.visualization.matplotlib.plot_param_importances
+    optuna.visualization.matplotlib.plot_slice
     optuna.visualization.matplotlib.is_available
