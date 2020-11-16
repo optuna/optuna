@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from optuna._study_direction import StudyDirection
 from optuna.storages._rdb.models import BaseModel
+from optuna.storages._rdb.models import StudyDirectionModel
 from optuna.storages._rdb.models import StudyModel
 from optuna.storages._rdb.models import StudySystemAttributeModel
 from optuna.storages._rdb.models import TrialModel
@@ -60,9 +61,8 @@ class TestStudySystemAttributeModel(object):
     def test_cascade_delete_on_study(session: Session) -> None:
 
         study_id = 1
-        study = StudyModel(
-            study_id=study_id, study_name="test-study", direction=StudyDirection.MINIMIZE
-        )
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=study_id, study_name="test-study", directions=[direction])
         study.system_attributes.append(
             StudySystemAttributeModel(study_id=study_id, key="sample-key1", value_json="1")
         )
@@ -135,9 +135,8 @@ class TestTrialModel(object):
     def test_cascade_delete_on_study(session: Session) -> None:
 
         study_id = 1
-        study = StudyModel(
-            study_id=study_id, study_name="test-study", direction=StudyDirection.MINIMIZE
-        )
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=study_id, study_name="test-study", directions=[direction])
         study.trials.append(TrialModel(study_id=study.study_id, state=TrialState.COMPLETE))
         study.trials.append(TrialModel(study_id=study.study_id, state=TrialState.RUNNING))
         session.add(study)
@@ -171,7 +170,8 @@ class TestTrialUserAttributeModel(object):
     @staticmethod
     def test_where_study(session: Session) -> None:
 
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(study)
@@ -189,7 +189,8 @@ class TestTrialUserAttributeModel(object):
     @staticmethod
     def test_where_trial(session: Session) -> None:
 
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(
@@ -205,7 +206,8 @@ class TestTrialUserAttributeModel(object):
     @staticmethod
     def test_all(session: Session) -> None:
 
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(
@@ -222,7 +224,8 @@ class TestTrialUserAttributeModel(object):
     def test_cascade_delete_on_trial(session: Session) -> None:
 
         trial_id = 1
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
         trial.user_attributes.append(
             TrialUserAttributeModel(trial_id=trial_id, key="sample-key1", value_json="1")
@@ -262,7 +265,8 @@ class TestTrialSystemAttributeModel(object):
     @staticmethod
     def test_where_study(session: Session) -> None:
 
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(study)
@@ -280,7 +284,8 @@ class TestTrialSystemAttributeModel(object):
     @staticmethod
     def test_where_trial(session: Session) -> None:
 
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(
@@ -296,7 +301,8 @@ class TestTrialSystemAttributeModel(object):
     @staticmethod
     def test_all(session: Session) -> None:
 
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
         session.add(
@@ -313,7 +319,8 @@ class TestTrialSystemAttributeModel(object):
     def test_cascade_delete_on_trial(session: Session) -> None:
 
         trial_id = 1
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
         trial.system_attributes.append(
             TrialSystemAttributeModel(trial_id=trial_id, key="sample-key1", value_json="1")
