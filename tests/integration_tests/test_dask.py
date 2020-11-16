@@ -11,8 +11,8 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.integration.dask import DaskStorage
 from optuna.integration.dask import _OptunaSchedulerExtension
+from optuna.integration.dask import DaskStorage
 from optuna.trial import Trial
 
 

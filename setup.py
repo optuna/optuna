@@ -77,6 +77,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "example": [
             "catboost",
             "chainer",
+            "dask[distributed]",
             "lightgbm",
             "mlflow",
             "mpi4py",
@@ -117,7 +118,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "bokeh<2.0.0",
             "chainer>=5.0.0",
             "cma",
-            "distributed",
+            "dask[distributed]",
             "fakeredis",
             "lightgbm",
             "matplotlib>=3.0.0",
@@ -158,7 +159,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
-            "distributed",
+            "dask[distributed]",
             "lightgbm",
             "mlflow",
             "mpi4py",
