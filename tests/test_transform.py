@@ -14,8 +14,6 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 
 
-@pytest.mark.parametrize("transform_log", [True, False])
-@pytest.mark.parametrize("transform_step", [True, False])
 @pytest.mark.parametrize(
     "param,distribution",
     [
@@ -29,13 +27,8 @@ from optuna.distributions import UniformDistribution
         ("bar", CategoricalDistribution(["foo", "bar", "baz"])),
     ],
 )
-def test_search_space_transform_shapes_dtypes(
-    transform_log: bool,
-    transform_step: bool,
-    param: Any,
-    distribution: BaseDistribution,
-) -> None:
-    trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)
+def test_search_space_transform_shapes_dtypes(param: Any, distribution: BaseDistribution) -> None:
+    trans = _SearchSpaceTransform({"x0": distribution})
     trans_params = trans.transform({"x0": param})
 
     if isinstance(distribution, CategoricalDistribution):
@@ -111,8 +104,6 @@ def test_search_space_transform_numerical(
         assert expected_low <= trans_params <= expected_high
 
 
-@pytest.mark.parametrize("transform_log", [True, False])
-@pytest.mark.parametrize("transform_step", [True, False])
 @pytest.mark.parametrize(
     "param,distribution",
     [
@@ -121,12 +112,9 @@ def test_search_space_transform_numerical(
     ],
 )
 def test_search_space_transform_values_categorical(
-    transform_log: bool,
-    transform_step: bool,
-    param: Any,
-    distribution: CategoricalDistribution,
+    param: Any, distribution: CategoricalDistribution
 ) -> None:
-    trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)
+    trans = _SearchSpaceTransform({"x0": distribution})
 
     for bound in trans.bounds:
         assert bound[0] == 0.0
@@ -138,11 +126,7 @@ def test_search_space_transform_values_categorical(
         assert trans_param in (0.0, 1.0)
 
 
-@pytest.mark.parametrize("transform_log", [True, False])
-@pytest.mark.parametrize("transform_step", [True, False])
-def test_search_space_transform_untransform_params(
-    transform_log: bool, transform_step: bool
-) -> None:
+def test_search_space_transform_untransform_params() -> None:
     search_space = {
         "x0": DiscreteUniformDistribution(0, 1, q=0.2),
         "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
@@ -153,6 +137,7 @@ def test_search_space_transform_untransform_params(
         "x6": IntUniformDistribution(2, 4),
         "x7": CategoricalDistribution(["corge"]),
     }
+
     params = {
         "x0": 0.2,
         "x1": "qux",
@@ -164,10 +149,8 @@ def test_search_space_transform_untransform_params(
         "x7": "corge",
     }
 
-    trans = _SearchSpaceTransform(search_space, transform_log, transform_step)
-
+    trans = _SearchSpaceTransform(search_space)
     trans_params = trans.transform(params)
-
     untrans_params = trans.untransform(trans_params)
 
     for name in params.keys():
