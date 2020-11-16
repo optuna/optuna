@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import inspect
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -94,7 +95,6 @@ def deserialize_studydirection(data: str) -> StudyDirection:
     return getattr(StudyDirection, data)
 
 
-@experimental("2.4.0")
 class _OptunaSchedulerExtension:
     def __init__(self, scheduler: distributed.Scheduler):
         self.scheduler = scheduler
@@ -413,29 +413,44 @@ def _register_with_scheduler(
         ext.storages[name] = optuna.storages.get_storage(storage)
 
 
-def use_basestorage_doc(func: Callable) -> Callable:
+def _use_basestorage_doc(func: Callable) -> Callable:
     method = getattr(optuna.storages.BaseStorage, func.__name__, None)
     if method is not None:
+        # Ensure BaseStorage and DaskStorage have the same signature
+        assert inspect.signature(func) == inspect.signature(method)
         func.__doc__ = method.__doc__
     return func
 
 
 @experimental("2.4.0")
 class DaskStorage(optuna.storages.BaseStorage):
-    """Dask-compatible Storage class
+    """Dask-compatible storage class.
 
-    Parameters
-    ----------
-    storage
-        Optuna storage class or url to use for underlying Optuna storage to wrap
-        (e.g. ``None`` for in-memory storage, ``sqlite:///example.db`` for SQLite storage).
-        Defaults to ``None``.
-    name
-        Unique identifier for the Dask storage class. If not provided, a random name
-        will be generated.
-    client
-        Dask ``Client`` to connect to. If not provided, will attempt to find an
-        existing ``Client``.
+    This storage class wraps a Optuna storage class (e.g. Optuna’s in-memory or sqlite storage)
+    and is used to run optimization trials in parallel on a Dask cluster.
+    The underlying Optuna storage object lives on the cluster’s scheduler and any method calls on
+    the ``DaskStorage`` instance results in the same method being called on the underlying Optuna
+    storage object.
+
+    See `this example <https://github.com/optuna/optuna/blob/master/
+    examples/dask_simple.py>`__
+    for how to use ``DaskStorage`` to extend Optuna's in-memory storage class to run across
+    multiple processes.
+
+    Args:
+        storage:
+            Optuna storage url to use for underlying Optuna storage class to wrap
+            (e.g. ``None`` for in-memory storage, ``sqlite:///example.db`` for SQLite storage).
+            Defaults to ``None``.
+
+        name:
+            Unique identifier for the Dask storage class. If not provided, a random name
+            will be generated.
+
+        client:
+            Dask ``Client`` to connect to. If not provided, will attempt to find an
+            existing ``Client``.
+
     """
 
     def __init__(self, storage: str = None, name: str = None, client: "distributed.Client" = None):
@@ -474,7 +489,7 @@ class DaskStorage(optuna.storages.BaseStorage):
 
         return self.client.run_on_scheduler(_, name=self.name)
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def create_new_study(self, study_name: Optional[str] = None) -> int:
         return self.client.sync(
             self.client.scheduler.optuna_create_new_study,
@@ -482,7 +497,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             study_name=study_name,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def delete_study(self, study_id: int) -> None:
         return self.client.sync(
             self.client.scheduler.optuna_delete_study,
@@ -490,7 +505,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             study_id=study_id,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
         return self.client.sync(
             self.client.scheduler.optuna_set_study_user_attr,
@@ -500,7 +515,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             value=value,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
         return self.client.sync(
             self.client.scheduler.optuna_set_study_system_attr,
@@ -510,7 +525,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             value=value,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
         return self.client.sync(
             self.client.scheduler.optuna_set_study_direction,
@@ -521,7 +536,7 @@ class DaskStorage(optuna.storages.BaseStorage):
 
     # Basic study access
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_study_id_from_name(self, study_name: str) -> int:
         return self.client.sync(
             self.client.scheduler.optuna_get_study_id_from_name,
@@ -529,7 +544,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             storage_name=self.name,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
         return self.client.sync(
             self.client.scheduler.optuna_get_study_id_from_trial_id,
@@ -537,7 +552,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             trial_id=trial_id,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_study_name_from_id(self, study_id: int) -> str:
         return self.client.sync(
             self.client.scheduler.optuna_get_study_name_from_id,
@@ -545,7 +560,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             study_id=study_id,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_study_direction(self, study_id: int) -> StudyDirection:
         direction = self.client.sync(
             self.client.scheduler.optuna_get_study_direction,
@@ -554,7 +569,7 @@ class DaskStorage(optuna.storages.BaseStorage):
         )
         return deserialize_studydirection(direction)
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
         return self.client.sync(
             self.client.scheduler.optuna_get_study_user_attrs,
@@ -562,7 +577,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             study_id=study_id,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
         return self.client.sync(
             self.client.scheduler.optuna_get_study_system_attrs,
@@ -576,13 +591,13 @@ class DaskStorage(optuna.storages.BaseStorage):
         )
         return [deserialize_studysummary(s) for s in serialized_summaries]
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_all_study_summaries(self) -> List[StudySummary]:
         return self.client.sync(self._get_all_study_summaries)
 
     # Basic trial manipulation
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
         return self.client.sync(
             self.client.scheduler.optuna_create_new_trial,
@@ -591,7 +606,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             template_trial=template_trial,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
         return self.client.sync(
             self.client.scheduler.optuna_set_trial_state,
@@ -600,7 +615,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             state=state.name,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def set_trial_param(
         self,
         trial_id: int,
@@ -617,7 +632,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             distribution=distribution_to_json(distribution),
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_trial_number_from_id(self, trial_id: int) -> int:
         return self.client.sync(
             self.client.scheduler.optuna_get_trial_number_from_id,
@@ -625,7 +640,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             trial_id=trial_id,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
         return self.client.sync(
             self.client.scheduler.optuna_get_trial_param,
@@ -634,7 +649,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             param_name=param_name,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def set_trial_value(self, trial_id: int, value: float) -> None:
         return self.client.sync(
             self.client.scheduler.optuna_set_trial_value,
@@ -643,7 +658,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             storage_name=self.name,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
@@ -655,7 +670,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             intermediate_value=intermediate_value,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
         return self.client.sync(
             self.client.scheduler.optuna_set_trial_user_attr,
@@ -665,7 +680,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             value=value,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
         return self.client.sync(
             self.client.scheduler.optuna_set_trial_system_attr,
@@ -682,7 +697,7 @@ class DaskStorage(optuna.storages.BaseStorage):
         )
         return deserialize_frozentrial(serialized_trial)
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_trial(self, trial_id: int) -> FrozenTrial:
         return self.client.sync(self._get_trial, trial_id=trial_id)
 
@@ -694,7 +709,7 @@ class DaskStorage(optuna.storages.BaseStorage):
         )
         return [deserialize_frozentrial(t) for t in serialized_trials]
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
         return self.client.sync(
             self._get_all_trials,
@@ -702,7 +717,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             deepcopy=deepcopy,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
         return self.client.sync(
             self.client.scheduler.optuna_get_n_trials,
@@ -711,7 +726,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             state=state,
         )
 
-    @use_basestorage_doc
+    @_use_basestorage_doc
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         return self.client.sync(
             self.client.scheduler.optuna_read_trials_from_remote_storage,
