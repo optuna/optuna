@@ -153,7 +153,7 @@ class FrozenTrial(BaseTrial):
         self._trial_id = trial_id
 
     # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
-    # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
+    # TODO(hvy): Remove this list in Python 3.7 as the order of `self.__dict__` is preserved.
     _ordered_fields = [
         "number",
         "_values",

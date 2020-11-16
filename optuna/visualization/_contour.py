@@ -45,7 +45,8 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
                 return x ** 2 + y
 
 
-            study = optuna.create_study()
+            sampler = optuna.samplers.TPESampler(seed=10)
+            study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=30)
 
             optuna.visualization.plot_contour(study, params=["x", "y"])
@@ -244,7 +245,7 @@ def _generate_contour_subplot(
     # If contours_coloring='heatmap' is specified, reversescale argument of go.Contour does not
     # work correctly. See https://github.com/pfnet/optuna/issues/606.
     colorscale = plotly.colors.PLOTLY_SCALES["Blues"]
-    if direction == StudyDirection.MINIMIZE:
+    if direction == StudyDirection.MAXIMIZE:
         colorscale = [[1 - t[0], t[1]] for t in colorscale]
         colorscale.reverse()
 

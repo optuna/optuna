@@ -112,8 +112,6 @@ You can run the following jobs.
   - Runs unit tests under Python 3.7
 - `tests-python38`
   - Runs unit tests under Python 3.8
-- `checks`
-  - Checks guidelines
 - `document`
   - Checks documentation build
 - `doctest`
