@@ -12,7 +12,7 @@ import pytest
 
 import optuna
 from optuna.integration.dask import DaskStorage
-from optuna.integration.dask import OptunaSchedulerExtension
+from optuna.integration.dask import _OptunaSchedulerExtension
 from optuna.trial import Trial
 
 
@@ -51,7 +51,7 @@ async def test_daskstorage_registers_extension(
     assert "optuna" not in s.extensions
     await DaskStorage()
     assert "optuna" in s.extensions
-    assert isinstance(s.extensions["optuna"], OptunaSchedulerExtension)
+    assert isinstance(s.extensions["optuna"], _OptunaSchedulerExtension)
 
 
 @gen_cluster(client=True)

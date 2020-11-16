@@ -95,7 +95,7 @@ def deserialize_studydirection(data: str) -> StudyDirection:
 
 
 @experimental("2.4.0")
-class OptunaSchedulerExtension:
+class _OptunaSchedulerExtension:
     def __init__(self, scheduler: distributed.Scheduler):
         self.scheduler = scheduler
         self.storages: Dict[str, BaseStorage] = {}
@@ -401,11 +401,11 @@ class OptunaSchedulerExtension:
         return self.get_storage(storage_name).read_trials_from_remote_storage(study_id=study_id)
 
 
-def register_with_scheduler(
+def _register_with_scheduler(
     dask_scheduler: distributed.Scheduler, storage: str, name: str
 ) -> None:
     if "optuna" not in dask_scheduler.extensions:
-        ext = OptunaSchedulerExtension(dask_scheduler)
+        ext = _OptunaSchedulerExtension(dask_scheduler)
     else:
         ext = dask_scheduler.extensions["optuna"]
 
@@ -447,13 +447,13 @@ class DaskStorage(optuna.storages.BaseStorage):
 
             async def _register() -> DaskStorage:
                 await self.client.run_on_scheduler(
-                    register_with_scheduler, storage=storage, name=self.name
+                    _register_with_scheduler, storage=storage, name=self.name
                 )
                 return self
 
             self._started = asyncio.ensure_future(_register())
         else:
-            self.client.run_on_scheduler(register_with_scheduler, storage=storage, name=self.name)
+            self.client.run_on_scheduler(_register_with_scheduler, storage=storage, name=self.name)
 
     def __await__(self) -> Generator[Any, None, "DaskStorage"]:
         if hasattr(self, "_started"):

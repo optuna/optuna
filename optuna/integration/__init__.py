@@ -12,7 +12,7 @@ _import_structure = {
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
     "cma": ["CmaEsSampler", "PyCmaSampler"],
-    "dask": ["DaskStorage", "OptunaSchedulerExtension"],
+    "dask": ["DaskStorage"],
     "mlflow": ["MLflowCallback"],
     "keras": ["KerasPruningCallback"],
     "lightgbm": ["LightGBMPruningCallback", "LightGBMTuner", "LightGBMTunerCV"],
@@ -42,7 +42,6 @@ if TYPE_CHECKING:
     from optuna.integration.cma import CmaEsSampler  # NOQA
     from optuna.integration.cma import PyCmaSampler  # NOQA
     from optuna.integration.dask import DaskStorage  # NOQA
-    from optuna.integration.dask import OptunaSchedulerExtension  # NOQA
     from optuna.integration.fastai import FastAIPruningCallback  # NOQA
     from optuna.integration.keras import KerasPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
