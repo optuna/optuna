@@ -737,6 +737,10 @@ def create_study(
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization.
+
+            .. note::
+                If none of `direction` and `directions` are specified, the direction of the study
+                is set to "minimize".
         directions:
             A sequence of directions during multi-objective optimization.
         load_if_exists:
@@ -762,10 +766,6 @@ def create_study(
 
     if direction is None and directions is None:
         directions = ("minimize",)
-        _logger.info(
-            "None of `direction` and `directions` are specified. The direction of the study is "
-            'set to "minimize".'
-        )
     elif direction is not None:
         directions = (direction,)
     elif directions is not None:
