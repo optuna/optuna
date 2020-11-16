@@ -126,6 +126,6 @@ jobs:
         mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-actions@v2
+      uses: codecov/codecov-action@v1
       with:
         file: ./coverage.xml
