@@ -45,6 +45,12 @@ def objective(trial: Trial) -> float:
 
 
 @gen_cluster(client=True)
+async def test_experimental(c: Client, s: Scheduler, a: Worker, b: Worker) -> None:
+    with pytest.warns(optuna._experimental.ExperimentalWarning):
+        DaskStorage()
+
+
+@gen_cluster(client=True)
 async def test_daskstorage_registers_extension(
     c: Client, s: Scheduler, a: Worker, b: Worker
 ) -> None:
