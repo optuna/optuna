@@ -97,8 +97,10 @@ pytest tests/${TARGET_TEST_FILE_NAME}
 Optuna repository uses GitHub Actions and CircleCI.
 
 CircleCI is used for continuous integration.
-Currently, we are migrating to GitHub Actions but still we use CirclCI for some tests listed below.
-`document` still exists because it makes it much easier to check built documentation and `tests-rdbstorage` is there because CircleCI better provides RDB storages.
+
+Currently, we are migrating to GitHub Actions but still we use CirclCI for a few tests listed below.
+`document` still exists because it makes it much easier to check built documentation and `tests-rdbstorage`
+is there because CircleCI supports more various RDB storages than GitHub Actions as of November 2020.
 
 ### Local Verification
 
