@@ -264,7 +264,7 @@ class AllenNLPExecutor(object):
         force:
             If :obj:`True`, an executor overwrites the output directory if it exists.
         file_friendly_logging:
-            If True, tqdm status is printed on separate lines and slows tqdm refresh rate.
+            If :obj:`True`, tqdm status is printed on separate lines and slows tqdm refresh rate.
         include_package:
             Additional packages to include.
             For more information, please see
