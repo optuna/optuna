@@ -88,7 +88,7 @@ class _SearchSpaceTransform:
                 A parameter configuration to transform.
 
         Returns:
-            An 1-dimenstional ``numpy.ndarray`` holding the transformed parameters in the
+            A 1-dimensional ``numpy.ndarray`` holding the transformed parameters in the
             configuration.
 
         """
