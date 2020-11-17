@@ -4,6 +4,7 @@ import tempfile
 from typing import Dict
 from typing import Type
 from typing import Union
+from unittest import mock
 
 import _jsonnet
 import allennlp.data
@@ -16,7 +17,6 @@ import allennlp.modules.text_field_embedders
 import allennlp.training
 import pytest
 import torch.optim
-from torch.utils.data import DataLoader
 
 import optuna
 from optuna.integration.allennlp import AllenNLPPruningCallback
@@ -188,8 +188,15 @@ def test_allennlp_executor_with_options() -> None:
             include_package=["tests.integration_tests.allennlp_tests.tiny_single_id"],
         )
 
-        assert executor._force
-        assert executor._file_friendly_logging
+        # ``executor.run`` loads ``metrics.json``
+        # after running ``allennlp.commands.train.train_model``.
+        with open(os.path.join(executor._serialization_dir, "metrics.json"), "w") as fout:
+            json.dump({executor._metrics: 1.0}, fout)
+
+        with mock.patch("allennlp.commands.train.train_model", return_value=None) as mock_obj:
+            executor.run()
+            assert mock_obj.call_args[1]["force"]
+            assert mock_obj.call_args[1]["file_friendly_logging"]
 
 
 def test_dump_best_config() -> None:
@@ -236,7 +243,7 @@ def test_allennlp_pruning_callback() -> None:
                 text_field_embedder=embedder, seq2vec_encoder=encoder, vocab=vocab
             )
             optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-            data_loader = DataLoader(
+            data_loader = allennlp.data.dataloader.PyTorchDataLoader(
                 dataset, batch_size=10, collate_fn=allennlp.data.allennlp_collate
             )
             serialization_dir = os.path.join(tmp_dir, "trial_{}".format(trial.number))
