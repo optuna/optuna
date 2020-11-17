@@ -5,16 +5,11 @@ from typing import Tuple
 from typing import Union
 
 import numpy
-
-from optuna import type_checking
-
-
-if type_checking.TYPE_CHECKING:
-    import sklearn.tree
+import sklearn.tree
 
 
 class _FanovaTree(object):
-    def __init__(self, tree: "sklearn.tree._tree.Tree", search_spaces: numpy.ndarray) -> None:
+    def __init__(self, tree: sklearn.tree._tree.Tree, search_spaces: numpy.ndarray) -> None:
         assert search_spaces.shape[0] == tree.n_features
         assert search_spaces.shape[1] == 2
 

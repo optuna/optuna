@@ -1,5 +1,9 @@
-try:
-    from typing import TYPE_CHECKING  # NOQA
-except ImportError:
-    # typing.TYPE_CHECKING doesn't exist before Python 3.5.2
-    TYPE_CHECKING = False
+from typing import TYPE_CHECKING
+import warnings
+
+
+warnings.warn(
+    "`optuna.typing` module will be removed due to drop Python 3.5 support", FutureWarning
+)
+
+__all__ = ["TYPE_CHECKING"]
