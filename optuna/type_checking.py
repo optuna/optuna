@@ -3,7 +3,7 @@ import warnings
 
 
 warnings.warn(
-    "`optuna.typing` module will be removed due to drop Python 3.5 support", FutureWarning
+    "`optuna.type_checking` will be removed due to the drop of Python 3.5 support.", FutureWarning
 )
 
 __all__ = ["TYPE_CHECKING"]
