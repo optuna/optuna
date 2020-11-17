@@ -2,14 +2,18 @@ import itertools
 from typing import List
 from typing import Set
 from typing import Tuple
+from typing import TYPE_CHECKING
 from typing import Union
 
 import numpy
-import sklearn.tree
+
+
+if TYPE_CHECKING:
+    import sklearn.tree
 
 
 class _FanovaTree(object):
-    def __init__(self, tree: sklearn.tree._tree.Tree, search_spaces: numpy.ndarray) -> None:
+    def __init__(self, tree: "sklearn.tree._tree.Tree", search_spaces: numpy.ndarray) -> None:
         assert search_spaces.shape[0] == tree.n_features
         assert search_spaces.shape[1] == 2
 
