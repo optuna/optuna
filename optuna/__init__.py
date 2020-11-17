@@ -59,3 +59,4 @@ else:
     dashboard = _LazyImport("optuna.dashboard")
 
 structs = _LazyImport("optuna.structs")
+type_checking = _LazyImport("optuna.type_checking")
