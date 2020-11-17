@@ -262,7 +262,7 @@ class AllenNLPExecutor(object):
         metrics:
             An evaluation metric for the result of ``objective``.
         force:
-            If True, an executor overwrite the output directory if it exists.
+            If :obj:`True`, an executor overwrites the output directory if it exists.
         file_friendly_logging:
             If True, tqdm status is printed on separate lines and slows tqdm refresh rate.
         include_package:
