@@ -1,6 +1,7 @@
 import importlib
 import types
 from typing import Any
+from typing import TYPE_CHECKING  # NOQA
 
 from optuna import distributions  # NOQA
 from optuna import exceptions  # NOQA
@@ -23,7 +24,6 @@ from optuna.study import load_study  # NOQA
 from optuna.study import Study  # NOQA
 from optuna.trial import create_trial  # NOQA
 from optuna.trial import Trial  # NOQA
-from optuna.type_checking import TYPE_CHECKING  # NOQA
 from optuna.version import __version__  # NOQA
 
 
