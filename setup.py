@@ -77,9 +77,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
         ]
         + (
-            ["torch==1.6.0", "torchvision==0.7.0", "thop"]
+            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
-            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu", "thop"]
+            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
         )
         if (3, 5) < sys.version_info[:2]
         else [],
