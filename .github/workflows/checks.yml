@@ -27,8 +27,8 @@ jobs:
     - name: flake8
       run: flake8 .
     - name: isort
-      run: isort . --check --diff --skip=tutorial
+      run: isort . --check --diff
     - name: mypy
       run: mypy .
     - name: blackdoc
-      run: blackdoc . --check
+      run: blackdoc . --check --diff
