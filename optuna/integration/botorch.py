@@ -3,9 +3,11 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 
+import numpy
+
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna._transform import _Transform
+from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import IntersectionSearchSpace
@@ -75,10 +77,17 @@ class BoTorchSampler(BaseSampler):
         if n_trials < self._n_startup_trials:
             return {}
 
-        trans = _Transform(trials, search_space, transform_log=True)
-        params = torch.from_numpy(trans.params)
-        values = torch.from_numpy(trans.values)
-        bounds = torch.from_numpy(trans.bounds)
+        values = numpy.asarray([t.value for t in trials], dtype=numpy.float64)
+
+        trans = _SearchSpaceTransform(search_space)
+        bounds = trans.bounds
+        params = numpy.empty((n_trials, bounds.shape[0]), dtype=numpy.float64)
+        for i, t in enumerate(trials):
+            params[i] = trans.transform(t.params)
+
+        values = torch.from_numpy(values)
+        params = torch.from_numpy(params)
+        bounds = torch.from_numpy(bounds)
 
         values.unsqueeze_(-1)
         bounds.transpose_(0, 1)
