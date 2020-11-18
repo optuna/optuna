@@ -87,7 +87,7 @@ class TestStudyDirectionModel(object):
             ),
             StudyDirectionModel(
                 study_id=study_id, direction=StudyDirection.MAXIMIZE, objective_id=1
-            )
+            ),
         ]
         study = StudyModel(study_id=study_id, study_name="test-study", directions=directions)
         session.add(study)
@@ -484,12 +484,8 @@ class TestTrialValueModel(object):
         direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
-        trial.values.append(
-            TrialValueModel(trial_id=trial_id, objective_id=0, value=10)
-        )
-        trial.values.append(
-            TrialValueModel(trial_id=trial_id, objective_id=1, value=20)
-        )
+        trial.values.append(TrialValueModel(trial_id=trial_id, objective_id=0, value=10))
+        trial.values.append(TrialValueModel(trial_id=trial_id, objective_id=1, value=20))
         study.trials.append(trial)
         session.add(study)
         session.commit()

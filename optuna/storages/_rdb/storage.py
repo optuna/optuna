@@ -203,14 +203,12 @@ class RDBStorage(BaseStorage):
                 )
             )
 
-        session.query(models.StudyDirectionModel).filter(
-            models.StudyDirectionModel.study_id == study_id
-        ).delete()
-
-        direction_model = models.StudyDirectionModel(
-            study_id=study_id, objective_id=0, direction=direction
+        direction_model = (
+            session.query(models.StudyDirectionModel)
+            .filter(models.StudyDirectionModel.study_id == study_id)
+            .first()
         )
-        session.add(direction_model)
+        direction_model.direction = direction
 
         self._commit(session)
 
@@ -281,6 +279,7 @@ class RDBStorage(BaseStorage):
         session = self.scoped_session()
 
         study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        # Terminate transaction explicitly to avoid connection timeout during transaction.
         direction = tuple(
             [d.direction for d in models.StudyDirectionModel.where_study(study, session)]
         )[0]
@@ -371,9 +370,7 @@ class RDBStorage(BaseStorage):
             ]
             best_trial: Optional[models.TrialModel] = None
             try:
-                if len(directions) > 1:
-                    raise ValueError
-                elif directions[0] == StudyDirection.MAXIMIZE:
+                if directions[0] == StudyDirection.MAXIMIZE:
                     best_trial = models.TrialModel.find_max_value_trial(study.study_id, session)
                 else:
                     best_trial = models.TrialModel.find_min_value_trial(study.study_id, session)
