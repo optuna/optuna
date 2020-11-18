@@ -19,7 +19,7 @@ exclude = '''
 [tool.isort]
 profile = 'black'
 src_paths = ['optuna', 'tests', 'docs']
-skip_glob = ['docs/source/conf.py', '**/alembic/versions/*.py']
+skip_glob = ['docs/source/conf.py', '**/alembic/versions/*.py', 'tutorial/**/*.py']
 line_length = 99
 lines_after_imports = 2
 force_single_line = 'True'
