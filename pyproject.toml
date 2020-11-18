@@ -13,7 +13,6 @@ exclude = '''
   | buck-out
   | build
   | dist
-  | docs  # Optuna specific
 )/
 '''
 
