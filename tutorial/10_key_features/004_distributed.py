@@ -43,11 +43,14 @@ Then, write an optimization script. Let's assume that ``foo.py`` contains the fo
 
 
     def objective(trial):
-        x = trial.suggest_uniform('x', -10, 10)
+        x = trial.suggest_uniform("x", -10, 10)
         return (x - 2) ** 2
 
-    if __name__ == '__main__':
-        study = optuna.load_study(study_name="distributed-example", storage="mysql://root@localhost/example")
+
+    if __name__ == "__main__":
+        study = optuna.load_study(
+            study_name="distributed-example", storage="mysql://root@localhost/example"
+        )
         study.optimize(objective, n_trials=100)
 
 
