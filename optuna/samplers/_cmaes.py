@@ -159,7 +159,7 @@ class CmaEsSampler(BaseSampler):
         *,
         consider_pruned_trials: bool = False,
         restart_strategy: Optional[str] = None,
-        inc_popsize: int = 2
+        inc_popsize: int = 2,
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0

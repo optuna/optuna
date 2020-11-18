@@ -275,7 +275,7 @@ class AllenNLPExecutor(object):
         serialization_dir: str,
         metrics: str = "best_validation_accuracy",
         *,
-        include_package: Optional[Union[str, List[str]]] = None
+        include_package: Optional[Union[str, List[str]]] = None,
     ):
         _imports.check()
 
