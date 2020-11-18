@@ -10,9 +10,11 @@ from optuna.storages._rdb.models import BaseModel
 from optuna.storages._rdb.models import StudyDirectionModel
 from optuna.storages._rdb.models import StudyModel
 from optuna.storages._rdb.models import StudySystemAttributeModel
+from optuna.storages._rdb.models import TrialIntermediateValueModel
 from optuna.storages._rdb.models import TrialModel
 from optuna.storages._rdb.models import TrialSystemAttributeModel
 from optuna.storages._rdb.models import TrialUserAttributeModel
+from optuna.storages._rdb.models import TrialValueModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.trial import TrialState
 
@@ -23,6 +25,80 @@ def session() -> Session:
     engine = create_engine("sqlite:///:memory:")
     BaseModel.metadata.create_all(engine)
     return Session(bind=engine)
+
+
+class TestStudyDirectionModel(object):
+    @staticmethod
+    def test_find_by_study_and_objective_id(session: Session) -> None:
+
+        study = StudyModel(study_id=1, study_name="test-study")
+        session.add(
+            StudyDirectionModel(
+                study_id=study.study_id, direction=StudyDirection.MINIMIZE, objective_id=0
+            )
+        )
+        session.commit()
+
+        direction = StudyDirectionModel.find_by_study_and_objective_id(study, 0, session)
+        assert direction is not None
+        assert direction.direction == StudyDirection.MINIMIZE
+
+        assert StudyDirectionModel.find_by_study_and_objective_id(study, 1, session) is None
+
+    @staticmethod
+    def test_where_study(session: Session) -> None:
+
+        study = StudyModel(study_id=1, study_name="test-study")
+        session.add(
+            StudyDirectionModel(
+                study_id=study.study_id, direction=StudyDirection.MINIMIZE, objective_id=0
+            )
+        )
+        session.commit()
+
+        directions = StudyDirectionModel.where_study(study, session)
+        assert 1 == len(directions)
+        assert directions[0].objective_id == 0
+        assert directions[0].direction == StudyDirection.MINIMIZE
+
+    @staticmethod
+    def test_all(session: Session) -> None:
+
+        study = StudyModel(study_id=1, study_name="test-study")
+        session.add(
+            StudyDirectionModel(
+                study_id=study.study_id, direction=StudyDirection.MINIMIZE, objective_id=0
+            )
+        )
+        session.commit()
+
+        directions = StudyDirectionModel.all(session)
+        assert 1 == len(directions)
+        assert directions[0].objective_id == 0
+        assert directions[0].direction == StudyDirection.MINIMIZE
+
+    @staticmethod
+    def test_cascade_delete_on_study(session: Session) -> None:
+
+        study_id = 1
+        directions = [
+            StudyDirectionModel(
+                study_id=study_id, direction=StudyDirection.MINIMIZE, objective_id=0
+            ),
+            StudyDirectionModel(
+                study_id=study_id, direction=StudyDirection.MAXIMIZE, objective_id=1
+            )
+        ]
+        study = StudyModel(study_id=study_id, study_name="test-study", directions=directions)
+        session.add(study)
+        session.commit()
+
+        assert 2 == len(StudyDirectionModel.where_study(study, session))
+
+        session.delete(study)
+        session.commit()
+
+        assert 0 == len(StudyDirectionModel.where_study(study, session))
 
 
 class TestStudySystemAttributeModel(object):
@@ -338,6 +414,180 @@ class TestTrialSystemAttributeModel(object):
         session.commit()
 
         assert 0 == len(TrialSystemAttributeModel.where_trial_id(trial_id, session))
+
+
+class TestTrialValueModel(object):
+    @staticmethod
+    def test_find_by_trial_and_objective_id(session: Session) -> None:
+
+        study = StudyModel(study_id=1, study_name="test-study")
+        trial = TrialModel(study_id=study.study_id)
+
+        session.add(TrialValueModel(trial_id=trial.trial_id, objective_id=0, value=10))
+        session.commit()
+
+        trial_value = TrialValueModel.find_by_trial_and_objective_id(trial, 0, session)
+        assert trial_value is not None
+        assert 10 == trial_value.value
+        assert TrialValueModel.find_by_trial_and_objective_id(trial, 1, session) is None
+
+    @staticmethod
+    def test_where_study(session: Session) -> None:
+
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
+        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
+
+        session.add(study)
+        session.add(trial)
+        session.add(TrialValueModel(trial_id=trial.trial_id, objective_id=0, value=10))
+        session.commit()
+
+        trial_values = TrialValueModel.where_study(study, session)
+        assert 1 == len(trial_values)
+        assert 0 == trial_values[0].objective_id
+        assert 10 == trial_values[0].value
+
+    @staticmethod
+    def test_where_trial(session: Session) -> None:
+
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
+        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
+
+        session.add(TrialValueModel(trial_id=trial.trial_id, objective_id=0, value=10))
+        session.commit()
+
+        trial_values = TrialValueModel.where_trial(trial, session)
+        assert 1 == len(trial_values)
+        assert 0 == trial_values[0].objective_id
+        assert 10 == trial_values[0].value
+
+    @staticmethod
+    def test_all(session: Session) -> None:
+
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
+        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
+
+        session.add(TrialValueModel(trial_id=trial.trial_id, objective_id=0, value=10))
+        session.commit()
+
+        trial_values = TrialValueModel.all(session)
+        assert 1 == len(trial_values)
+        assert 0 == trial_values[0].objective_id
+        assert 10 == trial_values[0].value
+
+    @staticmethod
+    def test_cascade_delete_on_trial(session: Session) -> None:
+        trial_id = 1
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
+        trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
+        trial.values.append(
+            TrialValueModel(trial_id=trial_id, objective_id=0, value=10)
+        )
+        trial.values.append(
+            TrialValueModel(trial_id=trial_id, objective_id=1, value=20)
+        )
+        study.trials.append(trial)
+        session.add(study)
+        session.commit()
+
+        assert 2 == len(TrialValueModel.where_trial(trial, session))
+
+        session.delete(trial)
+        session.commit()
+
+        assert 0 == len(TrialValueModel.where_trial(trial, session))
+
+
+class TestTrialIntermediateValueModel(object):
+    @staticmethod
+    def test_find_by_trial_and_step(session: Session) -> None:
+
+        study = StudyModel(study_id=1, study_name="test-study")
+        trial = TrialModel(study_id=study.study_id)
+
+        session.add(TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, value=10))
+        session.commit()
+
+        trial_intermediate_value = TrialIntermediateValueModel.find_by_trial_and_step(
+            trial, 0, session
+        )
+        assert trial_intermediate_value is not None
+        assert 10 == trial_intermediate_value.value
+        assert TrialIntermediateValueModel.find_by_trial_and_step(trial, 1, session) is None
+
+    @staticmethod
+    def test_where_study(session: Session) -> None:
+
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
+        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
+
+        session.add(study)
+        session.add(trial)
+        session.add(TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, value=10))
+        session.commit()
+
+        trial_intermediate_values = TrialIntermediateValueModel.where_study(study, session)
+        assert 1 == len(trial_intermediate_values)
+        assert 0 == trial_intermediate_values[0].step
+        assert 10 == trial_intermediate_values[0].value
+
+    @staticmethod
+    def test_where_trial(session: Session) -> None:
+
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
+        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
+
+        session.add(TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, value=10))
+        session.commit()
+
+        trial_intermediate_values = TrialIntermediateValueModel.where_trial(trial, session)
+        assert 1 == len(trial_intermediate_values)
+        assert 0 == trial_intermediate_values[0].step
+        assert 10 == trial_intermediate_values[0].value
+
+    @staticmethod
+    def test_all(session: Session) -> None:
+
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
+        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
+
+        session.add(TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, value=10))
+        session.commit()
+
+        trial_intermediate_values = TrialIntermediateValueModel.all(session)
+        assert 1 == len(trial_intermediate_values)
+        assert 0 == trial_intermediate_values[0].step
+        assert 10 == trial_intermediate_values[0].value
+
+    @staticmethod
+    def test_cascade_delete_on_trial(session: Session) -> None:
+        trial_id = 1
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
+        trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
+        trial.intermediate_values.append(
+            TrialIntermediateValueModel(trial_id=trial_id, step=0, value=10)
+        )
+        trial.intermediate_values.append(
+            TrialIntermediateValueModel(trial_id=trial_id, step=1, value=20)
+        )
+        study.trials.append(trial)
+        session.add(study)
+        session.commit()
+
+        assert 2 == len(TrialIntermediateValueModel.where_trial(trial, session))
+
+        session.delete(trial)
+        session.commit()
+
+        assert 0 == len(TrialIntermediateValueModel.where_trial(trial, session))
 
 
 class TestVersionInfoModel(object):

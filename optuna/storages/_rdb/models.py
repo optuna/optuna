@@ -107,7 +107,7 @@ class StudyDirectionModel(BaseModel):
             session.query(cls)
             .filter(cls.study_id == study.study_id)
             .filter(cls.objective_id == objective_id)
-            .one_by_none()
+            .one_or_none()
         )
 
         return study_direction
@@ -589,34 +589,34 @@ class TrialIntermediateValueModel(BaseModel):
         cls, trial: TrialModel, step: int, session: orm.Session
     ) -> Optional["TrialIntermediateValueModel"]:
 
-        trial_intermediate_values = (
+        trial_intermediate_value = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
             .filter(cls.step == step)
             .one_or_none()
         )
 
-        return trial_intermediate_values
+        return trial_intermediate_value
 
     @classmethod
     def where_study(
         cls, study: StudyModel, session: orm.Session
     ) -> List["TrialIntermediateValueModel"]:
 
-        trial_values = (
+        trial_intermediate_values = (
             session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
         )
 
-        return trial_values
+        return trial_intermediate_values
 
     @classmethod
     def where_trial(
         cls, trial: TrialModel, session: orm.Session
     ) -> List["TrialIntermediateValueModel"]:
 
-        trial_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+        trial_intermediate_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
 
-        return trial_values
+        return trial_intermediate_values
 
     @classmethod
     def all(cls, session: orm.Session) -> List["TrialIntermediateValueModel"]:
