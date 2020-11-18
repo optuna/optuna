@@ -1,7 +1,7 @@
 import importlib
 import types
 from typing import Any
-from typing import TYPE_CHECKING  # NOQA
+from typing import TYPE_CHECKING
 
 from optuna import distributions
 from optuna import exceptions
