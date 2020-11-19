@@ -177,6 +177,7 @@ def test_allennlp_executor_with_options() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
     trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    package_name = "tests.integration_tests.allennlp_tests.tiny_single_id"
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         executor = optuna.integration.AllenNLPExecutor(
@@ -185,7 +186,7 @@ def test_allennlp_executor_with_options() -> None:
             tmp_dir,
             force=True,
             file_friendly_logging=True,
-            include_package=["tests.integration_tests.allennlp_tests.tiny_single_id"],
+            include_package=package_name,
         )
 
         # ``executor.run`` loads ``metrics.json``
@@ -197,6 +198,7 @@ def test_allennlp_executor_with_options() -> None:
             executor.run()
             assert mock_obj.call_args[1]["force"]
             assert mock_obj.call_args[1]["file_friendly_logging"]
+            assert mock_obj.call_args[1]["include_package"] == [package_name]
 
 
 def test_dump_best_config() -> None:
