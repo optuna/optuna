@@ -261,6 +261,10 @@ class AllenNLPExecutor(object):
             A path which model weights and logs are saved.
         metrics:
             An evaluation metric for the result of ``objective``.
+        force:
+            If :obj:`True`, an executor overwrites the output directory if it exists.
+        file_friendly_logging:
+            If :obj:`True`, tqdm status is printed on separate lines and slows tqdm refresh rate.
         include_package:
             Additional packages to include.
             For more information, please see
@@ -276,6 +280,8 @@ class AllenNLPExecutor(object):
         metrics: str = "best_validation_accuracy",
         *,
         include_package: Optional[Union[str, List[str]]] = None,
+        force: bool = False,
+        file_friendly_logging: bool = False,
     ):
         _imports.check()
 
@@ -283,6 +289,9 @@ class AllenNLPExecutor(object):
         self._config_file = config_file
         self._serialization_dir = serialization_dir
         self._metrics = metrics
+        self._force = force
+        self._file_friendly_logging = file_friendly_logging
+
         if include_package is None:
             include_package = []
         if isinstance(include_package, str):
@@ -358,8 +367,12 @@ class AllenNLPExecutor(object):
 
         self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
-        allennlp.commands.train.train_model(params, self._serialization_dir)
-
+        allennlp.commands.train.train_model(
+            params=params,
+            serialization_dir=self._serialization_dir,
+            file_friendly_logging=self._file_friendly_logging,
+            force=self._force,
+        )
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]
 
