@@ -1,0 +1,255 @@
+- alembic:
+    used_by:
+        - default
+- cliff:
+    used_by:
+        - default
+- cmaes:
+    used_by:
+        - default
+    version_condition: ">=0.6.0"
+- colorlog:
+    used_by:
+        - default
+- joblib:
+    used_by:
+        - default
+- numpy:
+    used_by:
+        - default
+- packaging:
+    used_by:
+        - default
+    version_condition: ">=20.0"
+- scipy:
+    used_by:
+        - default
+    version_condition: "!=1.4.0"
+- sqlalchemy:
+    used_by:
+        - default
+    version_condition: ">=1.1.0"
+- tqdm:
+    used_by:
+        - default
+- black:
+    used_by:
+        - checking
+- blackdoc:
+    used_by:
+        - checking
+- hacking:
+    used_by:
+        - checking
+- isort:
+    used_by:
+        - checking
+- mypy:
+    used_by:
+        - checking
+    version_condition: "==0.782"
+- codecov:
+    used_by:
+        - codecov
+- pytest-cov:
+    used_by:
+        - codecov
+- cma:
+    used_by:
+        - doctest
+        - testing
+        - integration
+- matplotlib:
+    used_by:
+        - doctest
+        - document
+        - example
+        - optional
+    version_condition: ">=3.0.0"
+- pandas:
+    used_by:
+        - doctest
+        - testing
+        - optional
+        - integration
+- plotly:
+    used_by:
+        - doctest
+        - testing
+        - optional
+    version_condition: ">=4.0.0"
+- scikit-learn:
+    used_by:
+        - doctest
+        - document
+        - example
+        - testing
+        - optional
+        - integration
+    version_condition: ">=0.19.0,<0.23.0"
+- scikit-optimize:
+    used_by:
+        - doctest
+        - testing
+        - integration
+- mlflow:
+    used_by:
+        - doctest
+        - example
+        - testing
+        - integration
+- sphinx:
+    used_by:
+        - document
+    version_condition: "==3.0.4"
+- sphinx_rtd_theme:
+    used_by:
+        - document
+    version_condition: "<0.5.0"
+- sphinx-gallery:
+    used_by:
+        - document
+- sphinx-plotly-directive:
+    used_by:
+        - document
+- pillow:
+    used_by:
+        - document
+- catboost:
+    used_by:
+        - example
+- chainer:
+    used_by:
+        - example
+        - testing
+        - integration
+- lightgbm:
+    used_by:
+        - example
+        - testing
+        - integration
+- mpi4py:
+    used_by:
+        - example
+        - testing
+        - integration
+- mxnet:
+    used_by:
+        - example
+        - testing
+        - integration
+- nbval:
+    used_by:
+        - example
+- scikit-image:
+    used_by:
+        - example
+- xgboost:
+    used_by:
+        - example
+        - testing
+        - integration
+- keras:
+    used_by:
+        - example
+        - testing
+        - integration
+- tensorflow:
+    used_by:
+        - example
+        - testing
+        - integration
+    version_condition: ">=2.0.0"
+- tensorflow-datasets:
+    used_by:
+        - example
+        - testing
+        - integration
+- pytorch-ignite:
+    used_by:
+        - example
+        - testing
+        - integration
+- pytorch-lightning:
+    used_by:
+        - example
+        - testing
+        - integration
+    version_condition: ">=0.8.1"
+- thop:
+    used_by:
+        - example
+- skorch:
+    used_by:
+        - example
+        - testing
+        - integration
+- stable-baseline3:
+    used_by:
+        - example
+    version_condition: ">=0.7.0"
+- catalyst:
+    used_by:
+        - example
+        - testing
+        - integration
+- torch:
+    used_by:
+        - example
+        - testing
+        - integration
+    version_condition: "==1.7.0"
+    darwin_name: "torch==1.7.0+cpu"
+- torchvision:
+    used_by:
+        - example
+        - testing
+        - integration
+    version_condition: "==0.8.1"
+    darwin_name: "torchvision==0.8.1+cpu"
+- torchaudio:
+    used_by:
+        - example
+        - testing
+        - integration
+    version_condition: "==0.7.0"
+- allennlp:
+    used_by:
+        - example
+        - testing
+        - integration
+    version_condition: "==1.2.0"
+    support_py38: false
+- fastai:
+    used_by:
+        - example
+        - testing
+        - integration
+    version_condition: "<2"
+    support_py38: false
+- dask:
+    used_by:
+        - example
+    version_condition: "[dataframe]"
+    support_py38: false
+- dask-ml:
+    used_by:
+        - example
+    support_py38: false
+- redis:
+    used_by:
+        - experimental
+        - optional
+- bokeh:
+    used_by:
+        - testing
+        - optional
+    version_condition: "<2.0.0"
+- fakeredis:
+    used_by:
+        - tests
+        - testing
+- pytest:
+    used_by:
+        - tests
+        - testing

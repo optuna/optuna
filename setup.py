@@ -8,6 +8,47 @@ import pkg_resources
 from setuptools import find_packages
 from setuptools import setup
 
+import yaml
+
+
+def _parse_requirements_yaml() -> Dict[str, List[str]]:
+    _repository_root = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(_repository_root, "requirements.yaml")
+    with open(config_path, "r") as f:
+        yaml_requirements = yaml.safe_load(f)
+
+    is_darwin = sys.platform == "darwin"
+    is_py38 = sys.version_info[:2] == (3, 8)
+
+    requirements: Dict[str, List[str]] = {
+        "default": [],
+        "checking": [],
+        "codecov": [],
+        "doctest": [],
+        "document": [],
+        "example": [],
+        "experimental": [],
+        "testing": [],
+        "tests": [],
+        "optional": [],
+        "integration": [],
+    }
+
+    for library_dict in yaml_requirements:
+        for library_name, info_dict in library_dict.items():
+            version_condition = info_dict.get("version_condition", None)
+            if version_condition is not None:
+                library_name += version_condition
+            if is_darwin and "darwin_name" in info_dict:
+                library_name = info_dict["darwin_name"]
+            support_py38 = info_dict.get("support_38", True)
+            if is_py38 and support_py38:
+                continue
+            for requirement_name in info_dict["used_by"]:
+                requirements[requirement_name].append(library_name)
+
+    return requirements
+
 
 def get_version() -> str:
 
