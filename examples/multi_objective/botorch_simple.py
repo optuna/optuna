@@ -25,7 +25,7 @@ _OBJECTIVE = C2DTLZ2(dim=3, num_objectives=2, negate=True)
 def objective(trial: Trial) -> Sequence[float]:
     xs = torch.tensor([trial.suggest_float(f"x{i}", 0, 1) for i in range(_OBJECTIVE.dim)])
     values = _OBJECTIVE(xs)
-    constraint = -_OBJECTIVE.evaluate_slack(xs.unsqueeze(dim=0))[0]
+    constraint = _OBJECTIVE.evaluate_slack(xs.unsqueeze(dim=0))[0]
     return values.tolist() + constraint.tolist()
 
 
@@ -33,10 +33,14 @@ def optimize_func(
     train_x: torch.Tensor, train_obj_and_con: torch.Tensor, bounds: torch.Tensor
 ) -> torch.Tensor:
     # We can always assume maximization in `optimize_func`.
+    # However, constraints are considered feasible if negative.
 
-    train_con = train_obj_and_con[:, -1]  # Given that the last column is a constraint.
-    train_con = train_con.unsqueeze(dim=-1)
-    train_obj = train_obj_and_con[:, :-1]
+    # TODO(hvy): Should be known without having to be hard-coded.
+    n_contraints = 1
+
+    train_con = train_obj_and_con[:, -n_contraints:]
+    train_con *= -1  # In-place.
+    train_obj = train_obj_and_con[:, :-n_contraints]
 
     is_feas = (train_con <= 0).all(dim=-1)
 
@@ -53,20 +57,25 @@ def optimize_func(
     fit_gpytorch_model(mll)
 
     # Optimize acquisition function.
-    better_than_ref = (train_obj > _OBJECTIVE.ref_point).all(dim=-1)
+    n_outcomes = train_obj.shape[-1]
+    ref_point = train_obj.amin(dim=0) - 1e-6
+    better_than_ref = (train_obj > ref_point).all(dim=-1)
     partitioning = NondominatedPartitioning(
-        num_outcomes=_OBJECTIVE.num_objectives,
+        num_outcomes=n_outcomes,
         Y=train_obj[better_than_ref & is_feas],
     )
 
     sampler = SobolQMCNormalSampler(num_samples=128)
+    acqf_constraints = []
+    for i in range(1, n_contraints):
+        acqf_constraints.append(lambda Z, i=i: Z[..., -i])
     acqf = qExpectedHypervolumeImprovement(
         model=model,
-        ref_point=_OBJECTIVE.ref_point.tolist(),
+        ref_point=ref_point.tolist(),
         partitioning=partitioning,
         sampler=sampler,
-        objective=IdentityMCMultiOutputObjective(outcomes=[0, 1]),
-        constraints=[lambda Z: Z[..., -1]],  # Given that the last column is a constraint.
+        objective=IdentityMCMultiOutputObjective(outcomes=list(range(n_outcomes))),
+        constraints=acqf_constraints,
     )
 
     candidates, _ = optimize_acqf(
