@@ -89,7 +89,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow>=2.0.0",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "thop",
             "skorch",
             "stable-baselines3>=0.7.0",
@@ -133,7 +133,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
         ]
@@ -169,7 +169,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
         ]
