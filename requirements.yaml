@@ -198,15 +198,15 @@
         - example
         - testing
         - integration
-    version_condition: "==1.7.0"
-    darwin_name: "torch==1.7.0+cpu"
+    version_condition: "==1.7.0+cpu"
+    darwin_name: "torch==1.7.0"
 - torchvision:
     used_by:
         - example
         - testing
         - integration
-    version_condition: "==0.8.1"
-    darwin_name: "torchvision==0.8.1+cpu"
+    version_condition: "==0.8.1+cpu"
+    darwin_name: "torchvision==0.8.1"
 - torchaudio:
     used_by:
         - example
