@@ -1,16 +1,12 @@
 import textwrap
+from typing import Dict
 from typing import Optional
 
 import optuna
-from optuna import type_checking
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna._study_direction import StudyDirection
 from optuna.trial import TrialState
-
-
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
 
 
 with try_import() as _imports:
