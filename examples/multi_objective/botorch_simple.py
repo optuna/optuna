@@ -67,7 +67,7 @@ def optimize_func(
 
     sampler = SobolQMCNormalSampler(num_samples=128)
     acqf_constraints = []
-    for i in range(1, n_contraints):
+    for i in range(1, n_contraints + 1):
         acqf_constraints.append(lambda Z, i=i: Z[..., -i])
     acqf = qExpectedHypervolumeImprovement(
         model=model,
