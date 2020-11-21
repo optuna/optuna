@@ -372,6 +372,7 @@ class AllenNLPExecutor(object):
             serialization_dir=self._serialization_dir,
             file_friendly_logging=self._file_friendly_logging,
             force=self._force,
+            include_package=self._include_package,
         )
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]
