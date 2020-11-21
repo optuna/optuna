@@ -41,6 +41,35 @@ DIR = os.getcwd()
 MODEL_DIR = os.path.join(DIR, "result")
 
 
+from typing import Iterable
+class MultiplePruners(optuna.pruners.BasePruner):
+
+    def __init__(
+        self,
+        pruners: Iterable[optuna.pruners.BasePruner],
+        pruning_condition: str = "any",
+    ) -> None:
+
+        self._pruners = tuple(pruners)
+
+        self._pruning_condition_check_fn = None
+        if pruning_condition == "any":
+            self._pruning_condition_check_fn = any
+        elif pruning_condition == "all":
+            self._pruning_condition_check_fn = all
+        else:
+            raise ValueError(f"Invalid pruning ({pruning_condition}) condition passed!")
+        assert self._pruning_condition_check_fn is not None
+
+    def prune(
+        self,
+        study: "optuna.study.Study",
+        trial: "optuna.trial.FrozenTrial",
+    ) -> bool:
+
+         return self._pruning_condition_check_fn(pruner.prune(study, trial) for pruner in self._pruners)
+
+
 class MetricsCallback(Callback):
     """PyTorch Lightning metric callback."""
 
@@ -101,19 +130,14 @@ class LightningNet(pl.LightningModule):
     def training_step(self, batch, batch_nb):
         data, target = batch
         output = self.forward(data)
-        return {"loss": F.nll_loss(output, target)}
+        return F.nll_loss(output, target)
 
     def validation_step(self, batch, batch_nb):
         data, target = batch
         output = self.forward(data)
         pred = output.argmax(dim=1, keepdim=True)
         accuracy = pred.eq(target.view_as(pred)).float().mean()
-        return {"batch_val_acc": accuracy}
-
-    def validation_epoch_end(self, outputs):
-        accuracy = sum(x["batch_val_acc"] for x in outputs) / len(outputs)
-        # Pass the accuracy to the `DictLogger` via the `'log'` key.
-        return {"log": {"val_acc": accuracy}}
+        self.log("val_acc", accuracy)
 
     def configure_optimizers(self):
         return Adam(self.model.parameters())
@@ -170,6 +194,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
+    pruners = [pruner, optuna.pruners.SuccessiveHalvingPruner()]
+    pruner = MultiplePruners(pruners)
 
     study = optuna.create_study(direction="maximize", pruner=pruner)
     study.optimize(objective, n_trials=100, timeout=600)
