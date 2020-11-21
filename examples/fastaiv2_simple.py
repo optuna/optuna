@@ -69,7 +69,7 @@ def objective(trial):
         model,
         metrics=[accuracy],
         # You could as FastAIPruningCallback in the fit function
-        cbs=[FastAIPruningCallback(trial), CudaCallback],
+        cbs=FastAIPruningCallback(trial),
     )
 
     # See https://forums.fast.ai/t/how-to-diable-progress-bar-completely/65249/3
