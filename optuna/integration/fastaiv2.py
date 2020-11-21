@@ -23,10 +23,10 @@ class FastAIV2PruningCallback(TrackerCallback):
     """FastAI callback to prune unpromising trials for fastai.
 
     .. note::
-        This callback is for fastai>2.0.
+        This callback is for fastai>=2.0.
 
     See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/fastai_simple.py>`__
+    examples/fastaiv2_simple.py>`__
     if you want to add a pruning callback which monitors validation loss of a ``Learner``.
 
     Example:
@@ -58,10 +58,10 @@ class FastAIV2PruningCallback(TrackerCallback):
     # Implementation notes: it's a subclass of TrackerCallback to benefit from it. For example,
     # when to run (after the Recorder callback), when not to (like with lr_find), etc.
 
-    def __init__(self, optuna_trial: optuna.Trial, monitor: str = "valid_loss"):
+    def __init__(self, trial: optuna.Trial, monitor: str = "valid_loss"):
         super(FastAIV2PruningCallback, self).__init__(monitor=monitor)
         _imports.check()
-        self.optuna_trial = optuna_trial
+        self.trial = trial
 
     def after_epoch(self) -> None:
         super().after_epoch()

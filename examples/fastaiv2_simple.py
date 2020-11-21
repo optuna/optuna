@@ -1,5 +1,5 @@
 """
-Optuna example that optimizes convolutional neural network and data augmentation using FastAI V2.
+Optuna example that optimizes convolutional neural network and data augmentation using fastai V2.
 
 In this example, we optimize the hyperparameters of a convolutional neural network and
 data augmentation for hand-written digit recognition in terms of validation accuracy.
@@ -82,7 +82,7 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="FastAI V2 example.")
+    parser = argparse.ArgumentParser(description="fastai V2 example.")
     parser.add_argument(
         "--pruning",
         "-p",
