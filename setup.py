@@ -69,6 +69,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
             "sphinx_rtd_theme<0.5.0",
             "sphinx-gallery",
+            "sphinx-plotly-directive",
             "pillow",
             "matplotlib",
             "scikit-learn",
@@ -95,13 +96,13 @@ def get_extras_require() -> Dict[str, List[str]]:
             "catalyst",
         ]
         + (
-            ["torch==1.6.0", "torchvision==0.7.0"]
+            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
-            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
         )
         + (
             [
-                "allennlp==1.0.0",
+                "allennlp==1.2.0",
                 "fastai",
                 "dask[dataframe]",
                 "dask-ml",
@@ -137,11 +138,11 @@ def get_extras_require() -> Dict[str, List[str]]:
             "catalyst",
         ]
         + (
-            ["torch==1.6.0", "torchvision==0.7.0"]
+            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
-            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
         )
-        + (["allennlp==1.0.0", "fastai"] if sys.version_info[:2] < (3, 8) else ["fastai"]),
+        + (["allennlp==1.2.0", "fastai"] if sys.version_info[:2] < (3, 8) else ["fastai"]),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -173,11 +174,11 @@ def get_extras_require() -> Dict[str, List[str]]:
             "catalyst",
         ]
         + (
-            ["torch==1.6.0", "torchvision==0.7.0"]
+            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
-            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
         )
-        + (["allennlp==1.0.0", "fastai"] if sys.version_info[:2] < (3, 8) else ["fastai"]),
+        + (["allennlp==1.2.0", "fastai"] if sys.version_info[:2] < (3, 8) else ["fastai"]),
     }
 
     return requirements
@@ -202,7 +203,7 @@ setup(
     author="Takuya Akiba",
     author_email="akiba@preferred.jp",
     url="https://optuna.org/",
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests", "tests.*")),
     package_data={
         "optuna": [
             "storages/_rdb/alembic.ini",

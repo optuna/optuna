@@ -42,7 +42,7 @@ jobs:
         if [ "${{matrix.build_type}}" = 'dev' ]; then
           export TAG_NAME="${TAG_NAME}-dev"
         fi
-        echo "::set-env name=HUB_TAG::${DOCKER_HUB_BASE_NAME}:${TAG_NAME}"
+        echo "HUB_TAG=${DOCKER_HUB_BASE_NAME}:${TAG_NAME}" >> $GITHUB_ENV
 
     - name: Build the Docker image
       run: |

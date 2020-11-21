@@ -34,7 +34,6 @@ do
 done
 
 target="examples optuna tests"
-blackdoc_target="optuna"
 mypy_target="optuna tests"
 res_all=0
 
@@ -52,11 +51,11 @@ else
   echo "black succeeded."
 fi
 
-res_blackdoc=$(blackdoc $blackdoc_target --check 2>&1)
+res_blackdoc=$(blackdoc $target --check --diff 2>&1)
 if [ $? -eq 1 ] ; then
   if [ $update -eq 1 ] ; then
     echo "blackdoc failed. The docstrings will be formatted by blackdoc."
-    blackdoc $blackdoc_target
+    blackdoc $target
   else
     echo "$res_blackdoc"
     echo "blackdoc failed."
