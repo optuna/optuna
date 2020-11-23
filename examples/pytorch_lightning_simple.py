@@ -101,7 +101,7 @@ class LightningNet(pl.LightningModule):
     def training_step(self, batch, batch_nb):
         data, target = batch
         output = self.forward(data)
-        return {"loss": F.nll_loss(output, target)}
+        return F.nll_loss(output, target)
 
     def validation_step(self, batch, batch_nb):
         data, target = batch
