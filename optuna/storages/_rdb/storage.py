@@ -41,7 +41,7 @@ _logger = optuna.logging.get_logger(__name__)
 _engine = None
 
 
-def _get_engine(url: str, engine_kwargs: dict):
+def _get_engine(url: str, engine_kwargs: dict) -> Engine:
     global _engine
     if not _engine:
         _engine = create_engine(url, **engine_kwargs)
@@ -113,7 +113,7 @@ class RDBStorage(BaseStorage):
         self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
         try:
-            engine = create_engine(self.url, **self.engine_kwargs)
+            engine = _get_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError(
                 "Failed to import DB access module for the specified storage URL. "
