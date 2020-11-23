@@ -38,6 +38,16 @@ from optuna.trial import TrialState
 _logger = optuna.logging.get_logger(__name__)
 
 
+_engine = None
+
+
+def _get_engine(url: str, engine_kwargs: dict):
+    global _engine
+    if not _engine:
+        _engine = create_engine(url, **engine_kwargs)
+    return _engine
+
+
 class RDBStorage(BaseStorage):
     """Storage class for RDB backend.
 
@@ -103,17 +113,17 @@ class RDBStorage(BaseStorage):
         self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
         try:
-            self.engine = create_engine(self.url, **self.engine_kwargs)
+            engine = create_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError(
                 "Failed to import DB access module for the specified storage URL. "
                 "Please install appropriate one."
             ) from e
 
-        self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
-        models.BaseModel.metadata.create_all(self.engine)
+        self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=engine))
+        models.BaseModel.metadata.create_all(engine)
 
-        self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
+        self._version_manager = _VersionManager(self.url, engine, self.scoped_session)
         if not skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
 
@@ -123,7 +133,6 @@ class RDBStorage(BaseStorage):
 
         state = self.__dict__.copy()
         del state["scoped_session"]
-        del state["engine"]
         del state["_version_manager"]
         return state
 
@@ -131,16 +140,16 @@ class RDBStorage(BaseStorage):
 
         self.__dict__.update(state)
         try:
-            self.engine = create_engine(self.url, **self.engine_kwargs)
+            engine = _get_engine(self.url, **self.engine_kwargs)
         except ImportError as e:
             raise ImportError(
                 "Failed to import DB access module for the specified storage URL. "
                 "Please install appropriate one."
             ) from e
 
-        self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=self.engine))
-        models.BaseModel.metadata.create_all(self.engine)
-        self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
+        self.scoped_session = orm.scoped_session(orm.sessionmaker(bind=engine))
+        models.BaseModel.metadata.create_all(engine)
+        self._version_manager = _VersionManager(self.url, engine, self.scoped_session)
         if not self.skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
 
