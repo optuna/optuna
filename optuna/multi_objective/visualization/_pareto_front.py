@@ -183,7 +183,7 @@ def _get_pareto_front_3d(
     else:
         if len(axis_order) != 3:
             raise ValueError(
-                f"Size of `axis_order` {axis_order}. Expect: 3, Actual: {len(axis_order)}"
+                f"Size of `axis_order` {axis_order}. Expect: 3, Actual: {len(axis_order)}."
             )
         if np.unique(axis_order).size != 3:
             raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!.")
