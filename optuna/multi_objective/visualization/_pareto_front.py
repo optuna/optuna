@@ -190,7 +190,7 @@ def _get_pareto_front_3d(
         if max(axis_order) > 2:
             raise ValueError(
                 f"Given `axis_order` {axis_order} contains invalid index {max(axis_order)} "
-                "higher than 2"
+                "higher than 2."
             )
         if min(axis_order) < 0:
             raise ValueError(
