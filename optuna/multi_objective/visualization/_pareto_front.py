@@ -138,7 +138,7 @@ def _get_pareto_front_2d(
         if min(axis_order) < 0:
             raise ValueError(
                 f"Given `axis_order` {axis_order} contains invalid index {min(axis_order)} "
-                "lower than 0"
+                "lower than 0."
             )
 
     data = go.Scatter(
