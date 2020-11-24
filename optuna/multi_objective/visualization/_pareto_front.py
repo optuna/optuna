@@ -66,7 +66,7 @@ def plot_pareto_front(
         include_dominated_trials:
             A flag to include all dominated trial's objective values.
         axis_order:
-            A list of axis index indicating the order of axis. If :obj:`None` is specified,
+            A list of indices indicating the axis order. If :obj:`None` is specified,
             default order is used.
 
 
