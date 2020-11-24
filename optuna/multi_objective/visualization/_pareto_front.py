@@ -2,8 +2,6 @@ import json
 from typing import List
 from typing import Optional
 
-import numpy as np
-
 import optuna
 from optuna import multi_objective
 from optuna._experimental import experimental
@@ -128,7 +126,7 @@ def _get_pareto_front_2d(
             raise ValueError(
                 f"Size of `axis_order` {axis_order}. Expect: 2, Actual: {len(axis_order)}."
             )
-        if np.unique(axis_order).size != 2:
+        if len(set(axis_order)) != 2:
             raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!")
         if max(axis_order) > 1:
             raise ValueError(
@@ -185,7 +183,7 @@ def _get_pareto_front_3d(
             raise ValueError(
                 f"Size of `axis_order` {axis_order}. Expect: 3, Actual: {len(axis_order)}."
             )
-        if np.unique(axis_order).size != 3:
+        if len(set(axis_order)) != 3:
             raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!.")
         if max(axis_order) > 2:
             raise ValueError(
