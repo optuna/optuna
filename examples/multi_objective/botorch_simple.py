@@ -14,7 +14,9 @@ from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikeliho
 import torch
 
 import optuna
+from optuna.study import Study
 from optuna.trial import Trial
+from optuna.trial import FrozenTrial
 
 
 # C2-DTLZ2 minimization objective function with a single constraint.
@@ -23,57 +25,54 @@ _OBJECTIVE = C2DTLZ2(dim=3, num_objectives=2, negate=True)
 
 
 def objective(trial: Trial) -> Sequence[float]:
-    xs = torch.tensor([trial.suggest_float(f"x{i}", 0, 1) for i in range(_OBJECTIVE.dim)])
-    values = _OBJECTIVE(xs)
-    constraint = _OBJECTIVE.evaluate_slack(xs.unsqueeze(dim=0))[0]
-    return values.tolist() + constraint.tolist()
+    # xs = torch.tensor([trial.suggest_float(f"x{i}", 0, 1) for i in range(_OBJECTIVE.dim)])
+    # values = _OBJECTIVE(xs)
+    # constraint = _OBJECTIVE.evaluate_slack(xs.unsqueeze(dim=0))[0]
+    # return values.tolist() + constraint.tolist()
+    x = trial.suggest_float("x", 0, 10)
+    y = trial.suggest_float("y", 0, 10)
+    return x, y
+
+
+def constraints(study: Study, trial: FrozenTrial) -> Sequence[float]:
+    # Constraints are considered feasible if negative.
+    x = trial.params["x"]
+    y = trial.params["y"]
+    return (x + y - 10,)
 
 
 def optimize_func(
-    train_x: torch.Tensor, train_obj_and_con: torch.Tensor, bounds: torch.Tensor
+    train_x: torch.Tensor, train_obj: torch.Tensor, train_con: torch.Tensor, bounds: torch.Tensor
 ) -> torch.Tensor:
     # We can always assume maximization in `optimize_func`.
-    # However, constraints are considered feasible if negative.
-
-    # TODO(hvy): Should be known without having to be hard-coded.
-    n_contraints = 1
-
-    train_con = train_obj_and_con[:, -n_contraints:]
-    train_con *= -1  # In-place.
-    train_obj = train_obj_and_con[:, :-n_contraints]
-
-    is_feas = (train_con <= 0).all(dim=-1)
-
-    # Debug.
-    hv = Hypervolume(ref_point=_OBJECTIVE.ref_point)  # `Hypervolume` assumes maximization.
-    feas_train_obj = train_obj[is_feas]
-    pareto_mask = is_non_dominated(feas_train_obj)
-    pareto_obj = feas_train_obj[pareto_mask]
-    print("Pareto front size:", pareto_obj.numel(), "hypervolume:", hv.compute(pareto_obj))
 
     # Initialize and fit GP.
-    model = SingleTaskGP(train_x, train_obj_and_con)
+    train_y = torch.cat([train_obj, train_con], dim=-1)
+    model = SingleTaskGP(train_x, train_y)
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     fit_gpytorch_model(mll)
 
-    # Optimize acquisition function.
-    n_outcomes = train_obj.shape[-1]
-    ref_point = train_obj.amin(dim=0) - 1e-6
-    better_than_ref = (train_obj > ref_point).all(dim=-1)
-    partitioning = NondominatedPartitioning(
-        num_outcomes=n_outcomes,
-        Y=train_obj[better_than_ref & is_feas],
-    )
+    # Optimize qEHVI acquisition function.
 
-    sampler = SobolQMCNormalSampler(num_samples=128)
+    # TODO(hvy): Use tighter reference point to reduce the size of `Y` by taking the intersection
+    # of `is_feas` and points in `train_obj` better than the reference point.
+    n_outcomes = train_obj.size(-1)
+    is_feas = (train_con <= 0).all(dim=-1)
+    partitioning = NondominatedPartitioning(num_outcomes=n_outcomes, Y=train_obj[is_feas])
+
     acqf_constraints = []
+    n_contraints = train_con.size(1)
     for i in range(1, n_contraints + 1):
         acqf_constraints.append(lambda Z, i=i: Z[..., -i])
+
+    ref_point = train_obj.amin(dim=0) - 1e-6
+    ref_point = ref_point.tolist()
+
     acqf = qExpectedHypervolumeImprovement(
         model=model,
-        ref_point=ref_point.tolist(),
+        ref_point=ref_point,
         partitioning=partitioning,
-        sampler=sampler,
+        sampler=SobolQMCNormalSampler(num_samples=128),
         objective=IdentityMCMultiOutputObjective(outcomes=list(range(n_outcomes))),
         constraints=acqf_constraints,
     )
@@ -94,13 +93,14 @@ def optimize_func(
 if __name__ == "__main__":
     sampler = optuna.integration.BoTorchSampler(
         optimize_func=optimize_func,
+        constraints=constraints,
         n_startup_trials=10,
     )
     study = optuna.multi_objective.create_study(
-        directions=["maximize", "maximize", "maximize"],
+        directions=["maximize", "maximize"],
         sampler=sampler,
     )
-    study.optimize(objective, n_trials=30)
+    study.optimize(objective, n_trials=64)
 
     print("Number of finished trials: ", len(study.trials))
 
@@ -114,3 +114,8 @@ if __name__ == "__main__":
         print("  Trial#{}".format(trial.number))
         print("    Values: Values={}, Constraint={}".format(trial.values[:-1], trial.values[-1]))
         print("    Params: {}".format(trial.params))
+
+    fig = optuna.multi_objective.visualization.plot_pareto_front(
+        study, include_dominated_trials=True
+    )
+    fig.show()
