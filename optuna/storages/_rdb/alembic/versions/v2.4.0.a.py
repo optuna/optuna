@@ -112,20 +112,23 @@ def upgrade():
             {"study_id": r.study_id, "direction": r.direction, "objective_id": 0}
             for r in studies_records
         ]
-        session.bulk_update_mappings(StudyDirectionModel, mapping)
+        if len(mapping) > 0:
+            session.bulk_update_mappings(StudyDirectionModel, mapping)
 
         intermediate_values_records = session.query(TrialValueModel).all()
         mapping = [
             {"trial_id": r.trial_id, "value": r.value, "step": r.step}
             for r in intermediate_values_records
         ]
-        session.bulk_update_mappings(TrialIntermediateValueModel, mapping)
+        if len(mapping) > 0:
+            session.bulk_update_mappings(TrialIntermediateValueModel, mapping)
 
         trials_records = session.query(TrialModel).all()
         mapping = [
             {"trial_id": r.trial_id, "value": r.value, "objective_id": 0} for r in trials_records
         ]
-        session.bulk_update_mappings(TrialValueModel, mapping)
+        if len(mapping):
+            session.bulk_update_mappings(TrialValueModel, mapping)
 
         session.commit()
     except SQLAlchemyError as e:
