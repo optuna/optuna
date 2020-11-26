@@ -10,6 +10,7 @@ from typing import Any
 from alembic import op
 import sqlalchemy as sa
 
+from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
@@ -69,42 +70,47 @@ class TrialIntermediateValueModel(BaseModel):
 
 
 def upgrade():
-    # op.create_table(
-    #     "study_direction",
-    #     sa.Column("study_direction_id", sa.Integer(), nullable=False),
-    #     sa.Column(
-    #         "direction",
-    #         sa.Enum("NOT_SET", "MINIMIZE", "MAXIMIZE", name="studydirection"),
-    #         nullable=False,
-    #     ),
-    #     sa.Column("study_id", sa.Integer(), nullable=True),
-    #     sa.Column("objective_id", sa.Integer(), nullable=True),
-    #     sa.ForeignKeyConstraint(
-    #         ["study_id"],
-    #         ["studies.study_id"],
-    #     ),
-    #     sa.PrimaryKeyConstraint("study_direction_id"),
-    #     sa.UniqueConstraint("study_id", "objective_id"),
-    # )
-    # op.create_table(
-    #     "trial_intermediate_values",
-    #     sa.Column("trial_intermediate_values_id", sa.Integer(), nullable=False),
-    #     sa.Column("trial_id", sa.Integer(), nullable=True),
-    #     sa.Column("step", sa.Integer(), nullable=True),
-    #     sa.Column("value", sa.Float(), nullable=True),
-    #     sa.ForeignKeyConstraint(
-    #         ["trial_id"],
-    #         ["trials.trial_id"],
-    #     ),
-    #     sa.PrimaryKeyConstraint("trial_intermediate_values_id"),
-    #     sa.UniqueConstraint("trial_id", "step"),
-    # )
+    bind = op.get_bind()
+    tables = Inspector.from_engine(bind).get_table_names()
+
+    if "study_direction" not in tables:
+        op.create_table(
+            "study_direction",
+            sa.Column("study_direction_id", sa.Integer(), nullable=False),
+            sa.Column(
+                "direction",
+                sa.Enum("NOT_SET", "MINIMIZE", "MAXIMIZE", name="studydirection"),
+                nullable=False,
+            ),
+            sa.Column("study_id", sa.Integer(), nullable=True),
+            sa.Column("objective_id", sa.Integer(), nullable=True),
+            sa.ForeignKeyConstraint(
+                ["study_id"],
+                ["studies.study_id"],
+            ),
+            sa.PrimaryKeyConstraint("study_direction_id"),
+            sa.UniqueConstraint("study_id", "objective_id"),
+        )
+
+    if "trial_intermediate_values" not in tables:
+        op.create_table(
+            "trial_intermediate_values",
+            sa.Column("trial_intermediate_values_id", sa.Integer(), nullable=False),
+            sa.Column("trial_id", sa.Integer(), nullable=True),
+            sa.Column("step", sa.Integer(), nullable=True),
+            sa.Column("value", sa.Float(), nullable=True),
+            sa.ForeignKeyConstraint(
+                ["trial_id"],
+                ["trials.trial_id"],
+            ),
+            sa.PrimaryKeyConstraint("trial_intermediate_values_id"),
+            sa.UniqueConstraint("trial_id", "step"),
+        )
 
     with op.batch_alter_table("trial_values", schema=None) as batch_op:
         batch_op.add_column(sa.Column("objective_id", sa.Integer(), nullable=True))
         batch_op.create_unique_constraint("value_constraint", ["trial_id", "objective_id"])
 
-    bind = op.get_bind()
     session = orm.Session(bind=bind)
     try:
         studies_records = session.query(StudyModel).all()
@@ -127,7 +133,7 @@ def upgrade():
         mapping = [
             {"trial_id": r.trial_id, "value": r.value, "objective_id": 0} for r in trials_records
         ]
-        if len(mapping):
+        if len(mapping) > 0:
             session.bulk_update_mappings(TrialValueModel, mapping)
 
         session.commit()
