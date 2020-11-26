@@ -69,36 +69,36 @@ class TrialIntermediateValueModel(BaseModel):
 
 
 def upgrade():
-    op.create_table(
-        "study_direction",
-        sa.Column("study_direction_id", sa.Integer(), nullable=False),
-        sa.Column(
-            "direction",
-            sa.Enum("NOT_SET", "MINIMIZE", "MAXIMIZE", name="studydirections"),
-            nullable=False,
-        ),
-        sa.Column("study_id", sa.Integer(), nullable=True),
-        sa.Column("objective_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["study_id"],
-            ["studies.study_id"],
-        ),
-        sa.PrimaryKeyConstraint("study_direction_id"),
-        sa.UniqueConstraint("study_id", "objective_id"),
-    )
-    op.create_table(
-        "trial_intermediate_values",
-        sa.Column("trial_intermediate_values_id", sa.Integer(), nullable=False),
-        sa.Column("trial_id", sa.Integer(), nullable=True),
-        sa.Column("step", sa.Integer(), nullable=True),
-        sa.Column("value", sa.Float(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["trial_id"],
-            ["trials.trial_id"],
-        ),
-        sa.PrimaryKeyConstraint("trial_intermediate_values_id"),
-        sa.UniqueConstraint("trial_id", "step"),
-    )
+    # op.create_table(
+    #     "study_direction",
+    #     sa.Column("study_direction_id", sa.Integer(), nullable=False),
+    #     sa.Column(
+    #         "direction",
+    #         sa.Enum("NOT_SET", "MINIMIZE", "MAXIMIZE", name="studydirection"),
+    #         nullable=False,
+    #     ),
+    #     sa.Column("study_id", sa.Integer(), nullable=True),
+    #     sa.Column("objective_id", sa.Integer(), nullable=True),
+    #     sa.ForeignKeyConstraint(
+    #         ["study_id"],
+    #         ["studies.study_id"],
+    #     ),
+    #     sa.PrimaryKeyConstraint("study_direction_id"),
+    #     sa.UniqueConstraint("study_id", "objective_id"),
+    # )
+    # op.create_table(
+    #     "trial_intermediate_values",
+    #     sa.Column("trial_intermediate_values_id", sa.Integer(), nullable=False),
+    #     sa.Column("trial_id", sa.Integer(), nullable=True),
+    #     sa.Column("step", sa.Integer(), nullable=True),
+    #     sa.Column("value", sa.Float(), nullable=True),
+    #     sa.ForeignKeyConstraint(
+    #         ["trial_id"],
+    #         ["trials.trial_id"],
+    #     ),
+    #     sa.PrimaryKeyConstraint("trial_intermediate_values_id"),
+    #     sa.UniqueConstraint("trial_id", "step"),
+    # )
 
     with op.batch_alter_table("trial_values", schema=None) as batch_op:
         batch_op.add_column(sa.Column("objective_id", sa.Integer(), nullable=True))
