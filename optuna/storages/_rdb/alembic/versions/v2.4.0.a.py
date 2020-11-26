@@ -5,8 +5,6 @@ Revises: v1.3.0.a
 Create Date: 2020-11-17 02:16:16.536171
 
 """
-from typing import Any
-
 from alembic import op
 import sqlalchemy as sa
 
@@ -15,6 +13,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
 
+from optuna.storages._rdb.models import StudyModel
+from optuna.storages._rdb.models import StudyDirectionModel
+from optuna.storages._rdb.models import TrialIntermediateValueModel
+from optuna.storages._rdb.models import TrialModel
+from optuna.storages._rdb.models import TrialValueModel
 from optuna.study import StudyDirection
 
 
@@ -28,45 +31,6 @@ depends_on = None
 MAX_INDEXED_STRING_LENGTH = 512
 MAX_STRING_LENGTH = 2048
 BaseModel = declarative_base()
-
-
-class StudyModel(BaseModel):
-    __tablename__ = "studies"
-    study_id = sa.Column(sa.Integer, primary_key=True)
-    direction = sa.Column(sa.Enum(StudyDirection), nullable=False)
-
-
-class StudyDirectionModel(BaseModel):
-    __tablename__ = "study_direction"
-    __table_args__: Any = (sa.UniqueConstraint("study_id", "objective_id"),)
-    study_direction_id = sa.Column(sa.Integer, primary_key=True)
-    direction = sa.Column(sa.Enum(StudyDirection), nullable=False)
-    study_id = sa.Column(sa.Integer, sa.ForeignKey("studies.study_id"))
-    objective_id = sa.Column(sa.Integer)
-
-
-class TrialModel(BaseModel):
-    __tablename__ = "trials"
-    trial_id = sa.Column(sa.Integer, primary_key=True)
-    value = sa.Column(sa.Float)
-
-
-class TrialValueModel(BaseModel):
-    __tablename__ = "trial_values"
-    __table_args__: Any = (sa.UniqueConstraint("trial_id", "objective_id"),)
-    trial_value_id = sa.Column(sa.Integer, primary_key=True)
-    trial_id = sa.Column(sa.Integer, sa.ForeignKey("trials.trial_id"))
-    objective_id = sa.Column(sa.Integer)
-    value = sa.Column(sa.Float)
-
-
-class TrialIntermediateValueModel(BaseModel):
-    __tablename__ = "trial_intermediate_values"
-    __table_args__: Any = (sa.UniqueConstraint("trial_id", "step"),)
-    trial_intermediate_values_id = sa.Column(sa.Integer, primary_key=True)
-    trial_id = sa.Column(sa.Integer, sa.ForeignKey("trials.trial_id"))
-    step = sa.Column(sa.Integer)
-    value = sa.Column(sa.Float)
 
 
 def upgrade():
@@ -113,28 +77,37 @@ def upgrade():
 
     session = orm.Session(bind=bind)
     try:
-        studies_records = session.query(StudyModel).all()
-        mapping = [
-            {"study_id": r.study_id, "direction": r.direction, "objective_id": 0}
+
+        class BackwardCompatibleStudyModel(StudyModel):
+            direction = sa.Column(sa.Enum(StudyDirection), nullable=False)
+
+        class BackwardCompatibleTrialValueModel(TrialValueModel):
+            step = sa.Column(sa.Integer)
+
+        class BackwardCompatibleTrialModel(TrialModel):
+            value = sa.Column(sa.Float)
+
+        studies_records = session.query(BackwardCompatibleStudyModel).all()
+        objects = [
+            StudyDirectionModel(study_id=r.study_id, direction=r.direction, objective_id=0)
             for r in studies_records
         ]
-        if len(mapping) > 0:
-            session.bulk_update_mappings(StudyDirectionModel, mapping)
+        session.bulk_save_objects(objects)
 
-        intermediate_values_records = session.query(TrialValueModel).all()
-        mapping = [
-            {"trial_id": r.trial_id, "value": r.value, "step": r.step}
+        intermediate_values_records = session.query(BackwardCompatibleTrialValueModel).all()
+        objects = [
+            TrialIntermediateValueModel(trial_id=r.trial_id, value=r.value, step=r.step)
             for r in intermediate_values_records
         ]
-        if len(mapping) > 0:
-            session.bulk_update_mappings(TrialIntermediateValueModel, mapping)
+        session.bulk_save_objects(objects)
 
-        trials_records = session.query(TrialModel).all()
-        mapping = [
-            {"trial_id": r.trial_id, "value": r.value, "objective_id": 0} for r in trials_records
+        TrialValueModel.__table__.delete()
+        trials_records = session.query(BackwardCompatibleTrialModel).all()
+        objects = [
+            TrialValueModel(trial_id=r.trial_id, value=r.value, objective_id=0)
+            for r in trials_records
         ]
-        if len(mapping) > 0:
-            session.bulk_update_mappings(TrialValueModel, mapping)
+        session.bulk_save_objects(objects)
 
         session.commit()
     except SQLAlchemyError as e:
