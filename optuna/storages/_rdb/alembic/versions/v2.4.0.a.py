@@ -27,11 +27,6 @@ down_revision = "v1.3.0.a"
 branch_labels = None
 depends_on = None
 
-# Model definition
-MAX_INDEXED_STRING_LENGTH = 512
-MAX_STRING_LENGTH = 2048
-BaseModel = declarative_base()
-
 
 def upgrade():
     bind = op.get_bind()
@@ -79,7 +74,7 @@ def upgrade():
     try:
 
         class BackwardCompatibleStudyModel(StudyModel):
-            direction = sa.Column(sa.Enum(StudyDirection), nullable=False)
+            direction = sa.Column(sa.Enum(StudyDirection))
 
         class BackwardCompatibleTrialValueModel(TrialValueModel):
             step = sa.Column(sa.Integer)
