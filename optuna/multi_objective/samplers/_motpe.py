@@ -112,7 +112,9 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
             sampler = optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler(
                 n_startup_trials=n_startup_trials, n_ehvi_candidates=24, seed=seed
             )
-            study = optuna.multi_objective.create_study(["minimize"] * num_variables)
+            study = optuna.multi_objective.create_study(
+                ["minimize"] * num_variables, sampler=sampler
+            )
             study.optimize(objective, n_trials=250)
     """
 
