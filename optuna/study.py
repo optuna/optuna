@@ -104,9 +104,6 @@ class BaseStudy(object):
 
         The returned trials are ordered by trial number.
 
-        For library users, it's recommended to use more handy
-        :attr:`~optuna.study.Study.trials` property to get the trials instead.
-
         Example:
             .. testcode::
 
