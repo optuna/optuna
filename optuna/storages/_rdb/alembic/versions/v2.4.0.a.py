@@ -95,7 +95,7 @@ def upgrade():
         ]
         session.bulk_save_objects(objects)
 
-        TrialValueModel.__table__.delete()
+        session.query(TrialValueModel).delete()
         trials_records = session.query(BackwardCompatibleTrialModel).all()
         objects = [
             TrialValueModel(trial_id=r.trial_id, value=r.value, objective=0)
