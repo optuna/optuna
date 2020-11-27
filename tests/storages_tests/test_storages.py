@@ -829,15 +829,15 @@ def test_get_all_trials_state_option(storage_mode: str) -> None:
         storage.set_study_direction(study_id, StudyDirection.MAXIMIZE)
         generator = random.Random(51)
 
-        states = [
+        states = (
             TrialState.COMPLETE,
             TrialState.COMPLETE,
             TrialState.PRUNED,
-        ]
+        )
 
-        for s in states:
+        for state in states:
             t = _generate_trial(generator)
-            t.state = s
+            t.state = state
             storage.create_new_trial(study_id, template_trial=t)
 
         trials = storage.get_all_trials(study_id, states=None)
@@ -857,8 +857,8 @@ def test_get_all_trials_state_option(storage_mode: str) -> None:
         other_states = [
             s for s in ALL_STATES if s != TrialState.COMPLETE and s != TrialState.PRUNED
         ]
-        for s in other_states:
-            trials = storage.get_all_trials(study_id, states=(s,))
+        for state in other_states:
+            trials = storage.get_all_trials(study_id, states=(state,))
             assert len(trials) == 0
 
 
