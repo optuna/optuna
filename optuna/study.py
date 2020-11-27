@@ -87,13 +87,13 @@ class BaseStudy(object):
 
         The returned trials are ordered by trial number.
 
-        This is a short form of ``self.get_trials(deepcopy=True)``.
+        This is a short form of ``self.get_trials(deepcopy=True, states=None)``.
 
         Returns:
             A list of :class:`~optuna.FrozenTrial` objects.
         """
 
-        return self.get_trials()
+        return self.get_trials(deepcopy=True, states=None)
 
     def get_trials(
         self,
