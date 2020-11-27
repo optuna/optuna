@@ -87,26 +87,26 @@ class StudyModel(BaseModel):
 
 
 class StudyDirectionModel(BaseModel):
-    __tablename__ = "study_direction"
-    __table_args__: Any = (UniqueConstraint("study_id", "objective_id"),)
+    __tablename__ = "study_directions"
+    __table_args__: Any = (UniqueConstraint("study_id", "objective"),)
     study_direction_id = Column(Integer, primary_key=True)
     direction = Column(Enum(StudyDirection), nullable=False)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
-    objective_id = Column(Integer)
+    objective = Column(Integer, default=0)
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("directions", cascade="all, delete-orphan")
     )
 
     @classmethod
-    def find_by_study_and_objective_id(
-        cls, study: StudyModel, objective_id: int, session: orm.Session
+    def find_by_study_and_objective(
+        cls, study: StudyModel, objective: int, session: orm.Session
     ) -> Optional["StudyDirectionModel"]:
 
         study_direction = (
             session.query(cls)
             .filter(cls.study_id == study.study_id)
-            .filter(cls.objective_id == objective_id)
+            .filter(cls.objective == objective)
             .one_or_none()
         )
 
@@ -118,7 +118,7 @@ class StudyDirectionModel(BaseModel):
         study_directions = (
             session.query(cls)
             .filter(cls.study_id == study.study_id)
-            .order_by(asc(cls.objective_id))
+            .order_by(asc(cls.objective))
             .all()
         )
 
@@ -230,7 +230,7 @@ class TrialModel(BaseModel):
 
     @classmethod
     def find_max_value_trial(
-        cls, study_id: int, session: orm.Session, objective_id: int = 0
+        cls, study_id: int, session: orm.Session, objective: int = 0
     ) -> "TrialModel":
 
         trial = (
@@ -238,7 +238,7 @@ class TrialModel(BaseModel):
             .filter(cls.study_id == study_id)
             .filter(cls.state == TrialState.COMPLETE)
             .join(TrialValueModel)
-            .filter(TrialValueModel.objective_id == objective_id)
+            .filter(TrialValueModel.objective == objective)
             .order_by(desc(TrialValueModel.value))
             .limit(1)
             .one_or_none()
@@ -249,7 +249,7 @@ class TrialModel(BaseModel):
 
     @classmethod
     def find_min_value_trial(
-        cls, study_id: int, session: orm.Session, objective_id: int = 0
+        cls, study_id: int, session: orm.Session, objective: int = 0
     ) -> "TrialModel":
 
         trial = (
@@ -257,7 +257,7 @@ class TrialModel(BaseModel):
             .filter(cls.study_id == study_id)
             .filter(cls.state == TrialState.COMPLETE)
             .join(TrialValueModel)
-            .filter(TrialValueModel.objective_id == objective_id)
+            .filter(TrialValueModel.objective == objective)
             .order_by(asc(TrialValueModel.value))
             .limit(1)
             .one_or_none()
@@ -526,10 +526,10 @@ class TrialParamModel(BaseModel):
 
 class TrialValueModel(BaseModel):
     __tablename__ = "trial_values"
-    __table_args__: Any = (UniqueConstraint("trial_id", "objective_id"),)
+    __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
     trial_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
-    objective_id = Column(Integer)
+    objective = Column(Integer)
     value = Column(Float)
 
     trial = orm.relationship(
@@ -537,14 +537,14 @@ class TrialValueModel(BaseModel):
     )
 
     @classmethod
-    def find_by_trial_and_objective_id(
-        cls, trial: TrialModel, objective_id: int, session: orm.Session
+    def find_by_trial_and_objective(
+        cls, trial: TrialModel, objective: int, session: orm.Session
     ) -> Optional["TrialValueModel"]:
 
         trial_value = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
-            .filter(cls.objective_id == objective_id)
+            .filter(cls.objective == objective)
             .one_or_none()
         )
 
@@ -575,7 +575,7 @@ class TrialValueModel(BaseModel):
 class TrialIntermediateValueModel(BaseModel):
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
-    trial_intermediate_values_id = Column(Integer, primary_key=True)
+    trial_intermediate_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     step = Column(Integer)
     value = Column(Float)

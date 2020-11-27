@@ -380,7 +380,7 @@ class RDBStorage(BaseStorage):
                 value = (
                     session.query(models.TrialValueModel)
                     .filter(models.TrialValueModel.trial_id == best_trial.trial_id)
-                    .filter(models.TrialValueModel.objective_id == 0)
+                    .filter(models.TrialValueModel.objective == 0)
                     .one_or_none()
                 )
                 params = (
@@ -646,14 +646,14 @@ class RDBStorage(BaseStorage):
                 .filter(models.TrialValueModel.trial_id == trial_id)
                 .all()
             )
-            value_dict = {value_model.objective_id: value_model for value_model in value_models}
-            for objective_id, v in enumerate([value]):
-                if objective_id in value_dict:
-                    value_dict[objective_id].value = v
-                    session.add(value_dict[objective_id])
+            value_dict = {value_model.objective: value_model for value_model in value_models}
+            for objective, v in enumerate([value]):
+                if objective in value_dict:
+                    value_dict[objective].value = v
+                    session.add(value_dict[objective])
                 else:
                     trial_model.values.extend(
-                        [models.TrialValueModel(objective_id=objective_id, value=v)]
+                        [models.TrialValueModel(objective=objective, value=v)]
                     )
 
         if user_attrs:
@@ -870,18 +870,16 @@ class RDBStorage(BaseStorage):
         self._commit_with_integrity_check(session)
 
     def _set_trial_value_without_commit(
-        self, session: orm.Session, trial_id: int, objective_id: int, value: float
+        self, session: orm.Session, trial_id: int, objective: int, value: float
     ) -> None:
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial_value = models.TrialValueModel.find_by_trial_and_objective_id(
-            trial, objective_id, session
-        )
+        trial_value = models.TrialValueModel.find_by_trial_and_objective(trial, objective, session)
         if trial_value is None:
             trial_value = models.TrialValueModel(
-                trial_id=trial_id, objective_id=objective_id, value=value
+                trial_id=trial_id, objective=objective, value=value
             )
             session.add(trial_value)
         else:

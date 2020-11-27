@@ -10,7 +10,6 @@ import sqlalchemy as sa
 
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
 
 from optuna.storages._rdb.models import StudyModel
@@ -32,9 +31,9 @@ def upgrade():
     bind = op.get_bind()
     tables = Inspector.from_engine(bind).get_table_names()
 
-    if "study_direction" not in tables:
+    if "study_directions" not in tables:
         op.create_table(
-            "study_direction",
+            "study_directions",
             sa.Column("study_direction_id", sa.Integer(), nullable=False),
             sa.Column(
                 "direction",
@@ -42,13 +41,13 @@ def upgrade():
                 nullable=False,
             ),
             sa.Column("study_id", sa.Integer(), nullable=True),
-            sa.Column("objective_id", sa.Integer(), nullable=True),
+            sa.Column("objective", sa.Integer(), nullable=True),
             sa.ForeignKeyConstraint(
                 ["study_id"],
                 ["studies.study_id"],
             ),
             sa.PrimaryKeyConstraint("study_direction_id"),
-            sa.UniqueConstraint("study_id", "objective_id"),
+            sa.UniqueConstraint("study_id", "objective"),
         )
 
     if "trial_intermediate_values" not in tables:
@@ -67,8 +66,8 @@ def upgrade():
         )
 
     with op.batch_alter_table("trial_values", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("objective_id", sa.Integer(), nullable=True))
-        batch_op.create_unique_constraint("value_constraint", ["trial_id", "objective_id"])
+        batch_op.add_column(sa.Column("objective", sa.Integer(), nullable=True))
+        batch_op.create_unique_constraint("value_constraint", ["trial_id", "objective"])
 
     session = orm.Session(bind=bind)
     try:
@@ -84,7 +83,7 @@ def upgrade():
 
         studies_records = session.query(BackwardCompatibleStudyModel).all()
         objects = [
-            StudyDirectionModel(study_id=r.study_id, direction=r.direction, objective_id=0)
+            StudyDirectionModel(study_id=r.study_id, direction=r.direction, objective=0)
             for r in studies_records
         ]
         session.bulk_save_objects(objects)
@@ -99,7 +98,7 @@ def upgrade():
         TrialValueModel.__table__.delete()
         trials_records = session.query(BackwardCompatibleTrialModel).all()
         objects = [
-            TrialValueModel(trial_id=r.trial_id, value=r.value, objective_id=0)
+            TrialValueModel(trial_id=r.trial_id, value=r.value, objective=0)
             for r in trials_records
         ]
         session.bulk_save_objects(objects)
@@ -159,7 +158,7 @@ def downgrade():
 
     with op.batch_alter_table("trial_values", schema=None) as batch_op:
         batch_op.drop_constraint("value_constraint", type_="unique")
-        batch_op.drop_column("objective_id")
+        batch_op.drop_column("objective")
 
     op.drop_table("trial_intermediate_values")
     op.drop_table("study_direction")
