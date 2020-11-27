@@ -165,7 +165,7 @@ class TPESampler(BaseSampler):
         seed: Optional[int] = None,
         *,
         multivariate: bool = False,
-        warn_independent_sampling: bool = True
+        warn_independent_sampling: bool = True,
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(

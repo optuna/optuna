@@ -1,6 +1,7 @@
 import importlib
 import types
 from typing import Any
+from typing import TYPE_CHECKING
 
 from optuna import distributions
 from optuna import exceptions
@@ -23,7 +24,6 @@ from optuna.study import load_study
 from optuna.study import Study
 from optuna.trial import create_trial
 from optuna.trial import Trial
-from optuna.type_checking import TYPE_CHECKING
 from optuna.version import __version__
 
 
@@ -86,3 +86,4 @@ else:
     dashboard = _LazyImport("optuna.dashboard")
 
 structs = _LazyImport("optuna.structs")
+type_checking = _LazyImport("optuna.type_checking")
