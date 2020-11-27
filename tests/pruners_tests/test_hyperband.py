@@ -213,6 +213,6 @@ def test_hyperband_no_call_of_filter_study_in_should_prune(
     study.optimize(objective, n_trials=10)
 
 
-def test_hyperband_boostrap_parameter() -> None:
+def test_incompatibility_between_bootstrap_count_and_auto_max_resource() -> None:
     with pytest.raises(ValueError):
         optuna.pruners.HyperbandPruner(max_resource="auto", bootstrap_count=1)
