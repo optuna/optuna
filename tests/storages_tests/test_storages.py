@@ -840,29 +840,25 @@ def test_get_all_trials_state_option(storage_mode: str) -> None:
             t.state = s
             storage.create_new_trial(study_id, template_trial=t)
 
-        trials = storage.get_all_trials(study_id, state=None)
+        trials = storage.get_all_trials(study_id, states=None)
         assert len(trials) == 3
 
-        trials = storage.get_all_trials(study_id, state=TrialState.COMPLETE)
+        trials = storage.get_all_trials(study_id, states=(TrialState.COMPLETE,))
         assert len(trials) == 2
         assert all(t.state == TrialState.COMPLETE for t in trials)
 
-        trials = storage.get_all_trials(study_id, state=(TrialState.COMPLETE,))
-        assert len(trials) == 2
-        assert all(t.state == TrialState.COMPLETE for t in trials)
-
-        trials = storage.get_all_trials(study_id, state=(TrialState.COMPLETE, TrialState.PRUNED))
+        trials = storage.get_all_trials(study_id, states=(TrialState.COMPLETE, TrialState.PRUNED))
         assert len(trials) == 3
         assert all(t.state in (TrialState.COMPLETE, TrialState.PRUNED) for t in trials)
 
-        trials = storage.get_all_trials(study_id, state=())
+        trials = storage.get_all_trials(study_id, states=())
         assert len(trials) == 0
 
         other_states = [
             s for s in ALL_STATES if s != TrialState.COMPLETE and s != TrialState.PRUNED
         ]
         for s in other_states:
-            trials = storage.get_all_trials(study_id, state=s)
+            trials = storage.get_all_trials(study_id, states=(s,))
             assert len(trials) == 0
 
 

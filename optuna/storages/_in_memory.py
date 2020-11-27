@@ -384,7 +384,7 @@ class InMemoryStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None,
+        states: Optional[Tuple[TrialState, ...]] = None,
     ) -> List[FrozenTrial]:
 
         with self._lock:
@@ -394,10 +394,8 @@ class InMemoryStorage(BaseStorage):
                 study_id
             ].trials  # type: Union[List[FrozenTrial], Iterator[FrozenTrial]]
 
-            if state is not None:
-                if isinstance(state, TrialState):
-                    state = (state,)
-                trials = filter(lambda t: t.state in state, trials)
+            if states is not None:
+                trials = filter(lambda t: t.state in states, trials)
 
             if deepcopy:
                 trials = copy.deepcopy(list(trials))

@@ -361,7 +361,7 @@ class _CachedStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None,
+        states: Optional[Tuple[TrialState, ...]] = None,
     ) -> List[FrozenTrial]:
         if study_id not in self._studies:
             self.read_trials_from_remote_storage(study_id)
@@ -373,11 +373,8 @@ class _CachedStorage(BaseStorage):
 
             trials: Union[Dict[int, FrozenTrial], List[FrozenTrial]]
 
-            if state is not None:
-                if isinstance(state, TrialState):
-                    state = (state,)
-                assert state is not None and isinstance(state, tuple)
-                trials = {number: t for number, t in study.trials.items() if t.state in state}
+            if states is not None:
+                trials = {number: t for number, t in study.trials.items() if t.state in states}
             else:
                 trials = study.trials
             trials = list(sorted(trials.values(), key=lambda t: t.number))
@@ -389,7 +386,7 @@ class _CachedStorage(BaseStorage):
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
             trials = self._backend._get_trials(
-                study_id, state=None, excluded_trial_ids=study.owned_or_finished_trial_ids
+                study_id, states=None, excluded_trial_ids=study.owned_or_finished_trial_ids
             )
             if trials:
                 self._add_trials_to_cache(study_id, trials)

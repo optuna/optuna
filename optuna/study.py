@@ -98,7 +98,7 @@ class BaseStudy(object):
     def get_trials(
         self,
         deepcopy: bool = True,
-        state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None,
+        states: Optional[Tuple[TrialState, ...]] = None,
     ) -> List[FrozenTrial]:
         """Return all trials in the study.
 
@@ -129,7 +129,7 @@ class BaseStudy(object):
                 Note that if you set the flag to :obj:`False`, you shouldn't mutate
                 any fields of the returned trial. Otherwise the internal state of
                 the study may corrupt and unexpected behavior may happen.
-            state:
+            states:
                 Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
@@ -137,7 +137,7 @@ class BaseStudy(object):
         """
 
         self._storage.read_trials_from_remote_storage(self._study_id)
-        return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, state=state)
+        return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
 
 
 class Study(BaseStudy):

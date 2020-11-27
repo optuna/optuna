@@ -279,9 +279,9 @@ class HyperbandPruner(BasePruner):
             def get_trials(
                 self,
                 deepcopy: bool = True,
-                state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None,
+                states: Optional[Tuple[TrialState, ...]] = None,
             ) -> List["optuna.trial.FrozenTrial"]:
-                trials = super().get_trials(deepcopy=deepcopy, state=state)
+                trials = super().get_trials(deepcopy=deepcopy, states=states)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
                 return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]

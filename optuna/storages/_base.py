@@ -527,7 +527,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         self,
         study_id: int,
         deepcopy: bool = True,
-        state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None,
+        states: Optional[Tuple[TrialState, ...]] = None,
     ) -> List[FrozenTrial]:
         """Read all trials in a study.
 
@@ -537,7 +537,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             deepcopy:
                 Whether to copy the list of trials before returning.
                 Set to :obj:`True` if you intend to update the list or elements of the list.
-            state:
+            states:
                 Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
@@ -567,7 +567,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        return len(self.get_all_trials(study_id, deepcopy=False, state=state))
+        # TODO(hvy): Align the name and the behavior or the `state` parameter with
+        # `get_all_trials`'s `states`.
+        if isinstance(state, TrialState):
+            state = (state,)
+        return len(self.get_all_trials(study_id, deepcopy=False, states=state))
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
         """Return the trial with the best value in a study.

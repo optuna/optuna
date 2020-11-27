@@ -763,7 +763,7 @@ def _get_observation_pairs(
 
     values = []
     scores = []
-    for trial in study.get_trials(deepcopy=False, state=(TrialState.COMPLETE, TrialState.PRUNED)):
+    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
         if trial.state is TrialState.COMPLETE:
             if trial.value is None:
                 continue
@@ -801,7 +801,7 @@ def _get_multivariate_observation_pairs(
 
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
-    for trial in study.get_trials(deepcopy=False, state=(TrialState.COMPLETE, TrialState.PRUNED)):
+    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
 
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE:

@@ -275,10 +275,10 @@ def test_get_trials_excluded_trial_ids() -> None:
 
     storage.create_new_trial(study_id)
 
-    trials = storage._get_trials(study_id, state=None, excluded_trial_ids=set())
+    trials = storage._get_trials(study_id, states=None, excluded_trial_ids=set())
     assert len(trials) == 1
 
     # A large exclusion list used to raise errors. Check that it is not an issue.
     # See https://github.com/optuna/optuna/issues/1457.
-    trials = storage._get_trials(study_id, state=None, excluded_trial_ids=set(range(500000)))
+    trials = storage._get_trials(study_id, states=None, excluded_trial_ids=set(range(500000)))
     assert len(trials) == 0

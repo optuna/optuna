@@ -915,29 +915,25 @@ def test_get_trials_state_option(storage_mode: str) -> None:
 
         study.optimize(objective, n_trials=3)
 
-        trials = study.get_trials(state=None)
+        trials = study.get_trials(states=None)
         assert len(trials) == 3
 
-        trials = study.get_trials(state=TrialState.COMPLETE)
+        trials = study.get_trials(states=(TrialState.COMPLETE,))
         assert len(trials) == 2
         assert all(t.state == TrialState.COMPLETE for t in trials)
 
-        trials = study.get_trials(state=(TrialState.COMPLETE,))
-        assert len(trials) == 2
-        assert all(t.state == TrialState.COMPLETE for t in trials)
-
-        trials = study.get_trials(state=(TrialState.COMPLETE, TrialState.PRUNED))
+        trials = study.get_trials(states=(TrialState.COMPLETE, TrialState.PRUNED))
         assert len(trials) == 3
         assert all(t.state in (TrialState.COMPLETE, TrialState.PRUNED) for t in trials)
 
-        trials = study.get_trials(state=())
+        trials = study.get_trials(states=())
         assert len(trials) == 0
 
         other_states = [
             s for s in list(TrialState) if s != TrialState.COMPLETE and s != TrialState.PRUNED
         ]
         for s in other_states:
-            trials = study.get_trials(state=s)
+            trials = study.get_trials(states=(s,))
             assert len(trials) == 0
 
 

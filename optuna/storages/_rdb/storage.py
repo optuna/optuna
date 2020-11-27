@@ -9,7 +9,6 @@ from typing import List
 from typing import Optional
 from typing import Set
 from typing import Tuple
-from typing import Union
 import uuid
 import weakref
 
@@ -942,17 +941,17 @@ class RDBStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None,
+        states: Optional[Tuple[TrialState, ...]] = None,
     ) -> List[FrozenTrial]:
 
-        trials = self._get_trials(study_id, state, set())
+        trials = self._get_trials(study_id, states, set())
 
         return copy.deepcopy(trials) if deepcopy else trials
 
     def _get_trials(
         self,
         study_id: int,
-        state: Optional[Union[Tuple[TrialState, ...], TrialState]],
+        states: Optional[Tuple[TrialState, ...]],
         excluded_trial_ids: Set[int],
     ) -> List[FrozenTrial]:
 
@@ -965,10 +964,8 @@ class RDBStorage(BaseStorage):
             models.TrialModel.study_id == study_id
         )
 
-        if state is not None:
-            if isinstance(state, TrialState):
-                state = (state,)
-            query = query.filter(models.TrialModel.state.in_(state))
+        if states is not None:
+            query = query.filter(models.TrialModel.state.in_(states))
 
         trial_ids = query.all()
 
