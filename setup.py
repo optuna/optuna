@@ -94,6 +94,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "skorch",
             "stable-baselines3>=0.7.0",
             "catalyst",
+            "allennlp==1.2.0",
         ]
         + (
             ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
@@ -102,7 +103,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         )
         + (
             [
-                "allennlp==1.2.0",
                 "fastai<2",
                 "dask[dataframe]",
                 "dask-ml",
@@ -136,13 +136,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
+            "allennlp==1.2.0",
         ]
         + (
             ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
             else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
         )
-        + (["allennlp==1.2.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
+        + (["fastai<2"] if sys.version_info[:2] < (3, 8) else []),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -172,13 +173,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
+            "allennlp==1.2.0",
         ]
         + (
             ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
             else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
         )
-        + (["allennlp==1.2.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
+        + (["fastai<2"] if sys.version_info[:2] < (3, 8) else []),
     }
 
     return requirements
