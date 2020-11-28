@@ -188,6 +188,7 @@ def test_get_study_id_from_trial_id(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_and_get_study_direction(storage_mode: str) -> None:
+
     with StorageSupplier(storage_mode) as storage:
 
         for target, opposite in [

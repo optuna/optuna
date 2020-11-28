@@ -42,7 +42,7 @@ _logger = optuna.logging.get_logger(__name__)
 
 
 @contextmanager
-def _scoped_session(
+def _create_scoped_session(
     scoped_session: orm.scoped_session,
     ignore_integrity_error: bool = False,
 ) -> Generator[orm.Session, None, None]:
@@ -181,7 +181,7 @@ class RDBStorage(BaseStorage):
     def create_new_study(self, study_name: Optional[str] = None) -> int:
 
         try:
-            with _scoped_session(self.scoped_session) as session:
+            with _create_scoped_session(self.scoped_session) as session:
                 if study_name is None:
                     study_name = self._create_unique_study_name(session)
 
@@ -201,7 +201,7 @@ class RDBStorage(BaseStorage):
 
     def delete_study(self, study_id: int) -> None:
 
-        with _scoped_session(self.scoped_session, True) as session:
+        with _create_scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             session.delete(study)
 
@@ -220,7 +220,7 @@ class RDBStorage(BaseStorage):
     # TODO(sano): Prevent simultaneously setting different direction in distributed environments.
     def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
             if study.direction != StudyDirection.NOT_SET and study.direction != direction:
@@ -234,7 +234,7 @@ class RDBStorage(BaseStorage):
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
-        with _scoped_session(self.scoped_session, True) as session:
+        with _create_scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             attribute = models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
             if attribute is None:
@@ -247,7 +247,7 @@ class RDBStorage(BaseStorage):
 
     def set_study_system_attr(self, study_id: int, key: str, value: Any) -> None:
 
-        with _scoped_session(self.scoped_session, True) as session:
+        with _create_scoped_session(self.scoped_session, True) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             attribute = models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
             if attribute is None:
@@ -260,35 +260,35 @@ class RDBStorage(BaseStorage):
 
     def get_study_id_from_name(self, study_name: str) -> int:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_name(study_name, session)
 
         return study.study_id
 
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
 
         return trial.study_id
 
     def get_study_name_from_id(self, study_id: int) -> str:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         return study.study_name
 
     def get_study_direction(self, study_id: int) -> StudyDirection:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
 
         return study.direction
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             # Ensure that that study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
             attributes = models.StudyUserAttributeModel.where_study_id(study_id, session)
@@ -298,7 +298,7 @@ class RDBStorage(BaseStorage):
 
     def get_study_system_attrs(self, study_id: int) -> Dict[str, Any]:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             # Ensure that that study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
             attributes = models.StudySystemAttributeModel.where_study_id(study_id, session)
@@ -308,7 +308,7 @@ class RDBStorage(BaseStorage):
 
     def get_trial_user_attrs(self, trial_id: int) -> Dict[str, Any]:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             # Ensure trial exists.
             models.TrialModel.find_or_raise_by_id(trial_id, session)
 
@@ -319,7 +319,7 @@ class RDBStorage(BaseStorage):
 
     def get_trial_system_attrs(self, trial_id: int) -> Dict[str, Any]:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             # Ensure trial exists.
             models.TrialModel.find_or_raise_by_id(trial_id, session)
 
@@ -330,7 +330,7 @@ class RDBStorage(BaseStorage):
 
     def get_all_study_summaries(self) -> List[StudySummary]:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             summarized_trial = (
                 session.query(
                     models.TrialModel.study_id,
@@ -449,7 +449,7 @@ class RDBStorage(BaseStorage):
         n_retries = 0
         while True:
             try:
-                with _scoped_session(self.scoped_session) as session:
+                with _create_scoped_session(self.scoped_session) as session:
                     # Ensure that that study exists.
                     #
                     # Locking within a study is necessary since the creation of a trial is not an
@@ -583,7 +583,7 @@ class RDBStorage(BaseStorage):
 
         """
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             trial_model = (
                 session.query(models.TrialModel)
                 .filter(models.TrialModel.trial_id == trial_id)
@@ -692,7 +692,7 @@ class RDBStorage(BaseStorage):
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
 
         try:
-            with _scoped_session(self.scoped_session) as session:
+            with _create_scoped_session(self.scoped_session) as session:
                 trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
                 if trial is None:
                     raise KeyError(models.NOT_FOUND_MSG)
@@ -717,7 +717,7 @@ class RDBStorage(BaseStorage):
         distribution: distributions.BaseDistribution,
     ) -> None:
 
-        with _scoped_session(self.scoped_session, True) as session:
+        with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_param_without_commit(
                 session, trial_id, param_name, param_value_internal, distribution
             )
@@ -765,7 +765,7 @@ class RDBStorage(BaseStorage):
         distribution: distributions.BaseDistribution,
     ) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             # Acquire lock.
             #
             # Assume that study exists.
@@ -797,7 +797,7 @@ class RDBStorage(BaseStorage):
 
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
             trial_param = models.TrialParamModel.find_or_raise_by_trial_and_param_name(
                 trial, param_name, session
@@ -807,7 +807,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_value(self, trial_id: int, value: float) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
             self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -817,7 +817,7 @@ class RDBStorage(BaseStorage):
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
 
-        with _scoped_session(self.scoped_session, True) as session:
+        with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_intermediate_value_without_commit(
                 session, trial_id, step, intermediate_value
             )
@@ -840,7 +840,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        with _scoped_session(self.scoped_session, True) as session:
+        with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_user_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_user_attr_without_commit(
@@ -861,7 +861,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        with _scoped_session(self.scoped_session, True) as session:
+        with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_system_attr_without_commit(session, trial_id, key, value)
 
     def _set_trial_system_attr_without_commit(
@@ -887,7 +887,7 @@ class RDBStorage(BaseStorage):
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             trial_model = (
                 session.query(models.TrialModel)
                 .filter(models.TrialModel.trial_id == trial_id)
@@ -919,7 +919,7 @@ class RDBStorage(BaseStorage):
         excluded_trial_ids: Set[int],
     ) -> List[FrozenTrial]:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             # Ensure that the study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
             query = session.query(models.TrialModel.trial_id).filter(
@@ -1003,7 +1003,7 @@ class RDBStorage(BaseStorage):
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
                 trial = models.TrialModel.find_max_value_trial(study_id, session)
             else:
@@ -1013,7 +1013,7 @@ class RDBStorage(BaseStorage):
 
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         # Make sure that the given study exists.
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             models.StudyModel.find_or_raise_by_id(study_id, session)
 
     @staticmethod
@@ -1096,7 +1096,7 @@ class _VersionManager(object):
 
     def _init_version_info_model(self) -> None:
 
-        with _scoped_session(self.scoped_session, True) as session:
+        with _create_scoped_session(self.scoped_session, True) as session:
             version_info = models.VersionInfoModel.find(session)
             if version_info is not None:
                 return
@@ -1133,7 +1133,7 @@ class _VersionManager(object):
 
     def check_table_schema_compatibility(self) -> None:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             # NOTE: After invocation of `_init_version_info_model` method,
             #       it is ensured that a `VersionInfoModel` entry exists.
             version_info = models.VersionInfoModel.find(session)
@@ -1192,7 +1192,7 @@ class _VersionManager(object):
 
     def _is_alembic_supported(self) -> bool:
 
-        with _scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
             version_info = models.VersionInfoModel.find(session)
 
         if version_info is None:
