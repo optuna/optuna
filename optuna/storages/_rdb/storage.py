@@ -10,6 +10,7 @@ from typing import Generator
 from typing import List
 from typing import Optional
 from typing import Set
+from typing import Tuple
 import uuid
 import weakref
 
@@ -900,25 +901,36 @@ class RDBStorage(BaseStorage):
 
         return frozen_trial
 
-    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
+    def get_all_trials(
+        self,
+        study_id: int,
+        deepcopy: bool = True,
+        states: Optional[Tuple[TrialState, ...]] = None,
+    ) -> List[FrozenTrial]:
 
-        trials = self._get_trials(study_id, set())
+        trials = self._get_trials(study_id, states, set())
 
         return copy.deepcopy(trials) if deepcopy else trials
 
-    def _get_trials(self, study_id: int, excluded_trial_ids: Set[int]) -> List[FrozenTrial]:
+    def _get_trials(
+        self,
+        study_id: int,
+        states: Optional[Tuple[TrialState, ...]],
+        excluded_trial_ids: Set[int],
+    ) -> List[FrozenTrial]:
 
         with _scoped_session(self.scoped_session) as session:
             # Ensure that the study exists.
             models.StudyModel.find_or_raise_by_id(study_id, session)
-
-            trial_ids = (
-                session.query(models.TrialModel.trial_id)
-                .filter(
-                    models.TrialModel.study_id == study_id,
-                )
-                .all()
+            query = session.query(models.TrialModel.trial_id).filter(
+                models.TrialModel.study_id == study_id
             )
+
+            if states is not None:
+                query = query.filter(models.TrialModel.state.in_(states))
+
+            trial_ids = query.all()
+
             trial_ids = set(
                 trial_id_tuple[0]
                 for trial_id_tuple in trial_ids

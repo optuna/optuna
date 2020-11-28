@@ -142,6 +142,10 @@ class CmaEsSampler(BaseSampler):
                 to set this flag :obj:`True` when the :class:`~optuna.pruners.HyperbandPruner` is
                 used. Please see `the benchmark result
                 <https://github.com/optuna/optuna/pull/1229>`_ for the details.
+
+    Raises:
+        ValueError:
+            If ``restart_strategy`` is not 'ipop' or :obj:`None`.
     """
 
     def __init__(
@@ -155,7 +159,7 @@ class CmaEsSampler(BaseSampler):
         *,
         consider_pruned_trials: bool = False,
         restart_strategy: Optional[str] = None,
-        inc_popsize: int = 2
+        inc_popsize: int = 2,
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
@@ -403,6 +407,7 @@ class CmaEsSampler(BaseSampler):
             "The parameter '{}' in trial#{} is sampled independently "
             "by using `{}` instead of `CmaEsSampler` "
             "(optimization performance may be degraded). "
+            "`CmaEsSampler` does not support dynamic search space or `CategoricalDistribution`. "
             "You can suppress this warning by setting `warn_independent_sampling` "
             "to `False` in the constructor of `CmaEsSampler`, "
             "if this independent sampling is intended behavior.".format(

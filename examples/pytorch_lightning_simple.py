@@ -30,8 +30,8 @@ import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 
 
-if version.parse(pl.__version__) < version.parse("0.8.1"):
-    raise RuntimeError("PyTorch Lightning>=0.8.1 is required for this example.")
+if version.parse(pl.__version__) < version.parse("1.0.2"):
+    raise RuntimeError("PyTorch Lightning>=1.0.2 is required for this example.")
 
 PERCENT_VALID_EXAMPLES = 0.1
 BATCHSIZE = 128
@@ -101,19 +101,14 @@ class LightningNet(pl.LightningModule):
     def training_step(self, batch, batch_nb):
         data, target = batch
         output = self.forward(data)
-        return {"loss": F.nll_loss(output, target)}
+        return F.nll_loss(output, target)
 
     def validation_step(self, batch, batch_nb):
         data, target = batch
         output = self.forward(data)
         pred = output.argmax(dim=1, keepdim=True)
         accuracy = pred.eq(target.view_as(pred)).float().mean()
-        return {"batch_val_acc": accuracy}
-
-    def validation_epoch_end(self, outputs):
-        accuracy = sum(x["batch_val_acc"] for x in outputs) / len(outputs)
-        # Pass the accuracy to the `DictLogger` via the `'log'` key.
-        return {"log": {"val_acc": accuracy}}
+        self.log("val_acc", accuracy)
 
     def configure_optimizers(self):
         return Adam(self.model.parameters())

@@ -95,25 +95,27 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
 
         .. testcode::
 
-                import optuna
+            import optuna
 
-                seed = 128
-                num_variables = 9
-                n_startup_trials = 11 * num_variables - 1
+            seed = 128
+            num_variables = 9
+            n_startup_trials = 11 * num_variables - 1
 
-                def objective(trial):
-                    x = []
-                    for i in range(1, num_variables + 1):
-                        x.append(trial.suggest_float(f"x{i}", 0.0, 2.0 * i))
-                    return x
 
-                sampler = optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler(
-                    n_startup_trials=n_startup_trials,
-                    n_ehvi_candidates=24,
-                    seed=seed
-                )
-                study = optuna.multi_objective.create_study(["minimize"] * num_variables)
-                study.optimize(objective, n_trials=250)
+            def objective(trial):
+                x = []
+                for i in range(1, num_variables + 1):
+                    x.append(trial.suggest_float(f"x{i}", 0.0, 2.0 * i))
+                return x
+
+
+            sampler = optuna.multi_objective.samplers.MOTPEMultiObjectiveSampler(
+                n_startup_trials=n_startup_trials, n_ehvi_candidates=24, seed=seed
+            )
+            study = optuna.multi_objective.create_study(
+                ["minimize"] * num_variables, sampler=sampler
+            )
+            study.optimize(objective, n_trials=250)
     """
 
     def __init__(
@@ -253,9 +255,9 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         # We cache the result of splitting.
         if _SPLITCACHE_KEY in trial.system_attrs:
             split_cache = trial.system_attrs[_SPLITCACHE_KEY]
-            indices_below = split_cache["indices_below"]
-            weights_below = split_cache["weights_below"]
-            indices_above = split_cache["indices_above"]
+            indices_below = np.asarray(split_cache["indices_below"])
+            weights_below = np.asarray(split_cache["weights_below"])
+            indices_above = np.asarray(split_cache["indices_above"])
         else:
             nondomination_ranks = _calculate_nondomination_rank(lvals)
             n_below = self._gamma(len(lvals))
@@ -286,10 +288,13 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
 
             indices_above = np.setdiff1d(indices, indices_below)
 
-            attrs = {"indices_below": indices_below, "indices_above": indices_above}
+            attrs = {
+                "indices_below": indices_below.tolist(),
+                "indices_above": indices_above.tolist(),
+            }
             if self._weights is _default_weights_above:
                 weights_below = self._calculate_default_weights_below(lvals, indices_below)
-                attrs["weights_below"] = weights_below
+                attrs["weights_below"] = weights_below.tolist()
             study._storage.set_trial_system_attr(trial._trial_id, _SPLITCACHE_KEY, attrs)
 
         below = cvals[indices_below]
@@ -297,9 +302,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
             study._storage.set_trial_system_attr(
                 trial._trial_id,
                 _WEIGHTS_BELOW_KEY,
-                lambda _: np.asarray(
-                    [w for w, v in zip(weights_below, below) if v is not None], dtype=float
-                ),
+                [w for w, v in zip(weights_below, below) if v is not None],
             )
         below = np.asarray([v for v in below if v is not None], dtype=float)
         above = cvals[indices_above]
@@ -401,12 +404,19 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
             above = np.log(above)
 
         size = (self._n_ehvi_candidates,)
+
+        weights_below: Callable[[int], np.ndarray]
+
         if self._weights is _default_weights_above:
-            weights_below = study._storage.get_trial(trial._trial_id).system_attrs[
-                _WEIGHTS_BELOW_KEY
-            ]
+
+            weights_below = lambda _: np.asarray(  # NOQA
+                study._storage.get_trial(trial._trial_id).system_attrs[_WEIGHTS_BELOW_KEY],
+                dtype=float,
+            )
+
         else:
             weights_below = self._weights
+
         parzen_estimator_parameters_below = _ParzenEstimatorParameters(
             self._parzen_estimator_parameters.consider_prior,
             self._parzen_estimator_parameters.prior_weight,
@@ -475,7 +485,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         if self._weights is _default_weights_above:
             weights_below = study._storage.get_trial(trial._trial_id).system_attrs[
                 _WEIGHTS_BELOW_KEY
-            ](len(below))
+            ]
         else:
             weights_below = self._weights(len(below))
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)

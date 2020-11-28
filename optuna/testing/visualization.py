@@ -5,7 +5,10 @@ from optuna.trial import create_trial
 
 
 def prepare_study_with_trials(
-    no_trials: bool = False, less_than_two: bool = False, with_c_d: bool = True
+    no_trials: bool = False,
+    less_than_two: bool = False,
+    more_than_three: bool = False,
+    with_c_d: bool = True,
 ) -> Study:
 
     """Prepare a study for tests.
@@ -13,8 +16,11 @@ def prepare_study_with_trials(
     Args:
         no_trials: If ``False``, create a study with no trials.
         less_than_two: If ``True``, create a study with two/four hyperparameters where
-            'param_a' (and 'param_c') appear(s) only once while 'param_b' (and 'param_b')
+            'param_a' (and 'param_c') appear(s) only once while 'param_b' (and 'param_d')
             appear(s) twice in `study.trials`.
+        more_than_three: If ``True``, create a study with two/four hyperparameters where
+            'param_a' (and 'param_c') appear(s) only three times while 'param_b' (and 'param_d')
+            appear(s) four times in `study.trials`.
         with_c_d: If ``True``, the study has four hyperparameters named 'param_a',
             'param_b', 'param_c', and 'param_d'. Otherwise, there are only two
             hyperparameters ('param_a' and 'param_b').
@@ -80,4 +86,25 @@ def prepare_study_with_trials(
             },
         )
     )
+
+    if more_than_three:
+        study.add_trial(
+            create_trial(
+                value=1.5,
+                params={"param_a": 0.5, "param_b": 1.5, "param_c": 2.0, "param_d": 3.0}
+                if with_c_d
+                else {"param_a": 0.5, "param_b": 1.5},
+                distributions={
+                    "param_a": UniformDistribution(0.0, 3.0),
+                    "param_b": UniformDistribution(0.0, 3.0),
+                    "param_c": UniformDistribution(2.0, 5.0),
+                    "param_d": UniformDistribution(2.0, 5.0),
+                }
+                if with_c_d
+                else {
+                    "param_a": UniformDistribution(0.0, 3.0),
+                    "param_b": UniformDistribution(0.0, 3.0),
+                },
+            )
+        )
     return study

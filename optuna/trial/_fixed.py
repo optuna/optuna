@@ -72,7 +72,7 @@ class FixedTrial(BaseTrial):
         high: float,
         *,
         step: Optional[float] = None,
-        log: bool = False
+        log: bool = False,
     ) -> float:
 
         if step is not None:
