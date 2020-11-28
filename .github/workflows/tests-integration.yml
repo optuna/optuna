@@ -12,11 +12,9 @@ jobs:
   tests-integration:
     runs-on: ubuntu-latest
 
-    # TODO (crcrpar): Add 3.9 to python-version matrix once libraries support it.
-    # ref: https://github.com/optuna/optuna/issues/2034
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     # Not intended for forks.
     if: github.repository == 'optuna/optuna'
@@ -56,11 +54,36 @@ jobs:
         optuna --version
 
         pip install --progress-bar off .[tests]
-        pip install --progress-bar off .[integration] -f https://download.pytorch.org/whl/torch_stable.html
+
+        if [ ${{ matrix.python-version }} = 3.9  ]; then
+            pip install --progress-bar off .[integration]
+        else
+            pip install --progress-bar off .[integration] -f https://download.pytorch.org/whl/torch_stable.html
+        fi
 
     - name: Tests
       run: |
-        if [ ${{ matrix.python-version }} = 3.8 ]; then
+        # TODO (crcrpar): Run more tests with Python3.9.
+        # ref: https://github.com/optuna/optuna/issues/2034
+        if [ ${{ matrix.python-version }} = 3.9 ]; then
+          pytest tests/integration_tests \
+            --ignore tests/integration_tests/allennlp_tests/test_allennlp.py \
+            --ignore tests/integration_tests/test_catalyst.py \
+            --ignore tests/integration_tests/test_chainer.py \
+            --ignore tests/integration_tests/test_chainermn.py \
+            --ignore tests/integration_tests/test_cma.py \
+            --ignore tests/integration_tests/test_fastai.py \
+            --ignore tests/integration_tests/test_keras.py \
+            --ignore tests/integration_tests/test_mxnet.py \
+            --ignore tests/integration_tests/test_pytorch_ignite.py \
+            --ignore tests/integration_tests/test_pytorch_lightning.py \
+            --ignore tests/integration_tests/test_sampler.py \
+            --ignore tests/integration_tests/test_skopt.py \
+            --ignore tests/integration_tests/test_skorch.py \
+            --ignore tests/integration_tests/test_tensorboard.py \
+            --ignore tests/integration_tests/test_tensorflow.py \
+            --ignore tests/integration_tests/test_tfkeras.py \
+        elif [ ${{ matrix.python-version }} = 3.8 ]; then
           pytest tests/integration_tests \
             --ignore tests/integration_tests/test_fastai.py \
             --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
@@ -70,6 +93,7 @@ jobs:
         fi
 
     - name: Tests MPI
+      if: ${{ matrix.python-version != 3.9 }}
       run: |
         mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
       env:
