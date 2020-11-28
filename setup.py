@@ -65,6 +65,7 @@ def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
         "checking": ["black", "hacking", "isort", "mypy==0.782", "blackdoc"],
+        "tests": ["fakeredis", "pytest"],
     }
 
     if py_ver == (3, 9):
@@ -76,6 +77,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "xgboost",
         ]
         requirements["testing"] = [
+            "fakeredis",
+            "pytest",
             "lightgbm",
             "mlflow",
             "pandas",
@@ -177,7 +180,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         ]
         + _torch_packages
         + (["allennlp==1.2.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
-        "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
