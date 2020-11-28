@@ -65,6 +65,34 @@ def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
         "checking": ["black", "hacking", "isort", "mypy==0.782", "blackdoc"],
+    }
+
+    if py_ver == (3, 9):
+        requirements["example"] = [
+            "catboost",
+            "lightgbm",
+            "mlflow",
+            "scikit-learn>=0.19.0,<0.23.0",
+            "xgboost",
+        ]
+        requirements["testing"] = [
+            "lightgbm",
+            "mlflow",
+            "pandas",
+            "pytest",
+            "scikit-learn>=0.19.0,<0.23.0",
+            "xgboost",
+        ]
+        requirements["integration"] = [
+            "lightgbm",
+            "mlflow",
+            "pandas",
+            "scikit-learn>=0.19.0,<0.23.0",
+            "xgboost",
+        ]
+        return requirements
+
+    requirements.update({
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
@@ -181,34 +209,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         ]
         + _torch_packages
         + (["allennlp==1.2.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
-    }
-
-    if py_ver == (3, 9):
-        del requirements["codecov"]
-        del requirements["doctest"]
-        del requirements["documemt"]
-        requirements["example"] = [
-            "catboost",
-            "lightgbm",
-            "mlflow",
-            "scikit-learn>=0.19.0,<0.23.0",
-            "xgboost",
-        ]
-        requirements["testing"] = [
-            "lightgbm",
-            "mlflow",
-            "pandas",
-            "pytest",
-            "scikit-learn>=0.19.0,<0.23.0",
-            "xgboost",
-        ]
-        requirements["integration"] = [
-            "lightgbm",
-            "mlflow",
-            "pandas",
-            "scikit-learn>=0.19.0,<0.23.0",
-            "xgboost",
-        ]
+    })
 
     return requirements
 
