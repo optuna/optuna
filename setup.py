@@ -54,6 +54,15 @@ def get_tests_require() -> List[str]:
 
 def get_extras_require() -> Dict[str, List[str]]:
 
+    py_ver = sys.version_info[:2]
+    is_under_py38 = sys.version_info[:2] < (3, 8)
+
+    _torch_packages = (
+        ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
+        if sys.platform == "darwin"
+        else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
+    )
+
     requirements = {
         "checking": ["black", "hacking", "isort", "mypy==0.782", "blackdoc"],
         "codecov": ["codecov", "pytest-cov"],
@@ -100,11 +109,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "stable-baselines3>=0.7.0",
             "catalyst",
         ]
-        + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
-            if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        )
+        + _torch_packages
         + (
             [
                 "allennlp==1.2.0",
@@ -112,7 +117,7 @@ def get_extras_require() -> Dict[str, List[str]]:
                 "dask[dataframe]",
                 "dask-ml",
             ]
-            if sys.version_info[:2] < (3, 8)
+            if is_under_py38
             else []
         ),
         "experimental": ["redis"],
@@ -142,11 +147,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "skorch",
             "catalyst",
         ]
-        + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
-            if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        )
+        + _torch_packages
         + (["allennlp==1.2.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
         "tests": ["fakeredis", "pytest"],
         "optional": [
@@ -178,13 +179,36 @@ def get_extras_require() -> Dict[str, List[str]]:
             "skorch",
             "catalyst",
         ]
-        + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
-            if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        )
+        + _torch_packages
         + (["allennlp==1.2.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
     }
+
+    if py_ver == (3, 9):
+        del requirements["codecov"]
+        del requirements["doctest"]
+        del requirements["documemt"]
+        requirements["example"] = [
+            "catboost",
+            "lightgbm",
+            "mlflow",
+            "scikit-learn>=0.19.0,<0.23.0",
+            "xgboost",
+        ]
+        requirements["testing"] = [
+            "lightgbm",
+            "mlflow",
+            "pandas",
+            "pytest",
+            "scikit-learn>=0.19.0,<0.23.0",
+            "xgboost",
+        ]
+        requirements["integration"] = [
+            "lightgbm",
+            "mlflow",
+            "pandas",
+            "scikit-learn>=0.19.0,<0.23.0",
+            "xgboost",
+        ]
 
     return requirements
 
