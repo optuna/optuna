@@ -82,7 +82,7 @@ jobs:
             --ignore tests/integration_tests/test_skorch.py \
             --ignore tests/integration_tests/test_tensorboard.py \
             --ignore tests/integration_tests/test_tensorflow.py \
-            --ignore tests/integration_tests/test_tfkeras.py \
+            --ignore tests/integration_tests/test_tfkeras.py
         elif [ ${{ matrix.python-version }} = 3.8 ]; then
           pytest tests/integration_tests \
             --ignore tests/integration_tests/test_fastai.py \
