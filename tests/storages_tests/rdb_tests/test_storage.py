@@ -15,7 +15,7 @@ from optuna.distributions import UniformDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import VersionInfoModel
-from optuna.storages._rdb.storage import _scoped_session
+from optuna.storages._rdb.storage import _create_scoped_session
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -141,14 +141,14 @@ def test_pickle_storage() -> None:
     assert storage._version_manager != restored_storage._version_manager
 
 
-def test_scoped_session() -> None:
+def test_create_scoped_session() -> None:
 
     storage = create_test_storage()
 
     # This object violates the unique constraint of version_info_id.
     v = VersionInfoModel(version_info_id=1, schema_version=1, library_version="0.0.1")
     with pytest.raises(IntegrityError):
-        with _scoped_session(storage.scoped_session) as session:
+        with _create_scoped_session(storage.scoped_session) as session:
             session.add(v)
 
 
