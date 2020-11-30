@@ -408,24 +408,22 @@ class MultiObjectiveStudy(object):
 
         The returned trials are ordered by trial number.
 
-        This is a short form of ``self.get_trials(deepcopy=True)``.
+        This is a short form of ``self.get_trials(deepcopy=True, states=None)``.
 
         Returns:
             A list of :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` objects.
         """
 
-        return self.get_trials(deepcopy=True)
+        return self.get_trials(deepcopy=True, states=None)
 
     def get_trials(
-        self, deepcopy: bool = True
+        self,
+        deepcopy: bool = True,
+        states: Optional[Tuple[TrialState, ...]] = None,
     ) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
-
-        For library users, it's recommended to use more handy
-        :attr:`~optuna.multi_objective.study.MultiObjectiveStudy.trials`
-        property to get the trials instead.
 
         Args:
             deepcopy:
@@ -433,6 +431,8 @@ class MultiObjectiveStudy(object):
                 Note that if you set the flag to :obj:`False`, you shouldn't mutate
                 any fields of the returned trial. Otherwise the internal state of
                 the study may corrupt and unexpected behavior may happen.
+            states:
+                Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
             A list of :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` objects.
@@ -440,7 +440,7 @@ class MultiObjectiveStudy(object):
 
         return [
             multi_objective.trial.FrozenMultiObjectiveTrial(self.n_objectives, t)
-            for t in self._study.get_trials(deepcopy=deepcopy)
+            for t in self._study.get_trials(deepcopy=deepcopy, states=states)
         ]
 
     def get_pareto_front_trials(self) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:

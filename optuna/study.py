@@ -87,21 +87,22 @@ class BaseStudy(object):
 
         The returned trials are ordered by trial number.
 
-        This is a short form of ``self.get_trials(deepcopy=True)``.
+        This is a short form of ``self.get_trials(deepcopy=True, states=None)``.
 
         Returns:
             A list of :class:`~optuna.FrozenTrial` objects.
         """
 
-        return self.get_trials()
+        return self.get_trials(deepcopy=True, states=None)
 
-    def get_trials(self, deepcopy: bool = True) -> List[FrozenTrial]:
+    def get_trials(
+        self,
+        deepcopy: bool = True,
+        states: Optional[Tuple[TrialState, ...]] = None,
+    ) -> List[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
-
-        For library users, it's recommended to use more handy
-        :attr:`~optuna.study.Study.trials` property to get the trials instead.
 
         Example:
             .. testcode::
@@ -125,13 +126,15 @@ class BaseStudy(object):
                 Note that if you set the flag to :obj:`False`, you shouldn't mutate
                 any fields of the returned trial. Otherwise the internal state of
                 the study may corrupt and unexpected behavior may happen.
+            states:
+                Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
             A list of :class:`~optuna.FrozenTrial` objects.
         """
 
         self._storage.read_trials_from_remote_storage(self._study_id)
-        return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
+        return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
 
 
 class Study(BaseStudy):
