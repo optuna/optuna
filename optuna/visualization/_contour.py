@@ -111,7 +111,12 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
         min_value = min(values)
         max_value = max(values)
 
-        if _is_categorical(trials, p_name):
+        if _is_log_scale(trials, p_name):
+            padding = (math.log10(max_value) - math.log10(min_value)) * padding_ratio
+            min_value = math.pow(10, math.log10(min_value) - padding)
+            max_value = math.pow(10, math.log10(max_value) + padding)
+
+        elif _is_categorical(trials, p_name):
             # For numeric values, plotly does not automatically plot as "category" type.
             update_category_axes[p_name] = any([str(v).isnumeric() for v in set(values)])
 
@@ -120,13 +125,10 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
             # See https://github.com/optuna/optuna/issues/1967.
             # TODO(toshihikoyanase): Remove this if-clause after resolving the error.
             if version.parse(plotly.__version__) >= version.parse("4.12.0"):
-                min_value = 0
-                max_value = len(set(values)) - 1
-
-        if _is_log_scale(trials, p_name):
-            padding = (math.log10(max_value) - math.log10(min_value)) * padding_ratio
-            min_value = math.pow(10, math.log10(min_value) - padding)
-            max_value = math.pow(10, math.log10(max_value) + padding)
+                span = len(set(values)) - 1
+                padding = span * padding_ratio
+                min_value = -padding
+                max_value = span + padding
 
         else:
             padding = (max_value - min_value) * padding_ratio
