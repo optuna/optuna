@@ -46,7 +46,9 @@ jobs:
         pip install --progress-bar off $(ls dist/*.tar.gz)[example] -f https://download.pytorch.org/whl/torch_stable.html
     - name: Run examples
       run: |
-        if [ ${{ matrix.python-version }} = 3.8 ]; then
+        if [ ${{ matrix.python-version }} = 3.6 ]; then
+          IGNORES='botorch_.*'
+        elif [ ${{ matrix.python-version }} = 3.8 ]; then
           IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai_.*|allennlp|rapids_.*'
         else
           IGNORES='chainermn_.*|rapids_.*'
