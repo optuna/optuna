@@ -89,7 +89,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow>=2.0.0",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "thop",
             "skorch",
             "stable-baselines3>=0.7.0",
@@ -133,7 +133,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
         ]
@@ -169,7 +169,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
         ]
@@ -203,7 +203,7 @@ setup(
     author="Takuya Akiba",
     author_email="akiba@preferred.jp",
     url="https://optuna.org/",
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests", "tests.*")),
     package_data={
         "optuna": [
             "storages/_rdb/alembic.ini",

@@ -213,7 +213,7 @@ class FrozenTrial(BaseTrial):
         high: float,
         *,
         step: Optional[float] = None,
-        log: bool = False
+        log: bool = False,
     ) -> float:
 
         if step is not None:
@@ -503,7 +503,7 @@ def create_trial(
     distributions: Optional[Dict[str, BaseDistribution]] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
     system_attrs: Optional[Dict[str, Any]] = None,
-    intermediate_values: Optional[Dict[int, float]] = None
+    intermediate_values: Optional[Dict[int, float]] = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
 

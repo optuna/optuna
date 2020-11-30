@@ -1,6 +1,7 @@
 import math
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 import optuna
@@ -276,8 +277,12 @@ class HyperbandPruner(BasePruner):
                 )
                 self._bracket_id = bracket_id
 
-            def get_trials(self, deepcopy: bool = True) -> List["optuna.trial.FrozenTrial"]:
-                trials = super().get_trials(deepcopy=deepcopy)
+            def get_trials(
+                self,
+                deepcopy: bool = True,
+                states: Optional[Tuple[TrialState, ...]] = None,
+            ) -> List["optuna.trial.FrozenTrial"]:
+                trials = super().get_trials(deepcopy=deepcopy, states=states)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
                 return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]

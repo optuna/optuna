@@ -3,10 +3,12 @@ from datetime import datetime
 import threading
 from typing import Any
 from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Union
 import uuid
 
 import optuna
@@ -391,25 +393,29 @@ class InMemoryStorage(BaseStorage):
         study_id, trial_number = self._trial_id_to_study_id_and_number[trial_id]
         self._studies[study_id].trials[trial_number] = trial
 
-    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
+    def get_all_trials(
+        self,
+        study_id: int,
+        deepcopy: bool = True,
+        states: Optional[Tuple[TrialState, ...]] = None,
+    ) -> List[FrozenTrial]:
 
         with self._lock:
             self._check_study_id(study_id)
+
+            trials = self._studies[
+                study_id
+            ].trials  # type: Union[List[FrozenTrial], Iterator[FrozenTrial]]
+
+            if states is not None:
+                trials = filter(lambda t: t.state in states, trials)
+
             if deepcopy:
-                return copy.deepcopy(self._studies[study_id].trials)
+                trials = copy.deepcopy(list(trials))
             else:
-                return self._studies[study_id].trials[:]
+                trials = list(trials)
 
-    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
-
-        with self._lock:
-            self._check_study_id(study_id)
-            if state is None:
-                return len(self._studies[study_id].trials)
-
-            return sum(
-                trial.state == state for trial in self.get_all_trials(study_id, deepcopy=False)
-            )
+        return trials
 
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         self._check_study_id(study_id)

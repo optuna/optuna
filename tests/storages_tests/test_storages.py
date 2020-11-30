@@ -854,6 +854,47 @@ def test_get_all_trials_deepcopy_option(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_all_trials_state_option(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+        storage.set_study_directions(study_id, [StudyDirection.MAXIMIZE])
+        generator = random.Random(51)
+
+        states = (
+            TrialState.COMPLETE,
+            TrialState.COMPLETE,
+            TrialState.PRUNED,
+        )
+
+        for state in states:
+            t = _generate_trial(generator)
+            t.state = state
+            storage.create_new_trial(study_id, template_trial=t)
+
+        trials = storage.get_all_trials(study_id, states=None)
+        assert len(trials) == 3
+
+        trials = storage.get_all_trials(study_id, states=(TrialState.COMPLETE,))
+        assert len(trials) == 2
+        assert all(t.state == TrialState.COMPLETE for t in trials)
+
+        trials = storage.get_all_trials(study_id, states=(TrialState.COMPLETE, TrialState.PRUNED))
+        assert len(trials) == 3
+        assert all(t.state in (TrialState.COMPLETE, TrialState.PRUNED) for t in trials)
+
+        trials = storage.get_all_trials(study_id, states=())
+        assert len(trials) == 0
+
+        other_states = [
+            s for s in ALL_STATES if s != TrialState.COMPLETE and s != TrialState.PRUNED
+        ]
+        for state in other_states:
+            trials = storage.get_all_trials(study_id, states=(state,))
+            assert len(trials) == 0
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_n_trials(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:

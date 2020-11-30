@@ -51,7 +51,7 @@ else
   echo "black succeeded."
 fi
 
-res_blackdoc=$(blackdoc $target --check 2>&1)
+res_blackdoc=$(blackdoc $target --check --diff 2>&1)
 if [ $? -eq 1 ] ; then
   if [ $update -eq 1 ] ; then
     echo "blackdoc failed. The docstrings will be formatted by blackdoc."
