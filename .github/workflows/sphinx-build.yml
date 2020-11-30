@@ -19,7 +19,7 @@ jobs:
       with:
         python-version: 3.8
 
-    - name: get date for cache
+    - name: Get date for cache
       id: date
       run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
 
