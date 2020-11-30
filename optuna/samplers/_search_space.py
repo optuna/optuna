@@ -20,12 +20,18 @@ class IntersectionSearchSpace(object):
     Note that an instance of this class is supposed to be used for only one study.
     If different studies are passed to :func:`~optuna.samplers.IntersectionSearchSpace.calculate`,
     a :obj:`ValueError` is raised.
+
+    Args:
+        include_pruned:
+            Whether pruned trials should be included in the search space.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, include_pruned: bool = False) -> None:
         self._cursor: int = -1
         self._search_space: Optional[Dict[str, BaseDistribution]] = None
         self._study_id: Optional[int] = None
+
+        self._include_pruned = include_pruned
 
     def calculate(
         self, study: BaseStudy, ordered_dict: bool = False
@@ -57,6 +63,11 @@ class IntersectionSearchSpace(object):
             if self._study_id != study._study_id:
                 raise ValueError("`IntersectionSearchSpace` cannot handle multiple studies.")
 
+        states_of_interest = [optuna.trial.TrialState.COMPLETE]
+
+        if self._include_pruned:
+            states_of_interest.append(optuna.trial.TrialState.PRUNED)
+
         next_cursor = self._cursor
         for trial in reversed(study.get_trials(deepcopy=False)):
             if self._cursor > trial.number:
@@ -65,7 +76,7 @@ class IntersectionSearchSpace(object):
             if not trial.state.is_finished():
                 next_cursor = trial.number
 
-            if trial.state != optuna.trial.TrialState.COMPLETE:
+            if trial.state not in states_of_interest:
                 continue
 
             if self._search_space is None:
@@ -92,7 +103,7 @@ class IntersectionSearchSpace(object):
 
 
 def intersection_search_space(
-    study: BaseStudy, ordered_dict: bool = False
+    study: BaseStudy, ordered_dict: bool = False, include_pruned: bool = False
 ) -> Dict[str, BaseDistribution]:
     """Return the intersection search space of the :class:`~optuna.study.BaseStudy`.
 
@@ -120,4 +131,6 @@ def intersection_search_space(
         A dictionary containing the parameter names and parameter's distributions.
     """
 
-    return IntersectionSearchSpace().calculate(study, ordered_dict=ordered_dict)
+    return IntersectionSearchSpace(include_pruned=include_pruned).calculate(
+        study, ordered_dict=ordered_dict
+    )

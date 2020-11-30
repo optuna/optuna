@@ -183,7 +183,7 @@ class TPESampler(BaseSampler):
         self._random_sampler = RandomSampler(seed=seed)
 
         self._multivariate = multivariate
-        self._search_space = IntersectionSearchSpace()
+        self._search_space = IntersectionSearchSpace(include_pruned=True)
 
         if multivariate:
             warnings.warn(
@@ -838,7 +838,11 @@ def _get_multivariate_observation_pairs(
 
         # We extract param_value from the trial.
         for param_name in param_names:
-            assert param_name in trial.params
+            assert (
+                param_name in trial.params
+            ), "Parameter {} not found in trial {}, which has parameters {}".format(
+                param_name, trial.number, list(trial.params)
+            )
             distribution = trial.distributions[param_name]
             param_value = distribution.to_internal_repr(trial.params[param_name])
             values[param_name].append(param_value)
