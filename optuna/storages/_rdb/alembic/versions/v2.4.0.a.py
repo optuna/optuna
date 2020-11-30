@@ -121,44 +121,4 @@ def upgrade():
 
 
 def downgrade():
-    with op.batch_alter_table("trials", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("value", sa.FLOAT(), nullable=True))
-
-    with op.batch_alter_table("trial_values", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("step", sa.INTEGER(), nullable=True))
-
-    with op.batch_alter_table("studies", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("direction", sa.VARCHAR(length=8), nullable=False))
-
-    bind = op.get_bind()
-    session = orm.Session(bind=bind)
-
-    try:
-        values_records = session.query(TrialValueModel).all()
-        mapping = [{"trial_id": r.trial_id, "value": r.value} for r in values_records]
-        session.bulk_update_mappings(TrialModel, mapping)
-
-        intermediate_values_records = session.query(TrialIntermediateValueModel).all()
-        mapping = [
-            {"trial_id": r.trial_id, "value": r.value, "step": r.step}
-            for r in intermediate_values_records
-        ]
-        session.bulk_update_mappings(TrialValueModel, mapping)
-
-        direction_records = session.query(StudyDirectionModel).all()
-        mapping = [{"study_id": r.study_id, "direction": r.direction} for r in direction_records]
-        session.bulk_update_mappings(StudyModel, mapping)
-
-        session.commit()
-    except SQLAlchemyError as e:
-        session.rollback()
-        raise e
-    finally:
-        session.close()
-
-    with op.batch_alter_table("trial_values", schema=None) as batch_op:
-        batch_op.drop_constraint("value_constraint", type_="unique")
-        batch_op.drop_column("objective")
-
-    op.drop_table("trial_intermediate_values")
-    op.drop_table("study_direction")
+    pass
