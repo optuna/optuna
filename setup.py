@@ -111,7 +111,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         ),
         "experimental": ["redis"],
         "testing": [
-            "botorch",
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
             "bokeh<2.0.0",
@@ -142,7 +141,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             if sys.platform == "darwin"
             else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
         )
-        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
+        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else [])
+        + (["botorch"] if sys.version_info[:2] >= (3, 7) else []),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -153,7 +153,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
         ],
         "integration": [
-            "botorch",
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
@@ -179,7 +178,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             if sys.platform == "darwin"
             else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
         )
-        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
+        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else [])
+        + (["botorch"] if sys.version_info[:2] >= (3, 7) else []),
     }
 
     return requirements
