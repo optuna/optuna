@@ -99,20 +99,6 @@ class StudyDirectionModel(BaseModel):
     )
 
     @classmethod
-    def find_by_study_and_objective(
-        cls, study: StudyModel, objective: int, session: orm.Session
-    ) -> Optional["StudyDirectionModel"]:
-
-        study_direction = (
-            session.query(cls)
-            .filter(cls.study_id == study.study_id)
-            .filter(cls.objective == objective)
-            .one_or_none()
-        )
-
-        return study_direction
-
-    @classmethod
     def where_study(cls, study: StudyModel, session: orm.Session) -> List["StudyDirectionModel"]:
 
         study_directions = (
@@ -578,7 +564,7 @@ class TrialIntermediateValueModel(BaseModel):
     trial_intermediate_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     step = Column(Integer)
-    value = Column(Float)
+    intermediate_value = Column(Float)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")

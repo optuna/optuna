@@ -90,7 +90,9 @@ def upgrade():
 
         intermediate_values_records = session.query(BackwardCompatibleTrialValueModel).all()
         objects = [
-            TrialIntermediateValueModel(trial_id=r.trial_id, value=r.value, step=r.step)
+            TrialIntermediateValueModel(
+                trial_id=r.trial_id, intermediate_value=r.value, step=r.step
+            )
             for r in intermediate_values_records
         ]
         session.bulk_save_objects(objects)

@@ -29,23 +29,6 @@ def session() -> Session:
 
 class TestStudyDirectionModel(object):
     @staticmethod
-    def test_find_by_study_and_objective(session: Session) -> None:
-
-        study = StudyModel(study_id=1, study_name="test-study")
-        session.add(
-            StudyDirectionModel(
-                study_id=study.study_id, direction=StudyDirection.MINIMIZE, objective=0
-            )
-        )
-        session.commit()
-
-        direction = StudyDirectionModel.find_by_study_and_objective(study, 0, session)
-        assert direction is not None
-        assert direction.direction == StudyDirection.MINIMIZE
-
-        assert StudyDirectionModel.find_by_study_and_objective(study, 1, session) is None
-
-    @staticmethod
     def test_where_study(session: Session) -> None:
 
         study = StudyModel(study_id=1, study_name="test-study")
@@ -501,14 +484,16 @@ class TestTrialIntermediateValueModel(object):
         study = StudyModel(study_id=1, study_name="test-study")
         trial = TrialModel(study_id=study.study_id)
 
-        session.add(TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, value=10))
+        session.add(
+            TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, intermediate_value=10)
+        )
         session.commit()
 
         trial_intermediate_value = TrialIntermediateValueModel.find_by_trial_and_step(
             trial, 0, session
         )
         assert trial_intermediate_value is not None
-        assert 10 == trial_intermediate_value.value
+        assert 10 == trial_intermediate_value.intermediate_value
         assert TrialIntermediateValueModel.find_by_trial_and_step(trial, 1, session) is None
 
     @staticmethod
@@ -520,13 +505,15 @@ class TestTrialIntermediateValueModel(object):
 
         session.add(study)
         session.add(trial)
-        session.add(TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, value=10))
+        session.add(
+            TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, intermediate_value=10)
+        )
         session.commit()
 
         trial_intermediate_values = TrialIntermediateValueModel.where_study(study, session)
         assert 1 == len(trial_intermediate_values)
         assert 0 == trial_intermediate_values[0].step
-        assert 10 == trial_intermediate_values[0].value
+        assert 10 == trial_intermediate_values[0].intermediate_value
 
     @staticmethod
     def test_where_trial(session: Session) -> None:
@@ -535,13 +522,15 @@ class TestTrialIntermediateValueModel(object):
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
-        session.add(TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, value=10))
+        session.add(
+            TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, intermediate_value=10)
+        )
         session.commit()
 
         trial_intermediate_values = TrialIntermediateValueModel.where_trial(trial, session)
         assert 1 == len(trial_intermediate_values)
         assert 0 == trial_intermediate_values[0].step
-        assert 10 == trial_intermediate_values[0].value
+        assert 10 == trial_intermediate_values[0].intermediate_value
 
     @staticmethod
     def test_all(session: Session) -> None:
@@ -550,13 +539,15 @@ class TestTrialIntermediateValueModel(object):
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
-        session.add(TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, value=10))
+        session.add(
+            TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, intermediate_value=10)
+        )
         session.commit()
 
         trial_intermediate_values = TrialIntermediateValueModel.all(session)
         assert 1 == len(trial_intermediate_values)
         assert 0 == trial_intermediate_values[0].step
-        assert 10 == trial_intermediate_values[0].value
+        assert 10 == trial_intermediate_values[0].intermediate_value
 
     @staticmethod
     def test_cascade_delete_on_trial(session: Session) -> None:
@@ -565,10 +556,10 @@ class TestTrialIntermediateValueModel(object):
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
         trial.intermediate_values.append(
-            TrialIntermediateValueModel(trial_id=trial_id, step=0, value=10)
+            TrialIntermediateValueModel(trial_id=trial_id, step=0, intermediate_value=10)
         )
         trial.intermediate_values.append(
-            TrialIntermediateValueModel(trial_id=trial_id, step=1, value=20)
+            TrialIntermediateValueModel(trial_id=trial_id, step=1, intermediate_value=20)
         )
         study.trials.append(trial)
         session.add(study)
