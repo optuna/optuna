@@ -170,7 +170,7 @@ class ChainerMNTrial(BaseTrial):
         high: float,
         *,
         step: Optional[float] = None,
-        log: bool = False
+        log: bool = False,
     ) -> float:
         def func() -> float:
             assert self.delegate is not None

@@ -2,8 +2,7 @@ import os
 import sys
 from types import ModuleType
 from typing import Any
-
-from optuna.type_checking import TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 
 _import_structure = {

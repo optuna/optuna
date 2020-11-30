@@ -4,20 +4,14 @@ workflows:
   version: 2
   commit-build:
     jobs:
-      - checks
       - document
-      - doctest
-      - tests-python38
-      - tests-python37
-      - tests-python36
       - tests-rdbstorage
 
 jobs:
-  # Lint and static type checking
 
-  checks:
+  document:
     docker:
-      - image: circleci/python:3.7
+      - image: readthedocs/build:latest
     steps:
       - checkout
 
@@ -30,52 +24,6 @@ jobs:
                 git fetch -u origin ${FETCH_REFS}
                 git checkout "pr/${CIRCLE_PR_NUMBER}/merge"
             fi
-
-      - run:
-          name: install
-          command: |
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            pip install -U pip
-            pip install --progress-bar off .[checking]
-
-      - run:
-          name: black
-          command: |
-            . venv/bin/activate
-            black . --check --diff
-
-      - run:
-          name: flake8
-          command: |
-            . venv/bin/activate
-            flake8 .
-
-      - run:
-          name: isort
-          command: |
-            . venv/bin/activate
-            isort . --check --diff
-
-      - run:
-          name: mypy
-          command: |
-            . venv/bin/activate
-            mypy .
-
-      - run:
-          name: blackdoc
-          command: |
-            . venv/bin/activate
-            blackdoc optuna --check
-
-  document:
-    docker:
-      - image: readthedocs/build:latest
-    steps:
-      - checkout
-
-      - run: *checkout-merge-master
 
       - run:
           name: install
@@ -95,35 +43,21 @@ jobs:
       - store_artifacts:
           path: ./docs/build/html
 
-  doctest:
-    docker:
-      - image: readthedocs/build:latest
-    steps:
-      - checkout
-
-      - run: *checkout-merge-master
-
-      - run:
-          name: install
-          command: |
-            python -m venv venv || virtualenv venv --python=python3
-            . venv/bin/activate
-            pip install -U pip
-            pip install --progress-bar off .[doctest,document]
-
-      - run:
-          name: build
-          command: |
-            . venv/bin/activate
-            cd docs
-            make doctest
-
   # Unit tests
 
-  tests-python37:
+  tests-rdbstorage:
     docker:
       - image: circleci/python:3.7
-      - image: circleci/redis:5.0.7
+      - image: circleci/mysql:5.7
+        environment:
+          MYSQL_DATABASE: optunatest
+          MYSQL_USER: user
+          MYSQL_PASSWORD: test
+      - image: circleci/postgres:10.1-alpine
+        environment:
+          POSTGRES_USER: user
+          POSTGRES_DB: optunatest
+          POSTGRES_PASSWORD: test
     steps:
       - checkout
 
@@ -147,95 +81,6 @@ jobs:
 
             # Install all dependencies needed for testing.
             pip install --progress-bar off $(ls dist/*.tar.gz)[testing] -f https://download.pytorch.org/whl/torch_stable.html
-
-      - run:
-          name: install-codecov
-          command: |
-            . venv/bin/activate
-            pip install --progress-bar off .[codecov]
-
-      - run: &tests
-          name: tests
-          command: |
-            . venv/bin/activate
-            pytest --cov=optuna tests
-          environment:
-            OMP_NUM_THREADS: 1
-
-      - run: &tests-mn
-          name: tests-mn
-          command: |
-            . venv/bin/activate
-            mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
-          environment:
-            OMP_NUM_THREADS: 1
-
-      - run:
-          name: codecov
-          command: |
-            . venv/bin/activate
-            codecov
-          environment:
-            OMP_NUM_THREADS: 1
-
-  tests-python38:
-    docker:
-      - image: circleci/python:3.8
-      - image: circleci/redis:5.0.7
-    steps:
-      - checkout
-
-      - run: *checkout-merge-master
-
-      - run: *install
-
-      - run:
-          <<: *tests
-          command: |
-            . venv/bin/activate
-            pytest tests --ignore tests/integration_tests/test_fastai.py \
-                --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
-
-      - run: *tests-mn
-
-  tests-python36:
-    docker:
-      - image: circleci/python:3.6
-      - image: circleci/redis:5.0.7
-    steps:
-      - checkout
-
-      - run: *checkout-merge-master
-
-      - run: *install
-
-      - run:
-          <<: *tests
-          command: |
-            . venv/bin/activate
-            pytest tests
-
-      - run: *tests-mn
-
-  tests-rdbstorage:
-    docker:
-      - image: circleci/python:3.7
-      - image: circleci/mysql:5.7
-        environment:
-          MYSQL_DATABASE: optunatest
-          MYSQL_USER: user
-          MYSQL_PASSWORD: test
-      - image: circleci/postgres:10.1-alpine
-        environment:
-          POSTGRES_USER: user
-          POSTGRES_DB: optunatest
-          POSTGRES_PASSWORD: test
-    steps:
-      - checkout
-
-      - run: *checkout-merge-master
-
-      - run: *install
 
       - run: &install-rdb-bindings
           name: install-rdb-bindings

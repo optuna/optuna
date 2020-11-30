@@ -106,7 +106,7 @@ class SkoptSampler(BaseSampler):
         skopt_kwargs: Optional[Dict[str, Any]] = None,
         n_startup_trials: int = 1,
         *,
-        consider_pruned_trials: bool = False
+        consider_pruned_trials: bool = False,
     ) -> None:
 
         _imports.check()
