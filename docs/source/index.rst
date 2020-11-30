@@ -30,7 +30,7 @@ Optuna has modern functionalities as follows:
 
   - Scale studies to tens or hundreds or workers with little or no changes to the code.
 
-- :doc:`Quick visualization <reference/visualization/index>`
+- :doc:`Quick visualization <tutorial/10_key_features/005_visualization>`
 
   - Inspect optimization histories from a variety of plotting functions.
 
