@@ -613,10 +613,8 @@ class RDBStorage(BaseStorage):
                 .one_or_none()
             )
             if trial_model is None:
-                session.rollback()
                 raise KeyError(models.NOT_FOUND_MSG)
             if trial_model.state.is_finished():
-                session.rollback()
                 raise RuntimeError("Cannot change attributes of finished trial.")
             if (
                 state
@@ -624,7 +622,6 @@ class RDBStorage(BaseStorage):
                 and state == TrialState.RUNNING
                 and trial_model.state != TrialState.WAITING
             ):
-                session.rollback()
                 return False
 
             if state:
