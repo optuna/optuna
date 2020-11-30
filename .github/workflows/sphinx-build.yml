@@ -40,7 +40,6 @@ jobs:
       with:
         path: |
           tutorial/MNIST
-          tutorial/FashionMNIST
           docs/source/tutorial
         key: py3.8-${{ steps.date.outputs.date }}-${{ env.cache-name }}-${{ hashFiles('tutorial/**/README.rst') }}
 
@@ -89,7 +88,6 @@ jobs:
       with:
         path: |
           tutorial/MNIST
-          tutorial/FashionMNIST
           docs/source/tutorial
         key: py3.8-${{ steps.date.outputs.date }}-${{ env.cache-name }}-${{ hashFiles('tutorial/**/README.rst') }}
 

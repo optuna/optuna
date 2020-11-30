@@ -6,7 +6,7 @@ Quick Visualization for Hyperparameter Optimization Analysis
 
 Optuna provides various visualization features in :mod:`optuna.visualization` to optimization results visually.
 
-This tutorial walks you through this module by visualizing the history of multi-layer preceptron for FashionMNIST implemented in PyTorch.
+This tutorial walks you through this module by visualizing the history of multi-layer preceptron for MNIST implemented in PyTorch.
 """
 
 ###################################################################################################
@@ -79,14 +79,14 @@ def eval_model(model, valid_loader):
 # Define the objective function.
 def objective(trial):
     train_loader = torch.utils.data.DataLoader(
-        torchvision.datasets.FashionMNIST(
+        torchvision.datasets.MNIST(
             DIR, train=True, download=True, transform=torchvision.transforms.ToTensor()
         ),
         batch_size=BATCH_SIZE,
         shuffle=True,
     )
     valid_loader = torch.utils.data.DataLoader(
-        torchvision.datasets.FashionMNIST(
+        torchvision.datasets.MNIST(
             DIR, train=False, download=True, transform=torchvision.transforms.ToTensor()
         ),
         batch_size=BATCH_SIZE,
