@@ -54,6 +54,7 @@ extensions = [
     'cliff.sphinxext',
     'sphinx_gallery.gen_gallery',
     'matplotlib.sphinxext.plot_directive',
+    'sphinx_plotly_directive',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -105,7 +106,7 @@ html_logo = '../image/optuna-logo.png'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static', 'plotly_figures']
+html_static_path = ['_static']
 html_css_files = ["css/custom.css"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
@@ -193,3 +194,9 @@ plot_include_source = True
 plot_formats = [("png", 90)]
 plot_html_show_formats = False
 plot_html_show_source_link = False
+
+# sphinx plotly directive
+plotly_include_source = True
+plotly_formats = ["html"]
+plotly_html_show_formats = False
+plotly_html_show_source_link = False

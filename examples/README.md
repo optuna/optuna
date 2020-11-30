@@ -18,6 +18,7 @@ This page contains a list of example codes written with Optuna.
 * [LightGBM Tuner](./lightgbm_tuner_simple.py)
 * [CatBoost](./catboost_simple.py)
 * [MXNet](./mxnet_simple.py)
+* [Gluon](./gluon_simple.py)
 * [PyTorch](./pytorch_simple.py)
 * [PyTorch Ignite](./pytorch_ignite_simple.py)
 * [PyTorch Lightning](./pytorch_lightning_simple.py)

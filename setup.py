@@ -50,7 +50,7 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["black", "hacking", "isort", "mypy==0.782"],
+        "checking": ["black", "hacking", "isort", "mypy==0.782", "blackdoc"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
@@ -69,6 +69,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
             "sphinx_rtd_theme<0.5.0",
             "sphinx-gallery",
+            "sphinx-plotly-directive",
             "pillow",
             "matplotlib",
             "scikit-learn",
@@ -88,20 +89,20 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow>=2.0.0",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "thop",
             "skorch",
             "stable-baselines3>=0.7.0",
             "catalyst",
         ]
         + (
-            ["torch==1.6.0", "torchvision==0.7.0"]
+            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
-            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
         )
         + (
             [
-                "allennlp==1.0.0",
+                "allennlp==1.2.0",
                 "fastai<2",
                 "dask[dataframe]",
                 "dask-ml",
@@ -132,16 +133,16 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
         ]
         + (
-            ["torch==1.6.0", "torchvision==0.7.0"]
+            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
-            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
         )
-        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
+        + (["allennlp==1.2.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -168,16 +169,16 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
         ]
         + (
-            ["torch==1.6.0", "torchvision==0.7.0"]
+            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
-            else ["torch==1.6.0+cpu", "torchvision==0.7.0+cpu"]
+            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
         )
-        + (["allennlp==1.0.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
+        + (["allennlp==1.2.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
     }
 
     return requirements
@@ -202,7 +203,7 @@ setup(
     author="Takuya Akiba",
     author_email="akiba@preferred.jp",
     url="https://optuna.org/",
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests", "tests.*")),
     package_data={
         "optuna": [
             "storages/_rdb/alembic.ini",

@@ -34,7 +34,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
 
         The following code snippet shows how to plot the parameter relationship as contour plot.
 
-        .. testcode::
+        .. plotly::
 
             import optuna
 
@@ -45,16 +45,11 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
                 return x ** 2 + y
 
 
-            study = optuna.create_study()
+            sampler = optuna.samplers.TPESampler(seed=10)
+            study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=30)
 
             optuna.visualization.plot_contour(study, params=["x", "y"])
-
-        .. raw:: html
-
-            <iframe src="../../../_static/plot_contour.html"
-                width="100%" height="500px" frameborder="0">
-            </iframe>
 
     Args:
         study:
@@ -247,10 +242,10 @@ def _generate_contour_subplot(
         z[y_i][x_i] = value
 
     # TODO(Yanase): Use reversescale argument to reverse colorscale if Plotly's bug is fixed.
-    # If contours_coloring='heatmap' is specified, reversesecale argument of go.Contour does not
+    # If contours_coloring='heatmap' is specified, reversescale argument of go.Contour does not
     # work correctly. See https://github.com/pfnet/optuna/issues/606.
     colorscale = plotly.colors.PLOTLY_SCALES["Blues"]
-    if direction == StudyDirection.MINIMIZE:
+    if direction == StudyDirection.MAXIMIZE:
         colorscale = [[1 - t[0], t[1]] for t in colorscale]
         colorscale.reverse()
 

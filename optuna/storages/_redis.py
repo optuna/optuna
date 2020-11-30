@@ -1,10 +1,11 @@
 import copy
 from datetime import datetime
 import pickle
-from typing import Any  # NOQA
-from typing import Dict  # NOQA
-from typing import List  # NOQA
-from typing import Optional  # NOQA
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
 
 import optuna
 from optuna import distributions
@@ -48,7 +49,7 @@ class RedisStorage(BaseStorage):
 
 
             storage = optuna.storages.RedisStorage(
-                url='redis://passwd@localhost:port/db',
+                url="redis://passwd@localhost:port/db",
             )
 
             study = optuna.create_study(storage=storage)
@@ -531,7 +532,12 @@ class RedisStorage(BaseStorage):
         study_trial_list_key = "study_id:{:010d}:trial_list".format(study_id)
         return [int(tid) for tid in self._redis.lrange(study_trial_list_key, 0, -1)]
 
-    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
+    def get_all_trials(
+        self,
+        study_id: int,
+        deepcopy: bool = True,
+        states: Optional[Tuple[TrialState, ...]] = None,
+    ) -> List[FrozenTrial]:
 
         self._check_study_id(study_id)
 
@@ -539,7 +545,9 @@ class RedisStorage(BaseStorage):
         trial_ids = self._get_study_trials(study_id)
         for trial_id in trial_ids:
             frozen_trial = self.get_trial(trial_id)
-            trials.append(frozen_trial)
+
+            if states is None or frozen_trial.state in states:
+                trials.append(frozen_trial)
 
         if deepcopy:
             return copy.deepcopy(trials)

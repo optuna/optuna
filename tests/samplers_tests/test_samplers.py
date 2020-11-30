@@ -5,6 +5,7 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+import warnings
 
 import numpy as np
 import pytest
@@ -18,6 +19,7 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
+from optuna.samplers import PartialFixedSampler
 from optuna.study import Study
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
@@ -30,8 +32,9 @@ parametrize_sampler = pytest.mark.parametrize(
         optuna.samplers.RandomSampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
+        lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
         lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
-        lambda: optuna.integration.PyCmaSampler(),
+        lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
     ],
 )
 
@@ -355,3 +358,27 @@ def test_nan_objective_value(sampler_class: Callable[[], BaseSampler]) -> None:
     # Non NaN objective value.
     study.optimize(lambda t: objective(t, 1), n_trials=1, catch=())
     assert int(study.best_value) == 1
+
+
+@parametrize_sampler
+def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> None:
+
+    study = optuna.create_study(sampler=sampler_class())
+
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_float("x", -1, 1)
+        y = trial.suggest_int("y", -1, 1)
+        z = trial.suggest_float("z", -1, 1)
+        return x + y + z
+
+    # First trial.
+    study.optimize(objective, n_trials=1)
+
+    # Second trial. Here, the parameter ``y`` is fixed as 0.
+    fixed_params = {"y": 0}
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        study.sampler = PartialFixedSampler(fixed_params, study.sampler)
+    study.optimize(objective, n_trials=1)
+    trial_params = study.trials[-1].params
+    assert trial_params["y"] == fixed_params["y"]

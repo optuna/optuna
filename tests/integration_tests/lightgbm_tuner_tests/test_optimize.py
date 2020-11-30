@@ -5,6 +5,7 @@ from typing import Dict
 from typing import Generator
 from typing import List
 from typing import Optional
+from typing import TYPE_CHECKING
 from typing import Union
 from unittest import mock
 import warnings
@@ -13,7 +14,6 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna import type_checking
 from optuna.integration._lightgbm_tuner.optimize import _BaseTuner
 from optuna.integration._lightgbm_tuner.optimize import _OptunaObjective
 from optuna.integration._lightgbm_tuner.optimize import _OptunaObjectiveCV
@@ -150,7 +150,7 @@ class TestBaseTuner(object):
             tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert tuner.higher_is_better()
 
-        for metric in ["rmsle", "rmse", "binary_logloss"]:
+        for metric in ["rmsle", "rmse", "binary_logloss", "mape"]:
             tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert not tuner.higher_is_better()
 
@@ -386,7 +386,7 @@ class TestLightGBMTuner(object):
         runner.sample_train_set()
 
         # Workaround for mypy.
-        if not type_checking.TYPE_CHECKING:
+        if not TYPE_CHECKING:
             runner.train_subset.construct()  # Cannot get label before construct `lgb.Dataset`.
             assert runner.train_subset.get_label().shape[0] == sample_size
 

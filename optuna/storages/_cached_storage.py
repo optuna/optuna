@@ -7,6 +7,7 @@ from typing import List
 from typing import Optional
 from typing import Set
 from typing import Tuple
+from typing import Union
 
 from optuna import distributions
 from optuna._study_direction import StudyDirection
@@ -356,7 +357,12 @@ class _CachedStorage(BaseStorage):
 
         return self._backend.get_trial(trial_id)
 
-    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
+    def get_all_trials(
+        self,
+        study_id: int,
+        deepcopy: bool = True,
+        states: Optional[Tuple[TrialState, ...]] = None,
+    ) -> List[FrozenTrial]:
         if study_id not in self._studies:
             self.read_trials_from_remote_storage(study_id)
 
@@ -364,7 +370,14 @@ class _CachedStorage(BaseStorage):
             study = self._studies[study_id]
             # We need to sort trials by their number because some samplers assume this behavior.
             # The following two lines are latency-sensitive.
-            trials = list(sorted(study.trials.values(), key=lambda t: t.number))
+
+            trials: Union[Dict[int, FrozenTrial], List[FrozenTrial]]
+
+            if states is not None:
+                trials = {number: t for number, t in study.trials.items() if t.state in states}
+            else:
+                trials = study.trials
+            trials = list(sorted(trials.values(), key=lambda t: t.number))
             return copy.deepcopy(trials) if deepcopy else trials
 
     def read_trials_from_remote_storage(self, study_id: int) -> None:
@@ -373,7 +386,7 @@ class _CachedStorage(BaseStorage):
                 self._studies[study_id] = _StudyInfo()
             study = self._studies[study_id]
             trials = self._backend._get_trials(
-                study_id, excluded_trial_ids=study.owned_or_finished_trial_ids
+                study_id, states=None, excluded_trial_ids=study.owned_or_finished_trial_ids
             )
             if trials:
                 self._add_trials_to_cache(study_id, trials)

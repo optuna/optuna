@@ -35,10 +35,25 @@ If you choose to write some code, we have some conventions as follows.
 
 ## Guidelines
 
-### Coding Style
+### Checking the Format, Coding Style, and Type Hints
 
-Coding style is checked with [flake8](http://flake8.pycqa.org) and [isort](https://pycqa.github.io/isort/).
-Additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
+Code is formatted with [black](https://github.com/psf/black),
+and docstrings are formatted with [blackdoc](https://github.com/keewis/blackdoc).
+Coding style is checked with [flake8](http://flake8.pycqa.org) and [isort](https://pycqa.github.io/isort/),
+and additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
+Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked with [mypy](http://mypy-lang.org/).
+
+You can check the format, coding style, and type hint at the same time just by executing a script `checks.sh`.
+If your environment misses some dependencies such as black, flake8, isort or mypy, 
+you will be asked to install them.
+
+```bash
+# Without any fixes.
+bash checks.sh
+
+# With fixes on the format by `black` and the import order by `isort`.
+bash checks.sh -u
+```
 
 ### Documentation
 
@@ -61,21 +76,6 @@ make html
 HTML files are generated under `build/html` directory. Open `index.html` with the browser and see
 if it is rendered as expected.
 
-### Type Hints
-
-Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked with [mypy](http://mypy-lang.org/).
-
-### Formatting
-
-Code is formatted with [black](https://github.com/psf/black).
-You have to install it first. This can be done with
-`pip install black`. The command to format a certain file
-is `black <filename_with_path>`.
-To just check the file you can use
-`black <filename_with_path> --check`.
-You can also apply these operations to all files by replacing
-`<filename_with_path>` with a simple `.`.
-
 ## Unit Tests
 
 When adding a new feature or fixing a bug, you also need to write sufficient test code.
@@ -94,7 +94,13 @@ pytest tests/${TARGET_TEST_FILE_NAME}
 
 ## Continuous Integration and Local Verification
 
+Optuna repository uses GitHub Actions and CircleCI.
+
 CircleCI is used for continuous integration.
+
+Currently, we are migrating to GitHub Actions but still we use CirclCI for a few tests listed below.
+`document` still exists because it makes it much easier to check built documentation and `tests-rdbstorage`
+is there because CircleCI supports more various RDB storages than GitHub Actions as of November 2020.
 
 ### Local Verification
 
@@ -106,28 +112,18 @@ circleci build --job <job_name>
 
 You can run the following jobs.
 
-- `tests-python36`
-  - Runs unit tests under Python 3.6
-- `tests-python37`
-  - Runs unit tests under Python 3.7
-- `tests-python38`
-  - Runs unit tests under Python 3.8
-- `checks`
-  - Checks guidelines
+- `tests-rdbstorage`
+  - Runs unit tests with RDB storages with Python 3.7
 - `document`
   - Checks documentation build
-- `doctest`
-  - Checks doctest validity
-- `codecov`
-  - Checks unit test code coverage
 
 #### Example
 
-The following `circleci` job runs all unit tests in Python 3.7:
+The following `circleci` job runs all unit tests with RDB storages:
 Note that this job will download several hundred megabytes of data to install all the packages required for testing, and take several tens of minutes to complete all tests.
 
 ```bash
-circleci build --job tests-python37
+circleci build --job tests-rdbstorage
 ```
 
 ## Creating a Pull Request

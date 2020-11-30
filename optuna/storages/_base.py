@@ -3,6 +3,8 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
+from typing import Union
 
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
@@ -521,7 +523,12 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
+    def get_all_trials(
+        self,
+        study_id: int,
+        deepcopy: bool = True,
+        states: Optional[Tuple[TrialState, ...]] = None,
+    ) -> List[FrozenTrial]:
         """Read all trials in a study.
 
         Args:
@@ -530,6 +537,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             deepcopy:
                 Whether to copy the list of trials before returning.
                 Set to :obj:`True` if you intend to update the list or elements of the list.
+            states:
+                Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
             List of trials in the study.
@@ -540,14 +549,16 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
+    def get_n_trials(
+        self, study_id: int, state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None
+    ) -> int:
         """Count the number of trials in a study.
 
         Args:
             study_id:
                 ID of the study.
             state:
-                :class:`~optuna.trial.TrialState` to filter trials.
+                Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
             Number of trials in the study.
@@ -556,10 +567,11 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        if state is None:
-            return len(self.get_all_trials(study_id, deepcopy=False))
-
-        return len([t for t in self.get_all_trials(study_id, deepcopy=False) if t.state == state])
+        # TODO(hvy): Align the name and the behavior or the `state` parameter with
+        # `get_all_trials`'s `states`.
+        if isinstance(state, TrialState):
+            state = (state,)
+        return len(self.get_all_trials(study_id, deepcopy=False, states=state))
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
         """Return the trial with the best value in a study.
