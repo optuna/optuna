@@ -100,13 +100,13 @@ class StudyDirectionModel(BaseModel):
 
     @classmethod
     def find_by_study_and_objective(
-            cls, study: StudyModel, objective: int, session: orm.Session
+        cls, study: StudyModel, objective: int, session: orm.Session
     ) -> Optional["StudyDirectionModel"]:
         study_direction = (
             session.query(cls)
-                .filter(cls.study_id == study.study_id)
-                .filter(cls.objective == objective)
-                .one_or_none()
+            .filter(cls.study_id == study.study_id)
+            .filter(cls.objective == objective)
+            .one_or_none()
         )
 
         return study_direction
