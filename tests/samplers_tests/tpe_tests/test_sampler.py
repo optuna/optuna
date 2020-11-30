@@ -848,7 +848,7 @@ def frozen_trial_factory(
         user_attrs={},
         system_attrs={},
         intermediate_values=interm_val_fn(idx),
-        trial_id=idx + 123,
+        trial_id=idx,
     )
 
 
