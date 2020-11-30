@@ -1,6 +1,10 @@
 from typing import List
 from typing import Optional
+from typing import Tuple
+from typing import Union
 
+from packaging import version
+import plotly
 import pytest
 
 from optuna.distributions import CategoricalDistribution
@@ -12,6 +16,9 @@ from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_contour
 from optuna.visualization._contour import _generate_contour_subplot
+
+
+RANGE_TYPE = Union[Tuple[str, str], Tuple[float, float]]
 
 
 @pytest.mark.parametrize(
@@ -114,7 +121,10 @@ def test_plot_contour_log_scale_and_str_category() -> None:
 
     figure = plot_contour(study)
     assert figure.layout["xaxis"]["range"] == (-6.05, -4.95)
-    assert figure.layout["yaxis"]["range"] == ("100", "101")
+    if version.parse(plotly.__version__) >= version.parse("4.12.0"):
+        assert figure.layout["yaxis"]["range"] == (-0.05, 1.05)
+    else:
+        assert figure.layout["yaxis"]["range"] == ("100", "101")
     assert figure.layout["xaxis_type"] == "log"
     assert figure.layout["yaxis_type"] == "category"
 
@@ -145,8 +155,12 @@ def test_plot_contour_log_scale_and_str_category() -> None:
 
     figure = plot_contour(study)
     param_a_range = (-6.05, -4.95)
-    param_b_range = ("100", "101")
-    param_c_range = ("one", "two")
+    if version.parse(plotly.__version__) >= version.parse("4.12.0"):
+        param_b_range: RANGE_TYPE = (-0.05, 1.05)
+        param_c_range: RANGE_TYPE = (-0.05, 1.05)
+    else:
+        param_b_range = ("100", "101")
+        param_c_range = ("one", "two")
     param_a_type = "log"
     param_b_type = "category"
     param_c_type = None
@@ -199,7 +213,11 @@ def test_plot_contour_mixture_category_types() -> None:
         )
     )
     figure = plot_contour(study)
-    assert figure.layout["xaxis"]["range"] == ("100", "None")
-    assert figure.layout["yaxis"]["range"] == ("101", "102.0")
+    if version.parse(plotly.__version__) >= version.parse("4.12.0"):
+        assert figure.layout["xaxis"]["range"] == (-0.05, 1.05)
+        assert figure.layout["yaxis"]["range"] == (-0.05, 1.05)
+    else:
+        assert figure.layout["xaxis"]["range"] == ("100", "None")
+        assert figure.layout["yaxis"]["range"] == ("101", "102.0")
     assert figure.layout["xaxis"]["type"] == "category"
     assert figure.layout["yaxis"]["type"] == "category"
