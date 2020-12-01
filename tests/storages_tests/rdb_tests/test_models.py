@@ -124,7 +124,7 @@ class TestStudySystemAttributeModel(object):
     def test_cascade_delete_on_study(session: Session) -> None:
 
         study_id = 1
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=study_id, study_name="test-study", directions=[direction])
         study.system_attributes.append(
             StudySystemAttributeModel(study_id=study_id, key="sample-key1", value_json="1")
@@ -198,7 +198,7 @@ class TestTrialModel(object):
     def test_cascade_delete_on_study(session: Session) -> None:
 
         study_id = 1
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=study_id, study_name="test-study", directions=[direction])
         study.trials.append(TrialModel(study_id=study.study_id, state=TrialState.COMPLETE))
         study.trials.append(TrialModel(study_id=study.study_id, state=TrialState.RUNNING))
@@ -233,7 +233,7 @@ class TestTrialUserAttributeModel(object):
     @staticmethod
     def test_where_study(session: Session) -> None:
 
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
@@ -252,7 +252,7 @@ class TestTrialUserAttributeModel(object):
     @staticmethod
     def test_where_trial(session: Session) -> None:
 
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
@@ -269,7 +269,7 @@ class TestTrialUserAttributeModel(object):
     @staticmethod
     def test_all(session: Session) -> None:
 
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
@@ -287,7 +287,7 @@ class TestTrialUserAttributeModel(object):
     def test_cascade_delete_on_trial(session: Session) -> None:
 
         trial_id = 1
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
         trial.user_attributes.append(
@@ -328,7 +328,7 @@ class TestTrialSystemAttributeModel(object):
     @staticmethod
     def test_where_study(session: Session) -> None:
 
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
@@ -347,7 +347,7 @@ class TestTrialSystemAttributeModel(object):
     @staticmethod
     def test_where_trial(session: Session) -> None:
 
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
@@ -364,7 +364,7 @@ class TestTrialSystemAttributeModel(object):
     @staticmethod
     def test_all(session: Session) -> None:
 
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
 
@@ -382,7 +382,7 @@ class TestTrialSystemAttributeModel(object):
     def test_cascade_delete_on_trial(session: Session) -> None:
 
         trial_id = 1
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=trial_id, study_id=study.study_id, state=TrialState.COMPLETE)
         trial.system_attributes.append(
@@ -407,7 +407,7 @@ class TestTrialValueModel(object):
     @classmethod
     def _create_model(cls, session: Session) -> Tuple[StudyModel, TrialModel]:
 
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
         session.add(study)
@@ -471,7 +471,7 @@ class TestTrialIntermediateValueModel(object):
     @classmethod
     def _create_model(cls, session: Session) -> Tuple[StudyModel, TrialModel]:
 
-        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE)
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
         trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
         session.add(study)

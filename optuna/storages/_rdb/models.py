@@ -92,7 +92,7 @@ class StudyDirectionModel(BaseModel):
     study_direction_id = Column(Integer, primary_key=True)
     direction = Column(Enum(StudyDirection), nullable=False)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
-    objective = Column(Integer, default=0)
+    objective = Column(Integer)
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("directions", cascade="all, delete-orphan")
@@ -229,7 +229,7 @@ class TrialModel(BaseModel):
 
     @classmethod
     def find_max_value_trial(
-        cls, study_id: int, session: orm.Session, objective: int = 0
+        cls, study_id: int, objective: int, session: orm.Session
     ) -> "TrialModel":
 
         trial = (
@@ -248,7 +248,7 @@ class TrialModel(BaseModel):
 
     @classmethod
     def find_min_value_trial(
-        cls, study_id: int, session: orm.Session, objective: int = 0
+        cls, study_id: int, objective: int, session: orm.Session
     ) -> "TrialModel":
 
         trial = (

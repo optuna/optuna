@@ -185,7 +185,9 @@ class RDBStorage(BaseStorage):
                 if study_name is None:
                     study_name = self._create_unique_study_name(session)
 
-                direction = models.StudyDirectionModel(direction=StudyDirection.NOT_SET)
+                direction = models.StudyDirectionModel(
+                    direction=StudyDirection.NOT_SET, objective=0
+                )
                 study = models.StudyModel(study_name=study_name, directions=[direction])
                 session.add(study)
         except IntegrityError:
@@ -364,11 +366,11 @@ class RDBStorage(BaseStorage):
                 try:
                     if directions[0] == StudyDirection.MAXIMIZE:
                         best_trial = models.TrialModel.find_max_value_trial(
-                            study.study_id, session
+                            study.study_id, 0, session
                         )
                     else:
                         best_trial = models.TrialModel.find_min_value_trial(
-                            study.study_id, session
+                            study.study_id, 0, session
                         )
                 except ValueError:
                     best_trial_frozen: Optional[FrozenTrial] = None
@@ -589,8 +591,6 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             trial_model = models.TrialModel.find_or_raise_by_id(trial_id, session)
-            if trial_model is None:
-                raise KeyError(models.NOT_FOUND_MSG)
             if trial_model.state.is_finished():
                 raise RuntimeError("Cannot change attributes of finished trial.")
             if (
@@ -892,10 +892,6 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             trial_model = models.TrialModel.find_or_raise_by_id(trial_id, session)
-
-            if not trial_model:
-                raise KeyError("No trial with trial-id {} found.".format(trial_id))
-
             frozen_trial = self._build_frozen_trial_from_trial_model(trial_model)
 
         return frozen_trial
@@ -1012,9 +1008,9 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
-                trial = models.TrialModel.find_max_value_trial(study_id, session)
+                trial = models.TrialModel.find_max_value_trial(study_id, 0, session)
             else:
-                trial = models.TrialModel.find_min_value_trial(study_id, session)
+                trial = models.TrialModel.find_min_value_trial(study_id, 0, session)
 
         return self.get_trial(trial.trial_id)
 
