@@ -53,7 +53,7 @@ In addition, integration modules are available for the following libraries, prov
 * [Pruning with Keras integration module](./pruning/keras_integration.py)
 * [Pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
 * [Pruning with MXNet integration module](./pruning/mxnet_integration.py)
-* [Pruning with PyTorch integration module](./pruning/pytorch_simple.py)
+* [Pruning with PyTorch integration module](./pytorch_simple.py)
 * [Pruning with PyTorch Ignite integration module](./pytorch_ignite_simple.py)
 * [Pruning with PyTorch Lightning integration module](./pytorch_lightning_simple.py)
 * [Pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
@@ -74,7 +74,7 @@ In addition, integration modules are available for the following libraries, prov
 
 ### Examples of Distributed Optimization
 
-* [Optimizing on Kubernetes](./distributed/kubernetes/README.md)
+* [Optimizing on Kubernetes](./kubernetes/README.md)
 
 ### External projects using Optuna
 
