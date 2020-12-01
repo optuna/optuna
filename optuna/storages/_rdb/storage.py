@@ -929,6 +929,7 @@ class RDBStorage(BaseStorage):
                 query = query.filter(models.TrialModel.state.in_(states))
 
             trial_ids = query.all()
+
             trial_ids = set(
                 trial_id_tuple[0]
                 for trial_id_tuple in trial_ids
