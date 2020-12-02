@@ -66,7 +66,7 @@ def upgrade():
         )
 
     with op.batch_alter_table("trial_values", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("objective", sa.Integer(), nullable=True))
+        batch_op.add_column(sa.Column("objective", sa.Integer(), nullable=False))
         batch_op.create_unique_constraint("value_constraint", ["trial_id", "objective"])
 
     session = orm.Session(bind=bind)
