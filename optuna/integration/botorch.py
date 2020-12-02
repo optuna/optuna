@@ -43,6 +43,7 @@ with try_import() as _imports:
     import torch
 
 
+@experimental("2.4.0")
 def ucb_candidates_func(
     train_x: "torch.Tensor",
     train_obj: "torch.Tensor",
@@ -51,7 +52,36 @@ def ucb_candidates_func(
 ) -> "torch.Tensor":
     """Upper Confidence Bound (UCB).
 
-    Single-objective, without objective constraints.
+    The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
+    with single-objective optimization without objective constraints.
+
+    Args:
+        train_x:
+            Previous parameter configurations. A ``torch.Tensor`` of shape
+            ``(n_trials, n_params)``. ``n_trials`` is the number of already observed trials
+            and ``n_params`` is the number of parameters. ``n_params`` may be larger than the
+            actual number of parameters if categorical parameters are included in the search
+            space, since these parameters are one-hot encoded.
+            Values are not normalized.
+        train_obj:
+            Objectives. A ``torch.Tensor`` of shape ``(n_trials, n_objectives)``. ``n_trials``
+            is identical to that of ``train_x``. ``n_objectives`` is the number of objectives.
+            Observations are not normalized.
+        train_con:
+            Objective constraints. A ``torch.Tensor`` of shape ``(n_trials, n_constraints)``.
+            ``n_trials`` is identical to that of ``train_x``. ``n_constraints`` is the number of
+            constraints. A constraint is violated if strictly larger than 0. If no constraints are
+            involved in the optimization, this argument will be :obj:`None`. In particular for
+            :func:`~optuna.integration.botorch.ucb_candidates_func`, it should always be
+            :obj:`None` since UCB does not support constrained optimization.
+        bounds:
+            Search space bounds. A ``torch.Tensor`` of shape ``(n_params, 2)``. ``n_params`` is
+            identical to that of ``train_x``. The first and the second column correspond to the
+            lower and upper bounds for each parameter respectively.
+
+    Returns:
+        Next set of candidates. Usually the return value of BoTorch's ``optimize_acqf``.
+
     """
 
     if train_con is not None:
@@ -74,6 +104,7 @@ def ucb_candidates_func(
     return candidates
 
 
+@experimental("2.4.0")
 def qei_candidates_func(
     train_x: "torch.Tensor",
     train_obj: "torch.Tensor",
@@ -82,7 +113,12 @@ def qei_candidates_func(
 ) -> "torch.Tensor":
     """Expected Improvement (qEI).
 
-    Single-objective, with objective constraints.
+    The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
+    with single-objective optimization with objective constraints.
+
+    .. seealso::
+        :func:`~optuna.integration.botorch.ucb_candidates_func` for argument and return value
+        descriptions.
     """
 
     if train_obj.size(-1) != 1:
@@ -130,6 +166,7 @@ def qei_candidates_func(
     return candidates
 
 
+@experimental("2.4.0")
 def qehvi_candidates_func(
     train_x: "torch.Tensor",
     train_obj: "torch.Tensor",
@@ -138,7 +175,12 @@ def qehvi_candidates_func(
 ) -> "torch.Tensor":
     """Expected Hypervolume Improvement (qEHVI).
 
-    Multi-objective, with and without objective constraints.
+    The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
+    with multi-objective optimization with or without objective constraints.
+
+    .. seealso::
+        :func:`~optuna.integration.botorch.ucb_candidates_func` for argument and return value
+        descriptions.
     """
 
     n_outcomes = train_obj.size(-1)
@@ -226,6 +268,58 @@ def _get_default_candidates_func(
 # functions.
 @experimental("2.4.0")
 class BoTorchSampler(BaseMultiObjectiveSampler):
+    """A sampler that uses BoTorch, a Bayesian optimization library built on top of PyTorch.
+
+    This sampler allows using BoTorch's optimization algorithms from Optuna to suggest parameter
+    configurations. Parameters are transformed to continuous space and passed to BoTorch, and then
+    transformed back to Optuna's representations. Categorical parameters are one-hot encoded.
+
+    .. seealso::
+        See an `example <https://github.com/optuna/optuna/blob/master/examples/multi_objective/
+        botorch_simple.py>`_ how to use the sampler.
+
+    .. seealso::
+        See the `BoTorch <https://botorch.org/>`_ homepage for details and for how to implement
+        your own ``candidates_func``.
+
+    .. note::
+        An instance of this sampler *should be not used with different studies* when used with
+        constraints. Instead, a new instance should be created for each new study. The reason for
+        this is that the sampler is stateful keeping all the computed constraints.
+
+    Args:
+        candidates_func:
+            An optional function that suggests the next candidates. It must take the training
+            data, the objectives, the constraints, the search space bounds and return the next
+            candidates. The arguments are of type ``torch.Tensor``. The return value must be a
+            ``torch.Tensor``. However, if ``constraints_func`` is omitted, constraints will be
+            :obj:`None`.
+
+            If omitted, is determined automatically based on the number of objectives and
+            constraints.
+
+            The function should assume *maximization* of the objective.
+
+            .. seealso::
+                See :func:`optuna.integration.botorch.ucb_candidates_func` for an example.
+        constraints_func:
+            An optional function that computes the objective constraints. It must take a
+            :class:`~optuna.multi_objective.study.MultiObjectiveStudy`, a
+            :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` and return the
+            constraints. The return value must be a sequence of :obj:`float` s. A value strictly
+            larger than 0 means that a constraints is violated. A value equal to or smaller than 0
+            is considered feasible.
+
+            If omitted, no constraints will be passed to ``candidates_func`` nor taken into
+            account during suggestion if ``candidates_func`` is omitted.
+        n_startup_trials:
+            Number of initial trials, that is the number of trials to resort to independent
+            sampling.
+        independent_sampler:
+            An independent sampler to use for the initial trials and for parameters that are
+            conditional.
+    """
+
     def __init__(
         self,
         candidates_func: Callable[

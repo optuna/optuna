@@ -24,6 +24,18 @@ AllenNLP
    optuna.integration.allennlp.dump_best_config
    optuna.integration.AllenNLPPruningCallback
 
+BoTorch
+-------
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   optuna.integration.BoTorchSampler
+   optuna.integration.botorch.ucb_candidates_func
+   optuna.integration.botorch.qei_candidates_func
+   optuna.integration.botorch.qehvi_candidates_func
+
 Catalyst
 --------
 
