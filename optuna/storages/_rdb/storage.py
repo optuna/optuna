@@ -237,7 +237,7 @@ class RDBStorage(BaseStorage):
                     )
                 )
 
-            models.StudyDirectionModel.where_study(study, session)[0].direction = direction
+            current_direction_model.direction = direction
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
@@ -385,7 +385,15 @@ class RDBStorage(BaseStorage):
                         best_trial, 0, session
                     )
                     assert value
-                    params = models.TrialParamModel.where_trial(best_trial, session)
+                    params = (
+                        session.query(
+                            models.TrialParamModel.param_name,
+                            models.TrialParamModel.param_value,
+                            models.TrialParamModel.distribution_json,
+                        )
+                        .filter(models.TrialParamModel.trial_id == best_trial.trial_id)
+                        .all()
+                    )
                     param_dict = {}
                     param_distributions = {}
                     for param in params:
@@ -614,15 +622,16 @@ class RDBStorage(BaseStorage):
                 trial_model.datetime_complete = datetime_complete
 
             if value is not None:
+                values = [value]
                 trial_values = models.TrialValueModel.where_trial_id(trial_id, session)
-                trial_values_dict = {v.objective: v for v in trial_values}
-                for objective, v in enumerate([value]):
-                    if objective in trial_values_dict:
-                        trial_values_dict[objective].value = v
-                        session.add(trial_values_dict[objective])
-                    else:
+                if len(trial_values) > 0:
+                    for objective in range(len(values)):
+                        trial_values[objective].value = values[objective]
+                        session.add(trial_values[objective])
+                else:
+                    for objective in range(len(values)):
                         trial_model.values.extend(
-                            [models.TrialValueModel(objective=objective, value=v)]
+                            [models.TrialValueModel(objective=objective, value=values[objective])]
                         )
 
             if user_attrs:

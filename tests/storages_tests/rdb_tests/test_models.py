@@ -61,15 +61,6 @@ class TestStudyDirectionModel(object):
         assert directions[0].direction == StudyDirection.MINIMIZE
 
     @staticmethod
-    def test_all(session: Session) -> None:
-
-        TestStudyDirectionModel._create_model(session)
-        directions = StudyDirectionModel.all(session)
-        assert 1 == len(directions)
-        assert directions[0].objective == 0
-        assert directions[0].direction == StudyDirection.MINIMIZE
-
-    @staticmethod
     def test_cascade_delete_on_study(session: Session) -> None:
 
         directions = [
@@ -426,28 +417,10 @@ class TestTrialValueModel(object):
         assert TrialValueModel.find_by_trial_and_objective(trial, 1, session) is None
 
     @staticmethod
-    def test_where_study(session: Session) -> None:
-
-        study, _ = TestTrialValueModel._create_model(session)
-        trial_values = TrialValueModel.where_study(study, session)
-        assert 1 == len(trial_values)
-        assert 0 == trial_values[0].objective
-        assert 10 == trial_values[0].value
-
-    @staticmethod
-    def test_where_trial(session: Session) -> None:
+    def test_where_trial_id(session: Session) -> None:
 
         _, trial = TestTrialValueModel._create_model(session)
-        trial_values = TrialValueModel.where_trial(trial, session)
-        assert 1 == len(trial_values)
-        assert 0 == trial_values[0].objective
-        assert 10 == trial_values[0].value
-
-    @staticmethod
-    def test_all(session: Session) -> None:
-
-        _, _ = TestTrialValueModel._create_model(session)
-        trial_values = TrialValueModel.all(session)
+        trial_values = TrialValueModel.where_trial_id(trial.trial_id, session)
         assert 1 == len(trial_values)
         assert 0 == trial_values[0].objective
         assert 10 == trial_values[0].value
@@ -459,12 +432,12 @@ class TestTrialValueModel(object):
         trial.values.append(TrialValueModel(trial_id=1, objective=1, value=20))
         session.commit()
 
-        assert 2 == len(TrialValueModel.where_trial(trial, session))
+        assert 2 == len(TrialValueModel.where_trial_id(trial.trial_id, session))
 
         session.delete(trial)
         session.commit()
 
-        assert 0 == len(TrialValueModel.where_trial(trial, session))
+        assert 0 == len(TrialValueModel.where_trial_id(trial.trial_id, session))
 
 
 class TestTrialIntermediateValueModel(object):
@@ -494,28 +467,10 @@ class TestTrialIntermediateValueModel(object):
         assert TrialIntermediateValueModel.find_by_trial_and_step(trial, 1, session) is None
 
     @staticmethod
-    def test_where_study(session: Session) -> None:
-
-        study, _ = TestTrialIntermediateValueModel._create_model(session)
-        trial_intermediate_values = TrialIntermediateValueModel.where_study(study, session)
-        assert 1 == len(trial_intermediate_values)
-        assert 0 == trial_intermediate_values[0].step
-        assert 10 == trial_intermediate_values[0].intermediate_value
-
-    @staticmethod
     def test_where_trial(session: Session) -> None:
 
         _, trial = TestTrialIntermediateValueModel._create_model(session)
         trial_intermediate_values = TrialIntermediateValueModel.where_trial(trial, session)
-        assert 1 == len(trial_intermediate_values)
-        assert 0 == trial_intermediate_values[0].step
-        assert 10 == trial_intermediate_values[0].intermediate_value
-
-    @staticmethod
-    def test_all(session: Session) -> None:
-
-        _, _ = TestTrialIntermediateValueModel._create_model(session)
-        trial_intermediate_values = TrialIntermediateValueModel.all(session)
         assert 1 == len(trial_intermediate_values)
         assert 0 == trial_intermediate_values[0].step
         assert 10 == trial_intermediate_values[0].intermediate_value
