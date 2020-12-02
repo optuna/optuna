@@ -91,7 +91,7 @@ class StudyDirectionModel(BaseModel):
     __table_args__: Any = (UniqueConstraint("study_id", "objective"),)
     study_direction_id = Column(Integer, primary_key=True)
     direction = Column(Enum(StudyDirection), nullable=False)
-    study_id = Column(Integer, ForeignKey("studies.study_id"))
+    study_id = Column(Integer, ForeignKey("studies.study_id"), nullable=False)
     objective = Column(Integer, nullable=False)
 
     study = orm.relationship(
