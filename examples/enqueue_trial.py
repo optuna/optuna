@@ -2,7 +2,7 @@
 Optuna enqueue_trial example that optimizes a classifier configuration using sklearn.
 
 In this example, we optimize a classifier configuration for Iris dataset. We start a study with
-given parameter values, such as a default and a manually optimized.
+given parameter values, such as a default and a manually suggested one.
 
 """
 
@@ -28,7 +28,7 @@ def objective(trial):
 if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
 
-    # We enqueue a default parameter and a manually optimized parameter.
+    # We enqueue a default parameter and a manually suggested parameter.
     study.enqueue_trial({"svc_c": 1})
     study.enqueue_trial({"svc_c": 10})
 
