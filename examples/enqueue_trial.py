@@ -34,6 +34,6 @@ if __name__ == "__main__":
 
     study.optimize(objective, n_trials=100)
 
-    print(study.trials[0])
-    print(study.trials[1])
-    print(study.best_trial)
+    print("C={}, Value={}".format(study.trials[0].params["svc_c"], study.trials[0].value))
+    print("C={}, Value={}".format(study.trials[1].params["svc_c"], study.trials[1].value))
+    print("C={}, Value={}".format(study.best_trial.params["svc_c"], study.best_trial.value))
