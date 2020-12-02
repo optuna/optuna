@@ -329,7 +329,7 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
                 Optional["torch.Tensor"],
                 "torch.Tensor",
             ],
-            torch.Tensor,
+            "torch.Tensor",
         ] = None,
         constraints_func: Optional[
             Callable[
