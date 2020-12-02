@@ -464,7 +464,12 @@ class TrialParamModel(BaseModel):
     @classmethod
     def where_trial(cls, trial: TrialModel, session: orm.Session) -> List["TrialParamModel"]:
 
-        trial_params = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+        return cls.where_trial_id(trial.trial_id, session)
+
+    @classmethod
+    def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialParamModel"]:
+
+        trial_params = session.query(cls).filter(cls.trial_id == trial_id).all()
 
         return trial_params
 
@@ -512,7 +517,12 @@ class TrialValueModel(BaseModel):
     @classmethod
     def where_trial(cls, trial: TrialModel, session: orm.Session) -> List["TrialValueModel"]:
 
-        trial_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+        return cls.where_trial_id(trial.trial_id, session)
+
+    @classmethod
+    def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialValueModel"]:
+
+        trial_values = session.query(cls).filter(cls.trial_id == trial_id).all()
 
         return trial_values
 
