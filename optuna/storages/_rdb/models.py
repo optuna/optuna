@@ -555,10 +555,7 @@ class TrialValueModel(BaseModel):
     def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialValueModel"]:
 
         trial_values = (
-            session.query(cls)
-            .filter(cls.trial_id == trial_id)
-            .order_by(asc(cls.objective))
-            .all()
+            session.query(cls).filter(cls.trial_id == trial_id).order_by(asc(cls.objective)).all()
         )
 
         return trial_values
