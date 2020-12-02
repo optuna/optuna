@@ -40,8 +40,8 @@ def upgrade():
                 sa.Enum("NOT_SET", "MINIMIZE", "MAXIMIZE", name="studydirection"),
                 nullable=False,
             ),
-            sa.Column("study_id", sa.Integer(), nullable=True),
-            sa.Column("objective", sa.Integer(), nullable=True),
+            sa.Column("study_id", sa.Integer(), nullable=False),
+            sa.Column("objective", sa.Integer(), nullable=False),
             sa.ForeignKeyConstraint(
                 ["study_id"],
                 ["studies.study_id"],
@@ -54,9 +54,9 @@ def upgrade():
         op.create_table(
             "trial_intermediate_values",
             sa.Column("trial_intermediate_values_id", sa.Integer(), nullable=False),
-            sa.Column("trial_id", sa.Integer(), nullable=True),
-            sa.Column("step", sa.Integer(), nullable=True),
-            sa.Column("value", sa.Float(), nullable=True),
+            sa.Column("trial_id", sa.Integer(), nullable=False),
+            sa.Column("step", sa.Integer(), nullable=False),
+            sa.Column("intermediate_value", sa.Float(), nullable=False),
             sa.ForeignKeyConstraint(
                 ["trial_id"],
                 ["trials.trial_id"],
@@ -122,5 +122,6 @@ def upgrade():
         batch_op.drop_column("value")
 
 
+# TODO(imamura): Implement downgrade
 def downgrade():
     pass

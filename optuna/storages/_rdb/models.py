@@ -92,7 +92,7 @@ class StudyDirectionModel(BaseModel):
     study_direction_id = Column(Integer, primary_key=True)
     direction = Column(Enum(StudyDirection), nullable=False)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
-    objective = Column(Integer, default=0)
+    objective = Column(Integer, nullable=False)
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("directions", cascade="all, delete-orphan")
@@ -230,7 +230,7 @@ class TrialModel(BaseModel):
 
     @classmethod
     def find_max_value_trial(
-        cls, study_id: int, session: orm.Session, objective: int = 0
+        cls, study_id: int, objective: int, session: orm.Session
     ) -> "TrialModel":
 
         trial = (
@@ -249,7 +249,7 @@ class TrialModel(BaseModel):
 
     @classmethod
     def find_min_value_trial(
-        cls, study_id: int, session: orm.Session, objective: int = 0
+        cls, study_id: int, objective: int, session: orm.Session
     ) -> "TrialModel":
 
         trial = (
@@ -514,7 +514,14 @@ class TrialParamModel(BaseModel):
     @classmethod
     def where_trial(cls, trial: TrialModel, session: orm.Session) -> List["TrialParamModel"]:
 
-        trial_params = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+        trial_params = cls.where_trial_id(trial.trial_id, session)
+
+        return trial_params
+
+    @classmethod
+    def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialParamModel"]:
+
+        trial_params = session.query(cls).filter(cls.trial_id == trial_id).all()
 
         return trial_params
 
@@ -528,9 +535,9 @@ class TrialValueModel(BaseModel):
     __tablename__ = "trial_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
     trial_value_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
-    objective = Column(Integer)
-    value = Column(Float)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    objective = Column(Integer, nullable=False)
+    value = Column(Float, nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
@@ -562,7 +569,14 @@ class TrialValueModel(BaseModel):
     @classmethod
     def where_trial(cls, trial: TrialModel, session: orm.Session) -> List["TrialValueModel"]:
 
-        trial_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+        trial_values = cls.where_trial_id(trial.trial_id, session)
+
+        return trial_values
+
+    @classmethod
+    def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialValueModel"]:
+
+        trial_values = session.query(cls).filter(cls.trial_id == trial_id).all()
 
         return trial_values
 
@@ -576,9 +590,9 @@ class TrialIntermediateValueModel(BaseModel):
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
     trial_intermediate_value_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
-    step = Column(Integer)
-    intermediate_value = Column(Float)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    step = Column(Integer, nullable=False)
+    intermediate_value = Column(Float, nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
@@ -614,7 +628,16 @@ class TrialIntermediateValueModel(BaseModel):
         cls, trial: TrialModel, session: orm.Session
     ) -> List["TrialIntermediateValueModel"]:
 
-        trial_intermediate_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+        trial_intermediate_values = cls.where_trial_id(trial.trial_id, session)
+
+        return trial_intermediate_values
+
+    @classmethod
+    def where_trial_id(
+        cls, trial_id: int, session: orm.Session
+    ) -> List["TrialIntermediateValueModel"]:
+
+        trial_intermediate_values = session.query(cls).filter(cls.trial_id == trial_id).all()
 
         return trial_intermediate_values
 
