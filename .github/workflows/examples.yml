@@ -7,6 +7,8 @@ on:
 jobs:
   examples:
 
+    # TODO (crcrpar): Run on 3.9.
+    # ref: https://github.com/optuna/optuna/issues/2034
     runs-on: ubuntu-latest
     strategy:
       matrix:
