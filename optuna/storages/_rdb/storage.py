@@ -693,10 +693,7 @@ class RDBStorage(BaseStorage):
 
         try:
             with _create_scoped_session(self.scoped_session) as session:
-                trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
-                if trial is None:
-                    raise KeyError(models.NOT_FOUND_MSG)
-
+                trial = models.TrialModel.find_or_raise_by_id(trial_id, session, for_update=True)
                 self.check_trial_is_updatable(trial_id, trial.state)
 
                 if state == TrialState.RUNNING and trial.state != TrialState.WAITING:

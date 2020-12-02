@@ -143,12 +143,12 @@ class TestTrialModel(object):
         session.add(study)
         session.commit()
 
-        assert 2 == len(TrialModel.where_study(study, session))
+        assert 2 == TrialModel.count(session, study)
 
         session.delete(study)
         session.commit()
 
-        assert 0 == len(TrialModel.where_study(study, session))
+        assert 0 == TrialModel.count(session, study)
 
 
 class TestTrialUserAttributeModel(object):
@@ -167,56 +167,6 @@ class TestTrialUserAttributeModel(object):
         assert attr is not None
         assert "1" == attr.value_json
         assert TrialUserAttributeModel.find_by_trial_and_key(trial, "not-found", session) is None
-
-    @staticmethod
-    def test_where_study(session: Session) -> None:
-
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
-        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
-
-        session.add(study)
-        session.add(trial)
-        session.add(
-            TrialUserAttributeModel(trial_id=trial.trial_id, key="sample-key", value_json="1")
-        )
-        session.commit()
-
-        user_attributes = TrialUserAttributeModel.where_study(study, session)
-        assert 1 == len(user_attributes)
-        assert "sample-key" == user_attributes[0].key
-        assert "1" == user_attributes[0].value_json
-
-    @staticmethod
-    def test_where_trial(session: Session) -> None:
-
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
-        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
-
-        session.add(
-            TrialUserAttributeModel(trial_id=trial.trial_id, key="sample-key", value_json="1")
-        )
-        session.commit()
-
-        user_attributes = TrialUserAttributeModel.where_trial(trial, session)
-        assert 1 == len(user_attributes)
-        assert "sample-key" == user_attributes[0].key
-        assert "1" == user_attributes[0].value_json
-
-    @staticmethod
-    def test_all(session: Session) -> None:
-
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
-        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
-
-        session.add(
-            TrialUserAttributeModel(trial_id=trial.trial_id, key="sample-key", value_json="1")
-        )
-        session.commit()
-
-        user_attributes = TrialUserAttributeModel.all(session)
-        assert 1 == len(user_attributes)
-        assert "sample-key" == user_attributes[0].key
-        assert "1" == user_attributes[0].value_json
 
     @staticmethod
     def test_cascade_delete_on_trial(session: Session) -> None:
@@ -258,56 +208,6 @@ class TestTrialSystemAttributeModel(object):
         assert attr is not None
         assert "1" == attr.value_json
         assert TrialSystemAttributeModel.find_by_trial_and_key(trial, "not-found", session) is None
-
-    @staticmethod
-    def test_where_study(session: Session) -> None:
-
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
-        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
-
-        session.add(study)
-        session.add(trial)
-        session.add(
-            TrialSystemAttributeModel(trial_id=trial.trial_id, key="sample-key", value_json="1")
-        )
-        session.commit()
-
-        system_attributes = TrialSystemAttributeModel.where_study(study, session)
-        assert 1 == len(system_attributes)
-        assert "sample-key" == system_attributes[0].key
-        assert "1" == system_attributes[0].value_json
-
-    @staticmethod
-    def test_where_trial(session: Session) -> None:
-
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
-        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
-
-        session.add(
-            TrialSystemAttributeModel(trial_id=trial.trial_id, key="sample-key", value_json="1")
-        )
-        session.commit()
-
-        system_attributes = TrialSystemAttributeModel.where_trial(trial, session)
-        assert 1 == len(system_attributes)
-        assert "sample-key" == system_attributes[0].key
-        assert "1" == system_attributes[0].value_json
-
-    @staticmethod
-    def test_all(session: Session) -> None:
-
-        study = StudyModel(study_id=1, study_name="test-study", direction=StudyDirection.MINIMIZE)
-        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
-
-        session.add(
-            TrialSystemAttributeModel(trial_id=trial.trial_id, key="sample-key", value_json="1")
-        )
-        session.commit()
-
-        system_attributes = TrialSystemAttributeModel.all(session)
-        assert 1 == len(system_attributes)
-        assert "sample-key" == system_attributes[0].key
-        assert "1" == system_attributes[0].value_json
 
     @staticmethod
     def test_cascade_delete_on_trial(session: Session) -> None:
