@@ -68,6 +68,10 @@ In addition, integration modules are available for the following libraries, prov
 
 * [Visualizing study](https://colab.research.google.com/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
 
+### An example to enqueue trials with given parameter values
+
+* [Enqueuing trials with given parameters](./enqueue_trial.py)
+
 ### Examples of MLflow
 
 * [Tracking optimization process with MLflow](./mlflow/keras_mlflow.py)
