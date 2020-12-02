@@ -225,9 +225,11 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
-            current_direction = [
-                d.direction for d in models.StudyDirectionModel.where_study(study, session)
-            ][0]
+            current_direction_model = models.StudyDirectionModel.find_by_study_and_objective(
+                study, 0, session
+            )
+            assert current_direction_model
+            current_direction = current_direction_model.direction
             if current_direction != StudyDirection.NOT_SET and current_direction != direction:
                 raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
@@ -288,9 +290,11 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
-            direction = tuple(
-                [d.direction for d in models.StudyDirectionModel.where_study(study, session)]
-            )[0]
+            direction_model = models.StudyDirectionModel.find_by_study_and_objective(
+                study, 0, session
+            )
+            assert direction_model
+            direction = direction_model.direction
 
         return direction
 
@@ -359,9 +363,11 @@ class RDBStorage(BaseStorage):
             study_summary = study_summary_stmt.all()
             study_summaries = []
             for study in study_summary:
-                directions = [
-                    d.direction for d in models.StudyDirectionModel.where_study(study, session)
-                ]
+                direction_model = models.StudyDirectionModel.find_by_study_and_objective(
+                    study, 0, session
+                )
+                assert direction_model
+                directions = [direction_model.direction]
                 best_trial: Optional[models.TrialModel] = None
                 try:
                     if directions[0] == StudyDirection.MAXIMIZE:

@@ -92,7 +92,7 @@ class StudyDirectionModel(BaseModel):
     study_direction_id = Column(Integer, primary_key=True)
     direction = Column(Enum(StudyDirection), nullable=False)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
-    objective = Column(Integer)
+    objective = Column(Integer, nullable=False)
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("directions", cascade="all, delete-orphan")
@@ -534,9 +534,9 @@ class TrialValueModel(BaseModel):
     __tablename__ = "trial_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
     trial_value_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
-    objective = Column(Integer)
-    value = Column(Float)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    objective = Column(Integer, nullable=False)
+    value = Column(Float, nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
@@ -589,9 +589,9 @@ class TrialIntermediateValueModel(BaseModel):
     __tablename__ = "trial_intermediate_values"
     __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
     trial_intermediate_value_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
-    step = Column(Integer)
-    intermediate_value = Column(Float)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    step = Column(Integer, nullable=False)
+    intermediate_value = Column(Float, nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")

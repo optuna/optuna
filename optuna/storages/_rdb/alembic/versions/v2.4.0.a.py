@@ -56,7 +56,7 @@ def upgrade():
             sa.Column("trial_intermediate_values_id", sa.Integer(), nullable=False),
             sa.Column("trial_id", sa.Integer(), nullable=False),
             sa.Column("step", sa.Integer(), nullable=False),
-            sa.Column("value", sa.Float(), nullable=False),
+            sa.Column("intermediate_value", sa.Float(), nullable=False),
             sa.ForeignKeyConstraint(
                 ["trial_id"],
                 ["trials.trial_id"],
@@ -122,5 +122,6 @@ def upgrade():
         batch_op.drop_column("value")
 
 
+# TODO(imamura): Implement downgrade
 def downgrade():
     pass
