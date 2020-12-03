@@ -19,20 +19,8 @@ jobs:
       with:
         python-version: 3.8
 
-    - name: Get date for cache
-      id: date
-      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-
-    - name: Pip cache
-      uses: actions/cache@v2
-      env:
-        cache-name: pip-documentation
-      with:
-        path: ~/.cache/pip
-        key: py3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
-        restore-keys: |
-          py3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
-
+    # note (crcrpar): We've not updated tutorial frequently enough so far thus
+    # it'd be okay to discard cache by any small changes including typo fix under tutorial directory.
     - name: Sphinx Gallery Cache
       uses: actions/cache@v2
       env:
@@ -41,7 +29,7 @@ jobs:
         path: |
           tutorial/MNIST
           docs/source/tutorial
-        key: py3.8-${{ steps.date.outputs.date }}-${{ env.cache-name }}-${{ hashFiles('tutorial/**/README.rst') }}
+        key: py3.8-${{ env.cache-name }}-${{ hashFiles('tutorial/**/README.rst', 'tutorial/**/*.py') }}
 
     - name: Install Dependencies
       run: |
@@ -71,16 +59,6 @@ jobs:
       with:
         python-version: 3.8
 
-    - name: Pip cache
-      uses: actions/cache@v2
-      env:
-        cache-name: pip-doctest
-      with:
-        path: ~/.cache/pip
-        key: py3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
-        restore-keys: |
-          py3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
-
     - name: Sphinx Gallery Cache
       uses: actions/cache@v2
       env:
@@ -89,7 +67,7 @@ jobs:
         path: |
           tutorial/MNIST
           docs/source/tutorial
-        key: py3.8-${{ steps.date.outputs.date }}-${{ env.cache-name }}-${{ hashFiles('tutorial/**/README.rst') }}
+        key: py3.8-${{ env.cache-name }}-${{ hashFiles('tutorial/**/README.rst', 'tutorial/**/*.py') }}
 
     - name: Install Dependencies
       run: |
