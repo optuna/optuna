@@ -467,10 +467,12 @@ class TestTrialIntermediateValueModel(object):
         assert TrialIntermediateValueModel.find_by_trial_and_step(trial, 1, session) is None
 
     @staticmethod
-    def test_where_trial(session: Session) -> None:
+    def test_where_trial_id(session: Session) -> None:
 
         _, trial = TestTrialIntermediateValueModel._create_model(session)
-        trial_intermediate_values = TrialIntermediateValueModel.where_trial(trial, session)
+        trial_intermediate_values = TrialIntermediateValueModel.where_trial_id(
+            trial.trial_id, session
+        )
         assert 1 == len(trial_intermediate_values)
         assert 0 == trial_intermediate_values[0].step
         assert 10 == trial_intermediate_values[0].intermediate_value
@@ -484,12 +486,12 @@ class TestTrialIntermediateValueModel(object):
         )
         session.commit()
 
-        assert 2 == len(TrialIntermediateValueModel.where_trial(trial, session))
+        assert 2 == len(TrialIntermediateValueModel.where_trial_id(trial.trial_id, session))
 
         session.delete(trial)
         session.commit()
 
-        assert 0 == len(TrialIntermediateValueModel.where_trial(trial, session))
+        assert 0 == len(TrialIntermediateValueModel.where_trial_id(trial.trial_id, session))
 
 
 class TestVersionInfoModel(object):

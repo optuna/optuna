@@ -508,14 +508,7 @@ class TrialParamModel(BaseModel):
     @classmethod
     def where_trial(cls, trial: TrialModel, session: orm.Session) -> List["TrialParamModel"]:
 
-        trial_params = cls.where_trial_id(trial.trial_id, session)
-
-        return trial_params
-
-    @classmethod
-    def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialParamModel"]:
-
-        trial_params = session.query(cls).filter(cls.trial_id == trial_id).all()
+        trial_params = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
 
         return trial_params
 
@@ -552,6 +545,20 @@ class TrialValueModel(BaseModel):
         return trial_value
 
     @classmethod
+    def where_study(cls, study: StudyModel, session: orm.Session) -> List["TrialValueModel"]:
+        trial_values = (
+            session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
+        )
+
+        return trial_values
+
+    @classmethod
+    def where_trial(cls, trial: TrialModel, session: orm.Session) -> List["TrialValueModel"]:
+        trial_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
+
+        return trial_values
+
+    @classmethod
     def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialValueModel"]:
 
         trial_values = (
@@ -559,6 +566,10 @@ class TrialValueModel(BaseModel):
         )
 
         return trial_values
+
+    @classmethod
+    def all(cls, session: orm.Session) -> List["TrialValueModel"]:
+        return session.query(cls).all()
 
 
 class TrialIntermediateValueModel(BaseModel):
@@ -586,15 +597,6 @@ class TrialIntermediateValueModel(BaseModel):
         )
 
         return trial_intermediate_value
-
-    @classmethod
-    def where_trial(
-        cls, trial: TrialModel, session: orm.Session
-    ) -> List["TrialIntermediateValueModel"]:
-
-        trial_intermediate_values = cls.where_trial_id(trial.trial_id, session)
-
-        return trial_intermediate_values
 
     @classmethod
     def where_trial_id(
