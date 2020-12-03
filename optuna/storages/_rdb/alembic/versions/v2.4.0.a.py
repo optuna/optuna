@@ -7,16 +7,19 @@ Create Date: 2020-11-17 02:16:16.536171
 """
 from alembic import op
 import sqlalchemy as sa
+from typing import Any
 
+from sqlalchemy import Column
+from sqlalchemy import Enum
+from sqlalchemy import Float
+from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
 
-from optuna.storages._rdb.models import StudyModel
-from optuna.storages._rdb.models import StudyDirectionModel
-from optuna.storages._rdb.models import TrialIntermediateValueModel
-from optuna.storages._rdb.models import TrialModel
-from optuna.storages._rdb.models import TrialValueModel
 from optuna.study import StudyDirection
 
 
@@ -25,6 +28,53 @@ revision = "v2.4.0.a"
 down_revision = "v1.3.0.a"
 branch_labels = None
 depends_on = None
+
+# Model definition
+MAX_INDEXED_STRING_LENGTH = 512
+MAX_STRING_LENGTH = 2048
+BaseModel = declarative_base()
+
+
+class StudyModel(BaseModel):
+    __tablename__ = "studies"
+    study_id = Column(Integer, primary_key=True)
+    direction = sa.Column(sa.Enum(StudyDirection))
+
+
+class StudyDirectionModel(BaseModel):
+    __tablename__ = "study_directions"
+    __table_args__: Any = (UniqueConstraint("study_id", "objective"),)
+    study_direction_id = Column(Integer, primary_key=True)
+    direction = Column(Enum(StudyDirection), nullable=False)
+    study_id = Column(Integer, ForeignKey("studies.study_id"), nullable=False)
+    objective = Column(Integer, nullable=False)
+
+
+class TrialModel(BaseModel):
+    __tablename__ = "trials"
+    trial_id = Column(Integer, primary_key=True)
+    number = Column(Integer)
+    study_id = Column(Integer, ForeignKey("studies.study_id"))
+    value = sa.Column(sa.Float)
+
+
+class TrialValueModel(BaseModel):
+    __tablename__ = "trial_values"
+    __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
+    trial_value_id = Column(Integer, primary_key=True)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    objective = Column(Integer, nullable=False)
+    value = Column(Float, nullable=False)
+    step = sa.Column(sa.Integer)
+
+
+class TrialIntermediateValueModel(BaseModel):
+    __tablename__ = "trial_intermediate_values"
+    __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
+    trial_intermediate_value_id = Column(Integer, primary_key=True)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    step = Column(Integer, nullable=False)
+    intermediate_value = Column(Float, nullable=False)
 
 
 def upgrade():
@@ -65,30 +115,21 @@ def upgrade():
             sa.UniqueConstraint("trial_id", "step"),
         )
 
-    with op.batch_alter_table("trial_values", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("objective", sa.Integer(), nullable=False))
-        batch_op.create_unique_constraint("value_constraint", ["trial_id", "objective"])
-
     session = orm.Session(bind=bind)
     try:
-
-        class BackwardCompatibleStudyModel(StudyModel):
-            direction = sa.Column(sa.Enum(StudyDirection))
-
-        class BackwardCompatibleTrialValueModel(TrialValueModel):
-            step = sa.Column(sa.Integer)
-
-        class BackwardCompatibleTrialModel(TrialModel):
-            value = sa.Column(sa.Float)
-
-        studies_records = session.query(BackwardCompatibleStudyModel).all()
+        studies_records = session.query(StudyModel).all()
         objects = [
             StudyDirectionModel(study_id=r.study_id, direction=r.direction, objective=0)
             for r in studies_records
         ]
         session.bulk_save_objects(objects)
 
-        intermediate_values_records = session.query(BackwardCompatibleTrialValueModel).all()
+        intermediate_values_records = (
+            session.query(
+                TrialValueModel.trial_id, TrialValueModel.value, TrialValueModel.step
+            )
+            .all()
+        )
         objects = [
             TrialIntermediateValueModel(
                 trial_id=r.trial_id, intermediate_value=r.value, step=r.step
@@ -98,7 +139,13 @@ def upgrade():
         session.bulk_save_objects(objects)
 
         session.query(TrialValueModel).delete()
-        trials_records = session.query(BackwardCompatibleTrialModel).all()
+        session.commit()
+
+        with op.batch_alter_table("trial_values", schema=None) as batch_op:
+            batch_op.add_column(sa.Column("objective", sa.Integer(), nullable=False))
+            batch_op.create_unique_constraint("value_constraint", ["trial_id", "objective"])
+
+        trials_records = session.query(TrialModel).all()
         objects = [
             TrialValueModel(trial_id=r.trial_id, value=r.value, objective=0)
             for r in trials_records
