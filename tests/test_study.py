@@ -353,9 +353,7 @@ def test_run_trial(storage_mode: str) -> None:
         trial = _optimize._run_trial(study, func_value_error, catch=(ValueError,))
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = "Trial 1 failed because of the following error: ValueError()"
         assert frozen_trial.state == TrialState.FAIL
-        assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
@@ -369,13 +367,7 @@ def test_run_trial(storage_mode: str) -> None:
         trial = _optimize._run_trial(study, func_none, catch=(Exception,))
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = (
-            "Trial 3 failed, because the returned "
-            "value from the objective function cannot be cast to float. "
-            "Returned value is: None"
-        )
         assert frozen_trial.state == TrialState.FAIL
-        assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
         # Test trial with invalid objective value: nan
         def func_nan(_: optuna.trial.Trial) -> float:
@@ -385,9 +377,7 @@ def test_run_trial(storage_mode: str) -> None:
         trial = _optimize._run_trial(study, func_nan, catch=(Exception,))
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = "Trial 4 failed, because the objective function returned nan."
         assert frozen_trial.state == TrialState.FAIL
-        assert frozen_trial.system_attrs["fail_reason"] == expected_message
 
 
 # TODO(Yanase): Remove this test function after removing `optuna.structs.TrialPruned`.
@@ -562,8 +552,8 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
         # Change index to access rows via trial number.
         df.set_index("number", inplace=True, drop=False)
         assert len(df) == 3
-        # non-nested: 6, params: 2, user_attrs: 1 system_attrs: 1
-        assert len(df.columns) == 10
+        # non-nested: 6, params: 2, user_attrs: 1 system_attrs: 0
+        assert len(df.columns) == 9
         for i in range(3):
             assert df.number[i] == i
             assert df.state[i] == "FAIL"
@@ -574,7 +564,6 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
             assert df.params_x[i] == 1
             assert df.params_y[i] == 2.5
             assert df.user_attrs_train_loss[i] == 3
-            assert "system_attrs_fail_reason" in df.columns
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
