@@ -30,8 +30,6 @@ branch_labels = None
 depends_on = None
 
 # Model definition
-MAX_INDEXED_STRING_LENGTH = 512
-MAX_STRING_LENGTH = 2048
 BaseModel = declarative_base()
 
 
