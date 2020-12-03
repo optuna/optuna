@@ -29,7 +29,7 @@ jobs:
         path: |
           tutorial/MNIST
           docs/source/tutorial
-        key: py3.8-${{ env.cache-name }}-${{ hashFiles('tutorial/**/README.rst', 'tutorial/**/*.py') }}
+        key: py3.8-${{ env.cache-name }}-${{ hashFiles('tutorial/**/*') }}
 
     - name: Install Dependencies
       run: |
@@ -67,7 +67,7 @@ jobs:
         path: |
           tutorial/MNIST
           docs/source/tutorial
-        key: py3.8-${{ env.cache-name }}-${{ hashFiles('tutorial/**/README.rst', 'tutorial/**/*.py') }}
+        key: py3.8-${{ env.cache-name }}-${{ hashFiles('tutorial/**/*') }}
 
     - name: Install Dependencies
       run: |
