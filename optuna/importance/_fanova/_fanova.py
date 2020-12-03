@@ -56,14 +56,14 @@ class _Fanova(object):
         )
         self._trees: Optional[List[_FanovaTree]] = None
         self._variances: Optional[Dict[Tuple[int, ...], numpy.ndarray]] = None
-        self._cols_to_encoded_cols: Optional[List[numpy.ndarray]] = None
+        self._column_to_encoded_columns: Optional[List[numpy.ndarray]] = None
 
     def fit(
         self,
         X: numpy.ndarray,
         y: numpy.ndarray,
         search_spaces: numpy.ndarray,
-        cols_to_encoded_cols: List[numpy.ndarray],
+        column_to_encoded_columns: List[numpy.ndarray],
     ) -> None:
         assert X.shape[0] == y.shape[0]
         assert X.shape[1] == search_spaces.shape[0]
@@ -72,7 +72,7 @@ class _Fanova(object):
         self._forest.fit(X, y)
 
         self._trees = [_FanovaTree(e.tree_, search_spaces) for e in self._forest.estimators_]
-        self._cols_to_encoded_cols = cols_to_encoded_cols
+        self._column_to_encoded_columns = column_to_encoded_columns
         self._variances = {}
 
         if all(tree.variance == 0 for tree in self._trees):
@@ -102,7 +102,7 @@ class _Fanova(object):
     def _compute_variances(self, features: Tuple[int, ...]) -> None:
         assert self._trees is not None
         assert self._variances is not None
-        assert self._cols_to_encoded_cols is not None
+        assert self._column_to_encoded_columns is not None
 
         if features in self._variances:
             return
@@ -112,7 +112,7 @@ class _Fanova(object):
                 if sub_features not in self._variances:
                     self._compute_variances(sub_features)
 
-        raw_features = numpy.concatenate([self._cols_to_encoded_cols[f] for f in features])
+        raw_features = numpy.concatenate([self._column_to_encoded_columns[f] for f in features])
 
         variances = numpy.empty(len(self._trees), dtype=numpy.float64)
 

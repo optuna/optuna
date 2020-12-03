@@ -6,7 +6,7 @@ from typing import Optional
 import numpy
 
 from optuna._imports import try_import
-from optuna._transform import _Transform
+from optuna._transform import _SearchSpaceTransform
 from optuna.importance._base import _get_distributions
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
@@ -64,11 +64,17 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
                 continue
             trials.append(trial)
 
-        trans = _Transform(trials, distributions, transform_log=False)
-        trans_params = trans.params
-        trans_values = trans.values
-        encoded_cols_to_cols = trans._encoder.encoded_cols_to_cols
-        assert encoded_cols_to_cols is not None
+        trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
+
+        n_trials = len(trials)
+        trans_params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
+        trans_values = numpy.empty(n_trials, dtype=numpy.float64)
+
+        for trial_idx, trial in enumerate(trials):
+            trans_params[trial_idx] = trans.transform(trial.params)
+            trans_values[trial_idx] = trial.value
+
+        encoded_column_to_column = trans.encoded_column_to_column
 
         if trans_params.size == 0:  # `params` were given but as an empty list.
             return OrderedDict()
@@ -77,7 +83,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
         forest.fit(trans_params, trans_values)
         feature_importances = forest.feature_importances_
         feature_importances_reduced = numpy.zeros(len(distributions))
-        numpy.add.at(feature_importances_reduced, encoded_cols_to_cols, feature_importances)
+        numpy.add.at(feature_importances_reduced, encoded_column_to_column, feature_importances)
 
         param_importances = OrderedDict()
         param_names = list(distributions.keys())

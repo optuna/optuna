@@ -3,7 +3,9 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from optuna._transform import _Transform
+import numpy
+
+from optuna._transform import _SearchSpaceTransform
 from optuna.importance._base import _get_distributions
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
@@ -79,12 +81,18 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
                 continue
             trials.append(trial)
 
-        trans = _Transform(trials, distributions, transform_log=False)
-        trans_params = trans.params
-        trans_values = trans.values
+        trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
+
+        n_trials = len(trials)
+        trans_params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
+        trans_values = numpy.empty(n_trials, dtype=numpy.float64)
+
+        for trial_idx, trial in enumerate(trials):
+            trans_params[trial_idx] = trans.transform(trial.params)
+            trans_values[trial_idx] = trial.value
+
         trans_bounds = trans.bounds
-        cols_to_encoded_cols = trans._encoder.cols_to_encoded_cols
-        assert cols_to_encoded_cols is not None
+        column_to_encoded_columns = trans.column_to_encoded_columns
 
         if trans_params.size == 0:  # `params` were given but as an empty list.
             return OrderedDict()
@@ -100,7 +108,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             X=trans_params,
             y=trans_values,
             search_spaces=trans_bounds,
-            cols_to_encoded_cols=cols_to_encoded_cols,
+            column_to_encoded_columns=column_to_encoded_columns,
         )
 
         importances = {}
