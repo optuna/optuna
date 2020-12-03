@@ -546,6 +546,7 @@ class TrialValueModel(BaseModel):
 
     @classmethod
     def where_study(cls, study: StudyModel, session: orm.Session) -> List["TrialValueModel"]:
+
         trial_values = (
             session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
         )
@@ -554,6 +555,7 @@ class TrialValueModel(BaseModel):
 
     @classmethod
     def where_trial(cls, trial: TrialModel, session: orm.Session) -> List["TrialValueModel"]:
+
         trial_values = session.query(cls).filter(cls.trial_id == trial.trial_id).all()
 
         return trial_values
