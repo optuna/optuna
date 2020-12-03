@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Tuple
 
 import pytest
 from sqlalchemy import create_engine
@@ -29,13 +28,19 @@ def session() -> Session:
 
 
 class TestStudyDirectionModel(object):
-    @classmethod
-    def _create_model(cls, session: Session) -> StudyModel:
+    @staticmethod
+    def _create_model(session: Session) -> StudyModel:
 
         study = StudyModel(study_id=1, study_name="test-study")
+        dummy_study = StudyModel(study_id=2, study_name="dummy-study")
         session.add(
             StudyDirectionModel(
                 study_id=study.study_id, direction=StudyDirection.MINIMIZE, objective=0
+            )
+        )
+        session.add(
+            StudyDirectionModel(
+                study_id=dummy_study.study_id, direction=StudyDirection.MINIMIZE, objective=0
             )
         )
         session.commit()
@@ -395,8 +400,8 @@ class TestTrialSystemAttributeModel(object):
 
 
 class TestTrialValueModel(object):
-    @classmethod
-    def _create_model(cls, session: Session) -> Tuple[StudyModel, TrialModel]:
+    @staticmethod
+    def _create_model(session: Session) -> TrialModel:
 
         direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
@@ -405,12 +410,12 @@ class TestTrialValueModel(object):
         session.add(trial)
         session.add(TrialValueModel(trial_id=trial.trial_id, objective=0, value=10))
         session.commit()
-        return study, trial
+        return trial
 
     @staticmethod
     def test_find_by_trial_and_objective(session: Session) -> None:
 
-        _, trial = TestTrialValueModel._create_model(session)
+        trial = TestTrialValueModel._create_model(session)
         trial_value = TrialValueModel.find_by_trial_and_objective(trial, 0, session)
         assert trial_value is not None
         assert 10 == trial_value.value
@@ -419,7 +424,7 @@ class TestTrialValueModel(object):
     @staticmethod
     def test_where_trial_id(session: Session) -> None:
 
-        _, trial = TestTrialValueModel._create_model(session)
+        trial = TestTrialValueModel._create_model(session)
         trial_values = TrialValueModel.where_trial_id(trial.trial_id, session)
         assert 1 == len(trial_values)
         assert 0 == trial_values[0].objective
@@ -428,7 +433,7 @@ class TestTrialValueModel(object):
     @staticmethod
     def test_cascade_delete_on_trial(session: Session) -> None:
 
-        _, trial = TestTrialValueModel._create_model(session)
+        trial = TestTrialValueModel._create_model(session)
         trial.values.append(TrialValueModel(trial_id=1, objective=1, value=20))
         session.commit()
 
@@ -441,8 +446,8 @@ class TestTrialValueModel(object):
 
 
 class TestTrialIntermediateValueModel(object):
-    @classmethod
-    def _create_model(cls, session: Session) -> Tuple[StudyModel, TrialModel]:
+    @staticmethod
+    def _create_model(session: Session) -> TrialModel:
 
         direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
         study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
@@ -453,12 +458,12 @@ class TestTrialIntermediateValueModel(object):
             TrialIntermediateValueModel(trial_id=trial.trial_id, step=0, intermediate_value=10)
         )
         session.commit()
-        return study, trial
+        return trial
 
     @staticmethod
     def test_find_by_trial_and_step(session: Session) -> None:
 
-        _, trial = TestTrialIntermediateValueModel._create_model(session)
+        trial = TestTrialIntermediateValueModel._create_model(session)
         trial_intermediate_value = TrialIntermediateValueModel.find_by_trial_and_step(
             trial, 0, session
         )
@@ -469,7 +474,7 @@ class TestTrialIntermediateValueModel(object):
     @staticmethod
     def test_where_trial_id(session: Session) -> None:
 
-        _, trial = TestTrialIntermediateValueModel._create_model(session)
+        trial = TestTrialIntermediateValueModel._create_model(session)
         trial_intermediate_values = TrialIntermediateValueModel.where_trial_id(
             trial.trial_id, session
         )
@@ -480,7 +485,7 @@ class TestTrialIntermediateValueModel(object):
     @staticmethod
     def test_cascade_delete_on_trial(session: Session) -> None:
 
-        _, trial = TestTrialIntermediateValueModel._create_model(session)
+        trial = TestTrialIntermediateValueModel._create_model(session)
         trial.intermediate_values.append(
             TrialIntermediateValueModel(trial_id=1, step=1, intermediate_value=20)
         )
