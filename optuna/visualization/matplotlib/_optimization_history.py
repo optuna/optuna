@@ -1,6 +1,5 @@
 from typing import Callable
 from typing import Optional
-from typing import Union
 
 from optuna._experimental import experimental
 from optuna.logging import get_logger
@@ -21,7 +20,7 @@ _logger = get_logger(__name__)
 @experimental("2.2.0")
 def plot_optimization_history(
     study: Study,
-    target: Optional[Callable[[FrozenTrial], Union[int, float]]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
     """Plot optimization history of all trials in a study with Matplotlib.
@@ -68,7 +67,7 @@ def plot_optimization_history(
 
 def _get_optimization_history_plot(
     study: Study,
-    target: Optional[Callable[[FrozenTrial], Union[int, float]]],
+    target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
 ) -> "Axes":
 
