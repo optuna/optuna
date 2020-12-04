@@ -101,7 +101,7 @@ def upgrade():
     if "trial_intermediate_values" not in tables:
         op.create_table(
             "trial_intermediate_values",
-            sa.Column("trial_intermediate_values_id", sa.Integer(), nullable=False),
+            sa.Column("trial_intermediate_value_id", sa.Integer(), nullable=False),
             sa.Column("trial_id", sa.Integer(), nullable=False),
             sa.Column("step", sa.Integer(), nullable=False),
             sa.Column("intermediate_value", sa.Float(), nullable=False),
@@ -109,7 +109,7 @@ def upgrade():
                 ["trial_id"],
                 ["trials.trial_id"],
             ),
-            sa.PrimaryKeyConstraint("trial_intermediate_values_id"),
+            sa.PrimaryKeyConstraint("trial_intermediate_value_id"),
             sa.UniqueConstraint("trial_id", "step"),
         )
 
