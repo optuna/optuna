@@ -19,10 +19,22 @@ jobs:
       with:
         python-version: 3.8
 
+    # note (crcrpar): We've not updated tutorial frequently enough so far thus
+    # it'd be okay to discard cache by any small changes including typo fix under tutorial directory.
+    - name: Sphinx Gallery Cache
+      uses: actions/cache@v2
+      env:
+        cache-name: sphx-glry-documentation
+      with:
+        path: |
+          tutorial/MNIST
+          docs/source/tutorial
+        key: py3.8-${{ env.cache-name }}-${{ hashFiles('tutorial/**/*') }}
+
     - name: Install Dependencies
       run: |
         python -m pip install -U pip
-        pip install --progress-bar off -U .[document]
+        pip install --progress-bar off -U .[document] -f https://download.pytorch.org/whl/torch_stable.html
 
     - name: Build Document
       run: |
@@ -47,12 +59,21 @@ jobs:
       with:
         python-version: 3.8
 
+    - name: Sphinx Gallery Cache
+      uses: actions/cache@v2
+      env:
+        cache-name: sphx-glry-doctest
+      with:
+        path: |
+          tutorial/MNIST
+          docs/source/tutorial
+        key: py3.8-${{ env.cache-name }}-${{ hashFiles('tutorial/**/*') }}
+
     - name: Install Dependencies
       run: |
         python -m pip install -U pip
-        pip install --progress-bar off -U .[document,doctest]
+        pip install --progress-bar off -U .[document,doctest] -f https://download.pytorch.org/whl/torch_stable.html
 
-    # TODO (crcrpar): Prevent sphinx-gallery build
     - name: Run Doctest
       run: |
         cd docs

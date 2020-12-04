@@ -78,7 +78,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pillow",
             "matplotlib",
             "scikit-learn",
-        ],
+            "plotly>=4.0.0",  # optuna/visualization.
+            "pandas",
+        ]
+        + (
+            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
+            if sys.platform == "darwin"
+            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
+        ),
         "example": [
             "catboost",
             "chainer",
