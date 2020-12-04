@@ -80,6 +80,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn",
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
+            # Read the Docs does not allow pip install with the -f, --find-links option. Therefore
+            # `torch` and `torchvision` in `document` are not pinned to the CPU only version since
+            # that would require this option. This increases the build time of the documentation.
+            # See https://github.com/optuna/optuna/pull/2065 for details.
             "torch",
             "torchvision",
         ],
