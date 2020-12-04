@@ -9,6 +9,7 @@ workflows:
 
 jobs:
 
+  # TODO (crcrpar): Set cache for sphinx gallery to avoid document job being bottleneck.
   document:
     docker:
       - image: readthedocs/build:latest
@@ -31,7 +32,7 @@ jobs:
             python -m venv venv || virtualenv venv --python=python3.8
             . venv/bin/activate
             pip install -U pip
-            pip install --progress-bar off .[document]
+            pip install --progress-bar off .[document] -f https://download.pytorch.org/whl/torch_stable.html
 
       - run:
           name: build

@@ -24,6 +24,7 @@ First, callable classes can be used for that purpose as follows:
 
     import optuna
 
+
     class Objective(object):
         def __init__(self, min_x, max_x):
             # Hold this implementation specific arguments as the fields of the class.
@@ -32,8 +33,9 @@ First, callable classes can be used for that purpose as follows:
 
         def __call__(self, trial):
             # Calculate an objective value by using the extra arguments.
-            x = trial.suggest_uniform('x', self.min_x, self.max_x)
+            x = trial.suggest_uniform("x", self.min_x, self.max_x)
             return (x - 2) ** 2
+
 
     # Execute an optimization by using an `Objective` instance.
     study = optuna.create_study()
@@ -49,8 +51,9 @@ Below is an example that uses ``lambda``:
 
     # Objective function that takes three arguments.
     def objective(trial, min_x, max_x):
-        x = trial.suggest_uniform('x', min_x, max_x)
+        x = trial.suggest_uniform("x", min_x, max_x)
         return (x - 2) ** 2
+
 
     # Extra arguments.
     min_x = -100
@@ -81,10 +84,10 @@ If you want to save and resume studies,  it's handy to use SQLite as the local s
 
 .. code-block:: python
 
-    study = optuna.create_study(study_name='foo_study', storage='sqlite:///example.db')
+    study = optuna.create_study(study_name="foo_study", storage="sqlite:///example.db")
     study.optimize(objective)  # The state of `study` will be persisted to the local SQLite file.
 
-Please see :ref:`sphx_glr_tutorial_003_rdb.py` for more details.
+Please see :ref:`rdb` for more details.
 
 
 How can I save and resume studies?
@@ -98,20 +101,20 @@ example, using ``joblib``:
 .. code-block:: python
 
     study = optuna.create_study()
-    joblib.dump(study, 'study.pkl')
+    joblib.dump(study, "study.pkl")
 
 And to resume the study:
 
 .. code-block:: python
 
-    study = joblib.load('study.pkl')
-    print('Best trial until now:')
-    print(' Value: ', study.best_trial.value)
-    print(' Params: ')
+    study = joblib.load("study.pkl")
+    print("Best trial until now:")
+    print(" Value: ", study.best_trial.value)
+    print(" Params: ")
     for key, value in study.best_trial.params.items():
-        print(f'    {key}: {value}')
+        print(f"    {key}: {value}")
 
-If you are using RDBs, see :ref:`sphx_glr_tutorial_003_rdb.py` for more details.
+If you are using RDBs, see :ref:`rdb` for more details.
 
 How to suppress log messages of Optuna?
 ---------------------------------------
@@ -146,12 +149,12 @@ For example, you can save SVM models trained in the objective function as follow
 .. code-block:: python
 
     def objective(trial):
-        svc_c = trial.suggest_loguniform('svc_c', 1e-10, 1e10)
+        svc_c = trial.suggest_loguniform("svc_c", 1e-10, 1e10)
         clf = sklearn.svm.SVC(C=svc_c)
         clf.fit(X_train, y_train)
 
         # Save a trained model to a file.
-        with open('{}.pickle'.format(trial.number), 'wb') as fout:
+        with open("{}.pickle".format(trial.number), "wb") as fout:
             pickle.dump(clf, fout)
         return 1.0 - accuracy_score(y_valid, clf.predict(X_valid))
 
@@ -160,7 +163,7 @@ For example, you can save SVM models trained in the objective function as follow
     study.optimize(objective, n_trials=100)
 
     # Load the best model.
-    with open('{}.pickle'.format(study.best_trial.number), 'rb') as fin:
+    with open("{}.pickle".format(study.best_trial.number), "rb") as fin:
         best_clf = pickle.load(fin)
     print(accuracy_score(y_valid, best_clf.predict(X_valid)))
 
@@ -280,12 +283,13 @@ For instance, you can input arbitrary values of :math:`x` and :math:`y` to the o
 .. code-block:: python
 
     def objective(trial):
-        x = trial.suggest_uniform('x', -1.0, 1.0)
-        y = trial.suggest_int('y', -5, 5)
+        x = trial.suggest_uniform("x", -1.0, 1.0)
+        y = trial.suggest_int("y", -5, 5)
         return x + y
 
-    objective(FixedTrial({'x': 1.0, 'y': -1}))  # 0.0
-    objective(FixedTrial({'x': -1.0, 'y': -4}))  # -5.0
+
+    objective(FixedTrial({"x": 1.0, "y": -1}))  # 0.0
+    objective(FixedTrial({"x": -1.0, "y": -4}))  # -5.0
 
 
 Using :class:`~optuna.trial.FixedTrial`, you can write unit tests as follows:
@@ -294,9 +298,9 @@ Using :class:`~optuna.trial.FixedTrial`, you can write unit tests as follows:
 
     # A test function of pytest
     def test_objective():
-        assert 1.0 == objective(FixedTrial({'x': 1.0, 'y': 0}))
-        assert -1.0 == objective(FixedTrial({'x': 0.0, 'y': -1}))
-        assert 0.0 == objective(FixedTrial({'x': -1.0, 'y': 1}))
+        assert 1.0 == objective(FixedTrial({"x": 1.0, "y": 0}))
+        assert -1.0 == objective(FixedTrial({"x": 0.0, "y": -1}))
+        assert 0.0 == objective(FixedTrial({"x": -1.0, "y": 1}))
 
 
 .. _out-of-memory-gc-collect:
@@ -310,9 +314,10 @@ Specify ``gc_after_trial`` to :obj:`True` when calling :func:`~optuna.study.Stud
 .. code-block:: python
 
     def objective(trial):
-        x = trial.suggest_uniform('x', -1.0, 1.0)
-        y = trial.suggest_int('y', -5, 5)
+        x = trial.suggest_uniform("x", -1.0, 1.0)
+        y = trial.suggest_int("y", -5, 5)
         return x + y
+
 
     study = optuna.create_study()
     study.optimize(objective, n_trials=10, gc_after_trial=True)
