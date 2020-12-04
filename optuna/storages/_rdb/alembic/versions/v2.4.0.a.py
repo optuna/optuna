@@ -122,12 +122,9 @@ def upgrade():
         ]
         session.bulk_save_objects(objects)
 
-        intermediate_values_records = (
-            session.query(
-                TrialValueModel.trial_id, TrialValueModel.value, TrialValueModel.step
-            )
-            .all()
-        )
+        intermediate_values_records = session.query(
+            TrialValueModel.trial_id, TrialValueModel.value, TrialValueModel.step
+        ).all()
         objects = [
             TrialIntermediateValueModel(
                 trial_id=r.trial_id, intermediate_value=r.value, step=r.step
