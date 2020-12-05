@@ -400,12 +400,13 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
             return {}
 
         trials = [t for t in study.get_trials(deepcopy=False) if t.state == TrialState.COMPLETE]
-        n_trials = len(trials)
-        if n_trials < self._n_startup_trials:
-            return {}
 
         if self._constraints_func is not None:
             self._update_trial_constraints(study, trials)
+
+        n_trials = len(trials)
+        if n_trials < self._n_startup_trials:
+            return {}
 
         trans = _SearchSpaceTransform(search_space)
 
