@@ -275,12 +275,12 @@ class MultiObjectiveStudy(object):
     def optimize(
         self,
         objective: ObjectiveFuncType,
-        timeout: Optional[int] = None,
         n_trials: Optional[int] = None,
+        timeout: Optional[int] = None,
         n_jobs: int = 1,
         catch: Tuple[Type[Exception], ...] = (),
         callbacks: Optional[List[CallbackFuncType]] = None,
-        gc_after_trial: bool = True,
+        gc_after_trial: bool = False,
         show_progress_bar: bool = False,
     ) -> None:
         """Optimize an objective function.
