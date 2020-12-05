@@ -134,8 +134,8 @@ def qei_candidates_func(
 
     constraints = []
     n_contraints = train_con.size(1)
-    for i in range(1, n_contraints + 1):
-        constraints.append(lambda Z, i=i: Z[..., -i])
+    for i in range(n_contraints):
+        constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
     constrained_objective = ConstrainedMCObjective(
         objective=lambda Z: Z[..., 0],
         constraints=constraints,
@@ -144,7 +144,7 @@ def qei_candidates_func(
     acqf = qExpectedImprovement(
         model=model,
         best_f=(train_obj * (train_con <= 0)).max(),
-        sampler=SobolQMCNormalSampler(num_samples=128),
+        sampler=SobolQMCNormalSampler(num_samples=256),
         objective=constrained_objective,
     )
 
@@ -156,7 +156,7 @@ def qei_candidates_func(
         bounds=standard_bounds,
         q=1,
         num_restarts=10,
-        raw_samples=1024,
+        raw_samples=512,
         options={"batch_limit": 5, "maxiter": 200},
         sequential=True,
     )
@@ -193,8 +193,9 @@ def qehvi_candidates_func(
 
         constraints = []
         n_contraints = train_con.size(1)
-        for i in range(1, n_contraints + 1):
-            constraints.append(lambda Z, i=i: Z[..., -i])
+
+        for i in range(n_contraints):
+            constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
         additional_qehvi_kwargs = {
             "objective": IdentityMCMultiOutputObjective(outcomes=list(range(n_outcomes))),
             "constraints": constraints,
@@ -219,7 +220,7 @@ def qehvi_candidates_func(
         model=model,
         ref_point=ref_point_list,
         partitioning=partitioning,
-        sampler=SobolQMCNormalSampler(num_samples=128),
+        sampler=SobolQMCNormalSampler(num_samples=256),
         **additional_qehvi_kwargs,
     )
 
@@ -340,7 +341,7 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
                 Sequence[float],
             ]
         ] = None,
-        n_startup_trials: int = 1,
+        n_startup_trials: int = 10,
         independent_sampler: Optional[BaseMultiObjectiveSampler] = None,
     ):
         _imports.check()
