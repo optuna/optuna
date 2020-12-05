@@ -2,6 +2,7 @@ import collections
 import itertools
 import random
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Mapping
@@ -16,6 +17,7 @@ from optuna.trial import FrozenTrial
 
 
 GridValueType = Union[str, float, int, bool, None]
+SortableParamValueSequenceType = Union[List[str], List[float], List[int], List[bool]]
 
 
 _logger = get_logger(__name__)
@@ -98,6 +100,8 @@ class GridSampler(BaseSampler):
 
         self._search_space = collections.OrderedDict()
         for param_name, param_values in sorted(search_space.items(), key=lambda x: x[0]):
+            param_values = cast(SortableParamValueSequenceType, param_values)
+
             self._search_space[param_name] = sorted(param_values)
 
         self._all_grids = list(itertools.product(*self._search_space.values()))
@@ -218,7 +222,8 @@ class GridSampler(BaseSampler):
             if len(search_space[param_name]) != len(self._search_space[param_name]):
                 return False
 
-            for i, param_value in enumerate(sorted(search_space[param_name])):
+            param_values = cast(SortableParamValueSequenceType, search_space[param_name])
+            for i, param_value in enumerate(sorted(param_values)):
                 if param_value != self._search_space[param_name][i]:
                     return False
 
