@@ -358,7 +358,7 @@ class AllenNLPExecutor(object):
     def run(self) -> float:
         """Train a model using AllenNLP."""
         try:
-            import_func = allennlp.common.util.import_submodules
+            import_func = allennlp.common.util.import_submodules  # type: ignore
         except AttributeError:
             import_func = allennlp.common.util.import_module_and_submodules
 
