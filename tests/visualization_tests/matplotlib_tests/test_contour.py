@@ -60,3 +60,37 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
     else:
         # TODO(ytknzw): Add more specific assertion with the test case.
         assert figure.shape == (len(params), len(params))
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        ["param_a", "param_b"],
+        ["param_a", "param_b", "param_c"],
+    ],
+)
+def test_plot_contour_customized_target(params: List[str]) -> None:
+
+    study = prepare_study_with_trials(more_than_three=True)
+    figure = plot_contour(study, params=params, target=lambda t: t.params["param_d"])
+    if len(params) == 2:
+        assert figure.has_data()
+    else:
+        assert figure.shape == (len(params), len(params))
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        ["param_a", "param_b"],
+        ["param_a", "param_b", "param_c"],
+    ],
+)
+def test_plot_contour_customized_target_name(params: List[str]) -> None:
+
+    study = prepare_study_with_trials(more_than_three=True)
+    figure = plot_contour(study, params=params, target_name="Target Name")
+    if len(params) == 2:
+        assert figure.has_data()
+    else:
+        assert figure.shape == (len(params), len(params))
