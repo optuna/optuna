@@ -139,7 +139,8 @@ def upgrade():
         with op.batch_alter_table("trial_values", schema=None) as batch_op:
             batch_op.add_column(sa.Column("objective", sa.Integer(), nullable=False))
             # The name of this constraint is manually determined.
-            # In the future, the naming
+            # In the future, the naming convention may be determined based on
+            # https://alembic.sqlalchemy.org/en/latest/naming.html
             batch_op.create_unique_constraint(
                 "uq_trial_values_trial_id_objective", ["trial_id", "objective"]
             )
