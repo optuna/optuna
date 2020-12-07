@@ -684,7 +684,7 @@ class Trial(BaseTrial):
             if self._is_fixed_param(name, distribution):
                 param_value = storage.get_trial_system_attrs(trial_id)["fixed_params"][name]
             elif distribution.single():
-                param_value = distributions._get_single_value(distribution)
+                param_value = distribution._get_single_value(distribution)
             elif self._is_relative_param(name, distribution):
                 param_value = self.relative_params[name]
             else:
