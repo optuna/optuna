@@ -26,7 +26,7 @@ def constraints(study, trial):
 if __name__ == "__main__":
     sampler = optuna.integration.BoTorchSampler(
         constraints_func=constraints,
-        n_startup_trials=12,
+        n_startup_trials=10,
     )
     study = optuna.multi_objective.create_study(
         directions=["maximize", "maximize"],
@@ -46,8 +46,3 @@ if __name__ == "__main__":
         print("  Trial#{}".format(trial.number))
         print("    Values: Values={}, Constraint={}".format(trial.values[:-1], trial.values[-1]))
         print("    Params: {}".format(trial.params))
-
-    fig = optuna.multi_objective.visualization.plot_pareto_front(
-        study, include_dominated_trials=True
-    )
-    fig.show()
