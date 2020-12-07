@@ -399,7 +399,15 @@ class RDBStorage(BaseStorage):
                         best_trial, 0, session
                     )
                     assert value
-                    params = models.TrialParamModel.where_trial(best_trial, session)
+                    params = (
+                        session.query(
+                            models.TrialParamModel.param_name,
+                            models.TrialParamModel.param_value,
+                            models.TrialParamModel.distribution_json,
+                        )
+                        .filter(models.TrialParamModel.trial_id == best_trial.trial_id)
+                        .all()
+                    )
                     param_dict = {}
                     param_distributions = {}
                     for param in params:
@@ -408,12 +416,14 @@ class RDBStorage(BaseStorage):
                             param.param_value
                         )
                         param_distributions[param.param_name] = distribution
-                    user_attrs = models.TrialUserAttributeModel.where_trial(best_trial, session)
-                    system_attrs = models.TrialSystemAttributeModel.where_trial(
-                        best_trial, session
+                    user_attrs = session.query(models.TrialUserAttributeModel).filter(
+                        models.TrialUserAttributeModel.trial_id == best_trial.trial_id
                     )
-                    intermediate = models.TrialIntermediateValueModel.where_trial(
-                        best_trial, session
+                    system_attrs = session.query(models.TrialSystemAttributeModel).filter(
+                        models.TrialSystemAttributeModel.trial_id == best_trial.trial_id
+                    )
+                    intermediate = models.TrialIntermediateValueModel.where_trial_id(
+                        best_trial.trial_id, session
                     )
                     best_trial_frozen = FrozenTrial(
                         best_trial.number,
@@ -428,9 +438,11 @@ class RDBStorage(BaseStorage):
                         {value.step: value.intermediate_value for value in intermediate},
                         best_trial.trial_id,
                     )
-                user_attrs = models.StudyUserAttributeModel.where_study_id(study.study_id, session)
-                system_attrs = models.StudySystemAttributeModel.where_study_id(
-                    study.study_id, session
+                user_attrs = session.query(models.StudyUserAttributeModel).filter(
+                    models.StudyUserAttributeModel.study_id == study.study_id
+                )
+                system_attrs = session.query(models.StudySystemAttributeModel).filter(
+                    models.StudySystemAttributeModel.study_id == study.study_id
                 )
                 study_summaries.append(
                     StudySummary(
@@ -614,7 +626,13 @@ class RDBStorage(BaseStorage):
         """
 
         with _create_scoped_session(self.scoped_session) as session:
-            trial_model = models.TrialModel.find_or_raise_by_id(trial_id, session)
+            trial_model = (
+                session.query(models.TrialModel)
+                .filter(models.TrialModel.trial_id == trial_id)
+                .one_or_none()
+            )
+            if trial_model is None:
+                raise KeyError(models.NOT_FOUND_MSG)
             if trial_model.state.is_finished():
                 raise RuntimeError("Cannot change attributes of finished trial.")
             if (
@@ -632,23 +650,23 @@ class RDBStorage(BaseStorage):
                 trial_model.datetime_complete = datetime_complete
 
             if values is not None:
-                trial_values = (
-                    session.query(models.TrialValueModel)
-                    .filter(models.TrialValueModel.trial_id == trial_id)
-                    .all()
-                )
-                trial_values_dict = {v.objective: v for v in trial_values}
-                for objective, v in enumerate(values):
-                    if objective in trial_values_dict:
-                        trial_values_dict[objective].value = v
-                        session.add(trial_values_dict[objective])
-                    else:
+                trial_values = models.TrialValueModel.where_trial_id(trial_id, session)
+                if len(trial_values) > 0:
+                    for objective in range(len(values)):
+                        trial_values[objective].value = values[objective]
+                        session.add(trial_values[objective])
+                else:
+                    for objective in range(len(values)):
                         trial_model.values.extend(
-                            [models.TrialValueModel(objective=objective, value=v)]
+                            [models.TrialValueModel(objective=objective, value=values[objective])]
                         )
 
             if user_attrs:
-                trial_user_attrs = models.TrialUserAttributeModel.where_trial_id(trial_id, session)
+                trial_user_attrs = (
+                    session.query(models.TrialUserAttributeModel)
+                    .filter(models.TrialUserAttributeModel.trial_id == trial_id)
+                    .all()
+                )
                 trial_user_attrs_dict = {attr.key: attr for attr in trial_user_attrs}
                 for k, v in user_attrs.items():
                     if k in trial_user_attrs_dict:
@@ -661,8 +679,10 @@ class RDBStorage(BaseStorage):
                 )
 
             if system_attrs:
-                trial_system_attrs = models.TrialSystemAttributeModel.where_trial_id(
-                    trial_id, session
+                trial_system_attrs = (
+                    session.query(models.TrialSystemAttributeModel)
+                    .filter(models.TrialSystemAttributeModel.trial_id == trial_id)
+                    .all()
                 )
                 trial_system_attrs_dict = {attr.key: attr for attr in trial_system_attrs}
                 for k, v in system_attrs.items():
@@ -691,7 +711,11 @@ class RDBStorage(BaseStorage):
                 )
 
             if params and distributions_:
-                trial_param = models.TrialParamModel.where_trial_id(trial_id, session)
+                trial_param = (
+                    session.query(models.TrialParamModel)
+                    .filter(models.TrialParamModel.trial_id == trial_id)
+                    .all()
+                )
                 trial_param_dict = {attr.param_name: attr for attr in trial_param}
                 for name, v in params.items():
                     if name in trial_param_dict:
@@ -802,12 +826,27 @@ class RDBStorage(BaseStorage):
 
             models.TrialModel.find_or_raise_by_id(trial_id, session)
 
-            models.TrialParamModel(
-                trial_id=trial_id,
-                param_name=param_name,
-                param_value=param_value_internal,
-                distribution_json=distributions.distribution_to_json(distribution),
-            ).check_and_add(session)
+            previous_record = (
+                session.query(models.TrialParamModel)
+                .join(models.TrialModel)
+                .filter(models.TrialModel.study_id == study_id)
+                .filter(models.TrialParamModel.param_name == param_name)
+                .first()
+            )
+            if previous_record is not None:
+                distributions.check_distribution_compatibility(
+                    distributions.json_to_distribution(previous_record.distribution_json),
+                    distribution,
+                )
+
+            session.add(
+                models.TrialParamModel(
+                    trial_id=trial_id,
+                    param_name=param_name,
+                    param_value=param_value_internal,
+                    distribution_json=distributions.distribution_to_json(distribution),
+                )
+            )
 
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
 
@@ -924,7 +963,15 @@ class RDBStorage(BaseStorage):
     def get_trial(self, trial_id: int) -> FrozenTrial:
 
         with _create_scoped_session(self.scoped_session) as session:
-            trial_model = models.TrialModel.find_or_raise_by_id(trial_id, session)
+            trial_model = (
+                session.query(models.TrialModel)
+                .filter(models.TrialModel.trial_id == trial_id)
+                .one_or_none()
+            )
+
+            if not trial_model:
+                raise KeyError("No trial with trial-id {} found.".format(trial_id))
+
             frozen_trial = self._build_frozen_trial_from_trial_model(trial_model)
 
         return frozen_trial

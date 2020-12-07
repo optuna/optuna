@@ -29,6 +29,14 @@ def test_plot_optimization_history(direction: str) -> None:
     figure = plot_optimization_history(study)
     assert figure.has_data()
 
+    # Test customized target.
+    figure = plot_optimization_history(study, target=lambda t: t.number)
+    assert figure.has_data()
+
+    # Test customized target name.
+    figure = plot_optimization_history(study, target_name="Target Name")
+    assert figure.has_data()
+
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
         raise ValueError

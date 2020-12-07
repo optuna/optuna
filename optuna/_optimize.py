@@ -203,12 +203,11 @@ def _run_trial(
         _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
         return trial
     except Exception as e:
-        message = "Trial {} failed because of the following error: {}".format(
-            trial_number, repr(e)
-        )
-        study._storage.set_trial_system_attr(trial_id, "fail_reason", message)
         study._tell(trial, TrialState.FAIL, None)
-        _logger.warning(message, exc_info=True)
+        _logger.warning(
+            "Trial {} failed because of the following error: {}".format(trial_number, repr(e)),
+            exc_info=True,
+        )
         if isinstance(e, catch):
             return trial
         raise
