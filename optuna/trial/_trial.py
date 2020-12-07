@@ -73,7 +73,7 @@ class Trial(BaseTrial):
         high: float,
         *,
         step: Optional[float] = None,
-        log: bool = False
+        log: bool = False,
     ) -> float:
         """Suggest a value for the floating point parameter.
 

@@ -73,6 +73,17 @@ class GridSampler(BaseSampler):
             study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space))
             study.optimize(objective, n_trials=2)
 
+    Note:
+        A parameter configuration in the grid is not considered finished until its trial is
+        finished. Therefore, during distributed optimization where trials run concurrently,
+        different workers will occasionally suggest the same parameter configuration.
+        The total number of actual trials may therefore exceed the size of the grid.
+
+    Note:
+        The grid is randomly shuffled and the order in which parameter configurations are
+        suggested may vary. This is to reduce duplicate suggestions during distributed
+        optimization.
+
     Args:
         search_space:
             A dictionary whose key and value are a parameter name and the corresponding candidates

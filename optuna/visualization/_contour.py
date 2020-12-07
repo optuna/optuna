@@ -5,6 +5,8 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+from packaging import version
+
 from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -34,7 +36,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
 
         The following code snippet shows how to plot the parameter relationship as contour plot.
 
-        .. testcode::
+        .. plotly::
 
             import optuna
 
@@ -45,16 +47,11 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
                 return x ** 2 + y
 
 
-            study = optuna.create_study()
+            sampler = optuna.samplers.TPESampler(seed=10)
+            study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=30)
 
             optuna.visualization.plot_contour(study, params=["x", "y"])
-
-        .. raw:: html
-
-            <iframe src="../../../_static/plot_contour.html"
-                width="100%" height="500px" frameborder="0">
-            </iframe>
 
     Args:
         study:
@@ -117,6 +114,15 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
         elif _is_categorical(trials, p_name):
             # For numeric values, plotly does not automatically plot as "category" type.
             update_category_axes[p_name] = any([str(v).isnumeric() for v in set(values)])
+
+            # Plotly>=4.12.0 draws contours using the indices of categorical variables instead of
+            # raw values and the range should be updated based on the cardinality of categorical
+            # variables. See https://github.com/optuna/optuna/issues/1967.
+            if version.parse(plotly.__version__) >= version.parse("4.12.0"):
+                span = len(set(values)) - 1
+                padding = span * padding_ratio
+                min_value = -padding
+                max_value = span + padding
 
         else:
             padding = (max_value - min_value) * padding_ratio
@@ -250,7 +256,7 @@ def _generate_contour_subplot(
     # If contours_coloring='heatmap' is specified, reversescale argument of go.Contour does not
     # work correctly. See https://github.com/pfnet/optuna/issues/606.
     colorscale = plotly.colors.PLOTLY_SCALES["Blues"]
-    if direction == StudyDirection.MINIMIZE:
+    if direction == StudyDirection.MAXIMIZE:
         colorscale = [[1 - t[0], t[1]] for t in colorscale]
         colorscale.reverse()
 

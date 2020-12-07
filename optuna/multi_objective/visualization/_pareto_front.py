@@ -22,6 +22,7 @@ def plot_pareto_front(
     study: MultiObjectiveStudy,
     names: Optional[List[str]] = None,
     include_dominated_trials: bool = False,
+    axis_order: Optional[List[int]] = None,
 ) -> "go.Figure":
     """Plot the pareto front of a study.
 
@@ -29,7 +30,7 @@ def plot_pareto_front(
 
         The following code snippet shows how to plot the pareto front of a study.
 
-        .. testcode::
+        .. plotly::
 
             import optuna
 
@@ -48,11 +49,6 @@ def plot_pareto_front(
 
             optuna.multi_objective.visualization.plot_pareto_front(study)
 
-        .. raw:: html
-
-            <iframe src="../../../_static/plot_pareto_front.html" width="100%" height="500px"
-            frameborder="0"></iframe>
-
     Args:
         study:
             A :class:`~optuna.multi_objective.study.MultiObjectiveStudy` object whose trials
@@ -62,6 +58,9 @@ def plot_pareto_front(
             "Objective {objective_index}" is used instead.
         include_dominated_trials:
             A flag to include all dominated trial's objective values.
+        axis_order:
+            A list of indices indicating the axis order. If :obj:`None` is specified,
+            default order is used.
 
 
     Returns:
@@ -75,9 +74,9 @@ def plot_pareto_front(
     _imports.check()
 
     if study.n_objectives == 2:
-        return _get_pareto_front_2d(study, names, include_dominated_trials)
+        return _get_pareto_front_2d(study, names, include_dominated_trials, axis_order)
     elif study.n_objectives == 3:
-        return _get_pareto_front_3d(study, names, include_dominated_trials)
+        return _get_pareto_front_3d(study, names, include_dominated_trials, axis_order)
     else:
         raise ValueError("`plot_pareto_front` function only supports 2 or 3 objective studies.")
 
@@ -95,7 +94,10 @@ def _get_non_pareto_front_trials(
 
 
 def _get_pareto_front_2d(
-    study: MultiObjectiveStudy, names: Optional[List[str]], include_dominated_trials: bool = False
+    study: MultiObjectiveStudy,
+    names: Optional[List[str]],
+    include_dominated_trials: bool = False,
+    axis_order: Optional[List[int]] = None,
 ) -> "go.Figure":
     if names is None:
         names = ["Objective 0", "Objective 1"]
@@ -112,20 +114,47 @@ def _get_pareto_front_2d(
         point_colors += ["red"] * len(non_pareto_trials)
         trials += non_pareto_trials
 
+    if axis_order is None:
+        axis_order = list(range(2))
+    else:
+        if len(axis_order) != 2:
+            raise ValueError(
+                f"Size of `axis_order` {axis_order}. Expect: 2, Actual: {len(axis_order)}."
+            )
+        if len(set(axis_order)) != 2:
+            raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!")
+        if max(axis_order) > 1:
+            raise ValueError(
+                f"Given `axis_order` {axis_order} contains invalid index {max(axis_order)} "
+                "higher than 1."
+            )
+        if min(axis_order) < 0:
+            raise ValueError(
+                f"Given `axis_order` {axis_order} contains invalid index {min(axis_order)} "
+                "lower than 0."
+            )
+
     data = go.Scatter(
-        x=[t.values[0] for t in trials],
-        y=[t.values[1] for t in trials],
+        x=[t.values[axis_order[0]] for t in trials],
+        y=[t.values[axis_order[1]] for t in trials],
         text=[_make_hovertext(t) for t in trials],
         mode="markers",
         hovertemplate="%{text}<extra></extra>",
         marker={"color": point_colors},
     )
-    layout = go.Layout(title="Pareto-front Plot", xaxis_title=names[0], yaxis_title=names[1])
+    layout = go.Layout(
+        title="Pareto-front Plot",
+        xaxis_title=names[axis_order[0]],
+        yaxis_title=names[axis_order[1]],
+    )
     return go.Figure(data=data, layout=layout)
 
 
 def _get_pareto_front_3d(
-    study: MultiObjectiveStudy, names: Optional[List[str]], include_dominated_trials: bool = False
+    study: MultiObjectiveStudy,
+    names: Optional[List[str]],
+    include_dominated_trials: bool = False,
+    axis_order: Optional[List[int]] = None,
 ) -> "go.Figure":
     if names is None:
         names = ["Objective 0", "Objective 1", "Objective 2"]
@@ -142,10 +171,30 @@ def _get_pareto_front_3d(
         point_colors += ["red"] * len(non_pareto_trials)
         trials += non_pareto_trials
 
+    if axis_order is None:
+        axis_order = list(range(3))
+    else:
+        if len(axis_order) != 3:
+            raise ValueError(
+                f"Size of `axis_order` {axis_order}. Expect: 3, Actual: {len(axis_order)}."
+            )
+        if len(set(axis_order)) != 3:
+            raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!.")
+        if max(axis_order) > 2:
+            raise ValueError(
+                f"Given `axis_order` {axis_order} contains invalid index {max(axis_order)} "
+                "higher than 2."
+            )
+        if min(axis_order) < 0:
+            raise ValueError(
+                f"Given `axis_order` {axis_order} contains invalid index {min(axis_order)} "
+                "lower than 0."
+            )
+
     data = go.Scatter3d(
-        x=[t.values[0] for t in trials],
-        y=[t.values[1] for t in trials],
-        z=[t.values[2] for t in trials],
+        x=[t.values[axis_order[0]] for t in trials],
+        y=[t.values[axis_order[1]] for t in trials],
+        z=[t.values[axis_order[2]] for t in trials],
         text=[_make_hovertext(t) for t in trials],
         mode="markers",
         hovertemplate="%{text}<extra></extra>",
@@ -153,7 +202,11 @@ def _get_pareto_front_3d(
     )
     layout = go.Layout(
         title="Pareto-front Plot",
-        scene={"xaxis_title": names[0], "yaxis_title": names[1], "zaxis_title": names[2]},
+        scene={
+            "xaxis_title": names[axis_order[0]],
+            "yaxis_title": names[axis_order[1]],
+            "zaxis_title": names[axis_order[2]],
+        },
     )
     return go.Figure(data=data, layout=layout)
 
