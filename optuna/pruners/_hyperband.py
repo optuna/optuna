@@ -130,6 +130,10 @@ class HyperbandPruner(BasePruner):
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
+        bootstrap_count:
+            Parameter specifying the number of trials required in a rung before any trial can be
+            promoted. Incompatible with ``max_resouce`` is ``"auto"``.
+            See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
     """
 
     def __init__(
@@ -137,12 +141,14 @@ class HyperbandPruner(BasePruner):
         min_resource: int = 1,
         max_resource: Union[str, int] = "auto",
         reduction_factor: int = 3,
+        bootstrap_count: int = 0,
     ) -> None:
 
         self._min_resource = min_resource
         self._max_resource = max_resource
         self._reduction_factor = reduction_factor
         self._pruners: List[SuccessiveHalvingPruner] = []
+        self._bootstrap_count = bootstrap_count
         self._total_trial_allocation_budget = 0
         self._trial_allocation_budgets: List[int] = []
         self._n_brackets: Optional[int] = None
@@ -151,6 +157,12 @@ class HyperbandPruner(BasePruner):
             raise ValueError(
                 "The 'max_resource' should be integer or 'auto'. "
                 "But max_resource = {}".format(self._max_resource)
+            )
+
+        if self._bootstrap_count > 0 and self._max_resource == "auto":
+            raise ValueError(
+                "bootstrap_count > 0 and max_resource == 'auto' "
+                "are mutually incompatible, bootstrap_count is {}".format(self._bootstrap_count)
             )
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
@@ -206,6 +218,7 @@ class HyperbandPruner(BasePruner):
                 min_resource=self._min_resource,
                 reduction_factor=self._reduction_factor,
                 min_early_stopping_rate=bracket_id,
+                bootstrap_count=self._bootstrap_count,
             )
             self._pruners.append(pruner)
 

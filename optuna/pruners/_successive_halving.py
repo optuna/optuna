@@ -104,6 +104,9 @@ class SuccessiveHalvingPruner(BasePruner):
             A parameter for specifying the minimum early-stopping rate
             (in the `paper <http://arxiv.org/abs/1810.05934>`_ this parameter is
             referred to as :math:`s`).
+        bootstrap_count:
+            Minimum number of trials that need to complete a rung before any trial
+            is considered for promotion into the next rung.
     """
 
     def __init__(
@@ -111,6 +114,7 @@ class SuccessiveHalvingPruner(BasePruner):
         min_resource: Union[str, int] = "auto",
         reduction_factor: int = 4,
         min_early_stopping_rate: int = 0,
+        bootstrap_count: int = 0,
     ) -> None:
 
         if isinstance(min_resource, str) and min_resource != "auto":
@@ -137,11 +141,24 @@ class SuccessiveHalvingPruner(BasePruner):
                 "but must be `min_early_stopping_rate >= 0`".format(min_early_stopping_rate)
             )
 
+        if bootstrap_count < 0:
+            raise ValueError(
+                "The value of `bootstrap_count` is {}, "
+                "but must be `bootstrap_count >= 0`".format(bootstrap_count)
+            )
+
+        if bootstrap_count > 0 and min_resource == "auto":
+            raise ValueError(
+                "bootstrap_count > 0 and min_resource == 'auto' "
+                "are mutually incompatible, bootstrap_count is {}".format(bootstrap_count)
+            )
+
         self._min_resource: Optional[int] = None
         if isinstance(min_resource, int):
             self._min_resource = min_resource
         self._reduction_factor = reduction_factor
         self._min_early_stopping_rate = min_early_stopping_rate
+        self._bootstrap_count = bootstrap_count
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
@@ -178,9 +195,16 @@ class SuccessiveHalvingPruner(BasePruner):
 
             study._storage.set_trial_system_attr(trial._trial_id, rung_key, value)
 
+            competing = _get_competing_values(trials, value, rung_key)
+
+            # 'competing' already includes the current trial
+            # Therefore, we need to use the '<=' operator here
+            if len(competing) <= self._bootstrap_count:
+                return True
+
             if not _is_trial_promotable_to_next_rung(
                 value,
-                _get_competing_values(trials, value, rung_key),
+                competing,
                 self._reduction_factor,
                 study.direction,
             ):
