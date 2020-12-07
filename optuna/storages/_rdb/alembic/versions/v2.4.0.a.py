@@ -138,7 +138,11 @@ def upgrade():
 
         with op.batch_alter_table("trial_values", schema=None) as batch_op:
             batch_op.add_column(sa.Column("objective", sa.Integer(), nullable=False))
-            batch_op.create_unique_constraint(None, ["trial_id", "objective"])
+            # The name of this constraint is manually determined.
+            # In the future, the naming
+            batch_op.create_unique_constraint(
+                "uq_trial_values_trial_id_objective", ["trial_id", "objective"]
+            )
 
         trials_records = session.query(TrialModel).all()
         objects = [

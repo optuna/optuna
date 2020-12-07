@@ -13,7 +13,6 @@ from sqlalchemy import Float
 from sqlalchemy import ForeignKey
 from sqlalchemy import func
 from sqlalchemy import Integer
-from sqlalchemy import MetaData
 from sqlalchemy import orm
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
@@ -34,14 +33,7 @@ MAX_VERSION_LENGTH = 256
 
 NOT_FOUND_MSG = "Record does not exist."
 
-convention = {
-    "ix": "ix_%(column_0_label)s",
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-    "pk": "pk_%(table_name)s",
-}
-metadata = MetaData(naming_convention=convention)
-BaseModel: Any = declarative_base(metadata=metadata)
+BaseModel: Any = declarative_base()
 
 
 class StudyModel(BaseModel):
