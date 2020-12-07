@@ -3,11 +3,6 @@ from typing import Optional
 from typing import Sequence
 from unittest.mock import patch
 
-from botorch.acquisition import UpperConfidenceBound
-from botorch.fit import fit_gpytorch_model
-from botorch.models import SingleTaskGP
-from botorch.optim import optimize_acqf
-from gpytorch.mlls import ExactMarginalLogLikelihood
 import pytest
 import torch
 
@@ -41,6 +36,8 @@ def test_botorch_default_multi_objective() -> None:
 
 
 def test_botorch_candidates_func() -> None:
+    candidates_func_call_count = 0
+
     def candidates_func(
         train_x: torch.Tensor,
         train_obj: torch.Tensor,
@@ -49,39 +46,154 @@ def test_botorch_candidates_func() -> None:
     ) -> torch.Tensor:
         assert train_con is None
 
-        model = SingleTaskGP(train_x, train_obj)
-        mll = ExactMarginalLogLikelihood(model.likelihood, model)
-        fit_gpytorch_model(mll)
+        candidates = torch.rand(1)
 
-        acqf = UpperConfidenceBound(model, beta=0.1)
-        candidates, _ = optimize_acqf(acqf, bounds=bounds, q=1, num_restarts=5, raw_samples=40)
+        nonlocal candidates_func_call_count
+        candidates_func_call_count += 1
 
         return candidates
 
-    sampler = BoTorchSampler(candidates_func=candidates_func)
+    n_trials = 3
+    n_startup_trials = 1
+
+    sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=n_startup_trials)
 
     study = multi_objective.create_study(["minimize"], sampler=sampler)
-    study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+    study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=n_trials)
 
-    assert len(study.trials) == 3
+    assert len(study.trials) == n_trials
+    assert candidates_func_call_count == n_trials - n_startup_trials
+
+
+def test_botorch_candidates_func_invalid_type() -> None:
+    def candidates_func(
+        train_x: torch.Tensor,
+        train_obj: torch.Tensor,
+        train_con: Optional[torch.Tensor],
+        bounds: torch.Tensor,
+    ) -> torch.Tensor:
+        # Must be a `torch.Tensor`, not a list.
+        return torch.rand(1).tolist()  # type: ignore
+
+    sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
+
+    study = multi_objective.create_study(["minimize"], sampler=sampler)
+
+    with pytest.raises(TypeError):
+        study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+
+
+def test_botorch_candidates_func_invalid_batch_size() -> None:
+    def candidates_func(
+        train_x: torch.Tensor,
+        train_obj: torch.Tensor,
+        train_con: Optional[torch.Tensor],
+        bounds: torch.Tensor,
+    ) -> torch.Tensor:
+        return torch.rand(2, 1)  # Must have the batch size one, not two.
+
+    sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
+
+    study = multi_objective.create_study(["minimize"], sampler=sampler)
+
+    with pytest.raises(ValueError):
+        study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+
+
+def test_botorch_candidates_func_invalid_dimensionality() -> None:
+    def candidates_func(
+        train_x: torch.Tensor,
+        train_obj: torch.Tensor,
+        train_con: Optional[torch.Tensor],
+        bounds: torch.Tensor,
+    ) -> torch.Tensor:
+        return torch.rand(1, 1, 1)  # Must have one or two dimensions, not three.
+
+    sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
+
+    study = multi_objective.create_study(["minimize"], sampler=sampler)
+
+    with pytest.raises(ValueError):
+        study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+
+
+def test_botorch_candidates_func_invalid_candidates_size() -> None:
+    n_params = 3
+
+    def candidates_func(
+        train_x: torch.Tensor,
+        train_obj: torch.Tensor,
+        train_con: Optional[torch.Tensor],
+        bounds: torch.Tensor,
+    ) -> torch.Tensor:
+        return torch.rand(n_params - 1)  # Must return candidates for all parameters.
+
+    sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
+
+    study = multi_objective.create_study(["minimize"] * n_params, sampler=sampler)
+
+    with pytest.raises(ValueError):
+        study.optimize(
+            lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_params)], n_trials=3
+        )
 
 
 def test_botorch_constraints_func_default_single_objective() -> None:
+    constraints_func_call_count = 0
+
     def constraints_func(
         study: MultiObjectiveStudy, trial: FrozenMultiObjectiveTrial
     ) -> Sequence[float]:
         x0 = trial.params["x0"]
+
+        nonlocal constraints_func_call_count
+        constraints_func_call_count += 1
+
         return (x0 - 0.5,)
 
-    sampler = BoTorchSampler(constraints_func=constraints_func)
+    n_trials = 4
+    n_startup_trials = 2
+
+    sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=n_startup_trials)
 
     study = multi_objective.create_study(["minimize"], sampler=sampler)
-    study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+    study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=n_trials)
 
-    assert len(study.trials) == 3
+    assert len(study.trials) == n_trials
+    # Only constraints up to the previous trial is computed.
+    assert constraints_func_call_count == n_trials - 1
 
 
-def test_botorch_constraints_func_default_single_objective_invalid_type() -> None:
+def test_botorch_constraints_func_default_multie_objective() -> None:
+    constraints_func_call_count = 0
+
+    def constraints_func(
+        study: MultiObjectiveStudy, trial: FrozenMultiObjectiveTrial
+    ) -> Sequence[float]:
+        x0 = trial.params["x0"]
+        x1 = trial.params["x1"]
+
+        nonlocal constraints_func_call_count
+        constraints_func_call_count += 1
+
+        return (x0 + x1 - 0.5,)
+
+    n_trials = 4
+    n_startup_trials = 2
+
+    sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=n_startup_trials)
+
+    study = multi_objective.create_study(["minimize", "maximize"], sampler=sampler)
+    study.optimize(
+        lambda t: [t.suggest_float("x0", 0, 1), t.suggest_float("x1", 0, 1)], n_trials=n_trials
+    )
+
+    assert len(study.trials) == n_trials
+    # Only constraints up to the previous trial is computed.
+    assert constraints_func_call_count == n_trials - 1
+
+
+def test_botorch_constraints_func_invalid_type() -> None:
     def constraints_func(
         study: MultiObjectiveStudy, trial: FrozenMultiObjectiveTrial
     ) -> Sequence[float]:
@@ -94,24 +206,6 @@ def test_botorch_constraints_func_default_single_objective_invalid_type() -> Non
 
     with pytest.raises(TypeError):
         study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
-
-
-def test_botorch_constraints_func_default_multie_objective() -> None:
-    def constraints_func(
-        study: MultiObjectiveStudy, trial: FrozenMultiObjectiveTrial
-    ) -> Sequence[float]:
-        x0 = trial.params["x0"]
-        x1 = trial.params["x1"]
-        return (x0 + x1 - 0.5,)
-
-    sampler = BoTorchSampler(constraints_func=constraints_func)
-
-    study = multi_objective.create_study(["minimize", "maximize"], sampler=sampler)
-    study.optimize(
-        lambda t: [t.suggest_float("x0", 0, 1), t.suggest_float("x1", 0, 1)], n_trials=3
-    )
-
-    assert len(study.trials) == 3
 
 
 def test_botorch_n_startup_trials() -> None:

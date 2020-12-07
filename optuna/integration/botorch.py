@@ -297,7 +297,10 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
             :obj:`None`.
 
             If omitted, is determined automatically based on the number of objectives and
-            constraints.
+            constraints. If the number of objectives is one and no constraints are defined,
+            Upper Confidence Bound (UCB) is used. If the number of objectives is one and
+            constraints are defined, Expected Improvement (qEI) is used. If the number of
+            objectives are larger than one, Expected Hypervolume Improvement (qEHVI) is used.
 
             The function should assume *maximization* of the objective.
 
@@ -313,6 +316,11 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
 
             If omitted, no constraints will be passed to ``candidates_func`` nor taken into
             account during suggestion if ``candidates_func`` is omitted.
+
+            .. note::
+                ``constraints_func`` is called once per trial for each trial on each worker during
+                distributed optimization. Therefore, during distributed optimization, this
+                function should be deterministic to ensure that all workers hold the same values.
         n_startup_trials:
             Number of initial trials, that is the number of trials to resort to independent
             sampling.
@@ -383,8 +391,10 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
             number = trial.number
             if number not in self._trial_constraints:
                 constraints = self._constraints_func(study, trial)
+
                 if not isinstance(constraints, (tuple, list)):
                     raise TypeError("Constraints must be a tuple or list.")
+
                 constraints = tuple(constraints)
                 self._trial_constraints[number] = constraints
 
@@ -396,13 +406,12 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
     ) -> Dict[str, Any]:
         assert isinstance(search_space, OrderedDict)
 
-        if len(search_space) == 0:
-            return {}
-
         trials = [t for t in study.get_trials(deepcopy=False) if t.state == TrialState.COMPLETE]
-
         if self._constraints_func is not None:
             self._update_trial_constraints(study, trials)
+
+        if len(search_space) == 0:
+            return {}
 
         n_trials = len(trials)
         if n_trials < self._n_startup_trials:
@@ -452,18 +461,24 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
             )
         candidates = self._candidates_func(params, values, con, bounds)
 
-        # TODO(hvy): Clean up validation.
         if not isinstance(candidates, torch.Tensor):
-            raise TypeError
+            raise TypeError("Candidates must be a torch.Tensor.")
         if candidates.dim() == 2:
-            if candidates.shape[0] != 1:
-                raise ValueError  # Batch optimization is not supported.
+            if candidates.size(0) != 1:
+                raise ValueError(
+                    "Candidates batch optimization is not supported and the first dimension must "
+                    "have size 1 if the candidates is two-dimensional. Actual: "
+                    f"{candidates.size()}."
+                )
             # Batch size is one. Get rid of the batch dimension.
             candidates = candidates.squeeze(0)
         if candidates.dim() != 1:
-            raise ValueError
-        if candidates.shape[0] != bounds.shape[1]:
-            raise ValueError
+            raise ValueError("Candidates must be one or two-dimensional.")
+        if candidates.size(0) != bounds.size(1):
+            raise ValueError(
+                "Candidates size must match with the given bounds. Actual candidates: "
+                f"{candidates.size(0)}, bounds: {bounds.size(1)}."
+            )
 
         candidates = candidates.numpy()
 
