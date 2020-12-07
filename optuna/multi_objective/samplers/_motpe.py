@@ -28,7 +28,7 @@ _SPLITCACHE_KEY = "multi_objective:motpe:splitcache"
 _WEIGHTS_BELOW_KEY = "multi_objective:motpe:weights_below"
 
 
-def _default_gamma(x: int) -> int:
+def default_gamma(x: int) -> int:
     return int(np.floor(0.1 * x))
 
 
@@ -126,7 +126,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         consider_endpoints: bool = True,
         n_startup_trials: int = 10,
         n_ehvi_candidates: int = 24,
-        gamma: Callable[[int], int] = _default_gamma,
+        gamma: Callable[[int], int] = default_gamma,
         weights_above: Callable[[int], np.ndarray] = _default_weights_above,
         seed: Optional[int] = None,
     ) -> None:
