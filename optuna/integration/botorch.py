@@ -213,7 +213,7 @@ def qehvi_candidates_func(
 
     partitioning = NondominatedPartitioning(num_outcomes=n_outcomes, Y=partitioning_y)
 
-    ref_point = train_obj.amin(dim=0) - 1e-8
+    ref_point = train_obj.min(dim=0).values - 1e-8
     ref_point_list = ref_point.tolist()
 
     acqf = qExpectedHypervolumeImprovement(
