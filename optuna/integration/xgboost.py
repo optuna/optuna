@@ -35,7 +35,7 @@ _doc = """Callback for XGBoost to prune unpromising trials.
 
 if _imports.is_successful() and use_callback_cls:
 
-    class XGBoostPruningCallback(xgb.callback.TrainingCallback):
+    class XGBoostPruningCallback(xgb.callback.TrainingCallback):  # type: ignore
         __doc__ = _doc
 
         def __init__(self, trial: optuna.trial.Trial, observation_key: str) -> None:
@@ -44,6 +44,8 @@ if _imports.is_successful() and use_callback_cls:
             self._is_cv = False
 
         def before_training(self, model: Any) -> Any:
+            # The use of Any type is due to _PackedBooster is not yet being exposed
+            # as public interface as of xgboost 1.3.
             if isinstance(model, xgb.Booster):
                 self._is_cv = False
             else:
@@ -88,7 +90,7 @@ elif _imports.is_successful():
             context = "train"
         return context
 
-    class XGBoostPruningCallback(object):
+    class XGBoostPruningCallback(object):  # type: ignore
         __doc__ = _doc
 
         def __init__(self, trial: optuna.trial.Trial, observation_key: str) -> None:
@@ -114,7 +116,7 @@ elif _imports.is_successful():
 
 else:
 
-    class XGBoostPruningCallback:
+    class XGBoostPruningCallback:  # type: ignore
         __doc__ = _doc
 
         def __init__(self, trial: optuna.trial.Trial, observation_key: str) -> None:
