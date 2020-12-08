@@ -80,6 +80,7 @@ def qei_candidates_func(
         Next set of candidates. Usually the return value of BoTorch's ``optimize_acqf``.
 
     """
+
     if train_obj.size(-1) != 1:
         raise ValueError("Objective may only contain single values with qEI.")
     if train_con is not None:
@@ -427,7 +428,7 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
             if candidates.size(0) != 1:
                 raise ValueError(
                     "Candidates batch optimization is not supported and the first dimension must "
-                    "have size 1 if the candidates is two-dimensional. Actual: "
+                    "have size 1 if candidates is a two-dimensional tensor. Actual: "
                     f"{candidates.size()}."
                 )
             # Batch size is one. Get rid of the batch dimension.
