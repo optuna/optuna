@@ -4,7 +4,8 @@ use_callback_cls = True
 
 with optuna._imports.try_import() as _imports:
     import xgboost as xgb
-    xgboost_version = xgb.__version__.split('.')
+
+    xgboost_version = xgb.__version__.split(".")
     xgboost_major_version = int(xgboost_version[0])
     xgboost_minor_version = int(xgboost_version[1])
     use_callback_cls = xgboost_major_version >= 1 and xgboost_minor_version >= 3
@@ -30,11 +31,11 @@ _doc = """Callback for XGBoost to prune unpromising trials.
     """
 
 if _imports.is_successful() and use_callback_cls:
+
     class XGBoostPruningCallback(xgb.callback.TrainingCallback):
         __doc__ = _doc
 
-        def __init__(self, trial: optuna.trial.Trial,
-                     observation_key: str) -> None:
+        def __init__(self, trial: optuna.trial.Trial, observation_key: str) -> None:
             self._trial = trial
             self._observation_key = observation_key
             self._is_cv = False
@@ -51,7 +52,7 @@ if _imports.is_successful() and use_callback_cls:
             for dataset, metrics in evals_log.items():
                 for metric, scores in metrics.items():
                     assert isinstance(scores, list), scores
-                    key = dataset + '-' + metric
+                    key = dataset + "-" + metric
                     if self._is_cv:
                         # Remove stddev of the metric across the cross-valdation
                         # folds.
@@ -64,7 +65,10 @@ if _imports.is_successful() and use_callback_cls:
             if self._trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(epoch)
                 raise optuna.TrialPruned(message)
+
+
 elif _imports.is_successful():
+
     def _get_callback_context(env: "xgb.core.CallbackEnv") -> str:
         """Return whether the current callback context is cv or train.
 
@@ -93,17 +97,20 @@ elif _imports.is_successful():
             if context == "cv":
                 # Remove a third element: the stddev of the metric across the
                 # cross-valdation folds.
-                evaluation_result_list = [(key, metric) for key, metric, _ in
-                                          evaluation_result_list]
+                evaluation_result_list = [
+                    (key, metric) for key, metric, _ in evaluation_result_list
+                ]
             current_score = dict(evaluation_result_list)[self._observation_key]
             self._trial.report(current_score, step=env.iteration)
             if self._trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(env.iteration)
                 raise optuna.TrialPruned(message)
+
+
 else:
+
     class XGBoostPruningCallback:
         __doc__ = _doc
 
-        def __init__(self, trial: optuna.trial.Trial,
-                     observation_key: str) -> None:
+        def __init__(self, trial: optuna.trial.Trial, observation_key: str) -> None:
             _imports.check()

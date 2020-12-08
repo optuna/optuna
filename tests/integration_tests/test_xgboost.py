@@ -35,11 +35,9 @@ def test_xgboost_pruning_callback_call() -> None:
             pruning_callback(env)
     else:
         after_it = {
-            'model': None,
-            'epoch': 1,
-            'evals_log': {
-                'validation': OrderedDict({'logloss': [1.0]})
-            }
+            "model": None,
+            "epoch": 1,
+            "evals_log": {"validation": OrderedDict({"logloss": [1.0]})},
         }
 
         # The pruner is deactivated.
