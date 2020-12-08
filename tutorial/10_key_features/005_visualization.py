@@ -88,7 +88,7 @@ plot_parallel_coordinate(study)
 
 ###################################################################################################
 # Select parameters to visualize.
-plot_parallel_coordinate(study, params=["lambda_l1", "lambda_l2"])
+plot_parallel_coordinate(study, params=["bagging_freq", "bagging_fraction"])
 
 ###################################################################################################
 # Visualize hyperparameter relationships. See :func:`~optuna.visualization.plot_contour` for the details.
@@ -96,7 +96,7 @@ plot_contour(study)
 
 ###################################################################################################
 # Select parameters to visualize.
-plot_contour(study, params=["lambda_l1", "lambda_l2"])
+plot_contour(study, params=["bagging_freq", "bagging_fraction"])
 
 ###################################################################################################
 # Visualize individual hyperparameters as slice plot. See :func:`~optuna.visualization.plot_slice` for the details.
@@ -104,7 +104,7 @@ plot_slice(study)
 
 ###################################################################################################
 # Select parameters to visualize.
-plot_slice(study, params=["lambda_l1", "lambda_l2"])
+plot_slice(study, params=["bagging_freq", "bagging_fraction"])
 
 ###################################################################################################
 # Visualize parameter importances. See :func:`~optuna.visualization.plot_param_importances` for the details.
