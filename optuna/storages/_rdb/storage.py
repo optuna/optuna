@@ -300,13 +300,13 @@ class RDBStorage(BaseStorage):
 
         return study.study_name
 
-    def get_study_directions(self, study_id: int) -> Sequence[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
 
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
-            directions = tuple(
-                [d.direction for d in models.StudyDirectionModel.where_study(study, session)]
-            )
+            directions = [
+                d.direction for d in models.StudyDirectionModel.where_study(study, session)
+            ]
 
         return directions
 
@@ -1055,7 +1055,7 @@ class RDBStorage(BaseStorage):
     @staticmethod
     def _build_frozen_trial_from_trial_model(trial: models.TrialModel) -> FrozenTrial:
 
-        values: Optional[Sequence[float]]
+        values: Optional[List[float]]
         if trial.values:
             values = [0 for _ in range(len(trial.values))]
             for value_model in trial.values:
@@ -1092,7 +1092,6 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             _directions = self.get_study_directions(study_id)
-            print(_directions)
             if len(_directions) > 1:
                 raise ValueError(
                     "Best trial can be obtained only for single-objective optimization."

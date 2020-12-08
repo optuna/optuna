@@ -198,7 +198,7 @@ def _run_trial(
         study._tell(
             trial,
             TrialState.PRUNED,
-            None if last_step is None else (frozen_trial.intermediate_values[last_step],),
+            None if last_step is None else [frozen_trial.intermediate_values[last_step]],
         )
         _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
         return trial

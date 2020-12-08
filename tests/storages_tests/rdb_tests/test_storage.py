@@ -3,8 +3,8 @@ import sys
 import tempfile
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
-from typing import Sequence
 from unittest.mock import patch
 
 import pytest
@@ -172,8 +172,8 @@ def test_upgrade() -> None:
             {"state": TrialState.COMPLETE, "datetime_complete": None},
             {"state": TrialState.COMPLETE},
         ),
-        ({"_values": (1.1,)}, {"values": (1.1,)}),
-        ({"_values": (1.1, 2.2)}, {"values": (1.1, 2.2)}),
+        ({"_values": [1.1]}, {"values": [1.1]}),
+        ({"_values": [1.1, 2.2]}, {"values": [1.1, 2.2]}),
         ({"intermediate_values": {1: 2.3, 3: 2.5}}, {"intermediate_values": {1: 2.3, 3: 2.5}}),
         (
             {
@@ -221,8 +221,8 @@ def test_update_trial(fields_to_modify: Dict[str, Any], kwargs: Dict[str, Any]) 
                 assert getattr(trial_after_update, key) == value
 
 
-@pytest.mark.parametrize("values1, values2", [((0.1,), (1.1,)), ((0.1, 0.2), (1.1, 1.2))])
-def test_update_trial_second_write(values1: Sequence[float], values2: Sequence[float]) -> None:
+@pytest.mark.parametrize("values1, values2", [([0.1], [1.1]), ([0.1, 0.2], [1.1, 1.2])])
+def test_update_trial_second_write(values1: List[float], values2: List[float]) -> None:
 
     storage = create_test_storage()
     study_id = storage.create_new_study()
@@ -253,7 +253,6 @@ def test_update_trial_second_write(values1: Sequence[float], values2: Sequence[f
         system_attrs={"sysA": 6, "sysC": 8},
     )
     trial_after_update = storage.get_trial(trial_id)
-
     expected_attrs = {
         "_trial_id": trial_before_update._trial_id,
         "number": trial_before_update.number,

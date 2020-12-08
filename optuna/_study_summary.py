@@ -59,9 +59,9 @@ class StudySummary(object):
         if direction is None and directions is None:
             raise ValueError("Specify one of `direction` and `directions`.")
         elif directions is not None:
-            self._directions = tuple(directions)
+            self._directions = list(directions)
         elif direction is not None:
-            self._directions = (direction,)
+            self._directions = [direction]
         else:
             raise ValueError("Specify only one of `direction` and `directions`.")
         self.best_trial = best_trial
@@ -110,7 +110,7 @@ class StudySummary(object):
                 "This attribute is not available during multi-objective optimization."
             )
 
-        self._directions = (d,)
+        self._directions = [d]
 
     @property
     def directions(self) -> Sequence[StudyDirection]:
@@ -120,4 +120,4 @@ class StudySummary(object):
     @directions.setter
     def directions(self, d: Sequence[StudyDirection]) -> None:
 
-        self._directions = tuple(d)
+        self._directions = list(d)

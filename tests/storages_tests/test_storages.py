@@ -206,17 +206,17 @@ def test_set_and_get_study_directions(storage_mode: str) -> None:
         ]:
             study_id = storage.create_new_study()
 
-            def check_set_and_get(direction: Sequence[StudyDirection]) -> None:
-                storage.set_study_directions(study_id, direction)
-                got_direction = storage.get_study_directions(study_id)
+            def check_set_and_get(directions: Sequence[StudyDirection]) -> None:
+                storage.set_study_directions(study_id, directions)
+                got_directions = storage.get_study_directions(study_id)
 
-                assert got_direction == tuple(
-                    direction
+                assert got_directions == list(
+                    directions
                 ), "Direction of a study should be a tuple of `StudyDirection` objects."
 
-            direction = storage.get_study_directions(study_id)
-            assert len(direction) == 1
-            assert direction[0] == StudyDirection.NOT_SET
+            directions = storage.get_study_directions(study_id)
+            assert len(directions) == 1
+            assert directions[0] == StudyDirection.NOT_SET
 
             # Test setting value.
             check_set_and_get(target)
@@ -600,8 +600,8 @@ def test_set_trial_values(storage_mode: str) -> None:
         assert storage.get_trial(trial_id_1).value == 0.5
         assert storage.get_trial(trial_id_2).value is None
         assert storage.get_trial(trial_id_3).value == float("inf")
-        assert storage.get_trial(trial_id_4).values == (0.1, 0.2, 0.3)
-        assert storage.get_trial(trial_id_5).values == (0.1, 0.2, 0.3)
+        assert storage.get_trial(trial_id_4).values == [0.1, 0.2, 0.3]
+        assert storage.get_trial(trial_id_5).values == [0.1, 0.2, 0.3]
 
         # Values can be overwritten.
         storage.set_trial_values(trial_id_1, (0.2,))
@@ -793,12 +793,6 @@ def test_get_trial(storage_mode: str) -> None:
         for _, expected_trials in study_to_trials.items():
             for expected_trial in expected_trials.values():
                 trial = storage.get_trial(expected_trial._trial_id)
-                for k, x, y in zip(
-                    trial.__dict__.keys(),
-                    trial.__dict__.values(),
-                    expected_trial.__dict__.values(),
-                ):
-                    print(f"{k}: {x}, {y}")
                 assert trial == expected_trial
 
         non_existent_trial_id = (
@@ -818,12 +812,6 @@ def test_get_all_trials(storage_mode: str) -> None:
             trials = storage.get_all_trials(study_id)
             for trial in trials:
                 expected_trial = expected_trials[trial._trial_id]
-                for k, x, y in zip(
-                    trial.__dict__.keys(),
-                    trial.__dict__.values(),
-                    expected_trial.__dict__.values(),
-                ):
-                    print(f"{k}: {x} v.s. {y}")
                 assert trial == expected_trial
 
         non_existent_study_id = max(study_to_trials.keys()) + 1
@@ -1029,7 +1017,7 @@ def _generate_trial(generator: random.Random) -> FrozenTrial:
     distributions = {}
     user_attrs = {}
     system_attrs = {}
-    intermediate_values: Dict[int, float] = {}
+    intermediate_values = {}
     for key, (value, dist) in example_params.items():
         if generator.choice([True, False]):
             params[key] = value

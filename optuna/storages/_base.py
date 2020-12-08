@@ -239,7 +239,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_directions(self, study_id: int) -> Sequence[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
         """Read whether a study maximizes or minimizes an objective.
 
         Args:

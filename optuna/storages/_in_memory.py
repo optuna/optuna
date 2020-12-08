@@ -129,11 +129,11 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].name
 
-    def get_study_directions(self, study_id: int) -> Sequence[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
 
         with self._lock:
             self._check_study_id(study_id)
-            return tuple(self._studies[study_id].directions)
+            return list(self._studies[study_id].directions)
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -318,7 +318,7 @@ class InMemoryStorage(BaseStorage):
         _directions = self.get_study_directions(study_id)
         if len(_directions) > 1:
             return
-        directions = _directions[0]
+        direction = _directions[0]
 
         best_trial = self._get_trial(best_trial_id)
         assert best_trial is not None
@@ -330,7 +330,7 @@ class InMemoryStorage(BaseStorage):
         best_value = best_trial.value
         new_value = trial.value
 
-        if directions == StudyDirection.MAXIMIZE:
+        if direction == StudyDirection.MAXIMIZE:
             if best_value < new_value:
                 self._studies[study_id].best_trial_id = trial_id
         else:
@@ -438,5 +438,5 @@ class _StudyInfo:
         self.user_attrs: Dict[str, Any] = {}
         self.system_attrs: Dict[str, Any] = {}
         self.name: str = name
-        self.directions: Sequence[StudyDirection] = (StudyDirection.NOT_SET,)
+        self.directions: Sequence[StudyDirection] = [StudyDirection.NOT_SET]
         self.best_trial_id: Optional[int] = None

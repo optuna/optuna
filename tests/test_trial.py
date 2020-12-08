@@ -1065,11 +1065,11 @@ def test_frozen_trial_set_values() -> None:
 
     trial = _create_frozen_trial()
     trial.values = (0.1, 0.2)
-    assert trial.values == (0.1, 0.2)
+    assert trial.values == [0.1, 0.2]
 
     trial = _create_frozen_trial()
     trial.values = [0.1, 0.2]
-    assert trial.values == (0.1, 0.2)
+    assert trial.values == [0.1, 0.2]
 
 
 def test_frozen_trial_validate() -> None:

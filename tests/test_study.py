@@ -1036,7 +1036,7 @@ def test_create_study_with_multi_objectives() -> None:
     assert study.direction == StudyDirection.MAXIMIZE
 
     study = optuna.create_study(directions=["maximize", "minimize"])
-    assert study.directions == (StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE)
+    assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
 
     with pytest.raises(ValueError):
         # Empty `direction` isn't allowed.
@@ -1061,24 +1061,28 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
 
 
 def test_pareto_front() -> None:
+    def _trial_to_values(t: optuna.trial.FrozenTrial) -> Tuple[float, ...]:
+        assert t.values is not None
+        return tuple(t.values)
+
     study = optuna.create_study(directions=["minimize", "maximize"])
-    assert {t.values for t in study.best_trials} == set()
+    assert {_trial_to_values(t) for t in study.best_trials} == set()
 
     study.optimize(lambda t: [2, 2], n_trials=1)
-    assert {t.values for t in study.best_trials} == {(2, 2)}
+    assert {_trial_to_values(t) for t in study.best_trials} == {(2, 2)}
 
     study.optimize(lambda t: [1, 1], n_trials=1)
-    assert {t.values for t in study.best_trials} == {(1, 1), (2, 2)}
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
 
     study.optimize(lambda t: [3, 1], n_trials=1)
-    assert {t.values for t in study.best_trials} == {(1, 1), (2, 2)}
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
 
     study.optimize(lambda t: [1, 3], n_trials=1)
-    assert {t.values for t in study.best_trials} == {(1, 3)}
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 3)}
     assert len(study.best_trials) == 1
 
     study.optimize(lambda t: [1, 3], n_trials=1)  # The trial result is the same as the above one.
-    assert {t.values for t in study.best_trials} == {(1, 3)}
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 3)}
     assert len(study.best_trials) == 2
 
 

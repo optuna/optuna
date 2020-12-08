@@ -126,11 +126,11 @@ class BaseStudy(object):
         return self.directions[0]
 
     @property
-    def directions(self) -> Sequence[StudyDirection]:
+    def directions(self) -> List[StudyDirection]:
         """Return the directions of the study.
 
         Returns:
-            A tuple of :class:`~optuna.study.StudyDirection` objects.
+            A list of :class:`~optuna.study.StudyDirection` objects.
         """
 
         return self._storage.get_study_directions(self._study_id)
@@ -653,7 +653,7 @@ class Study(BaseStudy):
         return trial_module.Trial(self, trial_id)
 
     def _tell(
-        self, trial: trial_module.Trial, state: TrialState, values: Optional[Sequence[float]]
+        self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
     ) -> None:
         if state == TrialState.COMPLETE:
             assert values is not None
@@ -772,7 +772,7 @@ def create_study(
     elif direction is not None:
         directions = (direction,)
     elif directions is not None:
-        directions = tuple(directions)
+        directions = list(directions)
     else:
         raise ValueError("Specify only one of `direction` and `directions`.")
 
@@ -781,7 +781,7 @@ def create_study(
     elif any(d != "minimize" and d != "maximize" for d in directions):
         raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
 
-    direction_objects = tuple(
+    direction_objects = list(
         map(
             lambda d: StudyDirection.MINIMIZE if d == "minimize" else StudyDirection.MAXIMIZE,
             directions,
@@ -803,6 +803,7 @@ def create_study(
         else:
             raise
 
+    # TODO(imamura): Change the default sampler for MO as NSGAII after MO sampler refactoring.
     if sampler is None and len(direction_objects) > 1:
         _logger.info(
             "Multi-objective optimization is set, but no sampler is specified. "

@@ -143,20 +143,20 @@ class _CachedStorage(BaseStorage):
             self._studies[study_id].name = name
         return name
 
-    def get_study_directions(self, study_id: int) -> Sequence[StudyDirection]:
+    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
 
         with self._lock:
             if study_id in self._studies:
                 directions = self._studies[study_id].directions
                 if len(directions) > 1 or directions[0] != StudyDirection.NOT_SET:
-                    return tuple(directions)
+                    return list(directions)
 
         directions = self._backend.get_study_directions(study_id)
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             self._studies[study_id].directions = directions
-        return tuple(directions)
+        return list(directions)
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 

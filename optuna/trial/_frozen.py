@@ -1,6 +1,7 @@
 import datetime
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -136,13 +137,13 @@ class FrozenTrial(BaseTrial):
 
         self._number = number
         self.state = state
-        self._values: Optional[Sequence[float]] = None
+        self._values: Optional[List[float]] = None
         if value is not None and values is not None:
             raise ValueError("Specify only one of `value` and `values`.")
         elif value is not None:
-            self._values = (value,)
+            self._values = [value]
         elif values is not None:
-            self._values = tuple(values)
+            self._values = list(values)
         self._datetime_start = datetime_start
         self.datetime_complete = datetime_complete
         self._params = params
@@ -381,10 +382,10 @@ class FrozenTrial(BaseTrial):
         if self._values is not None:
             if len(self._values) > 1:
                 raise RuntimeError(
-                    "This attribute is not available for the multi-objective optimization."
+                    "This attribute is not available during multi-objective optimization."
                 )
             return self._values[0]
-        return self._values
+        return None
 
     @value.setter
     def value(self, v: Optional[float]) -> None:
@@ -392,11 +393,11 @@ class FrozenTrial(BaseTrial):
         if self._values is not None:
             if len(self._values) > 1:
                 raise RuntimeError(
-                    "This attribute is not available for the multi-objective optimization."
+                    "This attribute is not available during multi-objective optimization."
                 )
 
         if v is not None:
-            self._values = (v,)
+            self._values = [v]
         else:
             self._values = None
 
@@ -404,14 +405,14 @@ class FrozenTrial(BaseTrial):
     def values(self) -> Optional[Sequence[float]]:
 
         if self._values is not None:
-            return tuple(self._values)
-        return self._values
+            return self._values
+        return None
 
     @values.setter
     def values(self, v: Optional[Sequence[float]]) -> None:
 
         if v is not None:
-            self._values = tuple(v)
+            self._values = list(v)
         else:
             self._values = None
 
@@ -544,7 +545,7 @@ def create_trial(
         value:
             Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
         values:
-            Trial objective value for the multi-objective optimization. Must be specified for the
+            Trial objective value for multi-objective optimization. Must be specified for
             multi-objective optimization if ``state`` is :class:`TrialState.COMPLETE`.
         params:
             Dictionary with suggested parameters of the trial.
@@ -568,7 +569,7 @@ def create_trial(
     if value is not None and values is not None:
         raise ValueError("Specify only one of `value` and `values`.")
     elif value is not None:
-        _values = (value,)
+        _values = [value]
     else:
         _values = values
 
