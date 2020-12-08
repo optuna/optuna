@@ -1,11 +1,12 @@
 from collections import OrderedDict
+
 import numpy as np
 import pytest
 import xgboost as xgb
 
 import optuna
-from optuna.integration.xgboost import XGBoostPruningCallback
 from optuna.integration.xgboost import use_callback_cls
+from optuna.integration.xgboost import XGBoostPruningCallback
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
@@ -35,24 +36,22 @@ def test_xgboost_pruning_callback_call() -> None:
         with pytest.raises(optuna.TrialPruned):
             pruning_callback(env)
     else:
-        after_it = {
-            "model": None,
-            "epoch": 1,
-            "evals_log": {"validation": OrderedDict({"logloss": [1.0]})},
-        }
-
         # The pruner is deactivated.
         study = optuna.create_study(pruner=DeterministicPruner(False))
         trial = create_running_trial(study, 1.0)
         pruning_callback = XGBoostPruningCallback(trial, "validation-logloss")
-        pruning_callback.after_iteration(**after_it)
+        pruning_callback.after_iteration(
+            model=None, epoch=1, evals_log={"validation": OrderedDict({"logloss": [1.0]})}
+        )
 
         # The pruner is activated.
         study = optuna.create_study(pruner=DeterministicPruner(True))
         trial = create_running_trial(study, 1.0)
         pruning_callback = XGBoostPruningCallback(trial, "validation-logloss")
         with pytest.raises(optuna.TrialPruned):
-            pruning_callback.after_iteration(**after_it)
+            pruning_callback.after_iteration(
+                model=None, epoch=1, evals_log={"validation": OrderedDict({"logloss": [1.0]})}
+            )
 
 
 def test_xgboost_pruning_callback() -> None:

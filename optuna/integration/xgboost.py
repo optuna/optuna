@@ -1,4 +1,7 @@
+from typing import Any
+
 import optuna
+
 
 use_callback_cls = True
 
@@ -40,14 +43,14 @@ if _imports.is_successful() and use_callback_cls:
             self._observation_key = observation_key
             self._is_cv = False
 
-        def before_training(self, model):
+        def before_training(self, model: Any) -> Any:
             if isinstance(model, xgb.Booster):
                 self._is_cv = False
             else:
                 self._is_cv = True
             return model
 
-        def after_iteration(self, model, epoch: int, evals_log: dict) -> bool:
+        def after_iteration(self, model: Any, epoch: int, evals_log: dict) -> bool:
             evaluation_result_list = {}
             for dataset, metrics in evals_log.items():
                 for metric, scores in metrics.items():
