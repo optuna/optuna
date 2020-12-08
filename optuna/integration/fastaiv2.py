@@ -33,7 +33,7 @@ class FastAIV2PruningCallback(TrackerCallback):
 
         Register a pruning callback to ``learn.fit`` and ``learn.fit_one_cycle``.
 
-        .. code::
+        .. testcode::
 
             learn = cnn_learner(dls, resnet18, metrics=[error_rate])
             learn.fit(n_epochs, cbs=[FastAIPruningCallback(trial)])  # Monitor "valid_loss"
@@ -66,14 +66,14 @@ class FastAIV2PruningCallback(TrackerCallback):
     def after_epoch(self) -> None:
         super().after_epoch()
         # self.idx is set by TrackTrackerCallback
-        self.optuna_trial.report(self.recorder.final_record[self.idx], step=self.epoch)
+        self.trial.report(self.recorder.final_record[self.idx], step=self.epoch)
 
-        if self.optuna_trial.should_prune():
+        if self.trial.should_prune():
             raise CancelFitException()
 
     def after_fit(self) -> None:
         super().after_fit()
-        if self.optuna_trial.should_prune():
+        if self.trial.should_prune():
             raise optuna.TrialPruned(f"Trial was pruned at epoch {self.epoch}.")
 
 
