@@ -66,6 +66,8 @@ if _imports.is_successful() and use_callback_cls:
                 message = "Trial was pruned at iteration {}.".format(epoch)
                 raise optuna.TrialPruned(message)
 
+            return False
+
 
 elif _imports.is_successful():
 

@@ -4,7 +4,8 @@ import pytest
 import xgboost as xgb
 
 import optuna
-from optuna.integration.xgboost import XGBoostPruningCallback, use_callback_cls
+from optuna.integration.xgboost import XGBoostPruningCallback
+from optuna.integration.xgboost import use_callback_cls
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
