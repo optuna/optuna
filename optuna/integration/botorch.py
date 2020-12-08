@@ -6,7 +6,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-import warnings
 
 import numpy
 
@@ -27,7 +26,6 @@ from optuna.trial import TrialState
 
 
 with try_import() as _imports:
-    from botorch.acquisition import UpperConfidenceBound
     from botorch.acquisition.monte_carlo import qExpectedImprovement
     from botorch.acquisition.multi_objective.monte_carlo import qExpectedHypervolumeImprovement
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
@@ -38,22 +36,23 @@ with try_import() as _imports:
     from botorch.optim import optimize_acqf
     from botorch.sampling.samplers import SobolQMCNormalSampler
     from botorch.utils.multi_objective.box_decomposition import NondominatedPartitioning
+    from botorch.utils.transforms import normalize
     from botorch.utils.transforms import unnormalize
     from gpytorch.mlls import ExactMarginalLogLikelihood
     import torch
 
 
 @experimental("2.4.0")
-def ucb_candidates_func(
+def qei_candidates_func(
     train_x: "torch.Tensor",
     train_obj: "torch.Tensor",
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
 ) -> "torch.Tensor":
-    """Upper Confidence Bound (UCB).
+    """Expected Improvement (qEI).
 
     The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
-    with single-objective optimization without objective constraints.
+    with single-objective optimization.
 
     Args:
         train_x:
@@ -71,9 +70,7 @@ def ucb_candidates_func(
             Objective constraints. A ``torch.Tensor`` of shape ``(n_trials, n_constraints)``.
             ``n_trials`` is identical to that of ``train_x``. ``n_constraints`` is the number of
             constraints. A constraint is violated if strictly larger than 0. If no constraints are
-            involved in the optimization, this argument will be :obj:`None`. In particular for
-            :func:`~optuna.integration.botorch.ucb_candidates_func`, it should always be
-            :obj:`None` since UCB does not support constrained optimization.
+            involved in the optimization, this argument will be :obj:`None`.
         bounds:
             Search space bounds. A ``torch.Tensor`` of shape ``(n_params, 2)``. ``n_params`` is
             identical to that of ``train_x``. The first and the second column correspond to the
@@ -83,69 +80,39 @@ def ucb_candidates_func(
         Next set of candidates. Usually the return value of BoTorch's ``optimize_acqf``.
 
     """
-
-    if train_con is not None:
-        warnings.warn("Constraints are given but will be ignored.")
-
-    model = SingleTaskGP(train_x, train_obj)
-    mll = ExactMarginalLogLikelihood(model.likelihood, model)
-    fit_gpytorch_model(mll)
-
-    acqf = UpperConfidenceBound(model, beta=0.1)
-
-    candidates, _ = optimize_acqf(
-        acqf,
-        bounds=bounds,
-        q=1,
-        num_restarts=5,
-        raw_samples=40,
-    )
-
-    return candidates
-
-
-@experimental("2.4.0")
-def qei_candidates_func(
-    train_x: "torch.Tensor",
-    train_obj: "torch.Tensor",
-    train_con: Optional["torch.Tensor"],
-    bounds: "torch.Tensor",
-) -> "torch.Tensor":
-    """Expected Improvement (qEI).
-
-    The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
-    with single-objective optimization with objective constraints.
-
-    .. seealso::
-        :func:`~optuna.integration.botorch.ucb_candidates_func` for argument and return value
-        descriptions.
-    """
-
     if train_obj.size(-1) != 1:
         raise ValueError("Objective may only contain single values with qEI.")
-    if train_con is None:
-        raise ValueError("Constraints must be used with qEI.")
+    if train_con is not None:
+        train_y = torch.cat([train_obj, train_con], dim=-1)
 
-    train_y = torch.cat([train_obj, train_con], dim=-1)
+        best_f = (train_obj * (train_con <= 0)).max()
 
-    model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.shape[-1]))
+        constraints = []
+        n_contraints = train_con.size(1)
+        for i in range(n_contraints):
+            constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
+        objective = ConstrainedMCObjective(
+            objective=lambda Z: Z[..., 0],
+            constraints=constraints,
+        )
+    else:
+        train_y = train_obj
+
+        best_f = train_obj.max()
+
+        objective = None  # Using the default identity objective.
+
+    train_x = normalize(train_x, bounds=bounds)
+
+    model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     fit_gpytorch_model(mll)
-
-    constraints = []
-    n_contraints = train_con.size(1)
-    for i in range(n_contraints):
-        constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
-    constrained_objective = ConstrainedMCObjective(
-        objective=lambda Z: Z[..., 0],
-        constraints=constraints,
-    )
 
     acqf = qExpectedImprovement(
         model=model,
-        best_f=(train_obj * (train_con <= 0)).max(),
+        best_f=best_f,
         sampler=SobolQMCNormalSampler(num_samples=256),
-        objective=constrained_objective,
+        objective=objective,
     )
 
     standard_bounds = torch.zeros_like(bounds)
@@ -176,10 +143,10 @@ def qehvi_candidates_func(
     """Expected Hypervolume Improvement (qEHVI).
 
     The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
-    with multi-objective optimization with or without objective constraints.
+    with multi-objective optimization.
 
     .. seealso::
-        :func:`~optuna.integration.botorch.ucb_candidates_func` for argument and return value
+        :func:`~optuna.integration.botorch.qei_candidates_func` for argument and return value
         descriptions.
     """
 
@@ -206,6 +173,8 @@ def qehvi_candidates_func(
         partitioning_y = train_obj
 
         additional_qehvi_kwargs = {}
+
+    train_x = normalize(train_x, bounds=bounds)
 
     model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.shape[-1]))
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
@@ -243,7 +212,7 @@ def qehvi_candidates_func(
 
 
 def _get_default_candidates_func(
-    n_objectives: int, n_objective_constraints: int
+    n_objectives: int,
 ) -> Callable[
     [
         "torch.Tensor",
@@ -253,16 +222,12 @@ def _get_default_candidates_func(
     ],
     "torch.Tensor",
 ]:
-    assert n_objectives >= 1
-    assert n_objective_constraints >= 0
-
     if n_objectives == 1:
-        if n_objective_constraints == 0:
-            return ucb_candidates_func
-        else:
-            return qei_candidates_func
-    else:
+        return qei_candidates_func
+    elif n_objectives > 1:
         return qehvi_candidates_func
+    else:
+        assert False, "Should not reach."
 
 
 # TODO(hvy): Allow utilizing GPUs via some parameter, not having to rewrite the callback
@@ -296,16 +261,14 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
             ``torch.Tensor``. However, if ``constraints_func`` is omitted, constraints will be
             :obj:`None`.
 
-            If omitted, is determined automatically based on the number of objectives and
-            constraints. If the number of objectives is one and no constraints are defined,
-            Upper Confidence Bound (UCB) is used. If the number of objectives is one and
-            constraints are defined, Expected Improvement (qEI) is used. If the number of
-            objectives are larger than one, Expected Hypervolume Improvement (qEHVI) is used.
+            If omitted, is determined automatically based on the number of objectives. If the
+            number of objectives is one, Expected Improvement (qEI) is used. If the number of
+            objectives is larger than one, Expected Hypervolume Improvement (qEHVI) is used.
 
             The function should assume *maximization* of the objective.
 
             .. seealso::
-                See :func:`optuna.integration.botorch.ucb_candidates_func` for an example.
+                See :func:`optuna.integration.botorch.qei_candidates_func` for an example.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.multi_objective.study.MultiObjectiveStudy`, a
@@ -448,17 +411,13 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
             con = torch.from_numpy(con)
         bounds = torch.from_numpy(bounds)
 
-        if values.dim() == 1:
-            values.unsqueeze_(-1)
         if con is not None:
             if con.dim() == 1:
                 con.unsqueeze_(-1)
         bounds.transpose_(0, 1)
 
         if self._candidates_func is None:
-            self._candidates_func = _get_default_candidates_func(
-                n_objectives=study.n_objectives, n_objective_constraints=n_objective_constraints
-            )
+            self._candidates_func = _get_default_candidates_func(n_objectives=study.n_objectives)
         candidates = self._candidates_func(params, values, con, bounds)
 
         if not isinstance(candidates, torch.Tensor):

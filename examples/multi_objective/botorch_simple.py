@@ -1,3 +1,5 @@
+from botorch.settings import suppress_botorch_warnings
+from botorch.settings import validate_input_scaling
 from botorch.test_functions.multi_objective import C2DTLZ2
 import torch
 
@@ -24,6 +26,10 @@ def constraints(study, trial):
 
 
 if __name__ == "__main__":
+    # Show warnings from BoTorch such as unnormalized input data warnings.
+    suppress_botorch_warnings(False)
+    validate_input_scaling(True)
+
     sampler = optuna.integration.BoTorchSampler(
         constraints_func=constraints,
         n_startup_trials=10,
