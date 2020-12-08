@@ -49,7 +49,7 @@ def qei_candidates_func(
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
 ) -> "torch.Tensor":
-    """Expected Improvement (qEI).
+    """Quasi MC-based batch Expected Improvement (qEI).
 
     The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
     with single-objective optimization.
@@ -140,7 +140,7 @@ def qehvi_candidates_func(
     train_con: Optional["torch.Tensor"],
     bounds: "torch.Tensor",
 ) -> "torch.Tensor":
-    """Expected Hypervolume Improvement (qEHVI).
+    """Quasi MC-based batch Expected Hypervolume Improvement (qEHVI).
 
     The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
     with multi-objective optimization.
@@ -262,8 +262,9 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
             :obj:`None`.
 
             If omitted, is determined automatically based on the number of objectives. If the
-            number of objectives is one, Expected Improvement (qEI) is used. If the number of
-            objectives is larger than one, Expected Hypervolume Improvement (qEHVI) is used.
+            number of objectives is one, Quasi MC-based batch Expected Improvement (qEI) is used.
+            If the number of objectives is larger than one, Quasi MC-based batch Expected
+            Hypervolume Improvement (qEHVI) is used.
 
             The function should assume *maximization* of the objective.
 
