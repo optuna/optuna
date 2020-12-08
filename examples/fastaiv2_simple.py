@@ -18,7 +18,6 @@ import argparse
 
 from fastai.vision.all import accuracy
 from fastai.vision.all import aug_transforms
-from fastai.vision.all import CudaCallback
 from fastai.vision.all import ImageDataLoaders
 from fastai.vision.all import Learner
 from fastai.vision.all import SimpleCNN
