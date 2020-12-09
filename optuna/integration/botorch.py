@@ -387,10 +387,9 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
         values = numpy.empty((n_trials, study.n_objectives), dtype=numpy.float64)
         params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
         if self._constraints_func is not None:
-            n_objective_constraints = len(next(iter(self._trial_constraints.values())))
-            con = numpy.empty((n_trials, n_objective_constraints), dtype=numpy.float64)
+            n_constraints = len(next(iter(self._trial_constraints.values())))
+            con = numpy.empty((n_trials, n_constraints), dtype=numpy.float64)
         else:
-            n_objective_constraints = 0
             con = None
         bounds = trans.bounds
 
