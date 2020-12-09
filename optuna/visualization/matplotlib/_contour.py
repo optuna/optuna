@@ -57,7 +57,7 @@ def plot_contour(
             A function to specify the value to display. If it is :obj:`None`, the objective values
             are plotted.
         target_name:
-            Target's name to display on the axis label and the legend.
+            Target's name to display on the color bar.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
