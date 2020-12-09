@@ -205,9 +205,9 @@ class _OptunaObjective(_BaseTuner):
             self.pbar.set_description(self.pbar_fmt.format(self.step_name, self.best_score))
 
         if "lambda_l1" in self.target_param_names:
-            self.lgbm_params["lambda_l1"] = trial.suggest_loguniform("lambda_l1", 1e-8, 10.0)
+            self.lgbm_params["lambda_l1"] = trial.suggest_float("lambda_l1", 1e-8, 10.0, log=True)
         if "lambda_l2" in self.target_param_names:
-            self.lgbm_params["lambda_l2"] = trial.suggest_loguniform("lambda_l2", 1e-8, 10.0)
+            self.lgbm_params["lambda_l2"] = trial.suggest_float("lambda_l2", 1e-8, 10.0, log=True)
         if "num_leaves" in self.target_param_names:
             tree_depth = self.lgbm_params.get("max_depth", _DEFAULT_TUNER_TREE_DEPTH)
             max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** _DEFAULT_TUNER_TREE_DEPTH
@@ -215,19 +215,19 @@ class _OptunaObjective(_BaseTuner):
         if "feature_fraction" in self.target_param_names:
             # `GridSampler` is used for sampling feature_fraction value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = min(trial.suggest_uniform("feature_fraction", 0.4, 1.0 + _EPS), 1.0)
+            param_value = min(trial.suggest_float("feature_fraction", 0.4, 1.0 + _EPS), 1.0)
             self.lgbm_params["feature_fraction"] = param_value
         if "bagging_fraction" in self.target_param_names:
             # `TPESampler` is used for sampling bagging_fraction value.
             # The value 1.0 for the hyperparameter might by sampled.
-            param_value = min(trial.suggest_uniform("bagging_fraction", 0.4, 1.0 + _EPS), 1.0)
+            param_value = min(trial.suggest_float("bagging_fraction", 0.4, 1.0 + _EPS), 1.0)
             self.lgbm_params["bagging_fraction"] = param_value
         if "bagging_freq" in self.target_param_names:
             self.lgbm_params["bagging_freq"] = trial.suggest_int("bagging_freq", 1, 7)
         if "min_child_samples" in self.target_param_names:
             # `GridSampler` is used for sampling min_child_samples value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + _EPS))
+            param_value = int(trial.suggest_float("min_child_samples", 5, 100 + _EPS))
             self.lgbm_params["min_child_samples"] = param_value
 
     def _copy_valid_sets(self, valid_sets: "VALID_SET_TYPE") -> "VALID_SET_TYPE":
