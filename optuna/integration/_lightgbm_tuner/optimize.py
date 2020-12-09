@@ -345,7 +345,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
 class _LightGBMBaseTuner(_BaseTuner):
     """Base class of LightGBM Tuners.
 
-    This class has common attributes and method of
+    This class has common attributes and methods of
     :class:`~optuna.integration.lightgbm.LightGBMTuner` and
     :class:`~optuna.integration.lightgbm.LightGBMTunerCV`.
     """
