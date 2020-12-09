@@ -33,6 +33,7 @@ _logger = get_logger(__name__)
 def plot_contour(
     study: Study,
     params: Optional[List[str]] = None,
+    *,
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
