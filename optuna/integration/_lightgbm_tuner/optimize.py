@@ -622,11 +622,10 @@ class _LightGBMBaseTuner(_BaseTuner):
         study = self._create_stepwise_study(self.study, step_name)
         study.sampler = sampler
 
-        complete_trials = [
-            t
-            for t in study.trials
-            if t.state in (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
-        ]
+        complete_trials = study.get_trials(
+            deepcopy=True,
+            states=(optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED),
+        )
         _n_trials = n_trials - len(complete_trials)
 
         if self._start_time is None:
