@@ -69,7 +69,7 @@ class StepwiseSampler(optuna.samplers.BaseSampler):
         return ret_step
 
     def _get_default_params(self, study: Study) -> Dict[str, Any]:
-        if len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]) > 0:
+        if study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,)):
             return study.best_params
         return self.default_params
 
