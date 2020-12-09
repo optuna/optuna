@@ -5,6 +5,8 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+from packaging import version
+
 from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -112,6 +114,15 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
         elif _is_categorical(trials, p_name):
             # For numeric values, plotly does not automatically plot as "category" type.
             update_category_axes[p_name] = any([str(v).isnumeric() for v in set(values)])
+
+            # Plotly>=4.12.0 draws contours using the indices of categorical variables instead of
+            # raw values and the range should be updated based on the cardinality of categorical
+            # variables. See https://github.com/optuna/optuna/issues/1967.
+            if version.parse(plotly.__version__) >= version.parse("4.12.0"):
+                span = len(set(values)) - 1
+                padding = span * padding_ratio
+                min_value = -padding
+                max_value = span + padding
 
         else:
             padding = (max_value - min_value) * padding_ratio

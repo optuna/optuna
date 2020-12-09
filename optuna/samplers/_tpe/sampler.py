@@ -165,7 +165,7 @@ class TPESampler(BaseSampler):
         seed: Optional[int] = None,
         *,
         multivariate: bool = False,
-        warn_independent_sampling: bool = True
+        warn_independent_sampling: bool = True,
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
@@ -207,9 +207,7 @@ class TPESampler(BaseSampler):
         for name, distribution in self._search_space.calculate(study).items():
             if not isinstance(distribution, _DISTRIBUTION_CLASSES):
                 if self._warn_independent_sampling:
-                    complete_trials = study._storage.get_all_trials(
-                        study._study_id, deepcopy=False
-                    )
+                    complete_trials = study.get_trials(deepcopy=False)
                     if len(complete_trials) >= self._n_startup_trials:
                         self._log_independent_sampling(trial, name)
                 continue
@@ -765,8 +763,10 @@ def _get_observation_pairs(
 
     values = []
     scores = []
-    for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
-        if trial.state is TrialState.COMPLETE and trial.value is not None:
+    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
+        if trial.state is TrialState.COMPLETE:
+            if trial.value is None:
+                continue
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
@@ -778,7 +778,7 @@ def _get_observation_pairs(
             else:
                 score = (float("inf"), 0.0)
         else:
-            continue
+            assert False
 
         param_value: Optional[float] = None
         if param_name in trial.params:
@@ -801,10 +801,12 @@ def _get_multivariate_observation_pairs(
 
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
-    for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
+    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
 
         # We extract score from the trial.
-        if trial.state is TrialState.COMPLETE and trial.value is not None:
+        if trial.state is TrialState.COMPLETE:
+            if trial.value is None:
+                continue
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
@@ -816,7 +818,7 @@ def _get_multivariate_observation_pairs(
             else:
                 score = (float("inf"), 0.0)
         else:
-            continue
+            assert False
         scores.append(score)
 
         # We extract param_value from the trial.

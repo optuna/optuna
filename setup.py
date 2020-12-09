@@ -28,7 +28,7 @@ def get_long_description() -> str:
 
 def get_install_requires() -> List[str]:
 
-    return [
+    requirements = [
         "alembic",
         "cliff",
         "cmaes>=0.6.0",
@@ -40,6 +40,11 @@ def get_install_requires() -> List[str]:
         "sqlalchemy>=1.1.0",
         "tqdm",
     ]
+    # NOTE (crcrpar): Some of the above libraries require Cython to be installed.
+    # I hope they will obviate it in the future releases.
+    if sys.version_info[:2] > (3, 8):
+        requirements.append("Cython")
+    return requirements
 
 
 def get_tests_require() -> List[str]:
@@ -73,6 +78,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pillow",
             "matplotlib",
             "scikit-learn",
+            "plotly>=4.0.0",  # optuna/visualization.
+            "pandas",
+            # Read the Docs does not allow pip install with the -f, --find-links option. Therefore
+            # `torch` and `torchvision` in `document` are not pinned to the CPU only version since
+            # that would require this option. This increases the build time of the documentation.
+            # See https://github.com/optuna/optuna/pull/2065 for details.
+            "torch",
+            "torchvision",
         ],
         "example": [
             "catboost",
@@ -89,7 +102,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow>=2.0.0",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "thop",
             "skorch",
             "stable-baselines3>=0.7.0",
@@ -133,7 +146,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
         ]
@@ -169,7 +182,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
         ]
@@ -203,7 +216,7 @@ setup(
     author="Takuya Akiba",
     author_email="akiba@preferred.jp",
     url="https://optuna.org/",
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests", "tests.*")),
     package_data={
         "optuna": [
             "storages/_rdb/alembic.ini",
@@ -237,6 +250,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",

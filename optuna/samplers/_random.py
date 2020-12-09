@@ -33,8 +33,8 @@ class RandomSampler(BaseSampler):
             study = optuna.create_study(sampler=RandomSampler())
             study.optimize(objective, n_trials=10)
 
-        Args:
-            seed: Seed for random number generator.
+    Args:
+        seed: Seed for random number generator.
     """
 
     def __init__(self, seed: Optional[int] = None) -> None:
