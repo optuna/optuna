@@ -227,7 +227,7 @@ class _OptunaObjective(_BaseTuner):
         if "min_child_samples" in self.target_param_names:
             # `GridSampler` is used for sampling min_child_samples value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = int(trial.suggest_float("min_child_samples", 5, 100 + _EPS))
+            param_value = trial.suggest_int("min_child_samples", 5, 100)
             self.lgbm_params["min_child_samples"] = param_value
 
     def _copy_valid_sets(self, valid_sets: "VALID_SET_TYPE") -> "VALID_SET_TYPE":
