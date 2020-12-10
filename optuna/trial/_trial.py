@@ -136,6 +136,12 @@ class Trial(BaseTrial):
             high:
                 Upper endpoint of the range of suggested values. ``high`` is excluded from the
                 range.
+
+                .. note::
+                    If ``step`` is specified, ``high`` is included as well as ``low`` because
+                    this method falls back to :func:`~optuna.trial.Trial.suggest_discrete_uniform`
+                    with ``step`` argument.
+
             step:
                 A step of discretization.
 
