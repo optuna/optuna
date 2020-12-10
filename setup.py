@@ -78,6 +78,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pillow",
             "matplotlib",
             "scikit-learn",
+            "plotly>=4.0.0",  # optuna/visualization.
+            "pandas",
+            # Read the Docs does not allow pip install with the -f, --find-links option. Therefore
+            # `torch` and `torchvision` in `document` are not pinned to the CPU only version since
+            # that would require this option. This increases the build time of the documentation.
+            # See https://github.com/optuna/optuna/pull/2065 for details.
+            "torch",
+            "torchvision",
         ],
         "example": [
             "catboost",
@@ -89,7 +97,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "nbval",
             "scikit-image",
             "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
-            "xgboost",
+            "xgboost<1.3",
             "keras",
             "tensorflow>=2.0.0",
             "tensorflow-datasets",
@@ -133,7 +141,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytest",
             "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
-            "xgboost",
+            "xgboost<1.3",
             "keras",
             "tensorflow",
             "tensorflow-datasets",
@@ -169,7 +177,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
-            "xgboost",
+            "xgboost<1.3",
             "keras",
             "tensorflow",
             "tensorflow-datasets",

@@ -14,23 +14,23 @@ Key Features
 
 Optuna has modern functionalities as follows:
 
-- :doc:`Lightweight, versatile, and platform agnostic architecture <tutorial/001_first>`
+- :doc:`Lightweight, versatile, and platform agnostic architecture <tutorial/10_key_features/001_first>`
 
-  - Handle a wide variety of tasks with a simple installation that has few requirements. 
+  - Handle a wide variety of tasks with a simple installation that has few requirements.
 
-- :doc:`Pythonic search spaces <tutorial/002_configurations>` 
+- :doc:`Pythonic search spaces <tutorial/10_key_features/002_configurations>`
 
   - Define search spaces using familiar Python syntax including conditionals and loops.
 
-- :doc:`Efficient optimization algorithms <tutorial/007_pruning>`
+- :doc:`Efficient optimization algorithms <tutorial/10_key_features/003_efficient_optimization_algorithms>`
 
   - Adopt state-of-the-art algorithms for sampling hyper parameters and efficiently pruning unpromising trials.
 
-- :doc:`Easy parallelization <tutorial/004_distributed>`
+- :doc:`Easy parallelization <tutorial/10_key_features/004_distributed>`
 
   - Scale studies to tens or hundreds or workers with little or no changes to the code.
 
-- :doc:`Quick visualization <reference/visualization/index>`
+- :doc:`Quick visualization <tutorial/10_key_features/005_visualization>`
 
   - Inspect optimization histories from a variety of plotting functions.
 
