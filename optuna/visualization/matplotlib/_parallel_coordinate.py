@@ -6,6 +6,7 @@ from typing import Optional
 import numpy as np
 
 from optuna._experimental import experimental
+from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import TrialState
@@ -46,7 +47,7 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
 
     # Set up the graph style.
     fig, ax = plt.subplots()
-    cmap = plt.get_cmap("Blues")
+    cmap = plt.get_cmap("Blues_r" if study.direction == StudyDirection.MINIMIZE else "Blues")
     ax.set_title("Parallel Coordinate Plot")
     ax.spines["top"].set_visible(False)
     ax.spines["bottom"].set_visible(False)
