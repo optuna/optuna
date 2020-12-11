@@ -62,7 +62,6 @@ jobs:
       run: |
         if [ ${{ matrix.python-version }} = 3.8 ]; then
           pytest tests/integration_tests \
-            --ignore tests/integration_tests/test_fastai.py \
             --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
         else
           # pytest cannot collect allennlp tests with allennlp==1.0.0.
