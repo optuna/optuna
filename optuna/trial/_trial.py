@@ -139,8 +139,7 @@ class Trial(BaseTrial):
 
                 .. note::
                     If ``step`` is specified, ``high`` is included as well as ``low`` because
-                    this method falls back to :func:`~optuna.trial.Trial.suggest_discrete_uniform`
-                    with ``step`` argument.
+                    this method falls back to :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
 
             step:
                 A step of discretization.
