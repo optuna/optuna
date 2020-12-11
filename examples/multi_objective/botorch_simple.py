@@ -50,5 +50,9 @@ if __name__ == "__main__":
 
     for trial in trials:
         print("  Trial#{}".format(trial.number))
-        print("    Values: Values={}, Constraint={}".format(trial.values[:-1], trial.values[-1]))
+        print(
+            "    Values: Values={}, Constraint={}".format(
+                trial.values, trial.user_attrs["constraint"][0]
+            )
+        )
         print("    Params: {}".format(trial.params))
