@@ -1,10 +1,20 @@
 from typing import Any
 
+from packaging import version
+
 import optuna
+from optuna._deprecated import deprecated
 from optuna._imports import try_import
 
 
 with try_import() as _imports:
+    import fastai
+
+    if version.parse(fastai.__version__) >= version.parse("2.0.0"):
+        raise ImportError(
+            f"You don't have fastai V1 installed! Fastai version: {fastai.__version__}"
+        )
+
     from fastai.basic_train import Learner
     from fastai.callbacks import TrackerCallback
 
@@ -12,14 +22,15 @@ if not _imports.is_successful():
     TrackerCallback = object  # NOQA
 
 
-class FastAIPruningCallback(TrackerCallback):
+@deprecated("2.4.0")
+class FastAIV1PruningCallback(TrackerCallback):
     """FastAI callback to prune unpromising trials for fastai.
 
     .. note::
-        This callback is for fastai<2.0, not the coming version developed in fastai/fastai_dev.
+        This callback is for fastai<2.0.
 
     See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/fastai_simple.py>`__
+    examples/fastaiv1_simple.py>`__
     if you want to add a pruning callback which monitors validation loss of a ``Learner``.
 
     Example:
@@ -45,14 +56,14 @@ class FastAIPruningCallback(TrackerCallback):
             evaluation of the objective function.
         monitor:
             An evaluation metric for pruning, e.g. ``valid_loss`` and ``Accuracy``.
-            Please refer to `fastai.Callback reference
-            <https://docs.fast.ai/callback.html#Callback>`_ for further
+            Please refer to `fastai.callbacks.TrackerCallback reference
+            <https://fastai1.fast.ai/callbacks.tracker.html#TrackerCallback>`_ for further
             details.
     """
 
     def __init__(self, learn: "Learner", trial: optuna.trial.Trial, monitor: str) -> None:
 
-        super(FastAIPruningCallback, self).__init__(learn, monitor)
+        super(FastAIV1PruningCallback, self).__init__(learn, monitor)
 
         _imports.check()
 
