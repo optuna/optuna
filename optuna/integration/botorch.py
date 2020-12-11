@@ -151,7 +151,7 @@ def qehvi_candidates_func(
         descriptions.
     """
 
-    n_outcomes = train_obj.size(-1)
+    n_objectives = train_obj.size(-1)
 
     if train_con is not None:
         train_y = torch.cat([train_obj, train_con], dim=-1)
@@ -165,7 +165,7 @@ def qehvi_candidates_func(
         for i in range(n_contraints):
             constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
         additional_qehvi_kwargs = {
-            "objective": IdentityMCMultiOutputObjective(outcomes=list(range(n_outcomes))),
+            "objective": IdentityMCMultiOutputObjective(outcomes=list(range(n_objectives))),
             "constraints": constraints,
         }
     else:
@@ -181,7 +181,7 @@ def qehvi_candidates_func(
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     fit_gpytorch_model(mll)
 
-    partitioning = NondominatedPartitioning(num_outcomes=n_outcomes, Y=partitioning_y)
+    partitioning = NondominatedPartitioning(num_outcomes=n_objectives, Y=partitioning_y)
 
     ref_point = train_obj.min(dim=0).values - 1e-8
     ref_point_list = ref_point.tolist()
