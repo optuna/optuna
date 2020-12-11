@@ -107,21 +107,15 @@ def get_extras_require() -> Dict[str, List[str]]:
             "skorch",
             "stable-baselines3>=0.7.0",
             "catalyst",
+            "allennlp==1.2.0",
+            "fastai",
+            "dask[dataframe]",
+            "dask-ml",
         ]
         + (
             ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
             else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        )
-        + (
-            [
-                "allennlp==1.2.0",
-                "fastai",
-                "dask[dataframe]",
-                "dask-ml",
-            ]
-            if sys.version_info[:2] < (3, 8)
-            else ["fastai"]
         ),
         "experimental": ["redis"],
         "testing": [
@@ -149,13 +143,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
+            "allennlp==1.2.0",
+            "fastai",
         ]
         + (
             ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
             else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        )
-        + (["allennlp==1.2.0", "fastai"] if sys.version_info[:2] < (3, 8) else ["fastai"]),
+        ),
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -185,13 +180,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
+            "allennlp==1.2.0",
+            "fastai",
         ]
         + (
             ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
             if sys.platform == "darwin"
             else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        )
-        + (["allennlp==1.2.0", "fastai"] if sys.version_info[:2] < (3, 8) else ["fastai"]),
+        ),
     }
 
     return requirements
