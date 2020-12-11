@@ -35,7 +35,7 @@ if __name__ == "__main__":
         n_startup_trials=10,
     )
     study = optuna.multi_objective.create_study(
-        directions=["maximize", "maximize"],
+        directions=["maximize"] * _OBJECTIVE.num_objectives,
         sampler=sampler,
     )
     study.optimize(objective, n_trials=32)
