@@ -35,6 +35,15 @@ jobs:
             pip install --progress-bar off .[document] -f https://download.pytorch.org/whl/torch_stable.html
 
       - run:
+          name: Calculate hash
+          command: |
+            find tutorial -type f -print0 | xargs -0 md5sum > /tmp/tutorial_files.md5
+
+      - restore_cache:
+          keys:
+            - tutorial-{{ checksum "/tmp/tutorial_files.md5" }}
+
+      - run:
           name: build
           command: |
             . venv/bin/activate
@@ -43,6 +52,12 @@ jobs:
 
       - store_artifacts:
           path: ./docs/build/html
+
+      - save_cache:
+          key: tutorial-{{ checksum "/tmp/tutorial_files.md5" }}
+          paths:
+            - tutorial/MNIST
+            - docs/source/tutorial
 
   # Unit tests
 
