@@ -61,6 +61,8 @@ fast.ai
    :toctree: generated/
    :nosignatures:
 
+   optuna.integration.FastAIV1PruningCallback
+   optuna.integration.FastAIV2PruningCallback
    optuna.integration.FastAIPruningCallback
 
 Keras

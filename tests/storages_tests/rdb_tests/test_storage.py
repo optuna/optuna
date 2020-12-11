@@ -30,7 +30,7 @@ def test_init() -> None:
     assert version_info.library_version == version.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
-    assert storage.get_all_versions() == ["v1.3.0.a", "v1.2.0.a", "v0.9.0.a"]
+    assert storage.get_all_versions() == ["v2.4.0.a", "v1.3.0.a", "v1.2.0.a", "v0.9.0.a"]
 
 
 def test_init_url_template() -> None:

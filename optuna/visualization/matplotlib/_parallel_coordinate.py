@@ -1,4 +1,6 @@
 from collections import defaultdict
+from typing import Callable
+from typing import cast
 from typing import DefaultDict
 from typing import List
 from typing import Optional
@@ -6,8 +8,10 @@ from typing import Optional
 import numpy as np
 
 from optuna._experimental import experimental
+from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
@@ -21,7 +25,13 @@ _logger = get_logger(__name__)
 
 
 @experimental("2.2.0")
-def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -> "Axes":
+def plot_parallel_coordinate(
+    study: Study,
+    params: Optional[List[str]] = None,
+    *,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "Axes":
     """Plot the high-dimentional parameter relationships in a study with Matplotlib.
 
     .. seealso::
@@ -29,24 +39,43 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
 
     Args:
         study:
-            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values.
+            A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
         params:
             Parameter list to visualize. The default is all parameters.
+        target:
+            A function to specify the value to display. If it is :obj:`None`, the objective values
+            are plotted.
+        target_name:
+            Target's name to display on the axis label and the legend.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
     """
 
     _imports.check()
-    return _get_parallel_coordinate_plot(study, params)
+    return _get_parallel_coordinate_plot(study, params, target, target_name)
 
 
-def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = None) -> "Axes":
+def _get_parallel_coordinate_plot(
+    study: Study,
+    params: Optional[List[str]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "Axes":
+
+    if target is None:
+
+        def _target(t: FrozenTrial) -> float:
+            return cast(float, t.value)
+
+        target = _target
+        reversescale = study.direction == StudyDirection.MINIMIZE
+    else:
+        reversescale = True
 
     # Set up the graph style.
     fig, ax = plt.subplots()
-    cmap = plt.get_cmap("Blues")
+    cmap = plt.get_cmap("Blues_r" if reversescale else "Blues")
     ax.set_title("Parallel Coordinate Plot")
     ax.spines["top"].set_visible(False)
     ax.spines["bottom"].set_visible(False)
@@ -66,7 +95,7 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
-    obj_org = [t.value for t in trials if t.value is not None]
+    obj_org = [target(t) for t in trials]
     obj_min = min(obj_org)
     obj_max = max(obj_org)
     obj_w = obj_max - obj_min
@@ -76,7 +105,7 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
     cat_param_values = []
     cat_param_ticks = []
     param_values = []
-    var_names = ["Objective Value"]
+    var_names = [target_name]
     for p_name in sorted_params:
         values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
         try:
@@ -105,9 +134,9 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
     xs = [range(0, len(sorted_params) + 1) for i in range(len(dims_obj_base))]
     segments = [np.column_stack([x, y]) for x, y in zip(xs, dims_obj_base)]
     lc = LineCollection(segments, cmap=cmap)
-    lc.set_array(np.asarray([t.value for t in trials] + [0]))
+    lc.set_array(np.asarray([target(t) for t in trials] + [0]))
     axcb = fig.colorbar(lc, pad=0.1)
-    axcb.set_label("Objective Value")
+    axcb.set_label(target_name)
     plt.xticks(range(0, len(sorted_params) + 1), var_names, rotation=330)
 
     for i, p_name in enumerate(sorted_params):
