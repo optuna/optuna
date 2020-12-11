@@ -92,9 +92,9 @@ class BaseStudy(object):
 
     @property
     def best_trials(self) -> List[FrozenTrial]:
-        """Return trials located at the pareto front in the study.
+        """Return trials located at the Pareto front in the study.
 
-        A trial is located at the pareto front if there are no trials that dominate the trial.
+        A trial is located at the Pareto front if there are no trials that dominate the trial.
         It's called that a trial ``t0`` dominates another trial ``t1`` if
         ``all(v0 <= v1) for v0, v1 in zip(t0.values, t1.values)`` and
         ``any(v0 < v1) for v0, v1 in zip(t0.values, t1.values)`` are held.
@@ -690,6 +690,7 @@ def create_study(
     study_name: Optional[str] = None,
     direction: Optional[str] = None,
     load_if_exists: bool = False,
+    *,
     directions: Optional[Sequence[str]] = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.

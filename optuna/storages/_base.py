@@ -166,7 +166,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
-        """Register an optimization problem direction to a study.
+        """Register optimization problem directions to a study.
 
         Args:
             study_id:
@@ -180,8 +180,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
             :exc:`ValueError`:
-                If the direction is already set and the passed ``direction`` is the opposite
-                direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
+                If the directions are already set and the each coordinate of passed ``directions``
+                is the opposite direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
         """
         raise NotImplementedError
 
@@ -247,7 +247,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 ID of a study.
 
         Returns:
-            Optimization direction of the study.
+            Optimization directions list of the study.
 
         Raises:
             :exc:`KeyError`:
@@ -419,15 +419,15 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
-        """Set a return value of an objective function.
+        """Set return values of an objective function.
 
-        This method overwrites any existing trial value.
+        This method overwrites any existing trial values.
 
         Args:
             trial_id:
                 ID of the trial.
             values:
-                Value of the objective function.
+                Values of the objective function.
 
         Raises:
             :exc:`KeyError`:

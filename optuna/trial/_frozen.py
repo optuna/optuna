@@ -117,6 +117,10 @@ class FrozenTrial(BaseTrial):
             :func:`optuna.trial.Trial.set_user_attr`.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
+
+    Raises:
+            :exc:`ValueError`:
+                If both ``value`` and ``values`` are specified.
     """
 
     def __init__(
@@ -404,9 +408,7 @@ class FrozenTrial(BaseTrial):
     @property
     def values(self) -> Optional[Sequence[float]]:
 
-        if self._values is not None:
-            return self._values
-        return None
+        return self._values
 
     @values.setter
     def values(self, v: Optional[Sequence[float]]) -> None:
@@ -562,16 +564,8 @@ def create_trial(
         Created trial.
 
     Raises:
-        If both `value` and `values` are specified.
+        If both ``value`` and ``values`` are specified.
     """
-
-    _values: Optional[Sequence[float]]
-    if value is not None and values is not None:
-        raise ValueError("Specify only one of `value` and `values`.")
-    elif value is not None:
-        _values = [value]
-    else:
-        _values = values
 
     params = params or {}
     distributions = distributions or {}
@@ -590,8 +584,8 @@ def create_trial(
         number=-1,
         trial_id=-1,
         state=state,
-        value=None,
-        values=_values,
+        value=value,
+        values=values,
         datetime_start=datetime_start,
         datetime_complete=datetime_complete,
         params=params,

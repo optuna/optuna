@@ -102,16 +102,6 @@ class StudySummary(object):
 
         return self._directions[0]
 
-    @direction.setter
-    def direction(self, d: StudyDirection) -> None:
-
-        if len(self._directions) > 1:
-            raise RuntimeError(
-                "This attribute is not available during multi-objective optimization."
-            )
-
-        self._directions = [d]
-
     @property
     def directions(self) -> Sequence[StudyDirection]:
 

@@ -218,12 +218,10 @@ def _run_trial(
 
     if failure_message is None:
         assert checked_values is not None
-        study._storage.set_trial_values(trial_id, checked_values)
-        study._storage.set_trial_state(trial_id, TrialState.COMPLETE)
+        study._tell(trial, TrialState.COMPLETE, checked_values)
         study._log_completed_trial(trial, checked_values)
     else:
-        study._storage.set_trial_system_attr(trial_id, "fail_reason", failure_message)
-        study._storage.set_trial_state(trial_id, TrialState.FAIL)
+        study._tell(trial, TrialState.FAIL, None)
         _logger.warning(failure_message)
 
     return trial
@@ -231,19 +229,18 @@ def _run_trial(
 
 def _check_and_convert_to_values(
     n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
-) -> Tuple[Optional[Sequence[float]], Optional[str]]:
+) -> Tuple[Optional[List[float]], Optional[str]]:
     if isinstance(original_value, Sequence):
         if n_objectives != len(original_value):
             return None, (
-                "Trial {} failed, because the number of the values {} is did not match the "
-                "number of the objectives {}.".format(
-                    trial.number, len(original_value), n_objectives
-                )
+                f"Trial {trial.number} failed, because the number of the values "
+                f"{len(original_value)} is did not match the number of the objectives "
+                f"{n_objectives}."
             )
         else:
-            _original_values = original_value
+            _original_values = list(original_value)
     else:
-        _original_values = (original_value,)
+        _original_values = [original_value]
 
     _checked_values = []
     for v in _original_values:
@@ -272,15 +269,16 @@ def _check_single_value(
         TypeError,
     ):
         failure_message = (
-            "Trial {} failed, because the returned value from the "
-            "objective function cannot be cast to float. Returned value is: "
-            "{}".format(trial.number, repr(original_value))
+            f"Trial {trial.number} failed, because the returned value from the "
+            f"objective function cannot be cast to float. Returned value is: "
+            f"{repr(original_value)}"
         )
 
     if value is not None and math.isnan(value):
         value = None
-        failure_message = "Trial {} failed, because the objective function returned {}.".format(
-            trial.number, original_value
+        failure_message = (
+            f"Trial {trial.number} failed, because the objective function returned "
+            f"{original_value}."
         )
 
     return value, failure_message
