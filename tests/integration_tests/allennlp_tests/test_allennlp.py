@@ -230,7 +230,7 @@ def test_allennlp_pruning_callback() -> None:
 
         def objective(trial: optuna.Trial) -> float:
             reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
-                tokenizer=allennlp.data.tokenizers.SpacyTokenizer()
+                tokenizer=allennlp.data.tokenizers.WhitespaceTokenizer(),
             )
             dataset = reader.read("tests/integration_tests/allennlp_tests/pruning_test.jsonl")
             vocab = allennlp.data.Vocabulary.from_instances(dataset)
