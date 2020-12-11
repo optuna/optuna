@@ -276,9 +276,7 @@ def _generate_contour_subplot(
             value = float(value)
         elif not isinstance(value, float):
             raise ValueError(
-                "Trial{} has COMPLETE state, but its target value is non-numeric.".format(
-                    trial.number
-                )
+                f"Trial{trial.number} has COMPLETE state, but its target value is non-numeric."
             )
         z[y_i][x_i] = value
 
