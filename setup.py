@@ -109,9 +109,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "catalyst",
         ]
         + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
+            ["torch==1.7.1", "torchvision==0.8.2", "torchaudio==0.7.2"]
             if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
+            else ["torch==1.7.1+cpu", "torchvision==0.8.2+cpu", "torchaudio==0.7.2"]
         )
         + (
             [
@@ -151,9 +151,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "catalyst",
         ]
         + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
+            ["torch==1.7.1", "torchvision==0.8.2", "torchaudio==0.7.2"]
             if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
+            else ["torch==1.7.1+cpu", "torchvision==0.8.2+cpu", "torchaudio==0.7.2"]
         )
         + (["allennlp==1.2.0", "fastai"] if sys.version_info[:2] < (3, 8) else ["fastai"]),
         "tests": ["fakeredis", "pytest"],
@@ -187,9 +187,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "catalyst",
         ]
         + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
+            ["torch==1.7.1", "torchvision==0.8.2", "torchaudio==0.7.2"]
             if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
+            else ["torch==1.7.1+cpu", "torchvision==0.8.2+cpu", "torchaudio==0.7.2"]
         )
         + (["allennlp==1.2.0", "fastai"] if sys.version_info[:2] < (3, 8) else ["fastai"]),
     }
