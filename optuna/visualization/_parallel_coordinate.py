@@ -101,6 +101,9 @@ def _get_parallel_coordinate_plot(
             return cast(float, t.value)
 
         target = _target
+        reversescale = study.direction == StudyDirection.MINIMIZE
+    else:
+        reversescale = True
 
     dims: List[Dict[str, Any]] = [
         {
@@ -141,7 +144,7 @@ def _get_parallel_coordinate_plot(
                 "colorscale": "blues",
                 "colorbar": {"title": target_name},
                 "showscale": True,
-                "reversescale": study.direction == StudyDirection.MINIMIZE,
+                "reversescale": reversescale,
             },
         )
     ]

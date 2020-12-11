@@ -63,9 +63,19 @@ def _get_parallel_coordinate_plot(
     target_name: str = "Objective Value",
 ) -> "Axes":
 
+    if target is None:
+
+        def _target(t: FrozenTrial) -> float:
+            return cast(float, t.value)
+
+        target = _target
+        reversescale = study.direction == StudyDirection.MINIMIZE
+    else:
+        reversescale = True
+
     # Set up the graph style.
     fig, ax = plt.subplots()
-    cmap = plt.get_cmap("Blues_r" if study.direction == StudyDirection.MINIMIZE else "Blues")
+    cmap = plt.get_cmap("Blues_r" if reversescale else "Blues")
     ax.set_title("Parallel Coordinate Plot")
     ax.spines["top"].set_visible(False)
     ax.spines["bottom"].set_visible(False)
@@ -84,13 +94,6 @@ def _get_parallel_coordinate_plot(
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
         all_params = set(params)
     sorted_params = sorted(list(all_params))
-
-    if target is None:
-
-        def _target(t: FrozenTrial) -> float:
-            return cast(float, t.value)
-
-        target = _target
 
     obj_org = [target(t) for t in trials]
     obj_min = min(obj_org)
