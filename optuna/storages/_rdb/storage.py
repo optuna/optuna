@@ -787,7 +787,7 @@ class RDBStorage(BaseStorage):
             # Acquire lock.
             #
             # Assume that study exists.
-            models.StudyModel.find_by_id(study_id, session, for_update=True)
+            models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
 
             models.TrialParamModel(
                 trial_id=trial_id,
