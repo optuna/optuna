@@ -45,7 +45,7 @@ if _imports.is_successful() and use_callback_cls:
 
         def before_training(self, model: Any) -> Any:
             # The use of Any type is due to _PackedBooster is not yet being exposed
-            # as public interface as of xgboost 1.3.
+            # to public interface as of xgboost 1.3.
             if isinstance(model, xgb.Booster):
                 self._is_cv = False
             else:
@@ -71,7 +71,7 @@ if _imports.is_successful() and use_callback_cls:
             if self._trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(epoch)
                 raise optuna.TrialPruned(message)
-
+            # The training should not stop.
             return False
 
 
