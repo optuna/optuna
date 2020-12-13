@@ -66,6 +66,11 @@ Keras
 LightGBM
 --------
 
+optuna.integration.LightGBMPruningCallback allows for the easier pruning activation in hyperparameter optimization of LightGBM
+while the others are drop-in replacement for lightgbm. So they have different goals.
+
+See `LightGBM Tuner: New Optuna Integration for Hyperparameter Optimization <https://medium.com/optuna/lightgbm-tuner-new-optuna-integration-for-hyperparameter-optimization-8b7095e99258>`_ for the details.
+
 .. autosummary::
    :toctree: generated/
    :nosignatures:
