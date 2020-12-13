@@ -91,7 +91,7 @@ elif _imports.is_successful():
             context = "train"
         return context
 
-    class XGBoostPruningCallback(object):  # type: ignore
+    class XGBoostPruningCallback:  # type: ignore
         __doc__ = _doc
 
         def __init__(self, trial: optuna.trial.Trial, observation_key: str) -> None:
