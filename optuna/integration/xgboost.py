@@ -66,7 +66,7 @@ if _imports.is_successful() and use_callback_cls:
                     else:
                         evaluation_result_list[key] = scores[-1]
 
-            current_score = dict(evaluation_result_list)[self._observation_key]
+            current_score = evaluation_result_list[self._observation_key]
             self._trial.report(current_score, step=epoch)
             if self._trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(epoch)
