@@ -81,6 +81,7 @@ class TestStudyDirectionModel(object):
 
         assert 0 == len(StudyDirectionModel.where_study_id(study.study_id, session))
 
+
 class TestStudySystemAttributeModel(object):
     @staticmethod
     def test_find_by_study_and_key(session: Session) -> None:
