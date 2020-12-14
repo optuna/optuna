@@ -20,6 +20,7 @@ _logger = get_logger(__name__)
 @experimental("2.2.0")
 def plot_optimization_history(
     study: Study,
+    *,
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
