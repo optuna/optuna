@@ -181,7 +181,15 @@ def qehvi_candidates_func(
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     fit_gpytorch_model(mll)
 
-    partitioning = NondominatedPartitioning(num_outcomes=n_objectives, Y=partitioning_y)
+    # Approximate box decomposition similar to Ax when the number of objectives is large.
+    # https://github.com/facebook/Ax/blob/master/ax/models/torch/botorch_moo_defaults
+    if n_objectives > 2:
+        alpha = 10 ** (-8 + n_objectives)
+    else:
+        alpha = 0.0
+    partitioning = NondominatedPartitioning(
+        num_outcomes=n_objectives, Y=partitioning_y, alpha=alpha
+    )
 
     ref_point = train_obj.min(dim=0).values - 1e-8
     ref_point_list = ref_point.tolist()
@@ -226,6 +234,7 @@ def _get_default_candidates_func(
     if n_objectives == 1:
         return qei_candidates_func
     elif n_objectives > 1:
+        # TODO(hvy): Default to qParEGO when the number of objectives is greater than three.
         return qehvi_candidates_func
     else:
         assert False, "Should not reach."
