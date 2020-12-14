@@ -27,6 +27,16 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study, params=["param_a"])
     assert figure.has_data()
 
+    # Test with a customized target value.
+    figure = plot_parallel_coordinate(
+        study, params=["param_a"], target=lambda t: t.params["param_b"]
+    )
+    assert figure.has_data()
+
+    # Test with a customized target name.
+    figure = plot_parallel_coordinate(study, target_name="Target Name")
+    assert figure.has_data()
+
     # Test with wrong params that do not exist in trials
     with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
         plot_parallel_coordinate(study, params=["optuna", "optuna"])

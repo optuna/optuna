@@ -25,12 +25,24 @@ def test_plot_slice() -> None:
     assert figure.data[0]["y"] == (0.0, 1.0)
     assert figure.data[1]["x"] == (2.0, 0.0, 1.0)
     assert figure.data[1]["y"] == (0.0, 2.0, 1.0)
+    assert figure.layout.yaxis.title.text == "Objective Value"
 
     # Test with a trial to select parameter.
     figure = plot_slice(study, params=["param_a"])
     assert len(figure.data) == 1
     assert figure.data[0]["x"] == (1.0, 2.5)
     assert figure.data[0]["y"] == (0.0, 1.0)
+
+    # Test with a customized target value.
+    figure = plot_slice(study, params=["param_a"], target=lambda t: t.params["param_b"])
+    assert len(figure.data) == 1
+    assert figure.data[0]["x"] == (1.0, 2.5)
+    assert figure.data[0]["y"] == (2.0, 1.0)
+    assert figure.layout.yaxis.title.text == "Objective Value"
+
+    # Test with a customized target name.
+    figure = plot_slice(study, target_name="Target Name")
+    assert figure.layout.yaxis.title.text == "Target Name"
 
     # Test with wrong parameters.
     with pytest.raises(ValueError):

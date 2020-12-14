@@ -1,4 +1,6 @@
 import math
+from typing import Callable
+from typing import cast
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -25,7 +27,13 @@ _logger = get_logger(__name__)
 
 
 @experimental("2.2.0")
-def plot_slice(study: Study, params: Optional[List[str]] = None) -> "Axes":
+def plot_slice(
+    study: Study,
+    params: Optional[List[str]] = None,
+    *,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "Axes":
     """Plot the parameter relationship as slice plot in a study with Matplotlib.
 
     .. seealso::
@@ -33,20 +41,30 @@ def plot_slice(study: Study, params: Optional[List[str]] = None) -> "Axes":
 
     Args:
         study:
-            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values.
+            A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
         params:
             Parameter list to visualize. The default is all parameters.
+        target:
+            A function to specify the value to display. If it is :obj:`None`, the objective values
+            are plotted.
+        target_name:
+            Target's name to display on the axis label.
+
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
     """
 
     _imports.check()
-    return _get_slice_plot(study, params)
+    return _get_slice_plot(study, params, target, target_name)
 
 
-def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> "Axes":
+def _get_slice_plot(
+    study: Study,
+    params: Optional[List[str]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "Axes":
 
     # Calculate basic numbers for plotting.
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
@@ -73,7 +91,10 @@ def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> "Axes":
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
 
     # Prepare data.
-    obj_values = [t.value for t in trials]
+    if target is None:
+        obj_values = [cast(float, t.value) for t in trials]
+    else:
+        obj_values = [target(t) for t in trials]
 
     if n_params == 1:
         # Set up the graph style.
@@ -82,7 +103,7 @@ def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> "Axes":
 
         # Draw a scatter plot.
         sc = _generate_slice_subplot(
-            trials, sorted_params[0], axs, cmap, padding_ratio, obj_values  # type: ignore
+            trials, sorted_params[0], axs, cmap, padding_ratio, obj_values, target_name
         )
     else:
         # Set up the graph style.
@@ -98,7 +119,7 @@ def _get_slice_plot(study: Study, params: Optional[List[str]] = None) -> "Axes":
         for i, param in enumerate(sorted_params):
             ax = axs[i]
             sc = _generate_slice_subplot(
-                trials, param, ax, cmap, padding_ratio, obj_values  # type: ignore
+                trials, param, ax, cmap, padding_ratio, obj_values, target_name
             )
 
     axcb = fig.colorbar(sc, ax=axs)
@@ -114,6 +135,7 @@ def _generate_slice_subplot(
     cmap: "Colormap",
     padding_ratio: float,
     obj_values: List[Union[int, float]],
+    target_name: str,
 ) -> "PathCollection":
     x_values = []
     y_values = []
@@ -124,7 +146,7 @@ def _generate_slice_subplot(
             x_values.append(t.params[param])
             y_values.append(obj_v)
             trial_numbers.append(t.number)
-    ax.set(xlabel=param, ylabel="Objective Value")
+    ax.set(xlabel=param, ylabel=target_name)
     if _is_log_scale(trials, param):
         ax.set_xscale("log")
         scale = "log"
