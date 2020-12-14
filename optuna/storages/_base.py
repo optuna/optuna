@@ -590,7 +590,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         Raises:
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
-            :exec:`RuntimeError`:
+            :exc:`RuntimeError`:
                 If the study has more than one direction.
             :exc:`ValueError`:
                 If no trials have been completed.

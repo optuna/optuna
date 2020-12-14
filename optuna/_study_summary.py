@@ -106,8 +106,3 @@ class StudySummary(object):
     def directions(self) -> Sequence[StudyDirection]:
 
         return self._directions
-
-    @directions.setter
-    def directions(self, d: Sequence[StudyDirection]) -> None:
-
-        self._directions = list(d)

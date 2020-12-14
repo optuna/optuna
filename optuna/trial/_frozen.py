@@ -104,8 +104,16 @@ class FrozenTrial(BaseTrial):
             :class:`TrialState` of the :class:`~optuna.trial.Trial`.
         value:
             Objective value of the :class:`~optuna.trial.Trial`.
+            The length is greater than 1 if the problem is multi-objective optimization.
+
+            .. warning::
+                Deprecated in v2.4.0. ``value`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v4.0.0,
+                but this schedule is subject to change.
+
+                Please use ``values`` instead.
         values:
-            A sequence of objective values of the :class:`~optuna.trial.Trial`.
+            Sequence of objective values of the :class:`~optuna.trial.Trial`.
         datetime_start:
             Datetime where the :class:`~optuna.trial.Trial` started.
         datetime_complete:
@@ -546,9 +554,17 @@ def create_trial(
             Trial state.
         value:
             Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
+
+            .. warning::
+                Deprecated in v2.4.0. ``value`` argument will be removed in the future.
+                The removal of this feature is currently scheduled for v4.0.0,
+                but this schedule is subject to change.
+
+                Please use ``values`` instead.
         values:
-            Trial objective value for multi-objective optimization. Must be specified for
-            multi-objective optimization if ``state`` is :class:`TrialState.COMPLETE`.
+            Sequence of the trial objective values. The length is greater than 1 if the problem is
+            multi-objective optimization.
+            Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
         params:
             Dictionary with suggested parameters of the trial.
         distributions:

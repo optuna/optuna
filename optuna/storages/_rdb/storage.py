@@ -303,7 +303,8 @@ class RDBStorage(BaseStorage):
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
 
         with _create_scoped_session(self.scoped_session) as session:
-            study = models.StudyModel.find_or_raise_by_id(study_id, session)
+            # Raise `KeyError` if the study does not exist.
+            _ = models.StudyModel.find_or_raise_by_id(study_id, session)
             directions = [
                 d.direction for d in models.StudyDirectionModel.where_study_id(study_id, session)
             ]
@@ -1011,7 +1012,7 @@ class RDBStorage(BaseStorage):
 
         values: Optional[List[float]]
         if trial.values:
-            values = [0 for _ in range(len(trial.values))]
+            values = [0 for _ in trial.values]
             for value_model in trial.values:
                 values[value_model.objective] = value_model.value
         else:

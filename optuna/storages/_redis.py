@@ -190,7 +190,7 @@ class RedisStorage(BaseStorage):
             pipe.multi()
             pipe.set(self._key_study_direction(study_id), pickle.dumps(directions))
             study_summary = self._get_study_summary(study_id)
-            study_summary.directions = directions
+            study_summary._directions = list(directions)
             pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
             pipe.execute()
 
