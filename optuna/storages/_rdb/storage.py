@@ -228,7 +228,7 @@ class RDBStorage(BaseStorage):
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             directions = list(directions)
             current_directions = [
-                d.direction for d in models.StudyDirectionModel.where_study(study, session)
+                d.direction for d in models.StudyDirectionModel.where_study_id(study_id, session)
             ]
             if (
                 len(current_directions) > 0
@@ -305,7 +305,7 @@ class RDBStorage(BaseStorage):
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
             directions = [
-                d.direction for d in models.StudyDirectionModel.where_study(study, session)
+                d.direction for d in models.StudyDirectionModel.where_study_id(study_id, session)
             ]
 
         return directions

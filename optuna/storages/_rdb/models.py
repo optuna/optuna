@@ -99,6 +99,13 @@ class StudyDirectionModel(BaseModel):
 
         return study_direction
 
+    @classmethod
+    def where_study_id(
+        cls, study_id: int, session: orm.Session
+    ) -> List["StudyDirectionModel"]:
+
+        return session.query(cls).filter(cls.study_id == study_id).all()
+
 
 class StudyUserAttributeModel(BaseModel):
     __tablename__ = "study_user_attributes"
