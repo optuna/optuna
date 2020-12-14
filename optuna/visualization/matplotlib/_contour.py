@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Callable
 from typing import DefaultDict
 from typing import List
 from typing import Optional
@@ -29,7 +30,13 @@ _logger = get_logger(__name__)
 
 
 @experimental("2.2.0")
-def plot_contour(study: Study, params: Optional[List[str]] = None) -> "Axes":
+def plot_contour(
+    study: Study,
+    params: Optional[List[str]] = None,
+    *,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "Axes":
     """Plot the parameter relationship as contour plot in a study with Matplotlib.
 
     Note that, if a parameter contains missing values, a trial with missing values is not plotted.
@@ -44,10 +51,14 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "Axes":
 
     Args:
         study:
-            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values.
+            A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
         params:
             Parameter list to visualize. The default is all parameters.
+        target:
+            A function to specify the value to display. If it is :obj:`None`, the objective values
+            are plotted.
+        target_name:
+            Target's name to display on the color bar.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
@@ -58,10 +69,15 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "Axes":
         "Output figures of this Matplotlib-based `plot_contour` function would be different from "
         "those of the Plotly-based `plot_contour`."
     )
-    return _get_contour_plot(study, params)
+    return _get_contour_plot(study, params, target, target_name)
 
 
-def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "Axes":
+def _get_contour_plot(
+    study: Study,
+    params: Optional[List[str]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "Axes":
     # Calculate basic numbers for plotting.
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
@@ -100,10 +116,12 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "Axes
         else:
             x_param = sorted_params[0]
             y_param = sorted_params[1]
-        cs = _generate_contour_subplot(trials, x_param, y_param, axs, cmap, contour_point_num)
+        cs = _generate_contour_subplot(
+            trials, x_param, y_param, axs, cmap, contour_point_num, target, target_name
+        )
         if isinstance(cs, ContourSet):
             axcb = fig.colorbar(cs)
-            axcb.set_label("Objective Value")
+            axcb.set_label(target_name)
     else:
         # Set up the graph style.
         fig, axs = plt.subplots(n_params, n_params)
@@ -117,13 +135,13 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "Axes
             for y_i, y_param in enumerate(sorted_params):
                 ax = axs[y_i, x_i]
                 cs = _generate_contour_subplot(
-                    trials, x_param, y_param, ax, cmap, contour_point_num
+                    trials, x_param, y_param, ax, cmap, contour_point_num, target, target_name
                 )
                 if isinstance(cs, ContourSet):
                     cs_list.append(cs)
         if cs_list:
             axcb = fig.colorbar(cs_list[0], ax=axs)
-            axcb.set_label("Objective Value")
+            axcb.set_label(target_name)
 
     return axs
 
@@ -151,6 +169,8 @@ def _calculate_griddata(
     y_param: str,
     y_indices: List[Union[str, int, float]],
     contour_point_num: int,
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
 ) -> Tuple[
     np.ndarray,
     np.ndarray,
@@ -176,13 +196,19 @@ def _calculate_griddata(
             continue
         x_values.append(trial.params[x_param])
         y_values.append(trial.params[y_param])
-        if isinstance(trial.value, int):
-            value = float(trial.value)
-        elif isinstance(trial.value, float):
+
+        if target is None:
             value = trial.value
         else:
+            value = target(trial)
+
+        if isinstance(value, int):
+            value = float(value)
+        elif not isinstance(value, float):
             raise ValueError(
-                "Trial{} has COMPLETE state, but its value is non-numeric.".format(trial.number)
+                "Trial{} has COMPLETE state, but its target value is non-numeric.".format(
+                    trial.number
+                )
             )
         z_values.append(value)
 
@@ -292,6 +318,8 @@ def _generate_contour_subplot(
     ax: "Axes",
     cmap: "Colormap",
     contour_point_num: int,
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
 ) -> "ContourSet":
 
     x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
@@ -317,7 +345,9 @@ def _generate_contour_subplot(
         y_cat_param_label,
         x_values_dummy_count,
         y_values_dummy_count,
-    ) = _calculate_griddata(trials, x_param, x_indices, y_param, y_indices, contour_point_num)
+    ) = _calculate_griddata(
+        trials, x_param, x_indices, y_param, y_indices, contour_point_num, target, target_name
+    )
     cs = None
     ax.set(xlabel=x_param, ylabel=y_param)
     if len(zi) > 0:

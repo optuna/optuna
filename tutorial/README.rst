@@ -1,23 +1,11 @@
 Tutorial
 ========
 
-Below tutorials cover the basic concepts and usage of Optuna.
-The order we assume is as follows:
+If you are new to Optuna or want a general introduction, we highly recommend the below video.
 
-* :ref:`first`
-* :ref:`configurations`
-* :ref:`rdb`
-* :ref:`distributed`
-* :ref:`cli`
-* :ref:`attributes`
-* :ref:`pruning`
-* :ref:`sampler`
+.. raw:: html
 
-**Other Resources**:
-
-* `Examples`_: More examples including how to use Optuna with popular libraries for machine learning and deep learning.
-
-.. _examples: https://github.com/optuna/optuna/tree/master/examples/
-
-.. toctree::
-   :maxdepth: 2
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/P6NwZVl8ttc" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    <br />
+    <br />
+    <br />

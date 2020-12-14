@@ -40,7 +40,6 @@ class StudyModel(BaseModel):
     __tablename__ = "studies"
     study_id = Column(Integer, primary_key=True)
     study_name = Column(String(MAX_INDEXED_STRING_LENGTH), index=True, unique=True, nullable=False)
-    direction = Column(Enum(StudyDirection), nullable=False)
 
     @classmethod
     def find_or_raise_by_id(
@@ -73,6 +72,44 @@ class StudyModel(BaseModel):
             raise KeyError(NOT_FOUND_MSG)
 
         return study
+
+
+class StudyDirectionModel(BaseModel):
+    __tablename__ = "study_directions"
+    __table_args__: Any = (UniqueConstraint("study_id", "objective"),)
+    study_direction_id = Column(Integer, primary_key=True)
+    direction = Column(Enum(StudyDirection), nullable=False)
+    study_id = Column(Integer, ForeignKey("studies.study_id"), nullable=False)
+    objective = Column(Integer, nullable=False)
+
+    study = orm.relationship(
+        StudyModel, backref=orm.backref("directions", cascade="all, delete-orphan")
+    )
+
+    @classmethod
+    def find_by_study_and_objective(
+        cls, study: StudyModel, objective: int, session: orm.Session
+    ) -> Optional["StudyDirectionModel"]:
+        study_direction = (
+            session.query(cls)
+            .filter(cls.study_id == study.study_id)
+            .filter(cls.objective == objective)
+            .one_or_none()
+        )
+
+        return study_direction
+
+    @classmethod
+    def where_study(cls, study: StudyModel, session: orm.Session) -> List["StudyDirectionModel"]:
+
+        study_directions = (
+            session.query(cls)
+            .filter(cls.study_id == study.study_id)
+            .order_by(asc(cls.objective))
+            .all()
+        )
+
+        return study_directions
 
 
 class StudyUserAttributeModel(BaseModel):
@@ -152,7 +189,6 @@ class TrialModel(BaseModel):
     number = Column(Integer)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     state = Column(Enum(TrialState), nullable=False)
-    value = Column(Float)
     datetime_start = Column(DateTime, default=datetime.now)
     datetime_complete = Column(DateTime)
 
@@ -161,13 +197,17 @@ class TrialModel(BaseModel):
     )
 
     @classmethod
-    def find_max_value_trial(cls, study_id: int, session: orm.Session) -> "TrialModel":
+    def find_max_value_trial(
+        cls, study_id: int, objective: int, session: orm.Session
+    ) -> "TrialModel":
 
         trial = (
             session.query(cls)
             .filter(cls.study_id == study_id)
             .filter(cls.state == TrialState.COMPLETE)
-            .order_by(desc(cls.value))
+            .join(TrialValueModel)
+            .filter(TrialValueModel.objective == objective)
+            .order_by(desc(TrialValueModel.value))
             .limit(1)
             .one_or_none()
         )
@@ -176,13 +216,17 @@ class TrialModel(BaseModel):
         return trial
 
     @classmethod
-    def find_min_value_trial(cls, study_id: int, session: orm.Session) -> "TrialModel":
+    def find_min_value_trial(
+        cls, study_id: int, objective: int, session: orm.Session
+    ) -> "TrialModel":
 
         trial = (
             session.query(cls)
             .filter(cls.study_id == study_id)
             .filter(cls.state == TrialState.COMPLETE)
-            .order_by(asc(cls.value))
+            .join(TrialValueModel)
+            .filter(TrialValueModel.objective == objective)
+            .order_by(asc(TrialValueModel.value))
             .limit(1)
             .one_or_none()
         )
@@ -363,32 +407,84 @@ class TrialParamModel(BaseModel):
 
         return param_distribution
 
+    @classmethod
+    def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialParamModel"]:
+
+        trial_params = session.query(cls).filter(cls.trial_id == trial_id).all()
+
+        return trial_params
+
 
 class TrialValueModel(BaseModel):
     __tablename__ = "trial_values"
-    __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
+    __table_args__: Any = (UniqueConstraint("trial_id", "objective"),)
     trial_value_id = Column(Integer, primary_key=True)
-    trial_id = Column(Integer, ForeignKey("trials.trial_id"))
-    step = Column(Integer)
-    value = Column(Float)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    objective = Column(Integer, nullable=False)
+    value = Column(Float, nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
     )
 
     @classmethod
-    def find_by_trial_and_step(
-        cls, trial: TrialModel, step: int, session: orm.Session
+    def find_by_trial_and_objective(
+        cls, trial: TrialModel, objective: int, session: orm.Session
     ) -> Optional["TrialValueModel"]:
 
         trial_value = (
+            session.query(cls)
+            .filter(cls.trial_id == trial.trial_id)
+            .filter(cls.objective == objective)
+            .one_or_none()
+        )
+
+        return trial_value
+
+    @classmethod
+    def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialValueModel"]:
+
+        trial_values = (
+            session.query(cls).filter(cls.trial_id == trial_id).order_by(asc(cls.objective)).all()
+        )
+
+        return trial_values
+
+
+class TrialIntermediateValueModel(BaseModel):
+    __tablename__ = "trial_intermediate_values"
+    __table_args__: Any = (UniqueConstraint("trial_id", "step"),)
+    trial_intermediate_value_id = Column(Integer, primary_key=True)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    step = Column(Integer, nullable=False)
+    intermediate_value = Column(Float, nullable=False)
+
+    trial = orm.relationship(
+        TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
+    )
+
+    @classmethod
+    def find_by_trial_and_step(
+        cls, trial: TrialModel, step: int, session: orm.Session
+    ) -> Optional["TrialIntermediateValueModel"]:
+
+        trial_intermediate_value = (
             session.query(cls)
             .filter(cls.trial_id == trial.trial_id)
             .filter(cls.step == step)
             .one_or_none()
         )
 
-        return trial_value
+        return trial_intermediate_value
+
+    @classmethod
+    def where_trial_id(
+        cls, trial_id: int, session: orm.Session
+    ) -> List["TrialIntermediateValueModel"]:
+
+        trial_intermediate_values = session.query(cls).filter(cls.trial_id == trial_id).all()
+
+        return trial_intermediate_values
 
 
 class VersionInfoModel(BaseModel):
