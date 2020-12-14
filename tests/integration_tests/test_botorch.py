@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 import torch
 
+from optuna import integration
 from optuna import multi_objective
 from optuna.integration import BoTorchSampler
 from optuna.multi_objective.samplers._random import RandomMultiObjectiveSampler
@@ -15,24 +16,29 @@ from optuna.storages import RDBStorage
 from optuna.trial import Trial
 
 
-def test_botorch_default_single_objective() -> None:
-    sampler = BoTorchSampler()
+@pytest.mark.parametrize("n_objectives", [1, 2, 4])
+def test_botorch_candidates_func_none(n_objectives: int) -> None:
+    n_trials = 3
+    n_startup_trials = 2
 
-    study = multi_objective.create_study(["minimize"], sampler=sampler)
-    study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+    sampler = BoTorchSampler(n_startup_trials=n_startup_trials)
 
-    assert len(study.trials) == 3
-
-
-def test_botorch_default_multi_objective() -> None:
-    sampler = BoTorchSampler()
-
-    study = multi_objective.create_study(["minimize", "maximize"], sampler=sampler)
+    study = multi_objective.create_study(["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
-        lambda t: [t.suggest_float("x0", 0, 1), t.suggest_float("x1", 0, 1)], n_trials=3
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
     )
 
-    assert len(study.trials) == 3
+    assert len(study.trials) == n_trials
+
+    # TODO(hvy): Do not check for the correct candidates function using private APIs.
+    if n_objectives == 1:
+        assert sampler._candidates_func is integration.botorch.qei_candidates_func
+    elif n_objectives == 2:
+        assert sampler._candidates_func is integration.botorch.qehvi_candidates_func
+    elif n_objectives == 4:
+        assert sampler._candidates_func is integration.botorch.qparego_candidates_func
+    else:
+        assert False, "Should not reach."
 
 
 def test_botorch_candidates_func() -> None:
@@ -138,54 +144,28 @@ def test_botorch_candidates_func_invalid_candidates_size() -> None:
         )
 
 
-def test_botorch_constraints_func_default_single_objective() -> None:
+@pytest.mark.parametrize("n_objectives", [1, 2, 4])
+def test_botorch_constraints_func_none(n_objectives: int) -> None:
     constraints_func_call_count = 0
 
     def constraints_func(
         study: MultiObjectiveStudy, trial: FrozenMultiObjectiveTrial
     ) -> Sequence[float]:
-        x0 = trial.params["x0"]
+        xs = sum(trial.params[f"x{i}"] for i in range(n_objectives))
 
         nonlocal constraints_func_call_count
         constraints_func_call_count += 1
 
-        return (x0 - 0.5,)
+        return (xs - 0.5,)
 
     n_trials = 4
     n_startup_trials = 2
 
     sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=n_startup_trials)
 
-    study = multi_objective.create_study(["minimize"], sampler=sampler)
-    study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=n_trials)
-
-    assert len(study.trials) == n_trials
-    # Only constraints up to the previous trial is computed.
-    assert constraints_func_call_count == n_trials - 1
-
-
-def test_botorch_constraints_func_default_multie_objective() -> None:
-    constraints_func_call_count = 0
-
-    def constraints_func(
-        study: MultiObjectiveStudy, trial: FrozenMultiObjectiveTrial
-    ) -> Sequence[float]:
-        x0 = trial.params["x0"]
-        x1 = trial.params["x1"]
-
-        nonlocal constraints_func_call_count
-        constraints_func_call_count += 1
-
-        return (x0 + x1 - 0.5,)
-
-    n_trials = 4
-    n_startup_trials = 2
-
-    sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=n_startup_trials)
-
-    study = multi_objective.create_study(["minimize", "maximize"], sampler=sampler)
+    study = multi_objective.create_study(["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
-        lambda t: [t.suggest_float("x0", 0, 1), t.suggest_float("x1", 0, 1)], n_trials=n_trials
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
     )
 
     assert len(study.trials) == n_trials

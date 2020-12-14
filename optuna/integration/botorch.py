@@ -30,12 +30,15 @@ with try_import() as _imports:
     from botorch.acquisition.multi_objective.monte_carlo import qExpectedHypervolumeImprovement
     from botorch.acquisition.multi_objective.objective import IdentityMCMultiOutputObjective
     from botorch.acquisition.objective import ConstrainedMCObjective
+    from botorch.acquisition.objective import GenericMCObjective
     from botorch.fit import fit_gpytorch_model
     from botorch.models import SingleTaskGP
     from botorch.models.transforms.outcome import Standardize
     from botorch.optim import optimize_acqf
     from botorch.sampling.samplers import SobolQMCNormalSampler
     from botorch.utils.multi_objective.box_decomposition import NondominatedPartitioning
+    from botorch.utils.multi_objective.scalarization import get_chebyshev_scalarization
+    from botorch.utils.sampling import sample_simplex
     from botorch.utils.transforms import normalize
     from botorch.utils.transforms import unnormalize
     from gpytorch.mlls import ExactMarginalLogLikelihood
@@ -144,7 +147,7 @@ def qehvi_candidates_func(
     """Quasi MC-based batch Expected Hypervolume Improvement (qEHVI).
 
     The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
-    with multi-objective optimization.
+    with multi-objective optimization when the number of objectives is three or less.
 
     .. seealso::
         :func:`~optuna.integration.botorch.qei_candidates_func` for argument and return value
@@ -220,6 +223,77 @@ def qehvi_candidates_func(
     return candidates
 
 
+@experimental("2.4.0")
+def qparego_candidates_func(
+    train_x: "torch.Tensor",
+    train_obj: "torch.Tensor",
+    train_con: Optional["torch.Tensor"],
+    bounds: "torch.Tensor",
+) -> "torch.Tensor":
+    """Quasi MC-based extended ParEGO (qParEGO) for constrained multi-objective optimization.
+
+    The default value of ``candidates_func`` in :class:`~optuna.integration.BoTorchSampler`
+    with multi-objective optimization when the number of objectives is larger than three.
+
+    .. seealso::
+        :func:`~optuna.integration.botorch.qei_candidates_func` for argument and return value
+        descriptions.
+    """
+
+    n_objectives = train_obj.size(-1)
+
+    weights = sample_simplex(n_objectives).squeeze()
+    scalarization = get_chebyshev_scalarization(weights=weights, Y=train_obj)
+
+    if train_con is not None:
+        train_y = torch.cat([train_obj, train_con], dim=-1)
+
+        constraints = []
+        n_contraints = train_con.size(1)
+
+        for i in range(n_contraints):
+            constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
+
+        objective = ConstrainedMCObjective(
+            objective=lambda Z: scalarization(Z[..., :n_objectives]),
+            constraints=constraints,
+        )
+    else:
+        train_y = train_obj
+
+        objective = GenericMCObjective(scalarization)
+
+    train_x = normalize(train_x, bounds=bounds)
+
+    model = SingleTaskGP(train_x, train_y, outcome_transform=Standardize(m=train_y.size(-1)))
+    mll = ExactMarginalLogLikelihood(model.likelihood, model)
+    fit_gpytorch_model(mll)
+
+    acqf = qExpectedImprovement(
+        model=model,
+        best_f=objective(train_y).max(),
+        sampler=SobolQMCNormalSampler(num_samples=256),
+        objective=objective,
+    )
+
+    standard_bounds = torch.zeros_like(bounds)
+    standard_bounds[1] = 1
+
+    candidates, _ = optimize_acqf(
+        acq_function=acqf,
+        bounds=standard_bounds,
+        q=1,
+        num_restarts=20,
+        raw_samples=1024,
+        options={"batch_limit": 5, "maxiter": 200},
+        sequential=True,
+    )
+
+    candidates = unnormalize(candidates.detach(), bounds=bounds)
+
+    return candidates
+
+
 def _get_default_candidates_func(
     n_objectives: int,
 ) -> Callable[
@@ -231,13 +305,12 @@ def _get_default_candidates_func(
     ],
     "torch.Tensor",
 ]:
-    if n_objectives == 1:
-        return qei_candidates_func
+    if n_objectives > 3:
+        return qparego_candidates_func
     elif n_objectives > 1:
-        # TODO(hvy): Default to qParEGO when the number of objectives is greater than three.
         return qehvi_candidates_func
     else:
-        assert False, "Should not reach."
+        return qei_candidates_func
 
 
 # TODO(hvy): Allow utilizing GPUs via some parameter, not having to rewrite the callback
@@ -273,8 +346,9 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
 
             If omitted, is determined automatically based on the number of objectives. If the
             number of objectives is one, Quasi MC-based batch Expected Improvement (qEI) is used.
-            If the number of objectives is larger than one, Quasi MC-based batch Expected
-            Hypervolume Improvement (qEHVI) is used.
+            If the number of objectives is larger than one but smaller than four, Quasi MC-based
+            batch Expected Hypervolume Improvement (qEHVI) is used. Otherwise, for larger number
+            of objectives, the faster Quasi MC-based extended ParEGO (qParEGO) is used.
 
             The function should assume *maximization* of the objective.
 
