@@ -1,4 +1,4 @@
-<!-- Thank you for creating a pull request! -->
+<!-- Thank you for creating a pull request! In general, we merge your pull requests after they get two or more approvals. -->
 
 ## Motivation
 <!-- Describe your motivation why you will submit this PR. This is useful for reviewers to understand the context of PR. -->
