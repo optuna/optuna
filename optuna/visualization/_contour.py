@@ -129,7 +129,7 @@ def _get_contour_plot(
 
         elif _is_categorical(trials, p_name):
             # For numeric values, plotly does not automatically plot as "category" type.
-            update_category_axes[p_name] = any([str(v).isnumeric() for v in set(values)])
+            update_category_axes[p_name] = any(_is_numeric(str(v)) for v in set(values))
 
             # Plotly>=4.12.0 draws contours using the indices of categorical variables instead of
             # raw values and the range should be updated based on the cardinality of categorical
@@ -216,6 +216,14 @@ def _get_contour_plot(
                     figure.update_xaxes(title_text=x_param, row=y_i + 1, col=x_i + 1)
 
     return figure
+
+
+def _is_numeric(s: str) -> bool:
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
 
 
 def _generate_contour_subplot(
