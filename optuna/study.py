@@ -48,7 +48,7 @@ class BaseStudy(object):
             A dictionary containing parameters of the best trial.
 
         Raises:
-            RuntimeError:
+            :exc:`RuntimeError`:
                 If the study has more than one direction.
         """
 
@@ -62,7 +62,7 @@ class BaseStudy(object):
             A float representing the best objective value.
 
         Raises:
-            RuntimeError:
+            :exc:`RuntimeError`:
                 If the study has more than one direction.
         """
 
@@ -79,7 +79,7 @@ class BaseStudy(object):
             A :class:`~optuna.FrozenTrial` object of the best trial.
 
         Raises:
-            RuntimeError:
+            :exc:`RuntimeError`:
                 If the study has more than one direction.
         """
 
@@ -113,7 +113,7 @@ class BaseStudy(object):
             A :class:`~optuna.study.StudyDirection` object.
 
         Raises:
-            RuntimeError:
+            :exc:`RuntimeError`:
                 If the study has more than one direction.
         """
 
@@ -758,7 +758,7 @@ def create_study(
         A :class:`~optuna.study.Study` object.
 
     Raises:
-        ValueError:
+        :exc:`ValueError`:
             If ``direction`` is neither 'minimize' nor 'maximize' when it is a string.
             Or, if the element of ``directions`` is neither `minimize` nor `maximize`.
             Or, if both ``direction`` and ``directions`` are specified.

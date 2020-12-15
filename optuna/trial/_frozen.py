@@ -127,8 +127,8 @@ class FrozenTrial(BaseTrial):
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
 
     Raises:
-            :exc:`ValueError`:
-                If both ``value`` and ``values`` are specified.
+        :exc:`ValueError`:
+            If both ``value`` and ``values`` are specified.
     """
 
     def __init__(
