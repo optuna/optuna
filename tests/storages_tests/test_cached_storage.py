@@ -53,8 +53,10 @@ def test_cached_set() -> None:
     trial_id = storage.create_new_trial(study_id)
     with patch.object(
         base_storage, "_update_trial", return_value=True
-    ) as update_mock, patch.object(base_storage, "set_trial_value", return_value=None) as set_mock:
-        storage.set_trial_value(trial_id, 0.3)
+    ) as update_mock, patch.object(
+        base_storage, "set_trial_values", return_value=None
+    ) as set_mock:
+        storage.set_trial_values(trial_id, (0.3,))
         assert update_mock.call_count == 0
         assert set_mock.call_count == 0
 

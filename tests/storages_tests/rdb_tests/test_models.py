@@ -57,6 +57,13 @@ class TestStudyDirectionModel(object):
         assert StudyDirectionModel.find_by_study_and_objective(study, 1, session) is None
 
     @staticmethod
+    def test_where_study_id(session: Session) -> None:
+
+        study = TestStudyDirectionModel._create_model(session)
+        assert 1 == len(StudyDirectionModel.where_study_id(study.study_id, session))
+        assert 0 == len(StudyDirectionModel.where_study_id(-1, session))
+
+    @staticmethod
     def test_cascade_delete_on_study(session: Session) -> None:
 
         directions = [
@@ -67,16 +74,12 @@ class TestStudyDirectionModel(object):
         session.add(study)
         session.commit()
 
-        assert 2 == len(
-            session.query(StudyDirectionModel).filter(StudyDirectionModel.study_id == 1).all()
-        )
+        assert 2 == len(StudyDirectionModel.where_study_id(study.study_id, session))
 
         session.delete(study)
         session.commit()
 
-        assert 0 == len(
-            session.query(StudyDirectionModel).filter(StudyDirectionModel.study_id == 1).all()
-        )
+        assert 0 == len(StudyDirectionModel.where_study_id(study.study_id, session))
 
 
 class TestStudySystemAttributeModel(object):
