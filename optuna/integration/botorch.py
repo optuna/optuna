@@ -89,7 +89,8 @@ def qei_candidates_func(
     if train_con is not None:
         train_y = torch.cat([train_obj, train_con], dim=-1)
 
-        best_f = (train_obj * (train_con <= 0)).max()
+        is_feas = (train_con <= 0).all(dim=-1)
+        best_f = (train_obj.transpose(1, 0) * is_feas).max()
 
         constraints = []
         n_contraints = train_con.size(1)
@@ -160,7 +161,7 @@ def qehvi_candidates_func(
         train_y = torch.cat([train_obj, train_con], dim=-1)
 
         is_feas = (train_con <= 0).all(dim=-1)
-        partitioning_y = train_obj[is_feas]
+        train_obj_feas = train_obj[is_feas]
 
         constraints = []
         n_contraints = train_con.size(1)
@@ -174,7 +175,7 @@ def qehvi_candidates_func(
     else:
         train_y = train_obj
 
-        partitioning_y = train_obj
+        train_obj_feas = train_obj
 
         additional_qehvi_kwargs = {}
 
@@ -191,7 +192,7 @@ def qehvi_candidates_func(
     else:
         alpha = 0.0
     partitioning = NondominatedPartitioning(
-        num_outcomes=n_objectives, Y=partitioning_y, alpha=alpha
+        num_outcomes=n_objectives, Y=train_obj_feas, alpha=alpha
     )
 
     ref_point = train_obj.min(dim=0).values - 1e-8
