@@ -662,23 +662,27 @@ class Study(BaseStudy):
         self._storage.set_trial_state(trial._trial_id, state)
 
     def _log_completed_trial(
-        self, trial: trial_module.Trial, value: Union[float, Sequence[float]]
+        self, trial: trial_module.Trial, value_or_values: Union[float, Sequence[float]]
     ) -> None:
 
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        if isinstance(value, Sequence):
+        if isinstance(value_or_values, Sequence):
             _logger.info(
                 "Trial {} finished with value: {} and parameters: {}. ".format(
-                    trial.number, value, trial.params
+                    trial.number, value_or_values, trial.params
                 )
             )
         else:
             _logger.info(
                 "Trial {} finished with value: {} and parameters: {}. "
                 "Best is trial {} with value: {}.".format(
-                    trial.number, value, trial.params, self.best_trial.number, self.best_value
+                    trial.number,
+                    value_or_values,
+                    trial.params,
+                    self.best_trial.number,
+                    self.best_value,
                 )
             )
 
@@ -759,7 +763,8 @@ def create_study(
 
     Raises:
         :exc:`ValueError`:
-            If ``direction`` is neither 'minimize' nor 'maximize' when it is a string.
+            If the length of ``directions`` is zero.
+            Or, if ``direction`` is neither 'minimize' nor 'maximize' when it is a string.
             Or, if the element of ``directions`` is neither `minimize` nor `maximize`.
             Or, if both ``direction`` and ``directions`` are specified.
 
@@ -769,25 +774,24 @@ def create_study(
     """
 
     if direction is None and directions is None:
-        directions = ("minimize",)
+        directions = ["minimize"]
+    elif direction is not None and directions is not None:
+        raise ValueError("Specify only one of `direction` and `directions`.")
     elif direction is not None:
-        directions = (direction,)
+        directions = [direction]
     elif directions is not None:
         directions = list(directions)
     else:
-        raise ValueError("Specify only one of `direction` and `directions`.")
+        assert False
 
     if len(directions) < 1:
         raise ValueError("The number of objectives must be greater than 0.")
     elif any(d != "minimize" and d != "maximize" for d in directions):
         raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
 
-    direction_objects = list(
-        map(
-            lambda d: StudyDirection.MINIMIZE if d == "minimize" else StudyDirection.MAXIMIZE,
-            directions,
-        )
-    )
+    direction_objects = [
+        StudyDirection.MINIMIZE if d == "minimize" else StudyDirection.MAXIMIZE for d in directions
+    ]
 
     storage = storages.get_storage(storage)
     try:
@@ -808,7 +812,7 @@ def create_study(
     if sampler is None and len(direction_objects) > 1:
         _logger.info(
             "Multi-objective optimization is set, but no sampler is specified. "
-            "The sampler is set to `samplers.RandomSampler`."
+            "The sampler is set to `optuna.samplers.RandomSampler`."
         )
         sampler = samplers.RandomSampler()
 

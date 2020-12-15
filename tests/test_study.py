@@ -94,8 +94,7 @@ def check_study(study: optuna.Study) -> None:
     for trial in study.trials:
         check_frozen_trial(trial)
 
-    if len(study.directions) > 1:
-        return
+    assert len(study.directions) == 1
 
     complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
     if len(complete_trials) == 0:
@@ -1042,6 +1041,12 @@ def test_create_study_with_multi_objectives() -> None:
         # Empty `direction` isn't allowed.
         _ = optuna.create_study(directions=[])
 
+    with pytest.raises(ValueError):
+        _ = optuna.create_study(direction="minimize", directions=["maximize"])
+
+    with pytest.raises(ValueError):
+        _ = optuna.create_study(direction="minimize", directions=[])
+
 
 @pytest.mark.parametrize("n_objectives", [2, 3])
 def test_optimize_with_multi_objectives(n_objectives: int) -> None:
@@ -1086,21 +1091,15 @@ def test_pareto_front() -> None:
     assert len(study.best_trials) == 2
 
 
-def test_callbacks_with_multi_objectives() -> None:
-    study = optuna.create_study(directions=["minimize", "maximize"])
+def test_wrong_n_objectives() -> None:
+    n_objectives = 2
+    directions = ["minimize" for _ in range(n_objectives)]
+    study = optuna.create_study(directions=directions)
 
-    def objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
-        x = trial.suggest_float("x", 0, 10)
-        y = trial.suggest_float("y", 0, 10)
-        return x, y
+    def objective(trial: optuna.trial.Trial) -> List[float]:
+        return [trial.suggest_uniform("v{}".format(i), 0, 5) for i in range(n_objectives + 1)]
 
-    list0 = []
-    list1 = []
-    callbacks = [
-        lambda study, trial: list0.append(trial.number),
-        lambda study, trial: list1.append(trial.number),
-    ]
-    study.optimize(objective, n_trials=2, callbacks=callbacks)
+    study.optimize(objective, n_trials=10)
 
-    assert list0 == [0, 1]
-    assert list1 == [0, 1]
+    for trial in study.trials:
+        assert trial.state is TrialState.FAIL

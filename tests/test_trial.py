@@ -1235,6 +1235,9 @@ def test_frozen_called_single_methods_when_multi() -> None:
     with pytest.raises(RuntimeError):
         trial.value = 0.1
 
+    with pytest.raises(RuntimeError):
+        trial.value = [0.1]
+
 
 # TODO(hvy): Write exhaustive test include invalid combinations when feature is no longer
 # experimental.
@@ -1269,6 +1272,35 @@ def test_create_trial(state: TrialState) -> None:
     assert (trial.datetime_complete is not None) == (state is None or state.is_finished())
 
 
+def test_frozen_init() -> None:
+    def _create_trial(value: Optional[float], values: Optional[List[float]]) -> FrozenTrial:
+
+        return FrozenTrial(
+            number=0,
+            trial_id=0,
+            state=TrialState.COMPLETE,
+            value=value,
+            values=values,
+            datetime_start=datetime.datetime.now(),
+            datetime_complete=datetime.datetime.now(),
+            params={},
+            distributions={"x": UniformDistribution(0, 10)},
+            user_attrs={},
+            system_attrs={},
+            intermediate_values={},
+        )
+
+    _ = _create_trial(0.2, None)
+
+    _ = _create_trial(None, [0.2])
+
+    with pytest.raises(ValueError):
+        _ = _create_trial(0.2, [0.2])
+
+    with pytest.raises(ValueError):
+        _ = _create_trial(0.2, [])
+
+
 def test_suggest_with_multi_objectives() -> None:
     study = optuna.create_study(directions=["maximize", "maximize"])
 
@@ -1287,84 +1319,3 @@ def test_suggest_with_multi_objectives() -> None:
         )
 
     study.optimize(objective, n_trials=10)
-
-
-def test_number_with_multi_objectives() -> None:
-    study = optuna.create_study(directions=["maximize", "minimize", "maximize"])
-
-    def objective(trial: optuna.trial.Trial, number: int) -> List[float]:
-        assert trial.number == number
-        return [0, 0, 0]
-
-    for i in range(10):
-        study.optimize(lambda t: objective(t, i), n_trials=1)
-
-    for i, trial in enumerate(study.trials):
-        assert trial.number == i
-
-
-def test_user_attrs_with_multi_objectives() -> None:
-    study = optuna.create_study(directions=["maximize", "minimize", "maximize"])
-
-    def objective(trial: optuna.trial.Trial) -> List[float]:
-        trial.set_user_attr("foo", "bar")
-        assert trial.user_attrs == {"foo": "bar"}
-
-        trial.set_user_attr("baz", "qux")
-        assert trial.user_attrs == {"foo": "bar", "baz": "qux"}
-
-        trial.set_user_attr("foo", "quux")
-        assert trial.user_attrs == {"foo": "quux", "baz": "qux"}
-
-        return [0, 0, 0]
-
-    study.optimize(objective, n_trials=1)
-
-    assert study.trials[0].user_attrs == {"foo": "quux", "baz": "qux"}
-
-
-def test_system_attrs_with_multi_objectives() -> None:
-    study = optuna.create_study(directions=["maximize", "minimize", "maximize"])
-
-    def objective(trial: optuna.trial.Trial) -> List[float]:
-        trial.set_system_attr("foo", "bar")
-        assert trial.system_attrs["foo"] == "bar"
-        return [0, 0, 0]
-
-    study.optimize(objective, n_trials=1)
-
-    assert study.trials[0].system_attrs["foo"] == "bar"
-
-
-def test_params_and_distributions_with_multi_objectives() -> None:
-    study = optuna.create_study(directions=["maximize", "minimize", "maximize"])
-
-    def objective(trial: optuna.trial.Trial) -> List[float]:
-        x = trial.suggest_uniform("x", 0, 10)
-
-        assert set(trial.params.keys()) == {"x"}
-        assert set(trial.distributions.keys()) == {"x"}
-        assert isinstance(trial.distributions["x"], optuna.distributions.UniformDistribution)
-
-        return [x, x, x]
-
-    study.optimize(objective, n_trials=1)
-
-    trial = study.trials[0]
-    assert set(trial.params.keys()) == {"x"}
-    assert set(trial.distributions.keys()) == {"x"}
-    assert isinstance(trial.distributions["x"], optuna.distributions.UniformDistribution)
-
-
-def test_datetime_with_multi_objectives() -> None:
-    study = optuna.create_study(directions=["maximize", "minimize", "maximize"])
-
-    def objective(trial: optuna.trial.Trial) -> List[float]:
-        assert isinstance(trial.datetime_start, datetime.datetime)
-
-        return [0, 0, 0]
-
-    study.optimize(objective, n_trials=1)
-
-    assert isinstance(study.trials[0].datetime_start, datetime.datetime)
-    assert isinstance(study.trials[0].datetime_complete, datetime.datetime)

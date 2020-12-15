@@ -303,11 +303,8 @@ class RDBStorage(BaseStorage):
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
 
         with _create_scoped_session(self.scoped_session) as session:
-            # Raise `KeyError` if the study does not exist.
-            _ = models.StudyModel.find_or_raise_by_id(study_id, session)
-            directions = [
-                d.direction for d in models.StudyDirectionModel.where_study_id(study_id, session)
-            ]
+            study = models.StudyModel.find_or_raise_by_id(study_id, session)
+            directions = [d.direction for d in study.directions]
 
         return directions
 
@@ -376,11 +373,10 @@ class RDBStorage(BaseStorage):
             study_summary = study_summary_stmt.all()
             study_summaries = []
             for study in study_summary:
-                direction_model = models.StudyDirectionModel.find_by_study_and_objective(
-                    study, 0, session
-                )
-                assert direction_model
-                directions = [direction_model.direction]
+                directions = [
+                    d.direction
+                    for d in models.StudyDirectionModel.where_study_id(study.study_id, session)
+                ]
                 best_trial: Optional[models.TrialModel] = None
                 try:
                     if len(directions) > 1:
@@ -446,7 +442,8 @@ class RDBStorage(BaseStorage):
                 study_summaries.append(
                     StudySummary(
                         study_name=study.study_name,
-                        direction=directions[0],
+                        direction=None,
+                        directions=directions,
                         best_trial=best_trial_frozen,
                         user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
                         system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
@@ -855,11 +852,7 @@ class RDBStorage(BaseStorage):
             )
 
     def _set_trial_intermediate_value_without_commit(
-        self,
-        session: orm.Session,
-        trial_id: int,
-        step: int,
-        intermediate_value: float,
+        self, session: orm.Session, trial_id: int, step: int, intermediate_value: float
     ) -> None:
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)

@@ -86,13 +86,15 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
 
             study = self._studies[study_id]
-            if study.directions[0] != StudyDirection.NOT_SET and study.directions != directions:
+            if study.directions[0] != StudyDirection.NOT_SET and study.directions != list(
+                directions
+            ):
                 raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
                         study.directions, directions
                     )
                 )
-            study.directions = directions
+            study.directions = list(directions)
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
@@ -133,7 +135,7 @@ class InMemoryStorage(BaseStorage):
 
         with self._lock:
             self._check_study_id(study_id)
-            return list(self._studies[study_id].directions)
+            return self._studies[study_id].directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -346,9 +348,8 @@ class InMemoryStorage(BaseStorage):
             self.check_trial_is_updatable(trial_id, trial.state)
 
             trial = copy.copy(trial)
-            intermediate_values = copy.copy(trial.intermediate_values)
-            intermediate_values[step] = intermediate_value
-            trial.intermediate_values = intermediate_values
+            trial.intermediate_values = copy.copy(trial.intermediate_values)
+            trial.intermediate_values[step] = intermediate_value
             self._set_trial(trial_id, trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
@@ -438,5 +439,5 @@ class _StudyInfo:
         self.user_attrs: Dict[str, Any] = {}
         self.system_attrs: Dict[str, Any] = {}
         self.name: str = name
-        self.directions: Sequence[StudyDirection] = [StudyDirection.NOT_SET]
+        self.directions: List[StudyDirection] = [StudyDirection.NOT_SET]
         self.best_trial_id: Optional[int] = None

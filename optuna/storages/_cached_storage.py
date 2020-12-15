@@ -41,7 +41,7 @@ class _StudyInfo:
         self.updates: Dict[int, _TrialUpdate] = {}
         # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
-        self.directions: Sequence[StudyDirection] = [StudyDirection.NOT_SET]
+        self.directions: List[StudyDirection] = [StudyDirection.NOT_SET]
         self.name: Optional[str] = None
 
 
@@ -102,7 +102,7 @@ class _CachedStorage(BaseStorage):
                     len(current_directions) == 1
                     and current_directions[0] == StudyDirection.NOT_SET
                 ):
-                    self._studies[study_id].directions = directions
+                    self._studies[study_id].directions = list(directions)
                     self._backend.set_study_directions(study_id, directions)
                     return
 
@@ -149,14 +149,14 @@ class _CachedStorage(BaseStorage):
             if study_id in self._studies:
                 directions = self._studies[study_id].directions
                 if len(directions) > 1 or directions[0] != StudyDirection.NOT_SET:
-                    return list(directions)
+                    return directions
 
         directions = self._backend.get_study_directions(study_id)
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
             self._studies[study_id].directions = directions
-        return list(directions)
+        return directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 

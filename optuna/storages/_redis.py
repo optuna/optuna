@@ -92,8 +92,8 @@ class RedisStorage(BaseStorage):
             pipe.set(self._key_study_name(study_name), pickle.dumps(study_id))
             pipe.set("study_id:{:010d}:study_name".format(study_id), pickle.dumps(study_name))
             pipe.set(
-                "study_id:{:010d}:direction".format(study_id),
-                pickle.dumps((StudyDirection.NOT_SET,)),
+                "study_id:{:010d}:directions".format(study_id),
+                pickle.dumps([StudyDirection.NOT_SET]),
             )
 
             study_summary = StudySummary(
@@ -134,7 +134,7 @@ class RedisStorage(BaseStorage):
             study_name = self.get_study_name_from_id(study_id)
             pipe.delete("study_name:{}:study_id".format(study_name))
             pipe.delete("study_id:{:010d}:study_name".format(study_id))
-            pipe.delete("study_id:{:010d}:direction".format(study_id))
+            pipe.delete("study_id:{:010d}:directions".format(study_id))
             pipe.delete("study_id:{:010d}:best_trial_id".format(study_id))
             pipe.delete("study_id:{:010d}:params_distribution".format(study_id))
             pipe.execute()
@@ -166,7 +166,7 @@ class RedisStorage(BaseStorage):
     @staticmethod
     def _key_study_direction(study_id: int) -> str:
 
-        return "study_id:{:010d}:direction".format(study_id)
+        return "study_id:{:010d}:directions".format(study_id)
 
     def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
 
@@ -236,7 +236,7 @@ class RedisStorage(BaseStorage):
 
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
 
-        direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
+        direction_pkl = self._redis.get("study_id:{:010d}:directions".format(study_id))
         if direction_pkl is None:
             raise KeyError("No such study: {}.".format(study_id))
         return list(pickle.loads(direction_pkl))
@@ -479,6 +479,9 @@ class RedisStorage(BaseStorage):
         best_value = float(best_value_or_none)
         new_value = float(trial.value)
 
+        # Complete trials do not have `None` values.
+        assert new_value is not None
+
         if direction == StudyDirection.MAXIMIZE:
             if new_value > best_value:
                 self._set_best_trial(study_id, trial_id)
@@ -495,9 +498,7 @@ class RedisStorage(BaseStorage):
         self._check_trial_id(trial_id)
         frozen_trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, frozen_trial.state)
-        intermediate_values = copy.copy(frozen_trial.intermediate_values)
-        intermediate_values[step] = intermediate_value
-        frozen_trial.intermediate_values = intermediate_values
+        frozen_trial.intermediate_values[step] = intermediate_value
         self._set_trial(trial_id, frozen_trial)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:

@@ -104,16 +104,9 @@ class FrozenTrial(BaseTrial):
             :class:`TrialState` of the :class:`~optuna.trial.Trial`.
         value:
             Objective value of the :class:`~optuna.trial.Trial`.
-            The length is greater than 1 if the problem is multi-objective optimization.
-
-            .. warning::
-                Deprecated in v2.4.0. ``value`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v4.0.0,
-                but this schedule is subject to change.
-
-                Please use ``values`` instead.
         values:
             Sequence of objective values of the :class:`~optuna.trial.Trial`.
+            The length is greater than 1 if the problem is multi-objective optimization.
         datetime_start:
             Datetime where the :class:`~optuna.trial.Trial` started.
         datetime_complete:
@@ -144,6 +137,7 @@ class FrozenTrial(BaseTrial):
         system_attrs: Dict[str, Any],
         intermediate_values: Dict[int, float],
         trial_id: int,
+        *,
         values: Optional[Sequence[float]] = None,
     ) -> None:
 
@@ -413,18 +407,21 @@ class FrozenTrial(BaseTrial):
         else:
             self._values = None
 
-    @property
-    def values(self) -> Optional[Sequence[float]]:
+    # These `_get_values`, `_set_values`, and `values = property(_get_values, _set_values)` are
+    # defined to pass the mypy.
+    # See https://github.com/python/mypy/issues/3004#issuecomment-726022329.
+    def _get_values(self) -> Optional[List[float]]:
 
         return self._values
 
-    @values.setter
-    def values(self, v: Optional[Sequence[float]]) -> None:
+    def _set_values(self, v: Optional[Sequence[float]]) -> None:
 
         if v is not None:
             self._values = list(v)
         else:
             self._values = None
+
+    values = property(_get_values, _set_values)
 
     @property
     def datetime_start(self) -> Optional[datetime.datetime]:
@@ -554,13 +551,6 @@ def create_trial(
             Trial state.
         value:
             Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
-
-            .. warning::
-                Deprecated in v2.4.0. ``value`` argument will be removed in the future.
-                The removal of this feature is currently scheduled for v4.0.0,
-                but this schedule is subject to change.
-
-                Please use ``values`` instead.
         values:
             Sequence of the trial objective values. The length is greater than 1 if the problem is
             multi-objective optimization.
@@ -580,7 +570,8 @@ def create_trial(
         Created trial.
 
     Raises:
-        If both ``value`` and ``values`` are specified.
+        :exc:`ValueError`:
+            If both ``value`` and ``values`` are specified.
     """
 
     params = params or {}

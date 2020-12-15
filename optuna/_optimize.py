@@ -246,6 +246,8 @@ def _check_and_convert_to_values(
     for v in _original_values:
         checked_v, failure_message = _check_single_value(v, trial)
         if failure_message is not None:
+            # TODO(Imamura): Construct error message taking into account all values and do not
+            #  early return
             # `value` is assumed to be ignored on failure so we can set it to any value.
             return None, failure_message
         elif isinstance(checked_v, float):

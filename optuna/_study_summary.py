@@ -52,6 +52,7 @@ class StudySummary(object):
         n_trials: int,
         datetime_start: Optional[datetime.datetime],
         study_id: int,
+        *,
         directions: Optional[Sequence[StudyDirection]] = None,
     ):
 
