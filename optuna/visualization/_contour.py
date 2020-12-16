@@ -66,16 +66,27 @@ def plot_contour(
         params:
             Parameter list to visualize. The default is all parameters.
         target:
-            A function to specify the value to display. If it is :obj:`None`, the objective values
-            are plotted.
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is for
+            single-objective optimization, the objective values are plotted.
+
+            .. note::
+                Specify this argument if ``study`` is for multi-objective optimization.
         target_name:
             Target's name to display on the color bar.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is for multi-objective optimization.
     """
 
     _imports.check()
+    if target is None and len(study.directions) > 1:
+        raise ValueError(
+            "If the `study` is for multi-objective optimization, please specify the `target`."
+        )
     return _get_contour_plot(study, params, target, target_name)
 
 

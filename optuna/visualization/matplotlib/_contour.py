@@ -76,16 +76,27 @@ def plot_contour(
         params:
             Parameter list to visualize. The default is all parameters.
         target:
-            A function to specify the value to display. If it is :obj:`None`, the objective values
-            are plotted.
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is for
+            single-objective optimization, the objective values are plotted.
+
+            .. note::
+                Specify this argument if ``study`` is for multi-objective optimization.
         target_name:
             Target's name to display on the color bar.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is for multi-objective optimization.
     """
 
     _imports.check()
+    if target is None and len(study.directions) > 1:
+        raise ValueError(
+            "If the `study` is for multi-objective optimization, please specify the `target`."
+        )
     _logger.warning(
         "Output figures of this Matplotlib-based `plot_contour` function would be different from "
         "those of the Plotly-based `plot_contour`."
