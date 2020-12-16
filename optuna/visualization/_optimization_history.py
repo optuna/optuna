@@ -17,6 +17,7 @@ _logger = get_logger(__name__)
 
 def plot_optimization_history(
     study: Study,
+    *,
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":

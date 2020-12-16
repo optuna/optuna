@@ -3,6 +3,7 @@ import sys
 import tempfile
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from unittest.mock import patch
 
@@ -171,7 +172,8 @@ def test_upgrade() -> None:
             {"state": TrialState.COMPLETE, "datetime_complete": None},
             {"state": TrialState.COMPLETE},
         ),
-        ({"value": 1.1}, {"value": 1.1}),
+        ({"_values": [1.1]}, {"values": [1.1]}),
+        ({"_values": [1.1, 2.2]}, {"values": [1.1, 2.2]}),
         ({"intermediate_values": {1: 2.3, 3: 2.5}}, {"intermediate_values": {1: 2.3, 3: 2.5}}),
         (
             {
@@ -219,14 +221,16 @@ def test_update_trial(fields_to_modify: Dict[str, Any], kwargs: Dict[str, Any]) 
                 assert getattr(trial_after_update, key) == value
 
 
-def test_update_trial_second_write() -> None:
+@pytest.mark.parametrize("values1, values2", [([0.1], [1.1]), ([0.1, 0.2], [1.1, 1.2])])
+def test_update_trial_second_write(values1: List[float], values2: List[float]) -> None:
 
     storage = create_test_storage()
     study_id = storage.create_new_study()
     template = FrozenTrial(
         number=1,
         state=TrialState.RUNNING,
-        value=0.1,
+        value=None,
+        values=values1,
         datetime_start=None,
         datetime_complete=None,
         params={"paramA": 0.1, "paramB": 1.1},
@@ -241,7 +245,7 @@ def test_update_trial_second_write() -> None:
     storage._update_trial(
         trial_id,
         state=None,
-        value=1.1,
+        values=values2,
         intermediate_values={3: 2.3, 7: 3.3},
         params={"paramA": 0.2, "paramC": 2.3},
         distributions_={"paramA": UniformDistribution(0, 1), "paramC": UniformDistribution(0, 4)},
@@ -253,7 +257,7 @@ def test_update_trial_second_write() -> None:
         "_trial_id": trial_before_update._trial_id,
         "number": trial_before_update.number,
         "state": TrialState.RUNNING,
-        "value": 1.1,
+        "values": values2,
         "params": {"paramA": 0.2, "paramB": 1.1, "paramC": 2.3},
         "intermediate_values": {3: 2.3, 5: 9.2, 7: 3.3},
         "_distributions": {
