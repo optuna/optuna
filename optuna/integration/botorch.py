@@ -390,6 +390,7 @@ class BoTorchSampler(BaseSampler):
 
     def __init__(
         self,
+        *,
         candidates_func: Callable[
             [
                 "torch.Tensor",
