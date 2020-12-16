@@ -5,6 +5,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Type
 from typing import Union
@@ -18,6 +19,7 @@ from optuna import trial as trial_module
 from optuna._dataframe import _trials_dataframe
 from optuna._dataframe import pd
 from optuna._experimental import experimental
+from optuna._multi_objective import _get_pareto_front_trials
 from optuna._optimize import _optimize
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
@@ -26,7 +28,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-ObjectiveFuncType = Callable[[trial_module.Trial], float]
+ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]]
 
 
 _logger = logging.get_logger(__name__)
@@ -44,6 +46,10 @@ class BaseStudy(object):
 
         Returns:
             A dictionary containing parameters of the best trial.
+
+        Raises:
+            :exc:`RuntimeError`:
+                If the study has more than one direction.
         """
 
         return self.best_trial.params
@@ -54,6 +60,10 @@ class BaseStudy(object):
 
         Returns:
             A float representing the best objective value.
+
+        Raises:
+            :exc:`RuntimeError`:
+                If the study has more than one direction.
         """
 
         best_value = self.best_trial.value
@@ -67,9 +77,33 @@ class BaseStudy(object):
 
         Returns:
             A :class:`~optuna.FrozenTrial` object of the best trial.
+
+        Raises:
+            :exc:`RuntimeError`:
+                If the study has more than one direction.
         """
 
+        if len(self.directions) > 1:
+            raise RuntimeError(
+                "The best trial of a `study` is only supported for single-objective optimization."
+            )
+
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
+
+    @property
+    def best_trials(self) -> List[FrozenTrial]:
+        """Return trials located at the Pareto front in the study.
+
+        A trial is located at the Pareto front if there are no trials that dominate the trial.
+        It's called that a trial ``t0`` dominates another trial ``t1`` if
+        ``all(v0 <= v1) for v0, v1 in zip(t0.values, t1.values)`` and
+        ``any(v0 < v1) for v0, v1 in zip(t0.values, t1.values)`` are held.
+
+        Returns:
+            A list of :class:`~optuna.trial.FrozenTrial` objects.
+        """
+
+        return _get_pareto_front_trials(self)
 
     @property
     def direction(self) -> StudyDirection:
@@ -77,9 +111,29 @@ class BaseStudy(object):
 
         Returns:
             A :class:`~optuna.study.StudyDirection` object.
+
+        Raises:
+            :exc:`RuntimeError`:
+                If the study has more than one direction.
         """
 
-        return self._storage.get_study_direction(self._study_id)
+        if len(self.directions) > 1:
+            raise RuntimeError(
+                "The single direction of a `study` is only supported for single-objective "
+                "optimization."
+            )
+
+        return self.directions[0]
+
+    @property
+    def directions(self) -> List[StudyDirection]:
+        """Return the directions of the study.
+
+        Returns:
+            A list of :class:`~optuna.study.StudyDirection` objects.
+        """
+
+        return self._storage.get_study_directions(self._study_id)
 
     @property
     def trials(self) -> List[FrozenTrial]:
@@ -598,26 +652,39 @@ class Study(BaseStudy):
             trial_id = self._storage.create_new_trial(self._study_id)
         return trial_module.Trial(self, trial_id)
 
-    def _tell(self, trial: trial_module.Trial, state: TrialState, value: Optional[float]) -> None:
+    def _tell(
+        self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
+    ) -> None:
         if state == TrialState.COMPLETE:
-            assert value is not None
-        if value is not None:
-            self._storage.set_trial_value(trial._trial_id, value)
+            assert values is not None
+        if values is not None:
+            self._storage.set_trial_values(trial._trial_id, values)
         self._storage.set_trial_state(trial._trial_id, state)
 
-    def _log_completed_trial(self, trial: trial_module.Trial, value: float) -> None:
-        # This method is overwritten by `MultiObjectiveStudy` using `types.MethodType` so one must
-        # be careful modifying this method, e.g. making this a free function.
+    def _log_completed_trial(
+        self, trial: trial_module.Trial, value_or_values: Union[float, Sequence[float]]
+    ) -> None:
 
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        _logger.info(
-            "Trial {} finished with value: {} and parameters: {}. "
-            "Best is trial {} with value: {}.".format(
-                trial.number, value, trial.params, self.best_trial.number, self.best_value
+        if isinstance(value_or_values, Sequence):
+            _logger.info(
+                "Trial {} finished with value: {} and parameters: {}. ".format(
+                    trial.number, value_or_values, trial.params
+                )
             )
-        )
+        else:
+            _logger.info(
+                "Trial {} finished with value: {} and parameters: {}. "
+                "Best is trial {} with value: {}.".format(
+                    trial.number,
+                    value_or_values,
+                    trial.params,
+                    self.best_trial.number,
+                    self.best_value,
+                )
+            )
 
 
 def create_study(
@@ -625,8 +692,10 @@ def create_study(
     sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
     study_name: Optional[str] = None,
-    direction: str = "minimize",
+    direction: Optional[str] = None,
     load_if_exists: bool = False,
+    *,
+    directions: Optional[Sequence[str]] = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
@@ -676,6 +745,12 @@ def create_study(
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization.
+
+            .. note::
+                If none of `direction` and `directions` are specified, the direction of the study
+                is set to "minimize".
+        directions:
+            A sequence of directions during multi-objective optimization.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
@@ -687,13 +762,36 @@ def create_study(
         A :class:`~optuna.study.Study` object.
 
     Raises:
-        ValueError:
-            If ``direction`` is neither 'minimize' nor 'maximize'.
+        :exc:`ValueError`:
+            If the length of ``directions`` is zero.
+            Or, if ``direction`` is neither 'minimize' nor 'maximize' when it is a string.
+            Or, if the element of ``directions`` is neither `minimize` nor `maximize`.
+            Or, if both ``direction`` and ``directions`` are specified.
 
     See also:
         :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
 
     """
+
+    if direction is None and directions is None:
+        directions = ["minimize"]
+    elif direction is not None and directions is not None:
+        raise ValueError("Specify only one of `direction` and `directions`.")
+    elif direction is not None:
+        directions = [direction]
+    elif directions is not None:
+        directions = list(directions)
+    else:
+        assert False
+
+    if len(directions) < 1:
+        raise ValueError("The number of objectives must be greater than 0.")
+    elif any(d != "minimize" and d != "maximize" for d in directions):
+        raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
+
+    direction_objects = [
+        StudyDirection.MINIMIZE if d == "minimize" else StudyDirection.MAXIMIZE for d in directions
+    ]
 
     storage = storages.get_storage(storage)
     try:
@@ -710,17 +808,18 @@ def create_study(
         else:
             raise
 
+    # TODO(imamura): Change the default sampler for MO as NSGAII after MO sampler refactoring.
+    if sampler is None and len(direction_objects) > 1:
+        _logger.info(
+            "Multi-objective optimization is set, but no sampler is specified. "
+            "The sampler is set to `optuna.samplers.RandomSampler`."
+        )
+        sampler = samplers.RandomSampler()
+
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
-    if direction == "minimize":
-        _direction = StudyDirection.MINIMIZE
-    elif direction == "maximize":
-        _direction = StudyDirection.MAXIMIZE
-    else:
-        raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
-
-    study._storage.set_study_direction(study_id, _direction)
+    study._storage.set_study_directions(study_id, direction_objects)
 
     return study
 

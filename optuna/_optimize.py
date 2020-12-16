@@ -5,8 +5,10 @@ import math
 from typing import Callable
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Type
+from typing import Union
 import warnings
 
 import joblib
@@ -186,8 +188,9 @@ def _run_trial(
     trial_number = trial.number
 
     try:
-        value = func(trial)
+        value_or_values = func(trial)
     except exceptions.TrialPruned as e:
+        # TODO(mamu): Handle multi-objective cases.
         # Register the last intermediate value if present as the value of the trial.
         # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
         frozen_trial = study._storage.get_trial(trial_id)
@@ -195,7 +198,7 @@ def _run_trial(
         study._tell(
             trial,
             TrialState.PRUNED,
-            None if last_step is None else frozen_trial.intermediate_values[last_step],
+            None if last_step is None else [frozen_trial.intermediate_values[last_step]],
         )
         _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
         return trial
@@ -209,29 +212,75 @@ def _run_trial(
             return trial
         raise
 
+    checked_values, failure_message = _check_and_convert_to_values(
+        len(study.directions), value_or_values, trial
+    )
+
+    if failure_message is None:
+        assert checked_values is not None
+        study._tell(trial, TrialState.COMPLETE, checked_values)
+        study._log_completed_trial(trial, checked_values)
+    else:
+        study._tell(trial, TrialState.FAIL, None)
+        _logger.warning(failure_message)
+
+    return trial
+
+
+def _check_and_convert_to_values(
+    n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
+) -> Tuple[Optional[List[float]], Optional[str]]:
+    if isinstance(original_value, Sequence):
+        if n_objectives != len(original_value):
+            return None, (
+                f"Trial {trial.number} failed, because the number of the values "
+                f"{len(original_value)} is did not match the number of the objectives "
+                f"{n_objectives}."
+            )
+        else:
+            _original_values = list(original_value)
+    else:
+        _original_values = [original_value]
+
+    _checked_values = []
+    for v in _original_values:
+        checked_v, failure_message = _check_single_value(v, trial)
+        if failure_message is not None:
+            # TODO(Imamura): Construct error message taking into account all values and do not
+            #  early return
+            # `value` is assumed to be ignored on failure so we can set it to any value.
+            return None, failure_message
+        elif isinstance(checked_v, float):
+            _checked_values.append(checked_v)
+        else:
+            assert False
+
+    return _checked_values, None
+
+
+def _check_single_value(
+    original_value: float, trial: trial_module.Trial
+) -> Tuple[Optional[float], Optional[str]]:
+    value = None
+    failure_message = None
+
     try:
-        value = float(value)
+        value = float(original_value)
     except (
         ValueError,
         TypeError,
     ):
-        study._tell(trial, TrialState.FAIL, None)
-        _logger.warning(
-            "Trial {} failed, because the returned value from the "
-            "objective function cannot be cast to float. Returned value is: "
-            "{}".format(trial_number, repr(value))
+        failure_message = (
+            f"Trial {trial.number} failed, because the returned value from the "
+            f"objective function cannot be cast to float. Returned value is: "
+            f"{repr(original_value)}"
         )
-        return trial
 
-    if math.isnan(value):
-        study._tell(trial, TrialState.FAIL, None)
-        _logger.warning(
-            "Trial {} failed, because the objective function returned {}.".format(
-                trial_number, value
-            )
+    if value is not None and math.isnan(value):
+        value = None
+        failure_message = (
+            f"Trial {trial.number} failed, because the objective function returned "
+            f"{original_value}."
         )
-        return trial
 
-    study._tell(trial, TrialState.COMPLETE, value)
-    study._log_completed_trial(trial, value)
-    return trial
+    return value, failure_message

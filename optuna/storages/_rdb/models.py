@@ -42,23 +42,16 @@ class StudyModel(BaseModel):
     study_name = Column(String(MAX_INDEXED_STRING_LENGTH), index=True, unique=True, nullable=False)
 
     @classmethod
-    def find_by_id(
+    def find_or_raise_by_id(
         cls, study_id: int, session: orm.Session, for_update: bool = False
-    ) -> Optional["StudyModel"]:
+    ) -> "StudyModel":
 
         query = session.query(cls).filter(cls.study_id == study_id)
 
         if for_update:
             query = query.with_for_update()
 
-        return query.one_or_none()
-
-    @classmethod
-    def find_or_raise_by_id(
-        cls, study_id: int, session: orm.Session, for_update: bool = False
-    ) -> "StudyModel":
-
-        study = cls.find_by_id(study_id, session, for_update)
+        study = query.one_or_none()
         if study is None:
             raise KeyError(NOT_FOUND_MSG)
 
@@ -79,11 +72,6 @@ class StudyModel(BaseModel):
             raise KeyError(NOT_FOUND_MSG)
 
         return study
-
-    @classmethod
-    def all(cls, session: orm.Session) -> List["StudyModel"]:
-
-        return session.query(cls).all()
 
 
 class StudyDirectionModel(BaseModel):
@@ -112,16 +100,9 @@ class StudyDirectionModel(BaseModel):
         return study_direction
 
     @classmethod
-    def where_study(cls, study: StudyModel, session: orm.Session) -> List["StudyDirectionModel"]:
+    def where_study_id(cls, study_id: int, session: orm.Session) -> List["StudyDirectionModel"]:
 
-        study_directions = (
-            session.query(cls)
-            .filter(cls.study_id == study.study_id)
-            .order_by(asc(cls.objective))
-            .all()
-        )
-
-        return study_directions
+        return session.query(cls).filter(cls.study_id == study_id).all()
 
 
 class StudyUserAttributeModel(BaseModel):
@@ -209,20 +190,6 @@ class TrialModel(BaseModel):
     )
 
     @classmethod
-    def find_by_id(
-        cls, trial_id: int, session: orm.Session, for_update: bool = False
-    ) -> Optional["TrialModel"]:
-
-        query = session.query(cls).filter(cls.trial_id == trial_id)
-
-        # "FOR UPDATE" clause is used for row-level locking.
-        # Please note that SQLite3 doesn't support this clause.
-        if for_update:
-            query = query.with_for_update()
-
-        return query.one_or_none()
-
-    @classmethod
     def find_max_value_trial(
         cls, study_id: int, objective: int, session: orm.Session
     ) -> "TrialModel":
@@ -261,22 +228,22 @@ class TrialModel(BaseModel):
         return trial
 
     @classmethod
-    def find_or_raise_by_id(cls, trial_id: int, session: orm.Session) -> "TrialModel":
+    def find_or_raise_by_id(
+        cls, trial_id: int, session: orm.Session, for_update: bool = False
+    ) -> "TrialModel":
 
-        trial = cls.find_by_id(trial_id, session)
+        query = session.query(cls).filter(cls.trial_id == trial_id)
+
+        # "FOR UPDATE" clause is used for row-level locking.
+        # Please note that SQLite3 doesn't support this clause.
+        if for_update:
+            query = query.with_for_update()
+
+        trial = query.one_or_none()
         if trial is None:
             raise KeyError(NOT_FOUND_MSG)
 
         return trial
-
-    @classmethod
-    def where_study(cls, study: StudyModel, session: orm.Session) -> List["TrialModel"]:
-
-        trials = (
-            session.query(cls).filter(cls.study_id == study.study_id).order_by(cls.trial_id).all()
-        )
-
-        return trials
 
     @classmethod
     def count(
@@ -300,23 +267,6 @@ class TrialModel(BaseModel):
             TrialModel.study_id == self.study_id, TrialModel.trial_id < self.trial_id
         )
         return trial_count.scalar()
-
-    @classmethod
-    def all(cls, session: orm.Session) -> List["TrialModel"]:
-
-        return session.query(cls).all()
-
-    @classmethod
-    def get_all_trial_ids_where_study(cls, study: StudyModel, session: orm.Session) -> List[int]:
-
-        trials = (
-            session.query(cls.trial_id)
-            .filter(cls.study_id == study.study_id)
-            .order_by(cls.trial_id)
-            .all()
-        )
-
-        return [t.trial_id for t in trials]
 
 
 class TrialUserAttributeModel(BaseModel):
@@ -346,34 +296,11 @@ class TrialUserAttributeModel(BaseModel):
         return attribute
 
     @classmethod
-    def where_study(
-        cls, study: StudyModel, session: orm.Session
-    ) -> List["TrialUserAttributeModel"]:
-
-        trial_user_attributes = (
-            session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
-        )
-
-        return trial_user_attributes
-
-    @classmethod
-    def where_trial(
-        cls, trial: TrialModel, session: orm.Session
-    ) -> List["TrialUserAttributeModel"]:
-
-        return cls.where_trial_id(trial.trial_id, session)
-
-    @classmethod
     def where_trial_id(
         cls, trial_id: int, session: orm.Session
     ) -> List["TrialUserAttributeModel"]:
 
         return session.query(cls).filter(cls.trial_id == trial_id).all()
-
-    @classmethod
-    def all(cls, session: orm.Session) -> List["TrialUserAttributeModel"]:
-
-        return session.query(cls).all()
 
 
 class TrialSystemAttributeModel(BaseModel):
@@ -403,34 +330,11 @@ class TrialSystemAttributeModel(BaseModel):
         return attribute
 
     @classmethod
-    def where_study(
-        cls, study: StudyModel, session: orm.Session
-    ) -> List["TrialSystemAttributeModel"]:
-
-        trial_system_attributes = (
-            session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
-        )
-
-        return trial_system_attributes
-
-    @classmethod
-    def where_trial(
-        cls, trial: TrialModel, session: orm.Session
-    ) -> List["TrialSystemAttributeModel"]:
-
-        return cls.where_trial_id(trial.trial_id, session)
-
-    @classmethod
     def where_trial_id(
         cls, trial_id: int, session: orm.Session
     ) -> List["TrialSystemAttributeModel"]:
 
         return session.query(cls).filter(cls.trial_id == trial_id).all()
-
-    @classmethod
-    def all(cls, session: orm.Session) -> List["TrialSystemAttributeModel"]:
-
-        return session.query(cls).all()
 
 
 class TrialParamModel(BaseModel):
@@ -497,30 +401,11 @@ class TrialParamModel(BaseModel):
         return param_distribution
 
     @classmethod
-    def where_study(cls, study: StudyModel, session: orm.Session) -> List["TrialParamModel"]:
-
-        trial_params = (
-            session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
-        )
-
-        return trial_params
-
-    @classmethod
-    def where_trial(cls, trial: TrialModel, session: orm.Session) -> List["TrialParamModel"]:
-
-        return cls.where_trial_id(trial.trial_id, session)
-
-    @classmethod
     def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialParamModel"]:
 
         trial_params = session.query(cls).filter(cls.trial_id == trial_id).all()
 
         return trial_params
-
-    @classmethod
-    def all(cls, session: orm.Session) -> List["TrialParamModel"]:
-
-        return session.query(cls).all()
 
 
 class TrialValueModel(BaseModel):
@@ -550,20 +435,6 @@ class TrialValueModel(BaseModel):
         return trial_value
 
     @classmethod
-    def where_study(cls, study: StudyModel, session: orm.Session) -> List["TrialValueModel"]:
-
-        trial_values = (
-            session.query(cls).join(TrialModel).filter(TrialModel.study_id == study.study_id).all()
-        )
-
-        return trial_values
-
-    @classmethod
-    def where_trial(cls, trial: TrialModel, session: orm.Session) -> List["TrialValueModel"]:
-
-        return cls.where_trial_id(trial.trial_id, session)
-
-    @classmethod
     def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialValueModel"]:
 
         trial_values = (
@@ -571,10 +442,6 @@ class TrialValueModel(BaseModel):
         )
 
         return trial_values
-
-    @classmethod
-    def all(cls, session: orm.Session) -> List["TrialValueModel"]:
-        return session.query(cls).all()
 
 
 class TrialIntermediateValueModel(BaseModel):

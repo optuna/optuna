@@ -9,6 +9,7 @@ from typing import Dict
 from typing import Generator
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
 from typing import Tuple
 import uuid
@@ -221,23 +222,36 @@ class RDBStorage(BaseStorage):
         return study_name
 
     # TODO(sano): Prevent simultaneously setting different direction in distributed environments.
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
+    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
 
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
-            current_direction_model = models.StudyDirectionModel.find_by_study_and_objective(
-                study, 0, session
-            )
-            assert current_direction_model
-            current_direction = current_direction_model.direction
-            if current_direction != StudyDirection.NOT_SET and current_direction != direction:
+            directions = list(directions)
+            current_directions = [
+                d.direction for d in models.StudyDirectionModel.where_study_id(study_id, session)
+            ]
+            if (
+                len(current_directions) > 0
+                and current_directions[0] != StudyDirection.NOT_SET
+                and current_directions != directions
+            ):
                 raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
-                        current_direction, direction
+                        current_directions, directions
                     )
                 )
 
-            current_direction_model.direction = direction
+            for objective, d in enumerate(directions):
+                direction_model = models.StudyDirectionModel.find_by_study_and_objective(
+                    study, objective, session
+                )
+                if direction_model is None:
+                    direction_model = models.StudyDirectionModel(
+                        study_id=study_id, objective=objective, direction=d
+                    )
+                    session.add(direction_model)
+                else:
+                    direction_model.direction = d
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
@@ -286,17 +300,13 @@ class RDBStorage(BaseStorage):
 
         return study.study_name
 
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
 
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
-            direction_model = models.StudyDirectionModel.find_by_study_and_objective(
-                study, 0, session
-            )
-            assert direction_model
-            direction = direction_model.direction
+            directions = [d.direction for d in study.directions]
 
-        return direction
+        return directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -363,14 +373,15 @@ class RDBStorage(BaseStorage):
             study_summary = study_summary_stmt.all()
             study_summaries = []
             for study in study_summary:
-                direction_model = models.StudyDirectionModel.find_by_study_and_objective(
-                    study, 0, session
-                )
-                assert direction_model
-                directions = [direction_model.direction]
+                directions = [
+                    d.direction
+                    for d in models.StudyDirectionModel.where_study_id(study.study_id, session)
+                ]
                 best_trial: Optional[models.TrialModel] = None
                 try:
-                    if directions[0] == StudyDirection.MAXIMIZE:
+                    if len(directions) > 1:
+                        raise ValueError
+                    elif directions[0] == StudyDirection.MAXIMIZE:
                         best_trial = models.TrialModel.find_max_value_trial(
                             study.study_id, 0, session
                         )
@@ -431,7 +442,8 @@ class RDBStorage(BaseStorage):
                 study_summaries.append(
                     StudySummary(
                         study_name=study.study_name,
-                        direction=directions[0],
+                        direction=None,
+                        directions=directions,
                         best_trial=best_trial_frozen,
                         user_attrs={i.key: json.loads(i.value_json) for i in user_attrs},
                         system_attrs={i.key: json.loads(i.value_json) for i in system_attrs},
@@ -493,6 +505,7 @@ class RDBStorage(BaseStorage):
                 number=trial.number,
                 state=trial.state,
                 value=None,
+                values=None,
                 datetime_start=trial.datetime_start,
                 datetime_complete=None,
                 params={},
@@ -535,7 +548,10 @@ class RDBStorage(BaseStorage):
         session.flush()
 
         if template_trial is not None:
-            if template_trial.value is not None:
+            if template_trial.values is not None and len(template_trial.values) > 1:
+                for objective, value in enumerate(template_trial.values):
+                    self._set_trial_value_without_commit(session, trial.trial_id, objective, value)
+            elif template_trial.value is not None:
                 self._set_trial_value_without_commit(
                     session, trial.trial_id, 0, template_trial.value
                 )
@@ -569,7 +585,7 @@ class RDBStorage(BaseStorage):
         self,
         trial_id: int,
         state: Optional[TrialState] = None,
-        value: Optional[float] = None,
+        values: Optional[Sequence[float]] = None,
         intermediate_values: Optional[Dict[int, float]] = None,
         params: Optional[Dict[str, Any]] = None,
         distributions_: Optional[Dict[str, distributions.BaseDistribution]] = None,
@@ -584,7 +600,7 @@ class RDBStorage(BaseStorage):
                 Trial id of the trial to update.
             state:
                 New state. None when there are no changes.
-            value:
+            values:
                 New value. None when there are no changes.
             intermediate_values:
                 New intermediate values. None when there are no updates.
@@ -623,8 +639,7 @@ class RDBStorage(BaseStorage):
             if datetime_complete:
                 trial_model.datetime_complete = datetime_complete
 
-            if value is not None:
-                values = [value]
+            if values is not None:
                 trial_values = models.TrialValueModel.where_trial_id(trial_id, session)
                 if len(trial_values) > 0:
                     for objective in range(len(values)):
@@ -711,10 +726,7 @@ class RDBStorage(BaseStorage):
 
         try:
             with _create_scoped_session(self.scoped_session) as session:
-                trial = models.TrialModel.find_by_id(trial_id, session, for_update=True)
-                if trial is None:
-                    raise KeyError(models.NOT_FOUND_MSG)
-
+                trial = models.TrialModel.find_or_raise_by_id(trial_id, session, for_update=True)
                 self.check_trial_is_updatable(trial_id, trial.state)
 
                 if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
@@ -787,7 +799,7 @@ class RDBStorage(BaseStorage):
             # Acquire lock.
             #
             # Assume that study exists.
-            models.StudyModel.find_by_id(study_id, session, for_update=True)
+            models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
 
             models.TrialParamModel(
                 trial_id=trial_id,
@@ -806,12 +818,13 @@ class RDBStorage(BaseStorage):
 
         return trial_param.param_value
 
-    def set_trial_value(self, trial_id: int, value: float) -> None:
+    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
         with _create_scoped_session(self.scoped_session) as session:
             trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
             self.check_trial_is_updatable(trial_id, trial.state)
-            self._set_trial_value_without_commit(session, trial_id, 0, value)
+            for objective, v in enumerate(values):
+                self._set_trial_value_without_commit(session, trial_id, objective, v)
 
     def _set_trial_value_without_commit(
         self, session: orm.Session, trial_id: int, objective: int, value: float
@@ -990,15 +1003,19 @@ class RDBStorage(BaseStorage):
     @staticmethod
     def _build_frozen_trial_from_trial_model(trial: models.TrialModel) -> FrozenTrial:
 
+        values: Optional[List[float]]
         if trial.values:
-            value = trial.values[0].value
+            values = [0 for _ in trial.values]
+            for value_model in trial.values:
+                values[value_model.objective] = value_model.value
         else:
-            value = None
+            values = None
 
         return FrozenTrial(
             number=trial.number,
             state=trial.state,
-            value=value,
+            value=None,
+            values=values,
             datetime_start=trial.datetime_start,
             datetime_complete=trial.datetime_complete,
             params={
@@ -1022,7 +1039,14 @@ class RDBStorage(BaseStorage):
     def get_best_trial(self, study_id: int) -> FrozenTrial:
 
         with _create_scoped_session(self.scoped_session) as session:
-            if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+            _directions = self.get_study_directions(study_id)
+            if len(_directions) > 1:
+                raise ValueError(
+                    "Best trial can be obtained only for single-objective optimization."
+                )
+            direction = _directions[0]
+
+            if direction == StudyDirection.MAXIMIZE:
                 trial = models.TrialModel.find_max_value_trial(study_id, 0, session)
             else:
                 trial = models.TrialModel.find_min_value_trial(study_id, 0, session)

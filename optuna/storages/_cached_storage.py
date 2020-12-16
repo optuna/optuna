@@ -5,6 +5,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
 from typing import Tuple
 from typing import Union
@@ -21,7 +22,7 @@ from optuna.trial import TrialState
 class _TrialUpdate:
     def __init__(self) -> None:
         self.state: Optional[TrialState] = None
-        self.value: Optional[float] = None
+        self.values: Optional[Sequence[float]] = None
         self.intermediate_values: Dict[int, float] = {}
         self.user_attrs: Dict[str, Any] = {}
         self.system_attrs: Dict[str, Any] = {}
@@ -40,7 +41,7 @@ class _StudyInfo:
         self.updates: Dict[int, _TrialUpdate] = {}
         # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
-        self.direction: StudyDirection = StudyDirection.NOT_SET
+        self.directions: List[StudyDirection] = [StudyDirection.NOT_SET]
         self.name: Optional[str] = None
 
 
@@ -90,19 +91,22 @@ class _CachedStorage(BaseStorage):
 
         self._backend.delete_study(study_id)
 
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
+    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
 
         with self._lock:
             if study_id in self._studies:
-                current_direction = self._studies[study_id].direction
-                if direction == current_direction:
+                current_directions = self._studies[study_id].directions
+                if directions == current_directions:
                     return
-                elif current_direction == StudyDirection.NOT_SET:
-                    self._studies[study_id].direction = direction
-                    self._backend.set_study_direction(study_id, direction)
+                elif (
+                    len(current_directions) == 1
+                    and current_directions[0] == StudyDirection.NOT_SET
+                ):
+                    self._studies[study_id].directions = list(directions)
+                    self._backend.set_study_directions(study_id, directions)
                     return
 
-        self._backend.set_study_direction(study_id, direction)
+        self._backend.set_study_directions(study_id, directions)
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
@@ -139,20 +143,20 @@ class _CachedStorage(BaseStorage):
             self._studies[study_id].name = name
         return name
 
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
 
         with self._lock:
             if study_id in self._studies:
-                direction = self._studies[study_id].direction
-                if direction != StudyDirection.NOT_SET:
-                    return direction
+                directions = self._studies[study_id].directions
+                if len(directions) > 1 or directions[0] != StudyDirection.NOT_SET:
+                    return directions
 
-        direction = self._backend.get_study_direction(study_id)
+        directions = self._backend.get_study_directions(study_id)
         with self._lock:
             if study_id not in self._studies:
                 self._studies[study_id] = _StudyInfo()
-            self._studies[study_id].direction = direction
-        return direction
+            self._studies[study_id].directions = directions
+        return directions
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -269,18 +273,18 @@ class _CachedStorage(BaseStorage):
         trial = self.get_trial(trial_id)
         return trial.distributions[param_name].to_internal_repr(trial.params[param_name])
 
-    def set_trial_value(self, trial_id: int, value: float) -> None:
+    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
-                cached_trial.value = value
-                updates.value = value
+                cached_trial.values = values
+                updates.values = values
                 return
 
-        self._backend._update_trial(trial_id, value=value)
+        self._backend._update_trial(trial_id, values=values)
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
@@ -407,7 +411,7 @@ class _CachedStorage(BaseStorage):
         del study.updates[number]
         return self._backend._update_trial(
             trial_id=trial_id,
-            value=updates.value,
+            values=updates.values,
             intermediate_values=updates.intermediate_values,
             state=updates.state,
             params=updates.params,

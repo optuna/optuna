@@ -40,6 +40,8 @@ jobs:
             . venv/bin/activate
             cd docs
             make html
+          environment:
+            OMP_NUM_THREADS: 1
 
       - store_artifacts:
           path: ./docs/build/html

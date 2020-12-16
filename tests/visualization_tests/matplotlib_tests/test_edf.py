@@ -31,3 +31,15 @@ def test_plot_optimization_history(direction: str) -> None:
     assert figure.has_data()
     figure = plot_edf((study0, study1))
     assert figure.has_data()
+
+    # Test with a customized target value.
+    study0 = create_study(direction=direction)
+    study0.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
+    figure = plot_edf(study0, target=lambda t: t.params["x"])
+    assert figure.has_data()
+
+    # Test with a customized target name.
+    study0 = create_study(direction=direction)
+    study0.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
+    figure = plot_edf(study0, target_name="Target Name")
+    assert figure.has_data()
