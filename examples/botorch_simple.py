@@ -1,24 +1,27 @@
 from botorch.settings import suppress_botorch_warnings
 from botorch.settings import validate_input_scaling
-from botorch.test_functions.multi_objective import C2DTLZ2
-import torch
 
 import optuna
 
 
-# C2-DTLZ2 minimization objective function with a single constraint.
-# It is negated to be a maximization problem since BoTorch otherwise assumes maximization.
-_OBJECTIVE = C2DTLZ2(dim=3, num_objectives=2, negate=True)
-
-
 def objective(trial):
-    xs = torch.tensor([trial.suggest_float(f"x{i}", 0, 1) for i in range(_OBJECTIVE.dim)])
-    values = _OBJECTIVE(xs)
+    # Binh and Korn function with constraints.
+    x = trial.suggest_float("x", -15, 30)
+    y = trial.suggest_float("y", -15, 30)
 
-    constraint = _OBJECTIVE.evaluate_slack(xs.unsqueeze(dim=0))[0]
-    trial.set_user_attr("constraint", constraint.tolist())
+    # Constraints which are considered feasible if less than or equal to zero.
+    # The feasible region is basically the intersection of a circle centered at (x=5, y=0)
+    # and the complement to a circle centered at (x=8, y=-3).
+    c0 = (x - 5) ** 2 + y ** 2 - 25
+    c1 = -((x - 8) ** 2) - (y + 3) ** 2 + 7.7
 
-    return values.tolist()
+    # Store the constraints as user attributes so that they can be restored after optimization.
+    trial.set_user_attr("constraint", (c0, c1))
+
+    v0 = 4 * x ** 2 + 4 * y ** 2
+    v1 = (x - 5) ** 2 + (y - 5) ** 2
+
+    return v0, v1
 
 
 def constraints(trial):
@@ -35,7 +38,7 @@ if __name__ == "__main__":
         n_startup_trials=10,
     )
     study = optuna.create_study(
-        directions=["maximize"] * _OBJECTIVE.num_objectives,
+        directions=["minimize", "minimize"],
         sampler=sampler,
     )
     study.optimize(objective, n_trials=32)
