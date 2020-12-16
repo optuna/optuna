@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import math
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -531,8 +532,13 @@ class BoTorchSampler(BaseSampler):
         # Exclude upper bounds for parameters that should have their upper bounds excluded.
         # TODO(hvy): Remove this exclusion logic when it is handled by the data transformer.
         for name, param in params.items():
-            if isinstance(search_space[name], (UniformDistribution, LogUniformDistribution)):
+            distribution = search_space[name]
+            if isinstance(distribution, UniformDistribution):
                 params[name] = min(params[name], search_space[name].high - 1e-8)
+            elif isinstance(distribution, LogUniformDistribution):
+                params[name] = min(
+                    params[name], math.exp(math.log(search_space[name].high) - 1e-8)
+                )
 
         return params
 
