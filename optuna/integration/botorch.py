@@ -9,6 +9,7 @@ from typing import Tuple
 
 import numpy
 
+from optuna import logging
 from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna._imports import try_import
@@ -43,6 +44,9 @@ with try_import() as _imports:
     from botorch.utils.transforms import unnormalize
     from gpytorch.mlls import ExactMarginalLogLikelihood
     import torch
+
+
+_logger = logging.get_logger(__name__)
 
 
 @experimental("2.4.0")
@@ -90,7 +94,16 @@ def qei_candidates_func(
         train_y = torch.cat([train_obj, train_con], dim=-1)
 
         is_feas = (train_con <= 0).all(dim=-1)
-        best_f = (train_obj.transpose(1, 0) * is_feas).max()
+        train_obj_feas = train_obj[is_feas]
+
+        if train_obj_feas.numel() == 0:
+            # TODO(hvy): Do not use 0 as the best observation.
+            _logger.warning(
+                "No objective values are feasible. Using 0 as the best objective in qEI."
+            )
+            best_f = torch.zeros(())
+        else:
+            best_f = train_obj_feas.max()
 
         constraints = []
         n_contraints = train_con.size(1)
