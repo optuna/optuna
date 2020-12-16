@@ -34,7 +34,7 @@ if __name__ == "__main__":
         constraints_func=constraints,
         n_startup_trials=10,
     )
-    study = optuna.multi_objective.create_study(
+    study = optuna.create_study(
         directions=["maximize"] * _OBJECTIVE.num_objectives,
         sampler=sampler,
     )
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     print("Pareto front:")
 
-    trials = {str(trial.values): trial for trial in study.get_pareto_front_trials()}
+    trials = {str(trial.values): trial for trial in study.best_trials}
     trials = list(trials.values())
     trials.sort(key=lambda t: t.values)
 

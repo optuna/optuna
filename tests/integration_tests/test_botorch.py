@@ -9,9 +9,9 @@ import torch
 from optuna import integration
 from optuna import multi_objective
 from optuna.integration import BoTorchSampler
-from optuna.multi_objective.samplers._random import RandomMultiObjectiveSampler
-from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
+from optuna.samplers import RandomSampler
 from optuna.storages import RDBStorage
+from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 
 
@@ -147,7 +147,7 @@ def test_botorch_candidates_func_invalid_candidates_size() -> None:
 def test_botorch_constraints_func_none(n_objectives: int) -> None:
     constraints_func_call_count = 0
 
-    def constraints_func(trial: FrozenMultiObjectiveTrial) -> Sequence[float]:
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
         xs = sum(trial.params[f"x{i}"] for i in range(n_objectives))
 
         nonlocal constraints_func_call_count
@@ -171,7 +171,7 @@ def test_botorch_constraints_func_none(n_objectives: int) -> None:
 
 
 def test_botorch_constraints_func_invalid_type() -> None:
-    def constraints_func(trial: FrozenMultiObjectiveTrial) -> Sequence[float]:
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
         x0 = trial.params["x0"]
         return x0 - 0.5  # Not a tuple, but it should be.
 
@@ -184,7 +184,7 @@ def test_botorch_constraints_func_invalid_type() -> None:
 
 
 def test_botorch_n_startup_trials() -> None:
-    independent_sampler = RandomMultiObjectiveSampler()
+    independent_sampler = RandomSampler()
     sampler = BoTorchSampler(n_startup_trials=2, independent_sampler=independent_sampler)
     study = multi_objective.create_study(["minimize", "maximize"], sampler=sampler)
 
@@ -238,14 +238,12 @@ def test_botorch_invalid_different_studies() -> None:
 
 
 def test_reseed_rng() -> None:
-    independent_sampler = RandomMultiObjectiveSampler()
+    independent_sampler = RandomSampler()
     sampler = BoTorchSampler(independent_sampler=independent_sampler)
-    original_independent_sampler_seed = cast(
-        RandomMultiObjectiveSampler, sampler._independent_sampler
-    )._sampler._rng.seed
+    original_independent_sampler_seed = cast(RandomSampler, sampler._independent_sampler)._rng.seed
 
     sampler.reseed_rng()
     assert (
         original_independent_sampler_seed
-        != cast(RandomMultiObjectiveSampler, sampler._independent_sampler)._sampler._rng.seed
+        != cast(RandomSampler, sampler._independent_sampler)._rng.seed
     )

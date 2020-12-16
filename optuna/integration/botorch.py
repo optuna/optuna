@@ -10,18 +10,18 @@ from typing import Tuple
 import numpy
 
 from optuna import logging
-from optuna import multi_objective
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
-from optuna.multi_objective.samplers._random import RandomMultiObjectiveSampler
-from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
+from optuna.samplers import BaseSampler
 from optuna.samplers import IntersectionSearchSpace
+from optuna.samplers import RandomSampler
+from optuna.study import Study
 from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
@@ -329,7 +329,7 @@ def _get_default_candidates_func(
 # TODO(hvy): Allow utilizing GPUs via some parameter, not having to rewrite the callback
 # functions.
 @experimental("2.4.0")
-class BoTorchSampler(BaseMultiObjectiveSampler):
+class BoTorchSampler(BaseSampler):
     """A sampler that uses BoTorch, a Bayesian optimization library built on top of PyTorch.
 
     This sampler allows using BoTorch's optimization algorithms from Optuna to suggest parameter
@@ -337,7 +337,7 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
     transformed back to Optuna's representations. Categorical parameters are one-hot encoded.
 
     .. seealso::
-        See an `example <https://github.com/optuna/optuna/blob/master/examples/multi_objective/
+        See an `example <https://github.com/optuna/optuna/blob/master/examples/
         botorch_simple.py>`_ how to use the sampler.
 
     .. seealso::
@@ -369,10 +369,9 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
                 See :func:`optuna.integration.botorch.qei_candidates_func` for an example.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
-            :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` and return the
-            constraints. The return value must be a sequence of :obj:`float` s. A value strictly
-            larger than 0 means that a constraints is violated. A value equal to or smaller than 0
-            is considered feasible.
+            :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
+            be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
+            constraints is violated. A value equal to or smaller than 0 is considered feasible.
 
             If omitted, no constraints will be passed to ``candidates_func`` nor taken into
             account during suggestion if ``candidates_func`` is omitted.
@@ -400,22 +399,15 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
             ],
             "torch.Tensor",
         ] = None,
-        constraints_func: Optional[
-            Callable[
-                [
-                    "FrozenMultiObjectiveTrial",
-                ],
-                Sequence[float],
-            ]
-        ] = None,
+        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         n_startup_trials: int = 10,
-        independent_sampler: Optional[BaseMultiObjectiveSampler] = None,
+        independent_sampler: Optional[BaseSampler] = None,
     ):
         _imports.check()
 
         self._candidates_func = candidates_func
         self._constraints_func = constraints_func
-        self._independent_sampler = independent_sampler or RandomMultiObjectiveSampler()
+        self._independent_sampler = independent_sampler or RandomSampler()
         self._n_startup_trials = n_startup_trials
 
         self._trial_constraints: Dict[int, Tuple[float, ...]] = {}
@@ -424,8 +416,8 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
 
     def infer_relative_search_space(
         self,
-        study: "multi_objective.study.MultiObjectiveStudy",
-        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
+        study: Study,
+        trial: FrozenTrial,
     ) -> Dict[str, BaseDistribution]:
         if self._study_id is None:
             self._study_id = study._study_id
@@ -436,9 +428,7 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
 
         return self._search_space.calculate(study, ordered_dict=True)  # type: ignore
 
-    def _update_trial_constraints(
-        self, trials: List["multi_objective.trial.FrozenMultiObjectiveTrial"]
-    ) -> None:
+    def _update_trial_constraints(self, trials: List[FrozenTrial]) -> None:
         # Since trial constraints are computed on each worker, constraints should be computed
         # deterministically.
 
@@ -457,8 +447,8 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
 
     def sample_relative(
         self,
-        study: "multi_objective.study.MultiObjectiveStudy",
-        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
+        study: Study,
+        trial: FrozenTrial,
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
         assert isinstance(search_space, OrderedDict)
@@ -476,7 +466,8 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
 
         trans = _SearchSpaceTransform(search_space)
 
-        values = numpy.empty((n_trials, study.n_objectives), dtype=numpy.float64)
+        n_objectives = len(study.directions)
+        values = numpy.empty((n_trials, n_objectives), dtype=numpy.float64)
         params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
         if self._constraints_func is not None:
             n_constraints = len(next(iter(self._trial_constraints.values())))
@@ -510,7 +501,7 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
         bounds.transpose_(0, 1)
 
         if self._candidates_func is None:
-            self._candidates_func = _get_default_candidates_func(n_objectives=study.n_objectives)
+            self._candidates_func = _get_default_candidates_func(n_objectives=n_objectives)
         candidates = self._candidates_func(params, values, con, bounds)
 
         if not isinstance(candidates, torch.Tensor):
@@ -546,8 +537,8 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
 
     def sample_independent(
         self,
-        study: "multi_objective.study.MultiObjectiveStudy",
-        trial: "multi_objective.trial.FrozenMultiObjectiveTrial",
+        study: Study,
+        trial: FrozenTrial,
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
