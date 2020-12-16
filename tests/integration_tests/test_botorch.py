@@ -10,7 +10,6 @@ from optuna import integration
 from optuna import multi_objective
 from optuna.integration import BoTorchSampler
 from optuna.multi_objective.samplers._random import RandomMultiObjectiveSampler
-from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from optuna.storages import RDBStorage
 from optuna.trial import Trial
@@ -148,9 +147,7 @@ def test_botorch_candidates_func_invalid_candidates_size() -> None:
 def test_botorch_constraints_func_none(n_objectives: int) -> None:
     constraints_func_call_count = 0
 
-    def constraints_func(
-        study: MultiObjectiveStudy, trial: FrozenMultiObjectiveTrial
-    ) -> Sequence[float]:
+    def constraints_func(trial: FrozenMultiObjectiveTrial) -> Sequence[float]:
         xs = sum(trial.params[f"x{i}"] for i in range(n_objectives))
 
         nonlocal constraints_func_call_count
@@ -174,9 +171,7 @@ def test_botorch_constraints_func_none(n_objectives: int) -> None:
 
 
 def test_botorch_constraints_func_invalid_type() -> None:
-    def constraints_func(
-        study: MultiObjectiveStudy, trial: FrozenMultiObjectiveTrial
-    ) -> Sequence[float]:
+    def constraints_func(trial: FrozenMultiObjectiveTrial) -> Sequence[float]:
         x0 = trial.params["x0"]
         return x0 - 0.5  # Not a tuple, but it should be.
 

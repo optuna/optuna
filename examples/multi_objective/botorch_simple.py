@@ -21,7 +21,7 @@ def objective(trial):
     return values.tolist()
 
 
-def constraints(study, trial):
+def constraints(trial):
     return trial.user_attrs["constraint"]
 
 

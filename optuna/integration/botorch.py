@@ -19,7 +19,6 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 from optuna.multi_objective.samplers._random import RandomMultiObjectiveSampler
-from optuna.multi_objective.study import MultiObjectiveStudy
 from optuna.multi_objective.trial import FrozenMultiObjectiveTrial
 from optuna.samplers import IntersectionSearchSpace
 from optuna.study import StudyDirection
@@ -370,7 +369,6 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
                 See :func:`optuna.integration.botorch.qei_candidates_func` for an example.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
-            :class:`~optuna.multi_objective.study.MultiObjectiveStudy`, a
             :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` and return the
             constraints. The return value must be a sequence of :obj:`float` s. A value strictly
             larger than 0 means that a constraints is violated. A value equal to or smaller than 0
@@ -405,7 +403,6 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
         constraints_func: Optional[
             Callable[
                 [
-                    "MultiObjectiveStudy",
                     "FrozenMultiObjectiveTrial",
                 ],
                 Sequence[float],
@@ -440,9 +437,7 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
         return self._search_space.calculate(study, ordered_dict=True)  # type: ignore
 
     def _update_trial_constraints(
-        self,
-        study: "multi_objective.study.MultiObjectiveStudy",
-        trials: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
+        self, trials: List["multi_objective.trial.FrozenMultiObjectiveTrial"]
     ) -> None:
         # Since trial constraints are computed on each worker, constraints should be computed
         # deterministically.
@@ -452,7 +447,7 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
         for trial in trials:
             number = trial.number
             if number not in self._trial_constraints:
-                constraints = self._constraints_func(study, trial)
+                constraints = self._constraints_func(trial)
 
                 if not isinstance(constraints, (tuple, list)):
                     raise TypeError("Constraints must be a tuple or list.")
@@ -470,7 +465,7 @@ class BoTorchSampler(BaseMultiObjectiveSampler):
 
         trials = [t for t in study.get_trials(deepcopy=False) if t.state == TrialState.COMPLETE]
         if self._constraints_func is not None:
-            self._update_trial_constraints(study, trials)
+            self._update_trial_constraints(trials)
 
         if len(search_space) == 0:
             return {}
