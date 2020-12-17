@@ -30,6 +30,16 @@ def test_plot_slice() -> None:
     figure = plot_slice(study, params=["param_a"])
     assert figure.has_data()
 
+    # Test with a customized target value.
+    figure = plot_slice(study, params=["param_a"], target=lambda t: t.params["param_b"])
+    assert figure.has_data()
+
+    # Test with a customized target name.
+    figure = plot_slice(study, target_name="Target Name")
+    assert len(figure) == 2
+    assert figure[0].has_data()
+    assert figure[1].has_data()
+
     # Test with wrong parameters.
     with pytest.raises(ValueError):
         plot_slice(study, params=["optuna"])

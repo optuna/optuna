@@ -3,6 +3,7 @@ import datetime
 import math
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -1053,6 +1054,24 @@ def test_frozen_trial_set_system_attrs() -> None:
     assert trial.system_attrs["system_message"] == "test"
 
 
+def test_frozen_trial_set_value() -> None:
+
+    trial = _create_frozen_trial()
+    trial.value = 0.1
+    assert trial.value == 0.1
+
+
+def test_frozen_trial_set_values() -> None:
+
+    trial = _create_frozen_trial()
+    trial.values = (0.1, 0.2)
+    assert trial.values == [0.1, 0.2]
+
+    trial = _create_frozen_trial()
+    trial.values = [0.1, 0.2]
+    assert trial.values == [0.1, 0.2]
+
+
 def test_frozen_trial_validate() -> None:
 
     # Valid.
@@ -1190,6 +1209,36 @@ def test_frozen_trial_system_attrs() -> None:
     assert trial.system_attrs == system_attrs
 
 
+def test_frozen_called_single_methods_when_multi() -> None:
+
+    state = TrialState.COMPLETE
+    values = (0.2, 0.3)
+    params = {"x": 10}
+    distributions = {"x": UniformDistribution(5, 12)}
+    user_attrs = {"foo": "bar"}
+    system_attrs = {"baz": "qux"}
+    intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
+
+    trial = create_trial(
+        state=state,
+        values=values,
+        params=params,
+        distributions=distributions,
+        user_attrs=user_attrs,
+        system_attrs=system_attrs,
+        intermediate_values=intermediate_values,
+    )
+
+    with pytest.raises(RuntimeError):
+        trial.value
+
+    with pytest.raises(RuntimeError):
+        trial.value = 0.1
+
+    with pytest.raises(RuntimeError):
+        trial.value = [0.1]
+
+
 # TODO(hvy): Write exhaustive test include invalid combinations when feature is no longer
 # experimental.
 @pytest.mark.parametrize("state", [None, TrialState.COMPLETE, TrialState.FAIL])
@@ -1221,3 +1270,52 @@ def test_create_trial(state: TrialState) -> None:
     assert trial.intermediate_values == intermediate_values
     assert trial.datetime_start is not None
     assert (trial.datetime_complete is not None) == (state is None or state.is_finished())
+
+
+def test_frozen_init() -> None:
+    def _create_trial(value: Optional[float], values: Optional[List[float]]) -> FrozenTrial:
+
+        return FrozenTrial(
+            number=0,
+            trial_id=0,
+            state=TrialState.COMPLETE,
+            value=value,
+            values=values,
+            datetime_start=datetime.datetime.now(),
+            datetime_complete=datetime.datetime.now(),
+            params={},
+            distributions={"x": UniformDistribution(0, 10)},
+            user_attrs={},
+            system_attrs={},
+            intermediate_values={},
+        )
+
+    _ = _create_trial(0.2, None)
+
+    _ = _create_trial(None, [0.2])
+
+    with pytest.raises(ValueError):
+        _ = _create_trial(0.2, [0.2])
+
+    with pytest.raises(ValueError):
+        _ = _create_trial(0.2, [])
+
+
+def test_suggest_with_multi_objectives() -> None:
+    study = optuna.create_study(directions=["maximize", "maximize"])
+
+    def objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
+        p0 = trial.suggest_float("p0", -10, 10)
+        p1 = trial.suggest_uniform("p1", 3, 5)
+        p2 = trial.suggest_loguniform("p2", 0.00001, 0.1)
+        p3 = trial.suggest_discrete_uniform("p3", 100, 200, q=5)
+        p4 = trial.suggest_int("p4", -20, -15)
+        p5 = cast(int, trial.suggest_categorical("p5", [7, 1, 100]))
+        p6 = trial.suggest_float("p6", -10, 10, step=1.0)
+        p7 = trial.suggest_int("p7", 1, 7, log=True)
+        return (
+            p0 + p1 + p2,
+            p3 + p4 + p5 + p6 + p7,
+        )
+
+    study.optimize(objective, n_trials=10)

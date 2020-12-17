@@ -80,12 +80,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn",
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
-            # Read the Docs does not allow pip install with the -f, --find-links option. Therefore
-            # `torch` and `torchvision` in `document` are not pinned to the CPU only version since
-            # that would require this option. This increases the build time of the documentation.
-            # See https://github.com/optuna/optuna/pull/2065 for details.
-            "torch",
-            "torchvision",
+            "lightgbm",
         ],
         "example": [
             "catboost",
@@ -107,16 +102,16 @@ def get_extras_require() -> Dict[str, List[str]]:
             "skorch",
             "stable-baselines3>=0.7.0",
             "catalyst",
+            "torch==1.7.1 ; sys_platform=='darwin'",
+            "torch==1.7.1+cpu ; sys_platform!='darwin'",
+            "torchvision==0.8.2 ; sys_platform=='darwin'",
+            "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
+            "torchaudio==0.7.2",
             "allennlp==1.2.0",
-            "fastai",
             "dask[dataframe]",
             "dask-ml",
-        ]
-        + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
-            if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        ),
+            "fastai",
+        ],
         "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -143,14 +138,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
+            "torch==1.7.1 ; sys_platform=='darwin'",
+            "torch==1.7.1+cpu ; sys_platform!='darwin'",
+            "torchvision==0.8.2 ; sys_platform=='darwin'",
+            "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
+            "torchaudio==0.7.2",
             "allennlp==1.2.0",
             "fastai",
-        ]
-        + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
-            if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        ),
+        ],
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -180,14 +175,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
+            "torch==1.7.1 ; sys_platform=='darwin'",
+            "torch==1.7.1+cpu ; sys_platform!='darwin'",
+            "torchvision==0.8.2 ; sys_platform=='darwin'",
+            "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
+            "torchaudio==0.7.2",
             "allennlp==1.2.0",
             "fastai",
-        ]
-        + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
-            if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        ),
+        ],
     }
 
     return requirements

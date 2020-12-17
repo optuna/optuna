@@ -5,6 +5,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 import optuna
@@ -91,8 +92,8 @@ class RedisStorage(BaseStorage):
             pipe.set(self._key_study_name(study_name), pickle.dumps(study_id))
             pipe.set("study_id:{:010d}:study_name".format(study_id), pickle.dumps(study_name))
             pipe.set(
-                "study_id:{:010d}:direction".format(study_id),
-                pickle.dumps(StudyDirection.NOT_SET),
+                "study_id:{:010d}:directions".format(study_id),
+                pickle.dumps([StudyDirection.NOT_SET]),
             )
 
             study_summary = StudySummary(
@@ -133,7 +134,7 @@ class RedisStorage(BaseStorage):
             study_name = self.get_study_name_from_id(study_id)
             pipe.delete("study_name:{}:study_id".format(study_name))
             pipe.delete("study_id:{:010d}:study_name".format(study_id))
-            pipe.delete("study_id:{:010d}:direction".format(study_id))
+            pipe.delete("study_id:{:010d}:directions".format(study_id))
             pipe.delete("study_id:{:010d}:best_trial_id".format(study_id))
             pipe.delete("study_id:{:010d}:params_distribution".format(study_id))
             pipe.execute()
@@ -165,28 +166,31 @@ class RedisStorage(BaseStorage):
     @staticmethod
     def _key_study_direction(study_id: int) -> str:
 
-        return "study_id:{:010d}:direction".format(study_id)
+        return "study_id:{:010d}:directions".format(study_id)
 
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
+    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
 
         self._check_study_id(study_id)
 
         if self._redis.exists(self._key_study_direction(study_id)):
             direction_pkl = self._redis.get(self._key_study_direction(study_id))
             assert direction_pkl is not None
-            current_direction = pickle.loads(direction_pkl)
-            if current_direction != StudyDirection.NOT_SET and current_direction != direction:
+            current_directions = pickle.loads(direction_pkl)
+            if (
+                current_directions[0] != StudyDirection.NOT_SET
+                and current_directions != directions
+            ):
                 raise ValueError(
                     "Cannot overwrite study direction from {} to {}.".format(
-                        current_direction, direction
+                        current_directions, directions
                     )
                 )
 
         with self._redis.pipeline() as pipe:
             pipe.multi()
-            pipe.set(self._key_study_direction(study_id), pickle.dumps(direction))
+            pipe.set(self._key_study_direction(study_id), pickle.dumps(directions))
             study_summary = self._get_study_summary(study_id)
-            study_summary.direction = direction
+            study_summary._directions = list(directions)
             pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
             pipe.execute()
 
@@ -230,12 +234,12 @@ class RedisStorage(BaseStorage):
             raise KeyError("No such study: {}.".format(study_id))
         return pickle.loads(study_name_pkl)
 
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
 
-        direction_pkl = self._redis.get("study_id:{:010d}:direction".format(study_id))
+        direction_pkl = self._redis.get("study_id:{:010d}:directions".format(study_id))
         if direction_pkl is None:
             raise KeyError("No such study: {}.".format(study_id))
-        return pickle.loads(direction_pkl)
+        return list(pickle.loads(direction_pkl))
 
     def get_study_user_attrs(self, study_id: int) -> Dict[str, Any]:
 
@@ -407,7 +411,14 @@ class RedisStorage(BaseStorage):
             if len(all_trials) == 0:
                 raise ValueError("No trials are completed yet.")
 
-            if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+            _direction = self.get_study_directions(study_id)
+            if len(_direction) > 1:
+                raise ValueError(
+                    "Best trial can be obtained only for single-objective optimization."
+                )
+            direction = _direction[0]
+
+            if direction == StudyDirection.MAXIMIZE:
                 best_trial = max(all_trials, key=lambda t: t.value)
             else:
                 best_trial = min(all_trials, key=lambda t: t.value)
@@ -437,13 +448,13 @@ class RedisStorage(BaseStorage):
         distribution = self.get_trial(trial_id).distributions[param_name]
         return distribution.to_internal_repr(self.get_trial(trial_id).params[param_name])
 
-    def set_trial_value(self, trial_id: int, value: float) -> None:
+    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
         self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        trial.value = value
+        trial.values = values
         self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
     def _update_cache(self, trial_id: int) -> None:
@@ -452,6 +463,12 @@ class RedisStorage(BaseStorage):
         if trial.state != TrialState.COMPLETE:
             return
         study_id = self.get_study_id_from_trial_id(trial_id)
+
+        _direction = self.get_study_directions(study_id)
+        if len(_direction) > 1:
+            return
+        direction = _direction[0]
+
         if not self._redis.exists("study_id:{:010d}:best_trial_id".format(study_id)):
             self._set_best_trial(study_id, trial_id)
             return
@@ -465,7 +482,7 @@ class RedisStorage(BaseStorage):
         # Complete trials do not have `None` values.
         assert new_value is not None
 
-        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
+        if direction == StudyDirection.MAXIMIZE:
             if new_value > best_value:
                 self._set_best_trial(study_id, trial_id)
         else:

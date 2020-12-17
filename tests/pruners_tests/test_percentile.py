@@ -174,7 +174,7 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
             # Study does not have any trials.
             with pytest.raises(ValueError):
                 _all_trials = _study._storage.get_all_trials(_study._study_id)
-                _direction = _study._storage.get_study_direction(_study._study_id)
+                _direction = _study.direction
                 _percentile._get_percentile_intermediate_result_over_trials(
                     _all_trials, _direction, step, 25
                 )
@@ -194,7 +194,7 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
     intermediate_values = [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]]
     study = setup_study(9, intermediate_values)
     all_trials = study._storage.get_all_trials(study._study_id)
-    direction = study._storage.get_study_direction(study._study_id)
+    direction = study.direction
     assert 0.3 == _percentile._get_percentile_intermediate_result_over_trials(
         all_trials, direction, 0, 25.0
     )
@@ -205,7 +205,7 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
     )
     study = setup_study(9, intermediate_values)
     all_trials = study._storage.get_all_trials(study._study_id)
-    direction = study._storage.get_study_direction(study._study_id)
+    direction = study.direction
     assert 0.2 == _percentile._get_percentile_intermediate_result_over_trials(
         all_trials, direction, 1, 25.0
     )
@@ -226,7 +226,7 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
     )
     study = setup_study(9, intermediate_values)
     all_trials = study._storage.get_all_trials(study._study_id)
-    direction = study._storage.get_study_direction(study._study_id)
+    direction = study.direction
     assert math.isnan(
         _percentile._get_percentile_intermediate_result_over_trials(all_trials, direction, 2, 75)
     )
