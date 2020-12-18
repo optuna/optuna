@@ -110,6 +110,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "allennlp==1.2.0 ; python_version<'3.8'",
             "dask[dataframe] ; python_version<'3.8'",
             "dask-ml ; python_version<'3.8'",
+            "botorch ; python_version>'3.6'",
             "fastai",
         ],
         "experimental": ["redis"],
