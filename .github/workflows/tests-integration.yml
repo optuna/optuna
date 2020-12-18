@@ -10,7 +10,7 @@ on:
 
 jobs:
   tests-integration:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     # TODO (crcrpar): Add 3.9 to python-version matrix once libraries support it.
     # ref: https://github.com/optuna/optuna/issues/2034
