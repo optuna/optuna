@@ -122,7 +122,7 @@ def test_get_param_importances_with_target(
         return value
 
     study = create_study(storage_init_func())
-    study.optimize(objective, n_trials=100)
+    study.optimize(objective, n_trials=3)
 
     param_importance = get_param_importances(
         study,
@@ -139,7 +139,6 @@ def test_get_param_importances_with_target(
         assert isinstance(importance, float)
         assert importance <= prev_importance
         prev_importance = importance
-    assert param_importance["x3"] == min(param_importance.values())
     assert math.isclose(1.0, sum(param_importance.values()), abs_tol=1e-5)
 
 
