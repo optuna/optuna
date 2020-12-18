@@ -48,16 +48,28 @@ def plot_optimization_history(
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
         target:
-            A function to specify the value to display. If it is :obj:`None`, the objective values
-            are plotted.
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is being
+            used for single-objective optimization, the objective values are plotted.
+            .. note::
+                Specify this argument if ``study`` is being used for multi-objective optimization.
         target_name:
             Target's name to display on the axis label and the legend.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
+            optimization.
     """
 
     _imports.check()
+    if target is None and len(study.directions) > 1:
+        raise ValueError(
+            "If the `study` is being used for multi-objective optimization, "
+            "please specify the `target`."
+        )
     return _get_optimization_history_plot(study, target, target_name)
 
 
