@@ -13,7 +13,6 @@ from typing import Sequence
 from typing import Set
 from typing import Tuple
 import uuid
-import weakref
 
 import alembic.command
 import alembic.config
@@ -151,8 +150,6 @@ class RDBStorage(BaseStorage):
         self._version_manager = _VersionManager(self.url, self.engine, self.scoped_session)
         if not skip_compatibility_check:
             self._version_manager.check_table_schema_compatibility()
-
-        weakref.finalize(self, self._finalize)
 
     def __getstate__(self) -> Dict[Any, Any]:
 
@@ -1095,16 +1092,6 @@ class RDBStorage(BaseStorage):
         """
 
         self.scoped_session.remove()
-
-    def _finalize(self) -> None:
-
-        # This destructor calls remove_session to explicitly close the DB connection. We need this
-        # because DB connections created in SQLAlchemy are not automatically closed by reference
-        # counters, so it is not guaranteed that they are released by correct threads (for more
-        # information, please see the docstring of remove_session).
-
-        if hasattr(self, "scoped_session"):
-            self.remove_session()
 
     def upgrade(self) -> None:
         """Upgrade the storage schema."""
