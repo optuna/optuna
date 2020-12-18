@@ -17,7 +17,7 @@ def test_plot_pareto_front_2d(
     # Test with no trial.
     study = optuna.create_study(directions=["minimize", "minimize"])
     figure = plot_pareto_front(
-        study,
+        study=study,
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
@@ -32,7 +32,7 @@ def test_plot_pareto_front_2d(
     study.optimize(lambda t: [t.suggest_int("x", 0, 1), t.suggest_int("y", 0, 1)], n_trials=3)
 
     figure = plot_pareto_front(
-        study,
+        study=study,
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
@@ -65,14 +65,18 @@ def test_plot_pareto_front_2d(
 
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
-        plot_pareto_front(study, target_names=[], include_dominated_trials=include_dominated_trials)
-
-    with pytest.raises(ValueError):
-        plot_pareto_front(study, target_names=["Foo"], include_dominated_trials=include_dominated_trials)
+        plot_pareto_front(
+            study=study, target_names=[], include_dominated_trials=include_dominated_trials
+        )
 
     with pytest.raises(ValueError):
         plot_pareto_front(
-            study,
+            study=study, target_names=["Foo"], include_dominated_trials=include_dominated_trials
+        )
+
+    with pytest.raises(ValueError):
+        plot_pareto_front(
+            study=study,
             target_names=["Foo", "Bar", "Baz"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
@@ -80,7 +84,7 @@ def test_plot_pareto_front_2d(
 
     target_names = ["Foo", "Bar"]
     figure = plot_pareto_front(
-        study,
+        study=study,
         target_names=target_names,
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
@@ -103,7 +107,7 @@ def test_plot_pareto_front_3d(
     # Test with no trial.
     study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
     figure = plot_pareto_front(
-        study,
+        study=study,
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
@@ -122,7 +126,7 @@ def test_plot_pareto_front_3d(
     )
 
     figure = plot_pareto_front(
-        study,
+        study=study,
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
@@ -162,7 +166,7 @@ def test_plot_pareto_front_3d(
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
         plot_pareto_front(
-            study,
+            study=study,
             target_names=[],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
@@ -170,7 +174,7 @@ def test_plot_pareto_front_3d(
 
     with pytest.raises(ValueError):
         plot_pareto_front(
-            study,
+            study=study,
             target_names=["Foo"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
@@ -178,7 +182,7 @@ def test_plot_pareto_front_3d(
 
     with pytest.raises(ValueError):
         plot_pareto_front(
-            study,
+            study=study,
             target_names=["Foo", "Bar"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
@@ -186,14 +190,14 @@ def test_plot_pareto_front_3d(
 
     with pytest.raises(ValueError):
         plot_pareto_front(
-            study,
+            study=study,
             target_names=["Foo", "Bar", "Baz", "Qux"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
         )
 
     target_names = ["Foo", "Bar", "Baz"]
-    figure = plot_pareto_front(study, target_names=target_names, axis_order=axis_order)
+    figure = plot_pareto_front(study=study, target_names=target_names, axis_order=axis_order)
     if axis_order is None:
         assert figure.layout.scene.xaxis.title.text == target_names[0]
         assert figure.layout.scene.yaxis.title.text == target_names[1]
@@ -210,28 +214,28 @@ def test_plot_pareto_front_unsupported_dimensions(include_dominated_trials: bool
     with pytest.raises(ValueError):
         study = optuna.create_study(directions=["minimize"])
         study.optimize(lambda t: [0], n_trials=1)
-        plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
+        plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
 
     with pytest.raises(ValueError):
         study = optuna.create_study(direction="minimize")
         study.optimize(lambda t: [0], n_trials=1)
-        plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
+        plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
 
     # Supported: n_objectives == 2.
     study = optuna.create_study(directions=["minimize", "minimize"])
     study.optimize(lambda t: [0, 0], n_trials=1)
-    plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
+    plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
 
     # Supported: n_objectives == 3.
     study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
     study.optimize(lambda t: [0, 0, 0], n_trials=1)
-    plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
+    plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
 
     # Unsupported: n_objectives == 4.
     with pytest.raises(ValueError):
         study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
         study.optimize(lambda t: [0, 0, 0, 0], n_trials=1)
-        plot_pareto_front(study, include_dominated_trials=include_dominated_trials)
+        plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
 
 
 @pytest.mark.parametrize("dimension", [2, 3])
@@ -246,7 +250,7 @@ def test_plot_pareto_front_invalid_axis_order(
         invalid_axis_order = list(range(dimension + 1))
         assert len(invalid_axis_order) != dimension
         plot_pareto_front(
-            study,
+            study=study,
             include_dominated_trials=include_dominated_trials,
             axis_order=invalid_axis_order,
         )
@@ -257,7 +261,7 @@ def test_plot_pareto_front_invalid_axis_order(
         invalid_axis_order[1] = invalid_axis_order[0]
         assert np.unique(invalid_axis_order).size != dimension
         plot_pareto_front(
-            study,
+            study=study,
             include_dominated_trials=include_dominated_trials,
             axis_order=invalid_axis_order,
         )
@@ -268,7 +272,7 @@ def test_plot_pareto_front_invalid_axis_order(
         invalid_axis_order[-1] += 1
         assert max(invalid_axis_order) > (dimension - 1)
         plot_pareto_front(
-            study,
+            study=study,
             include_dominated_trials=include_dominated_trials,
             axis_order=invalid_axis_order,
         )
@@ -280,7 +284,7 @@ def test_plot_pareto_front_invalid_axis_order(
         invalid_axis_order[0] -= 1
         assert min(invalid_axis_order) < 0
         plot_pareto_front(
-            study,
+            study=study,
             include_dominated_trials=include_dominated_trials,
             axis_order=invalid_axis_order,
         )
