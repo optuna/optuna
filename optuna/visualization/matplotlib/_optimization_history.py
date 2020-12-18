@@ -55,6 +55,7 @@ def plot_optimization_history(
         target:
             A function to specify the value to display. If it is :obj:`None` and ``study`` is being
             used for single-objective optimization, the objective values are plotted.
+
             .. note::
                 Specify this argument if ``study`` is being used for multi-objective optimization.
         target_name:
