@@ -6,8 +6,8 @@ from unittest.mock import patch
 import pytest
 import torch
 
+import optuna
 from optuna import integration
-from optuna import multi_objective
 from optuna.integration import BoTorchSampler
 from optuna.samplers import RandomSampler
 from optuna.storages import RDBStorage
@@ -22,7 +22,7 @@ def test_botorch_candidates_func_none(n_objectives: int) -> None:
 
     sampler = BoTorchSampler(n_startup_trials=n_startup_trials)
 
-    study = multi_objective.create_study(["minimize"] * n_objectives, sampler=sampler)
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
         lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
     )
@@ -63,8 +63,8 @@ def test_botorch_candidates_func() -> None:
 
     sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=n_startup_trials)
 
-    study = multi_objective.create_study(["minimize"], sampler=sampler)
-    study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=n_trials)
+    study = optuna.create_study(direction="minimize", sampler=sampler)
+    study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=n_trials)
 
     assert len(study.trials) == n_trials
     assert candidates_func_call_count == n_trials - n_startup_trials
@@ -82,10 +82,10 @@ def test_botorch_candidates_func_invalid_type() -> None:
 
     sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
 
-    study = multi_objective.create_study(["minimize"], sampler=sampler)
+    study = optuna.create_study(direction="minimize", sampler=sampler)
 
     with pytest.raises(TypeError):
-        study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
 
 def test_botorch_candidates_func_invalid_batch_size() -> None:
@@ -99,10 +99,10 @@ def test_botorch_candidates_func_invalid_batch_size() -> None:
 
     sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
 
-    study = multi_objective.create_study(["minimize"], sampler=sampler)
+    study = optuna.create_study(direction="minimize", sampler=sampler)
 
     with pytest.raises(ValueError):
-        study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
 
 def test_botorch_candidates_func_invalid_dimensionality() -> None:
@@ -116,10 +116,10 @@ def test_botorch_candidates_func_invalid_dimensionality() -> None:
 
     sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
 
-    study = multi_objective.create_study(["minimize"], sampler=sampler)
+    study = optuna.create_study(direction="minimize", sampler=sampler)
 
     with pytest.raises(ValueError):
-        study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
 
 def test_botorch_candidates_func_invalid_candidates_size() -> None:
@@ -135,11 +135,11 @@ def test_botorch_candidates_func_invalid_candidates_size() -> None:
 
     sampler = BoTorchSampler(candidates_func=candidates_func, n_startup_trials=1)
 
-    study = multi_objective.create_study(["minimize"] * n_params, sampler=sampler)
+    study = optuna.create_study(direction="minimize", sampler=sampler)
 
     with pytest.raises(ValueError):
         study.optimize(
-            lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_params)], n_trials=3
+            lambda t: sum(t.suggest_float(f"x{i}", 0, 1) for i in range(n_params)), n_trials=3
         )
 
 
@@ -160,7 +160,7 @@ def test_botorch_constraints_func_none(n_objectives: int) -> None:
 
     sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=n_startup_trials)
 
-    study = multi_objective.create_study(["minimize"] * n_objectives, sampler=sampler)
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
         lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
     )
@@ -177,16 +177,16 @@ def test_botorch_constraints_func_invalid_type() -> None:
 
     sampler = BoTorchSampler(constraints_func=constraints_func)
 
-    study = multi_objective.create_study(["minimize"], sampler=sampler)
+    study = optuna.create_study(direction="minimize", sampler=sampler)
 
     with pytest.raises(TypeError):
-        study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
 
 def test_botorch_n_startup_trials() -> None:
     independent_sampler = RandomSampler()
     sampler = BoTorchSampler(n_startup_trials=2, independent_sampler=independent_sampler)
-    study = multi_objective.create_study(["minimize", "maximize"], sampler=sampler)
+    study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
 
     with patch.object(
         independent_sampler, "sample_independent", wraps=independent_sampler.sample_independent
@@ -201,7 +201,7 @@ def test_botorch_n_startup_trials() -> None:
 
 
 def test_botorch_distributions() -> None:
-    def objective(trial: Trial) -> Sequence[float]:
+    def objective(trial: Trial) -> float:
         x0 = trial.suggest_float("x0", 0, 1)
         x1 = trial.suggest_float("x1", 0.1, 1, log=True)
         x2 = trial.suggest_float("x2", 0, 1, step=0.1)
@@ -209,11 +209,11 @@ def test_botorch_distributions() -> None:
         x4 = trial.suggest_int("x4", 2, 4, log=True)
         x5 = trial.suggest_int("x5", 0, 4, step=2)
         x6 = cast(float, trial.suggest_categorical("x6", [0.1, 0.2, 0.3]))
-        return [x0 + x1 + x2 + x3 + x4 + x5 + x6]
+        return x0 + x1 + x2 + x3 + x4 + x5 + x6
 
     sampler = BoTorchSampler()
 
-    study = multi_objective.create_study(["minimize"], sampler=sampler)
+    study = optuna.create_study(direction="minimize", sampler=sampler)
     study.optimize(objective, n_trials=3)
 
     assert len(study.trials) == 3
@@ -229,12 +229,12 @@ def test_botorch_invalid_different_studies() -> None:
 
     sampler = BoTorchSampler()
 
-    study = multi_objective.create_study(["minimize"], sampler=sampler, storage=storage)
-    study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+    study = optuna.create_study(direction="minimize", sampler=sampler, storage=storage)
+    study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
-    other_study = multi_objective.create_study(["minimize"], sampler=sampler, storage=storage)
+    other_study = optuna.create_study(direction="minimize", sampler=sampler, storage=storage)
     with pytest.raises(RuntimeError):
-        other_study.optimize(lambda t: [t.suggest_float("x0", 0, 1)], n_trials=3)
+        other_study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
 
 def test_reseed_rng() -> None:
