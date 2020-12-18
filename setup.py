@@ -110,6 +110,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "allennlp==1.2.0 ; python_version<'3.8'",
             "dask[dataframe] ; python_version<'3.8'",
             "dask-ml ; python_version<'3.8'",
+            "botorch ; python_version>'3.6'",
             "fastai",
         ],
         "experimental": ["redis"],
@@ -144,6 +145,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
             "allennlp==1.2.0 ; python_version<'3.8'",
+            "botorch ; python_version>'3.6'",
             "fastai",
         ],
         "tests": ["fakeredis", "pytest"],
@@ -181,6 +183,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
             "allennlp==1.2.0 ; python_version<'3.8'",
+            "botorch ; python_version>'3.6'",
             "fastai",
         ],
     }
