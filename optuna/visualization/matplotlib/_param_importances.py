@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Callable
 from typing import List
 from typing import Optional
 
@@ -16,6 +17,7 @@ from optuna.distributions import UniformDistribution
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
 from optuna.study import Study
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
@@ -53,6 +55,8 @@ def plot_param_importances(
     study: Study,
     evaluator: Optional[BaseImportanceEvaluator] = None,
     params: Optional[List[str]] = None,
+    *,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
 ) -> "Axes":
     """Plot hyperparameter importances with Matplotlib.
 
@@ -93,19 +97,23 @@ def plot_param_importances(
             A list of names of parameters to assess.
             If :obj:`None`, all parameters that are present in all of the completed trials are
             assessed.
+        target:
+            A function to specify the value to evaluate importances. If it is :obj:`None`, the
+            objective values are used.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
     """
 
     _imports.check()
-    return _get_param_importance_plot(study, evaluator, params)
+    return _get_param_importance_plot(study, evaluator, params, target)
 
 
 def _get_param_importance_plot(
     study: Study,
     evaluator: Optional[BaseImportanceEvaluator] = None,
     params: Optional[List[str]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
 ) -> "Axes":
 
     # Set up the graph style.
@@ -124,7 +132,7 @@ def _get_param_importance_plot(
         return ax
 
     importances = optuna.importance.get_param_importances(
-        study, evaluator=evaluator, params=params
+        study, evaluator=evaluator, params=params, target=target
     )
 
     importances = OrderedDict(reversed(list(importances.items())))
