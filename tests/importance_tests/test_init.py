@@ -104,6 +104,45 @@ def test_get_param_importances_with_params(
 
 
 @parametrize_evaluator
+@parametrize_storage
+def test_get_param_importances_with_target(
+    storage_init_func: Callable[[], storages.BaseStorage],
+    evaluator_init_func: Callable[[], BaseImportanceEvaluator],
+) -> None:
+    def objective(trial: Trial) -> float:
+        x1 = trial.suggest_uniform("x1", 0.1, 3)
+        x2 = trial.suggest_loguniform("x2", 0.1, 3)
+        x3 = trial.suggest_discrete_uniform("x3", 0, 3, 1)
+        if trial.number % 2 == 0:
+            x4 = trial.suggest_uniform("x4", 0.1, 3)
+
+        value = x1 ** 4 + x2 + x3
+        if trial.number % 2 == 0:
+            value += x4
+        return value
+
+    study = create_study(storage_init_func())
+    study.optimize(objective, n_trials=3)
+
+    param_importance = get_param_importances(
+        study,
+        evaluator=evaluator_init_func(),
+        target=lambda t: t.params["x1"] + t.params["x2"],
+    )
+
+    assert isinstance(param_importance, OrderedDict)
+    assert len(param_importance) == 3
+    assert all(param_name in param_importance for param_name in ["x1", "x2", "x3"])
+    prev_importance = float("inf")
+    for param_name, importance in param_importance.items():
+        assert isinstance(param_name, str)
+        assert isinstance(importance, float)
+        assert importance <= prev_importance
+        prev_importance = importance
+    assert math.isclose(1.0, sum(param_importance.values()), abs_tol=1e-5)
+
+
+@parametrize_evaluator
 def test_get_param_importances_invalid_empty_study(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
 ) -> None:

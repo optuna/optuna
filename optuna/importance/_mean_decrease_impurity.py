@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -14,6 +15,7 @@ from optuna.importance._base import _get_distributions
 from optuna.importance._base import _get_study_data
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
+from optuna.trial import FrozenTrial
 
 
 with try_import() as _imports:
@@ -56,9 +58,15 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             random_state=seed,
         )
 
-    def evaluate(self, study: Study, params: Optional[List[str]] = None) -> Dict[str, float]:
+    def evaluate(
+        self,
+        study: Study,
+        params: Optional[List[str]] = None,
+        *,
+        target: Optional[Callable[[FrozenTrial], float]] = None,
+    ) -> Dict[str, float]:
         distributions = _get_distributions(study, params)
-        params_data, values_data = _get_study_data(study, distributions)
+        params_data, values_data = _get_study_data(study, distributions, target)
 
         if params_data.size == 0:  # `params` were given but as an empty list.
             return OrderedDict()
