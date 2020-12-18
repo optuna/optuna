@@ -18,16 +18,17 @@ _logger = optuna.logging.get_logger(__name__)
 
 @experimental("2.4.0")
 def plot_pareto_front(
+    *,
     study: Study,
-    names: Optional[List[str]] = None,
+    target_names: Optional[List[str]] = None,
     include_dominated_trials: bool = False,
     axis_order: Optional[List[int]] = None,
 ) -> "go.Figure":
-    """Plot the pareto front of a study.
+    """Plot the Pareto front of a study.
 
     Example:
 
-        The following code snippet shows how to plot the pareto front of a study.
+        The following code snippet shows how to plot the Pareto front of a study.
 
         .. plotly::
 
@@ -52,7 +53,7 @@ def plot_pareto_front(
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
             values.
-        names:
+        target_names:
             Objective name list used as the axis titles. If :obj:`None` is specified,
             "Objective {objective_index}" is used instead.
         include_dominated_trials:
@@ -60,7 +61,6 @@ def plot_pareto_front(
         axis_order:
             A list of indices indicating the axis order. If :obj:`None` is specified,
             default order is used.
-
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
@@ -73,9 +73,9 @@ def plot_pareto_front(
     _imports.check()
 
     if len(study.directions) == 2:
-        return _get_pareto_front_2d(study, names, include_dominated_trials, axis_order)
+        return _get_pareto_front_2d(study, target_names, include_dominated_trials, axis_order)
     elif len(study.directions) == 3:
-        return _get_pareto_front_3d(study, names, include_dominated_trials, axis_order)
+        return _get_pareto_front_3d(study, target_names, include_dominated_trials, axis_order)
     else:
         raise ValueError("`plot_pareto_front` function only supports 2 or 3 objective studies.")
 
@@ -93,14 +93,14 @@ def _get_non_pareto_front_trials(
 
 def _get_pareto_front_2d(
     study: Study,
-    names: Optional[List[str]],
+    target_names: Optional[List[str]],
     include_dominated_trials: bool = False,
     axis_order: Optional[List[int]] = None,
 ) -> "go.Figure":
-    if names is None:
-        names = ["Objective 0", "Objective 1"]
-    elif len(names) != 2:
-        raise ValueError("The length of `names` is supposed to be 2.")
+    if target_names is None:
+        target_names = ["Objective 0", "Objective 1"]
+    elif len(target_names) != 2:
+        raise ValueError("The length of `target_names` is supposed to be 2.")
 
     trials = study.best_trials
     if len(trials) == 0:
@@ -142,22 +142,22 @@ def _get_pareto_front_2d(
     )
     layout = go.Layout(
         title="Pareto-front Plot",
-        xaxis_title=names[axis_order[0]],
-        yaxis_title=names[axis_order[1]],
+        xaxis_title=target_names[axis_order[0]],
+        yaxis_title=target_names[axis_order[1]],
     )
     return go.Figure(data=data, layout=layout)
 
 
 def _get_pareto_front_3d(
     study: Study,
-    names: Optional[List[str]],
+    target_names: Optional[List[str]],
     include_dominated_trials: bool = False,
     axis_order: Optional[List[int]] = None,
 ) -> "go.Figure":
-    if names is None:
-        names = ["Objective 0", "Objective 1", "Objective 2"]
-    elif len(names) != 3:
-        raise ValueError("The length of `names` is supposed to be 3.")
+    if target_names is None:
+        target_names = ["Objective 0", "Objective 1", "Objective 2"]
+    elif len(target_names) != 3:
+        raise ValueError("The length of `target_names` is supposed to be 3.")
 
     trials = study.best_trials
     if len(trials) == 0:
@@ -201,9 +201,9 @@ def _get_pareto_front_3d(
     layout = go.Layout(
         title="Pareto-front Plot",
         scene={
-            "xaxis_title": names[axis_order[0]],
-            "yaxis_title": names[axis_order[1]],
-            "zaxis_title": names[axis_order[2]],
+            "xaxis_title": target_names[axis_order[0]],
+            "yaxis_title": target_names[axis_order[1]],
+            "zaxis_title": target_names[axis_order[2]],
         },
     )
     return go.Figure(data=data, layout=layout)
