@@ -63,34 +63,34 @@ def test_plot_pareto_front_2d(
         assert figure.layout.xaxis.title.text == titles[axis_order[0]]
         assert figure.layout.yaxis.title.text == titles[axis_order[1]]
 
-    # Test with `names` argument.
+    # Test with `target_names` argument.
     with pytest.raises(ValueError):
-        plot_pareto_front(study, names=[], include_dominated_trials=include_dominated_trials)
+        plot_pareto_front(study, target_names=[], include_dominated_trials=include_dominated_trials)
 
     with pytest.raises(ValueError):
-        plot_pareto_front(study, names=["Foo"], include_dominated_trials=include_dominated_trials)
+        plot_pareto_front(study, target_names=["Foo"], include_dominated_trials=include_dominated_trials)
 
     with pytest.raises(ValueError):
         plot_pareto_front(
             study,
-            names=["Foo", "Bar", "Baz"],
+            target_names=["Foo", "Bar", "Baz"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
         )
 
-    names = ["Foo", "Bar"]
+    target_names = ["Foo", "Bar"]
     figure = plot_pareto_front(
         study,
-        names=names,
+        target_names=target_names,
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
     if axis_order is None:
-        assert figure.layout.xaxis.title.text == names[0]
-        assert figure.layout.yaxis.title.text == names[1]
+        assert figure.layout.xaxis.title.text == target_names[0]
+        assert figure.layout.yaxis.title.text == target_names[1]
     else:
-        assert figure.layout.xaxis.title.text == names[axis_order[0]]
-        assert figure.layout.yaxis.title.text == names[axis_order[1]]
+        assert figure.layout.xaxis.title.text == target_names[axis_order[0]]
+        assert figure.layout.yaxis.title.text == target_names[axis_order[1]]
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
@@ -159,11 +159,11 @@ def test_plot_pareto_front_3d(
         assert figure.layout.scene.yaxis.title.text == titles[axis_order[1]]
         assert figure.layout.scene.zaxis.title.text == titles[axis_order[2]]
 
-    # Test with `names` argument.
+    # Test with `target_names` argument.
     with pytest.raises(ValueError):
         plot_pareto_front(
             study,
-            names=[],
+            target_names=[],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
         )
@@ -171,7 +171,7 @@ def test_plot_pareto_front_3d(
     with pytest.raises(ValueError):
         plot_pareto_front(
             study,
-            names=["Foo"],
+            target_names=["Foo"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
         )
@@ -179,7 +179,7 @@ def test_plot_pareto_front_3d(
     with pytest.raises(ValueError):
         plot_pareto_front(
             study,
-            names=["Foo", "Bar"],
+            target_names=["Foo", "Bar"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
         )
@@ -187,21 +187,21 @@ def test_plot_pareto_front_3d(
     with pytest.raises(ValueError):
         plot_pareto_front(
             study,
-            names=["Foo", "Bar", "Baz", "Qux"],
+            target_names=["Foo", "Bar", "Baz", "Qux"],
             include_dominated_trials=include_dominated_trials,
             axis_order=axis_order,
         )
 
-    names = ["Foo", "Bar", "Baz"]
-    figure = plot_pareto_front(study, names=names, axis_order=axis_order)
+    target_names = ["Foo", "Bar", "Baz"]
+    figure = plot_pareto_front(study, target_names=target_names, axis_order=axis_order)
     if axis_order is None:
-        assert figure.layout.scene.xaxis.title.text == names[0]
-        assert figure.layout.scene.yaxis.title.text == names[1]
-        assert figure.layout.scene.zaxis.title.text == names[2]
+        assert figure.layout.scene.xaxis.title.text == target_names[0]
+        assert figure.layout.scene.yaxis.title.text == target_names[1]
+        assert figure.layout.scene.zaxis.title.text == target_names[2]
     else:
-        assert figure.layout.scene.xaxis.title.text == names[axis_order[0]]
-        assert figure.layout.scene.yaxis.title.text == names[axis_order[1]]
-        assert figure.layout.scene.zaxis.title.text == names[axis_order[2]]
+        assert figure.layout.scene.xaxis.title.text == target_names[axis_order[0]]
+        assert figure.layout.scene.yaxis.title.text == target_names[axis_order[1]]
+        assert figure.layout.scene.zaxis.title.text == target_names[axis_order[2]]
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
