@@ -86,13 +86,20 @@ def plot_edf(
             A target :class:`~optuna.study.Study` object.
             You can pass multiple studies if you want to compare those EDFs.
         target:
-            A function to specify the value to display. If it is :obj:`None`, the objective values
-            are plotted.
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is being
+            used for single-objective optimization, the objective values are plotted.
+            .. note::
+                Specify this argument if ``study`` is being used for multi-objective optimization.
         target_name:
             Target's name to display on the axis label.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
+            optimization.
     """
 
     _imports.check()
@@ -101,6 +108,12 @@ def plot_edf(
         studies = [study]
     else:
         studies = list(study)
+
+    if target is None and any(len(s.directions) > 1 for s in studies):
+        raise ValueError(
+            "If the `study` is being used for multi-objective optimization, "
+            "please specify the `target`."
+        )
 
     return _get_edf_plot(studies, target, target_name)
 
