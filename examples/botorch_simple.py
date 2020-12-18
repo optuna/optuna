@@ -41,7 +41,7 @@ if __name__ == "__main__":
         directions=["minimize", "minimize"],
         sampler=sampler,
     )
-    study.optimize(objective, n_trials=32)
+    study.optimize(objective, n_trials=32, timeout=600)
 
     print("Number of finished trials: ", len(study.trials))
 
