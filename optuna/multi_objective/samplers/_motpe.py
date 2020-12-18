@@ -12,7 +12,7 @@ import numpy as np
 import optuna
 from optuna import distributions
 from optuna import multi_objective
-from optuna._experimental import experimental
+from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective import _hypervolume
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
@@ -36,7 +36,7 @@ def _default_weights_above(x: int) -> np.ndarray:
     return np.ones(x)
 
 
-@experimental("2.3.0")
+@deprecated("2.4.0", "4.0.0")
 class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
