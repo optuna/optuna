@@ -9,6 +9,13 @@ from optuna.trial import Trial
 from optuna.visualization.matplotlib import plot_contour
 
 
+def test_target_is_none_and_study_is_multi_obj() -> None:
+
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError):
+        plot_contour(study)
+
+
 @pytest.mark.parametrize(
     "params",
     [
