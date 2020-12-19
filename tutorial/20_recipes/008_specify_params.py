@@ -35,7 +35,7 @@ def objective(trial):
         "metric": "auc",
         "verbosity": -1,
         "boosting_type": "gbdt",
-        "bagging_fraction": trial.suggest_float("bagging_fraction", 0.4, 1.0+1e-12),
+        "bagging_fraction": trial.suggest_float("bagging_fraction", 0.4, 1.0 + 1e-12),
         "bagging_freq": trial.suggest_int("bagging_freq", 0, 7),
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
     }
@@ -92,26 +92,30 @@ study.optimize(objective, n_trials=100, timeout=600)
 # If this is the case, :func:`optuna.study.Study.add_trial` plays the role.
 
 study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
-study.add_trial(optuna.trial.create_trial(
-    params={
-        "bagging_fraction": 1.0,
-        "bagging_freq": 0,
-    },
-    distributions={
-        "bagging_fraction": optuna.distributions.UniformDistribution(0.4, 1.0+1e-12),
-        "bagging_freq": optuna.distributions.IntUniformDistribution(0, 7),
-    },
-    value=0.94,
-))
-study.add_trial(optuna.trial.create_trial(
-    params={
-        "bagging_fraction": 0.75,
-        "bagging_freq": 5,
-    },
-    distributions={
-        "bagging_fraction": optuna.distributions.UniformDistribution(0.4, 1.0+1e-12),
-        "bagging_freq": optuna.distributions.IntUniformDistribution(0, 7),
-    },
-    value=0.95,
-))
+study.add_trial(
+    optuna.trial.create_trial(
+        params={
+            "bagging_fraction": 1.0,
+            "bagging_freq": 0,
+        },
+        distributions={
+            "bagging_fraction": optuna.distributions.UniformDistribution(0.4, 1.0 + 1e-12),
+            "bagging_freq": optuna.distributions.IntUniformDistribution(0, 7),
+        },
+        value=0.94,
+    )
+)
+study.add_trial(
+    optuna.trial.create_trial(
+        params={
+            "bagging_fraction": 0.75,
+            "bagging_freq": 5,
+        },
+        distributions={
+            "bagging_fraction": optuna.distributions.UniformDistribution(0.4, 1.0 + 1e-12),
+            "bagging_freq": optuna.distributions.IntUniformDistribution(0, 7),
+        },
+        value=0.95,
+    )
+)
 study.optimize(objective, n_trials=100, timeout=600)
