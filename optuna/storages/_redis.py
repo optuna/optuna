@@ -2,6 +2,7 @@ import copy
 from datetime import datetime
 import pickle
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -312,7 +313,9 @@ class RedisStorage(BaseStorage):
             pipe.multi()
             study_summary = self._get_study_summary(study_id)
             study_summary.n_trials = len(self._get_study_trials(study_id))
-            min_datetime_start = min([t.datetime_start for t in self.get_all_trials(study_id)])
+            min_datetime_start = min(
+                [cast(datetime, t.datetime_start) for t in self.get_all_trials(study_id)]
+            )
             study_summary.datetime_start = min_datetime_start
             pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
             pipe.execute()
@@ -419,9 +422,9 @@ class RedisStorage(BaseStorage):
             direction = _direction[0]
 
             if direction == StudyDirection.MAXIMIZE:
-                best_trial = max(all_trials, key=lambda t: t.value)
+                best_trial = max(all_trials, key=lambda t: cast(float, t.value))
             else:
-                best_trial = min(all_trials, key=lambda t: t.value)
+                best_trial = min(all_trials, key=lambda t: cast(float, t.value))
 
             self._set_best_trial(study_id, best_trial.number)
         else:

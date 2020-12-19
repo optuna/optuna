@@ -2,6 +2,7 @@ from collections import defaultdict
 import hashlib
 import itertools
 from typing import Any
+from typing import cast
 from typing import DefaultDict
 from typing import Dict
 from typing import List
@@ -316,7 +317,7 @@ def _crowding_distance_sort(
 ) -> None:
     manhattan_distances = defaultdict(float)
     for i in range(len(population[0].values)):
-        population.sort(key=lambda x: x.values[i])
+        population.sort(key=lambda x: cast(float, x.values[i]))
 
         v_min = population[0].values[i]
         v_max = population[-1].values[i]

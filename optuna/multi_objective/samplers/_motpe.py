@@ -1,6 +1,7 @@
 import math
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -640,7 +641,7 @@ def _get_observation_pairs(
 
         # Convert all objectives to minimization
         score = [
-            v if d == StudyDirection.MINIMIZE else -v  # type: ignore
+            cast(float, v) if d == StudyDirection.MINIMIZE else -v
             for d, v in zip(study.directions, trial.values)
         ]
 
