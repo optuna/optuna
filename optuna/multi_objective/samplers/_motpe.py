@@ -641,7 +641,7 @@ def _get_observation_pairs(
 
         # Convert all objectives to minimization
         score = [
-            cast(float, v) if d == StudyDirection.MINIMIZE else -v
+            cast(float, v) if d == StudyDirection.MINIMIZE else -cast(float, v)
             for d, v in zip(study.directions, trial.values)
         ]
 
