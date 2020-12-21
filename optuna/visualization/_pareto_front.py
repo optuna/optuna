@@ -21,7 +21,7 @@ def plot_pareto_front(
     *,
     study: Study,
     target_names: Optional[List[str]] = None,
-    include_dominated_trials: bool = False,
+    include_dominated_trials: bool = True,
     axis_order: Optional[List[int]] = None,
 ) -> "go.Figure":
     """Plot the Pareto front of a study.
