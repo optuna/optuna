@@ -661,30 +661,30 @@ class Study(BaseStudy):
             self._storage.set_trial_values(trial._trial_id, values)
         self._storage.set_trial_state(trial._trial_id, state)
 
-    def _log_completed_trial(
-        self, trial: trial_module.Trial, value_or_values: Union[float, Sequence[float]]
-    ) -> None:
+    def _log_completed_trial(self, trial: trial_module.Trial, values: Sequence[float]) -> None:
 
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        if isinstance(value_or_values, Sequence):
+        if len(values) > 1:
             _logger.info(
-                "Trial {} finished with value: {} and parameters: {}. ".format(
-                    trial.number, value_or_values, trial.params
+                "Trial {} finished with values: {} and parameters: {}. ".format(
+                    trial.number, values, trial.params
                 )
             )
-        else:
+        elif len(values) == 1:
             _logger.info(
                 "Trial {} finished with value: {} and parameters: {}. "
                 "Best is trial {} with value: {}.".format(
                     trial.number,
-                    value_or_values,
+                    values[0],
                     trial.params,
                     self.best_trial.number,
                     self.best_value,
                 )
             )
+        else:
+            assert False, "Should not reach."
 
 
 def create_study(
