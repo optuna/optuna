@@ -166,8 +166,7 @@ def test_botorch_constraints_func_none(n_objectives: int) -> None:
     )
 
     assert len(study.trials) == n_trials
-    # Only constraints up to the previous trial is computed.
-    assert constraints_func_call_count == n_trials - 1
+    assert constraints_func_call_count == n_trials
 
 
 def test_botorch_constraints_func_invalid_type() -> None:
@@ -181,6 +180,20 @@ def test_botorch_constraints_func_invalid_type() -> None:
 
     with pytest.raises(TypeError):
         study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
+
+
+def test_botorch_constraints_func_raises() -> None:
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        raise RuntimeError
+
+    sampler = BoTorchSampler(constraints_func=constraints_func)
+
+    study = optuna.create_study(direction="minimize", sampler=sampler)
+
+    with pytest.raises(RuntimeError):
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
+
+    assert all("botorch:constraints" in t.system_attrs for t in study.trials)
 
 
 def test_botorch_n_startup_trials() -> None:

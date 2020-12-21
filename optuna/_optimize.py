@@ -210,6 +210,14 @@ def _run_trial(
             len(study.directions), value_or_values, trial
         )
 
+    try:
+        trial._after_func(state, values)
+    except Exception as e:
+        state = TrialState.FAIL
+        values = None
+        err = e
+        exc_info = sys.exc_info()
+
     study._tell(trial, state, values)
 
     if state == TrialState.COMPLETE:

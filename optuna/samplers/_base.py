@@ -1,10 +1,14 @@
 import abc
 from typing import Any
 from typing import Dict
+from typing import Optional
+from typing import Sequence
 
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 class BaseSampler(object, metaclass=abc.ABCMeta):
@@ -136,6 +140,35 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         """
 
         raise NotImplementedError
+
+    @experimental("2.4.0")
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+        """Trial post-processing.
+
+        This method is called after the objective function returns and right before the trials is
+        finished and its state is stored. If this method raises an error, the trial will be
+        considered failed and the state and values will be updated accordingly.
+
+        Args:
+            study:
+                Target study object.
+            trial:
+                Target trial object.
+                Take a copy before modifying this object.
+            state:
+                Resulting trial state.
+            values:
+                Resulting trial values. Guaranteed to not be :obj:`None` if trial succeeded.
+
+        """
+
+        pass
 
     def reseed_rng(self) -> None:
         """Reseed sampler's random number generator.
