@@ -2,6 +2,7 @@ import copy
 import datetime
 import gc
 import math
+import sys
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -184,8 +185,9 @@ def _run_trial(
 ) -> trial_module.Trial:
     trial = study._ask()
 
-    trial_id = trial._trial_id
-    trial_number = trial.number
+    state: Optional[TrialState] = None
+    values: Optional[List[float]] = None
+    err: Optional[Exception] = None
 
     try:
         value_or_values = func(trial)
@@ -193,49 +195,59 @@ def _run_trial(
         # TODO(mamu): Handle multi-objective cases.
         # Register the last intermediate value if present as the value of the trial.
         # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
-        frozen_trial = study._storage.get_trial(trial_id)
+        state = TrialState.PRUNED
+        frozen_trial = study._storage.get_trial(trial._trial_id)
         last_step = frozen_trial.last_step
-        study._tell(
-            trial,
-            TrialState.PRUNED,
-            None if last_step is None else [frozen_trial.intermediate_values[last_step]],
-        )
-        _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
-        return trial
+        values = None if last_step is None else [frozen_trial.intermediate_values[last_step]]
+        err = e
     except Exception as e:
-        study._tell(trial, TrialState.FAIL, None)
-        _logger.warning(
-            "Trial {} failed because of the following error: {}".format(trial_number, repr(e)),
-            exc_info=True,
-        )
-        if isinstance(e, catch):
-            return trial
-        raise
-
-    checked_values, failure_message = _check_and_convert_to_values(
-        len(study.directions), value_or_values, trial
-    )
-
-    if failure_message is None:
-        assert checked_values is not None
-        study._tell(trial, TrialState.COMPLETE, checked_values)
-        study._log_completed_trial(trial, checked_values)
+        state = TrialState.FAIL
+        values = None
+        err = e
+        exc_info = sys.exc_info()
     else:
-        study._tell(trial, TrialState.FAIL, None)
-        _logger.warning(failure_message)
+        state, values, failure_message = _check_and_convert_to_values(
+            len(study.directions), value_or_values, trial
+        )
 
+    study._tell(trial, state, values)
+
+    if state == TrialState.COMPLETE:
+        assert values is not None
+        study._log_completed_trial(trial, values)
+    elif state == TrialState.PRUNED:
+        _logger.info("Trial {} pruned. {}".format(trial.number, str(err)))
+    elif state == TrialState.FAIL:
+        if err is not None:
+            _logger.warning(
+                "Trial {} failed because of the following error: {}".format(
+                    trial.number, repr(err)
+                ),
+                exc_info=exc_info,
+            )
+        else:
+            _logger.warning(failure_message)
+    else:
+        assert False, "Should not reach."
+
+    if state == TrialState.FAIL and err is not None and not isinstance(err, catch):
+        raise err
     return trial
 
 
 def _check_and_convert_to_values(
     n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
-) -> Tuple[Optional[List[float]], Optional[str]]:
+) -> Tuple[TrialState, Optional[List[float]], Optional[str]]:
     if isinstance(original_value, Sequence):
         if n_objectives != len(original_value):
-            return None, (
-                f"Trial {trial.number} failed, because the number of the values "
-                f"{len(original_value)} is did not match the number of the objectives "
-                f"{n_objectives}."
+            return (
+                TrialState.FAIL,
+                None,
+                (
+                    f"Trial {trial.number} failed, because the number of the values "
+                    f"{len(original_value)} is did not match the number of the objectives "
+                    f"{n_objectives}."
+                ),
             )
         else:
             _original_values = list(original_value)
@@ -249,13 +261,13 @@ def _check_and_convert_to_values(
             # TODO(Imamura): Construct error message taking into account all values and do not
             #  early return
             # `value` is assumed to be ignored on failure so we can set it to any value.
-            return None, failure_message
+            return TrialState.FAIL, None, failure_message
         elif isinstance(checked_v, float):
             _checked_values.append(checked_v)
         else:
             assert False
 
-    return _checked_values, None
+    return TrialState.COMPLETE, _checked_values, None
 
 
 def _check_single_value(
