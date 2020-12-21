@@ -463,14 +463,12 @@ class BoTorchSampler(BaseSampler):
                 constraints = study._storage.get_trial_system_attrs(trial._trial_id)[
                     "botorch:constraints"
                 ]
-                # `constraints` can be `None` if `constraints_func` raised an error. The best we
-                # can do is to fill with NaN.
-                if constraints is not None:
+                assert isinstance(constraints, tuple)
+                if con is None:
                     n_constraints = len(constraints)
-                    if con is None:
-                        con = numpy.full((n_trials, n_constraints), numpy.nan, dtype=numpy.float64)
+                    con = numpy.empty((n_trials, n_constraints), dtype=numpy.float64)
 
-                    con[trial_idx] = constraints
+                con[trial_idx] = constraints
 
         values = torch.from_numpy(values)
         params = torch.from_numpy(params)

@@ -1,6 +1,7 @@
 from typing import cast
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from unittest.mock import patch
 
 import pytest
@@ -184,7 +185,9 @@ def test_botorch_constraints_func_invalid_type() -> None:
 
 def test_botorch_constraints_func_raises() -> None:
     def constraints_func(trial: FrozenTrial) -> Sequence[float]:
-        raise RuntimeError
+        if trial.number == 1:
+            raise RuntimeError
+        return (0.0,)
 
     sampler = BoTorchSampler(constraints_func=constraints_func)
 
@@ -193,7 +196,21 @@ def test_botorch_constraints_func_raises() -> None:
     with pytest.raises(RuntimeError):
         study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
-    assert all("botorch:constraints" in t.system_attrs for t in study.trials)
+    for trial in study.trials:
+        sys_con = trial.system_attrs["botorch:constraints"]
+
+        expected_sys_con: Optional[Tuple[int]]
+
+        if trial.number == 0:
+            expected_sys_con = (0,)
+        elif trial.number == 1:
+            expected_sys_con = None
+        elif trial.number == 2:
+            expected_sys_con = (0,)
+        else:
+            assert False, "Should not reach."
+
+        assert sys_con == expected_sys_con
 
 
 def test_botorch_n_startup_trials() -> None:
