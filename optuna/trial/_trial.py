@@ -509,6 +509,9 @@ class Trial(BaseTrial):
         The reported values are used by the pruners to determine whether this trial should be
         pruned.
 
+        .. warning::
+            When the problem is multi-objective optimization, this function does nothing.
+
         .. seealso::
             Please refer to :class:`~optuna.pruners.BasePruner`.
 
@@ -561,6 +564,12 @@ class Trial(BaseTrial):
                 ``n_warmup_steps`` as the warmup mechanism.
         """
 
+        if len(self.study.directions) > 1:
+            _logger.warning(
+                "When the problem is multi-objective optimization, this function does nothing."
+            )
+            return
+
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
             value = float(value)
@@ -590,6 +599,10 @@ class Trial(BaseTrial):
         previously reported values. The algorithm can be specified when constructing a
         :class:`~optuna.study.Study`.
 
+        .. warning::
+            When the problem is multi-objective optimization, this function always returns
+            :obj:`False`.
+
         .. note::
             If no values have been reported, the algorithm cannot make meaningful suggestions.
             Similarly, if this method is called multiple times with the exact same set of reported
@@ -602,6 +615,13 @@ class Trial(BaseTrial):
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
         """
+
+        if len(self.study.directions) > 1:
+            _logger.warning(
+                "When the problem is multi-objective optimization, this function always returns "
+                "`False`."
+            )
+            return False
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
