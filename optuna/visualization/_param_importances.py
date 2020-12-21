@@ -44,6 +44,7 @@ def plot_param_importances(
     params: Optional[List[str]] = None,
     *,
     target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot hyperparameter importances.
 
@@ -88,6 +89,8 @@ def plot_param_importances(
         target:
             A function to specify the value to evaluate importances. If it is :obj:`None`, the
             objective values are used.
+        target_name:
+            Target's name to display on the axis label.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
@@ -97,7 +100,7 @@ def plot_param_importances(
 
     layout = go.Layout(
         title="Hyperparameter Importances",
-        xaxis={"title": "Importance"},
+        xaxis={"title": f"Importance for {target_name}"},
         yaxis={"title": "Hyperparameter"},
         showlegend=False,
     )

@@ -57,6 +57,7 @@ def plot_param_importances(
     params: Optional[List[str]] = None,
     *,
     target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
 ) -> "Axes":
     """Plot hyperparameter importances with Matplotlib.
 
@@ -100,13 +101,15 @@ def plot_param_importances(
         target:
             A function to specify the value to evaluate importances. If it is :obj:`None`, the
             objective values are used.
+        target_name:
+            Target's name to display on the axis label.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
     """
 
     _imports.check()
-    return _get_param_importance_plot(study, evaluator, params, target)
+    return _get_param_importance_plot(study, evaluator, params, target, target_name)
 
 
 def _get_param_importance_plot(
@@ -114,13 +117,14 @@ def _get_param_importance_plot(
     evaluator: Optional[BaseImportanceEvaluator] = None,
     params: Optional[List[str]] = None,
     target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
 ) -> "Axes":
 
     # Set up the graph style.
     _, ax = plt.subplots()
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     ax.set_title("Hyperparameter Importances")
-    ax.set_xlabel("Importance")
+    ax.set_xlabel(f"Importance for {target_name}")
     ax.set_ylabel("Hyperparameter")
 
     # Prepare data for plotting.
