@@ -1319,3 +1319,25 @@ def test_suggest_with_multi_objectives() -> None:
         )
 
     study.optimize(objective, n_trials=10)
+
+
+def test_report_with_multi_objectives() -> None:
+    study = optuna.create_study(directions=["maximize", "maximize"])
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+
+    # Try to report values but nothing happens.
+    trial.report(1.0, 0)
+    trial.report([1.0, 1.0], 1)  # type: ignore
+    assert study.trials[0].intermediate_values == {}
+
+
+def test_should_prune_multi_objectives() -> None:
+    study = optuna.create_study(directions=["maximize", "maximize"])
+    trials = [
+        create_trial(value=0.0, intermediate_values={i: 0.0 for i in range(10)}) for _ in range(10)
+    ]
+    for t in trials:
+        study.add_trial(t)
+
+    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    assert trial.should_prune() is False
