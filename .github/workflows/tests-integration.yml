@@ -60,7 +60,10 @@ jobs:
 
     - name: Tests
       run: |
-        if [ ${{ matrix.python-version }} = 3.8 ]; then
+        if [ ${{ matrix.python-version }} = 3.6 ]; then
+          pytest tests/integration_tests \
+            --ignore tests/integration_tests/test_botorch.py
+        elif [ ${{ matrix.python-version }} = 3.8 ]; then
           pytest tests/integration_tests \
             --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
         else

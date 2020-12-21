@@ -1,6 +1,7 @@
 import math
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -12,7 +13,7 @@ import numpy as np
 import optuna
 from optuna import distributions
 from optuna import multi_objective
-from optuna._experimental import experimental
+from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective import _hypervolume
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
@@ -36,7 +37,7 @@ def _default_weights_above(x: int) -> np.ndarray:
     return np.ones(x)
 
 
-@experimental("2.3.0")
+@deprecated("2.4.0", "4.0.0")
 class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
@@ -640,7 +641,7 @@ def _get_observation_pairs(
 
         # Convert all objectives to minimization
         score = [
-            v if d == StudyDirection.MINIMIZE else -v  # type: ignore
+            cast(float, v) if d == StudyDirection.MINIMIZE else -cast(float, v)
             for d, v in zip(study.directions, trial.values)
         ]
 

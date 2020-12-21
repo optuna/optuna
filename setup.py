@@ -55,7 +55,7 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["black", "hacking", "isort", "mypy==0.782", "blackdoc"],
+        "checking": ["black", "hacking", "isort", "mypy", "blackdoc"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
@@ -67,12 +67,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow",
         ],
         "document": [
-            # TODO(hvy): Unpin `sphinx` version after:
-            # https://github.com/sphinx-doc/sphinx/issues/8105.
-            "sphinx==3.0.4",
-            # As reported in: https://github.com/readthedocs/sphinx_rtd_theme/issues/949,
-            # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
-            "sphinx_rtd_theme<0.5.0",
+            "sphinx",
+            "sphinx_rtd_theme",
             "sphinx-gallery",
             "sphinx-plotly-directive",
             "pillow",
@@ -110,6 +106,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "allennlp==1.2.0 ; python_version<'3.8'",
             "dask[dataframe] ; python_version<'3.8'",
             "dask-ml ; python_version<'3.8'",
+            "botorch ; python_version>'3.6'",
             "fastai",
         ],
         "experimental": ["redis"],
@@ -144,6 +141,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
             "allennlp==1.2.0 ; python_version<'3.8'",
+            "botorch ; python_version>'3.6'",
             "fastai",
         ],
         "tests": ["fakeredis", "pytest"],
@@ -181,6 +179,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
             "allennlp==1.2.0 ; python_version<'3.8'",
+            "botorch ; python_version>'3.6'",
             "fastai",
         ],
     }

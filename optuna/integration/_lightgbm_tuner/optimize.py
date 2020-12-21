@@ -6,6 +6,7 @@ import pickle
 import time
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import Generator
 from typing import Iterator
@@ -704,9 +705,9 @@ class _LightGBMBaseTuner(_BaseTuner):
                     raise ValueError("No trials are completed yet.")
 
                 if self.direction == optuna.study.StudyDirection.MINIMIZE:
-                    best_trial = min(trials, key=lambda t: t.value)
+                    best_trial = min(trials, key=lambda t: cast(float, t.value))
                 else:
-                    best_trial = max(trials, key=lambda t: t.value)
+                    best_trial = max(trials, key=lambda t: cast(float, t.value))
                 return copy.deepcopy(best_trial)
 
         return _StepwiseStudy(study, step_name)

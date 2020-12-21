@@ -4,6 +4,13 @@ from optuna.study import create_study
 from optuna.visualization import plot_edf
 
 
+def test_target_is_none_and_study_is_multi_obj() -> None:
+
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError):
+        plot_edf(study)
+
+
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_plot_optimization_history(direction: str) -> None:
     # Test with no studies.

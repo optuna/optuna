@@ -25,6 +25,7 @@ def test_plot_param_importances() -> None:
         ("param_b", "param_d")
     )  # "param_a", "param_c" are conditional.
     assert math.isclose(1.0, sum(i for i in figure.data[0].x), abs_tol=1e-5)
+    assert figure.layout.xaxis.title.text == "Importance for Objective Value"
 
     # Test with an evaluator.
     plot_param_importances(study, evaluator=MeanDecreaseImpurityImportanceEvaluator())
@@ -39,6 +40,20 @@ def test_plot_param_importances() -> None:
     assert len(figure.data) == 1
     assert figure.data[0].y == ("param_b",)
     assert math.isclose(1.0, sum(i for i in figure.data[0].x), abs_tol=1e-5)
+
+    # Test with a customized target value.
+    figure = plot_param_importances(
+        study, target=lambda t: t.params["param_b"] + t.params["param_d"]
+    )
+    assert len(figure.data) == 1
+    assert set(figure.data[0].y) == set(
+        ("param_b", "param_d")
+    )  # "param_a", "param_c" are conditional.
+    assert math.isclose(1.0, sum(i for i in figure.data[0].x), abs_tol=1e-5)
+
+    # Test with a customized target name.
+    figure = plot_param_importances(study, target_name="Target Name")
+    assert figure.layout.xaxis.title.text == "Importance for Target Name"
 
     # Test with wrong parameters.
     with pytest.raises(ValueError):
