@@ -12,7 +12,7 @@ import numpy as np
 
 import optuna
 from optuna import multi_objective
-from optuna._experimental import experimental
+from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
@@ -23,7 +23,7 @@ _PARENTS_KEY = "multi_objective:nsga2:parents"
 _POPULATION_CACHE_KEY_PREFIX = "multi_objective:nsga2:population"
 
 
-@experimental("1.5.0")
+@deprecated("2.4.0", "4.0.0")
 class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using the NSGA-II algorithm.
 
