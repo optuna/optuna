@@ -18,8 +18,8 @@ _logger = optuna.logging.get_logger(__name__)
 
 @experimental("2.4.0")
 def plot_pareto_front(
-    *,
     study: Study,
+    *,
     target_names: Optional[List[str]] = None,
     include_dominated_trials: bool = True,
     axis_order: Optional[List[int]] = None,
