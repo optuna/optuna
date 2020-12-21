@@ -1,5 +1,6 @@
 import abc
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -609,9 +610,9 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         direction = directions[0]
 
         if direction == StudyDirection.MAXIMIZE:
-            best_trial = max(all_trials, key=lambda t: t.value)
+            best_trial = max(all_trials, key=lambda t: cast(float, t.value))
         else:
-            best_trial = min(all_trials, key=lambda t: t.value)
+            best_trial = min(all_trials, key=lambda t: cast(float, t.value))
 
         return best_trial
 
