@@ -50,7 +50,9 @@ jobs:
         # TODO (crcrpar): Allow fastaiv2 example once https://forums.fast.ai/t/ganlearner-error-no-implementation-found-on-types-that-implement-invisibletensor/83451/7 gets resolved.
     - name: Run examples
       run: |
-        if [ ${{ matrix.python-version }} = 3.8 ]; then
+        if [ ${{ matrix.python-version }} = 3.6 ]; then
+          IGNORES='botorch_.*'
+        elif [ ${{ matrix.python-version }} = 3.8 ]; then
           IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|allennlp|rapids_.*'
         else
           IGNORES='chainermn_.*|fastai*|rapids_.*'

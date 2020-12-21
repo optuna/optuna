@@ -22,6 +22,13 @@ from optuna.visualization._contour import _generate_contour_subplot
 RANGE_TYPE = Union[Tuple[str, str], Tuple[float, float]]
 
 
+def test_target_is_none_and_study_is_multi_obj() -> None:
+
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError):
+        plot_contour(study)
+
+
 @pytest.mark.parametrize(
     "params",
     [
