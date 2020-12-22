@@ -3,7 +3,7 @@
 optuna.multi_objective
 ======================
 
-This module is deprecated, with former functionality moved to :class:`optuna.trial`, :class:`optuna.study`, :class:`optuna.samplers` and :class:`optuna.visualization`.
+This module is deprecated, with former functionality moved to :mod:`optuna.samplers`, :mod:`optuna.study`, :mod:`optuna.trial` and :mod:`optuna.visualization`.
 
 .. toctree::
     :maxdepth: 1
