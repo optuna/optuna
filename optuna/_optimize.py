@@ -2,7 +2,10 @@ import copy
 import datetime
 import gc
 import math
+import sys
+from typing import Any
 from typing import Callable
+from typing import cast
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -184,8 +187,12 @@ def _run_trial(
 ) -> trial_module.Trial:
     trial = study._ask()
 
-    trial_id = trial._trial_id
-    trial_number = trial.number
+    state: Optional[TrialState] = None
+    values: Optional[List[float]] = None
+    func_err: Optional[Exception] = None
+    func_err_fail_exc_info: Optional[Any] = None
+    # Set to a string if `func` returns correctly but the return value violates assumptions.
+    values_conversion_failure_message: Optional[str] = None
 
     try:
         value_or_values = func(trial)
@@ -193,37 +200,48 @@ def _run_trial(
         # TODO(mamu): Handle multi-objective cases.
         # Register the last intermediate value if present as the value of the trial.
         # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
-        frozen_trial = study._storage.get_trial(trial_id)
+        state = TrialState.PRUNED
+        frozen_trial = study._storage.get_trial(trial._trial_id)
         last_step = frozen_trial.last_step
-        study._tell(
-            trial,
-            TrialState.PRUNED,
-            None if last_step is None else [frozen_trial.intermediate_values[last_step]],
-        )
-        _logger.info("Trial {} pruned. {}".format(trial_number, str(e)))
-        return trial
+        if last_step is not None:
+            values = [frozen_trial.intermediate_values[last_step]]
+        func_err = e
     except Exception as e:
-        study._tell(trial, TrialState.FAIL, None)
-        _logger.warning(
-            "Trial {} failed because of the following error: {}".format(trial_number, repr(e)),
-            exc_info=True,
-        )
-        if isinstance(e, catch):
-            return trial
-        raise
-
-    checked_values, failure_message = _check_and_convert_to_values(
-        len(study.directions), value_or_values, trial
-    )
-
-    if failure_message is None:
-        assert checked_values is not None
-        study._tell(trial, TrialState.COMPLETE, checked_values)
-        study._log_completed_trial(trial, checked_values)
+        state = TrialState.FAIL
+        func_err = e
+        func_err_fail_exc_info = sys.exc_info()
     else:
-        study._tell(trial, TrialState.FAIL, None)
-        _logger.warning(failure_message)
+        values, values_conversion_failure_message = _check_and_convert_to_values(
+            len(study.directions), value_or_values, trial
+        )
+        if values_conversion_failure_message is not None:
+            state = TrialState.FAIL
+        else:
+            state = TrialState.COMPLETE
 
+    study._tell(trial, state, values)
+
+    if state == TrialState.COMPLETE:
+        study._log_completed_trial(trial, cast(List[float], values))
+    elif state == TrialState.PRUNED:
+        _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
+    elif state == TrialState.FAIL:
+        if func_err is not None:
+            _logger.warning(
+                "Trial {} failed because of the following error: {}".format(
+                    trial.number, repr(func_err)
+                ),
+                exc_info=func_err_fail_exc_info,
+            )
+        elif values_conversion_failure_message is not None:
+            _logger.warning(values_conversion_failure_message)
+        else:
+            assert False, "Should not reach."
+    else:
+        assert False, "Should not reach."
+
+    if state == TrialState.FAIL and func_err is not None and not isinstance(func_err, catch):
+        raise func_err
     return trial
 
 
@@ -232,10 +250,13 @@ def _check_and_convert_to_values(
 ) -> Tuple[Optional[List[float]], Optional[str]]:
     if isinstance(original_value, Sequence):
         if n_objectives != len(original_value):
-            return None, (
-                f"Trial {trial.number} failed, because the number of the values "
-                f"{len(original_value)} is did not match the number of the objectives "
-                f"{n_objectives}."
+            return (
+                None,
+                (
+                    f"Trial {trial.number} failed, because the number of the values "
+                    f"{len(original_value)} is did not match the number of the objectives "
+                    f"{n_objectives}."
+                ),
             )
         else:
             _original_values = list(original_value)
