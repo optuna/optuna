@@ -224,8 +224,8 @@ def _run_trial(
     except Exception as e:
         state = TrialState.FAIL
         values = None
-        err = e
-        exc_info = sys.exc_info()
+        func_err = e
+        func_err_fail_exc_info = sys.exc_info()
 
     study._tell(trial, state, values)
 
