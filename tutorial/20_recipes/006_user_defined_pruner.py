@@ -4,24 +4,53 @@
 User-Defined Pruner
 ====================
 
-In :ref:`pruners`, we described how an objective function can optionally include calls to a pruning feature which allows Optuna to terminate an optimization trial when intermediate results do not appear promising. In this document, we describe how to implement your own pruner, i.e., a custom strategy for determining when to stop a trial.
+In :ref:`pruners`, we described how an objective function can optionally include 
+calls to a pruning feature which allows Optuna to terminate an optimization 
+trial when intermediate results do not appear promising. In this document, we 
+describe how to implement your own pruner, i.e., a custom strategy for 
+determining when to stop a trial.
 
 Overview of Pruning Interface
 -------------------
 
-The :func:`~optuna.study.create_study` constructor takes, as an optional argument, a pruner inheriting from :class:`~optuna.pruners.BasePruner`. The pruner should implement the abstract method :meth:`~optuna.pruners.BaseSampler.prune`, which takes arguments for the associated :class:`~optuna.study.Study` and :class:`~optuna.trial.Trial` and returns a boolean value: `True` if the trial should be pruned and `False` otherwise. Using the Study and Trial objects, you can access all other trials through the :meth:`study.get_trial` method and, and from a trial, its reported intermediate values through the `trial.intermediate_values` attribute (a dictionary which maps an integer `step` to a float value).
+The :func:`~optuna.study.create_study` constructor takes, as an optional 
+argument, a pruner inheriting from :class:`~optuna.pruners.BasePruner`. The 
+pruner should implement the abstract method 
+:meth:`~optuna.pruners.BaseSampler.prune`, which takes arguments for the 
+associated :class:`~optuna.study.Study` and :class:`~optuna.trial.Trial` and 
+returns a boolean value: `True` if the trial should be pruned and `False` 
+otherwise. Using the Study and Trial objects, you can access all other trials 
+through the :meth:`study.get_trial` method and, and from a trial, its reported 
+intermediate values through the `trial.intermediate_values` attribute (a 
+dictionary which maps an integer `step` to a float value).
 
-You can refer to the source code of the built-in Optuna pruners as templates for building your own. In this document, for illustration, we describe the construction and usage of a simple (but aggressive) pruner which prunes trials that are in last place compared to completed trials at the same step.
+You can refer to the source code of the built-in Optuna pruners as templates for 
+building your own. In this document, for illustration, we describe the 
+construction and usage of a simple (but aggressive) pruner which prunes trials 
+that are in last place compared to completed trials at the same step.
 
 .. note::
-  Please refer to the documentation of :class:`~optuna.pruners.BasePruner` or, for example, :class:`~optuna.pruners.ThresholdPruner` or :class:`optuna.pruners.PercentilePruner` for more robust examples of pruner implementation, including error checking and complex pruner-internal logic.
+  Please refer to the documentation of :class:`~optuna.pruners.BasePruner` or, 
+  for example, :class:`~optuna.pruners.ThresholdPruner` or 
+  :class:`optuna.pruners.PercentilePruner` for more robust examples of pruner 
+  implementation, including error checking and complex pruner-internal logic.
 
 An Example: Implementing LastPlacePruner
 --------------------------------------------------
 
-We aim to optimize the `loss` and `alpha` hyperparameters for a stochastic gradient descent classifier (SGDClassifier) run on the sklearn iris dataset. We implement a pruner which terminates a trial at a certain step if it is in last place compared to completed trials at the same step. We begin considering pruning after a "warmup" of 1 training step and 5 completed trials. For demonstration purposes, we print() a diagnostic message from prune() when it is about to return True (indicating pruning). 
+We aim to optimize the `loss` and `alpha` hyperparameters for a stochastic 
+gradient descent classifier (SGDClassifier) run on the sklearn iris dataset. We 
+implement a pruner which terminates a trial at a certain step if it is in last 
+place compared to completed trials at the same step. We begin considering 
+pruning after a "warmup" of 1 training step and 5 completed trials. For 
+demonstration purposes, we print() a diagnostic message from prune() when it is 
+about to return True (indicating pruning). 
 
-It may be important to note that the SGDClassifier score, as it is evaluated on a holdout set, decreases with enough training steps due to overfitting. This means that a trial could be pruned even if it had a favorable (high) value on a previous training set. After pruning, Optuna will take the intermediate value last reported as the value of the trial.
+It may be important to note that the SGDClassifier score, as it is evaluated on 
+a holdout set, decreases with enough training steps due to overfitting. This 
+means that a trial could be pruned even if it had a favorable (high) value on a 
+previous training set. After pruning, Optuna will take the intermediate value 
+last reported as the value of the trial.
 
 """
 
