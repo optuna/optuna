@@ -31,6 +31,16 @@ def test_plot_param_importances() -> None:
     figure = plot_param_importances(study, params=["param_b"])
     assert figure.has_data()
 
+    # Test with a customized target value.
+    figure = plot_param_importances(
+        study, target=lambda t: t.params["param_b"] + t.params["param_d"]
+    )
+    assert figure.has_data()
+
+    # Test with a customized target name.
+    figure = plot_param_importances(study, target_name="Target Name")
+    assert figure.has_data()
+
     # Test with wrong parameters.
     with pytest.raises(ValueError):
         plot_param_importances(study, params=["optuna"])
