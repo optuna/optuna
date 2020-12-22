@@ -1033,9 +1033,11 @@ def test_log_completed_trial_skip_storage_access() -> None:
 def test_create_study_with_multi_objectives() -> None:
     study = optuna.create_study(directions=["maximize"])
     assert study.direction == StudyDirection.MAXIMIZE
+    assert study._is_multi_objective() is False
 
     study = optuna.create_study(directions=["maximize", "minimize"])
     assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+    assert study._is_multi_objective() is True
 
     with pytest.raises(ValueError):
         # Empty `direction` isn't allowed.
