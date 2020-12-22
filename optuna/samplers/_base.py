@@ -149,11 +149,10 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
         pass
 
-    @staticmethod
-    def _raise_error_if_multi_objective(study: Study) -> None:
+    def _raise_error_if_multi_objective(self, study: Study) -> None:
 
         if len(study.directions) > 1:
-            raise RuntimeError(
-                "If the `study` is being used for multi-objective optimization, "
-                "this sampler cannot be used."
+            raise ValueError(
+                "If the study is being used for multi-objective optimization, "
+                f"{self.__class__.__name__} cannot be used."
             )

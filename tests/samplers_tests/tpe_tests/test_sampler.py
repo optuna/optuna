@@ -77,7 +77,7 @@ def test_sample_relative_empty_input(multivariate: bool) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = TPESampler(multivariate=multivariate)
-    # Frozen-trial are not supposed to be accessed.
+    # A frozen-trial is not supposed to be accessed.
     study = optuna.create_study()
     frozen_trial = Mock(spec=[])
     assert sampler.sample_relative(study, frozen_trial, {}) == {}
