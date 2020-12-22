@@ -183,6 +183,19 @@ def test_botorch_constraints_func_invalid_type() -> None:
         study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
 
+def test_botorch_constraints_func_invalid_inconsistent_n_constraints() -> None:
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        x0 = trial.params["x0"]
+        return [x0 - 0.5] * trial.number  # Number of constraints may not change.
+
+    sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=1)
+
+    study = optuna.create_study(direction="minimize", sampler=sampler)
+
+    with pytest.raises(RuntimeError):
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
+
+
 def test_botorch_constraints_func_raises() -> None:
     def constraints_func(trial: FrozenTrial) -> Sequence[float]:
         if trial.number == 1:

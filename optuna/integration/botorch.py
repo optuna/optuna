@@ -463,12 +463,29 @@ class BoTorchSampler(BaseSampler):
                 constraints = study._storage.get_trial_system_attrs(trial._trial_id)[
                     "botorch:constraints"
                 ]
-                assert isinstance(constraints, tuple)
-                if con is None:
+                if constraints is not None:
                     n_constraints = len(constraints)
-                    con = numpy.empty((n_trials, n_constraints), dtype=numpy.float64)
 
-                con[trial_idx] = constraints
+                    if con is None:
+                        con = numpy.full((n_trials, n_constraints), numpy.nan, dtype=numpy.float64)
+                    elif n_constraints != con.shape[1]:
+                        raise RuntimeError(
+                            f"Expected {con.shape[1]} constraints but received {n_constraints}."
+                        )
+
+                    con[trial_idx] = constraints
+
+        if self._constraints_func is not None:
+            if con is None:
+                warnings.warn(
+                    "`constraints_func` was given but no call to it correctly computed "
+                    "constraints. Constraints passed to `candidates_func` will be `None`."
+                )
+            elif numpy.isnan(con).any():
+                warnings.warn(
+                    "`constraints_func` was given but some calls to it did not correctly compute "
+                    "constraints. Constraints passed to `candidates_func` will contain NaN."
+                )
 
         values = torch.from_numpy(values)
         params = torch.from_numpy(params)
@@ -535,7 +552,6 @@ class BoTorchSampler(BaseSampler):
     def reseed_rng(self) -> None:
         self._independent_sampler.reseed_rng()
 
-    @experimental("2.4.0")
     def after_trial(
         self,
         study: Study,

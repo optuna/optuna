@@ -10,7 +10,6 @@ from typing import Optional
 from typing import Sequence
 from typing import Union
 
-from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
@@ -180,7 +179,6 @@ class GridSampler(BaseSampler):
 
         return param_value
 
-    @experimental("2.4.0")
     def after_trial(
         self,
         study: Study,

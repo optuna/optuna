@@ -4,7 +4,6 @@ from typing import Dict
 from typing import Optional
 from typing import Sequence
 
-from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -141,7 +140,6 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
-    @experimental("2.4.0")
     def after_trial(
         self,
         study: Study,
@@ -154,6 +152,10 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         This method is called after the objective function returns and right before the trials is
         finished and its state is stored. If this method raises an error, the trial will be
         considered failed and the state and values will be updated accordingly.
+
+        .. note::
+            Added in v2.4.0 as an experimental feature. The interface may change in newer versions
+            without prior notice. See https://github.com/optuna/optuna/releases/tag/v2.4.0.
 
         Args:
             study:
