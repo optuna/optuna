@@ -7,6 +7,7 @@ import time
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
 from unittest.mock import Mock  # NOQA
@@ -22,6 +23,7 @@ import pytest
 import optuna
 from optuna import _optimize
 from optuna import create_trial
+from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import TrialState
 
@@ -91,6 +93,8 @@ def check_study(study: optuna.Study) -> None:
 
     for trial in study.trials:
         check_frozen_trial(trial)
+
+    assert len(study.directions) == 1
 
     complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
     if len(complete_trials) == 0:
@@ -1011,16 +1015,91 @@ def test_log_completed_trial_skip_storage_access() -> None:
     storage = study._storage
 
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, 1.0)
+        study._log_completed_trial(trial, [1.0])
         # Trial.best_trial and Trial.best_params access storage.
         assert mock_object.call_count == 2
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, 1.0)
+        study._log_completed_trial(trial, [1.0])
         assert mock_object.call_count == 0
 
     optuna.logging.set_verbosity(optuna.logging.DEBUG)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, 1.0)
+        study._log_completed_trial(trial, [1.0])
         assert mock_object.call_count == 2
+
+
+def test_create_study_with_multi_objectives() -> None:
+    study = optuna.create_study(directions=["maximize"])
+    assert study.direction == StudyDirection.MAXIMIZE
+
+    study = optuna.create_study(directions=["maximize", "minimize"])
+    assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+
+    with pytest.raises(ValueError):
+        # Empty `direction` isn't allowed.
+        _ = optuna.create_study(directions=[])
+
+    with pytest.raises(ValueError):
+        _ = optuna.create_study(direction="minimize", directions=["maximize"])
+
+    with pytest.raises(ValueError):
+        _ = optuna.create_study(direction="minimize", directions=[])
+
+
+@pytest.mark.parametrize("n_objectives", [2, 3])
+def test_optimize_with_multi_objectives(n_objectives: int) -> None:
+    directions = ["minimize" for _ in range(n_objectives)]
+    study = optuna.create_study(directions=directions)
+
+    def objective(trial: optuna.trial.Trial) -> List[float]:
+        return [trial.suggest_uniform("v{}".format(i), 0, 5) for i in range(n_objectives)]
+
+    study.optimize(objective, n_trials=10)
+
+    assert len(study.trials) == 10
+
+    for trial in study.trials:
+        assert trial.values
+        assert len(trial.values) == n_objectives
+
+
+def test_pareto_front() -> None:
+    def _trial_to_values(t: optuna.trial.FrozenTrial) -> Tuple[float, ...]:
+        assert t.values is not None
+        return tuple(t.values)
+
+    study = optuna.create_study(directions=["minimize", "maximize"])
+    assert {_trial_to_values(t) for t in study.best_trials} == set()
+
+    study.optimize(lambda t: [2, 2], n_trials=1)
+    assert {_trial_to_values(t) for t in study.best_trials} == {(2, 2)}
+
+    study.optimize(lambda t: [1, 1], n_trials=1)
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
+
+    study.optimize(lambda t: [3, 1], n_trials=1)
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
+
+    study.optimize(lambda t: [1, 3], n_trials=1)
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 3)}
+    assert len(study.best_trials) == 1
+
+    study.optimize(lambda t: [1, 3], n_trials=1)  # The trial result is the same as the above one.
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 3)}
+    assert len(study.best_trials) == 2
+
+
+def test_wrong_n_objectives() -> None:
+    n_objectives = 2
+    directions = ["minimize" for _ in range(n_objectives)]
+    study = optuna.create_study(directions=directions)
+
+    def objective(trial: optuna.trial.Trial) -> List[float]:
+        return [trial.suggest_uniform("v{}".format(i), 0, 5) for i in range(n_objectives + 1)]
+
+    study.optimize(objective, n_trials=10)
+
+    for trial in study.trials:
+        assert trial.state is TrialState.FAIL

@@ -92,20 +92,14 @@ class LightGBMPruningCallback(object):
                 continue
 
             if is_higher_better:
-                if (
-                    self._trial.storage.get_study_direction(self._trial.study._study_id)
-                    != optuna.study.StudyDirection.MAXIMIZE
-                ):
+                if self._trial.study.direction != optuna.study.StudyDirection.MAXIMIZE:
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
                         "terms of study directions. Please specify a metric to be minimized for "
                         "LightGBMPruningCallback."
                     )
             else:
-                if (
-                    self._trial.storage.get_study_direction(self._trial.study._study_id)
-                    != optuna.study.StudyDirection.MINIMIZE
-                ):
+                if self._trial.study.direction != optuna.study.StudyDirection.MINIMIZE:
                     raise ValueError(
                         "The intermediate values are inconsistent with the objective values in "
                         "terms of study directions. Please specify a metric to be maximized for "

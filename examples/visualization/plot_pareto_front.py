@@ -11,7 +11,7 @@ def objective(trial):
     return v0, v1
 
 
-study = optuna.multi_objective.create_study(["minimize", "minimize"])
+study = optuna.create_study(directions=["minimize", "minimize"])
 study.optimize(objective, n_trials=100)
 
-optuna.multi_objective.visualization.plot_pareto_front(study).show()
+optuna.visualization.plot_pareto_front(study).show()

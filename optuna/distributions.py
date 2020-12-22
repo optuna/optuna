@@ -190,7 +190,7 @@ class DiscreteUniformDistribution(BaseDistribution):
     .. note::
         If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by :math:`q`,
         :math:`\\mathsf{high}` will be replaced with the maximum of :math:`k q + \\mathsf{low}
-        \\lt \\mathsf{high}`, where :math:`k` is an integer.
+        < \\mathsf{high}`, where :math:`k` is an integer.
 
     Attributes:
         low:
@@ -244,7 +244,7 @@ class IntUniformDistribution(BaseDistribution):
     .. note::
         If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by
         :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced with the maximum of
-        :math:`k \\times \\mathsf{step} + \\mathsf{low} \\lt \\mathsf{high}`, where :math:`k` is
+        :math:`k \\times \\mathsf{step} + \\mathsf{low} < \\mathsf{high}`, where :math:`k` is
         an integer.
 
     Attributes:

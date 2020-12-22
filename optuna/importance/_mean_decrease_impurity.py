@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -10,6 +11,7 @@ from optuna._transform import _SearchSpaceTransform
 from optuna.importance._base import _get_distributions
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.study import Study
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
@@ -51,7 +53,13 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             random_state=seed,
         )
 
-    def evaluate(self, study: Study, params: Optional[List[str]] = None) -> Dict[str, float]:
+    def evaluate(
+        self,
+        study: Study,
+        params: Optional[List[str]] = None,
+        *,
+        target: Optional[Callable[[FrozenTrial], float]] = None,
+    ) -> Dict[str, float]:
         distributions = _get_distributions(study, params)
         if len(distributions) == 0:
             return OrderedDict()
@@ -72,7 +80,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
 
         for trial_idx, trial in enumerate(trials):
             trans_params[trial_idx] = trans.transform(trial.params)
-            trans_values[trial_idx] = trial.value
+            trans_values[trial_idx] = trial.value if target is None else target(trial)
 
         encoded_column_to_column = trans.encoded_column_to_column
 

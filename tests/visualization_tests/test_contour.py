@@ -1,3 +1,4 @@
+import itertools
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -19,6 +20,13 @@ from optuna.visualization._contour import _generate_contour_subplot
 
 
 RANGE_TYPE = Union[Tuple[str, str], Tuple[float, float]]
+
+
+def test_target_is_none_and_study_is_multi_obj() -> None:
+
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError):
+        plot_contour(study)
 
 
 @pytest.mark.parametrize(
@@ -64,6 +72,9 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
         elif len(params) == 2:
             assert figure.data[0]["x"] == (0.925, 1.0, 2.5, 2.575)
             assert figure.data[0]["y"] == (-0.1, 0.0, 1.0, 2.0, 2.1)
+            assert figure.data[0]["z"][3][1] == 0.0
+            assert figure.data[0]["z"][2][2] == 1.0
+            assert figure.data[0]["colorbar"]["title"]["text"] == "Objective Value"
             assert figure.data[1]["x"] == (1.0, 2.5)
             assert figure.data[1]["y"] == (2.0, 1.0)
             assert figure.layout["xaxis"]["range"] == (0.925, 2.575)
@@ -72,6 +83,42 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
         # TODO(crcrpar): Add more checks. Currently this only checks the number of data.
         n_params = len(params) if params is not None else 4
         assert len(figure.data) == n_params ** 2 + n_params * (n_params - 1)
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        ["param_a", "param_b"],
+        ["param_a", "param_b", "param_c"],
+    ],
+)
+def test_plot_contour_customized_target(params: List[str]) -> None:
+
+    study = prepare_study_with_trials()
+    figure = plot_contour(study, params=params, target=lambda t: t.params["param_d"])
+    for data in figure.data:
+        if "z" in data:
+            assert 4.0 in itertools.chain.from_iterable(data["z"])
+            assert 2.0 in itertools.chain.from_iterable(data["z"])
+    if len(params) == 2:
+        assert figure.data[0]["z"][3][1] == 4.0
+        assert figure.data[0]["z"][2][2] == 2.0
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        ["param_a", "param_b"],
+        ["param_a", "param_b", "param_c"],
+    ],
+)
+def test_plot_contour_customized_target_name(params: List[str]) -> None:
+
+    study = prepare_study_with_trials()
+    figure = plot_contour(study, params=params, target_name="Target Name")
+    for data in figure.data:
+        if "colorbar" in data:
+            assert data["colorbar"]["title"]["text"] == "Target Name"
 
 
 def test_generate_contour_plot_for_few_observations() -> None:

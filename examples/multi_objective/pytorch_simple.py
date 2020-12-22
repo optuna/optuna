@@ -113,14 +113,14 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    study = optuna.multi_objective.create_study(["minimize", "maximize"])
+    study = optuna.create_study(directions=["minimize", "maximize"])
     study.optimize(objective, n_trials=100)
 
     print("Number of finished trials: ", len(study.trials))
 
     print("Pareto front:")
 
-    trials = {str(trial.values): trial for trial in study.get_pareto_front_trials()}
+    trials = {str(trial.values): trial for trial in study.best_trials}
     trials = list(trials.values())
     trials.sort(key=lambda t: t.values)
 

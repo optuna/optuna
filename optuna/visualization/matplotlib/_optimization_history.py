@@ -1,7 +1,11 @@
+from typing import Callable
+from typing import Optional
+
 from optuna._experimental import experimental
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
@@ -14,7 +18,12 @@ _logger = get_logger(__name__)
 
 
 @experimental("2.2.0")
-def plot_optimization_history(study: Study) -> "Axes":
+def plot_optimization_history(
+    study: Study,
+    *,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "Axes":
     """Plot optimization history of all trials in a study with Matplotlib.
 
     .. seealso::
@@ -42,25 +51,46 @@ def plot_optimization_history(study: Study) -> "Axes":
 
     Args:
         study:
-            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values.
+            A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
+        target:
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is being
+            used for single-objective optimization, the objective values are plotted.
+
+            .. note::
+                Specify this argument if ``study`` is being used for multi-objective optimization.
+        target_name:
+            Target's name to display on the axis label and the legend.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
+            optimization.
     """
 
     _imports.check()
-    return _get_optimization_history_plot(study)
+    if target is None and len(study.directions) > 1:
+        raise ValueError(
+            "If the `study` is being used for multi-objective optimization, "
+            "please specify the `target`."
+        )
+    return _get_optimization_history_plot(study, target, target_name)
 
 
-def _get_optimization_history_plot(study: Study) -> "Axes":
+def _get_optimization_history_plot(
+    study: Study,
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
+) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     _, ax = plt.subplots()
     ax.set_title("Optimization History Plot")
     ax.set_xlabel("#Trials")
-    ax.set_ylabel("Objective Value")
+    ax.set_ylabel(target_name)
     cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
     # Prepare data for plotting.
@@ -79,21 +109,30 @@ def _get_optimization_history_plot(study: Study) -> "Axes":
     best_values.pop(0)
 
     # Draw a scatter plot and a line plot.
-    ax.scatter(
-        x=[t.number for t in trials],
-        y=[t.value for t in trials],
-        color=cmap(0),
-        alpha=1,
-        label="Objective Value",
-    )
-    ax.plot(
-        [t.number for t in trials],
-        best_values,
-        marker="o",
-        color=cmap(3),
-        alpha=0.5,
-        label="Best Value",
-    )
+    if target is None:
+        ax.scatter(
+            x=[t.number for t in trials],
+            y=[t.value for t in trials],
+            color=cmap(0),
+            alpha=1,
+            label=target_name,
+        )
+        ax.plot(
+            [t.number for t in trials],
+            best_values,
+            marker="o",
+            color=cmap(3),
+            alpha=0.5,
+            label="Best Value",
+        )
+    else:
+        ax.scatter(
+            x=[t.number for t in trials],
+            y=[target(t) for t in trials],
+            color=cmap(0),
+            alpha=1,
+            label=target_name,
+        )
     ax.legend()
 
     return ax

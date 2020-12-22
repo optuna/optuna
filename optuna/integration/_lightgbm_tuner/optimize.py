@@ -6,6 +6,7 @@ import pickle
 import time
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import Generator
 from typing import Iterator
@@ -205,9 +206,9 @@ class _OptunaObjective(_BaseTuner):
             self.pbar.set_description(self.pbar_fmt.format(self.step_name, self.best_score))
 
         if "lambda_l1" in self.target_param_names:
-            self.lgbm_params["lambda_l1"] = trial.suggest_loguniform("lambda_l1", 1e-8, 10.0)
+            self.lgbm_params["lambda_l1"] = trial.suggest_float("lambda_l1", 1e-8, 10.0, log=True)
         if "lambda_l2" in self.target_param_names:
-            self.lgbm_params["lambda_l2"] = trial.suggest_loguniform("lambda_l2", 1e-8, 10.0)
+            self.lgbm_params["lambda_l2"] = trial.suggest_float("lambda_l2", 1e-8, 10.0, log=True)
         if "num_leaves" in self.target_param_names:
             tree_depth = self.lgbm_params.get("max_depth", _DEFAULT_TUNER_TREE_DEPTH)
             max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** _DEFAULT_TUNER_TREE_DEPTH
@@ -215,19 +216,19 @@ class _OptunaObjective(_BaseTuner):
         if "feature_fraction" in self.target_param_names:
             # `GridSampler` is used for sampling feature_fraction value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = min(trial.suggest_uniform("feature_fraction", 0.4, 1.0 + _EPS), 1.0)
+            param_value = min(trial.suggest_float("feature_fraction", 0.4, 1.0 + _EPS), 1.0)
             self.lgbm_params["feature_fraction"] = param_value
         if "bagging_fraction" in self.target_param_names:
             # `TPESampler` is used for sampling bagging_fraction value.
             # The value 1.0 for the hyperparameter might by sampled.
-            param_value = min(trial.suggest_uniform("bagging_fraction", 0.4, 1.0 + _EPS), 1.0)
+            param_value = min(trial.suggest_float("bagging_fraction", 0.4, 1.0 + _EPS), 1.0)
             self.lgbm_params["bagging_fraction"] = param_value
         if "bagging_freq" in self.target_param_names:
             self.lgbm_params["bagging_freq"] = trial.suggest_int("bagging_freq", 1, 7)
         if "min_child_samples" in self.target_param_names:
             # `GridSampler` is used for sampling min_child_samples value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + _EPS))
+            param_value = trial.suggest_int("min_child_samples", 5, 100)
             self.lgbm_params["min_child_samples"] = param_value
 
     def _copy_valid_sets(self, valid_sets: "VALID_SET_TYPE") -> "VALID_SET_TYPE":
@@ -345,7 +346,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
 class _LightGBMBaseTuner(_BaseTuner):
     """Base class of LightGBM Tuners.
 
-    This class has common attributes and method of
+    This class has common attributes and methods of
     :class:`~optuna.integration.lightgbm.LightGBMTuner` and
     :class:`~optuna.integration.lightgbm.LightGBMTunerCV`.
     """
@@ -622,11 +623,10 @@ class _LightGBMBaseTuner(_BaseTuner):
         study = self._create_stepwise_study(self.study, step_name)
         study.sampler = sampler
 
-        complete_trials = [
-            t
-            for t in study.trials
-            if t.state in (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
-        ]
+        complete_trials = study.get_trials(
+            deepcopy=True,
+            states=(optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED),
+        )
         _n_trials = n_trials - len(complete_trials)
 
         if self._start_time is None:
@@ -705,9 +705,9 @@ class _LightGBMBaseTuner(_BaseTuner):
                     raise ValueError("No trials are completed yet.")
 
                 if self.direction == optuna.study.StudyDirection.MINIMIZE:
-                    best_trial = min(trials, key=lambda t: t.value)
+                    best_trial = min(trials, key=lambda t: cast(float, t.value))
                 else:
-                    best_trial = max(trials, key=lambda t: t.value)
+                    best_trial = max(trials, key=lambda t: cast(float, t.value))
                 return copy.deepcopy(best_trial)
 
         return _StepwiseStudy(study, step_name)

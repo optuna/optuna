@@ -1,5 +1,6 @@
 import abc
 from collections import OrderedDict
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -7,6 +8,7 @@ from typing import Optional
 from optuna.distributions import BaseDistribution
 from optuna.samplers import intersection_search_space
 from optuna.study import Study
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
@@ -14,7 +16,13 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
     """Abstract parameter importance evaluator."""
 
     @abc.abstractmethod
-    def evaluate(self, study: Study, params: Optional[List[str]] = None) -> Dict[str, float]:
+    def evaluate(
+        self,
+        study: Study,
+        params: Optional[List[str]] = None,
+        *,
+        target: Optional[Callable[[FrozenTrial], float]] = None,
+    ) -> Dict[str, float]:
         """Evaluate parameter importances based on completed trials in the given study.
 
         .. note::
@@ -33,6 +41,9 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
                 A list of names of parameters to assess.
                 If :obj:`None`, all parameters that are present in all of the completed trials are
                 assessed.
+            target:
+                A function to specify the value to evaluate importances. If it is :obj:`None`, the
+                objective values are used.
 
         Returns:
             An :class:`collections.OrderedDict` where the keys are parameter names and the values

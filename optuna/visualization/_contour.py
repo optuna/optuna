@@ -1,5 +1,6 @@
 import math
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -27,7 +28,13 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
+def plot_contour(
+    study: Study,
+    params: Optional[List[str]] = None,
+    *,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "go.Figure":
     """Plot the parameter relationship as contour plot in a study.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
@@ -55,17 +62,34 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
 
     Args:
         study:
-            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values.
+            A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
         params:
             Parameter list to visualize. The default is all parameters.
+        target:
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is being
+            used for single-objective optimization, the objective values are plotted.
+
+            .. note::
+                Specify this argument if ``study`` is being used for multi-objective optimization.
+        target_name:
+            Target's name to display on the color bar.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
+            optimization.
     """
 
     _imports.check()
-    return _get_contour_plot(study, params)
+    if target is None and len(study.directions) > 1:
+        raise ValueError(
+            "If the `study` is being used for multi-objective optimization, "
+            "please specify the `target`."
+        )
+    return _get_contour_plot(study, params, target, target_name)
 
 
 def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
@@ -75,7 +99,12 @@ def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
     return list(map(str, values))
 
 
-def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
+def _get_contour_plot(
+    study: Study,
+    params: Optional[List[str]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "go.Figure":
 
     layout = go.Layout(title="Contour Plot")
 
@@ -113,7 +142,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
 
         elif _is_categorical(trials, p_name):
             # For numeric values, plotly does not automatically plot as "category" type.
-            update_category_axes[p_name] = any([str(v).isnumeric() for v in set(values)])
+            update_category_axes[p_name] = any(_is_numeric(str(v)) for v in set(values))
 
             # Plotly>=4.12.0 draws contours using the indices of categorical variables instead of
             # raw values and the range should be updated based on the cardinality of categorical
@@ -134,7 +163,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
         x_param = sorted_params[0]
         y_param = sorted_params[1]
         sub_plots = _generate_contour_subplot(
-            trials, x_param, y_param, study.direction, param_values_range
+            trials, x_param, y_param, study.direction, param_values_range, target, target_name
         )
         figure = go.Figure(data=sub_plots, layout=layout)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
@@ -163,7 +192,13 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
                     figure.add_trace(go.Scatter(), row=y_i + 1, col=x_i + 1)
                 else:
                     sub_plots = _generate_contour_subplot(
-                        trials, x_param, y_param, study.direction, param_values_range
+                        trials,
+                        x_param,
+                        y_param,
+                        study.direction,
+                        param_values_range,
+                        target,
+                        target_name,
                     )
                     contour = sub_plots[0]
                     scatter = sub_plots[1]
@@ -196,12 +231,22 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
     return figure
 
 
+def _is_numeric(s: str) -> bool:
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
 def _generate_contour_subplot(
     trials: List[FrozenTrial],
     x_param: str,
     y_param: str,
     direction: StudyDirection,
     param_values_range: Optional[Dict[str, Tuple[float, float]]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
 ) -> Tuple["Contour", "Scatter"]:
 
     if param_values_range is None:
@@ -242,13 +287,17 @@ def _generate_contour_subplot(
         y_values.append(y_value)
         x_i = x_indices.index(x_value)
         y_i = y_indices.index(y_value)
-        if isinstance(trial.value, int):
-            value = float(trial.value)
-        elif isinstance(trial.value, float):
+
+        if target is None:
             value = trial.value
         else:
+            value = target(trial)
+
+        if isinstance(value, int):
+            value = float(value)
+        elif not isinstance(value, float):
             raise ValueError(
-                "Trial{} has COMPLETE state, but its value is non-numeric.".format(trial.number)
+                f"Trial{trial.number} has COMPLETE state, but its target value is non-numeric."
             )
         z[y_i][x_i] = value
 
@@ -264,7 +313,7 @@ def _generate_contour_subplot(
         x=x_indices,
         y=y_indices,
         z=z,
-        colorbar={"title": "Objective Value"},
+        colorbar={"title": target_name},
         colorscale=colorscale,
         connectgaps=True,
         contours_coloring="heatmap",

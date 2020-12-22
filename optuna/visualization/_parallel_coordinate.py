@@ -1,5 +1,7 @@
 from collections import defaultdict
 from typing import Any
+from typing import Callable
+from typing import cast
 from typing import DefaultDict
 from typing import Dict
 from typing import List
@@ -8,6 +10,7 @@ from typing import Optional
 from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 
@@ -18,7 +21,13 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
+def plot_parallel_coordinate(
+    study: Study,
+    params: Optional[List[str]] = None,
+    *,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "go.Figure":
     """Plot the high-dimentional parameter relationships in a study.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
@@ -46,20 +55,29 @@ def plot_parallel_coordinate(study: Study, params: Optional[List[str]] = None) -
 
     Args:
         study:
-            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values.
+            A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
         params:
             Parameter list to visualize. The default is all parameters.
+        target:
+            A function to specify the value to display. If it is :obj:`None`, the objective values
+            are plotted.
+        target_name:
+            Target's name to display on the axis label and the legend.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
     """
 
     _imports.check()
-    return _get_parallel_coordinate_plot(study, params)
+    return _get_parallel_coordinate_plot(study, params, target, target_name)
 
 
-def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
+def _get_parallel_coordinate_plot(
+    study: Study,
+    params: Optional[List[str]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "go.Figure":
 
     layout = go.Layout(title="Parallel Coordinate Plot")
 
@@ -77,11 +95,21 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
         all_params = set(params)
     sorted_params = sorted(list(all_params))
 
+    if target is None:
+
+        def _target(t: FrozenTrial) -> float:
+            return cast(float, t.value)
+
+        target = _target
+        reversescale = study.direction == StudyDirection.MINIMIZE
+    else:
+        reversescale = True
+
     dims: List[Dict[str, Any]] = [
         {
-            "label": "Objective Value",
-            "values": tuple([t.value for t in trials]),
-            "range": (min([t.value for t in trials]), max([t.value for t in trials])),
+            "label": target_name,
+            "values": tuple([target(t) for t in trials]),
+            "range": (min([target(t) for t in trials]), max([target(t) for t in trials])),
         }
     ]
     for p_name in sorted_params:
@@ -114,9 +142,9 @@ def _get_parallel_coordinate_plot(study: Study, params: Optional[List[str]] = No
             line={
                 "color": dims[0]["values"],
                 "colorscale": "blues",
-                "colorbar": {"title": "Objective Value"},
+                "colorbar": {"title": target_name},
                 "showscale": True,
-                "reversescale": study.direction == StudyDirection.MINIMIZE,
+                "reversescale": reversescale,
             },
         )
     ]
