@@ -509,9 +509,11 @@ def test_after_trial_failing_in_after_trial() -> None:
     sampler = SamplerAfterTrialAlwaysFail({}, {})
     study = optuna.create_study(sampler=sampler)
 
-    study.optimize(
-        lambda t: t.suggest_int("x", 0, 10), n_trials=n_trials, catch=(NotImplementedError,)
-    )
+    # Not affected by `catch`.
+    with pytest.raises(NotImplementedError):
+        study.optimize(
+            lambda t: t.suggest_int("x", 0, 10), n_trials=n_trials, catch=(NotImplementedError,)
+        )
 
-    assert len(study.trials) == n_trials
-    assert n_calls == 1 + n_trials
+    assert len(study.trials) == 1
+    assert n_calls == 2

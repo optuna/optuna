@@ -221,32 +221,29 @@ def _run_trial(
 
     try:
         trial._after_func(state, values)
-    except Exception as e:
-        state = TrialState.FAIL
-        values = None
-        func_err = e
-        func_err_fail_exc_info = sys.exc_info()
+    except Exception:
+        raise
+    finally:
+        study._tell(trial, state, values)
 
-    study._tell(trial, state, values)
-
-    if state == TrialState.COMPLETE:
-        study._log_completed_trial(trial, cast(List[float], values))
-    elif state == TrialState.PRUNED:
-        _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
-    elif state == TrialState.FAIL:
-        if func_err is not None:
-            _logger.warning(
-                "Trial {} failed because of the following error: {}".format(
-                    trial.number, repr(func_err)
-                ),
-                exc_info=func_err_fail_exc_info,
-            )
-        elif values_conversion_failure_message is not None:
-            _logger.warning(values_conversion_failure_message)
+        if state == TrialState.COMPLETE:
+            study._log_completed_trial(trial, cast(List[float], values))
+        elif state == TrialState.PRUNED:
+            _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
+        elif state == TrialState.FAIL:
+            if func_err is not None:
+                _logger.warning(
+                    "Trial {} failed because of the following error: {}".format(
+                        trial.number, repr(func_err)
+                    ),
+                    exc_info=func_err_fail_exc_info,
+                )
+            elif values_conversion_failure_message is not None:
+                _logger.warning(values_conversion_failure_message)
+            else:
+                assert False, "Should not reach."
         else:
             assert False, "Should not reach."
-    else:
-        assert False, "Should not reach."
 
     if state == TrialState.FAIL and func_err is not None and not isinstance(func_err, catch):
         raise func_err

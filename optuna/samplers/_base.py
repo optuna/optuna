@@ -150,8 +150,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         """Trial post-processing.
 
         This method is called after the objective function returns and right before the trials is
-        finished and its state is stored. If this method raises an error, the trial will be
-        considered failed and the state and values will be updated accordingly.
+        finished and its state is stored.
 
         .. note::
             Added in v2.4.0 as an experimental feature. The interface may change in newer versions
