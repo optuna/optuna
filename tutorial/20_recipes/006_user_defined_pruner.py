@@ -4,14 +4,14 @@
 User-Defined Pruner
 ====================
 
-In :ref:`pruners`, we described how an objective function can optionally include 
-calls to a pruning feature which allows Optuna to terminate an optimization 
-trial when intermediate results do not appear promising. In this document, we 
-describe how to implement your own pruner, i.e., a custom strategy for 
-determining when to stop a trial.
+Previously, we described how an objective function can optionally include calls
+to a pruning feature which allows Optuna to terminate an optimization trial when 
+intermediate results do not appear promising. In this document, we describe how 
+to implement your own pruner, i.e., a custom strategy for determining when to 
+stop a trial.
 
 Overview of Pruning Interface
--------------------
+------------------------------
 
 The :func:`~optuna.study.create_study` constructor takes, as an optional 
 argument, a pruner inheriting from :class:`~optuna.pruners.BasePruner`. The 
@@ -36,7 +36,7 @@ that are in last place compared to completed trials at the same step.
   implementation, including error checking and complex pruner-internal logic.
 
 An Example: Implementing LastPlacePruner
---------------------------------------------------
+------------------------------------------
 
 We aim to optimize the `loss` and `alpha` hyperparameters for a stochastic 
 gradient descent classifier (SGDClassifier) run on the sklearn iris dataset. We 
