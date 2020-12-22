@@ -82,6 +82,12 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         *,
         target: Optional[Callable[[FrozenTrial], float]] = None,
     ) -> Dict[str, float]:
+        if target is None and len(study.directions) > 1:
+            raise ValueError(
+                "If the `study` is being used for multi-objective optimization, "
+                "please specify the `target`."
+            )
+
         distributions = _get_distributions(study, params)
         params_data, values_data = _get_study_data(study, distributions, target)
 

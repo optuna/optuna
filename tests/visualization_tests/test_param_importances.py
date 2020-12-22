@@ -9,6 +9,13 @@ from optuna.trial import Trial
 from optuna.visualization import plot_param_importances
 
 
+def test_target_is_none_and_study_is_multi_obj() -> None:
+
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError):
+        plot_param_importances(study)
+
+
 def test_plot_param_importances() -> None:
 
     # Test with no trial.

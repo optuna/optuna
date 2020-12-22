@@ -87,16 +87,30 @@ def plot_param_importances(
             If :obj:`None`, all parameters that are present in all of the completed trials are
             assessed.
         target:
-            A function to specify the value to evaluate importances. If it is :obj:`None`, the
-            objective values are used.
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is being
+            used for single-objective optimization, the objective values are plotted.
+
+            .. note::
+                Specify this argument if ``study`` is being used for multi-objective optimization.
         target_name:
             Target's name to display on the axis label.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
+            optimization.
     """
 
     _imports.check()
+
+    if target is None and len(study.directions) > 1:
+        raise ValueError(
+            "If the `study` is being used for multi-objective optimization, "
+            "please specify the `target`."
+        )
 
     layout = go.Layout(
         title="Hyperparameter Importances",
