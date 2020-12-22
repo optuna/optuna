@@ -234,6 +234,9 @@ class CmaEsSampler(BaseSampler):
         trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
+
+        self._raise_error_if_multi_objective(study)
+
         if len(search_space) == 0:
             return {}
 
@@ -393,6 +396,9 @@ class CmaEsSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+
+        self._raise_error_if_multi_objective(study)
+
         if self._warn_independent_sampling:
             complete_trials = self._get_trials(study)
             if len(complete_trials) >= self._n_startup_trials:
