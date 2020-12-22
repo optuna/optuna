@@ -3,7 +3,9 @@ import datetime
 import gc
 import math
 import sys
+from typing import Any
 from typing import Callable
+from typing import cast
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -187,7 +189,10 @@ def _run_trial(
 
     state: Optional[TrialState] = None
     values: Optional[List[float]] = None
-    err: Optional[Exception] = None
+    func_err: Optional[Exception] = None
+    func_err_fail_exc_info: Optional[Any] = None
+    # Set to a string if `func` returns correctly but the return value violates assumptions.
+    values_conversion_failure_message: Optional[str] = None
 
     try:
         value_or_values = func(trial)
@@ -198,50 +203,54 @@ def _run_trial(
         state = TrialState.PRUNED
         frozen_trial = study._storage.get_trial(trial._trial_id)
         last_step = frozen_trial.last_step
-        values = None if last_step is None else [frozen_trial.intermediate_values[last_step]]
-        err = e
+        if last_step is not None:
+            values = [frozen_trial.intermediate_values[last_step]]
+        func_err = e
     except Exception as e:
         state = TrialState.FAIL
-        values = None
-        err = e
-        exc_info = sys.exc_info()
+        func_err = e
+        func_err_fail_exc_info = sys.exc_info()
     else:
-        state, values, failure_message = _check_and_convert_to_values(
+        values, values_conversion_failure_message = _check_and_convert_to_values(
             len(study.directions), value_or_values, trial
         )
+        if values_conversion_failure_message is not None:
+            state = TrialState.FAIL
+        else:
+            state = TrialState.COMPLETE
 
     study._tell(trial, state, values)
 
     if state == TrialState.COMPLETE:
-        assert values is not None
-        study._log_completed_trial(trial, values)
+        study._log_completed_trial(trial, cast(List[float], values))
     elif state == TrialState.PRUNED:
-        _logger.info("Trial {} pruned. {}".format(trial.number, str(err)))
+        _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
     elif state == TrialState.FAIL:
-        if err is not None:
+        if func_err is not None:
             _logger.warning(
                 "Trial {} failed because of the following error: {}".format(
-                    trial.number, repr(err)
+                    trial.number, repr(func_err)
                 ),
-                exc_info=exc_info,
+                exc_info=func_err_fail_exc_info,
             )
+        elif values_conversion_failure_message is not None:
+            _logger.warning(values_conversion_failure_message)
         else:
-            _logger.warning(failure_message)
+            assert False, "Should not reach."
     else:
         assert False, "Should not reach."
 
-    if state == TrialState.FAIL and err is not None and not isinstance(err, catch):
-        raise err
+    if state == TrialState.FAIL and func_err is not None and not isinstance(func_err, catch):
+        raise func_err
     return trial
 
 
 def _check_and_convert_to_values(
     n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
-) -> Tuple[TrialState, Optional[List[float]], Optional[str]]:
+) -> Tuple[Optional[List[float]], Optional[str]]:
     if isinstance(original_value, Sequence):
         if n_objectives != len(original_value):
             return (
-                TrialState.FAIL,
                 None,
                 (
                     f"Trial {trial.number} failed, because the number of the values "
@@ -261,13 +270,13 @@ def _check_and_convert_to_values(
             # TODO(Imamura): Construct error message taking into account all values and do not
             #  early return
             # `value` is assumed to be ignored on failure so we can set it to any value.
-            return TrialState.FAIL, None, failure_message
+            return None, failure_message
         elif isinstance(checked_v, float):
             _checked_values.append(checked_v)
         else:
             assert False
 
-    return TrialState.COMPLETE, _checked_values, None
+    return _checked_values, None
 
 
 def _check_single_value(
