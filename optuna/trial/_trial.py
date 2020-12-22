@@ -566,7 +566,7 @@ class Trial(BaseTrial):
 
         if len(self.study.directions) > 1:
             _logger.warning(
-                "When the problem is multi-objective optimization, this function does nothing."
+                "When the problem is multi-objective optimization, Trial.report does nothing."
             )
             return
 
@@ -618,8 +618,8 @@ class Trial(BaseTrial):
 
         if len(self.study.directions) > 1:
             _logger.warning(
-                "When the problem is multi-objective optimization, this function always returns "
-                "`False`."
+                "When the problem is multi-objective optimization, "
+                "Trial.should_prune always returns `False`."
             )
             return False
 
