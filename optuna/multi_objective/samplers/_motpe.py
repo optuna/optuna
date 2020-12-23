@@ -174,7 +174,7 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
     ) -> Any:
         assert isinstance(study, multi_objective.study.MultiObjectiveStudy)
         assert isinstance(trial, multi_objective.trial.FrozenMultiObjectiveTrial)
-        if not study._is_multi_objective():
+        if len(study.directions) < 2:
             raise ValueError(
                 "Number of objectives must be >= 2. "
                 "Please use optuna.samplers.TPESampler for single-objective optimization."

@@ -156,7 +156,7 @@ class BaseStudy(object):
             A boolean value indicates if `self.directions` has more than 1 element or not.
         """
 
-        return True if len(self.directions) > 1 else False
+        return len(self.directions) > 1
 
     def get_trials(
         self,
