@@ -94,7 +94,7 @@ def check_study(study: optuna.Study) -> None:
     for trial in study.trials:
         check_frozen_trial(trial)
 
-    assert len(study.directions) == 1
+    assert not study._is_multi_objective()
 
     complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
     if len(complete_trials) == 0:

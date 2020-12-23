@@ -110,7 +110,7 @@ def plot_edf(
     else:
         studies = list(study)
 
-    if target is None and any(len(s.directions) > 1 for s in studies):
+    if target is None and any(study._is_multi_objective() for study in studies):
         raise ValueError(
             "If the `study` is being used for multi-objective optimization, "
             "please specify the `target`."
