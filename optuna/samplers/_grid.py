@@ -191,7 +191,7 @@ class GridSampler(BaseSampler):
         if len(target_grids) == 0:
             study.stop()
         elif len(target_grids) == 1:
-            if state == TrialState.COMPLETE:
+            if state.is_finished():
                 grid_id = study._storage.get_trial_system_attrs(trial._trial_id)["grid_id"]
                 if grid_id == target_grids[0]:
                     study.stop()
