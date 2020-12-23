@@ -46,6 +46,10 @@ class _SearchSpaceTransform:
     Attributes:
         bounds:
             Constructed bounds from the given search space.
+        column_to_encoded_columns:
+            Constructed mapping from original parameter column index to encoded column indices.
+        encoded_column_to_column:
+            Constructed mapping from encoded column index to original parameter column index.
 
     Note:
         Parameter values are not scaled to the unit cube.
@@ -67,18 +71,27 @@ class _SearchSpaceTransform:
         # order will be guaranteed.
         search_space = OrderedDict(search_space)
 
-        bounds, column_to_encoded_columns = _transform_search_space(
+        bounds, column_to_encoded_columns, encoded_column_to_column = _transform_search_space(
             search_space, transform_log, transform_step
         )
 
         self._bounds = bounds
         self._column_to_encoded_columns = column_to_encoded_columns
+        self._encoded_column_to_column = encoded_column_to_column
         self._search_space = search_space
         self._transform_log = transform_log
 
     @property
     def bounds(self) -> numpy.ndarray:
         return self._bounds
+
+    @property
+    def column_to_encoded_columns(self) -> List[numpy.ndarray]:
+        return self._column_to_encoded_columns
+
+    @property
+    def encoded_column_to_column(self) -> numpy.ndarray:
+        return self._encoded_column_to_column
 
     def transform(self, params: Dict[str, Any]) -> numpy.ndarray:
         """Transform a parameter configuration from actual values to continuous space.
@@ -129,7 +142,7 @@ class _SearchSpaceTransform:
         params = {}
 
         for (name, distribution), encoded_columns in zip(
-            self._search_space.items(), self._column_to_encoded_columns
+            self._search_space.items(), self.column_to_encoded_columns
         ):
             trans_param = trans_params[encoded_columns]
 
@@ -148,7 +161,7 @@ class _SearchSpaceTransform:
 
 def _transform_search_space(
     search_space: Dict[str, BaseDistribution], transform_log: bool, transform_step: bool
-) -> Tuple[numpy.ndarray, List[numpy.ndarray]]:
+) -> Tuple[numpy.ndarray, List[numpy.ndarray], numpy.ndarray]:
     assert len(search_space) > 0, "Cannot transform if no distributions are given."
 
     n_bounds = sum(
@@ -158,6 +171,7 @@ def _transform_search_space(
 
     bounds = numpy.empty((n_bounds, 2), dtype=numpy.float64)
     column_to_encoded_columns: List[numpy.ndarray] = []
+    encoded_column_to_column = numpy.empty(n_bounds, dtype=numpy.int64)
 
     bound_idx = 0
     for distribution in search_space.values():
@@ -165,7 +179,9 @@ def _transform_search_space(
         if isinstance(d, CategoricalDistribution):
             n_choices = len(d.choices)
             bounds[bound_idx : bound_idx + n_choices] = (0, 1)  # Broadcast across all choices.
-            column_to_encoded_columns.append(numpy.arange(bound_idx, bound_idx + n_choices))
+            encoded_columns = numpy.arange(bound_idx, bound_idx + n_choices)
+            encoded_column_to_column[encoded_columns] = len(column_to_encoded_columns)
+            column_to_encoded_columns.append(encoded_columns)
             bound_idx += n_choices
         elif isinstance(
             d,
@@ -209,14 +225,16 @@ def _transform_search_space(
                 assert False, "Should not reach. Unexpected distribution."
 
             bounds[bound_idx] = bds
-            column_to_encoded_columns.append(numpy.atleast_1d(bound_idx))
+            encoded_column = numpy.atleast_1d(bound_idx)
+            encoded_column_to_column[encoded_column] = len(column_to_encoded_columns)
+            column_to_encoded_columns.append(encoded_column)
             bound_idx += 1
         else:
             assert False, "Should not reach. Unexpected distribution."
 
     assert bound_idx == n_bounds
 
-    return bounds, column_to_encoded_columns
+    return bounds, column_to_encoded_columns, encoded_column_to_column
 
 
 def _transform_numerical_param(

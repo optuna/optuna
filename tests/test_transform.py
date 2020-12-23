@@ -43,6 +43,34 @@ def test_search_space_transform_shapes_dtypes(param: Any, distribution: BaseDist
     assert trans_params.dtype == numpy.float64
 
 
+def test_search_space_transform_encoding() -> None:
+    trans = _SearchSpaceTransform({"x0": IntUniformDistribution(0, 3)})
+
+    assert len(trans.column_to_encoded_columns) == 1
+    numpy.testing.assert_equal(trans.column_to_encoded_columns[0], numpy.array([0]))
+    numpy.testing.assert_equal(trans.encoded_column_to_column, numpy.array([0]))
+
+    trans = _SearchSpaceTransform({"x0": CategoricalDistribution(["foo", "bar", "baz"])})
+
+    assert len(trans.column_to_encoded_columns) == 1
+    numpy.testing.assert_equal(trans.column_to_encoded_columns[0], numpy.array([0, 1, 2]))
+    numpy.testing.assert_equal(trans.encoded_column_to_column, numpy.array([0, 0, 0]))
+
+    trans = _SearchSpaceTransform(
+        {
+            "x0": UniformDistribution(0, 3),
+            "x1": CategoricalDistribution(["foo", "bar", "baz"]),
+            "x3": DiscreteUniformDistribution(0, 1, q=0.2),
+        }
+    )
+
+    assert len(trans.column_to_encoded_columns) == 3
+    numpy.testing.assert_equal(trans.column_to_encoded_columns[0], numpy.array([0]))
+    numpy.testing.assert_equal(trans.column_to_encoded_columns[1], numpy.array([1, 2, 3]))
+    numpy.testing.assert_equal(trans.column_to_encoded_columns[2], numpy.array([4]))
+    numpy.testing.assert_equal(trans.encoded_column_to_column, numpy.array([0, 1, 1, 1, 2]))
+
+
 @pytest.mark.parametrize("transform_log", [True, False])
 @pytest.mark.parametrize("transform_step", [True, False])
 @pytest.mark.parametrize(
