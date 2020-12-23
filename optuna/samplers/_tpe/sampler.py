@@ -229,6 +229,8 @@ class TPESampler(BaseSampler):
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
 
+        self._raise_error_if_multi_objective(study)
+
         if search_space == {}:
             return {}
 
@@ -268,6 +270,8 @@ class TPESampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+
+        self._raise_error_if_multi_objective(study)
 
         values, scores = _get_observation_pairs(study, param_name)
 
