@@ -54,7 +54,7 @@ def test_get_param_importancetarget_target_is_none_and_study_is_multi_obj(
     study.optimize(objective, n_trials=3)
 
     with pytest.raises(ValueError):
-        _ = get_param_importances(study, evaluator=evaluator_init_func())
+        get_param_importances(study, evaluator=evaluator_init_func())
 
 
 @parametrize_evaluator
