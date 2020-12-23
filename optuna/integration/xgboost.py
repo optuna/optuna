@@ -53,7 +53,7 @@ if _imports.is_successful() and use_callback_cls:
             return model
 
         def after_iteration(self, model: Any, epoch: int, evals_log: dict) -> bool:
-            evaluation_result_list = {}
+            evaluation_results = {}
             # Flatten the evaluation history to `{dataset-metric: score}` layout.
             for dataset, metrics in evals_log.items():
                 for metric, scores in metrics.items():
@@ -62,11 +62,11 @@ if _imports.is_successful() and use_callback_cls:
                     if self._is_cv:
                         # Remove stddev of the metric across the cross-valdation
                         # folds.
-                        evaluation_result_list[key] = scores[-1][0]
+                        evaluation_results[key] = scores[-1][0]
                     else:
-                        evaluation_result_list[key] = scores[-1]
+                        evaluation_results[key] = scores[-1]
 
-            current_score = evaluation_result_list[self._observation_key]
+            current_score = evaluation_results[self._observation_key]
             self._trial.report(current_score, step=epoch)
             if self._trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(epoch)
