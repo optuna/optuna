@@ -150,10 +150,10 @@ class BaseStudy(object):
         return self.get_trials(deepcopy=True, states=None)
 
     def _is_multi_objective(self) -> bool:
-        """Return True if the study has multi objectives.
+        """Return :obj:`True` if the study has multiple objectives.
 
         Returns:
-            A boolean value indicates if the list `study.directions` has more than 1 element or not.
+            A boolean value indicates if `self.directions` has more than 1 element or not.
         """
 
         return True if len(self.directions) > 1 else False
