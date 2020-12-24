@@ -509,9 +509,6 @@ class Trial(BaseTrial):
         The reported values are used by the pruners to determine whether this trial should be
         pruned.
 
-        .. warning::
-            When the problem is multi-objective optimization, this function does nothing.
-
         .. seealso::
             Please refer to :class:`~optuna.pruners.BasePruner`.
 
@@ -562,14 +559,16 @@ class Trial(BaseTrial):
                 assume that ``step`` starts at zero. For example,
                 :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
                 ``n_warmup_steps`` as the warmup mechanism.
+
+        Raises:
+            :exc:`NotImplementedError`:
+                If study is being used for multi-objective optimization.
         """
 
         if len(self.study.directions) > 1:
-            warnings.warn(
-                "When the problem is multi-objective optimization, Trial.report does nothing.",
-                RuntimeWarning,
+            raise NotImplementedError(
+                "Trial.report is not supported for multi-objective optimization"
             )
-            return
 
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
@@ -600,10 +599,6 @@ class Trial(BaseTrial):
         previously reported values. The algorithm can be specified when constructing a
         :class:`~optuna.study.Study`.
 
-        .. warning::
-            When the problem is multi-objective optimization, this function always returns
-            :obj:`False`.
-
         .. note::
             If no values have been reported, the algorithm cannot make meaningful suggestions.
             Similarly, if this method is called multiple times with the exact same set of reported
@@ -615,15 +610,16 @@ class Trial(BaseTrial):
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
+
+        Raises:
+            :exc:`NotImplementedError`:
+                If study is being used for multi-objective optimization.
         """
 
         if len(self.study.directions) > 1:
-            warnings.warn(
-                "When the problem is multi-objective optimization, "
-                "Trial.should_prune always returns False.",
-                RuntimeWarning,
+            raise NotImplementedError(
+                "Trial.should_prune is not supported for multi-objective optimization"
             )
-            return False
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
