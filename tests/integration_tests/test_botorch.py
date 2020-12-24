@@ -209,6 +209,8 @@ def test_botorch_constraints_func_raises() -> None:
     with pytest.raises(RuntimeError):
         study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
 
+    assert len(study.trials) == 2
+
     for trial in study.trials:
         sys_con = trial.system_attrs["botorch:constraints"]
 
@@ -218,12 +220,62 @@ def test_botorch_constraints_func_raises() -> None:
             expected_sys_con = (0,)
         elif trial.number == 1:
             expected_sys_con = None
-        elif trial.number == 2:
-            expected_sys_con = (0,)
         else:
             assert False, "Should not reach."
 
         assert sys_con == expected_sys_con
+
+
+def test_botorch_constraints_func_nan_warning() -> None:
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        if trial.number == 1:
+            raise RuntimeError
+        return (0.0,)
+
+    last_trial_number_candidates_func = None
+
+    def candidates_func(
+        train_x: torch.Tensor,
+        train_obj: torch.Tensor,
+        train_con: Optional[torch.Tensor],
+        bounds: torch.Tensor,
+    ) -> torch.Tensor:
+        trial_number = train_x.size(0)
+
+        assert train_con is not None
+
+        if trial_number > 0:
+            assert not train_con[0, :].isnan().any()
+        if trial_number > 1:
+            assert train_con[1, :].isnan().all()
+        if trial_number > 2:
+            assert not train_con[2, :].isnan().any()
+
+        nonlocal last_trial_number_candidates_func
+        last_trial_number_candidates_func = trial_number
+
+        return torch.rand(1)
+
+    sampler = BoTorchSampler(
+        candidates_func=candidates_func,
+        constraints_func=constraints_func,
+        n_startup_trials=1,
+    )
+
+    study = optuna.create_study(direction="minimize", sampler=sampler)
+
+    with pytest.raises(RuntimeError):
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=None)
+
+    assert len(study.trials) == 2
+
+    # Warns when `train_con` contains NaN.
+    with pytest.warns(UserWarning):
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=2)
+
+    assert len(study.trials) == 4
+
+    assert last_trial_number_candidates_func == study.trials[-1].number
 
 
 def test_botorch_n_startup_trials() -> None:
