@@ -1321,16 +1321,22 @@ def test_suggest_with_multi_objectives() -> None:
     study.optimize(objective, n_trials=10)
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 def test_report_with_multi_objectives() -> None:
-    study = optuna.create_study(directions=["maximize", "maximize"])
-    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    def objective(trial: Trial) -> Tuple[float, float]:
+        # Try to report values but nothing happens.
+        with pytest.warns(RuntimeWarning):
+            trial.report(1.0, 0)
+        with pytest.warns(RuntimeWarning):
+            trial.report([1.0, 1.0], 1)  # type: ignore
+        return 1.0, 1.0
 
-    # Try to report values but nothing happens.
-    trial.report(1.0, 0)
-    trial.report([1.0, 1.0], 1)  # type: ignore
+    study = optuna.create_study(directions=["maximize", "maximize"])
+    study.optimize(objective, n_trials=1)
     assert study.trials[0].intermediate_values == {}
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 def test_should_prune_multi_objectives() -> None:
     study = optuna.create_study(directions=["maximize", "maximize"])
     trials = [
@@ -1339,5 +1345,9 @@ def test_should_prune_multi_objectives() -> None:
     for t in trials:
         study.add_trial(t)
 
-    trial = Trial(study, study._storage.create_new_trial(study._study_id))
-    assert trial.should_prune() is False
+    def objective(trial: Trial) -> Tuple[float, float]:
+        with pytest.warns(RuntimeWarning):
+            assert trial.should_prune() is False
+        return 1.0, 1.0
+
+    study.optimize(objective, n_trials=1)
