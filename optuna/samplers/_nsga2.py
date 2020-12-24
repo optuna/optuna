@@ -12,6 +12,7 @@ from typing import Tuple
 import numpy as np
 
 import optuna
+from optuna._experimental import experimental
 from optuna._multi_objective import _dominates
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
@@ -26,6 +27,7 @@ _PARENTS_KEY = "nsga2:parents"
 _POPULATION_CACHE_KEY_PREFIX = "nsga2:population"
 
 
+@experimental("2.4.0")
 class NSGAIISampler(BaseSampler):
     """Multi-objective sampler using the NSGA-II algorithm.
 
@@ -60,6 +62,7 @@ class NSGAIISampler(BaseSampler):
 
     def __init__(
         self,
+        *,
         population_size: int = 50,
         mutation_prob: Optional[float] = None,
         crossover_prob: float = 0.9,
