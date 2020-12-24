@@ -562,12 +562,12 @@ class Trial(BaseTrial):
 
         Raises:
             :exc:`NotImplementedError`:
-                If study is being used for multi-objective optimization.
+                If trial is being used for multi-objective optimization.
         """
 
         if len(self.study.directions) > 1:
             raise NotImplementedError(
-                "Trial.report is not supported for multi-objective optimization"
+                "Trial.report is not supported for multi-objective optimization."
             )
 
         try:
@@ -613,12 +613,12 @@ class Trial(BaseTrial):
 
         Raises:
             :exc:`NotImplementedError`:
-                If study is being used for multi-objective optimization.
+                If trial is being used for multi-objective optimization.
         """
 
         if len(self.study.directions) > 1:
             raise NotImplementedError(
-                "Trial.should_prune is not supported for multi-objective optimization"
+                "Trial.should_prune is not supported for multi-objective optimization."
             )
 
         trial = self.study._storage.get_trial(self._trial_id)
