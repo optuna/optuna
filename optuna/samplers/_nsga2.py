@@ -57,7 +57,6 @@ class NSGAIISampler(BaseSampler):
 
         seed:
             Seed for random number generator.
-
     """
 
     def __init__(
