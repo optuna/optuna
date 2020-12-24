@@ -248,9 +248,7 @@ class NSGAIISampler(BaseSampler):
 
         return elite_population
 
-    def _select_parent(
-        self, study: Study, population: List[FrozenTrial]
-    ) -> FrozenTrial:
+    def _select_parent(self, study: Study, population: List[FrozenTrial]) -> FrozenTrial:
         # TODO(ohta): Consider to allow users to specify the number of parent candidates.
         candidate0 = self._rng.choice(population)
         candidate1 = self._rng.choice(population)
