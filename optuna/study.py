@@ -733,9 +733,9 @@ def create_study(
 
         sampler:
             A sampler object that implements background algorithm for value suggestion.
-            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used for a
-            single-objective study and :class:`~optuna.samplers.NSGAIISampler` for a
-            multi-objective study. See also :class:`~optuna.samplers`.
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used during
+            single-objective optimization and :class:`~optuna.samplers.NSGAIISampler` during
+            multi-objective optimization. See also :class:`~optuna.samplers`.
         pruner:
             A pruner object that decides early stopping of unpromising trials. If :obj:`None`
             is specified, :class:`~optuna.pruners.MedianPruner` is used as the default. See

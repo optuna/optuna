@@ -97,9 +97,7 @@ class NSGAIISampler(BaseSampler):
         self._rng = np.random.RandomState()
 
     def infer_relative_search_space(
-        self,
-        study: Study,
-        trial: FrozenTrial,
+        self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
         return {}
 
@@ -235,9 +233,7 @@ class NSGAIISampler(BaseSampler):
         return parent_generation, parent_population
 
     def _select_elite_population(
-        self,
-        study: Study,
-        population: List[FrozenTrial],
+        self, study: Study, population: List[FrozenTrial]
     ) -> List[FrozenTrial]:
         elite_population: List[FrozenTrial] = []
         population_per_rank = _fast_non_dominated_sort(population, study.directions)
@@ -253,9 +249,7 @@ class NSGAIISampler(BaseSampler):
         return elite_population
 
     def _select_parent(
-        self,
-        study: Study,
-        population: List[FrozenTrial],
+        self, study: Study, population: List[FrozenTrial]
     ) -> FrozenTrial:
         # TODO(ohta): Consider to allow users to specify the number of parent candidates.
         candidate0 = self._rng.choice(population)
@@ -309,9 +303,7 @@ def _fast_non_dominated_sort(
     return population_per_rank
 
 
-def _crowding_distance_sort(
-    population: List[FrozenTrial],
-) -> None:
+def _crowding_distance_sort(population: List[FrozenTrial]) -> None:
     manhattan_distances = defaultdict(float)
     for i in range(len(population[0].values)):
         population.sort(key=lambda x: cast(float, x.values[i]))
