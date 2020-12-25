@@ -460,9 +460,9 @@ class BoTorchSampler(BaseSampler):
                 values[trial_idx, obj_idx] = value
 
             if self._constraints_func is not None:
-                constraints = study._storage.get_trial_system_attrs(trial._trial_id)[
+                constraints = study._storage.get_trial_system_attrs(trial._trial_id).get(
                     "botorch:constraints"
-                ]
+                )
                 if constraints is not None:
                     n_constraints = len(constraints)
 
