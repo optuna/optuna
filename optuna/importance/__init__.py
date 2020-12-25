@@ -66,12 +66,21 @@ def get_param_importances(
             If :obj:`None`, all parameters that are present in all of the completed trials are
             assessed.
         target:
-            A function to specify the value to evaluate importances. If it is :obj:`None`, the
-            objective values are used.
+            A function to specify the value to evaluate importances.
+            If it is :obj:`None` and ``study`` is being used for single-objective optimization,
+            the objective values are used.
+
+            .. note::
+                Specify this argument if ``study`` is being used for multi-objective optimization.
 
     Returns:
         An :class:`collections.OrderedDict` where the keys are parameter names and the values are
         assessed importances.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
+            optimization.
     """
     if evaluator is None:
         evaluator = FanovaImportanceEvaluator()

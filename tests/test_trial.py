@@ -1319,3 +1319,25 @@ def test_suggest_with_multi_objectives() -> None:
         )
 
     study.optimize(objective, n_trials=10)
+
+
+def test_raise_error_for_report_with_multi_objectives() -> None:
+    study = optuna.create_study(directions=["maximize", "maximize"])
+
+    def objective(trial: Trial) -> Tuple[float, float]:
+        with pytest.raises(NotImplementedError):
+            trial.report(1.0, 0)
+        return 1.0, 1.0
+
+    study.optimize(objective, n_trials=1)
+
+
+def test_raise_error_for_should_prune_multi_objectives() -> None:
+    study = optuna.create_study(directions=["maximize", "maximize"])
+
+    def objective(trial: Trial) -> Tuple[float, float]:
+        with pytest.raises(NotImplementedError):
+            trial.should_prune()
+        return 1.0, 1.0
+
+    study.optimize(objective, n_trials=1)

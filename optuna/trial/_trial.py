@@ -559,7 +559,16 @@ class Trial(BaseTrial):
                 assume that ``step`` starts at zero. For example,
                 :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
                 ``n_warmup_steps`` as the warmup mechanism.
+
+        Raises:
+            :exc:`NotImplementedError`:
+                If trial is being used for multi-objective optimization.
         """
+
+        if len(self.study.directions) > 1:
+            raise NotImplementedError(
+                "Trial.report is not supported for multi-objective optimization."
+            )
 
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
@@ -601,7 +610,16 @@ class Trial(BaseTrial):
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
+
+        Raises:
+            :exc:`NotImplementedError`:
+                If trial is being used for multi-objective optimization.
         """
+
+        if len(self.study.directions) > 1:
+            raise NotImplementedError(
+                "Trial.should_prune is not supported for multi-objective optimization."
+            )
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)

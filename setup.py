@@ -69,6 +69,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "document": [
             "sphinx",
             "sphinx_rtd_theme",
+            "sphinx-copybutton",
             "sphinx-gallery",
             "sphinx-plotly-directive",
             "pillow",
