@@ -180,6 +180,8 @@ class PyCmaSampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> float:
 
+        self._raise_error_if_multi_objective(study)
+
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
             if len(complete_trials) >= self._n_startup_trials:
@@ -192,6 +194,8 @@ class PyCmaSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, float]:
+
+        self._raise_error_if_multi_objective(study)
 
         if len(search_space) == 0:
             return {}

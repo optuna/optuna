@@ -157,6 +157,8 @@ class SkoptSampler(BaseSampler):
         search_space: Dict[str, distributions.BaseDistribution],
     ) -> Dict[str, Any]:
 
+        self._raise_error_if_multi_objective(study)
+
         if len(search_space) == 0:
             return {}
 
@@ -175,6 +177,8 @@ class SkoptSampler(BaseSampler):
         param_name: str,
         param_distribution: distributions.BaseDistribution,
     ) -> Any:
+
+        self._raise_error_if_multi_objective(study)
 
         if self._warn_independent_sampling:
             complete_trials = self._get_trials(study)
