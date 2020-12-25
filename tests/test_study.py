@@ -94,7 +94,7 @@ def check_study(study: optuna.Study) -> None:
     for trial in study.trials:
         check_frozen_trial(trial)
 
-    assert len(study.directions) == 1
+    assert not study._is_multi_objective()
 
     complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
     if len(complete_trials) == 0:
@@ -1033,9 +1033,11 @@ def test_log_completed_trial_skip_storage_access() -> None:
 def test_create_study_with_multi_objectives() -> None:
     study = optuna.create_study(directions=["maximize"])
     assert study.direction == StudyDirection.MAXIMIZE
+    assert not study._is_multi_objective()
 
     study = optuna.create_study(directions=["maximize", "minimize"])
     assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+    assert study._is_multi_objective()
 
     with pytest.raises(ValueError):
         # Empty `direction` isn't allowed.
