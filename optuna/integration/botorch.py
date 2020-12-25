@@ -568,7 +568,7 @@ class BoTorchSampler(BaseSampler):
                 _trial = copy.copy(trial)
                 _trial.state = state
                 _trial.values = values
-                con = self._constraints_func(trial)
+                con = self._constraints_func(_trial)
                 if not isinstance(con, (tuple, list)):
                     warnings.warn(
                         f"Constraints should be a sequence of floats but got {constraints}."

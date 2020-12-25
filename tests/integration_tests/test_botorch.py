@@ -153,6 +153,8 @@ def test_botorch_constraints_func_none(n_objectives: int) -> None:
 
         nonlocal constraints_func_call_count
         constraints_func_call_count += 1
+        assert trial.state == optuna.trial.TrialState.COMPLETE
+        assert len(trial.values) == n_objectives
 
         return (xs - 0.5,)
 
