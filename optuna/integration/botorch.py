@@ -3,10 +3,9 @@ import math
 from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
+import warnings
 
 import numpy
 
@@ -356,7 +355,8 @@ class BoTorchSampler(BaseSampler):
             data, the objectives, the constraints, the search space bounds and return the next
             candidates. The arguments are of type ``torch.Tensor``. The return value must be a
             ``torch.Tensor``. However, if ``constraints_func`` is omitted, constraints will be
-            :obj:`None`.
+            :obj:`None`. For any constraints that failed to compute, the tensor will contain
+            NaN.
 
             If omitted, is determined automatically based on the number of objectives. If the
             number of objectives is one, Quasi MC-based batch Expected Improvement (qEI) is used.
@@ -376,11 +376,6 @@ class BoTorchSampler(BaseSampler):
 
             If omitted, no constraints will be passed to ``candidates_func`` nor taken into
             account during suggestion if ``candidates_func`` is omitted.
-
-            .. note::
-                ``constraints_func`` is called once per trial for each trial on each worker during
-                distributed optimization. Therefore, during distributed optimization, this
-                function should be deterministic to ensure that all workers hold the same values.
         n_startup_trials:
             Number of initial trials, that is the number of trials to resort to independent
             sampling.
@@ -412,7 +407,6 @@ class BoTorchSampler(BaseSampler):
         self._independent_sampler = independent_sampler or RandomSampler()
         self._n_startup_trials = n_startup_trials
 
-        self._trial_constraints: Dict[int, Tuple[float, ...]] = {}
         self._study_id: Optional[int] = None
         self._search_space = IntersectionSearchSpace()
 
@@ -430,23 +424,6 @@ class BoTorchSampler(BaseSampler):
 
         return self._search_space.calculate(study, ordered_dict=True)  # type: ignore
 
-    def _update_trial_constraints(self, trials: List[FrozenTrial]) -> None:
-        # Since trial constraints are computed on each worker, constraints should be computed
-        # deterministically.
-
-        assert self._constraints_func is not None
-
-        for trial in trials:
-            number = trial.number
-            if number not in self._trial_constraints:
-                constraints = self._constraints_func(trial)
-
-                if not isinstance(constraints, (tuple, list)):
-                    raise TypeError("Constraints must be a tuple or list.")
-
-                constraints = tuple(constraints)
-                self._trial_constraints[number] = constraints
-
     def sample_relative(
         self,
         study: Study,
@@ -455,12 +432,10 @@ class BoTorchSampler(BaseSampler):
     ) -> Dict[str, Any]:
         assert isinstance(search_space, OrderedDict)
 
-        trials = [t for t in study.get_trials(deepcopy=False) if t.state == TrialState.COMPLETE]
-        if self._constraints_func is not None:
-            self._update_trial_constraints(trials)
-
         if len(search_space) == 0:
             return {}
+
+        trials = [t for t in study.get_trials(deepcopy=False) if t.state == TrialState.COMPLETE]
 
         n_trials = len(trials)
         if n_trials < self._n_startup_trials:
@@ -471,11 +446,7 @@ class BoTorchSampler(BaseSampler):
         n_objectives = len(study.directions)
         values = numpy.empty((n_trials, n_objectives), dtype=numpy.float64)
         params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
-        if self._constraints_func is not None:
-            n_constraints = len(next(iter(self._trial_constraints.values())))
-            con = numpy.empty((n_trials, n_constraints), dtype=numpy.float64)
-        else:
-            con = None
+        con = None
         bounds = trans.bounds
 
         for trial_idx, trial in enumerate(trials):
@@ -488,8 +459,33 @@ class BoTorchSampler(BaseSampler):
                     value *= -1
                 values[trial_idx, obj_idx] = value
 
-            if con is not None:
-                con[trial_idx] = self._trial_constraints[trial_idx]
+            if self._constraints_func is not None:
+                constraints = study._storage.get_trial_system_attrs(trial._trial_id).get(
+                    "botorch:constraints"
+                )
+                if constraints is not None:
+                    n_constraints = len(constraints)
+
+                    if con is None:
+                        con = numpy.full((n_trials, n_constraints), numpy.nan, dtype=numpy.float64)
+                    elif n_constraints != con.shape[1]:
+                        raise RuntimeError(
+                            f"Expected {con.shape[1]} constraints but received {n_constraints}."
+                        )
+
+                    con[trial_idx] = constraints
+
+        if self._constraints_func is not None:
+            if con is None:
+                warnings.warn(
+                    "`constraints_func` was given but no call to it correctly computed "
+                    "constraints. Constraints passed to `candidates_func` will be `None`."
+                )
+            elif numpy.isnan(con).any():
+                warnings.warn(
+                    "`constraints_func` was given but some calls to it did not correctly compute "
+                    "constraints. Constraints passed to `candidates_func` will contain NaN."
+                )
 
         values = torch.from_numpy(values)
         params = torch.from_numpy(params)
@@ -555,3 +551,31 @@ class BoTorchSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
         self._independent_sampler.reseed_rng()
+
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+        if self._constraints_func is not None:
+            constraints = None
+
+            try:
+                con = self._constraints_func(trial)
+                if not isinstance(con, (tuple, list)):
+                    warnings.warn(
+                        f"Constraints should be a sequence of floats but got {constraints}."
+                    )
+                constraints = tuple(con)
+            except Exception:
+                raise
+            finally:
+                assert constraints is None or isinstance(constraints, tuple)
+
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    "botorch:constraints",
+                    constraints,
+                )

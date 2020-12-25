@@ -6,6 +6,7 @@ from typing import cast
 from typing import Dict
 from typing import List
 from typing import Mapping
+from typing import Optional
 from typing import Sequence
 from typing import Union
 
@@ -14,6 +15,7 @@ from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 GridValueType = Union[str, float, int, bool, None]
@@ -138,14 +140,6 @@ class GridSampler(BaseSampler):
             # One of all grids is randomly picked up in this case.
             target_grids = list(range(len(self._all_grids)))
 
-            study.stop()
-
-        elif len(target_grids) == 1:
-            # When there is only one target grid, optimization stops after the current trial
-            # finishes.
-
-            study.stop()
-
         # In distributed optimization, multiple workers may simultaneously pick up the same grid.
         # To make the conflict less frequent, the grid is chosen randomly.
         grid_id = random.choice(target_grids)
@@ -184,6 +178,22 @@ class GridSampler(BaseSampler):
             )
 
         return param_value
+
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+        target_grids = self._get_unvisited_grid_ids(study)
+
+        if len(target_grids) == 0:
+            study.stop()
+        elif len(target_grids) == 1:
+            grid_id = study._storage.get_trial_system_attrs(trial._trial_id)["grid_id"]
+            if grid_id == target_grids[0]:
+                study.stop()
 
     @staticmethod
     def _check_value(param_name: str, param_value: Any) -> None:

@@ -20,6 +20,7 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
+from optuna.trial._state import TrialState
 
 
 _logger = logging.get_logger(__name__)
@@ -775,6 +776,16 @@ class Trial(BaseTrial):
                 "Using these values: {}".format(name, old_distribution._asdict()),
                 RuntimeWarning,
             )
+
+    def _after_func(self, state: TrialState, values: Optional[Sequence[float]]) -> None:
+        # This method is called right before `Study._tell`.
+        storage = self.storage
+        trial_id = self._trial_id
+
+        trial = storage.get_trial(trial_id)
+
+        study = pruners._filter_study(self.study, trial)
+        self.study.sampler.after_trial(study, trial, state, values)
 
     @property
     def params(self) -> Dict[str, Any]:
