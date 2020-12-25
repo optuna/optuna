@@ -88,7 +88,6 @@ def test_fast_non_dominated_sort() -> None:
         _create_frozen_trial(2, [20]),
         _create_frozen_trial(3, [30]),
     ]
-    print(trials)
     population_per_rank = optuna.samplers._nsga2._fast_non_dominated_sort(trials, directions)
     assert [{t.number for t in population} for population in population_per_rank] == [
         {0},

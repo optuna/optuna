@@ -270,7 +270,6 @@ def _fast_non_dominated_sort(
     dominates_list = defaultdict(list)
 
     for p, q in itertools.combinations(population, 2):
-        print(p, q)
         if _dominates(p, q, directions):
             dominates_list[p.number].append(q.number)
             dominated_count[q.number] += 1
