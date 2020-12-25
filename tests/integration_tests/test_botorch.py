@@ -1,6 +1,7 @@
 from typing import cast
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 from unittest.mock import patch
 
 import pytest
@@ -166,8 +167,7 @@ def test_botorch_constraints_func_none(n_objectives: int) -> None:
     )
 
     assert len(study.trials) == n_trials
-    # Only constraints up to the previous trial is computed.
-    assert constraints_func_call_count == n_trials - 1
+    assert constraints_func_call_count == n_trials
 
 
 def test_botorch_constraints_func_invalid_type() -> None:
@@ -181,6 +181,197 @@ def test_botorch_constraints_func_invalid_type() -> None:
 
     with pytest.raises(TypeError):
         study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
+
+
+def test_botorch_constraints_func_invalid_inconsistent_n_constraints() -> None:
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        x0 = trial.params["x0"]
+        return [x0 - 0.5] * trial.number  # Number of constraints may not change.
+
+    sampler = BoTorchSampler(constraints_func=constraints_func, n_startup_trials=1)
+
+    study = optuna.create_study(direction="minimize", sampler=sampler)
+
+    with pytest.raises(RuntimeError):
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
+
+
+def test_botorch_constraints_func_raises() -> None:
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        if trial.number == 1:
+            raise RuntimeError
+        return (0.0,)
+
+    sampler = BoTorchSampler(constraints_func=constraints_func)
+
+    study = optuna.create_study(direction="minimize", sampler=sampler)
+
+    with pytest.raises(RuntimeError):
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
+
+    assert len(study.trials) == 2
+
+    for trial in study.trials:
+        sys_con = trial.system_attrs["botorch:constraints"]
+
+        expected_sys_con: Optional[Tuple[int]]
+
+        if trial.number == 0:
+            expected_sys_con = (0,)
+        elif trial.number == 1:
+            expected_sys_con = None
+        else:
+            assert False, "Should not reach."
+
+        assert sys_con == expected_sys_con
+
+
+def test_botorch_constraints_func_nan_warning() -> None:
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        if trial.number == 1:
+            raise RuntimeError
+        return (0.0,)
+
+    last_trial_number_candidates_func = None
+
+    def candidates_func(
+        train_x: torch.Tensor,
+        train_obj: torch.Tensor,
+        train_con: Optional[torch.Tensor],
+        bounds: torch.Tensor,
+    ) -> torch.Tensor:
+        trial_number = train_x.size(0)
+
+        assert train_con is not None
+
+        if trial_number > 0:
+            assert not train_con[0, :].isnan().any()
+        if trial_number > 1:
+            assert train_con[1, :].isnan().all()
+        if trial_number > 2:
+            assert not train_con[2, :].isnan().any()
+
+        nonlocal last_trial_number_candidates_func
+        last_trial_number_candidates_func = trial_number
+
+        return torch.rand(1)
+
+    sampler = BoTorchSampler(
+        candidates_func=candidates_func,
+        constraints_func=constraints_func,
+        n_startup_trials=1,
+    )
+
+    study = optuna.create_study(direction="minimize", sampler=sampler)
+
+    with pytest.raises(RuntimeError):
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=None)
+
+    assert len(study.trials) == 2
+
+    # Warns when `train_con` contains NaN.
+    with pytest.warns(UserWarning):
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=2)
+
+    assert len(study.trials) == 4
+
+    assert last_trial_number_candidates_func == study.trials[-1].number
+
+
+def test_botorch_constraints_func_none_warning() -> None:
+    candidates_func_call_count = 0
+
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        raise RuntimeError
+
+    def candidates_func(
+        train_x: torch.Tensor,
+        train_obj: torch.Tensor,
+        train_con: Optional[torch.Tensor],
+        bounds: torch.Tensor,
+    ) -> torch.Tensor:
+        # `train_con` should be `None` if `constraints_func` always fails.
+        assert train_con is None
+
+        nonlocal candidates_func_call_count
+        candidates_func_call_count += 1
+
+        return torch.rand(1)
+
+    sampler = BoTorchSampler(
+        candidates_func=candidates_func,
+        constraints_func=constraints_func,
+        n_startup_trials=1,
+    )
+
+    study = optuna.create_study(direction="minimize", sampler=sampler)
+
+    with pytest.raises(RuntimeError):
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=None)
+
+    assert len(study.trials) == 1
+
+    # Warns when `train_con` becomes `None`.
+    with pytest.warns(UserWarning), pytest.raises(RuntimeError):
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=1)
+
+    assert len(study.trials) == 2
+
+    assert candidates_func_call_count == 1
+
+
+def test_botorch_constraints_func_late() -> None:
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        return (0,)
+
+    last_trial_number_candidates_func = None
+
+    def candidates_func(
+        train_x: torch.Tensor,
+        train_obj: torch.Tensor,
+        train_con: Optional[torch.Tensor],
+        bounds: torch.Tensor,
+    ) -> torch.Tensor:
+        trial_number = train_x.size(0)
+
+        if trial_number < 3:
+            assert train_con is None
+        if trial_number == 3:
+            assert train_con is not None
+            assert train_con[:2, :].isnan().all()
+            assert not train_con[2, :].isnan().any()
+
+        nonlocal last_trial_number_candidates_func
+        last_trial_number_candidates_func = trial_number
+
+        return torch.rand(1)
+
+    sampler = BoTorchSampler(
+        candidates_func=candidates_func,
+        n_startup_trials=1,
+    )
+
+    study = optuna.create_study(direction="minimize", sampler=sampler)
+    study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=2)
+
+    assert len(study.trials) == 2
+
+    sampler = BoTorchSampler(
+        candidates_func=candidates_func,
+        constraints_func=constraints_func,
+        n_startup_trials=1,
+    )
+
+    study.sampler = sampler
+
+    # Warns when `train_con` contains NaN. Should not raise but will with NaN for previous trials
+    # that were not computed with contraints.
+    with pytest.warns(UserWarning):
+        study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=2)
+
+    assert len(study.trials) == 4
+
+    assert last_trial_number_candidates_func == study.trials[-1].number
 
 
 def test_botorch_n_startup_trials() -> None:

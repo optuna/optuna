@@ -21,9 +21,11 @@ from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import PartialFixedSampler
 from optuna.study import Study
+from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
+from optuna.trial import TrialState
 
 
 parametrize_sampler = pytest.mark.parametrize(
@@ -52,6 +54,8 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
+        lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
+        lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
     ],
 )
 def test_raise_error_for_samplers_during_multi_objectives(
@@ -460,3 +464,136 @@ def test_multi_objective_sample_independent(
             value /= distribution.q
             round_value = np.round(value)
             np.testing.assert_almost_equal(round_value, value)
+
+
+def test_after_trial() -> None:
+    n_calls = 0
+    n_trials = 3
+
+    class SamplerAfterTrial(DeterministicRelativeSampler):
+        def after_trial(
+            self,
+            study: Study,
+            trial: FrozenTrial,
+            state: TrialState,
+            values: Optional[Sequence[float]],
+        ) -> None:
+            assert len(study.trials) - 1 == trial.number
+            assert trial.state == TrialState.RUNNING
+            assert trial.values is None
+            assert state == TrialState.COMPLETE
+            assert values is not None
+            assert len(values) == 2
+            nonlocal n_calls
+            n_calls += 1
+
+    sampler = SamplerAfterTrial({}, {})
+    study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
+
+    study.optimize(
+        lambda t: [t.suggest_uniform("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3
+    )
+
+    assert n_calls == n_trials
+
+
+def test_after_trial_pruning() -> None:
+    n_calls = 0
+    n_trials = 3
+
+    class SamplerAfterTrial(DeterministicRelativeSampler):
+        def after_trial(
+            self,
+            study: Study,
+            trial: FrozenTrial,
+            state: TrialState,
+            values: Optional[Sequence[float]],
+        ) -> None:
+            assert len(study.trials) - 1 == trial.number
+            assert trial.state == TrialState.RUNNING
+            assert trial.values is None
+            assert state == TrialState.PRUNED
+            assert values is None
+            nonlocal n_calls
+            n_calls += 1
+
+    sampler = SamplerAfterTrial({}, {})
+    study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
+
+    def objective(trial: Trial) -> Any:
+        raise optuna.TrialPruned
+
+    study.optimize(objective, n_trials=n_trials)
+
+    assert n_calls == n_trials
+
+
+def test_after_trial_failing() -> None:
+    n_calls = 0
+    n_trials = 3
+
+    class SamplerAfterTrial(DeterministicRelativeSampler):
+        def after_trial(
+            self,
+            study: Study,
+            trial: FrozenTrial,
+            state: TrialState,
+            values: Optional[Sequence[float]],
+        ) -> None:
+            assert len(study.trials) - 1 == trial.number
+            assert trial.state == TrialState.RUNNING
+            assert trial.values is None
+            assert state == TrialState.FAIL
+            assert values is None
+            nonlocal n_calls
+            n_calls += 1
+
+    sampler = SamplerAfterTrial({}, {})
+    study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
+
+    def objective(trial: Trial) -> Any:
+        raise NotImplementedError  # Arbitrary error for testing purpose.
+
+    with pytest.raises(NotImplementedError):
+        study.optimize(objective, n_trials=n_trials)
+
+    # Called once after the first failing trial before returning from optimize.
+    assert n_calls == 1
+
+
+def test_after_trial_failing_in_after_trial() -> None:
+    n_calls = 0
+    n_trials = 3
+
+    class SamplerAfterTrialAlwaysFail(DeterministicRelativeSampler):
+        def after_trial(
+            self,
+            study: Study,
+            trial: FrozenTrial,
+            state: TrialState,
+            values: Optional[Sequence[float]],
+        ) -> None:
+            nonlocal n_calls
+            n_calls += 1
+            raise NotImplementedError  # Arbitrary error for testing purpose.
+
+    sampler = SamplerAfterTrialAlwaysFail({}, {})
+    study = optuna.create_study(sampler=sampler)
+
+    with pytest.raises(NotImplementedError):
+        study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=n_trials)
+
+    assert len(study.trials) == 1
+    assert n_calls == 1
+
+    sampler = SamplerAfterTrialAlwaysFail({}, {})
+    study = optuna.create_study(sampler=sampler)
+
+    # Not affected by `catch`.
+    with pytest.raises(NotImplementedError):
+        study.optimize(
+            lambda t: t.suggest_int("x", 0, 10), n_trials=n_trials, catch=(NotImplementedError,)
+        )
+
+    assert len(study.trials) == 1
+    assert n_calls == 2

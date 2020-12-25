@@ -20,6 +20,7 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
+from optuna.trial._state import TrialState
 
 
 _logger = logging.get_logger(__name__)
@@ -559,7 +560,16 @@ class Trial(BaseTrial):
                 assume that ``step`` starts at zero. For example,
                 :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
                 ``n_warmup_steps`` as the warmup mechanism.
+
+        Raises:
+            :exc:`NotImplementedError`:
+                If trial is being used for multi-objective optimization.
         """
+
+        if len(self.study.directions) > 1:
+            raise NotImplementedError(
+                "Trial.report is not supported for multi-objective optimization."
+            )
 
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
@@ -601,7 +611,16 @@ class Trial(BaseTrial):
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
+
+        Raises:
+            :exc:`NotImplementedError`:
+                If trial is being used for multi-objective optimization.
         """
+
+        if len(self.study.directions) > 1:
+            raise NotImplementedError(
+                "Trial.should_prune is not supported for multi-objective optimization."
+            )
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
@@ -757,6 +776,16 @@ class Trial(BaseTrial):
                 "Using these values: {}".format(name, old_distribution._asdict()),
                 RuntimeWarning,
             )
+
+    def _after_func(self, state: TrialState, values: Optional[Sequence[float]]) -> None:
+        # This method is called right before `Study._tell`.
+        storage = self.storage
+        trial_id = self._trial_id
+
+        trial = storage.get_trial(trial_id)
+
+        study = pruners._filter_study(self.study, trial)
+        self.study.sampler.after_trial(study, trial, state, values)
 
     @property
     def params(self) -> Dict[str, Any]:

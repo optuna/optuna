@@ -4,7 +4,7 @@
 Easy Parallelization
 ====================
 
-It's straightforward to parallelize ``optuna.optimize()``.
+It's straightforward to parallelize :func:`optuna.study.Study.optimize`.
 
 If you want to manually execute Optuna optimization:
 
