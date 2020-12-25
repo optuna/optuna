@@ -37,6 +37,13 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
         lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+        optuna.samplers.NSGAIISampler,
+    ],
+)
+parametrize_multi_objective_sampler = pytest.mark.parametrize(
+    "multi_objective_sampler_class",
+    [
+        optuna.samplers.NSGAIISampler,
     ],
 )
 
@@ -411,6 +418,52 @@ def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> Non
     study.optimize(objective, n_trials=1)
     trial_params = study.trials[-1].params
     assert trial_params["y"] == fixed_params["y"]
+
+
+@parametrize_multi_objective_sampler
+@pytest.mark.parametrize(
+    "distribution",
+    [
+        UniformDistribution(-1.0, 1.0),
+        UniformDistribution(0.0, 1.0),
+        UniformDistribution(-1.0, 0.0),
+        LogUniformDistribution(1e-7, 1.0),
+        DiscreteUniformDistribution(-10, 10, 0.1),
+        DiscreteUniformDistribution(-10.2, 10.2, 0.1),
+        IntUniformDistribution(-10, 10),
+        IntUniformDistribution(0, 10),
+        IntUniformDistribution(-10, 0),
+        IntUniformDistribution(-10, 10, 2),
+        IntUniformDistribution(0, 10, 2),
+        IntUniformDistribution(-10, 0, 2),
+        CategoricalDistribution((1, 2, 3)),
+        CategoricalDistribution(("a", "b", "c")),
+        CategoricalDistribution((1, "a")),
+    ],
+)
+def test_multi_objective_sample_independent(
+    multi_objective_sampler_class: Callable[[], BaseSampler], distribution: UniformDistribution
+) -> None:
+    study = optuna.study.create_study(
+        directions=["minimize", "maximize"], sampler=multi_objective_sampler_class()
+    )
+    for i in range(100):
+        value = study.sampler.sample_independent(
+            study, _create_new_trial(study), "x", distribution
+        )
+        assert distribution._contains(distribution.to_internal_repr(value))
+
+        if not isinstance(distribution, CategoricalDistribution):
+            # Please see https://github.com/optuna/optuna/pull/393 why this assertion is needed.
+            assert not isinstance(value, np.floating)
+
+        if isinstance(distribution, DiscreteUniformDistribution):
+            # Check the value is a multiple of `distribution.q` which is
+            # the quantization interval of the distribution.
+            value -= distribution.low
+            value /= distribution.q
+            round_value = np.round(value)
+            np.testing.assert_almost_equal(round_value, value)
 
 
 def test_after_trial() -> None:
