@@ -106,7 +106,7 @@ def plot_param_importances(
 
     _imports.check()
 
-    if target is None and len(study.directions) > 1:
+    if target is None and study._is_multi_objective():
         raise ValueError(
             "If the `study` is being used for multi-objective optimization, "
             "please specify the `target`."
