@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import copy
 import math
 from typing import Any
 from typing import Callable
@@ -563,6 +564,10 @@ class BoTorchSampler(BaseSampler):
             constraints = None
 
             try:
+                # Trial does not have state and values since they are not persisted in the sotrage.
+                _trial = copy.copy(trial)
+                _trial.state = state
+                _trial.values = values
                 con = self._constraints_func(trial)
                 if not isinstance(con, (tuple, list)):
                     warnings.warn(
