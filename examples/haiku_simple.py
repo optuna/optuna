@@ -24,10 +24,10 @@ Batch = Mapping[str, np.ndarray]
 
 
 def load_dataset(
-        split: str,
-        *,
-        is_training: bool,
-        batch_size: int,
+    split: str,
+    *,
+    is_training: bool,
+    batch_size: int,
 ) -> Generator[Batch, None, None]:
     """Loads the dataset as a generator of batches."""
     ds = tfds.load("mnist:3.*.*", split=split).cache().repeat()
@@ -51,13 +51,17 @@ def objective(trial):
     # Define feed-forward function by using sampled parameters
     def net_fn(batch: Batch) -> jnp.ndarray:
         """Standard MLP network."""
-        x = batch["image"].astype(jnp.float32) / 255.
-        mlp = hk.Sequential([
-            hk.Flatten(),
-            hk.Linear(n_units_l1), jax.nn.relu,
-            hk.Linear(n_units_l2), jax.nn.relu,
-            hk.Linear(10),
-        ])
+        x = batch["image"].astype(jnp.float32) / 255.0
+        mlp = hk.Sequential(
+            [
+                hk.Flatten(),
+                hk.Linear(n_units_l1),
+                jax.nn.relu,
+                hk.Linear(n_units_l2),
+                jax.nn.relu,
+                hk.Linear(10),
+            ]
+        )
         return mlp(x)
 
     # Make the network and optimiser.
@@ -84,9 +88,9 @@ def objective(trial):
 
     @jax.jit
     def update(
-            params: hk.Params,
-            opt_state: OptState,
-            batch: Batch,
+        params: hk.Params,
+        opt_state: OptState,
+        batch: Batch,
     ) -> Tuple[hk.Params, OptState]:
         """Learning rule (stochastic gradient descent)."""
         grads = jax.grad(loss)(params, batch)
@@ -99,29 +103,31 @@ def objective(trial):
     # For more, see: https://doi.org/10.1137/0330046
     @jax.jit
     def ema_update(
-            avg_params: hk.Params,
-            new_params: hk.Params,
-            epsilon: float = 0.001,
+        avg_params: hk.Params,
+        new_params: hk.Params,
+        epsilon: float = 0.001,
     ) -> hk.Params:
-        return jax.tree_multimap(lambda p1, p2: (1 - epsilon) * p1 + epsilon * p2,
-                                 avg_params, new_params)
+        return jax.tree_multimap(
+            lambda p1, p2: (1 - epsilon) * p1 + epsilon * p2, avg_params, new_params
+        )
 
     # Initialize network and optimiser; note we draw an input to get shapes.
     params = avg_params = net.init(jax.random.PRNGKey(42), next(train))
     opt_state = opt.init(params)
 
-    best_test_accuracy = 0.
+    best_test_accuracy = 0.0
     # Train/eval loop.
     for step in range(10001):
         if step % 1000 == 0:
             # Periodically evaluate classification accuracy on train & test sets.
             train_accuracy = accuracy(avg_params, next(train_eval))
             test_accuracy = accuracy(avg_params, next(test_eval))
-            train_accuracy, test_accuracy = jax.device_get(
-                (train_accuracy, test_accuracy))
+            train_accuracy, test_accuracy = jax.device_get((train_accuracy, test_accuracy))
 
-            print(f"[Step {step}] Train / Test accuracy: "
-                  f"{train_accuracy:.3f} / {test_accuracy:.3f}.")
+            print(
+                f"[Step {step}] Train / Test accuracy: "
+                f"{train_accuracy:.3f} / {test_accuracy:.3f}."
+            )
 
             best_test_accuracy = max(best_test_accuracy, test_accuracy)
 
