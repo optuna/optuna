@@ -21,20 +21,20 @@ def test_keras_pruning_callback(interval: int, epochs: int) -> None:
             np.zeros((16,), np.int32),
             batch_size=1,
             epochs=epochs,
-            callbacks=[KerasPruningCallback(trial, "accuracy", interval=interval)],
+            callbacks=[KerasPruningCallback(trial, "accuracy")],
             verbose=0,
         )
 
         return 1.0
 
-    study = optuna.create_study(pruner=DeterministicPruner(True))
+    study = optuna.create_study(pruner=DeterministicPruner(True, interval))
     study.optimize(objective, n_trials=1)
     if interval <= epochs:
         assert study.trials[0].state == optuna.trial.TrialState.PRUNED
     else:
         assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
 
-    study = optuna.create_study(pruner=DeterministicPruner(False))
+    study = optuna.create_study(pruner=DeterministicPruner(False, interval))
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0

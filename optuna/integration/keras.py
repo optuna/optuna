@@ -37,23 +37,19 @@ class KerasPruningCallback(Callback):
             An evaluation metric for pruning, e.g., ``val_loss`` and
             ``val_accuracy``. Please refer to `keras.Callback reference
             <https://keras.io/callbacks/#callback>`_ for further details.
-        interval:
-            Check if trial should be pruned every n-th epoch. By default ``interval=1`` and
-            pruning is performed after every epoch. Increase ``interval`` to run several
-            epochs faster before applying pruning.
     """
 
-    def __init__(self, trial: optuna.trial.Trial, monitor: str, interval: int = 1) -> None:
+    def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
         super(KerasPruningCallback, self).__init__()
 
         _imports.check()
 
         self._trial = trial
         self._monitor = monitor
-        self._interval = interval
 
     def on_epoch_end(self, epoch: int, logs: Optional[Dict[str, float]] = None) -> None:
-        if (epoch + 1) % self._interval != 0:
+        trial = self._trial.storage.get_trial(self._trial._trial_id)
+        if not self._trial.study.pruner.is_target_step(epoch, trial):
             return
 
         logs = logs or {}

@@ -173,16 +173,11 @@ class PercentilePruner(BasePruner):
             return False
 
         step = trial.last_step
+
         if step is None:
             return False
 
-        n_warmup_steps = self._n_warmup_steps
-        if step < n_warmup_steps:
-            return False
-
-        if not _is_first_in_interval_step(
-            step, trial.intermediate_values.keys(), n_warmup_steps, self._interval_steps
-        ):
+        if not self.is_target_step(step, trial):
             return False
 
         direction = study.direction
@@ -199,3 +194,16 @@ class PercentilePruner(BasePruner):
         if direction == StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p
+
+    def is_target_step(self, step: int, trial: "optuna.trial.FrozenTrial") -> bool:
+
+        n_warmup_steps = self._n_warmup_steps
+        if step < n_warmup_steps:
+            return False
+
+        if not _is_first_in_interval_step(
+            step, trial.intermediate_values.keys(), n_warmup_steps, self._interval_steps
+        ):
+            return False
+
+        return (step - self._n_warmup_steps) % self._interval_steps == 0
