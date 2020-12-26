@@ -11,12 +11,12 @@ from optuna._transform import _SearchSpaceTransform
 from optuna.importance._base import _get_distributions
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
     from optuna.study import Study
-    from optuna.trial import FrozenTrial
 
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
@@ -79,7 +79,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         study: "Study",
         params: Optional[List[str]] = None,
         *,
-        target: Optional[Callable[["FrozenTrial"], float]] = None,
+        target: Optional[Callable[[FrozenTrial], float]] = None,
     ) -> Dict[str, float]:
         if target is None and study._is_multi_objective():
             raise ValueError(

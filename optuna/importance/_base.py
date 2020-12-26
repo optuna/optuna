@@ -14,12 +14,12 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
 if TYPE_CHECKING:
     from optuna.study import Study
-    from optuna.trial import FrozenTrial
 
 
 class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
@@ -31,7 +31,7 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
         study: "Study",
         params: Optional[List[str]] = None,
         *,
-        target: Optional[Callable[["FrozenTrial"], float]] = None,
+        target: Optional[Callable[[FrozenTrial], float]] = None,
     ) -> Dict[str, float]:
         """Evaluate parameter importances based on completed trials in the given study.
 
