@@ -8,7 +8,10 @@ jax nad haiku. We optimize the number of linear layers and learning rate of the 
 The example code is based on https://github.com/deepmind/dm-haiku/blob/master/examples/mnist.py
 """
 
-from typing import Any, Generator, Mapping, Tuple
+from typing import Any
+from typing import Generator
+from typing import Mapping
+from typing import Tuple
 
 import haiku as hk
 import jax
@@ -18,6 +21,7 @@ import optax
 import tensorflow_datasets as tfds
 
 import optuna
+
 
 OptState = Any
 Batch = Mapping[str, np.ndarray]
