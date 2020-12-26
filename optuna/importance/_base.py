@@ -5,6 +5,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import TYPE_CHECKING
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
@@ -13,10 +14,12 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-import optuna.samplers  # NOQA
-from optuna.study import Study
-from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
@@ -25,10 +28,10 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def evaluate(
         self,
-        study: Study,
+        study: "Study",
         params: Optional[List[str]] = None,
         *,
-        target: Optional[Callable[[FrozenTrial], float]] = None,
+        target: Optional[Callable[["FrozenTrial"], float]] = None,
     ) -> Dict[str, float]:
         """Evaluate parameter importances based on completed trials in the given study.
 
@@ -96,7 +99,7 @@ def _get_info_distribution(distribution: BaseDistribution) -> Dict[str, Any]:
     return info_distribution
 
 
-def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
+def _get_distributions(study: "Study", params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
     _check_evaluate_args(study, params)
     info_distributions = None
     for trial in reversed(study._storage.get_all_trials(study._study_id, deepcopy=False)):
@@ -163,7 +166,7 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
     return distributions
 
 
-def _check_evaluate_args(study: Study, params: Optional[List[str]]) -> None:
+def _check_evaluate_args(study: "Study", params: Optional[List[str]]) -> None:
     completed_trials = list(filter(lambda t: t.state == TrialState.COMPLETE, study.trials))
     if len(completed_trials) == 0:
         raise ValueError("Cannot evaluate parameter importances without completed trials.")

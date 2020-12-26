@@ -2,12 +2,16 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import TYPE_CHECKING
 
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator
-from optuna.study import Study
-from optuna.trial import FrozenTrial
+
+
+if TYPE_CHECKING:
+    from optuna.study import Study
+    from optuna.trial import FrozenTrial
 
 
 __all__ = [
@@ -19,11 +23,11 @@ __all__ = [
 
 
 def get_param_importances(
-    study: Study,
+    study: "Study",
     *,
     evaluator: Optional[BaseImportanceEvaluator] = None,
     params: Optional[List[str]] = None,
-    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target: Optional[Callable[["FrozenTrial"], float]] = None,
 ) -> Dict[str, float]:
     """Evaluate parameter importances based on completed trials in the given study.
 
