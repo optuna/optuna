@@ -13,6 +13,7 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+import optuna.samplers  # NOQA
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
