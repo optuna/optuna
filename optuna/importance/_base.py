@@ -1,7 +1,7 @@
 import abc
 from collections import OrderedDict
-from typing import Callable
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -13,7 +13,6 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.samplers import intersection_search_space
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -95,6 +94,7 @@ def _get_info_distribution(distribution: BaseDistribution) -> Dict[str, Any]:
 
     return info_distribution
 
+
 def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
     _check_evaluate_args(study, params)
     info_distributions = None
@@ -148,10 +148,12 @@ def _get_distributions(study: Study, params: Optional[List[str]]) -> Dict[str, B
 
     distributions = {}
     for param, info_distribution in info_distributions.items():
-        if info_distribution["is_categorical"] == True:
+        if info_distribution["is_categorical"] is True:
             distributions[param] = info_distribution["distribution"]
         else:
-            distributions[param] = UniformDistribution(info_distribution["low"], info_distribution["high"])
+            distributions[param] = UniformDistribution(
+                info_distribution["low"], info_distribution["high"]
+            )
 
     assert distributions is not None  # Required to pass mypy.
     distributions = OrderedDict(
