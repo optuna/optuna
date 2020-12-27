@@ -56,7 +56,7 @@ def test_tfkeras_pruning_callback_observation_isnan() -> None:
 
 
 def test_tfkeras_pruning_callback_monitor_is_invalid() -> None:
-    
+
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)
     callback = TFKerasPruningCallback(trial, "InvalidMonitor")
