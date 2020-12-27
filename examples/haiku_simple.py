@@ -26,26 +26,38 @@ import optuna
 OptState = Any
 Batch = Mapping[str, np.ndarray]
 
+BATCH_SIZE = 128
+TRAIN_STEPS = 1000
+N_TRAIN_BATCHES = 3000
+N_VALID_BATCHES = 1000
+
 
 def load_dataset(
     split: str,
     *,
     is_training: bool,
     batch_size: int,
+    sample_size: int,
 ) -> Generator[Batch, None, None]:
-    """Loads the dataset as a generator of batches."""
-    ds = tfds.load("mnist:3.*.*", split=split).cache().repeat()
+    """Loads the dataset, which contains only 1000 samples, as a generator of batches."""
+    ds = tfds.load("mnist:3.*.*", split=split).take(sample_size).cache().repeat()
     if is_training:
-        ds = ds.shuffle(10 * batch_size, seed=0)
+        ds = ds.shuffle(sample_size, seed=0)
     ds = ds.batch(batch_size)
     return iter(tfds.as_numpy(ds))
 
 
 def objective(trial):
     # Make datasets.
-    train = load_dataset("train", is_training=True, batch_size=200)
-    train_eval = load_dataset("train", is_training=False, batch_size=10000)
-    test_eval = load_dataset("test", is_training=False, batch_size=10000)
+    train = load_dataset(
+        "train", is_training=True, batch_size=BATCH_SIZE, sample_size=N_TRAIN_BATCHES
+    )
+    train_eval = load_dataset(
+        "train", is_training=False, batch_size=BATCH_SIZE, sample_size=N_TRAIN_BATCHES
+    )
+    test_eval = load_dataset(
+        "test", is_training=False, batch_size=BATCH_SIZE, sample_size=N_VALID_BATCHES
+    )
 
     # Draw hyper-parameters
     n_units_l1 = trial.suggest_int("n_units_l1", 4, 128)
@@ -102,30 +114,17 @@ def objective(trial):
         new_params = optax.apply_updates(params, updates)
         return new_params, opt_state
 
-    # We maintain avg_params, the exponential moving average of the "live" params.
-    # avg_params is used only for evaluation.
-    # For more, see: https://doi.org/10.1137/0330046
-    @jax.jit
-    def ema_update(
-        avg_params: hk.Params,
-        new_params: hk.Params,
-        epsilon: float = 0.001,
-    ) -> hk.Params:
-        return jax.tree_multimap(
-            lambda p1, p2: (1 - epsilon) * p1 + epsilon * p2, avg_params, new_params
-        )
-
     # Initialize network and optimiser; note we draw an input to get shapes.
-    params = avg_params = net.init(jax.random.PRNGKey(42), next(train))
+    params = net.init(jax.random.PRNGKey(42), next(train))
     opt_state = opt.init(params)
 
     best_test_accuracy = 0.0
     # Train/eval loop.
-    for step in range(10001):
-        if step % 1000 == 0:
+    for step in range(TRAIN_STEPS + 1):
+        if step % 100 == 0:
             # Periodically evaluate classification accuracy on train & test sets.
-            train_accuracy = accuracy(avg_params, next(train_eval))
-            test_accuracy = accuracy(avg_params, next(test_eval))
+            train_accuracy = accuracy(params, next(train_eval))
+            test_accuracy = accuracy(params, next(test_eval))
             train_accuracy, test_accuracy = jax.device_get((train_accuracy, test_accuracy))
 
             print(
@@ -142,7 +141,6 @@ def objective(trial):
 
         # Do SGD on a batch of training examples.
         params, opt_state = update(params, opt_state, next(train))
-        avg_params = ema_update(avg_params, params)
 
     return best_test_accuracy
 
@@ -152,7 +150,7 @@ if __name__ == "__main__":
         direction="maximize",
         pruner=optuna.pruners.MedianPruner(n_startup_trials=2, interval_steps=1000),
     )
-    study.optimize(objective, n_trials=10, timeout=600)
+    study.optimize(objective, n_trials=100, timeout=600)
 
     print("Number of finished trials: {}".format(len(study.trials)))
 
