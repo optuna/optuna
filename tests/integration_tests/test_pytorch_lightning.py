@@ -2,6 +2,7 @@ from typing import Dict
 from typing import List
 from typing import Union
 
+import pytest
 import pytorch_lightning as pl
 import torch
 from torch import nn
@@ -9,6 +10,7 @@ import torch.nn.functional as F
 
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
+from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
