@@ -28,8 +28,8 @@ Batch = Mapping[str, np.ndarray]
 
 BATCH_SIZE = 128
 TRAIN_STEPS = 1000
-N_TRAIN_BATCHES = 3000
-N_VALID_BATCHES = 1000
+N_TRAIN_SAMPLES = 3000
+N_VALID_SAMPLES = 1000
 
 
 def load_dataset(
@@ -50,13 +50,13 @@ def load_dataset(
 def objective(trial):
     # Make datasets.
     train = load_dataset(
-        "train", is_training=True, batch_size=BATCH_SIZE, sample_size=N_TRAIN_BATCHES
+        "train", is_training=True, batch_size=BATCH_SIZE, sample_size=N_TRAIN_SAMPLES
     )
     train_eval = load_dataset(
-        "train", is_training=False, batch_size=BATCH_SIZE, sample_size=N_TRAIN_BATCHES
+        "train", is_training=False, batch_size=BATCH_SIZE, sample_size=N_TRAIN_SAMPLES
     )
     test_eval = load_dataset(
-        "test", is_training=False, batch_size=BATCH_SIZE, sample_size=N_VALID_BATCHES
+        "test", is_training=False, batch_size=BATCH_SIZE, sample_size=N_VALID_SAMPLES
     )
 
     # Draw hyper-parameters
