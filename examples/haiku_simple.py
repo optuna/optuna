@@ -39,7 +39,7 @@ def load_dataset(
     batch_size: int,
     sample_size: int,
 ) -> Generator[Batch, None, None]:
-    """Loads the dataset, which contains only 1000 samples, as a generator of batches."""
+    """Loads the sub-sampled dataset as a generator of batches."""
     ds = tfds.load("mnist:3.*.*", split=split).take(sample_size).cache().repeat()
     if is_training:
         ds = ds.shuffle(sample_size, seed=0)
