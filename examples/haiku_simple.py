@@ -43,7 +43,7 @@ def load_dataset(
 
 def objective(trial):
     # Make datasets.
-    train = load_dataset("train", is_training=True, batch_size=1000)
+    train = load_dataset("train", is_training=True, batch_size=200)
     train_eval = load_dataset("train", is_training=False, batch_size=10000)
     test_eval = load_dataset("test", is_training=False, batch_size=10000)
 
