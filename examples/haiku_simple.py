@@ -148,7 +148,10 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner(n_startup_trials=2, interval_steps=1000))
+    study = optuna.create_study(
+        direction="maximize",
+        pruner=optuna.pruners.MedianPruner(n_startup_trials=2, interval_steps=1000),
+    )
     study.optimize(objective, n_trials=10, timeout=600)
 
     print("Number of finished trials: {}".format(len(study.trials)))
