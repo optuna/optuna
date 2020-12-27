@@ -39,7 +39,6 @@ def get_install_requires() -> List[str]:
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
-        "dm-haiku @ git+https://github.com/deepmind/dm-haiku",
     ]
     # NOTE (crcrpar): Some of the above libraries require Cython to be installed.
     # I hope they will obviate it in the future releases.
@@ -112,7 +111,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fastai",
             "jax",
             "optax",
-            "dm-haiku",
+            "dm-haiku @ git+https://github.com/deepmind/dm-haiku",
         ],
         "experimental": ["redis"],
         "testing": [
