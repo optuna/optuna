@@ -87,3 +87,13 @@ def test_pytorch_lightning_pruning_callback() -> None:
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+
+
+def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    trial = create_running_trial(study, 1.0)
+    callback = PyTorchLightningPruningCallback(trial, "InvalidMonitor")
+
+    with pytest.warns(UserWarning):
+        callback.on_epoch_end(0, {"loss": 1.0})

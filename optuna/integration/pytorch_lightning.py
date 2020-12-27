@@ -1,3 +1,5 @@
+import warnings
+
 import optuna
 
 
@@ -45,6 +47,11 @@ class PyTorchLightningPruningCallback(EarlyStopping):
         epoch = pl_module.current_epoch
         current_score = logs.get(self.monitor)
         if current_score is None:
+            message = (
+                "The metric '{}' is not in the evaluation logs for pruning. "
+                "Please make sure you set the correct metric name.".format(self._monitor)
+            )
+            warnings.warn(message)
             return
         self._trial.report(current_score, step=epoch)
         if self._trial.should_prune():
