@@ -129,9 +129,14 @@ def objective(trial):
             train_accuracy, test_accuracy = jax.device_get((train_accuracy, test_accuracy))
 
             print(
-                f"[Step {step}] Train / Test accuracy: "
+                f"[Step {step:5d}] Train / Test accuracy: "
                 f"{train_accuracy:.3f} / {test_accuracy:.3f}."
             )
+
+            # Handle pruning based on the intermediate value.
+            trial.report(test_accuracy, step)
+            if trial.should_prune():
+                raise optuna.exceptions.TrialPruned()
 
             best_test_accuracy = max(best_test_accuracy, test_accuracy)
 
@@ -143,7 +148,7 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    study = optuna.create_study(direction="maximize")
+    study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner(n_startup_trials=2, interval_steps=1000))
     study.optimize(objective, n_trials=10, timeout=600)
 
     print("Number of finished trials: {}".format(len(study.trials)))
