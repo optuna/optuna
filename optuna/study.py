@@ -381,6 +381,58 @@ class Study(BaseStudy):
             show_progress_bar=show_progress_bar,
         )
 
+    def ask(self) -> trial_module.Trial:
+
+        # Sync storage once at the beginning of the objective evaluation.
+        self._storage.read_trials_from_remote_storage(self._study_id)
+
+        trial_id = self._pop_waiting_trial_id()
+        if trial_id is None:
+            trial_id = self._storage.create_new_trial(self._study_id)
+        return trial_module.Trial(self, trial_id)
+
+    def tell(
+        self,
+        trial: trial_module.Trial,
+        values: Optional[Union[float, List[float]]] = None,
+        state: TrialState = TrialState.COMPLETE,
+    ) -> None:
+        self._validate_tell(trial, values, state)
+
+        # TODO(hvy): Do trial post-processing with `after_trial`.
+
+        if values is not None:
+            # TODO(hvy): Validate values.
+
+            if not isinstance(values, Sequence):
+                values = [values]
+
+            self._storage.set_trial_values(trial._trial_id, values)
+
+        self._storage.set_trial_state(trial._trial_id, state)
+
+    def _validate_tell(
+        self,
+        trial: trial_module.Trial,
+        values: Optional[Union[float, List[float]]] = None,
+        state: TrialState = TrialState.COMPLETE,
+    ) -> None:
+        if state == TrialState.COMPLETE:
+            if values is None:
+                raise ValueError(
+                    "No values were told. Values are required when state is TrialState.COMPLETE."
+                )
+            state = TrialState.COMPLETE
+        elif state == TrialState.PRUNED:
+            pass
+        elif state == TrialState.FAIL:
+            if values is not None:
+                raise ValueError(
+                    "Values were told. Values cannot be stored when state is TrialState.FAIL."
+                )
+        else:
+            raise ValueError("Cannot tell with state {state}.")
+
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
 
@@ -653,22 +705,14 @@ class Study(BaseStudy):
         return None
 
     def _ask(self) -> trial_module.Trial:
-        # Sync storage once at the beginning of the objective evaluation.
-        self._storage.read_trials_from_remote_storage(self._study_id)
-
-        trial_id = self._pop_waiting_trial_id()
-        if trial_id is None:
-            trial_id = self._storage.create_new_trial(self._study_id)
-        return trial_module.Trial(self, trial_id)
+        # TODO(hvy): Remove this method since `Study.ask` has been implemented.
+        return self.ask()
 
     def _tell(
         self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
     ) -> None:
-        if state == TrialState.COMPLETE:
-            assert values is not None
-        if values is not None:
-            self._storage.set_trial_values(trial._trial_id, values)
-        self._storage.set_trial_state(trial._trial_id, state)
+        # TODO(hvy): Remove this method since `Study.tell` has been implemented.
+        self.tell(trial, values, state)
 
     def _log_completed_trial(self, trial: trial_module.Trial, values: Sequence[float]) -> None:
 

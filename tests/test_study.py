@@ -10,6 +10,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 from unittest.mock import Mock  # NOQA
 from unittest.mock import patch
 import uuid
@@ -25,6 +26,7 @@ from optuna import _optimize
 from optuna import create_trial
 from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
+from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -1105,3 +1107,25 @@ def test_wrong_n_objectives() -> None:
 
     for trial in study.trials:
         assert trial.state is TrialState.FAIL
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        1.0,  # "value" single-objective optimization interface.
+        [1.0],  # "values" multi-objective optimization interface.
+    ],
+)
+def test_ask_and_tell(values: Union[float, List[float]]) -> None:
+    study = optuna.create_study()
+    trial = study.ask()
+
+    assert isinstance(trial, Trial)
+
+    with pytest.raises(ValueError):  # Values missing.
+        study.tell(trial)
+
+    study.tell(trial, values)
+
+    with pytest.raises(RuntimeError):  # Trial already finished.
+        study.tell(trial, values)
