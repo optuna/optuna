@@ -120,7 +120,7 @@ def objective(trial):
 
     best_test_accuracy = 0.0
     # Train/eval loop.
-    for step in range(TRAIN_STEPS + 1):
+    for step in range(1, TRAIN_STEPS + 1):
         if step % 100 == 0:
             # Periodically evaluate classification accuracy on train & test sets.
             train_accuracy = accuracy(params, next(train_eval))
