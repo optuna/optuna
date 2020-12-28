@@ -98,4 +98,4 @@ def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
     callback = PyTorchLightningPruningCallback(trial, "InvalidMonitor")
 
     with pytest.warns(UserWarning):
-        callback.on_epoch_end(0, {"loss": 1.0})
+        callback.on_validation_end(0, {"loss": 1.0})
