@@ -49,7 +49,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
         if current_score is None:
             message = (
                 "The metric '{}' is not in the evaluation logs for pruning. "
-                "Please make sure you set the correct metric name.".format(self._monitor)
+                "Please make sure you set the correct metric name.".format(self.monitor)
             )
             warnings.warn(message)
             return
