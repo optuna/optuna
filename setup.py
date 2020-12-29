@@ -111,7 +111,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fastai",
             "jax",
             "optax",
-            "dm-haiku @ git+https://github.com/deepmind/dm-haiku",
+            "dm-haiku",
         ],
         "experimental": ["redis"],
         "testing": [
