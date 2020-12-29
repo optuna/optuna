@@ -43,16 +43,22 @@ Coding style is checked with [flake8](http://flake8.pycqa.org) and [isort](https
 and additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked with [mypy](http://mypy-lang.org/).
 
-You can check the format, coding style, and type hint at the same time just by executing a script `checks.sh`.
-If your environment misses some dependencies such as black, flake8, isort or mypy, 
-you will be asked to install them.
+You can check the format, coding style, and type hint via [tox](https://tox.readthedocs.io/en/latest/) like below.
+
+```
+$ pip install tox
+$ tox -e flake8 -e black -e blackdoc -e isort -e mypy
+```
+
+If you catch format errors, you can automatically fix them by auto-formatters.
 
 ```bash
-# Without any fixes.
-bash checks.sh
+# Install auto-formatters.
+$ pip install .[checking]
 
-# With fixes on the format by `black` and the import order by `isort`.
-bash checks.sh -u
+$ black .     # Fix the format by black.
+$ blackdoc .  # Fix the format of docstring by blackdoc.
+$ isort .     # Fix the import order by isort.
 ```
 
 ### Documentation
