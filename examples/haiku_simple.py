@@ -32,7 +32,7 @@ N_TRAIN_SAMPLES = 3000
 N_VALID_SAMPLES = 1000
 
 # disable tf's warning messages
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 
 def load_dataset(
@@ -107,9 +107,9 @@ def objective(trial):
 
     @jax.jit
     def update(
-            params: hk.Params,
-            opt_state: OptState,
-            batch: Batch,
+        params: hk.Params,
+        opt_state: OptState,
+        batch: Batch,
     ) -> Tuple[hk.Params, OptState]:
         """Learning rule (stochastic gradient descent)."""
         grads = jax.grad(loss)(params, batch)
