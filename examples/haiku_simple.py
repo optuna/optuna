@@ -8,6 +8,7 @@ jax nad haiku. We optimize the number of linear layers and learning rate of the 
 The example code is based on https://github.com/deepmind/dm-haiku/blob/master/examples/mnist.py
 """
 
+import os
 from typing import Any
 from typing import Generator
 from typing import Mapping
@@ -22,7 +23,6 @@ import tensorflow_datasets as tfds
 
 import optuna
 
-
 OptState = Any
 Batch = Mapping[str, np.ndarray]
 
@@ -30,6 +30,9 @@ BATCH_SIZE = 128
 TRAIN_STEPS = 1000
 N_TRAIN_SAMPLES = 3000
 N_VALID_SAMPLES = 1000
+
+# disable tf's warning messages
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 
 
 def load_dataset(
@@ -104,9 +107,9 @@ def objective(trial):
 
     @jax.jit
     def update(
-        params: hk.Params,
-        opt_state: OptState,
-        batch: Batch,
+            params: hk.Params,
+            opt_state: OptState,
+            batch: Batch,
     ) -> Tuple[hk.Params, OptState]:
         """Learning rule (stochastic gradient descent)."""
         grads = jax.grad(loss)(params, batch)
