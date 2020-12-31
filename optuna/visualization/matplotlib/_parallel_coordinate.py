@@ -18,6 +18,7 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 from optuna.visualization.matplotlib._utils import _is_categorical
 from optuna.visualization.matplotlib._utils import _is_log_scale
 
+
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import LineCollection
@@ -174,28 +175,6 @@ def _get_parallel_coordinate_plot(
 
         var_names.append(p_name if len(p_name) < 20 else "{}...".format(p_name[:17]))
         param_values.append(values)
-
-        """
-        values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
-        try:
-            tuple(map(float, values))
-        except (TypeError, ValueError):
-            vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
-            values = [vocab[v] for v in values]
-            cat_param_names.append(p_name)
-            vocab_item_sorted = sorted(vocab.items(), key=lambda x: x[1])
-            cat_param_values.append([v[0] for v in vocab_item_sorted])
-            cat_param_ticks.append([v[1] for v in vocab_item_sorted])
-
-        p_min = min(values)
-        p_max = max(values)
-        p_w = p_max - p_min
-        for i, v in enumerate(values):
-            dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
-
-        var_names.append(p_name if len(p_name) < 20 else "{}...".format(p_name[:17]))
-        param_values.append(values)
-        """
 
     # Draw multiple line plots and axes.
     # Ref: https://stackoverflow.com/a/50029441

@@ -1,6 +1,5 @@
 from collections import defaultdict
 import math
-import numpy as np
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -8,6 +7,8 @@ from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
+
+import numpy as np
 
 from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
@@ -137,18 +138,17 @@ def _get_parallel_coordinate_plot(
                 values.append(t.params[p_name])
 
         if _is_log_scale(trials, p_name):
-            min_value = math.log10(min(values))
-            max_value = math.log10(max(values))
+            values = [math.log10(v) for v in values]
+            min_value = min(values)
+            max_value = max(values)
             padding = (max_value - min_value) * padding_ratio
             dim = {
                 "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
-                "values": [math.log10(x) for x in values],
+                "values": tuple(values),
                 "range": (min_value, max_value),
-                "tickvals": np.arange(min_value,max_value + padding,padding).tolist(),
+                "tickvals": np.arange(min_value, max_value + padding, padding).tolist(),
             }
-            dim["ticktext"] = ['{:.3g}'.format(math.pow(10, x)) for x in dim["tickvals"]]
-#            min_value = math.pow(10, math.log10(min_value) - padding)
-#            max_value = math.pow(10, math.log10(max_value) + padding)
+            dim["ticktext"] = ["{:.3g}".format(math.pow(10, x)) for x in dim["tickvals"]]
 
         elif _is_categorical(trials, p_name):
             vocab: DefaultDict[str, int] = defaultdict(lambda: len(vocab))
@@ -158,39 +158,16 @@ def _get_parallel_coordinate_plot(
                 "values": tuple(values),
                 "range": (min(values), max(values)),
                 "tickvals": list(range(len(vocab))),
-                "ticktext": list(sorted(vocab.items(), key=lambda x: x[1]))
+                "ticktext": list(sorted(vocab.items(), key=lambda x: x[1])),
             }
         else:
             dim = {
                 "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
                 "values": tuple(values),
                 "range": (min(values), max(values)),
-           }
+            }
 
         dims.append(dim)
-
-        """
-        values = []
-        for t in trials:
-            if p_name in t.params:
-                values.append(t.params[p_name])
-        is_categorical = False
-        try:
-            tuple(map(float, values))
-        except (TypeError, ValueError):
-            vocab: DefaultDict[str, int] = defaultdict(lambda: len(vocab))
-            values = [vocab[v] for v in values]
-            is_categorical = True
-        dim = {
-            "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
-            "values": tuple(values),
-            "range": (min(values), max(values)),
-        }
-        if is_categorical:
-            dim["tickvals"] = list(range(len(vocab)))
-            dim["ticktext"] = list(sorted(vocab.items(), key=lambda x: x[1]))
-        dims.append(dim)
-        """
 
     traces = [
         go.Parcoords(
