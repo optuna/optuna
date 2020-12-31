@@ -1,4 +1,6 @@
 from collections import defaultdict
+import math
+import numpy as np
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -13,6 +15,8 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
+from optuna.visualization._utils import _is_categorical
+from optuna.visualization._utils import _is_log_scale
 
 
 if _imports.is_successful():
@@ -125,7 +129,47 @@ def _get_parallel_coordinate_plot(
             "range": (min([target(t) for t in trials]), max([target(t) for t in trials])),
         }
     ]
+    padding_ratio = 0.125
     for p_name in sorted_params:
+        values = []
+        for t in trials:
+            if p_name in t.params:
+                values.append(t.params[p_name])
+
+        if _is_log_scale(trials, p_name):
+            min_value = math.log10(min(values))
+            max_value = math.log10(max(values))
+            padding = (max_value - min_value) * padding_ratio
+            dim = {
+                "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+                "values": [math.log10(x) for x in values],
+                "range": (min_value, max_value),
+                "tickvals": np.arange(min_value,max_value + padding,padding).tolist(),
+            }
+            dim["ticktext"] = ['{:.3g}'.format(math.pow(10, x)) for x in dim["tickvals"]]
+#            min_value = math.pow(10, math.log10(min_value) - padding)
+#            max_value = math.pow(10, math.log10(max_value) + padding)
+
+        elif _is_categorical(trials, p_name):
+            vocab: DefaultDict[str, int] = defaultdict(lambda: len(vocab))
+            values = [vocab[v] for v in values]
+            dim = {
+                "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+                "values": tuple(values),
+                "range": (min(values), max(values)),
+                "tickvals": list(range(len(vocab))),
+                "ticktext": list(sorted(vocab.items(), key=lambda x: x[1]))
+            }
+        else:
+            dim = {
+                "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+                "values": tuple(values),
+                "range": (min(values), max(values)),
+           }
+
+        dims.append(dim)
+
+        """
         values = []
         for t in trials:
             if p_name in t.params:
@@ -146,6 +190,7 @@ def _get_parallel_coordinate_plot(
             dim["tickvals"] = list(range(len(vocab)))
             dim["ticktext"] = list(sorted(vocab.items(), key=lambda x: x[1]))
         dims.append(dim)
+        """
 
     traces = [
         go.Parcoords(
