@@ -8,8 +8,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-import numpy as np
-
 from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -130,7 +128,6 @@ def _get_parallel_coordinate_plot(
             "range": (min([target(t) for t in trials]), max([target(t) for t in trials])),
         }
     ]
-    padding_ratio = 0.125
     for p_name in sorted_params:
         values = []
         for t in trials:
@@ -141,15 +138,18 @@ def _get_parallel_coordinate_plot(
             values = [math.log10(v) for v in values]
             min_value = min(values)
             max_value = max(values)
-            padding = (max_value - min_value) * padding_ratio
+            tickvals = list(range(math.ceil(min_value), math.ceil(max_value)))
+            if min_value not in tickvals:
+                tickvals = [min_value] + tickvals
+            if max_value not in tickvals:
+                tickvals = tickvals + [max_value]
             dim = {
                 "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
                 "values": tuple(values),
                 "range": (min_value, max_value),
-                "tickvals": np.arange(min_value, max_value + padding, padding).tolist(),
+                "tickvals": tickvals,
+                "ticktext": ["{:.3g}".format(math.pow(10, x)) for x in tickvals],
             }
-            dim["ticktext"] = ["{:.3g}".format(math.pow(10, x)) for x in dim["tickvals"]]
-
         elif _is_categorical(trials, p_name):
             vocab: DefaultDict[str, int] = defaultdict(lambda: len(vocab))
             values = [vocab[v] for v in values]
