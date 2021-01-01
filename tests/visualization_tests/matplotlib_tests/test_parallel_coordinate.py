@@ -1,6 +1,7 @@
 import pytest
 
 from optuna.distributions import CategoricalDistribution
+from optuna.distributions import LogUniformDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
@@ -82,4 +83,38 @@ def test_plot_parallel_coordinate() -> None:
         )
     )
     figure = plot_parallel_coordinate(study_categorical_params)
+    assert figure.has_data()
+
+    study_log_params = create_study()
+    study_log_params.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1e-6, "param_b": 10},
+            distributions={
+                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_b": LogUniformDistribution(1, 1000),
+            },
+        )
+    )
+    study_log_params.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 2e-5, "param_b": 200},
+            distributions={
+                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_b": LogUniformDistribution(1, 1000),
+            },
+        )
+    )
+    study_log_params.add_trial(
+        create_trial(
+            value=0.1,
+            params={"param_a": 1e-4, "param_b": 30},
+            distributions={
+                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_b": LogUniformDistribution(1, 1000),
+            },
+        )
+    )
+    figure = plot_parallel_coordinate(study_log_params)
     assert figure.has_data()
