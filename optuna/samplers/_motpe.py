@@ -12,7 +12,6 @@ import numpy as np
 import optuna
 from optuna import distributions
 from optuna.distributions import BaseDistribution
-from optuna.samplers import _motpe_hypervolume as _hypervolume
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
@@ -492,7 +491,7 @@ class MOTPESampler(TPESampler):
 
     @staticmethod
     def _compute_hypervolume(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
-        return _hypervolume.WFG().compute(solution_set, reference_point)
+        return optuna.multi_objective._hypervolume.WFG().compute(solution_set, reference_point)
 
     def _solve_hssp(
         self,
