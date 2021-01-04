@@ -77,7 +77,7 @@ def test_optuna_search(enable_pruning: bool, fit_params: str) -> None:
 def test_optuna_search_properties() -> None:
 
     X, y = make_blobs(n_samples=10)
-    est = LogisticRegression(max_iter=5, tol=1e-03)
+    est = LogisticRegression(tol=1e-03)
     param_dist = {"C": distributions.LogUniformDistribution(1e-04, 1e03)}
 
     optuna_search = integration.OptunaSearchCV(
