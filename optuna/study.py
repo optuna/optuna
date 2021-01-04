@@ -414,15 +414,14 @@ class Study(BaseStudy):
     def _validate_tell(
         self,
         trial: trial_module.Trial,
-        values: Optional[Union[float, List[float]]] = None,
-        state: TrialState = TrialState.COMPLETE,
+        values: Optional[Union[float, List[float]]],
+        state: TrialState,
     ) -> None:
         if state == TrialState.COMPLETE:
             if values is None:
                 raise ValueError(
                     "No values were told. Values are required when state is TrialState.COMPLETE."
                 )
-            state = TrialState.COMPLETE
         elif state == TrialState.PRUNED:
             pass
         elif state == TrialState.FAIL:
