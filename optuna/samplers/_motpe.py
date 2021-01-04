@@ -12,7 +12,6 @@ import numpy as np
 import optuna
 from optuna import distributions
 from optuna.distributions import BaseDistribution
-from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
