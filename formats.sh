@@ -1,6 +1,8 @@
 #!/bin/bash
-# As described in `CONTRIBUTING.md`, this script checks Optuna's source codes for formatting,
-# coding style and type hints. This script automatic formats by `black` and `isort`.
+# As described in `CONTRIBUTING.md`, this script checks and formats Optuna's source codes by
+# `black`, `blackdoc`, and `isort`. If you pass `-n` as an option, this script checks codes
+# without updating codebase.
+
 
 res_pip_list=$(pip freeze)
 missing_dependencies=()
