@@ -107,9 +107,7 @@ class MOTPESampler(TPESampler):
             sampler = optuna.samplers.MOTPESampler(
                 n_startup_trials=n_startup_trials, n_ehvi_candidates=24, seed=seed
             )
-            study = optuna.create_study(
-                directions = ["minimize"] * num_variables, sampler=sampler
-            )
+            study = optuna.create_study(directions=["minimize"] * num_variables, sampler=sampler)
             study.optimize(objective, n_trials=250)
     """
 
