@@ -7,11 +7,13 @@ from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import intersection_search_space
 from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers._tpe.sampler import TPESampler
+from optuna.samplers._cnsga2 import CNSGAIISampler
 
 
 __all__ = [
     "BaseSampler",
     "CmaEsSampler",
+    "CNSGAIISampler",
     "GridSampler",
     "NSGAIISampler",
     "IntersectionSearchSpace",
