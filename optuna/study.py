@@ -397,7 +397,7 @@ class Study(BaseStudy):
         values: Optional[Union[float, List[float]]] = None,
         state: TrialState = TrialState.COMPLETE,
     ) -> None:
-        self._validate_tell(trial, values, state)
+        _check_tell_args(trial, values, state)
 
         # TODO(hvy): Do trial post-processing with `after_trial`.
 
@@ -410,27 +410,6 @@ class Study(BaseStudy):
             self._storage.set_trial_values(trial._trial_id, values)
 
         self._storage.set_trial_state(trial._trial_id, state)
-
-    def _validate_tell(
-        self,
-        trial: trial_module.Trial,
-        values: Optional[Union[float, List[float]]],
-        state: TrialState,
-    ) -> None:
-        if state == TrialState.COMPLETE:
-            if values is None:
-                raise ValueError(
-                    "No values were told. Values are required when state is TrialState.COMPLETE."
-                )
-        elif state == TrialState.PRUNED:
-            pass
-        elif state == TrialState.FAIL:
-            if values is not None:
-                raise ValueError(
-                    "Values were told. Values cannot be stored when state is TrialState.FAIL."
-                )
-        else:
-            raise ValueError("Cannot tell with state {state}.")
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
@@ -1034,3 +1013,24 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
+
+
+def _check_tell_args(
+    trial: trial_module.Trial,
+    values: Optional[Union[float, List[float]]],
+    state: TrialState,
+) -> None:
+    if state == TrialState.COMPLETE:
+        if values is None:
+            raise ValueError(
+                "No values were told. Values are required when state is TrialState.COMPLETE."
+            )
+    elif state == TrialState.PRUNED:
+        pass
+    elif state == TrialState.FAIL:
+        if values is not None:
+            raise ValueError(
+                "Values were told. Values cannot be stored when state is TrialState.FAIL."
+            )
+    else:
+        raise ValueError(f"Cannot tell with state {state}.")
