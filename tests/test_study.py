@@ -1151,17 +1151,6 @@ def test_tell() -> None:
         study.tell(study.ask(), state=TrialState.WAITING)
 
 
-def test_tell_complete_without_values() -> None:
-    study = optuna.create_study()
-
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), state=TrialState.COMPLETE)
-
-    # Default state is `TrialState.COMPLETE` for which values are required.
-    with pytest.raises(ValueError):
-        study.tell(study.ask())
-
-
 def test_tell_trial_variations() -> None:
     study = optuna.create_study()
 
@@ -1192,6 +1181,10 @@ def test_tell_values() -> None:
 
     study.tell(study.ask(), [1.0])
 
+    # Check invalid values, e.g. ones that cannot be cast to float.
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), "a")  # type: ignore
+
     # Check number of values.
     with pytest.raises(ValueError):
         study.tell(study.ask(), [])
@@ -1210,3 +1203,11 @@ def test_tell_values() -> None:
 
     with pytest.raises(ValueError):
         study.tell(study.ask(), [1.0, 2.0, 3.0])
+
+    # Missing values for completions.
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), state=TrialState.COMPLETE)
+
+    # Default state is `TrialState.COMPLETE` for which values are required.
+    with pytest.raises(ValueError):
+        study.tell(study.ask())

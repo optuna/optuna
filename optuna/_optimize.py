@@ -212,7 +212,7 @@ def _run_trial(
         func_err_fail_exc_info = sys.exc_info()
     else:
         values, values_conversion_failure_message = _check_and_convert_to_values(
-            len(study.directions), value_or_values, trial
+            len(study.directions), value_or_values, trial.number
         )
         if values_conversion_failure_message is not None:
             state = TrialState.FAIL
@@ -250,14 +250,14 @@ def _run_trial(
 
 
 def _check_and_convert_to_values(
-    n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
+    n_objectives: int, original_value: Union[float, Sequence[float]], trial_number: int
 ) -> Tuple[Optional[List[float]], Optional[str]]:
     if isinstance(original_value, Sequence):
         if n_objectives != len(original_value):
             return (
                 None,
                 (
-                    f"Trial {trial.number} failed, because the number of the values "
+                    f"Trial {trial_number} failed, because the number of the values "
                     f"{len(original_value)} is did not match the number of the objectives "
                     f"{n_objectives}."
                 ),
@@ -269,7 +269,7 @@ def _check_and_convert_to_values(
 
     _checked_values = []
     for v in _original_values:
-        checked_v, failure_message = _check_single_value(v, trial)
+        checked_v, failure_message = _check_single_value(v, trial_number)
         if failure_message is not None:
             # TODO(Imamura): Construct error message taking into account all values and do not
             #  early return
@@ -284,7 +284,7 @@ def _check_and_convert_to_values(
 
 
 def _check_single_value(
-    original_value: float, trial: trial_module.Trial
+    original_value: float, trial_number: int
 ) -> Tuple[Optional[float], Optional[str]]:
     value = None
     failure_message = None
@@ -296,15 +296,14 @@ def _check_single_value(
         TypeError,
     ):
         failure_message = (
-            f"Trial {trial.number} failed, because the returned value from the "
-            f"objective function cannot be cast to float. Returned value is: "
-            f"{repr(original_value)}"
+            f"Trial {trial_number} failed, because the value {repr(original_value)} could not be "
+            "cast to float."
         )
 
     if value is not None and math.isnan(value):
         value = None
         failure_message = (
-            f"Trial {trial.number} failed, because the objective function returned "
+            f"Trial {trial_number} failed, because the objective function returned "
             f"{original_value}."
         )
 

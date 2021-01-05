@@ -20,6 +20,7 @@ from optuna._dataframe import _trials_dataframe
 from optuna._dataframe import pd
 from optuna._experimental import experimental
 from optuna._multi_objective import _get_pareto_front_trials
+from optuna._optimize import _check_and_convert_to_values
 from optuna._optimize import _optimize
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
@@ -520,6 +521,7 @@ class Study(BaseStudy):
             raise ValueError(f"Cannot tell with state {state}.")
 
         if isinstance(trial, trial_module.Trial):
+            trial_number = trial.number
             trial_id = trial._trial_id
         elif isinstance(trial, int):
             trial_number = trial
@@ -536,20 +538,11 @@ class Study(BaseStudy):
             assert False, "Should not reach."
 
         if values is not None:
-            # TODO(hvy): Validate values.
-
-            if not isinstance(values, Sequence):
-                values = [values]
-
-            if len(values) != len(self.directions):
-                raise ValueError(
-                    "Trial {} could not be told because the number of values {} did not match "
-                    "the number of objectives {}.".format(
-                        trial.number if isinstance(trial, trial_module.Trial) else trial,
-                        len(values),
-                        len(self.directions),
-                    )
-                )
+            values, values_conversion_failure_message = _check_and_convert_to_values(
+                len(self.directions), values, trial_number
+            )
+            if values_conversion_failure_message is not None:
+                raise ValueError(values_conversion_failure_message)
 
         assert trial_id is not None
 
