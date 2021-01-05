@@ -105,7 +105,9 @@ def test_median_pruner_n_warmup_steps() -> None:
 @pytest.mark.parametrize(
     "n_warmup_steps,interval_steps,report_steps,expected_prune_steps",
     [
-        (1, 2, 1, [1, 3]),
+        (0, 1, 1, [0, 1, 2, 3, 4, 5]),
+        (1, 1, 1, [1, 2, 3, 4, 5]),
+        (1, 2, 1, [1, 3, 5]),
         (0, 3, 10, list(range(29))),
         (2, 3, 10, list(range(10, 29))),
         (0, 10, 3, [0, 1, 2, 12, 13, 14, 21, 22, 23]),
@@ -120,16 +122,18 @@ def test_median_pruner_interval_steps(
     study = optuna.study.create_study()
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    n_steps = max(expected_prune_steps)
-    base_index = 0
-    for i in range(base_index, base_index + n_steps):
-        trial.report(base_index, i)
+    last_step = max(expected_prune_steps) + 1
+
+    for i in range(last_step):
+        trial.report(0, i)
     study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    for i in range(base_index, base_index + n_steps):
-        if (i - base_index) % report_steps == 0:
+
+    pruned = []
+    for i in range(last_step):
+        if i % report_steps == 0:
             trial.report(2, i)
-        assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id)) == (
-            i >= n_warmup_steps and i in expected_prune_steps
-        )
+        if pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id)):
+            pruned.append(i)
+    assert pruned == expected_prune_steps
