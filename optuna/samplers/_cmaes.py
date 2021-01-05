@@ -71,8 +71,9 @@ class CmaEsSampler(BaseSampler):
       size. In Proceedings of the IEEE Congress on Evolutionary Computation (CEC 2005),
       pages 1769–1776. IEEE Press, 2005.
       <http://www.cmap.polytechnique.fr/~nikolaus.hansen/cec2005ipopcmaes.pdf>`_
-    - `Raymond Ros, Nikolaus Hansen. A Simple Modification in CMA-ES Achieving Linear
-      Time and Space Complexity. Raport instytutowy, INRIA, 2008.
+    - `Raymond Ros, Nikolaus Hansen. A Simple Modification in CMA-ES Achieving Linear Time and
+      Space Complexity. 10th International Conference on Parallel Problem Solving From Nature,
+      Sep 2008, Dortmund, Germany. inria-00287367.
       <https://hal.inria.fr/inria-00287367/document>`_
 
     .. seealso::
@@ -154,7 +155,7 @@ class CmaEsSampler(BaseSampler):
         use_separable_cma:
             If this is :obj:`True`, the covariance matrix is constrained to be diagonal.
             Due to reduce the model complexity, the learning rate for the covariance matrix
-            is reduced. Consequently, this algorithm outperforms CMA-ES on separable functions.
+            is increased. Consequently, this algorithm outperforms CMA-ES on separable functions.
 
             .. note::
                 Added in v2.3.0 as an experimental feature. The interface may change in newer
@@ -178,7 +179,7 @@ class CmaEsSampler(BaseSampler):
         consider_pruned_trials: bool = False,
         restart_strategy: Optional[str] = None,
         inc_popsize: int = 2,
-        use_separable_cma: bool = False
+        use_separable_cma: bool = False,
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
