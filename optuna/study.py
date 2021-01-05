@@ -382,6 +382,31 @@ class Study(BaseStudy):
         )
 
     def ask(self) -> trial_module.Trial:
+        """Create a new trial from which hyperparameters can be suggested.
+
+        This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
+        controlling the lifetime of a trial outside the scope of ``func``. Each call to this
+        method should be followed by a call to :func:`~optuna.study.Study.tell` to finish the
+        created trial.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+
+                study = optuna.create_study()
+
+                trial = study.ask()
+
+                x = trial.suggest_float("x", -1, 1)
+
+                study.tell(trial, x ** 2)
+
+        Returns:
+            A :class:`~optuna.trial.Trial`.
+        """
 
         # Sync storage once at the beginning of the objective evaluation.
         self._storage.read_trials_from_remote_storage(self._study_id)
@@ -394,9 +419,88 @@ class Study(BaseStudy):
     def tell(
         self,
         trial: Union[trial_module.Trial, int],
-        values: Optional[Union[float, List[float]]] = None,
+        values: Optional[Union[float, Sequence[float]]] = None,
         state: TrialState = TrialState.COMPLETE,
     ) -> None:
+        """Finish a trial created with :func:`~optuna.study.Study.ask`.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+                from optuna.trial import TrialState
+
+
+                def f(x):
+                    return (x - 2) ** 2
+
+
+                def df(x):
+                    return 2 * x - 4
+
+
+                study = optuna.create_study()
+
+                n_trials = 30
+
+                for _ in range(n_trials):
+                    trial = study.ask()
+
+                    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
+
+                    # Iterative gradient descent objective function.
+                    x = 3  # Initial value.
+                    for step in range(128):
+                        y = f(x)
+
+                        trial.report(y, step=step)
+
+                        if trial.should_prune():
+                            # Finish the trial with the pruned state.
+                            study.tell(trial, state=TrialState.PRUNED)
+                            break
+
+                        gy = df(x)
+                        x -= gy * lr
+                    else:
+                        # Finish the trial with the final value after all iterations.
+                        study.tell(trial, y)
+
+        Args:
+            trial:
+                A :class:`~optuna.trial.Trial` object or a trial number.
+            values:
+                Optional objective value or a sequence of such values in case the study is used
+                for multi-objective optimization. Argument must be provided if ``state`` is
+                :class:`~optuna.trial.TrialState.COMPLETE` and should be :obj:`None` if ``state``
+                is :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED`.
+            state:
+                State to be reported. Must be :class:`~optuna.trial.TrialState.COMPLETE`,
+                :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED`.
+
+        Raises:
+            TypeError:
+                If ``trial`` is not a :class:`~optuna.trial.Trial` or an :obj:`int`.
+            ValueError:
+                If any of the following.
+                ``values`` is a sequence but its length does not match the number of objectives
+                for its associated study.
+                ``state`` is :class:`~optuna.trial.TrialState.COMPLETE` but
+                ``values`` is :obj:`None`.
+                ``state`` is :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED` but
+                ``values`` is not :obj:`None`.
+                ``state`` is not
+                :class:`~optuna.trial.TrialState.COMPLETE`,
+                :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED`.
+                ``trial`` is a trial number but no
+                trial exists with that number.
+        """
+
         if not isinstance(trial, (trial_module.Trial, int)):
             raise TypeError("Trial must be a trial object or trial number.")
 
