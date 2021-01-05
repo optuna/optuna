@@ -597,3 +597,27 @@ def test_after_trial_failing_in_after_trial() -> None:
 
     assert len(study.trials) == 1
     assert n_calls == 2
+
+
+def test_after_trial_with_study_tell() -> None:
+    n_calls = 0
+
+    class SamplerAfterTrial(DeterministicRelativeSampler):
+        def after_trial(
+            self,
+            study: Study,
+            trial: FrozenTrial,
+            state: TrialState,
+            values: Optional[Sequence[float]],
+        ) -> None:
+            nonlocal n_calls
+            n_calls += 1
+
+    sampler = SamplerAfterTrial({}, {})
+    study = optuna.create_study(sampler=sampler)
+
+    assert n_calls == 0
+
+    study.tell(study.ask(), 1.0)
+
+    assert n_calls == 1

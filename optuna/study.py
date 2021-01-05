@@ -532,11 +532,8 @@ class Study(BaseStudy):
                     f"Cannot tell for trial with number {trial_number} since it has not been "
                     "created."
                 ) from e
-
         else:
             assert False, "Should not reach."
-
-        # TODO(hvy): Do trial post-processing with `after_trial`.
 
         if values is not None:
             # TODO(hvy): Validate values.
@@ -553,9 +550,21 @@ class Study(BaseStudy):
                         len(self.directions),
                     )
                 )
-            self._storage.set_trial_values(trial_id, values)
 
-        self._storage.set_trial_state(trial_id, state)
+        assert trial_id is not None
+
+        try:
+            # Sampler defined trial post-processing.
+            trial = self._storage.get_trial(trial_id)
+            study = pruners._filter_study(self, trial)
+            self.sampler.after_trial(study, trial, state, values)
+        except Exception:
+            raise
+        finally:
+            if values is not None:
+                self._storage.set_trial_values(trial_id, values)
+
+            self._storage.set_trial_state(trial_id, state)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.

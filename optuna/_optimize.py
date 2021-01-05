@@ -185,7 +185,7 @@ def _run_trial(
     func: "optuna.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.Trial:
-    trial = study._ask()
+    trial = study.ask()
 
     state: Optional[TrialState] = None
     values: Optional[List[float]] = None
@@ -219,13 +219,12 @@ def _run_trial(
         else:
             state = TrialState.COMPLETE
 
+    # `Study.tell` may raise during trial post-processing.
     try:
-        trial._after_func(state, values)
+        study.tell(trial, values=values, state=state)
     except Exception:
         raise
     finally:
-        study._tell(trial, state, values)
-
         if state == TrialState.COMPLETE:
             study._log_completed_trial(trial, cast(List[float], values))
         elif state == TrialState.PRUNED:
