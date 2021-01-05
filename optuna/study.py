@@ -393,11 +393,44 @@ class Study(BaseStudy):
 
     def tell(
         self,
-        trial: trial_module.Trial,
+        trial: Union[trial_module.Trial, int],
         values: Optional[Union[float, List[float]]] = None,
         state: TrialState = TrialState.COMPLETE,
     ) -> None:
-        _check_tell_args(trial, values, state)
+        if not isinstance(trial, (trial_module.Trial, int)):
+            raise TypeError("Trial must be a trial object or trial number.")
+
+        if state == TrialState.COMPLETE:
+            if values is None:
+                raise ValueError(
+                    "No values were told. Values are required when state is TrialState.COMPLETE."
+                )
+        elif state == TrialState.PRUNED:
+            pass
+        elif state == TrialState.FAIL:
+            if values is not None:
+                raise ValueError(
+                    "Values were told. Values cannot be stored when state is TrialState.FAIL."
+                )
+        else:
+            raise ValueError(f"Cannot tell with state {state}.")
+
+        if isinstance(trial, trial_module.Trial):
+            trial_id = trial._trial_id
+        elif isinstance(trial, int):
+            trial_number = trial
+            try:
+                trial_id = self._storage.get_trial_id_from_study_id_trial_number(
+                    self._study_id, trial_number
+                )
+            except KeyError as e:
+                raise ValueError(
+                    f"Cannot tell for trial with number {trial_number} since it has not been "
+                    "created."
+                ) from e
+
+        else:
+            assert False, "Should not reach."
 
         # TODO(hvy): Do trial post-processing with `after_trial`.
 
@@ -407,9 +440,18 @@ class Study(BaseStudy):
             if not isinstance(values, Sequence):
                 values = [values]
 
-            self._storage.set_trial_values(trial._trial_id, values)
+            if len(values) != len(self.directions):
+                raise ValueError(
+                    "Trial {} could not be told because the number of values {} did not match "
+                    "the number of objectives {}.".format(
+                        trial.number if isinstance(trial, trial_module.Trial) else trial,
+                        len(values),
+                        len(self.directions),
+                    )
+                )
+            self._storage.set_trial_values(trial_id, values)
 
-        self._storage.set_trial_state(trial._trial_id, state)
+        self._storage.set_trial_state(trial_id, state)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
@@ -1013,24 +1055,3 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
 
     storage = storages.get_storage(storage)
     return storage.get_all_study_summaries()
-
-
-def _check_tell_args(
-    trial: trial_module.Trial,
-    values: Optional[Union[float, List[float]]],
-    state: TrialState,
-) -> None:
-    if state == TrialState.COMPLETE:
-        if values is None:
-            raise ValueError(
-                "No values were told. Values are required when state is TrialState.COMPLETE."
-            )
-    elif state == TrialState.PRUNED:
-        pass
-    elif state == TrialState.FAIL:
-        if values is not None:
-            raise ValueError(
-                "Values were told. Values cannot be stored when state is TrialState.FAIL."
-            )
-    else:
-        raise ValueError(f"Cannot tell with state {state}.")

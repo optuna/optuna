@@ -10,7 +10,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
 from unittest.mock import Mock  # NOQA
 from unittest.mock import patch
 import uuid
@@ -1109,23 +1108,105 @@ def test_wrong_n_objectives() -> None:
         assert trial.state is TrialState.FAIL
 
 
-@pytest.mark.parametrize(
-    "values",
-    [
-        1.0,  # "value" single-objective optimization interface.
-        [1.0],  # "values" multi-objective optimization interface.
-    ],
-)
-def test_ask_and_tell(values: Union[float, List[float]]) -> None:
+def test_ask() -> None:
     study = optuna.create_study()
-    trial = study.ask()
 
+    trial = study.ask()
     assert isinstance(trial, Trial)
 
-    with pytest.raises(ValueError):  # Values missing.
-        study.tell(trial)
 
-    study.tell(trial, values)
+def test_ask_enqueue_trial() -> None:
+    study = optuna.create_study()
 
-    with pytest.raises(RuntimeError):  # Trial already finished.
-        study.tell(trial, values)
+    study.enqueue_trial({"x": 0.5})
+
+    trial = study.ask()
+    assert trial.suggest_float("x", 0, 1) == 0.5
+
+
+def test_tell() -> None:
+    study = optuna.create_study()
+    assert len(study.trials) == 0
+
+    trial = study.ask()
+    assert len(study.trials) == 1
+    assert len(study.get_trials(states=(TrialState.COMPLETE,))) == 0
+
+    study.tell(trial, 1.0)
+    assert len(study.trials) == 1
+    assert len(study.get_trials(states=(TrialState.COMPLETE,))) == 1
+
+    study.tell(study.ask(), state=TrialState.PRUNED)
+    assert len(study.trials) == 2
+    assert len(study.get_trials(states=(TrialState.PRUNED,))) == 1
+
+    study.tell(study.ask(), state=TrialState.FAIL)
+    assert len(study.trials) == 3
+    assert len(study.get_trials(states=(TrialState.FAIL,))) == 1
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), state=TrialState.RUNNING)
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), state=TrialState.WAITING)
+
+
+def test_tell_complete_without_values() -> None:
+    study = optuna.create_study()
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), state=TrialState.COMPLETE)
+
+    # Default state is `TrialState.COMPLETE` for which values are required.
+    with pytest.raises(ValueError):
+        study.tell(study.ask())
+
+
+def test_tell_trial_variations() -> None:
+    study = optuna.create_study()
+
+    study.tell(study.ask().number, 1.0)
+
+    # Trial that has not been asked for cannot be told.
+    with pytest.raises(ValueError):
+        study.tell(study.ask().number + 1, 1.0)
+
+    with pytest.raises(TypeError):
+        study.tell("1", 1.0)  # type: ignore
+
+
+def test_tell_duplicate_tell() -> None:
+    study = optuna.create_study()
+
+    trial = study.ask()
+    study.tell(trial, 1.0)
+
+    with pytest.raises(RuntimeError):
+        study.tell(trial, 1.0)
+
+
+def test_tell_values() -> None:
+    study = optuna.create_study()
+
+    study.tell(study.ask(), 1.0)
+
+    study.tell(study.ask(), [1.0])
+
+    # Check number of values.
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [])
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [1.0, 2.0])
+
+    study = optuna.create_study(directions=["minimize", "maximize"])
+    study.tell(study.ask(), [1.0, 2.0])
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [])
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [1.0])
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [1.0, 2.0, 3.0])
