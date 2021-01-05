@@ -23,10 +23,14 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # TODO (crcrpar): Remove `exclude` once integration works with Python 3.9.
     strategy:
       matrix:
-        python_version: ['3.6', '3.7', '3.8']
+        python_version: ['3.6', '3.7', '3.8', '3.9']
         build_type: ['', 'dev']  # "dev" installs all the dependencies including pytest.
+        exclude:
+        - python_version: '3.9'
+          build_type: 'dev'
 
     # This action cannot be executed in the forked repository.
     if: github.repository == 'optuna/optuna'
@@ -42,7 +46,7 @@ jobs:
         if [ "${{matrix.build_type}}" = 'dev' ]; then
           export TAG_NAME="${TAG_NAME}-dev"
         fi
-        echo "::set-env name=HUB_TAG::${DOCKER_HUB_BASE_NAME}:${TAG_NAME}"
+        echo "HUB_TAG=${DOCKER_HUB_BASE_NAME}:${TAG_NAME}" >> $GITHUB_ENV
 
     - name: Build the Docker image
       run: |
@@ -50,10 +54,11 @@ jobs:
           # Cache is not available because the image tag includes the Optuna version.
           CACHE_FROM=""
         else
-          docker pull "${HUB_TAG}"
           CACHE_FROM="--cache-from=${HUB_TAG}"
         fi
         docker build ${CACHE_FROM} . --build-arg PYTHON_VERSION=${{ matrix.python_version }} --build-arg BUILD_TYPE=${{ matrix.build_type }} --file Dockerfile --tag "${HUB_TAG}"
+      env:
+        DOCKER_BUILDKIT: 1
 
     - name: Verify the built image
       run: |

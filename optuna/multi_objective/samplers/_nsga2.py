@@ -2,6 +2,7 @@ from collections import defaultdict
 import hashlib
 import itertools
 from typing import Any
+from typing import cast
 from typing import DefaultDict
 from typing import Dict
 from typing import List
@@ -12,7 +13,7 @@ import numpy as np
 
 import optuna
 from optuna import multi_objective
-from optuna._experimental import experimental
+from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
@@ -23,7 +24,7 @@ _PARENTS_KEY = "multi_objective:nsga2:parents"
 _POPULATION_CACHE_KEY_PREFIX = "multi_objective:nsga2:population"
 
 
-@experimental("1.5.0")
+@deprecated("2.4.0", "4.0.0")
 class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using the NSGA-II algorithm.
 
@@ -184,7 +185,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
             generation_to_population[generation].append(trial)
 
         hasher = hashlib.sha256()
-        parent_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
+        parent_population: List[multi_objective.trial.FrozenMultiObjectiveTrial] = []
         parent_generation = -1
         while True:
             generation = parent_generation + 1
@@ -242,7 +243,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
         study: "multi_objective.study.MultiObjectiveStudy",
         population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
     ) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
-        elite_population = []  # type: List[multi_objective.trial.FrozenMultiObjectiveTrial]
+        elite_population: List[multi_objective.trial.FrozenMultiObjectiveTrial] = []
         population_per_rank = _fast_non_dominated_sort(population, study.directions)
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
@@ -275,7 +276,7 @@ def _fast_non_dominated_sort(
     population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
     directions: List[optuna.study.StudyDirection],
 ) -> List[List["multi_objective.trial.FrozenMultiObjectiveTrial"]]:
-    dominated_count = defaultdict(int)  # type: DefaultDict[int, int]
+    dominated_count: DefaultDict[int, int] = defaultdict(int)
     dominates_list = defaultdict(list)
 
     for p, q in itertools.combinations(population, 2):
@@ -316,7 +317,7 @@ def _crowding_distance_sort(
 ) -> None:
     manhattan_distances = defaultdict(float)
     for i in range(len(population[0].values)):
-        population.sort(key=lambda x: x.values[i])
+        population.sort(key=lambda x: cast(float, x.values[i]))
 
         v_min = population[0].values[i]
         v_max = population[-1].values[i]

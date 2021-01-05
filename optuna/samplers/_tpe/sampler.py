@@ -165,7 +165,7 @@ class TPESampler(BaseSampler):
         seed: Optional[int] = None,
         *,
         multivariate: bool = False,
-        warn_independent_sampling: bool = True
+        warn_independent_sampling: bool = True,
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
@@ -203,13 +203,11 @@ class TPESampler(BaseSampler):
         if not self._multivariate:
             return {}
 
-        search_space = {}  # type: Dict[str, BaseDistribution]
+        search_space: Dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
             if not isinstance(distribution, _DISTRIBUTION_CLASSES):
                 if self._warn_independent_sampling:
-                    complete_trials = study._storage.get_all_trials(
-                        study._study_id, deepcopy=False
-                    )
+                    complete_trials = study.get_trials(deepcopy=False)
                     if len(complete_trials) >= self._n_startup_trials:
                         self._log_independent_sampling(trial, name)
                 continue
@@ -230,6 +228,8 @@ class TPESampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
+
+        self._raise_error_if_multi_objective(study)
 
         if search_space == {}:
             return {}
@@ -270,6 +270,8 @@ class TPESampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+
+        self._raise_error_if_multi_objective(study)
 
         values, scores = _get_observation_pairs(study, param_name)
 
@@ -672,7 +674,7 @@ class TPESampler(BaseSampler):
                     "But (samples.size, score.size) = ({}, {})".format(sample_size, score.size)
                 )
             best = np.argmax(score)
-            return {k: v[best] for k, v in multivariate_samples.items()}
+            return {k: v[best].item() for k, v in multivariate_samples.items()}
         else:
             raise ValueError(
                 "The size of 'samples' should be more than 0."
@@ -765,8 +767,10 @@ def _get_observation_pairs(
 
     values = []
     scores = []
-    for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
-        if trial.state is TrialState.COMPLETE and trial.value is not None:
+    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
+        if trial.state is TrialState.COMPLETE:
+            if trial.value is None:
+                continue
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
@@ -778,9 +782,9 @@ def _get_observation_pairs(
             else:
                 score = (float("inf"), 0.0)
         else:
-            continue
+            assert False
 
-        param_value = None  # type: Optional[float]
+        param_value: Optional[float] = None
         if param_name in trial.params:
             distribution = trial.distributions[param_name]
             param_value = distribution.to_internal_repr(trial.params[param_name])
@@ -800,13 +804,13 @@ def _get_multivariate_observation_pairs(
         sign = -1
 
     scores = []
-    values = {
-        param_name: [] for param_name in param_names
-    }  # type: Dict[str, List[Optional[float]]]
-    for trial in study._storage.get_all_trials(study._study_id, deepcopy=False):
+    values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
+    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
 
         # We extract score from the trial.
-        if trial.state is TrialState.COMPLETE and trial.value is not None:
+        if trial.state is TrialState.COMPLETE:
+            if trial.value is None:
+                continue
             score = (-float("inf"), sign * trial.value)
         elif trial.state is TrialState.PRUNED:
             if len(trial.intermediate_values) > 0:
@@ -818,7 +822,7 @@ def _get_multivariate_observation_pairs(
             else:
                 score = (float("inf"), 0.0)
         else:
-            continue
+            assert False
         scores.append(score)
 
         # We extract param_value from the trial.

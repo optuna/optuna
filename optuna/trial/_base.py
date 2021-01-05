@@ -23,7 +23,7 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
         high: float,
         *,
         step: Optional[float] = None,
-        log: bool = False
+        log: bool = False,
     ) -> float:
 
         raise NotImplementedError

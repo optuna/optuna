@@ -249,3 +249,26 @@ def test_successive_halving_pruner_min_early_stopping_rate_parameter() -> None:
     assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
     assert "completed_rung_0" in trial.system_attrs
     assert "completed_rung_1" not in trial.system_attrs
+
+
+def test_successive_halving_pruner_bootstrap_parameter() -> None:
+
+    with pytest.raises(ValueError):
+        optuna.pruners.SuccessiveHalvingPruner(bootstrap_count=-1)
+
+    with pytest.raises(ValueError):
+        optuna.pruners.SuccessiveHalvingPruner(bootstrap_count=1, min_resource="auto")
+
+    pruner = optuna.pruners.SuccessiveHalvingPruner(
+        min_resource=1, reduction_factor=2, bootstrap_count=1
+    )
+    study = optuna.study.create_study(pruner=pruner)
+
+    trial1 = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial2 = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+
+    trial1.report(1, step=1)
+    assert pruner.prune(study=study, trial=study._storage.get_trial(trial1._trial_id))
+
+    trial2.report(1, step=1)
+    assert not pruner.prune(study=study, trial=study._storage.get_trial(trial2._trial_id))

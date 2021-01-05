@@ -1,5 +1,8 @@
 import itertools
+from typing import Callable
+from typing import cast
 from typing import List
+from typing import Optional
 from typing import Sequence
 from typing import Union
 
@@ -8,6 +11,7 @@ import numpy as np
 from optuna._experimental import experimental
 from optuna.logging import get_logger
 from optuna.study import Study
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
@@ -20,7 +24,12 @@ _logger = get_logger(__name__)
 
 
 @experimental("2.2.0")
-def plot_edf(study: Union[Study, Sequence[Study]]) -> "Axes":
+def plot_edf(
+    study: Union[Study, Sequence[Study]],
+    *,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "Axes":
     """Plot the objective value EDF (empirical distribution function) of a study with Matplotlib.
 
     .. seealso::
@@ -70,9 +79,22 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "Axes":
         study:
             A target :class:`~optuna.study.Study` object.
             You can pass multiple studies if you want to compare those EDFs.
+        target:
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is being
+            used for single-objective optimization, the objective values are plotted.
+
+            .. note::
+                Specify this argument if ``study`` is being used for multi-objective optimization.
+        target_name:
+            Target's name to display on the axis label.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
+            optimization.
     """
 
     _imports.check()
@@ -82,16 +104,25 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "Axes":
     else:
         studies = list(study)
 
-    return _get_edf_plot(studies)
+    if target is None and any(study._is_multi_objective() for study in studies):
+        raise ValueError(
+            "If the `study` is being used for multi-objective optimization, "
+            "please specify the `target`."
+        )
+    return _get_edf_plot(studies, target, target_name)
 
 
-def _get_edf_plot(studies: List[Study]) -> "Axes":
+def _get_edf_plot(
+    studies: List[Study],
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     _, ax = plt.subplots()
     ax.set_title("Empirical Distribution Function Plot")
-    ax.set_xlabel("Objective Value")
+    ax.set_xlabel(target_name)
     ax.set_ylabel("Cumulative Probability")
     ax.set_ylim(0, 1)
     cmap = plt.get_cmap("tab20")  # Use tab20 colormap for multiple line plots.
@@ -116,15 +147,22 @@ def _get_edf_plot(studies: List[Study]) -> "Axes":
         _logger.warning("There are no complete trials.")
         return ax
 
-    min_x_value = min(trial.value for trial in all_trials)
-    max_x_value = max(trial.value for trial in all_trials)
+    if target is None:
+
+        def _target(t: FrozenTrial) -> float:
+            return cast(float, t.value)
+
+        target = _target
+
+    min_x_value = min(target(trial) for trial in all_trials)
+    max_x_value = max(target(trial) for trial in all_trials)
     x_values = np.linspace(min_x_value, max_x_value, 100)
 
     # Draw multiple line plots.
     for i, study in enumerate(studies):
         values = np.asarray(
             [
-                trial.value
+                target(trial)
                 for trial in study.get_trials(deepcopy=False)
                 if trial.state == TrialState.COMPLETE
             ]

@@ -1,21 +1,18 @@
 from collections import OrderedDict
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
 
 import numpy
 
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna._transform import _SearchSpaceTransform
 from optuna.importance._base import _get_distributions
-from optuna.importance._base import _get_study_data
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova._fanova import _Fanova
 from optuna.study import Study
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 class FanovaImportanceEvaluator(BaseImportanceEvaluator):
@@ -73,11 +70,45 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             seed=seed,
         )
 
-    def evaluate(self, study: Study, params: Optional[List[str]] = None) -> Dict[str, float]:
-        distributions = _get_distributions(study, params)
-        params_data, values_data = _get_study_data(study, distributions)
+    def evaluate(
+        self,
+        study: Study,
+        params: Optional[List[str]] = None,
+        *,
+        target: Optional[Callable[[FrozenTrial], float]] = None,
+    ) -> Dict[str, float]:
+        if target is None and study._is_multi_objective():
+            raise ValueError(
+                "If the `study` is being used for multi-objective optimization, "
+                "please specify the `target`."
+            )
 
-        if params_data.size == 0:  # `params` were given but as an empty list.
+        distributions = _get_distributions(study, params)
+        if len(distributions) == 0:
+            return OrderedDict()
+
+        trials = []
+        for trial in study.trials:
+            if trial.state != TrialState.COMPLETE:
+                continue
+            if any(name not in trial.params for name in distributions.keys()):
+                continue
+            trials.append(trial)
+
+        trans = _SearchSpaceTransform(distributions, transform_log=False, transform_step=False)
+
+        n_trials = len(trials)
+        trans_params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
+        trans_values = numpy.empty(n_trials, dtype=numpy.float64)
+
+        for trial_idx, trial in enumerate(trials):
+            trans_params[trial_idx] = trans.transform(trial.params)
+            trans_values[trial_idx] = trial.value if target is None else target(trial)
+
+        trans_bounds = trans.bounds
+        column_to_encoded_columns = trans.column_to_encoded_columns
+
+        if trans_params.size == 0:  # `params` were given but as an empty list.
             return OrderedDict()
 
         # Many (deep) copies of the search spaces are required during the tree traversal and using
@@ -85,36 +116,13 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         # Therefore, search spaces (parameter distributions) are represented by a single
         # `numpy.ndarray`, coupled with a list of flags that indicate whether they are categorical
         # or not.
-        search_spaces = numpy.empty((len(distributions), 2), dtype=numpy.float64)
-        search_spaces_is_categorical = []
-
-        for i, distribution in enumerate(distributions.values()):
-            if isinstance(distribution, CategoricalDistribution):
-                search_spaces[i, 0] = 0
-                search_spaces[i, 1] = len(distribution.choices)
-                search_spaces_is_categorical.append(True)
-            elif isinstance(
-                distribution,
-                (
-                    DiscreteUniformDistribution,
-                    IntLogUniformDistribution,
-                    IntUniformDistribution,
-                    LogUniformDistribution,
-                    UniformDistribution,
-                ),
-            ):
-                search_spaces[i, 0] = distribution.low
-                search_spaces[i, 1] = distribution.high
-                search_spaces_is_categorical.append(False)
-            else:
-                assert False
 
         evaluator = self._evaluator
         evaluator.fit(
-            X=params_data,
-            y=values_data,
-            search_spaces=search_spaces,
-            search_spaces_is_categorical=search_spaces_is_categorical,
+            X=trans_params,
+            y=trans_values,
+            search_spaces=trans_bounds,
+            column_to_encoded_columns=column_to_encoded_columns,
         )
 
         importances = {}

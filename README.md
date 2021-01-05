@@ -2,7 +2,7 @@
 
 # Optuna: A hyperparameter optimization framework
 
-[![Python](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org)
+[![Python](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue)](https://www.python.org)
 [![pypi](https://img.shields.io/pypi/v/optuna.svg)](https://pypi.python.org/pypi/optuna)
 [![conda](https://img.shields.io/conda/vn/conda-forge/optuna.svg)](https://anaconda.org/conda-forge/optuna)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/optuna/optuna)
@@ -23,6 +23,7 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## News
 
+- **2020-12-02** Python 3.9 is now supported. Integration modules are still being worked on and is tracked by [#2034](https://github.com/optuna/optuna/issues/2034)
 - **2020-09-17** `isort` has been incorporated to keep import statements consistent. Read more about it in [CONTRIBUTING.md](./CONTRIBUTING.md)
 - **2020-08-07** We are welcoming [contributions](#contribution) and are working on streamlining the experience. Read more about it in the [blog](https://medium.com/optuna/optuna-wants-your-pull-request-ff619572302c)
 

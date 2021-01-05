@@ -1,8 +1,12 @@
 import math
+from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+
+from packaging import version
 
 from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
@@ -24,7 +28,13 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
+def plot_contour(
+    study: Study,
+    params: Optional[List[str]] = None,
+    *,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "go.Figure":
     """Plot the parameter relationship as contour plot in a study.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
@@ -33,7 +43,7 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
 
         The following code snippet shows how to plot the parameter relationship as contour plot.
 
-        .. testcode::
+        .. plotly::
 
             import optuna
 
@@ -44,33 +54,57 @@ def plot_contour(study: Study, params: Optional[List[str]] = None) -> "go.Figure
                 return x ** 2 + y
 
 
-            study = optuna.create_study()
+            sampler = optuna.samplers.TPESampler(seed=10)
+            study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=30)
 
             optuna.visualization.plot_contour(study, params=["x", "y"])
 
-        .. raw:: html
-
-            <iframe src="../../../_static/plot_contour.html"
-                width="100%" height="500px" frameborder="0">
-            </iframe>
-
     Args:
         study:
-            A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values.
+            A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
         params:
             Parameter list to visualize. The default is all parameters.
+        target:
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is being
+            used for single-objective optimization, the objective values are plotted.
+
+            .. note::
+                Specify this argument if ``study`` is being used for multi-objective optimization.
+        target_name:
+            Target's name to display on the color bar.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
+            optimization.
     """
 
     _imports.check()
-    return _get_contour_plot(study, params)
+    if target is None and study._is_multi_objective():
+        raise ValueError(
+            "If the `study` is being used for multi-objective optimization, "
+            "please specify the `target`."
+        )
+    return _get_contour_plot(study, params, target, target_name)
 
 
-def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.Figure":
+def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
+    values = [t.params[p_name] for t in trials if p_name in t.params]
+    if not _is_categorical(trials, p_name):
+        return values
+    return list(map(str, values))
+
+
+def _get_contour_plot(
+    study: Study,
+    params: Optional[List[str]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "go.Figure":
 
     layout = go.Layout(title="Contour Plot")
 
@@ -96,7 +130,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
     param_values_range = {}
     update_category_axes = {}
     for p_name in sorted_params:
-        values = [t.params[p_name] for t in trials if p_name in t.params]
+        values = _get_param_values(trials, p_name)
 
         min_value = min(values)
         max_value = max(values)
@@ -108,7 +142,16 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
 
         elif _is_categorical(trials, p_name):
             # For numeric values, plotly does not automatically plot as "category" type.
-            update_category_axes[p_name] = any([str(v).isnumeric() for v in set(values)])
+            update_category_axes[p_name] = any(_is_numeric(str(v)) for v in set(values))
+
+            # Plotly>=4.12.0 draws contours using the indices of categorical variables instead of
+            # raw values and the range should be updated based on the cardinality of categorical
+            # variables. See https://github.com/optuna/optuna/issues/1967.
+            if version.parse(plotly.__version__) >= version.parse("4.12.0"):
+                span = len(set(values)) - 1
+                padding = span * padding_ratio
+                min_value = -padding
+                max_value = span + padding
 
         else:
             padding = (max_value - min_value) * padding_ratio
@@ -120,7 +163,7 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
         x_param = sorted_params[0]
         y_param = sorted_params[1]
         sub_plots = _generate_contour_subplot(
-            trials, x_param, y_param, study.direction, param_values_range
+            trials, x_param, y_param, study.direction, param_values_range, target, target_name
         )
         figure = go.Figure(data=sub_plots, layout=layout)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
@@ -149,7 +192,13 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
                     figure.add_trace(go.Scatter(), row=y_i + 1, col=x_i + 1)
                 else:
                     sub_plots = _generate_contour_subplot(
-                        trials, x_param, y_param, study.direction, param_values_range
+                        trials,
+                        x_param,
+                        y_param,
+                        study.direction,
+                        param_values_range,
+                        target,
+                        target_name,
                     )
                     contour = sub_plots[0]
                     scatter = sub_plots[1]
@@ -182,19 +231,29 @@ def _get_contour_plot(study: Study, params: Optional[List[str]] = None) -> "go.F
     return figure
 
 
+def _is_numeric(s: str) -> bool:
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
 def _generate_contour_subplot(
     trials: List[FrozenTrial],
     x_param: str,
     y_param: str,
     direction: StudyDirection,
     param_values_range: Optional[Dict[str, Tuple[float, float]]] = None,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
 ) -> Tuple["Contour", "Scatter"]:
 
     if param_values_range is None:
         param_values_range = {}
 
-    x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
-    y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
+    x_indices = sorted(set(_get_param_values(trials, x_param)))
+    y_indices = sorted(set(_get_param_values(trials, y_param)))
     if len(x_indices) < 2:
         _logger.warning("Param {} unique value length is less than 2.".format(x_param))
         return go.Contour(), go.Scatter()
@@ -218,25 +277,35 @@ def _generate_contour_subplot(
     for trial in trials:
         if x_param not in trial.params or y_param not in trial.params:
             continue
-        x_values.append(trial.params[x_param])
-        y_values.append(trial.params[y_param])
-        x_i = x_indices.index(trial.params[x_param])
-        y_i = y_indices.index(trial.params[y_param])
-        if isinstance(trial.value, int):
-            value = float(trial.value)
-        elif isinstance(trial.value, float):
+        x_value = trial.params[x_param]
+        y_value = trial.params[y_param]
+        if _is_categorical(trials, x_param):
+            x_value = str(x_value)
+        if _is_categorical(trials, y_param):
+            y_value = str(y_value)
+        x_values.append(x_value)
+        y_values.append(y_value)
+        x_i = x_indices.index(x_value)
+        y_i = y_indices.index(y_value)
+
+        if target is None:
             value = trial.value
         else:
+            value = target(trial)
+
+        if isinstance(value, int):
+            value = float(value)
+        elif not isinstance(value, float):
             raise ValueError(
-                "Trial{} has COMPLETE state, but its value is non-numeric.".format(trial.number)
+                f"Trial{trial.number} has COMPLETE state, but its target value is non-numeric."
             )
         z[y_i][x_i] = value
 
     # TODO(Yanase): Use reversescale argument to reverse colorscale if Plotly's bug is fixed.
-    # If contours_coloring='heatmap' is specified, reversesecale argument of go.Contour does not
+    # If contours_coloring='heatmap' is specified, reversescale argument of go.Contour does not
     # work correctly. See https://github.com/pfnet/optuna/issues/606.
     colorscale = plotly.colors.PLOTLY_SCALES["Blues"]
-    if direction == StudyDirection.MINIMIZE:
+    if direction == StudyDirection.MAXIMIZE:
         colorscale = [[1 - t[0], t[1]] for t in colorscale]
         colorscale.reverse()
 
@@ -244,7 +313,7 @@ def _generate_contour_subplot(
         x=x_indices,
         y=y_indices,
         z=z,
-        colorbar={"title": "Objective Value"},
+        colorbar={"title": target_name},
         colorscale=colorscale,
         connectgaps=True,
         contours_coloring="heatmap",

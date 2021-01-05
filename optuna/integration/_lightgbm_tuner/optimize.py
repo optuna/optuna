@@ -6,6 +6,7 @@ import pickle
 import time
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import Generator
 from typing import Iterator
@@ -26,6 +27,7 @@ from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 with try_import() as _imports:
@@ -93,7 +95,7 @@ class _BaseTuner(object):
     def _get_booster_best_score(self, booster: "lgb.Booster") -> float:
 
         metric = self._get_metric_for_objective()
-        valid_sets = self.lgbm_kwargs.get("valid_sets")  # type: Optional[VALID_SET_TYPE]
+        valid_sets: Optional[VALID_SET_TYPE] = self.lgbm_kwargs.get("valid_sets")
 
         if self.lgbm_kwargs.get("valid_names") is not None:
             if type(self.lgbm_kwargs["valid_names"]) is str:
@@ -144,7 +146,7 @@ class _BaseTuner(object):
     def higher_is_better(self) -> bool:
 
         metric_name = self.lgbm_params.get("metric", "binary_logloss")
-        return metric_name.startswith(("auc", "ndcg", "map"))
+        return metric_name in ("auc", "ndcg", "map")
 
     def compare_validation_metrics(self, val_score: float, best_score: float) -> bool:
 
@@ -177,7 +179,7 @@ class _OptunaObjective(_BaseTuner):
 
         self.trial_count = 0
         self.best_score = best_score
-        self.best_booster_with_trial_number = None  # type: Optional[Tuple["lgb.Booster", int]]
+        self.best_booster_with_trial_number: Optional[Tuple["lgb.Booster", int]] = None
         self.step_name = step_name
         self.model_dir = model_dir
 
@@ -204,9 +206,9 @@ class _OptunaObjective(_BaseTuner):
             self.pbar.set_description(self.pbar_fmt.format(self.step_name, self.best_score))
 
         if "lambda_l1" in self.target_param_names:
-            self.lgbm_params["lambda_l1"] = trial.suggest_loguniform("lambda_l1", 1e-8, 10.0)
+            self.lgbm_params["lambda_l1"] = trial.suggest_float("lambda_l1", 1e-8, 10.0, log=True)
         if "lambda_l2" in self.target_param_names:
-            self.lgbm_params["lambda_l2"] = trial.suggest_loguniform("lambda_l2", 1e-8, 10.0)
+            self.lgbm_params["lambda_l2"] = trial.suggest_float("lambda_l2", 1e-8, 10.0, log=True)
         if "num_leaves" in self.target_param_names:
             tree_depth = self.lgbm_params.get("max_depth", _DEFAULT_TUNER_TREE_DEPTH)
             max_num_leaves = 2 ** tree_depth if tree_depth > 0 else 2 ** _DEFAULT_TUNER_TREE_DEPTH
@@ -214,19 +216,19 @@ class _OptunaObjective(_BaseTuner):
         if "feature_fraction" in self.target_param_names:
             # `GridSampler` is used for sampling feature_fraction value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = min(trial.suggest_uniform("feature_fraction", 0.4, 1.0 + _EPS), 1.0)
+            param_value = min(trial.suggest_float("feature_fraction", 0.4, 1.0 + _EPS), 1.0)
             self.lgbm_params["feature_fraction"] = param_value
         if "bagging_fraction" in self.target_param_names:
             # `TPESampler` is used for sampling bagging_fraction value.
             # The value 1.0 for the hyperparameter might by sampled.
-            param_value = min(trial.suggest_uniform("bagging_fraction", 0.4, 1.0 + _EPS), 1.0)
+            param_value = min(trial.suggest_float("bagging_fraction", 0.4, 1.0 + _EPS), 1.0)
             self.lgbm_params["bagging_fraction"] = param_value
         if "bagging_freq" in self.target_param_names:
             self.lgbm_params["bagging_freq"] = trial.suggest_int("bagging_freq", 1, 7)
         if "min_child_samples" in self.target_param_names:
             # `GridSampler` is used for sampling min_child_samples value.
             # The value 1.0 for the hyperparameter is always sampled.
-            param_value = int(trial.suggest_uniform("min_child_samples", 5, 100 + _EPS))
+            param_value = trial.suggest_int("min_child_samples", 5, 100)
             self.lgbm_params["min_child_samples"] = param_value
 
     def _copy_valid_sets(self, valid_sets: "VALID_SET_TYPE") -> "VALID_SET_TYPE":
@@ -344,7 +346,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
 class _LightGBMBaseTuner(_BaseTuner):
     """Base class of LightGBM Tuners.
 
-    This class has common attributes and method of
+    This class has common attributes and methods of
     :class:`~optuna.integration.lightgbm.LightGBMTuner` and
     :class:`~optuna.integration.lightgbm.LightGBMTunerCV`.
     """
@@ -378,7 +380,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         _handling_alias_metrics(params)
 
         args = [params, train_set]
-        kwargs = dict(
+        kwargs: Dict[str, Any] = dict(
             num_boost_round=num_boost_round,
             fobj=fobj,
             feval=feval,
@@ -391,13 +393,13 @@ class _LightGBMBaseTuner(_BaseTuner):
             sample_size=sample_size,
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
-        )  # type: Dict[str, Any]
+        )
         self._parse_args(*args, **kwargs)
-        self._start_time = None  # type: Optional[float]
+        self._start_time: Optional[float] = None
         self._optuna_callbacks = optuna_callbacks
-        self._best_booster_with_trial_number = (
-            None
-        )  # type: Optional[Tuple[Union[lgb.Booster, lgb.CVBooster], int]]
+        self._best_booster_with_trial_number: Optional[
+            Tuple[Union[lgb.Booster, lgb.CVBooster], int]
+        ] = None
         self._model_dir = model_dir
 
         # Should not alter data since `min_data_in_leaf` is tuned.
@@ -621,11 +623,10 @@ class _LightGBMBaseTuner(_BaseTuner):
         study = self._create_stepwise_study(self.study, step_name)
         study.sampler = sampler
 
-        complete_trials = [
-            t
-            for t in study.trials
-            if t.state in (optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED)
-        ]
+        complete_trials = study.get_trials(
+            deepcopy=True,
+            states=(optuna.trial.TrialState.COMPLETE, optuna.trial.TrialState.PRUNED),
+        )
         _n_trials = n_trials - len(complete_trials)
 
         if self._start_time is None:
@@ -680,9 +681,13 @@ class _LightGBMBaseTuner(_BaseTuner):
                 )
                 self._step_name = step_name
 
-            def get_trials(self, deepcopy: bool = True) -> List[optuna.trial.FrozenTrial]:
+            def get_trials(
+                self,
+                deepcopy: bool = True,
+                states: Optional[Tuple[TrialState, ...]] = None,
+            ) -> List[optuna.trial.FrozenTrial]:
 
-                trials = super().get_trials(deepcopy=deepcopy)
+                trials = super().get_trials(deepcopy=deepcopy, states=states)
                 return [t for t in trials if t.system_attrs.get(_STEP_NAME_KEY) == self._step_name]
 
             @property
@@ -700,9 +705,9 @@ class _LightGBMBaseTuner(_BaseTuner):
                     raise ValueError("No trials are completed yet.")
 
                 if self.direction == optuna.study.StudyDirection.MINIMIZE:
-                    best_trial = min(trials, key=lambda t: t.value)
+                    best_trial = min(trials, key=lambda t: cast(float, t.value))
                 else:
-                    best_trial = max(trials, key=lambda t: t.value)
+                    best_trial = max(trials, key=lambda t: cast(float, t.value))
                 return copy.deepcopy(best_trial)
 
         return _StepwiseStudy(study, step_name)
@@ -823,7 +828,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         self.lgbm_kwargs["learning_rates"] = learning_rates
         self.lgbm_kwargs["keep_training_booster"] = keep_training_booster
 
-        self._best_booster_with_trial_number = None  # type: Optional[Tuple[lgb.Booster, int]]
+        self._best_booster_with_trial_number: Optional[Tuple[lgb.Booster, int]] = None
         self._model_dir = model_dir
 
         if self._model_dir is not None and not os.path.exists(self._model_dir):

@@ -1,16 +1,12 @@
 import textwrap
+from typing import Dict
 from typing import Optional
 
 import optuna
-from optuna import type_checking
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna._study_direction import StudyDirection
 from optuna.trial import TrialState
-
-
-if type_checking.TYPE_CHECKING:
-    from typing import Dict  # NOQA
 
 
 with try_import() as _imports:
@@ -123,7 +119,7 @@ class MLflowCallback(object):
             mlflow.log_params(trial.params)
 
             # This sets the tags for MLflow.
-            tags = {}  # type: Dict[str, str]
+            tags: Dict[str, str] = {}
             tags["number"] = str(trial.number)
             tags["datetime_start"] = str(trial.datetime_start)
             tags["datetime_complete"] = str(trial.datetime_complete)

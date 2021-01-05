@@ -160,6 +160,10 @@ class CmaEsSampler(BaseSampler):
                 Added in v2.3.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.3.0.
+
+    Raises:
+        ValueError:
+            If ``restart_strategy`` is not 'ipop' or :obj:`None`.
     """
 
     def __init__(
@@ -227,7 +231,7 @@ class CmaEsSampler(BaseSampler):
     def infer_relative_search_space(
         self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial"
     ) -> Dict[str, BaseDistribution]:
-        search_space = {}  # type: Dict[str, BaseDistribution]
+        search_space: Dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
             if distribution.single():
                 # `cma` cannot handle distributions that contain just a single value, so we skip
@@ -257,6 +261,9 @@ class CmaEsSampler(BaseSampler):
         trial: "optuna.trial.FrozenTrial",
         search_space: Dict[str, BaseDistribution],
     ) -> Dict[str, Any]:
+
+        self._raise_error_if_multi_objective(study)
+
         if len(search_space) == 0:
             return {}
 
@@ -307,7 +314,7 @@ class CmaEsSampler(BaseSampler):
             if optimizer.generation == t.system_attrs.get(generation_attr_key, -1)
         ]
         if len(solution_trials) >= optimizer.population_size:
-            solutions = []  # type: List[Tuple[np.ndarray, float]]
+            solutions: List[Tuple[np.ndarray, float]] = []
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
                 x = np.array(
@@ -366,7 +373,7 @@ class CmaEsSampler(BaseSampler):
             if optimizer_str is None:
                 optimizer_str = _concat_optimizer_attrs(optimizer_attrs)
 
-            n_restarts = trial.system_attrs.get("cma:n_restarts", 0)  # type: int
+            n_restarts: int = trial.system_attrs.get("cma:n_restarts", 0)
             return pickle.loads(bytes.fromhex(optimizer_str)), n_restarts
         return None, 0
 
@@ -427,6 +434,9 @@ class CmaEsSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+
+        self._raise_error_if_multi_objective(study)
+
         if self._warn_independent_sampling:
             complete_trials = self._get_trials(study)
             if len(complete_trials) >= self._n_startup_trials:
@@ -441,6 +451,7 @@ class CmaEsSampler(BaseSampler):
             "The parameter '{}' in trial#{} is sampled independently "
             "by using `{}` instead of `CmaEsSampler` "
             "(optimization performance may be degraded). "
+            "`CmaEsSampler` does not support dynamic search space or `CategoricalDistribution`. "
             "You can suppress this warning by setting `warn_independent_sampling` "
             "to `False` in the constructor of `CmaEsSampler`, "
             "if this independent sampling is intended behavior.".format(

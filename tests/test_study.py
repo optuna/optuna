@@ -7,6 +7,7 @@ import time
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
 from unittest.mock import Mock  # NOQA
@@ -22,7 +23,9 @@ import pytest
 import optuna
 from optuna import _optimize
 from optuna import create_trial
+from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
+from optuna.trial import TrialState
 
 
 CallbackFuncType = Callable[[optuna.study.Study, optuna.trial.FrozenTrial], None]
@@ -81,7 +84,7 @@ def check_value(value: Optional[float]) -> None:
 
 def check_frozen_trial(frozen_trial: optuna.trial.FrozenTrial) -> None:
 
-    if frozen_trial.state == optuna.trial.TrialState.COMPLETE:
+    if frozen_trial.state == TrialState.COMPLETE:
         check_params(frozen_trial.params)
         check_value(frozen_trial.value)
 
@@ -91,7 +94,9 @@ def check_study(study: optuna.Study) -> None:
     for trial in study.trials:
         check_frozen_trial(trial)
 
-    complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+    assert not study._is_multi_objective()
+
+    complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
     if len(complete_trials) == 0:
         with pytest.raises(ValueError):
             study.best_params
@@ -201,18 +206,18 @@ def test_optimize_with_catch(storage_mode: str) -> None:
         with pytest.raises(ValueError):
             study.optimize(func_value_error, n_trials=20)
         assert len(study.trials) == 1
-        assert all(trial.state == optuna.trial.TrialState.FAIL for trial in study.trials)
+        assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
         # Test acceptable exception.
         study.optimize(func_value_error, n_trials=20, catch=(ValueError,))
         assert len(study.trials) == 21
-        assert all(trial.state == optuna.trial.TrialState.FAIL for trial in study.trials)
+        assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
             study.optimize(func_value_error, n_trials=20, catch=(ArithmeticError,))
         assert len(study.trials) == 22
-        assert all(trial.state == optuna.trial.TrialState.FAIL for trial in study.trials)
+        assert all(trial.state == TrialState.FAIL for trial in study.trials)
 
 
 @pytest.mark.parametrize("catch", [[], [Exception], None, 1])
@@ -352,9 +357,7 @@ def test_run_trial(storage_mode: str) -> None:
         trial = _optimize._run_trial(study, func_value_error, catch=(ValueError,))
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = "Trial 1 failed because of the following error: ValueError()"
-        assert frozen_trial.state == optuna.trial.TrialState.FAIL
-        assert frozen_trial.system_attrs["fail_reason"] == expected_message
+        assert frozen_trial.state == TrialState.FAIL
 
         # Test trial with unacceptable exception.
         with pytest.raises(ValueError):
@@ -368,13 +371,7 @@ def test_run_trial(storage_mode: str) -> None:
         trial = _optimize._run_trial(study, func_none, catch=(Exception,))
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = (
-            "Trial 3 failed, because the returned "
-            "value from the objective function cannot be cast to float. "
-            "Returned value is: None"
-        )
-        assert frozen_trial.state == optuna.trial.TrialState.FAIL
-        assert frozen_trial.system_attrs["fail_reason"] == expected_message
+        assert frozen_trial.state == TrialState.FAIL
 
         # Test trial with invalid objective value: nan
         def func_nan(_: optuna.trial.Trial) -> float:
@@ -384,9 +381,7 @@ def test_run_trial(storage_mode: str) -> None:
         trial = _optimize._run_trial(study, func_nan, catch=(Exception,))
         frozen_trial = study._storage.get_trial(trial._trial_id)
 
-        expected_message = "Trial 4 failed, because the objective function returned nan."
-        assert frozen_trial.state == optuna.trial.TrialState.FAIL
-        assert frozen_trial.system_attrs["fail_reason"] == expected_message
+        assert frozen_trial.state == TrialState.FAIL
 
 
 # TODO(Yanase): Remove this test function after removing `optuna.structs.TrialPruned`.
@@ -411,7 +406,7 @@ def test_run_trial_with_trial_pruned(
     trial = _optimize._run_trial(study, func_with_trial_pruned, catch=())
     frozen_trial = study._storage.get_trial(trial._trial_id)
     assert frozen_trial.value == report_value
-    assert frozen_trial.state == optuna.trial.TrialState.PRUNED
+    assert frozen_trial.state == TrialState.PRUNED
 
 
 def test_study_pickle() -> None:
@@ -561,8 +556,8 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
         # Change index to access rows via trial number.
         df.set_index("number", inplace=True, drop=False)
         assert len(df) == 3
-        # non-nested: 6, params: 2, user_attrs: 1 system_attrs: 1
-        assert len(df.columns) == 10
+        # non-nested: 6, params: 2, user_attrs: 1 system_attrs: 0
+        assert len(df.columns) == 9
         for i in range(3):
             assert df.number[i] == i
             assert df.state[i] == "FAIL"
@@ -573,7 +568,6 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
             assert df.params_x[i] == 1
             assert df.params_y[i] == 2.5
             assert df.user_attrs_train_loss[i] == 3
-            assert "system_attrs_fail_reason" in df.columns
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -858,7 +852,7 @@ def test_callbacks(n_jobs: int) -> None:
         n_jobs=n_jobs,
         catch=(ZeroDivisionError,),
     )
-    assert states == [optuna.trial.TrialState.FAIL] * 10
+    assert states == [TrialState.FAIL] * 10
 
     # If a trial is failed with an exception and the exception isn't caught by the study,
     # callbacks aren't invoked.
@@ -892,6 +886,48 @@ def test_get_trials(storage_mode: str) -> None:
             trials2 = study.trials
             assert mock_object.call_count > old_count
             assert trials0 == trials2
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_trials_state_option(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        storage = optuna.storages.get_storage(storage=storage)
+
+        study = optuna.create_study(storage=storage)
+
+        def objective(trial: optuna.trial.Trial) -> float:
+            if trial.number == 0:
+                return 0.0  # TrialState.COMPLETE.
+            elif trial.number == 1:
+                return 0.0  # TrialState.COMPLETE.
+            elif trial.number == 2:
+                raise optuna.exceptions.TrialPruned  # TrialState.PRUNED.
+            else:
+                assert False
+
+        study.optimize(objective, n_trials=3)
+
+        trials = study.get_trials(states=None)
+        assert len(trials) == 3
+
+        trials = study.get_trials(states=(TrialState.COMPLETE,))
+        assert len(trials) == 2
+        assert all(t.state == TrialState.COMPLETE for t in trials)
+
+        trials = study.get_trials(states=(TrialState.COMPLETE, TrialState.PRUNED))
+        assert len(trials) == 3
+        assert all(t.state in (TrialState.COMPLETE, TrialState.PRUNED) for t in trials)
+
+        trials = study.get_trials(states=())
+        assert len(trials) == 0
+
+        other_states = [
+            s for s in list(TrialState) if s != TrialState.COMPLETE and s != TrialState.PRUNED
+        ]
+        for s in other_states:
+            trials = study.get_trials(states=(s,))
+            assert len(trials) == 0
 
 
 def test_study_summary_eq_ne() -> None:
@@ -979,16 +1015,93 @@ def test_log_completed_trial_skip_storage_access() -> None:
     storage = study._storage
 
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, 1.0)
+        study._log_completed_trial(trial, [1.0])
         # Trial.best_trial and Trial.best_params access storage.
         assert mock_object.call_count == 2
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, 1.0)
+        study._log_completed_trial(trial, [1.0])
         assert mock_object.call_count == 0
 
     optuna.logging.set_verbosity(optuna.logging.DEBUG)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, 1.0)
+        study._log_completed_trial(trial, [1.0])
         assert mock_object.call_count == 2
+
+
+def test_create_study_with_multi_objectives() -> None:
+    study = optuna.create_study(directions=["maximize"])
+    assert study.direction == StudyDirection.MAXIMIZE
+    assert not study._is_multi_objective()
+
+    study = optuna.create_study(directions=["maximize", "minimize"])
+    assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+    assert study._is_multi_objective()
+
+    with pytest.raises(ValueError):
+        # Empty `direction` isn't allowed.
+        _ = optuna.create_study(directions=[])
+
+    with pytest.raises(ValueError):
+        _ = optuna.create_study(direction="minimize", directions=["maximize"])
+
+    with pytest.raises(ValueError):
+        _ = optuna.create_study(direction="minimize", directions=[])
+
+
+@pytest.mark.parametrize("n_objectives", [2, 3])
+def test_optimize_with_multi_objectives(n_objectives: int) -> None:
+    directions = ["minimize" for _ in range(n_objectives)]
+    study = optuna.create_study(directions=directions)
+
+    def objective(trial: optuna.trial.Trial) -> List[float]:
+        return [trial.suggest_uniform("v{}".format(i), 0, 5) for i in range(n_objectives)]
+
+    study.optimize(objective, n_trials=10)
+
+    assert len(study.trials) == 10
+
+    for trial in study.trials:
+        assert trial.values
+        assert len(trial.values) == n_objectives
+
+
+def test_pareto_front() -> None:
+    def _trial_to_values(t: optuna.trial.FrozenTrial) -> Tuple[float, ...]:
+        assert t.values is not None
+        return tuple(t.values)
+
+    study = optuna.create_study(directions=["minimize", "maximize"])
+    assert {_trial_to_values(t) for t in study.best_trials} == set()
+
+    study.optimize(lambda t: [2, 2], n_trials=1)
+    assert {_trial_to_values(t) for t in study.best_trials} == {(2, 2)}
+
+    study.optimize(lambda t: [1, 1], n_trials=1)
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
+
+    study.optimize(lambda t: [3, 1], n_trials=1)
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
+
+    study.optimize(lambda t: [1, 3], n_trials=1)
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 3)}
+    assert len(study.best_trials) == 1
+
+    study.optimize(lambda t: [1, 3], n_trials=1)  # The trial result is the same as the above one.
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 3)}
+    assert len(study.best_trials) == 2
+
+
+def test_wrong_n_objectives() -> None:
+    n_objectives = 2
+    directions = ["minimize" for _ in range(n_objectives)]
+    study = optuna.create_study(directions=directions)
+
+    def objective(trial: optuna.trial.Trial) -> List[float]:
+        return [trial.suggest_uniform("v{}".format(i), 0, 5) for i in range(n_objectives + 1)]
+
+    study.optimize(objective, n_trials=10)
+
+    for trial in study.trials:
+        assert trial.state is TrialState.FAIL

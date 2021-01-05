@@ -20,6 +20,7 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
+from optuna.trial._state import TrialState
 
 
 _logger = logging.get_logger(__name__)
@@ -73,7 +74,7 @@ class Trial(BaseTrial):
         high: float,
         *,
         step: Optional[float] = None,
-        log: bool = False
+        log: bool = False,
     ) -> float:
         """Suggest a value for the floating point parameter.
 
@@ -136,6 +137,11 @@ class Trial(BaseTrial):
             high:
                 Upper endpoint of the range of suggested values. ``high`` is excluded from the
                 range.
+
+                .. note::
+                    If ``step`` is specified, ``high`` is included as well as ``low`` because
+                    this method falls back to :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
+
             step:
                 A step of discretization.
 
@@ -432,9 +438,9 @@ class Trial(BaseTrial):
                     "The specified `step` is {}.".format(step)
                 )
             else:
-                distribution = IntUniformDistribution(
-                    low=low, high=high, step=step
-                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+                distribution: Union[
+                    IntUniformDistribution, IntLogUniformDistribution
+                ] = IntUniformDistribution(low=low, high=high, step=step)
         else:
             if log:
                 distribution = IntLogUniformDistribution(low=low, high=high)
@@ -554,7 +560,16 @@ class Trial(BaseTrial):
                 assume that ``step`` starts at zero. For example,
                 :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
                 ``n_warmup_steps`` as the warmup mechanism.
+
+        Raises:
+            :exc:`NotImplementedError`:
+                If trial is being used for multi-objective optimization.
         """
+
+        if len(self.study.directions) > 1:
+            raise NotImplementedError(
+                "Trial.report is not supported for multi-objective optimization."
+            )
 
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
@@ -596,7 +611,16 @@ class Trial(BaseTrial):
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
+
+        Raises:
+            :exc:`NotImplementedError`:
+                If trial is being used for multi-objective optimization.
         """
+
+        if len(self.study.directions) > 1:
+            raise NotImplementedError(
+                "Trial.should_prune is not supported for multi-objective optimization."
+            )
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
@@ -752,6 +776,16 @@ class Trial(BaseTrial):
                 "Using these values: {}".format(name, old_distribution._asdict()),
                 RuntimeWarning,
             )
+
+    def _after_func(self, state: TrialState, values: Optional[Sequence[float]]) -> None:
+        # This method is called right before `Study._tell`.
+        storage = self.storage
+        trial_id = self._trial_id
+
+        trial = storage.get_trial(trial_id)
+
+        study = pruners._filter_study(self.study, trial)
+        self.study.sampler.after_trial(study, trial, state, values)
 
     @property
     def params(self) -> Dict[str, Any]:

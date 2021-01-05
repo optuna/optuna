@@ -1,6 +1,7 @@
 import datetime
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -103,6 +104,9 @@ class FrozenTrial(BaseTrial):
             :class:`TrialState` of the :class:`~optuna.trial.Trial`.
         value:
             Objective value of the :class:`~optuna.trial.Trial`.
+        values:
+            Sequence of objective values of the :class:`~optuna.trial.Trial`.
+            The length is greater than 1 if the problem is multi-objective optimization.
         datetime_start:
             Datetime where the :class:`~optuna.trial.Trial` started.
         datetime_complete:
@@ -114,6 +118,10 @@ class FrozenTrial(BaseTrial):
             :func:`optuna.trial.Trial.set_user_attr`.
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
+
+    Raises:
+        :exc:`ValueError`:
+            If both ``value`` and ``values`` are specified.
     """
 
     def __init__(
@@ -129,11 +137,19 @@ class FrozenTrial(BaseTrial):
         system_attrs: Dict[str, Any],
         intermediate_values: Dict[int, float],
         trial_id: int,
+        *,
+        values: Optional[Sequence[float]] = None,
     ) -> None:
 
         self._number = number
         self.state = state
-        self.value = value
+        self._values: Optional[List[float]] = None
+        if value is not None and values is not None:
+            raise ValueError("Specify only one of `value` and `values`.")
+        elif value is not None:
+            self._values = [value]
+        elif values is not None:
+            self._values = list(values)
         self._datetime_start = datetime_start
         self.datetime_complete = datetime_complete
         self._params = params
@@ -144,10 +160,10 @@ class FrozenTrial(BaseTrial):
         self._trial_id = trial_id
 
     # Ordered list of fields required for `__repr__`, `__hash__` and dataframe creation.
-    # TODO(hvy): Remove this list in Python 3.6 as the order of `self.__dict__` is preserved.
+    # TODO(hvy): Remove this list in Python 3.7 as the order of `self.__dict__` is preserved.
     _ordered_fields = [
         "number",
-        "value",
+        "_values",
         "datetime_start",
         "datetime_complete",
         "params",
@@ -193,7 +209,8 @@ class FrozenTrial(BaseTrial):
                     value=repr(getattr(self, field)),
                 )
                 for field in self._ordered_fields
-            ),
+            )
+            + ", value=None",
         )
 
     def suggest_float(
@@ -203,7 +220,7 @@ class FrozenTrial(BaseTrial):
         high: float,
         *,
         step: Optional[float] = None,
-        log: bool = False
+        log: bool = False,
     ) -> float:
 
         if step is not None:
@@ -239,9 +256,9 @@ class FrozenTrial(BaseTrial):
                     "The specified `step` is {}.".format(step)
                 )
             else:
-                distribution = IntUniformDistribution(
-                    low=low, high=high, step=step
-                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+                distribution: Union[
+                    IntUniformDistribution, IntLogUniformDistribution
+                ] = IntUniformDistribution(low=low, high=high, step=step)
         else:
             if log:
                 distribution = IntLogUniformDistribution(low=low, high=high)
@@ -312,7 +329,7 @@ class FrozenTrial(BaseTrial):
                     "`datetime_complete` is supposed to be None for an unfinished trial."
                 )
 
-        if self.state == TrialState.COMPLETE and self.value is None:
+        if self.state == TrialState.COMPLETE and self._values is None:
             raise ValueError("`value` is supposed to be set for a complete trial.")
 
         if set(self.params.keys()) != set(self.distributions.keys()):
@@ -364,6 +381,47 @@ class FrozenTrial(BaseTrial):
     def number(self, value: int) -> None:
 
         self._number = value
+
+    @property
+    def value(self) -> Optional[float]:
+
+        if self._values is not None:
+            if len(self._values) > 1:
+                raise RuntimeError(
+                    "This attribute is not available during multi-objective optimization."
+                )
+            return self._values[0]
+        return None
+
+    @value.setter
+    def value(self, v: Optional[float]) -> None:
+
+        if self._values is not None:
+            if len(self._values) > 1:
+                raise RuntimeError(
+                    "This attribute is not available during multi-objective optimization."
+                )
+
+        if v is not None:
+            self._values = [v]
+        else:
+            self._values = None
+
+    # These `_get_values`, `_set_values`, and `values = property(_get_values, _set_values)` are
+    # defined to pass the mypy.
+    # See https://github.com/python/mypy/issues/3004#issuecomment-726022329.
+    def _get_values(self) -> Optional[List[float]]:
+
+        return self._values
+
+    def _set_values(self, v: Optional[Sequence[float]]) -> None:
+
+        if v is not None:
+            self._values = list(v)
+        else:
+            self._values = None
+
+    values = property(_get_values, _set_values)
 
     @property
     def datetime_start(self) -> Optional[datetime.datetime]:
@@ -448,11 +506,12 @@ def create_trial(
     *,
     state: Optional[TrialState] = None,
     value: Optional[float] = None,
+    values: Optional[Sequence[float]] = None,
     params: Optional[Dict[str, Any]] = None,
     distributions: Optional[Dict[str, BaseDistribution]] = None,
     user_attrs: Optional[Dict[str, Any]] = None,
     system_attrs: Optional[Dict[str, Any]] = None,
-    intermediate_values: Optional[Dict[int, float]] = None
+    intermediate_values: Optional[Dict[int, float]] = None,
 ) -> FrozenTrial:
     """Create a new :class:`~optuna.trial.FrozenTrial`.
 
@@ -492,6 +551,10 @@ def create_trial(
             Trial state.
         value:
             Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
+        values:
+            Sequence of the trial objective values. The length is greater than 1 if the problem is
+            multi-objective optimization.
+            Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
         params:
             Dictionary with suggested parameters of the trial.
         distributions:
@@ -506,6 +569,9 @@ def create_trial(
     Returns:
         Created trial.
 
+    Raises:
+        :exc:`ValueError`:
+            If both ``value`` and ``values`` are specified.
     """
 
     params = params or {}
@@ -517,7 +583,7 @@ def create_trial(
 
     datetime_start = datetime.datetime.now()
     if state.is_finished():
-        datetime_complete = datetime_start  # type: Optional[datetime.datetime]
+        datetime_complete: Optional[datetime.datetime] = datetime_start
     else:
         datetime_complete = None
 
@@ -526,6 +592,7 @@ def create_trial(
         trial_id=-1,
         state=state,
         value=value,
+        values=values,
         datetime_start=datetime_start,
         datetime_complete=datetime_complete,
         params=params,

@@ -1,8 +1,12 @@
 import abc
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
+from typing import Tuple
+from typing import Union
 
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
@@ -162,22 +166,23 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_study_direction(self, study_id: int, direction: StudyDirection) -> None:
-        """Register an optimization problem direction to a study.
+    def set_study_directions(self, study_id: int, directions: Sequence[StudyDirection]) -> None:
+        """Register optimization problem directions to a study.
 
         Args:
             study_id:
                 ID of the study.
-            direction:
-                Either :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
+            directions:
+                A sequence of direction whose element is either
+                :obj:`~optuna.study.StudyDirection.MAXIMIZE` or
                 :obj:`~optuna.study.StudyDirection.MINIMIZE`.
 
         Raises:
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
             :exc:`ValueError`:
-                If the direction is already set and the passed ``direction`` is the opposite
-                direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
+                If the directions are already set and the each coordinate of passed ``directions``
+                is the opposite direction or :obj:`~optuna.study.StudyDirection.NOT_SET`.
         """
         raise NotImplementedError
 
@@ -235,7 +240,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_study_direction(self, study_id: int) -> StudyDirection:
+    def get_study_directions(self, study_id: int) -> List[StudyDirection]:
         """Read whether a study maximizes or minimizes an objective.
 
         Args:
@@ -243,7 +248,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 ID of a study.
 
         Returns:
-            Optimization direction of the study.
+            Optimization directions list of the study.
 
         Raises:
             :exc:`KeyError`:
@@ -414,16 +419,16 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_value(self, trial_id: int, value: float) -> None:
-        """Set a return value of an objective function.
+    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
+        """Set return values of an objective function.
 
-        This method overwrites any existing trial value.
+        This method overwrites any existing trial values.
 
         Args:
             trial_id:
                 ID of the trial.
-            value:
-                Value of the objective function.
+            values:
+                Values of the objective function.
 
         Raises:
             :exc:`KeyError`:
@@ -521,7 +526,12 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_all_trials(self, study_id: int, deepcopy: bool = True) -> List[FrozenTrial]:
+    def get_all_trials(
+        self,
+        study_id: int,
+        deepcopy: bool = True,
+        states: Optional[Tuple[TrialState, ...]] = None,
+    ) -> List[FrozenTrial]:
         """Read all trials in a study.
 
         Args:
@@ -530,6 +540,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             deepcopy:
                 Whether to copy the list of trials before returning.
                 Set to :obj:`True` if you intend to update the list or elements of the list.
+            states:
+                Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
             List of trials in the study.
@@ -540,14 +552,16 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    def get_n_trials(self, study_id: int, state: Optional[TrialState] = None) -> int:
+    def get_n_trials(
+        self, study_id: int, state: Optional[Union[Tuple[TrialState, ...], TrialState]] = None
+    ) -> int:
         """Count the number of trials in a study.
 
         Args:
             study_id:
                 ID of the study.
             state:
-                :class:`~optuna.trial.TrialState` to filter trials.
+                Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
             Number of trials in the study.
@@ -556,13 +570,16 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
         """
-        if state is None:
-            return len(self.get_all_trials(study_id, deepcopy=False))
-
-        return len([t for t in self.get_all_trials(study_id, deepcopy=False) if t.state == state])
+        # TODO(hvy): Align the name and the behavior or the `state` parameter with
+        # `get_all_trials`'s `states`.
+        if isinstance(state, TrialState):
+            state = (state,)
+        return len(self.get_all_trials(study_id, deepcopy=False, states=state))
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
         """Return the trial with the best value in a study.
+
+        This method is valid only during single-objective optimization.
 
         Args:
             study_id:
@@ -574,6 +591,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         Raises:
             :exc:`KeyError`:
                 If no study with the matching ``study_id`` exists.
+            :exc:`RuntimeError`:
+                If the study has more than one direction.
             :exc:`ValueError`:
                 If no trials have been completed.
         """
@@ -583,10 +602,17 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         if len(all_trials) == 0:
             raise ValueError("No trials are completed yet.")
 
-        if self.get_study_direction(study_id) == StudyDirection.MAXIMIZE:
-            best_trial = max(all_trials, key=lambda t: t.value)
+        directions = self.get_study_directions(study_id)
+        if len(directions) > 1:
+            raise RuntimeError(
+                "Best trial can be obtained only for single-objective optimization."
+            )
+        direction = directions[0]
+
+        if direction == StudyDirection.MAXIMIZE:
+            best_trial = max(all_trials, key=lambda t: cast(float, t.value))
         else:
-            best_trial = min(all_trials, key=lambda t: t.value)
+            best_trial = min(all_trials, key=lambda t: cast(float, t.value))
 
         return best_trial
 
