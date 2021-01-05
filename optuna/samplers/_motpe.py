@@ -93,7 +93,7 @@ class MOTPESampler(TPESampler):
             import optuna
 
             seed = 128
-            num_variables = 9
+            num_variables = 2
             n_startup_trials = 11 * num_variables - 1
 
 
@@ -108,7 +108,7 @@ class MOTPESampler(TPESampler):
                 n_startup_trials=n_startup_trials, n_ehvi_candidates=24, seed=seed
             )
             study = optuna.create_study(directions=["minimize"] * num_variables, sampler=sampler)
-            study.optimize(objective, n_trials=250)
+            study.optimize(objective, n_trials=n_startup_trials + 10)
     """
 
     def __init__(
@@ -169,7 +169,7 @@ class MOTPESampler(TPESampler):
             raise ValueError(
                 "Number of objectives must be >= 2. "
                 "Please use optuna.samplers.TPESampler for single-objective optimization."
-            ) from None
+            )
 
         values, scores = _get_observation_pairs(study, param_name)
         n = len(values)
