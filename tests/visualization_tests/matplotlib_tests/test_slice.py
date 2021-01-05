@@ -38,7 +38,8 @@ def test_plot_slice() -> None:
     assert figure.has_data()
 
     # Test with a customized target value.
-    figure = plot_slice(study, params=["param_a"], target=lambda t: t.params["param_b"])
+    with pytest.warns(UserWarning):
+        figure = plot_slice(study, params=["param_a"], target=lambda t: t.params["param_b"])
     assert figure.has_data()
 
     # Test with a customized target name.

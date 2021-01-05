@@ -1,7 +1,13 @@
+from typing import Callable
 from typing import List
+from typing import Optional
+from typing import Sequence
+from typing import Union
+import warnings
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import LogUniformDistribution
+from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.visualization import _plotly_imports
 
@@ -24,6 +30,29 @@ def is_available() -> bool:
     """
 
     return _plotly_imports._imports.is_successful()
+
+
+def _check_plot_args(
+    study: Union[Study, Sequence[Study]],
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
+) -> None:
+    if isinstance(study, Study):
+        studies = [study]
+    else:
+        studies = list(study)
+
+    if target is None and any(study._is_multi_objective() for study in studies):
+        raise ValueError(
+            "If the `study` is being used for multi-objective optimization, "
+            "please specify the `target`."
+        )
+
+    if target is not None and target_name == "Objective Value":
+        warnings.warn(
+            "`target` is specified, but `target_name` is the default value, 'Objective Value'. "
+            "This setting may confuse a plot."
+        )
 
 
 def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:

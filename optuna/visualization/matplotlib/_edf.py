@@ -13,6 +13,7 @@ from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -104,11 +105,8 @@ def plot_edf(
     else:
         studies = list(study)
 
-    if target is None and any(study._is_multi_objective() for study in studies):
-        raise ValueError(
-            "If the `study` is being used for multi-objective optimization, "
-            "please specify the `target`."
-        )
+    _check_plot_args(studies, target, target_name)
+
     return _get_edf_plot(studies, target, target_name)
 
 
