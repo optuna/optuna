@@ -268,6 +268,26 @@ class InMemoryStorage(BaseStorage):
             trial.distributions[param_name] = distribution
             self._set_trial(trial_id, trial)
 
+    def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
+
+        with self._lock:
+            study = self._studies.get(study_id)
+            if study is None:
+                raise KeyError("No study with study_id {} exists.".format(study_id))
+
+            trials = study.trials
+            if len(trials) <= trial_number:
+                raise KeyError(
+                    "No trial with trial number {} exists in study with study_id {}.".format(
+                        trial_number, study_id
+                    )
+                )
+
+            trial = trials[trial_number]
+            assert trial.number == trial_number
+
+            return trial._trial_id
+
     def get_trial_number_from_id(self, trial_id: int) -> int:
 
         with self._lock:
