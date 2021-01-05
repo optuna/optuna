@@ -60,9 +60,7 @@ If you catch format errors, you can automatically fix them by auto-formatters.
 # Install auto-formatters.
 $ pip install .[checking]
 
-$ black .     # Fix the format by black.
-$ blackdoc .  # Fix the format of docstring by blackdoc.
-$ isort .     # Fix the import order by isort.
+$ ./formats.sh 
 ```
 
 ### Documentation
