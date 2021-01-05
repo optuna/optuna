@@ -555,9 +555,9 @@ class Study(BaseStudy):
 
         try:
             # Sampler defined trial post-processing.
-            trial = self._storage.get_trial(trial_id)
-            study = pruners._filter_study(self, trial)
-            self.sampler.after_trial(study, trial, state, values)
+            frozen_trial = self._storage.get_trial(trial_id)
+            study = pruners._filter_study(self, frozen_trial)
+            self.sampler.after_trial(study, frozen_trial, state, values)
         except Exception:
             raise
         finally:
