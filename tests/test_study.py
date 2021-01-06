@@ -1256,6 +1256,13 @@ def test_report_trial_variations() -> None:
         study.report("1", 1.0, 3)  # type: ignore
 
 
+def test_raise_error_for_report_with_multi_objectives() -> None:
+    study = optuna.create_study(directions=["maximize", "maximize"])
+
+    with pytest.raises(NotImplementedError):
+        study.report(study.ask(), 1.0, 0)
+
+
 def test_storage_not_implemented_trial_number() -> None:
     with StorageSupplier("inmemory") as storage:
 
