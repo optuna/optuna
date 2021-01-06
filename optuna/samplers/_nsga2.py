@@ -7,6 +7,7 @@ from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 import numpy as np
@@ -17,6 +18,7 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.study import Study
+from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 
 
@@ -236,7 +238,7 @@ class NSGAIISampler(BaseSampler):
         self, study: Study, population: List[FrozenTrial]
     ) -> List[FrozenTrial]:
         elite_population: List[FrozenTrial] = []
-        population_per_rank = _fast_non_dominated_sort(population, study.directions)
+        population_per_rank = self._fast_non_dominated_sort(population, study.directions)
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
@@ -254,50 +256,57 @@ class NSGAIISampler(BaseSampler):
         candidate1 = self._rng.choice(population)
 
         # TODO(ohta): Consider crowding distance.
-        if _dominates(candidate0, candidate1, study.directions):
+        if self._dominates(candidate0, candidate1, study.directions):
             return candidate0
         else:
             return candidate1
 
+    @classmethod
+    def _dominates(
+        cls, trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection]
+    ) -> bool:
+        return _dominates(trial0, trial1, directions)
 
-def _fast_non_dominated_sort(
-    population: List[FrozenTrial],
-    directions: List[optuna.study.StudyDirection],
-) -> List[List[FrozenTrial]]:
-    dominated_count: DefaultDict[int, int] = defaultdict(int)
-    dominates_list = defaultdict(list)
+    @classmethod
+    def _fast_non_dominated_sort(
+        cls,
+        population: List[FrozenTrial],
+        directions: List[optuna.study.StudyDirection],
+    ) -> List[List[FrozenTrial]]:
+        dominated_count: DefaultDict[int, int] = defaultdict(int)
+        dominates_list = defaultdict(list)
 
-    for p, q in itertools.combinations(population, 2):
-        if _dominates(p, q, directions):
-            dominates_list[p.number].append(q.number)
-            dominated_count[q.number] += 1
-        elif _dominates(q, p, directions):
-            dominates_list[q.number].append(p.number)
-            dominated_count[p.number] += 1
+        for p, q in itertools.combinations(population, 2):
+            if cls._dominates(p, q, directions):
+                dominates_list[p.number].append(q.number)
+                dominated_count[q.number] += 1
+            elif cls._dominates(q, p, directions):
+                dominates_list[q.number].append(p.number)
+                dominated_count[p.number] += 1
 
-    population_per_rank = []
-    while population:
-        non_dominated_population = []
-        i = 0
-        while i < len(population):
-            if dominated_count[population[i].number] == 0:
-                individual = population[i]
-                if i == len(population) - 1:
-                    population.pop()
+        population_per_rank = []
+        while population:
+            non_dominated_population = []
+            i = 0
+            while i < len(population):
+                if dominated_count[population[i].number] == 0:
+                    individual = population[i]
+                    if i == len(population) - 1:
+                        population.pop()
+                    else:
+                        population[i] = population.pop()
+                    non_dominated_population.append(individual)
                 else:
-                    population[i] = population.pop()
-                non_dominated_population.append(individual)
-            else:
-                i += 1
+                    i += 1
 
-        for x in non_dominated_population:
-            for y in dominates_list[x.number]:
-                dominated_count[y] -= 1
+            for x in non_dominated_population:
+                for y in dominates_list[x.number]:
+                    dominated_count[y] -= 1
 
-        assert non_dominated_population
-        population_per_rank.append(non_dominated_population)
+            assert non_dominated_population
+            population_per_rank.append(non_dominated_population)
 
-    return population_per_rank
+        return population_per_rank
 
 
 def _crowding_distance_sort(population: List[FrozenTrial]) -> None:

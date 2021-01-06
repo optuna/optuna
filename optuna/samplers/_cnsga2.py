@@ -1,25 +1,58 @@
-from collections import defaultdict
 import copy
-import itertools
 from typing import Callable
-from typing import DefaultDict
-from typing import List
 from typing import Optional
 from typing import Sequence
 import warnings
 
-import optuna
 from optuna._multi_objective import _dominates
-from optuna.samplers import NSGAIISampler
+from optuna.samplers._nsga2 import NSGAIISampler
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
 _CONSTRAINTS_KEY = "cnsga2:constraints"
 
 
 class CNSGAIISampler(NSGAIISampler):
+    """Multi-objective sampler using the constrained NSGA-II algorithm.
+
+    This sampler extends :class:`~optuna.samplers.NSGAIISampler` to handle constraints
+    based on the constrained-domination principle. In short, any feasible trial has a
+    better nondomination rank than any infeasible trial.
+
+    For further details of constrained NSGA-II, please refer to the following paper:
+
+    - `A fast and elitist multiobjective genetic algorithm: NSGA-II
+      <https://ieeexplore.ieee.org/document/996017>`_
+
+    Args:
+        population_size:
+            Number of individuals (trials) in a generation.
+
+        mutation_prob:
+            Probability of mutating each parameter when creating a new individual.
+            If :obj:`None` is specified, the value ``1.0 / len(parent_trial.params)`` is used
+            where ``parent_trial`` is the parent trial of the target individual.
+
+        crossover_prob:
+            Probability that a crossover (parameters swapping between parents) will occur
+            when creating a new individual.
+
+        swapping_prob:
+            Probability of swapping each parameter of the parents during crossover.
+
+        seed:
+            Seed for random number generator.
+
+        constraints_func:
+            A function that computes the objective constraints. It must take a
+            :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
+            be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
+            constraints is violated. A value equal to or smaller than 0 is considered feasible.
+    """
+
     def __init__(
         self,
         *,
@@ -28,7 +61,7 @@ class CNSGAIISampler(NSGAIISampler):
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
-        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+        constraints_func: Callable[[FrozenTrial], Sequence[float]],
     ) -> None:
         super().__init__(
             population_size=population_size,
@@ -69,105 +102,48 @@ class CNSGAIISampler(NSGAIISampler):
                     constraints,
                 )
 
-    def _select_elite_population(
-        self, study: Study, population: List[FrozenTrial]
-    ) -> List[FrozenTrial]:
-        elite_population: List[FrozenTrial] = []
-        population_per_rank = _fast_non_dominated_sort(population, study.directions)
-        for population in population_per_rank:
-            if len(elite_population) + len(population) < self._population_size:
-                elite_population.extend(population)
-            else:
-                n = self._population_size - len(elite_population)
-                optuna.samplers._nsga2._crowding_distance_sort(population)
-                elite_population.extend(population[:n])
-                break
+    @classmethod
+    def _dominates(
+        cls, trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection]
+    ) -> bool:
+        """Checks constrained-domination.
 
-        return elite_population
+        A trial x is said to constrained-dominate a trial y, if any of the following conditions is
+        true:
+        1) Trial x is feasible and trial y is not.
+        2) Trial x and y are both infeasible, but solution x has a smaller overall constraint
+        violation.
+        3) Trial x and y are feasible and trial x dominates trial y.
+        """
 
-    def _select_parent(self, study: Study, population: List[FrozenTrial]) -> FrozenTrial:
-        # TODO(ohta): Consider to allow users to specify the number of parent candidates.
-        candidate0 = self._rng.choice(population)
-        candidate1 = self._rng.choice(population)
+        constraints0 = trial0.system_attrs[_CONSTRAINTS_KEY]
+        constraints1 = trial1.system_attrs[_CONSTRAINTS_KEY]
 
-        # TODO(ohta): Consider crowding distance.
-        if _sigma_dominates(candidate0, candidate1, study.directions):
-            return candidate0
-        else:
-            return candidate1
+        assert isinstance(constraints0, (list, tuple))
+        assert isinstance(constraints1, (list, tuple))
 
+        if len(constraints1) != len(constraints1):
+            raise ValueError("Trials with different numbers of constraints cannot be compared.")
 
-def _sigma_dominates(
-    trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection]
-) -> bool:
-    constraints0 = trial0.system_attrs[_CONSTRAINTS_KEY]
-    constraints1 = trial1.system_attrs[_CONSTRAINTS_KEY]
+        if trial0.state != TrialState.COMPLETE:
+            return False
 
-    assert isinstance(constraints0, (list, tuple))
-    assert isinstance(constraints1, (list, tuple))
+        if trial1.state != TrialState.COMPLETE:
+            return True
 
-    if len(constraints1) != len(constraints1):
-        raise ValueError("Trials with different numbers of constraints cannot be compared.")
+        if all(v <= 0 for v in constraints0) and all(v <= 0 for v in constraints1):
+            # Both trials satisfy the constraints.
+            return _dominates(trial0, trial1, directions)
 
-    if trial0.state != TrialState.COMPLETE:
-        return False
+        if all(v <= 0 for v in constraints0):
+            # trial0 satisfies the constraints, but trial1 violates them.
+            return True
 
-    if trial1.state != TrialState.COMPLETE:
-        return True
+        if all(v <= 0 for v in constraints1):
+            # trial1 satisfies the constraints, but trial0 violates them.
+            return False
 
-    if all(v <= 0 for v in constraints0) and all(v <= 0 for v in constraints1):
-        # Both trials satisfy the constraints.
-        return _dominates(trial0, trial1, directions)
-
-    if all(v <= 0 for v in constraints0):
-        # trial0 satisfies the constraints, but trial1 violates them.
-        return True
-
-    if all(v <= 0 for v in constraints1):
-        # trial1 satisfies the constraints, but trial0 violates them.
-        return False
-
-    # Both trials violate the constraints.
-    violation0 = sum(v for v in constraints0 if v > 0)
-    violation1 = sum(v for v in constraints1 if v > 0)
-    return violation0 < violation1
-
-
-def _fast_non_dominated_sort(
-    population: List[FrozenTrial],
-    directions: List[StudyDirection],
-) -> List[List[FrozenTrial]]:
-    dominated_count: DefaultDict[int, int] = defaultdict(int)
-    dominates_list = defaultdict(list)
-
-    for p, q in itertools.combinations(population, 2):
-        if _sigma_dominates(p, q, directions):
-            dominates_list[p.number].append(q.number)
-            dominated_count[q.number] += 1
-        elif _sigma_dominates(q, p, directions):
-            dominates_list[q.number].append(p.number)
-            dominated_count[p.number] += 1
-
-    population_per_rank = []
-    while population:
-        non_dominated_population = []
-        i = 0
-        while i < len(population):
-            if dominated_count[population[i].number] == 0:
-                individual = population[i]
-                if i == len(population) - 1:
-                    population.pop()
-                else:
-                    population[i] = population.pop()
-                non_dominated_population.append(individual)
-            else:
-                i += 1
-
-        for x in non_dominated_population:
-            for y in dominates_list[x.number]:
-                dominated_count[y] -= 1
-
-        assert non_dominated_population
-        population_per_rank.append(non_dominated_population)
-
-    return population_per_rank
+        # Both trials violate the constraints.
+        violation0 = sum(v for v in constraints0 if v > 0)
+        violation1 = sum(v for v in constraints1 if v > 0)
+        return violation0 < violation1
