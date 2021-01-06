@@ -89,6 +89,8 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study)
     assert len(figure.data) == 0
 
+
+def test_plot_parallel_coordinate_categorical_params() -> None:
     # Test with categorical params that cannot be converted to numeral.
     study_categorical_params = create_study()
     study_categorical_params.add_trial(
@@ -125,6 +127,8 @@ def test_plot_parallel_coordinate() -> None:
     assert figure.data[0]["dimensions"][2]["values"] == (0, 1)
     assert figure.data[0]["dimensions"][2]["ticktext"] == (["net", 0], ["una", 1])
 
+
+def test_plot_parallel_coordinate_log_params() -> None:
     # Test with log params.
     study_log_params = create_study()
     study_log_params.add_trial(

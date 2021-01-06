@@ -59,6 +59,8 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study)
     assert not figure.has_data()
 
+
+def test_plot_parallel_coordinate_categorical_params() -> None:
     # Test with categorical params that cannot be converted to numeral.
     # TODO(ytknzw): Add more specific assertion with the test case.
     study_categorical_params = create_study()
@@ -85,6 +87,9 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study_categorical_params)
     assert figure.has_data()
 
+
+def test_plot_parallel_coordinate_log_params() -> None:
+    # Test with log params
     study_log_params = create_study()
     study_log_params.add_trial(
         create_trial(
