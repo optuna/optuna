@@ -175,6 +175,7 @@ def upgrade():
                 batch_op.drop_constraint(c["name"], type_="unique")
             break
 
+
 # TODO(imamura): Implement downgrade
 def downgrade():
     pass
