@@ -582,7 +582,8 @@ class Trial(BaseTrial):
             values, the suggestions will be the same.
 
         .. seealso::
-            Please refer to the example code in :func:`optuna.trial.Trial.report`.
+            Please refer to the example code in :func:`optuna.trial.Trial.report` and
+            :func:`~optuna.study.Study.should_prune` for an alternative interface.
 
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
@@ -593,13 +594,7 @@ class Trial(BaseTrial):
                 If trial is being used for multi-objective optimization.
         """
 
-        if len(self.study.directions) > 1:
-            raise NotImplementedError(
-                "Trial.should_prune is not supported for multi-objective optimization."
-            )
-
-        trial = self.study._storage.get_trial(self._trial_id)
-        return self.study.pruner.prune(self.study, trial)
+        return self.study.should_prune(self)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set user attributes to the trial.

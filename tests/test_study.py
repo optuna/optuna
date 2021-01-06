@@ -24,6 +24,7 @@ import optuna
 from optuna import _optimize
 from optuna import create_trial
 from optuna.study import StudyDirection
+from optuna.testing.integration import DeterministicPruner
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -1263,6 +1264,44 @@ def test_raise_error_for_report_with_multi_objectives() -> None:
         study.report(study.ask(), 1.0, 0)
 
 
+def test_should_prune() -> None:
+    # See tests/test_trial.py for corresponding tests for `Trial.should_prune`.
+
+    pruner = DeterministicPruner(True)
+    study = optuna.create_study(pruner=pruner)
+
+    trial = study.ask()
+
+    study.report(trial, 1, 1)
+
+    assert study.should_prune(trial)
+
+
+def test_should_prune_trial_variations() -> None:
+    pruner = DeterministicPruner(True)
+    study = optuna.create_study(pruner=pruner)
+
+    trial = study.ask()
+
+    study.report(trial, 1, 1)
+
+    assert study.should_prune(trial.number)
+
+    # Trial that has not been asked for cannot be reported.
+    with pytest.raises(ValueError):
+        study.should_prune(trial.number + 1)
+
+    with pytest.raises(TypeError):
+        study.should_prune("1")  # type: ignore
+
+
+def test_raise_error_for_should_prune_with_multi_objectives() -> None:
+    study = optuna.create_study(directions=["maximize", "maximize"])
+
+    with pytest.raises(NotImplementedError):
+        study.should_prune(study.ask())
+
+
 def test_storage_not_implemented_trial_number() -> None:
     with StorageSupplier("inmemory") as storage:
 
@@ -1282,3 +1321,6 @@ def test_storage_not_implemented_trial_number() -> None:
 
             with pytest.raises(TypeError):
                 study.report(study.ask().number, 1.0, 1)
+
+            with pytest.raises(TypeError):
+                study.should_prune(study.ask().number)

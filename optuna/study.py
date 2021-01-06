@@ -457,7 +457,7 @@ class Study(BaseStudy):
 
                         study.report(trial, y, step=step)
 
-                        if trial.should_prune():
+                        if study.should_prune(trial):
                             # Finish the trial with the pruned state.
                             study.tell(trial, state=TrialState.PRUNED)
                             break
@@ -607,6 +607,43 @@ class Study(BaseStudy):
             return
 
         self._storage.set_trial_intermediate_value(trial_id, step, value)
+
+    def should_prune(self, trial: Union[trial_module.Trial, int]) -> bool:
+        """Suggest whether the trial should be pruned or not.
+
+        The suggestion is made by a pruning algorithm associated with the trial and is based on
+        previously reported values. The algorithm can be specified when constructing a
+        :class:`~optuna.study.Study`.
+
+        This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
+        controlling the lifetime of a trial outside the scope of ``func`` and can be used instead
+        of :func:`~optuna.trial.Trial.should_prune` in case a :class:`~optuna.trial.Trial` object
+        is not available since ``trial`` can be a trial number.
+
+        .. seealso::
+            Please refer to :func:`~optuna.trial.Trial.should_prune` for more details and
+            :func:`~optuna.study.Study.tell` for an example.
+
+        Args:
+            trial:
+                A :class:`~optuna.trial.Trial` object or a trial number.
+
+        Returns:
+            A boolean value. If :obj:`True`, the trial should be pruned according to the
+            configured pruning algorithm. Otherwise, the trial should continue.
+
+        Raises:
+            NotImplementedError:
+                If trial is being used for multi-objective optimization.
+        """
+
+        if len(self.directions) > 1:
+            raise NotImplementedError("Pruning is not supported for multi-objective optimization.")
+
+        trial_id = self._get_trial_id(trial)
+
+        frozen_trial = self._storage.get_trial(trial_id)
+        return self.pruner.prune(self, frozen_trial)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
