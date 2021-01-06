@@ -144,7 +144,6 @@ def upgrade():
             batch_op.create_unique_constraint(
                 "uq_trial_values_trial_id_objective", ["trial_id", "objective"]
             )
-            batch_op.drop_constraint("trial_id", type_="unique")
 
         trials_records = session.query(TrialModel).all()
         objects = [
@@ -169,6 +168,12 @@ def upgrade():
     with op.batch_alter_table("trials", schema=None) as batch_op:
         batch_op.drop_column("value")
 
+    for c in Inspector.from_engine(bind).get_unique_constraints("trial_values"):
+        # MySQL changes the uniq constraint of (trial_id, step) to that of trial_id.
+        if c["column_names"] == ["trial_id"]:
+            with op.batch_alter_table("trial_values", schema=None) as batch_op:
+                batch_op.drop_constraint(c["name"], type_="unique")
+            break
 
 # TODO(imamura): Implement downgrade
 def downgrade():
