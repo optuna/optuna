@@ -144,6 +144,7 @@ def upgrade():
             batch_op.create_unique_constraint(
                 "uq_trial_values_trial_id_objective", ["trial_id", "objective"]
             )
+            batch_op.drop_constraint("trial_id", type_="unique")
 
         trials_records = session.query(TrialModel).all()
         objects = [
