@@ -541,7 +541,10 @@ class Study(BaseStudy):
             values, values_conversion_failure_message = _check_and_convert_to_values(
                 len(self.directions), values, trial_number
             )
-            if values_conversion_failure_message is not None:
+            # When called from `Study.optimize` and `state` is pruned, the given `values` contains
+            # the intermediate value with the largest step so far. In this case, the value is
+            # allowed to be NaN and errors should not be raised.
+            if state != TrialState.PRUNED and values_conversion_failure_message is not None:
                 raise ValueError(values_conversion_failure_message)
 
         assert trial_id is not None
