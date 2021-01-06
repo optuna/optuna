@@ -1211,3 +1211,21 @@ def test_tell_values() -> None:
     # Default state is `TrialState.COMPLETE` for which values are required.
     with pytest.raises(ValueError):
         study.tell(study.ask())
+
+
+def test_tell_storage_not_implemented_trial_number() -> None:
+    with StorageSupplier("inmemory") as storage:
+
+        with patch.object(
+            storage,
+            "get_trial_id_from_study_id_trial_number",
+            side_effect=NotImplementedError,
+        ):
+            study = optuna.create_study(storage=storage)
+
+            study.tell(study.ask(), 1.0)
+
+            # Storage missing implementation for method required to map trial numbers back to
+            # trial IDs.
+            with pytest.raises(TypeError):
+                study.tell(study.ask().number, 1.0)

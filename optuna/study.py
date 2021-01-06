@@ -529,6 +529,12 @@ class Study(BaseStudy):
                 trial_id = self._storage.get_trial_id_from_study_id_trial_number(
                     self._study_id, trial_number
                 )
+            except NotImplementedError as e:
+                raise TypeError(
+                    "Study.tell failed because the trial was represented by its number but the "
+                    f"storage {self._storage.__class__.__name__} does not implement the method "
+                    "required to map numbers back. Please provide the trial object instead."
+                ) from e
             except KeyError as e:
                 raise ValueError(
                     f"Cannot tell for trial with number {trial_number} since it has not been "
