@@ -1,13 +1,17 @@
 from collections import defaultdict
+import copy
 import hashlib
 import itertools
 from typing import Any
+from typing import Callable
 from typing import cast
 from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
+import warnings
 
 import numpy as np
 
@@ -17,10 +21,13 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.study import Study
+from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 
 
 # Define key names of `Trial.system_attrs`.
+_CONSTRAINTS_KEY = "nsga2:constraints"
 _GENERATION_KEY = "nsga2:generation"
 _PARENTS_KEY = "nsga2:parents"
 _POPULATION_CACHE_KEY_PREFIX = "nsga2:population"
@@ -55,6 +62,12 @@ class NSGAIISampler(BaseSampler):
 
         seed:
             Seed for random number generator.
+
+        constraints_func:
+            An optional function that computes the objective constraints. It must take a
+            :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
+            be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
+            constraints is violated. A value equal to or smaller than 0 is considered feasible.
     """
 
     def __init__(
@@ -65,6 +78,7 @@ class NSGAIISampler(BaseSampler):
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
+        constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
@@ -91,6 +105,7 @@ class NSGAIISampler(BaseSampler):
         self._swapping_prob = swapping_prob
         self._random_sampler = RandomSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
+        self._constraints_func = constraints_func
 
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
@@ -236,7 +251,7 @@ class NSGAIISampler(BaseSampler):
         self, study: Study, population: List[FrozenTrial]
     ) -> List[FrozenTrial]:
         elite_population: List[FrozenTrial] = []
-        population_per_rank = _fast_non_dominated_sort(population, study.directions)
+        population_per_rank = self._fast_non_dominated_sort(population, study.directions)
         for population in population_per_rank:
             if len(elite_population) + len(population) < self._population_size:
                 elite_population.extend(population)
@@ -253,51 +268,85 @@ class NSGAIISampler(BaseSampler):
         candidate0 = self._rng.choice(population)
         candidate1 = self._rng.choice(population)
 
+        dominates = _dominates if self._constraints_func is None else _constrained_dominates
+
         # TODO(ohta): Consider crowding distance.
-        if _dominates(candidate0, candidate1, study.directions):
+        if dominates(candidate0, candidate1, study.directions):
             return candidate0
         else:
             return candidate1
 
+    def _fast_non_dominated_sort(
+        self,
+        population: List[FrozenTrial],
+        directions: List[optuna.study.StudyDirection],
+    ) -> List[List[FrozenTrial]]:
+        dominated_count: DefaultDict[int, int] = defaultdict(int)
+        dominates_list = defaultdict(list)
 
-def _fast_non_dominated_sort(
-    population: List[FrozenTrial],
-    directions: List[optuna.study.StudyDirection],
-) -> List[List[FrozenTrial]]:
-    dominated_count: DefaultDict[int, int] = defaultdict(int)
-    dominates_list = defaultdict(list)
+        dominates = _dominates if self._constraints_func is None else _constrained_dominates
 
-    for p, q in itertools.combinations(population, 2):
-        if _dominates(p, q, directions):
-            dominates_list[p.number].append(q.number)
-            dominated_count[q.number] += 1
-        elif _dominates(q, p, directions):
-            dominates_list[q.number].append(p.number)
-            dominated_count[p.number] += 1
+        for p, q in itertools.combinations(population, 2):
+            if dominates(p, q, directions):
+                dominates_list[p.number].append(q.number)
+                dominated_count[q.number] += 1
+            elif dominates(q, p, directions):
+                dominates_list[q.number].append(p.number)
+                dominated_count[p.number] += 1
 
-    population_per_rank = []
-    while population:
-        non_dominated_population = []
-        i = 0
-        while i < len(population):
-            if dominated_count[population[i].number] == 0:
-                individual = population[i]
-                if i == len(population) - 1:
-                    population.pop()
+        population_per_rank = []
+        while population:
+            non_dominated_population = []
+            i = 0
+            while i < len(population):
+                if dominated_count[population[i].number] == 0:
+                    individual = population[i]
+                    if i == len(population) - 1:
+                        population.pop()
+                    else:
+                        population[i] = population.pop()
+                    non_dominated_population.append(individual)
                 else:
-                    population[i] = population.pop()
-                non_dominated_population.append(individual)
-            else:
-                i += 1
+                    i += 1
 
-        for x in non_dominated_population:
-            for y in dominates_list[x.number]:
-                dominated_count[y] -= 1
+            for x in non_dominated_population:
+                for y in dominates_list[x.number]:
+                    dominated_count[y] -= 1
 
-        assert non_dominated_population
-        population_per_rank.append(non_dominated_population)
+            assert non_dominated_population
+            population_per_rank.append(non_dominated_population)
 
-    return population_per_rank
+        return population_per_rank
+
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+        if self._constraints_func is not None:
+            constraints = None
+            _trial = copy.copy(trial)
+            _trial.state = state
+            _trial.values = values
+            try:
+                con = self._constraints_func(_trial)
+                if not isinstance(con, (tuple, list)):
+                    warnings.warn(
+                        f"Constraints should be a sequence of floats but got {constraints}."
+                    )
+                constraints = tuple(con)
+            except Exception:
+                raise
+            finally:
+                assert constraints is None or isinstance(constraints, tuple)
+
+                study._storage.set_trial_system_attr(
+                    trial._trial_id,
+                    _CONSTRAINTS_KEY,
+                    constraints,
+                )
 
 
 def _crowding_distance_sort(population: List[FrozenTrial]) -> None:
@@ -327,3 +376,49 @@ def _crowding_distance_sort(population: List[FrozenTrial]) -> None:
 
     population.sort(key=lambda x: manhattan_distances[x.number])
     population.reverse()
+
+
+def _constrained_dominates(
+    trial0: FrozenTrial, trial1: FrozenTrial, directions: Sequence[StudyDirection]
+) -> bool:
+    """Checks constrained-domination.
+
+    A trial x is said to constrained-dominate a trial y, if any of the following conditions is
+    true:
+    1) Trial x is feasible and trial y is not.
+    2) Trial x and y are both infeasible, but solution x has a smaller overall constraint
+    violation.
+    3) Trial x and y are feasible and trial x dominates trial y.
+    """
+
+    constraints0 = trial0.system_attrs[_CONSTRAINTS_KEY]
+    constraints1 = trial1.system_attrs[_CONSTRAINTS_KEY]
+
+    assert isinstance(constraints0, (list, tuple))
+    assert isinstance(constraints1, (list, tuple))
+
+    if len(constraints1) != len(constraints1):
+        raise ValueError("Trials with different numbers of constraints cannot be compared.")
+
+    if trial0.state != TrialState.COMPLETE:
+        return False
+
+    if trial1.state != TrialState.COMPLETE:
+        return True
+
+    if all(v <= 0 for v in constraints0) and all(v <= 0 for v in constraints1):
+        # Both trials satisfy the constraints.
+        return _dominates(trial0, trial1, directions)
+
+    if all(v <= 0 for v in constraints0):
+        # trial0 satisfies the constraints, but trial1 violates them.
+        return True
+
+    if all(v <= 0 for v in constraints1):
+        # trial1 satisfies the constraints, but trial0 violates them.
+        return False
+
+    # Both trials violate the constraints.
+    violation0 = sum(v for v in constraints0 if v > 0)
+    violation1 = sum(v for v in constraints1 if v > 0)
+    return violation0 < violation1
