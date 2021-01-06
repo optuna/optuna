@@ -409,7 +409,7 @@ class Study(BaseStudy):
             A :class:`~optuna.trial.Trial`.
         """
 
-        # Sync storage once at the beginning of the objective evaluation.
+        # Sync storage once every trial.
         self._storage.read_trials_from_remote_storage(self._study_id)
 
         trial_id = self._pop_waiting_trial_id()
