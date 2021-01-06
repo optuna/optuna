@@ -53,7 +53,7 @@ def objective(trial):
 
 
 ###################################################################################################
-# When You have some sets of hyperparameters that you want to try,
+# When you have some sets of hyperparameters that you want to try,
 # :func:`~optuna.study.Study.enqueue_trial` does the thing.
 
 study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
