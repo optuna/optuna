@@ -501,9 +501,7 @@ class Study(BaseStudy):
                 ``trial`` is a trial number but no
                 trial exists with that number.
         """
-
-        if not isinstance(trial, (trial_module.Trial, int)):
-            raise TypeError("Trial must be a trial object or trial number.")
+        trial_id = self._get_trial_id(trial)
 
         if state == TrialState.COMPLETE:
             if values is None:
@@ -520,40 +518,23 @@ class Study(BaseStudy):
         else:
             raise ValueError(f"Cannot tell with state {state}.")
 
-        if isinstance(trial, trial_module.Trial):
-            trial_number = trial.number
-            trial_id = trial._trial_id
-        elif isinstance(trial, int):
-            trial_number = trial
-            try:
-                trial_id = self._storage.get_trial_id_from_study_id_trial_number(
-                    self._study_id, trial_number
-                )
-            except NotImplementedError as e:
-                raise TypeError(
-                    "Study.tell failed because the trial was represented by its number but the "
-                    f"storage {self._storage.__class__.__name__} does not implement the method "
-                    "required to map numbers back. Please provide the trial object instead."
-                ) from e
-            except KeyError as e:
-                raise ValueError(
-                    f"Cannot tell for trial with number {trial_number} since it has not been "
-                    "created."
-                ) from e
-        else:
-            assert False, "Should not reach."
-
         if values is not None:
+            if isinstance(trial, trial_module.Trial):
+                trial_number = trial.number
+            elif isinstance(trial, int):
+                trial_number = trial
+            else:
+                assert False, "Should not reach."
+
             values, values_conversion_failure_message = _check_and_convert_to_values(
                 len(self.directions), values, trial_number
             )
+
             # When called from `Study.optimize` and `state` is pruned, the given `values` contains
             # the intermediate value with the largest step so far. In this case, the value is
             # allowed to be NaN and errors should not be raised.
             if state != TrialState.PRUNED and values_conversion_failure_message is not None:
                 raise ValueError(values_conversion_failure_message)
-
-        assert trial_id is not None
 
         try:
             # Sampler defined trial post-processing.
@@ -567,6 +548,36 @@ class Study(BaseStudy):
                 self._storage.set_trial_values(trial_id, values)
 
             self._storage.set_trial_state(trial_id, state)
+
+    def report(self, trial: Union[trial_module.Trial, int], value: float, step: int) -> None:
+        if len(self.directions) > 1:
+            raise NotImplementedError(
+                "Reporting is not supported for multi-objective optimization."
+            )
+
+        trial_id = self._get_trial_id(trial)
+
+        try:
+            # For convenience, we allow users to report a value that can be cast to `float`.
+            value = float(value)
+        except (TypeError, ValueError):
+            message = "The `value` argument is of type '{}' but supposed to be a float.".format(
+                type(value).__name__
+            )
+            raise TypeError(message) from None
+
+        if step < 0:
+            raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
+
+        intermediate_values = self._storage.get_trial(trial_id).intermediate_values
+
+        if step in intermediate_values:
+            # Do nothing if already reported.
+            # TODO(hvy): Consider raising a warning or an error.
+            # See https://github.com/optuna/optuna/issues/852.
+            return
+
+        self._storage.set_trial_intermediate_value(trial_id, step, value)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
@@ -873,6 +884,37 @@ class Study(BaseStudy):
             )
         else:
             assert False, "Should not reach."
+
+    def _get_trial_id(self, trial: Union[trial_module.Trial, int]) -> int:
+        # If `trial` is an `int`, it is the trial number. This functions maps it back to its
+        # corresponding trial ID.
+
+        if not isinstance(trial, (trial_module.Trial, int)):
+            raise TypeError("Trial must be a trial object or trial number.")
+
+        if isinstance(trial, trial_module.Trial):
+            trial_id = trial._trial_id
+        elif isinstance(trial, int):
+            trial_number = trial
+            try:
+                trial_id = self._storage.get_trial_id_from_study_id_trial_number(
+                    self._study_id, trial_number
+                )
+            except NotImplementedError as e:
+                raise TypeError(
+                    "Study.tell failed because the trial was represented by its number but the "
+                    f"storage {self._storage.__class__.__name__} does not implement the method "
+                    "required to map numbers back. Please provide the trial object instead."
+                ) from e
+            except KeyError as e:
+                raise ValueError(
+                    f"Cannot tell for trial with number {trial_number} since it has not been "
+                    "created."
+                ) from e
+        else:
+            assert False, "Should not reach."
+
+        return trial_id
 
 
 def create_study(
