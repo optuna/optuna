@@ -511,7 +511,8 @@ class Trial(BaseTrial):
         pruned.
 
         .. seealso::
-            Please refer to :class:`~optuna.pruners.BasePruner`.
+            Please refer to :class:`~optuna.pruners.BasePruner` and
+            :func:`~optuna.study.Study.report` for an alternative interface.
 
         .. note::
             The reported value is converted to ``float`` type by applying ``float()``

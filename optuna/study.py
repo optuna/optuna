@@ -455,7 +455,7 @@ class Study(BaseStudy):
                     for step in range(128):
                         y = f(x)
 
-                        trial.report(y, step=step)
+                        study.report(trial, y, step=step)
 
                         if trial.should_prune():
                             # Finish the trial with the pruned state.
@@ -550,6 +550,35 @@ class Study(BaseStudy):
             self._storage.set_trial_state(trial_id, state)
 
     def report(self, trial: Union[trial_module.Trial, int], value: float, step: int) -> None:
+        """Report an objective function value for a given trial and step.
+
+        The reported values are used by the pruners to determine whether this trial should be
+        pruned.
+
+        This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
+        controlling the lifetime of a trial outside the scope of ``func`` and can be used instead
+        of :func:`~optuna.trial.Trial.report` in case a :class:`~optuna.trial.Trial` object is not
+        available since ``trial`` can be a trial number.
+
+        .. seealso::
+            Please refer to :func:`~optuna.trial.Trial.report` for more details and
+            :func:`~optuna.study.Study.tell` for an example.
+
+        Args:
+            trial:
+                A :class:`~optuna.trial.Trial` object or a trial number.
+            value:
+                Objective value.
+            step:
+                Step of the trial.
+
+        Raises:
+            TypeError:
+                If ``trial`` is not a :class:`~optuna.trial.Trial` or an :obj:`int`.
+            NotImplementedError:
+                If study is being used for multi-objective optimization.
+        """
+
         if len(self.directions) > 1:
             raise NotImplementedError(
                 "Reporting is not supported for multi-objective optimization."
