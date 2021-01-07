@@ -577,7 +577,8 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
         ("values",),
     ],
 )
-def test_trials_dataframe_with_multi_objective_optimization(attrs: Tuple[str, ...]) -> None:
+@pytest.mark.parametrize("multi_index", [True, False])
+def test_trials_dataframe_with_multi_objective_optimization(attrs: Tuple[str, ...], multi_index: bool) -> None:
     def f(trial: optuna.trial.Trial) -> Tuple[float, float]:
 
         x = trial.suggest_float("x", 1, 1)
@@ -587,10 +588,16 @@ def test_trials_dataframe_with_multi_objective_optimization(attrs: Tuple[str, ..
 
     study = optuna.create_study(directions=["minimize", "maximize"])
     study.optimize(f, n_trials=3)
-    df = study.trials_dataframe(attrs=attrs)
+    df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
 
-    for i in range(3):
-        assert df.get("values")[i] == [3, 5]
+    if multi_index:
+        for i in range(3):
+            assert df.get("values").get(0)[i] == 3
+            assert df.get("values").get(1)[i] == 5
+    else:
+        for i in range(3):
+            assert df.values_0[i] == 3
+            assert df.values_1[i] == 5
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

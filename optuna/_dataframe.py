@@ -63,6 +63,11 @@ def _trials_dataframe(
                 for nested_attr, nested_value in value.items():
                     record[(df_column, nested_attr)] = nested_value
                     column_agg[attr].add((df_column, nested_attr))
+            elif isinstance(value, list):
+                # Expand trial.values.
+                for nested_attr, nested_value in enumerate(value):
+                    record[(df_column, nested_attr)] = nested_value
+                    column_agg[attr].add((df_column, nested_attr))
             else:
                 record[(df_column, non_nested_attr)] = value
                 column_agg[attr].add((df_column, non_nested_attr))
