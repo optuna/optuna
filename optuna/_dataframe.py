@@ -32,7 +32,7 @@ def _trials_dataframe(
         return pd.DataFrame()
 
     if "value" in attrs and study._is_multi_objective():
-        attrs = ["values" if attr == "value" else attr for attr in attrs]
+        attrs = tuple("values" if attr == "value" else attr for attr in attrs)
 
     attrs_to_df_columns: Dict[str, str] = collections.OrderedDict()
     for attr in attrs:
