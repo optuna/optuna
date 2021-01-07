@@ -14,8 +14,8 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.samplers import _motpe
 from optuna.samplers import MOTPESampler
+from optuna.samplers._tpe import multi_objective_sampler
 
 
 class MockSystemAttr:
@@ -540,11 +540,11 @@ def test_get_observation_pairs() -> None:
     study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
     study.optimize(objective, n_trials=5)
 
-    assert _motpe._get_observation_pairs(study, "x") == (
+    assert multi_objective_sampler._get_observation_pairs(study, "x") == (
         [5.0, 5.0, 5.0, 5.0, 5.0],
         [[5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0]],
     )
-    assert _motpe._get_observation_pairs(study, "y") == (
+    assert multi_objective_sampler._get_observation_pairs(study, "y") == (
         [None, None, None, None, None],
         [[5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0], [5.0, -5.0]],
     )
@@ -553,17 +553,17 @@ def test_get_observation_pairs() -> None:
 def test_calculate_nondomination_rank() -> None:
     # Single objective
     test_case = np.asarray([[10], [20], [20], [30]])
-    ranks = list(_motpe._calculate_nondomination_rank(test_case))
+    ranks = list(multi_objective_sampler._calculate_nondomination_rank(test_case))
     assert ranks == [0, 1, 1, 2]
 
     # Two objectives
     test_case = np.asarray([[10, 30], [10, 10], [20, 20], [30, 10], [15, 15]])
-    ranks = list(_motpe._calculate_nondomination_rank(test_case))
+    ranks = list(multi_objective_sampler._calculate_nondomination_rank(test_case))
     assert ranks == [1, 0, 2, 1, 1]
 
     # Three objectives
     test_case = np.asarray([[5, 5, 4], [5, 5, 5], [9, 9, 0], [5, 7, 5], [0, 0, 9], [0, 9, 9]])
-    ranks = list(_motpe._calculate_nondomination_rank(test_case))
+    ranks = list(multi_objective_sampler._calculate_nondomination_rank(test_case))
     assert ranks == [0, 1, 0, 2, 0, 1]
 
 

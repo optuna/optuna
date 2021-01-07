@@ -11,6 +11,7 @@ import numpy as np
 
 import optuna
 from optuna import distributions
+from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
@@ -32,6 +33,7 @@ def _default_weights_above(x: int) -> np.ndarray:
     return np.ones(x)
 
 
+@experimental("2.3.0")
 class MOTPESampler(TPESampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
