@@ -594,8 +594,8 @@ def test_trials_dataframe_with_multi_objective_optimization(
 
     if multi_index:
         for i in range(3):
-            assert df.get("values").get(0)[i] == 3
-            assert df.get("values").get(1)[i] == 5
+            assert df.get("values")[0][i] == 3
+            assert df.get("values")[1][i] == 5
     else:
         for i in range(3):
             assert df.values_0[i] == 3
