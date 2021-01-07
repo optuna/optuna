@@ -1227,8 +1227,11 @@ def test_tell_storage_not_implemented_trial_number() -> None:
 
             # Storage missing implementation for method required to map trial numbers back to
             # trial IDs.
-            with pytest.raises(TypeError):
+            with pytest.warns(UserWarning):
                 study.tell(study.ask().number, 1.0)
+
+            with pytest.raises(ValueError):
+                study.tell(study.ask().number + 1, 1.0)
 
 
 def test_tell_pruned_values() -> None:
