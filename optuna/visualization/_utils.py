@@ -40,7 +40,7 @@ def _check_plot_args(
     if isinstance(study, Study):
         studies = [study]
     else:
-        studies = list(study)
+        studies = study
 
     if target is None and any(study._is_multi_objective() for study in studies):
         raise ValueError(
