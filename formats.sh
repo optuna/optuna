@@ -1,6 +1,8 @@
 #!/bin/bash
-# As described in `CONTRIBUTING.md`, this script checks Optuna's source codes for formatting,
-# coding style and type hints. The `-u` option enables automatic formatting by `black` and `isort`.
+# As described in `CONTRIBUTING.md`, this script checks and formats Optuna's source codes by
+# `black`, `blackdoc`, and `isort`. If you pass `-n` as an option, this script checks codes
+# without updating codebase.
+
 
 res_pip_list=$(pip freeze)
 missing_dependencies=()
@@ -23,11 +25,11 @@ if [ ! ${#missing_dependencies[@]} -eq 0 ]; then
   pip install "${missing_dependencies[@]}"
 fi
 
-update=0
-while getopts "u" OPT
+update=1
+while getopts "n" OPT
 do
   case $OPT in
-    u) update=1
+    n) update=0
        ;;
     *) ;;
   esac

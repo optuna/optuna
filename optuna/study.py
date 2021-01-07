@@ -697,6 +697,10 @@ class Study(BaseStudy):
 
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
+
+        Note:
+            If ``value`` is in ``attrs`` during multi-objective optimization, it is implicitly
+            replaced with ``values``.
         """
         return _trials_dataframe(self, attrs, multi_index)
 

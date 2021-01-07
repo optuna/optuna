@@ -1084,10 +1084,8 @@ def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
         # study. Create a second study within the same storage.
         study_id = storage.create_new_study()
 
-        storage.create_new_trial(study_id)
-        storage.create_new_trial(study_id)
         trial_id = storage.create_new_trial(study_id)
 
         assert trial_id == storage.get_trial_id_from_study_id_trial_number(
-            study_id, trial_number=2
+            study_id, trial_number=0
         )
