@@ -5,7 +5,7 @@ Callback for Study.optimize
 ===========================
 
 This tutorial showcases how to use & implement Optuna ``Callback`` for :func:`~optuna.study.Study.optimize`.
-By callback, we mean a callable that takes :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial` and does some work.
+By a callback, we mean a callable that takes :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial` as arguments, and does some work.
 
 Note that callbacks in this tutorial and ``*PruningCallback``'s of :mod:`optuna.integration` are completely different.
 """

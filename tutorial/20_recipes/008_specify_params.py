@@ -1,13 +1,13 @@
 """
 .. _specify_params:
 
-Specify Hyperparameters
+Specify Hyperparameters Manually
 =======================
 
 Sometimes, it is natural for you to try some experiments with your out-of-box hyperparameters.
 For example, you have some specific sets of hyperparameters to try in your mind before using Optuna for the best hyperparameters.
 
-First scenario
+First scenario: Add hyperparameter sets to be evaluated
 --------------
 
 Try some sets of hyperparameters with :func:`optuna.study.Study.enqueue_trial`.
@@ -35,7 +35,7 @@ def objective(trial):
         "metric": "auc",
         "verbosity": -1,
         "boosting_type": "gbdt",
-        "bagging_fraction": trial.suggest_float("bagging_fraction", 0.4, 1.0 + 1e-12),
+        "bagging_fraction": min(trial.suggest_float("bagging_fraction", 0.4, 1.0 + 1e-12), 1),
         "bagging_freq": trial.suggest_int("bagging_freq", 0, 7),
         "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
     }
