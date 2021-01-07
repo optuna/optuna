@@ -1229,3 +1229,20 @@ def test_tell_storage_not_implemented_trial_number() -> None:
             # trial IDs.
             with pytest.raises(TypeError):
                 study.tell(study.ask().number, 1.0)
+
+
+def test_tell_pruned_values() -> None:
+    # See also `test_run_trial_with_trial_pruned`.
+    study = optuna.create_study()
+
+    trial = study.ask()
+
+    trial.report(2.0, step=1)
+
+    study.tell(trial, state=TrialState.PRUNED)
+    assert study.trials[-1].value == 2.0
+
+    trial = study.ask()
+
+    study.tell(trial, state=TrialState.PRUNED)
+    assert study.trials[-1].value is None

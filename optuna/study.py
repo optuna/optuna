@@ -510,12 +510,11 @@ class Study(BaseStudy):
                 raise ValueError(
                     "No values were told. Values are required when state is TrialState.COMPLETE."
                 )
-        elif state == TrialState.PRUNED:
-            pass
-        elif state == TrialState.FAIL:
+        elif state in (TrialState.PRUNED, TrialState.FAIL):
             if values is not None:
                 raise ValueError(
-                    "Values were told. Values cannot be stored when state is TrialState.FAIL."
+                    "Values were told. Values cannot be specified when state is "
+                    "TrialState.PRUNED or TrialState.FAIL."
                 )
         else:
             raise ValueError(f"Cannot tell with state {state}.")
@@ -543,6 +542,17 @@ class Study(BaseStudy):
         else:
             assert False, "Should not reach."
 
+        frozen_trial = self._storage.get_trial(trial_id)
+
+        if state == TrialState.PRUNED:
+            # Register the last intermediate value if present as the value of the trial.
+            # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
+            assert values is None
+
+            last_step = frozen_trial.last_step
+            if last_step is not None:
+                values = [frozen_trial.intermediate_values[last_step]]
+
         if values is not None:
             values, values_conversion_failure_message = _check_and_convert_to_values(
                 len(self.directions), values, trial_number
@@ -553,11 +563,8 @@ class Study(BaseStudy):
             if state != TrialState.PRUNED and values_conversion_failure_message is not None:
                 raise ValueError(values_conversion_failure_message)
 
-        assert trial_id is not None
-
         try:
             # Sampler defined trial post-processing.
-            frozen_trial = self._storage.get_trial(trial_id)
             study = pruners._filter_study(self, frozen_trial)
             self.sampler.after_trial(study, frozen_trial, state, values)
         except Exception:
