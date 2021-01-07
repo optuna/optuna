@@ -106,7 +106,6 @@ def plot_edf(
         studies = list(study)
 
     _check_plot_args(studies, target, target_name)
-
     return _get_edf_plot(studies, target, target_name)
 
 
