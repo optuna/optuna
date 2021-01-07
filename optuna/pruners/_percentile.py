@@ -206,4 +206,4 @@ class PercentilePruner(BasePruner):
         ):
             return False
 
-        return (step - self._n_warmup_steps) % self._interval_steps == 0
+        return True

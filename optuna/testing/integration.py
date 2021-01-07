@@ -13,12 +13,12 @@ class DeterministicPruner(optuna.pruners.BasePruner):
         if step is None:
             return False
 
-        if not self.is_taret_step(step, trial):
+        if not self.is_target_step(step, trial):
             return False
 
         return self.is_pruning
 
-    def is_taret_step(self, step: int, trial: "optuna.trial.FrozenTrial") -> bool:
+    def is_target_step(self, step: int, trial: "optuna.trial.FrozenTrial") -> bool:
         return (step + 1) % self.interval == 0
 
 
