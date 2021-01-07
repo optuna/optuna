@@ -7,6 +7,7 @@ from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -71,11 +72,7 @@ def plot_optimization_history(
     """
 
     _imports.check()
-    if target is None and study._is_multi_objective():
-        raise ValueError(
-            "If the `study` is being used for multi-objective optimization, "
-            "please specify the `target`."
-        )
+    _check_plot_args(study, target, target_name)
     return _get_optimization_history_plot(study, target, target_name)
 
 
