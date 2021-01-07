@@ -578,7 +578,9 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
     ],
 )
 @pytest.mark.parametrize("multi_index", [True, False])
-def test_trials_dataframe_with_multi_objective_optimization(attrs: Tuple[str, ...], multi_index: bool) -> None:
+def test_trials_dataframe_with_multi_objective_optimization(
+    attrs: Tuple[str, ...], multi_index: bool
+) -> None:
     def f(trial: optuna.trial.Trial) -> Tuple[float, float]:
 
         x = trial.suggest_float("x", 1, 1)
