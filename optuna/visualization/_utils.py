@@ -37,6 +37,8 @@ def _check_plot_args(
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
 ) -> None:
+
+    studies: Sequence[Study]
     if isinstance(study, Study):
         studies = [study]
     else:
@@ -50,8 +52,7 @@ def _check_plot_args(
 
     if target is not None and target_name == "Objective Value":
         warnings.warn(
-            "`target` is specified, but `target_name` is the default value, 'Objective Value'. "
-            "This setting may confuse a plot."
+            "`target` is specified, but `target_name` is the default value, 'Objective Value'."
         )
 
 
