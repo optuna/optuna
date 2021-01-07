@@ -33,7 +33,7 @@ def _default_weights_above(x: int) -> np.ndarray:
     return np.ones(x)
 
 
-@experimental("2.3.0")
+@experimental("2.4.0")
 class MOTPESampler(TPESampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
