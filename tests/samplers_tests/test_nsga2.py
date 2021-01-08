@@ -1,6 +1,7 @@
 from collections import Counter
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 import pytest
@@ -9,6 +10,7 @@ import optuna
 from optuna._study_direction import StudyDirection
 from optuna.samplers import NSGAIISampler
 from optuna.samplers._nsga2 import _CONSTRAINTS_KEY
+from optuna.trial import FrozenTrial
 
 
 def test_population_size() -> None:
@@ -79,6 +81,46 @@ def test_swapping_prob() -> None:
 
     with pytest.raises(ValueError):
         NSGAIISampler(swapping_prob=1.1)
+
+
+def test_constraints_func_none() -> None:
+    n_trials = 4
+    n_objectives = 2
+
+    sampler = NSGAIISampler(population_size=2)
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+    )
+
+    assert len(study.trials) == n_trials
+    for trial in study.trials:
+        assert _CONSTRAINTS_KEY not in trial.system_attrs
+
+
+def test_constraints_func() -> None:
+    n_trials = 4
+    n_objectives = 2
+    constraints_func_call_count = 0
+
+    def constraints_func(trial: FrozenTrial) -> Sequence[float]:
+        nonlocal constraints_func_call_count
+        constraints_func_call_count += 1
+
+        return (trial.number,)
+
+    sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+    )
+
+    assert len(study.trials) == n_trials
+    assert constraints_func_call_count == n_trials
+    for trial in study.trials:
+        assert trial.system_attrs[_CONSTRAINTS_KEY] == (trial.number,)
 
 
 def test_fast_non_dominated_sort() -> None:
