@@ -123,7 +123,6 @@ def objective(trial):
     return score
 
 
-
 pruner = LastPlacePruner(warmup_steps=1, warmup_trials=5)
 study = optuna.create_study(direction="maximize", pruner=pruner)
 study.optimize(objective, n_trials=50)
