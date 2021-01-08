@@ -2,13 +2,13 @@
 .. _specify_params:
 
 Specify Hyperparameters Manually
-=======================
+================================
 
 Sometimes, it is natural for you to try some experiments with your out-of-box hyperparameters.
 For example, you have some specific sets of hyperparameters to try in your mind before using Optuna for the best hyperparameters.
 
 First scenario: Add hyperparameter sets to be evaluated
---------------
+-------------------------------------------------------
 
 Try some sets of hyperparameters with :func:`optuna.study.Study.enqueue_trial`.
 """
@@ -85,8 +85,8 @@ optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout)
 study.optimize(objective, n_trials=100, timeout=600)
 
 ###################################################################################################
-# Second scenario
-# ---------------
+# Second scenario: Add hyperparameters that are already evaluated
+# ---------------------------------------------------------------
 #
 # You have tried some sets of hyperparameters manually and then you want to have Optuna find better sets of hyperparameters.
 # If this is the case, :func:`optuna.study.Study.add_trial` plays the role.
