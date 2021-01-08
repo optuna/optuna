@@ -9,6 +9,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Type
 from typing import Union
+import warnings
 
 from optuna import exceptions
 from optuna import logging
@@ -218,12 +219,21 @@ class Study(BaseStudy):
         storage: Union[str, storages.BaseStorage],
         sampler: Optional["samplers.BaseSampler"] = None,
         pruner: Optional[pruners.BasePruner] = None,
+        heartbeat_interval: Optional[int] = None,
     ) -> None:
 
         self.study_name = study_name
         storage = storages.get_storage(storage)
         study_id = storage.get_study_id_from_name(study_name)
         super(Study, self).__init__(study_id, storage)
+        if isinstance(self._storage, storages.RDBStorage) and heartbeat_interval is not None and heartbeat_interval > 0:
+            self._heartbeat_interval = heartbeat_interval
+        else:
+            warnings.warn(
+                "The heartbeat is recorded only for RDB storage and when `heartbeat_interval` is"
+                "an positive integer."
+            )
+            self._heartbeat_interval = None
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
@@ -705,6 +715,7 @@ def create_study(
     load_if_exists: bool = False,
     *,
     directions: Optional[Sequence[str]] = None,
+    heartbeat_interval: Optional[int] = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
@@ -767,6 +778,8 @@ def create_study(
             a :class:`~optuna.exceptions.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
+        heartbeat_interval:
+            Interval to record the heartbeat. It is recorded every ``interval`` seconds.
 
     Returns:
         A :class:`~optuna.study.Study` object.
@@ -822,7 +835,7 @@ def create_study(
         sampler = samplers.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
-    study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
+    study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner, heartbeat_interval=heartbeat_interval)
 
     study._storage.set_study_directions(study_id, direction_objects)
 

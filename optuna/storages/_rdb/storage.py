@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import contextmanager
 import copy
 from datetime import datetime
@@ -1112,6 +1113,32 @@ class RDBStorage(BaseStorage):
         """Return the schema version list."""
 
         return self._version_manager.get_all_versions()
+
+    async def record_heartbeat(self, trial_id: int, interval: int) -> None:
+        """Record the heartbeat (timestamp) of the trial.
+
+        This method is specific to RDBStorage. This method sets the timestamp to the system
+        attribute of the given trial.
+
+        Args:
+            trial_id:
+                ID of the trial
+            interval:
+                Interval to record the heartbeat. It is recorded every ``interval`` seconds.
+        """
+
+        while True:
+            with _create_scoped_session(self.scoped_session, True) as session:
+                step = models.TrialTimeStampModel.next_step(trial_id, session)
+                print(step)
+                timestamp = models.TrialTimeStampModel(trial_id=trial_id, step=step)
+                session.add(timestamp)
+            await asyncio.sleep(interval)
+            break
+
+        with _create_scoped_session(self.scoped_session, True) as session:
+            for timestamp_model in models.TrialTimeStampModel.where_trial_id(trial_id, session):
+                print(timestamp_model.timestamp)
 
 
 class _VersionManager(object):
