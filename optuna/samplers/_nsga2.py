@@ -1,5 +1,4 @@
 from collections import defaultdict
-import copy
 import hashlib
 import itertools
 from typing import Any
@@ -327,11 +326,8 @@ class NSGAIISampler(BaseSampler):
     ) -> None:
         if self._constraints_func is not None:
             constraints = None
-            _trial = copy.copy(trial)
-            _trial.state = state
-            _trial.values = values
             try:
-                con = self._constraints_func(_trial)
+                con = self._constraints_func(trial)
                 if not isinstance(con, (tuple, list)):
                     warnings.warn(
                         f"Constraints should be a sequence of floats but got {constraints}."
