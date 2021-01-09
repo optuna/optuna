@@ -37,7 +37,8 @@ def test_plot_optimization_history(direction: str) -> None:
     assert figure.has_data()
 
     # Test customized target.
-    figure = plot_optimization_history(study, target=lambda t: t.number)
+    with pytest.warns(UserWarning):
+        figure = plot_optimization_history(study, target=lambda t: t.number)
     assert figure.has_data()
 
     # Test customized target name.

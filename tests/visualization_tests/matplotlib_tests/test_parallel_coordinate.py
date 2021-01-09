@@ -36,9 +36,10 @@ def test_plot_parallel_coordinate() -> None:
     assert figure.has_data()
 
     # Test with a customized target value.
-    figure = plot_parallel_coordinate(
-        study, params=["param_a"], target=lambda t: t.params["param_b"]
-    )
+    with pytest.warns(UserWarning):
+        figure = plot_parallel_coordinate(
+            study, params=["param_a"], target=lambda t: t.params["param_b"]
+        )
     assert figure.has_data()
 
     # Test with a customized target name.

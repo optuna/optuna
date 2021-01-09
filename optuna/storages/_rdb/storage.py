@@ -908,6 +908,25 @@ class RDBStorage(BaseStorage):
         else:
             attribute.value_json = json.dumps(value)
 
+    def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
+
+        with _create_scoped_session(self.scoped_session) as session:
+            trial_id = (
+                session.query(models.TrialModel.trial_id)
+                .filter(
+                    models.TrialModel.number == trial_number,
+                    models.TrialModel.study_id == study_id,
+                )
+                .one_or_none()
+            )
+            if trial_id is None:
+                raise KeyError(
+                    "No trial with trial number {} exists in study with study_id {}.".format(
+                        trial_number, study_id
+                    )
+                )
+            return trial_id[0]
+
     def get_trial_number_from_id(self, trial_id: int) -> int:
 
         trial_number = self.get_trial(trial_id).number

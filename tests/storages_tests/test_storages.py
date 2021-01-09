@@ -1060,3 +1060,32 @@ def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> N
             storage.create_new_trial(study_id, template_trial=template_trial)
         with pytest.raises(ValueError):
             storage.get_best_trial(study_id)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        with pytest.raises(KeyError):  # Matching study does not exist.
+            storage.get_trial_id_from_study_id_trial_number(study_id=0, trial_number=0)
+
+        study_id = storage.create_new_study()
+
+        with pytest.raises(KeyError):  # Matching trial does not exist.
+            storage.get_trial_id_from_study_id_trial_number(study_id, trial_number=0)
+
+        trial_id = storage.create_new_trial(study_id)
+
+        assert trial_id == storage.get_trial_id_from_study_id_trial_number(
+            study_id, trial_number=0
+        )
+
+        # Trial IDs are globally unique within a storage but numbers are only unique within a
+        # study. Create a second study within the same storage.
+        study_id = storage.create_new_study()
+
+        trial_id = storage.create_new_trial(study_id)
+
+        assert trial_id == storage.get_trial_id_from_study_id_trial_number(
+            study_id, trial_number=0
+        )
