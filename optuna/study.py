@@ -226,13 +226,22 @@ class Study(BaseStudy):
         storage = storages.get_storage(storage)
         study_id = storage.get_study_id_from_name(study_name)
         super(Study, self).__init__(study_id, storage)
-        if isinstance(self._storage, storages.RDBStorage) and heartbeat_interval is not None and heartbeat_interval > 0:
+        self._heartbeat_interval: Optional[int]
+        if (
+            isinstance(self._storage, storages._CachedStorage)
+            and heartbeat_interval is not None
+            and heartbeat_interval > 0
+        ):
             self._heartbeat_interval = heartbeat_interval
         else:
-            warnings.warn(
-                "The heartbeat is recorded only for RDB storage and when `heartbeat_interval` is"
-                "an positive integer."
-            )
+            if (
+                not isinstance(self._storage, storages._CachedStorage)
+                and heartbeat_interval is not None
+            ):
+                warnings.warn(
+                    "The heartbeat is recorded only for RDB storage and when `heartbeat_interval` "
+                    "is an positive integer."
+                )
             self._heartbeat_interval = None
 
         self.sampler = sampler or samplers.TPESampler()
@@ -835,7 +844,13 @@ def create_study(
         sampler = samplers.NSGAIISampler()
 
     study_name = storage.get_study_name_from_id(study_id)
-    study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner, heartbeat_interval=heartbeat_interval)
+    study = Study(
+        study_name=study_name,
+        storage=storage,
+        sampler=sampler,
+        pruner=pruner,
+        heartbeat_interval=heartbeat_interval,
+    )
 
     study._storage.set_study_directions(study_id, direction_objects)
 

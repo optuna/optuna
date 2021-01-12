@@ -1,6 +1,7 @@
 import pickle
 import sys
 import tempfile
+import time
 from typing import Any
 from typing import Dict
 from typing import List
@@ -15,9 +16,15 @@ from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
+from optuna.storages._rdb.models import StudyModel
+from optuna.storages._rdb.models import TrialModel
+from optuna.storages._rdb.models import TrialTimeStampModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
+from optuna.study import create_study
+from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -286,3 +293,34 @@ def test_get_trials_excluded_trial_ids() -> None:
     # See https://github.com/optuna/optuna/issues/1457.
     trials = storage._get_trials(study_id, states=None, excluded_trial_ids=set(range(500000)))
     assert len(trials) == 0
+
+
+def test_record_heartbeat() -> None:
+    heartbeat_interval = 1
+
+    def objective(trial: Trial) -> float:
+        time.sleep(2)
+        return 1.0
+
+    with StorageSupplier("sqlite") as storage:
+        study = create_study(storage=storage, heartbeat_interval=heartbeat_interval)
+        study.optimize(objective, n_trials=1)
+
+        trial_timestamps = []
+        assert isinstance(storage, RDBStorage)
+        with _create_scoped_session(storage.scoped_session) as session:
+            StudyModel.find_or_raise_by_id(study._study_id, session)
+            trial_ids = (
+                session.query(TrialModel.trial_id)
+                .filter(TrialModel.study_id == study._study_id)
+                .filter(TrialModel.state.in_((TrialState.COMPLETE,)))
+                .all()
+            )
+            for trial_id_tuple in trial_ids:
+                timestamp_models = TrialTimeStampModel.where_trial_id(trial_id_tuple[0], session)
+                trial_timestamps.append([t.timestamp for t in timestamp_models])
+
+    assert len(trial_timestamps) == 1
+    assert len(trial_timestamps[0]) == 3
+    assert (trial_timestamps[0][1] - trial_timestamps[0][0]).seconds == 1
+    assert (trial_timestamps[0][2] - trial_timestamps[0][1]).seconds == 1

@@ -1,4 +1,5 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import copy
 import datetime
 import gc
@@ -186,8 +187,58 @@ def _run_trial(
     func: "optuna.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.Trial:
-    trial = study._ask()
 
+    trial = study._ask()
+    return asyncio.run(_return_coroutines(study, trial, func, catch))
+
+
+async def _return_coroutines(
+    study: "optuna.Study",
+    trial: trial_module.Trial,
+    func: "optuna.study.ObjectiveFuncType",
+    catch: Tuple[Type[Exception], ...],
+) -> trial_module.Trial:
+    fs = [asyncio.create_task(_create_run_trial_coroutine(study, trial, func, catch))]
+
+    if study._heartbeat_interval is not None:
+        assert isinstance(study._storage, storages._CachedStorage)
+        assert isinstance(study._storage._backend, storages.RDBStorage)
+        fs.append(
+            asyncio.create_task(
+                study._storage._backend.record_heartbeat(  # type: ignore
+                    trial._trial_id, study._heartbeat_interval
+                )
+            )
+        )
+
+    done, _ = await asyncio.wait(fs=fs, return_when=asyncio.FIRST_COMPLETED)
+    assert len(done) == 1
+    trial = next(iter(done)).result()
+    assert isinstance(trial, trial_module.Trial)
+    return trial
+
+
+async def _create_run_trial_coroutine(
+    study: "optuna.Study",
+    trial: trial_module.Trial,
+    func: "optuna.study.ObjectiveFuncType",
+    catch: Tuple[Type[Exception], ...],
+) -> trial_module.Trial:
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+    executor = ThreadPoolExecutor()
+    result = await loop.run_in_executor(executor, _run, study, trial, func, catch)
+    return result
+
+
+def _run(
+    study: "optuna.Study",
+    trial: trial_module.Trial,
+    func: "optuna.study.ObjectiveFuncType",
+    catch: Tuple[Type[Exception], ...],
+) -> trial_module.Trial:
     state: Optional[TrialState] = None
     values: Optional[List[float]] = None
     func_err: Optional[Exception] = None

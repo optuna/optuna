@@ -1117,12 +1117,11 @@ class RDBStorage(BaseStorage):
     async def record_heartbeat(self, trial_id: int, interval: int) -> None:
         """Record the heartbeat (timestamp) of the trial.
 
-        This method is specific to RDBStorage. This method sets the timestamp to the system
-        attribute of the given trial.
+        This method is specific to RDBStorage.
 
         Args:
             trial_id:
-                ID of the trial
+                ID of the trial.
             interval:
                 Interval to record the heartbeat. It is recorded every ``interval`` seconds.
         """
@@ -1130,15 +1129,34 @@ class RDBStorage(BaseStorage):
         while True:
             with _create_scoped_session(self.scoped_session, True) as session:
                 step = models.TrialTimeStampModel.next_step(trial_id, session)
-                print(step)
                 timestamp = models.TrialTimeStampModel(trial_id=trial_id, step=step)
                 session.add(timestamp)
             await asyncio.sleep(interval)
-            break
 
-        with _create_scoped_session(self.scoped_session, True) as session:
-            for timestamp_model in models.TrialTimeStampModel.where_trial_id(trial_id, session):
-                print(timestamp_model.timestamp)
+    def get_running_trial_timestamps(self, study_id: int) -> List[List[str]]:
+        """Return the timestamps for all running trials for the given study.
+
+        This method is specific to RDBStorage.
+
+        Args:
+            study_id:
+                ID of the study.
+        """
+
+        running_trial_timestamps = []
+        with _create_scoped_session(self.scoped_session) as session:
+            models.StudyModel.find_or_raise_by_id(study_id, session)
+            trial_ids = (
+                session.query(models.TrialModel.trial_id)
+                .filter(models.TrialModel.study_id == study_id)
+                .filter(models.TrialModel.state.in_((TrialState.RUNNING,)))
+                .all()
+            )
+            for trial_id in trial_ids:
+                timestamp_models = models.TrialTimeStampModel.where_trial_id(trial_id, session)
+                running_trial_timestamps.append([t.timestamp for t in timestamp_models])
+
+        return running_trial_timestamps
 
 
 class _VersionManager(object):

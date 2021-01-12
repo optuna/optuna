@@ -494,10 +494,10 @@ class TrialTimeStampModel(BaseModel):
 
     @classmethod
     def where_trial_id(cls, trial_id: int, session: orm.Session) -> List["TrialTimeStampModel"]:
-        return session.query(cls).filter(cls.trial_id == trial_id).all()
+        return session.query(cls).filter(cls.trial_id == trial_id).order_by(asc(cls.step)).all()
 
     @classmethod
-    def next_step(cls, trial_id, session: orm.Session) -> int:
+    def next_step(cls, trial_id: int, session: orm.Session) -> int:
         return len(session.query(cls).filter(cls.trial_id == trial_id).all())
 
 
