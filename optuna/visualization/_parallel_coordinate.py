@@ -13,6 +13,7 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
+from optuna.visualization._utils import _check_plot_args
 
 
 if _imports.is_successful():
@@ -77,11 +78,7 @@ def plot_parallel_coordinate(
     """
 
     _imports.check()
-    if target is None and study._is_multi_objective():
-        raise ValueError(
-            "If the `study` is being used for multi-objective optimization, "
-            "please specify the `target`."
-        )
+    _check_plot_args(study, target, target_name)
     return _get_parallel_coordinate_plot(study, params, target, target_name)
 
 

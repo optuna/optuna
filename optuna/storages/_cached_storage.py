@@ -260,6 +260,11 @@ class _CachedStorage(BaseStorage):
 
         self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
 
+    def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
+
+        # TODO(hvy): Optimize to not issue a query to the backend storage.
+        return self._backend.get_trial_id_from_study_id_trial_number(study_id, trial_number)
+
     def get_trial_number_from_id(self, trial_id: int) -> int:
 
         return self.get_trial(trial_id).number

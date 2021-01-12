@@ -396,6 +396,18 @@ class RedisStorage(BaseStorage):
             pipe.set(self._key_trial(trial_id), pickle.dumps(trial))
             pipe.execute()
 
+    def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
+
+        trial_ids = self._get_study_trials(study_id)
+        if len(trial_ids) <= trial_number:
+            raise KeyError(
+                "No trial with trial number {} exists in study with study_id {}.".format(
+                    trial_number, study_id
+                )
+            )
+
+        return trial_ids[trial_number]
+
     def get_trial_number_from_id(self, trial_id: int) -> int:
 
         return self.get_trial(trial_id).number
