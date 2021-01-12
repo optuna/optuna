@@ -1,6 +1,7 @@
 import pickle
 import sys
 import tempfile
+import time
 from typing import Any
 from typing import Dict
 from typing import List
@@ -10,14 +11,19 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from optuna import create_study
 from optuna import version
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
+from optuna.storages._rdb.models import StudyModel
+from optuna.storages._rdb.models import TrialModel
+from optuna.storages._rdb.models import TrialTimeStampModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -124,9 +130,13 @@ def test_check_table_schema_compatibility() -> None:
     #     storage._check_table_schema_compatibility()
 
 
-def create_test_storage(engine_kwargs: Optional[Dict[str, Any]] = None) -> RDBStorage:
+def create_test_storage(
+    engine_kwargs: Optional[Dict[str, Any]] = None, heartbeat_interval: Optional[int] = None
+) -> RDBStorage:
 
-    storage = RDBStorage("sqlite:///:memory:", engine_kwargs=engine_kwargs)
+    storage = RDBStorage(
+        "sqlite:///:memory:", engine_kwargs=engine_kwargs, heartbeat_interval=heartbeat_interval
+    )
     return storage
 
 
@@ -286,3 +296,36 @@ def test_get_trials_excluded_trial_ids() -> None:
     # See https://github.com/optuna/optuna/issues/1457.
     trials = storage._get_trials(study_id, states=None, excluded_trial_ids=set(range(500000)))
     assert len(trials) == 0
+
+
+def test_record_heartbeat() -> None:
+    heartbeat_interval = 1
+    n_trials = 2
+
+    def objective(trial: Trial) -> float:
+        time.sleep(2)
+        return 1.0
+
+    storage = create_test_storage(heartbeat_interval=heartbeat_interval)
+    assert isinstance(storage, RDBStorage)
+    study = create_study(storage=storage)
+    study.optimize(objective, n_trials=n_trials)
+
+    trial_timestamps = []
+
+    with _create_scoped_session(storage.scoped_session) as session:
+        StudyModel.find_or_raise_by_id(study._study_id, session)
+        trial_ids = (
+            session.query(TrialModel.trial_id)
+            .filter(TrialModel.study_id == study._study_id)
+            .filter(TrialModel.state.in_((TrialState.COMPLETE,)))
+            .all()
+        )
+        for trial_id_tuple in trial_ids:
+            timestamp_model = TrialTimeStampModel.where_trial_id(trial_id_tuple[0], session)
+            assert timestamp_model is not None
+            trial_timestamps.append(timestamp_model.timestamp)
+
+    assert len(trial_timestamps) == n_trials
+    for i in range(n_trials - 1):
+        assert (trial_timestamps[i + 1] - trial_timestamps[i]).seconds == heartbeat_interval * 2

@@ -480,6 +480,28 @@ class TrialIntermediateValueModel(BaseModel):
         return trial_intermediate_values
 
 
+class TrialTimeStampModel(BaseModel):
+    __tablename__ = "trial_timestamps"
+    __table_args__: Any = (
+        UniqueConstraint(
+            "trial_id",
+        ),
+    )
+    trial_timestamp_id = Column(Integer, primary_key=True)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    timestamp = Column(DateTime, nullable=False, default=func.current_timestamp())
+
+    trial = orm.relationship(
+        TrialModel, backref=orm.backref("timestamps", cascade="all, delete-orphan")
+    )
+
+    @classmethod
+    def where_trial_id(
+        cls, trial_id: int, session: orm.Session
+    ) -> Optional["TrialTimeStampModel"]:
+        return session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
+
+
 class VersionInfoModel(BaseModel):
     __tablename__ = "version_info"
     # setting check constraint to ensure the number of rows is at most 1

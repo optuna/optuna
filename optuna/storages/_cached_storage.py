@@ -386,6 +386,7 @@ class _CachedStorage(BaseStorage):
                 trials = {number: t for number, t in study.trials.items() if t.state in states}
             else:
                 trials = study.trials
+            print(trials)
             trials = list(sorted(trials.values(), key=lambda t: t.number))
             return copy.deepcopy(trials) if deepcopy else trials
 

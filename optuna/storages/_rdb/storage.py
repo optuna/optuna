@@ -108,6 +108,8 @@ class RDBStorage(BaseStorage):
             `sqlalchemy.engine.create_engine`_ function.
         skip_compatibility_check:
             Flag to skip schema compatibility check if set to True.
+        heartbeat_interval:
+                Interval to record the heartbeat. It is recorded every ``interval`` seconds.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -128,11 +130,14 @@ class RDBStorage(BaseStorage):
         url: str,
         engine_kwargs: Optional[Dict[str, Any]] = None,
         skip_compatibility_check: bool = False,
+        *,
+        heartbeat_interval: Optional[int] = None,
     ) -> None:
 
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
+        self.heartbeat_interval = heartbeat_interval
 
         self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
@@ -574,6 +579,7 @@ class RDBStorage(BaseStorage):
             trial.state = template_trial.state
 
         trial.number = trial.count_past_trials(session)
+        self.record_timestamp(trial.trial_id)
         session.add(trial)
 
         return trial
@@ -1131,6 +1137,23 @@ class RDBStorage(BaseStorage):
         """Return the schema version list."""
 
         return self._version_manager.get_all_versions()
+
+    def record_timestamp(self, trial_id: int) -> None:
+        """Record the timestamp of the trial.
+
+        This method is specific to RDBStorage.
+
+        Args:
+            trial_id:
+                ID of the trial.
+        """
+
+        with _create_scoped_session(self.scoped_session, True) as session:
+            timestamp = models.TrialTimeStampModel.where_trial_id(trial_id, session)
+            if timestamp is not None:
+                session.delete(timestamp)
+            new_timestamp = models.TrialTimeStampModel(trial_id=trial_id)
+            session.add(new_timestamp)
 
 
 class _VersionManager(object):

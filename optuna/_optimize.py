@@ -3,6 +3,8 @@ import datetime
 import gc
 import math
 import sys
+import threading
+import time
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -193,6 +195,18 @@ def _run_trial(
     func_err_fail_exc_info: Optional[Any] = None
     # Set to a string if `func` returns correctly but the return value violates assumptions.
     values_conversion_failure_message: Optional[str] = None
+    stop_event: Optional[threading.Event] = None
+    thread: Optional[threading.Thread] = None
+
+    if (
+        isinstance(study._storage, storages._CachedStorage)
+        and study._storage._backend.heartbeat_interval is not None
+    ):
+        stop_event = threading.Event()
+        thread = threading.Thread(
+            target=_record_heartbeat, args=(trial._trial_id, study._storage._backend, stop_event)
+        )
+        thread.start()
 
     try:
         value_or_values = func(trial)
@@ -218,6 +232,15 @@ def _run_trial(
             state = TrialState.FAIL
         else:
             state = TrialState.COMPLETE
+
+    if (
+        isinstance(study._storage, storages._CachedStorage)
+        and study._storage._backend.heartbeat_interval is not None
+    ):
+        assert stop_event is not None
+        assert thread is not None
+        stop_event.set()
+        thread.join()
 
     try:
         trial._after_func(state, values)
@@ -310,3 +333,14 @@ def _check_single_value(
         )
 
     return value, failure_message
+
+
+def _record_heartbeat(
+    trial_id: int, storage: storages.RDBStorage, stop_event: threading.Event
+) -> None:
+    assert storage.heartbeat_interval is not None
+    while True:
+        if stop_event.is_set():
+            return
+        storage.record_timestamp(trial_id)
+        time.sleep(storage.heartbeat_interval)
