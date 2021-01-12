@@ -14,6 +14,7 @@ import numpy as np
 import optuna
 from optuna import logging
 from optuna._study_direction import StudyDirection
+from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
@@ -254,22 +255,19 @@ class CmaEsSampler(BaseSampler):
             self._warn_independent_sampling = False
             return {}
 
-        # TODO(c-bata): Remove `ordered_keys` by passing `ordered_dict=True`
-        # to `intersection_search_space`.
-        ordered_keys = [key for key in search_space]
-        ordered_keys.sort()
+        trans = _SearchSpaceTransform(search_space)
 
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
             n_restarts = 0
-            optimizer = self._init_optimizer(search_space, ordered_keys)
+            optimizer = self._init_optimizer(trans)
 
         if self._restart_strategy is None:
             generation_attr_key = "cma:generation"  # for backward compatibility
         else:
             generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
 
-        if optimizer.dim != len(ordered_keys):
+        if optimizer.dim != len(trans.bounds):
             _logger.info(
                 "`CmaEsSampler` does not support dynamic search space. "
                 "`{}` is used instead of `CmaEsSampler`.".format(
@@ -290,10 +288,7 @@ class CmaEsSampler(BaseSampler):
             solutions: List[Tuple[np.ndarray, float]] = []
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
-                x = np.array(
-                    [_to_cma_param(search_space[k], t.params[k]) for k in ordered_keys],
-                    dtype=float,
-                )
+                x = trans.transform(t.params)
                 y = t.value if study.direction == StudyDirection.MINIMIZE else -t.value
                 solutions.append((x, y))
 
@@ -304,7 +299,7 @@ class CmaEsSampler(BaseSampler):
                 generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
-                    search_space, ordered_keys, population_size=popsize, randomize_start_point=True
+                    trans, population_size=popsize, randomize_start_point=True
                 )
 
             # Store optimizer
@@ -322,9 +317,20 @@ class CmaEsSampler(BaseSampler):
             trial._trial_id, generation_attr_key, optimizer.generation
         )
         study._storage.set_trial_system_attr(trial._trial_id, "cma:n_restarts", n_restarts)
-        external_values = {
-            k: _to_optuna_param(search_space[k], p) for k, p in zip(ordered_keys, params)
-        }
+
+        external_values = trans.untransform(params)
+
+        # Exclude upper bounds for parameters that should have their upper bounds excluded.
+        # TODO(hvy): Remove this exclusion logic when it is handled by the data transformer.
+        for name, param in external_values.items():
+            distribution = search_space[name]
+            if isinstance(distribution, optuna.distributions.UniformDistribution):
+                external_values[name] = min(external_values[name], search_space[name].high - _EPS)
+            elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
+                external_values[name] = min(
+                    external_values[name], math.exp(math.log(search_space[name].high) - _EPS)
+                )
+
         return external_values
 
     def _restore_optimizer(
@@ -352,38 +358,35 @@ class CmaEsSampler(BaseSampler):
 
     def _init_optimizer(
         self,
-        search_space: Dict[str, BaseDistribution],
-        ordered_keys: List[str],
+        trans: _SearchSpaceTransform,
         population_size: Optional[int] = None,
         randomize_start_point: bool = False,
     ) -> CMA:
+
+        bds = trans.bounds
+
         if randomize_start_point:
             # `_initialize_x0_randomly ` returns internal representations.
-            x0 = _initialize_x0_randomly(self._cma_rng, search_space)
-            mean = np.array([x0[k] for k in ordered_keys], dtype=float)
+            mean = np.array([b[0] + (b[1] - b[0]) * self._cma_rng.rand() for b in bds])
         elif self._x0 is None:
             # `_initialize_x0` returns internal representations.
-            x0 = _initialize_x0(search_space)
-            mean = np.array([x0[k] for k in ordered_keys], dtype=float)
+            mean = np.array([b[0] + (b[1] - b[0]) / 2 for b in bds])
         else:
             # `self._x0` is external representations.
-            mean = np.array(
-                [_to_cma_param(search_space[k], self._x0[k]) for k in ordered_keys], dtype=float
-            )
+            mean = trans.transform(self._x0)
 
         if self._sigma0 is None:
-            sigma0 = _initialize_sigma0(search_space)
+            sigma0 = min([(b[1] - b[0]) / 6 for b in bds])
         else:
             sigma0 = self._sigma0
 
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
-        bounds = _get_search_space_bound(ordered_keys, search_space)
-        n_dimension = len(ordered_keys)
+        n_dimension = len(bds)
         return CMA(
             mean=mean,
             sigma=sigma0,
-            bounds=bounds,
+            bounds=bds,
             seed=self._cma_rng.randint(1, 2 ** 31 - 2),
             n_max_resampling=10 * n_dimension,
             population_size=population_size,
@@ -455,144 +458,3 @@ def _concat_optimizer_attrs(optimizer_attrs: Dict[str, str]) -> str:
     return "".join(
         optimizer_attrs["cma:optimizer:{}".format(i)] for i in range(len(optimizer_attrs))
     )
-
-
-def _to_cma_param(distribution: BaseDistribution, optuna_param: Any) -> float:
-    if isinstance(distribution, optuna.distributions.LogUniformDistribution):
-        return math.log(optuna_param)
-    if isinstance(distribution, optuna.distributions.IntUniformDistribution):
-        return float(optuna_param)
-    if isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
-        return math.log(optuna_param)
-    return optuna_param
-
-
-def _to_optuna_param(distribution: BaseDistribution, cma_param: float) -> Any:
-    if isinstance(distribution, optuna.distributions.LogUniformDistribution):
-        return math.exp(cma_param)
-    if isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
-        v = np.round(cma_param / distribution.q) * distribution.q + distribution.low
-        # v may slightly exceed range due to round-off errors.
-        return float(min(max(v, distribution.low), distribution.high))
-    if isinstance(distribution, optuna.distributions.IntUniformDistribution):
-        r = np.round((cma_param - distribution.low) / distribution.step)
-        v = r * distribution.step + distribution.low
-        return int(v)
-    if isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
-        r = np.round(cma_param - math.log(distribution.low))
-        v = r + math.log(distribution.low)
-        return int(math.exp(v))
-    return cma_param
-
-
-def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, float]:
-    x0 = {}
-    for name, distribution in search_space.items():
-        if isinstance(
-            distribution,
-            (
-                optuna.distributions.UniformDistribution,
-                optuna.distributions.DiscreteUniformDistribution,
-                optuna.distributions.IntUniformDistribution,
-            ),
-        ):
-            x0[name] = distribution.low + (distribution.high - distribution.low) / 2
-        elif isinstance(
-            distribution,
-            (
-                optuna.distributions.LogUniformDistribution,
-                optuna.distributions.IntLogUniformDistribution,
-            ),
-        ):
-            log_high = math.log(distribution.high)
-            log_low = math.log(distribution.low)
-            x0[name] = log_low + (log_high - log_low) / 2
-        else:
-            raise NotImplementedError(
-                "The distribution {} is not implemented.".format(distribution)
-            )
-    return x0
-
-
-def _initialize_x0_randomly(
-    rng: np.random.RandomState, search_space: Dict[str, BaseDistribution]
-) -> Dict[str, float]:
-    x0 = {}
-    for name, distribution in search_space.items():
-        if isinstance(
-            distribution,
-            (
-                optuna.distributions.UniformDistribution,
-                optuna.distributions.DiscreteUniformDistribution,
-                optuna.distributions.IntUniformDistribution,
-            ),
-        ):
-            x0[name] = distribution.low + rng.rand() * (distribution.high - distribution.low)
-        elif isinstance(
-            distribution,
-            (
-                optuna.distributions.IntLogUniformDistribution,
-                optuna.distributions.LogUniformDistribution,
-            ),
-        ):
-            log_high = math.log(distribution.high)
-            log_low = math.log(distribution.low)
-            x0[name] = log_low + rng.rand() * (log_high - log_low)
-        else:
-            raise NotImplementedError(
-                "The distribution {} is not implemented.".format(distribution)
-            )
-    return x0
-
-
-def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
-    sigma0 = []
-    for name, distribution in search_space.items():
-        if isinstance(distribution, optuna.distributions.UniformDistribution):
-            sigma0.append((distribution.high - distribution.low) / 6)
-        elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
-            sigma0.append((distribution.high - distribution.low) / 6)
-        elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
-            sigma0.append((distribution.high - distribution.low) / 6)
-        elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
-            log_high = math.log(distribution.high)
-            log_low = math.log(distribution.low)
-            sigma0.append((log_high - log_low) / 6)
-        elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
-            log_high = math.log(distribution.high)
-            log_low = math.log(distribution.low)
-            sigma0.append((log_high - log_low) / 6)
-        else:
-            raise NotImplementedError(
-                "The distribution {} is not implemented.".format(distribution)
-            )
-    return min(sigma0)
-
-
-def _get_search_space_bound(
-    keys: List[str], search_space: Dict[str, BaseDistribution]
-) -> np.ndarray:
-    bounds = []
-    for param_name in keys:
-        dist = search_space[param_name]
-        if isinstance(
-            dist,
-            (
-                optuna.distributions.UniformDistribution,
-                optuna.distributions.LogUniformDistribution,
-            ),
-        ):
-            # These distributions cannot accept the value which equals to the upper bound.
-            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high) - _EPS])
-        elif isinstance(
-            dist,
-            (
-                optuna.distributions.DiscreteUniformDistribution,
-                optuna.distributions.IntUniformDistribution,
-                optuna.distributions.IntLogUniformDistribution,
-            ),
-        ):
-            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high)])
-        else:
-            raise NotImplementedError("The distribution {} is not implemented.".format(dist))
-    return np.array(bounds, dtype=float)
