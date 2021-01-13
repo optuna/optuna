@@ -144,7 +144,7 @@ The title of your pull request should
 
 - briefly describe and reflect the changes
 - wrap any code with backticks
-- no period in the PR title
+- not end with a period
 
 *The title will be directly visible in the release notes.*
 
