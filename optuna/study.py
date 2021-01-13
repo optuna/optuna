@@ -520,39 +520,7 @@ class Study(BaseStudy):
         else:
             raise ValueError(f"Cannot tell with state {state}.")
 
-        if isinstance(trial, trial_module.Trial):
-            trial_number = trial.number
-            trial_id = trial._trial_id
-        elif isinstance(trial, int):
-            trial_number = trial
-            try:
-                trial_id = self._storage.get_trial_id_from_study_id_trial_number(
-                    self._study_id, trial_number
-                )
-            except NotImplementedError as e:
-                warnings.warn(
-                    "Study.tell may be slow because the trial was represented by its number but "
-                    f"the storage {self._storage.__class__.__name__} does not implement the "
-                    "method required to map numbers back. Please provide the trial object "
-                    "to avoid performance degradation."
-                )
-
-                trials = self.get_trials(deepcopy=False)
-
-                if len(trials) <= trial_number:
-                    raise ValueError(
-                        f"Cannot tell for trial with number {trial_number} since it has not been "
-                        "created."
-                    ) from e
-
-                trial_id = trials[trial_number]._trial_id
-            except KeyError as e:
-                raise ValueError(
-                    f"Cannot tell for trial with number {trial_number} since it has not been "
-                    "created."
-                ) from e
-        else:
-            assert False, "Should not reach."
+        trial_id = self._get_trial_id(trial)
 
         frozen_trial = self._storage.get_trial(trial_id)
 
@@ -567,7 +535,7 @@ class Study(BaseStudy):
 
         if values is not None:
             values, values_conversion_failure_message = _check_and_convert_to_values(
-                len(self.directions), values, trial_number
+                len(self.directions), values, frozen_trial.number
             )
             # When called from `Study.optimize` and `state` is pruned, the given `values` contains
             # the intermediate value with the largest step so far. In this case, the value is
@@ -621,6 +589,9 @@ class Study(BaseStudy):
             raise NotImplementedError(
                 "Reporting is not supported for multi-objective optimization."
             )
+
+        if not isinstance(trial, (trial_module.Trial, int)):
+            raise TypeError("Trial must be a trial object or trial number.")
 
         trial_id = self._get_trial_id(trial)
 
@@ -960,9 +931,6 @@ class Study(BaseStudy):
         # If `trial` is an `int`, it is the trial number. This functions maps it back to its
         # corresponding trial ID.
 
-        if not isinstance(trial, (trial_module.Trial, int)):
-            raise TypeError("Trial must be a trial object or trial number.")
-
         if isinstance(trial, trial_module.Trial):
             trial_id = trial._trial_id
         elif isinstance(trial, int):
@@ -972,11 +940,22 @@ class Study(BaseStudy):
                     self._study_id, trial_number
                 )
             except NotImplementedError as e:
-                raise TypeError(
-                    "Study.tell failed because the trial was represented by its number but the "
-                    f"storage {self._storage.__class__.__name__} does not implement the method "
-                    "required to map numbers back. Please provide the trial object instead."
-                ) from e
+                warnings.warn(
+                    "Study.tell may be slow because the trial was represented by its number but "
+                    f"the storage {self._storage.__class__.__name__} does not implement the "
+                    "method required to map numbers back. Please provide the trial object "
+                    "to avoid performance degradation."
+                )
+
+                trials = self.get_trials(deepcopy=False)
+
+                if len(trials) <= trial_number:
+                    raise ValueError(
+                        f"Cannot tell for trial with number {trial_number} since it has not been "
+                        "created."
+                    ) from e
+
+                trial_id = trials[trial_number]._trial_id
             except KeyError as e:
                 raise ValueError(
                     f"Cannot tell for trial with number {trial_number} since it has not been "

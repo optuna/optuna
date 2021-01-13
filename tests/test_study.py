@@ -1312,8 +1312,7 @@ def test_storage_not_implemented_trial_number() -> None:
             with pytest.warns(UserWarning):
                 study.tell(study.ask().number, 1.0)
 
-            # TODO(hvy): Fix to emit `UserWarning` instead.
-            with pytest.raises(TypeError):
+            with pytest.warns(UserWarning):
                 study.report(study.ask().number, 1.0, 1)
 
 
