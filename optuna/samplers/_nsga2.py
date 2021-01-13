@@ -68,13 +68,15 @@ class NSGAIISampler(BaseSampler):
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
             be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
             constraints is violated. A value equal to or smaller than 0 is considered feasible.
+            If constraints_func returns more than one value for a trial, that trial is considered
+            feasible if and only if all values are equal to 0 or smaller.
 
             The constraints are handled by the constrained domination. A trial x is said to
             constrained-dominate a trial y, if any of the following conditions is true:
 
-            1. Trial x satisfies all constraints and trial y does not.
-            2. Trial x and y both violate constraints, but trial x has a smaller overall violation.
-            3. Trial x and y satisfies all constraints, and trial x dominates trial y.
+            1. Trial x is feasible and trial y is not.
+            2. Trial x and y are both infeasible, but trial x has a smaller overall violation.
+            3. Trial x and y are feasible and trial x dominates trial y.
 
             .. note::
                 Added in v2.5.0 as an experimental feature. The interface may change in newer
