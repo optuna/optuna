@@ -268,6 +268,11 @@ class TrialModel(BaseModel):
         )
         return trial_count.scalar()
 
+    @classmethod
+    def find_by_state(cls, state: TrialState, session: orm.Session) -> List["TrialModel"]:
+        trials = session.query(cls).filter(cls.state == state).all()
+        return trials
+
 
 class TrialUserAttributeModel(BaseModel):
     __tablename__ = "trial_user_attributes"

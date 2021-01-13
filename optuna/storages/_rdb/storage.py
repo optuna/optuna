@@ -109,7 +109,10 @@ class RDBStorage(BaseStorage):
         skip_compatibility_check:
             Flag to skip schema compatibility check if set to True.
         heartbeat_interval:
-                Interval to record the heartbeat. It is recorded every ``interval`` seconds.
+            Interval to record the heartbeat. It is recorded every ``interval`` seconds.
+        grace_period:
+            Grace period before a running trial is killed from the last timestamp.
+            If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -132,12 +135,14 @@ class RDBStorage(BaseStorage):
         skip_compatibility_check: bool = False,
         *,
         heartbeat_interval: Optional[int] = None,
+        grace_period: Optional[int] = None,
     ) -> None:
 
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
         self.heartbeat_interval = heartbeat_interval
+        self.grace_period = grace_period
 
         self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
@@ -1154,6 +1159,33 @@ class RDBStorage(BaseStorage):
                 session.delete(timestamp)
             new_timestamp = models.TrialTimeStampModel(trial_id=trial_id)
             session.add(new_timestamp)
+
+    def kill_stale_trials(self) -> None:
+        """Kill stale trials.
+
+        The running trials whose timestamp has not been updated for a long time will be killed,
+        that is, those states will be changed to :obj:`~optuna.trial.TrialState.FAIL`.
+        The grace period is ``2 * heartbeat_interval``.
+        """
+
+        assert self.heartbeat_interval is not None
+        grace_period = self.grace_period or 2 * self.heartbeat_interval
+
+        with _create_scoped_session(self.scoped_session, True) as session:
+            # Assume there is no trial whose if is -1.
+            assert models.TrialTimeStampModel.where_trial_id(-1, session) is None
+            current_timestamp = models.TrialTimeStampModel(trial_id=-1)
+            session.add(current_timestamp)
+
+            running_trials = models.TrialModel.find_by_state(TrialState.RUNNING, session)
+            for trial in running_trials:
+                self.check_trial_is_updatable(trial.trial_id, trial.state)
+                timestamp = models.TrialTimeStampModel.where_trial_id(trial.trial_id, session)
+                assert timestamp is not None
+                if (current_timestamp.timestamp - timestamp.timestamp).seconds > grace_period:
+                    trial.state = TrialState.FAIL
+
+            session.delete(current_timestamp)
 
 
 class _VersionManager(object):
