@@ -15,6 +15,7 @@ import warnings
 import numpy as np
 
 import optuna
+from optuna._experimental import ExperimentalWarning
 from optuna._multi_objective import _dominates
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
@@ -67,6 +68,20 @@ class NSGAIISampler(BaseSampler):
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
             be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
             constraints is violated. A value equal to or smaller than 0 is considered feasible.
+
+            The constraints are handled by the constrained domination. A trial x is said to
+            constrained-dominate a trial y, if any of the following conditions is true:
+
+            1) Trial x is feasible and trial y is not.
+            2) Trial x and y are both infeasible, but solution x has a smaller overall constraint
+            violation.
+            3) Trial x and y are feasible and trial x dominates trial y.
+
+            .. note::
+                Added in v2.5.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.5.0.
+
     """
 
     def __init__(
@@ -97,6 +112,13 @@ class NSGAIISampler(BaseSampler):
 
         if not (0.0 <= swapping_prob <= 1.0):
             raise ValueError("`swapping_prob` must be a float value within the range [0.0, 1.0].")
+
+        if constraints_func:
+            warnings.warn(
+                "The constraints_func option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
         self._population_size = population_size
         self._mutation_prob = mutation_prob

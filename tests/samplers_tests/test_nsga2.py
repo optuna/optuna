@@ -3,6 +3,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+import warnings
 
 import pytest
 
@@ -110,7 +111,9 @@ def test_constraints_func() -> None:
 
         return (trial.number,)
 
-    sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
     study.optimize(
@@ -177,7 +180,9 @@ def test_fast_non_dominated_sort() -> None:
 
 
 def test_fast_non_dominated_sort_constrained_feasible() -> None:
-    sampler = NSGAIISampler(constraints_func=lambda _: [0])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = NSGAIISampler(constraints_func=lambda _: [0])
 
     # Single objective.
     directions = [StudyDirection.MINIMIZE]
@@ -230,7 +235,9 @@ def test_fast_non_dominated_sort_constrained_feasible() -> None:
 
 
 def test_fast_non_dominated_sort_constrained_infeasible() -> None:
-    sampler = NSGAIISampler(constraints_func=lambda _: [0])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = NSGAIISampler(constraints_func=lambda _: [0])
 
     # Single objective.
     directions = [StudyDirection.MINIMIZE]
@@ -283,7 +290,9 @@ def test_fast_non_dominated_sort_constrained_infeasible() -> None:
 
 
 def test_fast_non_dominated_sort_constrained_feasible_infeasible() -> None:
-    sampler = NSGAIISampler(constraints_func=lambda _: [0])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = NSGAIISampler(constraints_func=lambda _: [0])
 
     # Single objective.
     directions = [StudyDirection.MINIMIZE]
@@ -394,6 +403,12 @@ def test_reseed_rng() -> None:
     sampler.reseed_rng()
     assert original_seed != sampler._rng.seed
     assert original_random_sampler_seed != sampler._random_sampler._rng.seed
+
+
+
+def test_constraints_func_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        NSGAIISampler(constraints_func=lambda _: [0])
 
 
 # TODO(ohta): Consider to move this utility function to `optuna.testing` module.
