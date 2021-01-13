@@ -390,7 +390,7 @@ class CmaEsSampler(BaseSampler):
         return CMA(
             mean=mean,
             sigma=sigma0,
-            bounds=bds,
+            bounds=trans.bounds,
             seed=self._cma_rng.randint(1, 2 ** 31 - 2),
             n_max_resampling=10 * n_dimension,
             population_size=population_size,
