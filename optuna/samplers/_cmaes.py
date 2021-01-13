@@ -385,7 +385,6 @@ class CmaEsSampler(BaseSampler):
 
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
-        n_dimension = len(bds)
         return CMA(
             mean=mean,
             sigma=sigma0,
