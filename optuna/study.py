@@ -955,7 +955,9 @@ class Study(BaseStudy):
                         "created."
                     ) from e
 
-                trial_id = trials[trial_number]._trial_id
+                frozen_trial = trials[trial_number]
+                assert frozen_trial.number == trial_number
+                trial_id = frozen_trial._trial_id
             except KeyError as e:
                 raise ValueError(
                     f"Cannot tell for trial with number {trial_number} since it has not been "
