@@ -114,7 +114,7 @@ class NSGAIISampler(BaseSampler):
         if not (0.0 <= swapping_prob <= 1.0):
             raise ValueError("`swapping_prob` must be a float value within the range [0.0, 1.0].")
 
-        if constraints_func:
+        if constraints_func is not None:
             warnings.warn(
                 "The constraints_func option is an experimental feature."
                 " The interface can change in the future.",
