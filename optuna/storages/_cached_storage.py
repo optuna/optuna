@@ -441,3 +441,40 @@ class _CachedStorage(BaseStorage):
             raise RuntimeError(
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
+
+    def kill_stale_trials(self) -> List[int]:
+        """Kill stale trials.
+
+        Call :meth:`~optuna.storages.RDBStorage.kill_stale_trials` and take consistency of the
+        cached trial and the trial stored in the backend.
+
+        This method is only available when the backend is :class:`~optuna.storages.RDBStorage`.
+
+        Returns:
+            List of trial IDs of the killed trials.
+        """
+
+        assert isinstance(self._backend, RDBStorage)
+        killed_trial_ids = self._backend.kill_stale_trials()
+
+        with self._lock:
+            for trial_id in killed_trial_ids:
+                if trial_id not in self._trial_id_to_study_id_and_number:
+                    continue
+                study_id, number = self._trial_id_to_study_id_and_number[trial_id]
+                study = self._studies[study_id]
+
+                if trial_id not in study.owned_or_finished_trial_ids:
+                    continue
+
+                cached_trial = study.trials[number]
+                self._check_trial_is_updatable(cached_trial)
+                updates = self._get_updates(trial_id)
+                cached_trial.state = TrialState.FAIL
+                updates.state = TrialState.FAIL
+                updates.datetime_complete = datetime.datetime.now()
+                cached_trial.datetime_complete = datetime.datetime.now()
+
+                del study.updates[number]
+
+        return killed_trial_ids

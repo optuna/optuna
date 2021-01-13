@@ -131,11 +131,16 @@ def test_check_table_schema_compatibility() -> None:
 
 
 def create_test_storage(
-    engine_kwargs: Optional[Dict[str, Any]] = None, heartbeat_interval: Optional[int] = None
+    engine_kwargs: Optional[Dict[str, Any]] = None,
+    heartbeat_interval: Optional[int] = None,
+    grace_period: Optional[int] = None,
 ) -> RDBStorage:
 
     storage = RDBStorage(
-        "sqlite:///:memory:", engine_kwargs=engine_kwargs, heartbeat_interval=heartbeat_interval
+        "sqlite:///:memory:",
+        engine_kwargs=engine_kwargs,
+        heartbeat_interval=heartbeat_interval,
+        grace_period=grace_period,
     )
     return storage
 
@@ -326,6 +331,33 @@ def test_record_heartbeat() -> None:
             assert timestamp_model is not None
             trial_timestamps.append(timestamp_model.timestamp)
 
+    for trial in study.trials:
+        assert trial.state is TrialState.COMPLETE
+
     assert len(trial_timestamps) == n_trials
     for i in range(n_trials - 1):
-        assert (trial_timestamps[i + 1] - trial_timestamps[i]).seconds == heartbeat_interval * 2
+        assert (
+            trial_timestamps[i + 1] - trial_timestamps[i]
+        ).seconds - heartbeat_interval * 2 <= 1
+
+
+def test_kill_stale_trials() -> None:
+    heartbeat_interval = 1
+    grace_period = -1
+    n_trials = 10
+
+    def objective(trial: Trial) -> float:
+        return 1.0
+
+    storage = create_test_storage(heartbeat_interval=heartbeat_interval, grace_period=grace_period)
+    assert isinstance(storage, RDBStorage)
+    study = create_study(storage=storage)
+    with pytest.raises(RuntimeError):
+        study.optimize(objective, n_trials=n_trials)
+
+    # The `study.optimize` fails in the first trial due to the RuntimeError.
+    # This is because the trial state is set `TrialState.FAIL` before the objective computation
+    # by `storage.kill_stale_trials` for `grace_period = 0`.
+    assert len(study.trials) == 1
+    for trial in study.trials:
+        assert trial.state is TrialState.FAIL

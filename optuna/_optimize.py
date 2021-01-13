@@ -207,7 +207,7 @@ def _run_trial(
             target=_record_heartbeat, args=(trial._trial_id, study._storage._backend, stop_event)
         )
         thread.start()
-        study._storage._backend.kill_stale_trials()
+        study._storage.kill_stale_trials()
 
     try:
         value_or_values = func(trial)

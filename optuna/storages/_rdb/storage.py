@@ -1160,16 +1160,20 @@ class RDBStorage(BaseStorage):
             new_timestamp = models.TrialTimeStampModel(trial_id=trial_id)
             session.add(new_timestamp)
 
-    def kill_stale_trials(self) -> None:
+    def kill_stale_trials(self) -> List[int]:
         """Kill stale trials.
 
         The running trials whose timestamp has not been updated for a long time will be killed,
         that is, those states will be changed to :obj:`~optuna.trial.TrialState.FAIL`.
         The grace period is ``2 * heartbeat_interval``.
+
+        Returns:
+            List of trial IDs of the killed trials.
         """
 
         assert self.heartbeat_interval is not None
         grace_period = self.grace_period or 2 * self.heartbeat_interval
+        killed_trial_ids = []
 
         with _create_scoped_session(self.scoped_session, True) as session:
             # Assume there is no trial whose if is -1.
@@ -1184,8 +1188,11 @@ class RDBStorage(BaseStorage):
                 assert timestamp is not None
                 if (current_timestamp.timestamp - timestamp.timestamp).seconds > grace_period:
                     trial.state = TrialState.FAIL
+                    killed_trial_ids.append(trial.trial_id)
 
             session.delete(current_timestamp)
+
+        return killed_trial_ids
 
 
 class _VersionManager(object):
