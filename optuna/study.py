@@ -561,11 +561,6 @@ class Study(BaseStudy):
         The reported values are used by the pruners to determine whether this trial should be
         pruned.
 
-        This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
-        controlling the lifetime of a trial outside the scope of ``func`` and can be used instead
-        of :func:`~optuna.trial.Trial.report` in case a :class:`~optuna.trial.Trial` object is not
-        available since ``trial`` can be a trial number.
-
         .. seealso::
             Please refer to :func:`~optuna.trial.Trial.report` for more details and
             :func:`~optuna.study.Study.tell` for an example.
