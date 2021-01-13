@@ -482,11 +482,7 @@ class TrialIntermediateValueModel(BaseModel):
 
 class TrialTimeStampModel(BaseModel):
     __tablename__ = "trial_timestamps"
-    __table_args__: Any = (
-        UniqueConstraint(
-            "trial_id",
-        ),
-    )
+    __table_args__: Any = (UniqueConstraint("trial_id"),)
     trial_timestamp_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     timestamp = Column(DateTime, nullable=False, default=func.current_timestamp())
