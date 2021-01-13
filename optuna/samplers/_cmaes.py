@@ -380,7 +380,7 @@ class CmaEsSampler(BaseSampler):
             mean = trans.transform(self._x0)
 
         if self._sigma0 is None:
-            sigma0 = min([(b[1] - b[0]) / 6 for b in bds])
+            sigma0 = np.min((upper_bounds - lower_bounds) / 6)
         else:
             sigma0 = self._sigma0
 
