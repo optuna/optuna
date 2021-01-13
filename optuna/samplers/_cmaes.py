@@ -363,7 +363,6 @@ class CmaEsSampler(BaseSampler):
         randomize_start_point: bool = False,
     ) -> CMA:
 
-        bds = trans.bounds
         lower_bounds = trans.bounds[:, 0]
         upper_bounds = trans.bounds[:, 1]
         n_dimension = len(trans.bounds)
