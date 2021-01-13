@@ -77,8 +77,7 @@ class LastPlacePruner(BasePruner):
             this_score = trial.intermediate_values[step]
 
             # Get scores from other trials in the study reported at the same step
-            all_trials = study.get_trials(deepcopy=False)
-            completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
+            completed_trials = study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,))
             other_scores = [
                 t.intermediate_values[step]
                 for t in completed_trials
@@ -121,7 +120,6 @@ def objective(trial):
             raise optuna.TrialPruned()
 
     return score
-
 
 
 pruner = LastPlacePruner(warmup_steps=1, warmup_trials=5)
