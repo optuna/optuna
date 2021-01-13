@@ -13,9 +13,6 @@ import pytest
 import optuna
 from optuna import create_trial
 from optuna.samplers._cmaes import _concat_optimizer_attrs
-from optuna.samplers._cmaes import _initialize_sigma0
-from optuna.samplers._cmaes import _initialize_x0
-from optuna.samplers._cmaes import _initialize_x0_randomly
 from optuna.samplers._cmaes import _split_optimizer_str
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
@@ -105,19 +102,6 @@ def test_sample_relative_n_startup_trials() -> None:
         study.optimize(objective, n_trials=4, catch=(Exception,))
         assert mock_independent.call_count == 6  # The objective function has two parameters.
         assert mock_relative.call_count == 4
-
-
-def test_initialize_x0_with_unsupported_distribution() -> None:
-    with pytest.raises(NotImplementedError):
-        _initialize_x0({"x": UnsupportedDistribution()})
-
-    with pytest.raises(NotImplementedError):
-        _initialize_x0_randomly(np.random.RandomState(1), {"x": UnsupportedDistribution()})
-
-
-def test_initialize_sigma0_with_unsupported_distribution() -> None:
-    with pytest.raises(NotImplementedError):
-        _initialize_sigma0({"x": UnsupportedDistribution()})
 
 
 def test_reseed_rng() -> None:
