@@ -353,7 +353,7 @@ class NSGAIISampler(BaseSampler):
                 con = self._constraints_func(trial)
                 if not isinstance(con, (tuple, list)):
                     warnings.warn(
-                        f"Constraints should be a sequence of floats but got {constraints}."
+                        f"Constraints should be a sequence of floats but got {type(con).__name__}."
                     )
                 constraints = tuple(con)
             except Exception:
