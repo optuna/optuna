@@ -373,7 +373,6 @@ class CmaEsSampler(BaseSampler):
             mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rand(n_dimension)
         elif self._x0 is None:
             # `_initialize_x0` returns internal representations.
-            # mean = np.array([b[0] + (b[1] - b[0]) / 2 for b in bds])
             mean = lower_bounds + (upper_bounds - lower_bounds) / 2
         else:
             # `self._x0` is external representations.
