@@ -19,6 +19,7 @@ from optuna import storages
 from optuna import trial as trial_module
 from optuna._dataframe import _trials_dataframe
 from optuna._dataframe import pd
+from optuna._deprecated import deprecated
 from optuna._experimental import experimental
 from optuna._multi_objective import _get_pareto_front_trials
 from optuna._optimize import _check_and_convert_to_values
@@ -862,14 +863,14 @@ class Study(BaseStudy):
 
         return None
 
+    @deprecated("2.5.0")
     def _ask(self) -> trial_module.Trial:
-        # TODO(hvy): Remove this method since `Study.ask` has been implemented.
         return self.ask()
 
+    @deprecated("2.5.0")
     def _tell(
         self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
     ) -> None:
-        # TODO(hvy): Remove this method since `Study.tell` has been implemented.
         self.tell(trial, values, state)
 
     def _log_completed_trial(self, trial: trial_module.Trial, values: Sequence[float]) -> None:
