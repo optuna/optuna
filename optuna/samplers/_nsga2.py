@@ -414,7 +414,7 @@ def _constrained_dominates(
     assert isinstance(constraints0, (list, tuple))
     assert isinstance(constraints1, (list, tuple))
 
-    if len(constraints1) != len(constraints1):
+    if len(constraints0) != len(constraints1):
         raise ValueError("Trials with different numbers of constraints cannot be compared.")
 
     if trial0.state != TrialState.COMPLETE:
