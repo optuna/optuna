@@ -368,10 +368,8 @@ class CmaEsSampler(BaseSampler):
         n_dimension = len(trans.bounds)
 
         if randomize_start_point:
-            # `_initialize_x0_randomly ` returns internal representations.
             mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rand(n_dimension)
         elif self._x0 is None:
-            # `_initialize_x0` returns internal representations.
             mean = lower_bounds + (upper_bounds - lower_bounds) / 2
         else:
             # `self._x0` is external representations.
