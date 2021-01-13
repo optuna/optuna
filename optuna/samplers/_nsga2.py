@@ -424,15 +424,18 @@ def _constrained_dominates(
     if trial1.state != TrialState.COMPLETE:
         return True
 
-    if all(v <= 0 for v in constraints0) and all(v <= 0 for v in constraints1):
+    satisfy_constraints0 = all(v <= 0 for v in constraints0)
+    satisfy_constraints1 = all(v <= 0 for v in constraints1)
+
+    if satisfy_constraints0 and satisfy_constraints1:
         # Both trials satisfy the constraints.
         return _dominates(trial0, trial1, directions)
 
-    if all(v <= 0 for v in constraints0):
+    if satisfy_constraints0:
         # trial0 satisfies the constraints, but trial1 violates them.
         return True
 
-    if all(v <= 0 for v in constraints1):
+    if satisfy_constraints1:
         # trial1 satisfies the constraints, but trial0 violates them.
         return False
 

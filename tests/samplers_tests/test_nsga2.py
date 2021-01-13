@@ -405,7 +405,6 @@ def test_reseed_rng() -> None:
     assert original_random_sampler_seed != sampler._random_sampler._rng.seed
 
 
-
 def test_constraints_func_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         NSGAIISampler(constraints_func=lambda _: [0])
