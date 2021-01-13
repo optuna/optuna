@@ -325,10 +325,10 @@ class CmaEsSampler(BaseSampler):
         for name, param in external_values.items():
             distribution = search_space[name]
             if isinstance(distribution, optuna.distributions.UniformDistribution):
-                external_values[name] = min(external_values[name], search_space[name].high - _EPS)
+                external_values[name] = min(external_values[name], distribution.high - _EPS)
             elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
                 external_values[name] = min(
-                    external_values[name], math.exp(math.log(search_space[name].high) - _EPS)
+                    external_values[name], math.exp(math.log(distribution.high) - _EPS)
                 )
 
         return external_values
