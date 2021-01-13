@@ -1,4 +1,5 @@
 from collections import defaultdict
+import math
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -13,6 +14,9 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
+from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _is_categorical
+from optuna.visualization._utils import _is_log_scale
 
 
 if _imports.is_successful():
@@ -77,11 +81,7 @@ def plot_parallel_coordinate(
     """
 
     _imports.check()
-    if target is None and study._is_multi_objective():
-        raise ValueError(
-            "If the `study` is being used for multi-objective optimization, "
-            "please specify the `target`."
-        )
+    _check_plot_args(study, target, target_name)
     return _get_parallel_coordinate_plot(study, params, target, target_name)
 
 
@@ -130,21 +130,40 @@ def _get_parallel_coordinate_plot(
         for t in trials:
             if p_name in t.params:
                 values.append(t.params[p_name])
-        is_categorical = False
-        try:
-            tuple(map(float, values))
-        except (TypeError, ValueError):
+
+        if _is_log_scale(trials, p_name):
+            values = [math.log10(v) for v in values]
+            min_value = min(values)
+            max_value = max(values)
+            tickvals = list(range(math.ceil(min_value), math.ceil(max_value)))
+            if min_value not in tickvals:
+                tickvals = [min_value] + tickvals
+            if max_value not in tickvals:
+                tickvals = tickvals + [max_value]
+            dim = {
+                "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+                "values": tuple(values),
+                "range": (min_value, max_value),
+                "tickvals": tickvals,
+                "ticktext": ["{:.3g}".format(math.pow(10, x)) for x in tickvals],
+            }
+        elif _is_categorical(trials, p_name):
             vocab: DefaultDict[str, int] = defaultdict(lambda: len(vocab))
             values = [vocab[v] for v in values]
-            is_categorical = True
-        dim = {
-            "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
-            "values": tuple(values),
-            "range": (min(values), max(values)),
-        }
-        if is_categorical:
-            dim["tickvals"] = list(range(len(vocab)))
-            dim["ticktext"] = list(sorted(vocab.items(), key=lambda x: x[1]))
+            dim = {
+                "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+                "values": tuple(values),
+                "range": (min(values), max(values)),
+                "tickvals": list(range(len(vocab))),
+                "ticktext": list(sorted(vocab.items(), key=lambda x: x[1])),
+            }
+        else:
+            dim = {
+                "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
+                "values": tuple(values),
+                "range": (min(values), max(values)),
+            }
+
         dims.append(dim)
 
     traces = [

@@ -95,7 +95,8 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
 def test_plot_contour_customized_target(params: List[str]) -> None:
 
     study = prepare_study_with_trials()
-    figure = plot_contour(study, params=params, target=lambda t: t.params["param_d"])
+    with pytest.warns(UserWarning):
+        figure = plot_contour(study, params=params, target=lambda t: t.params["param_d"])
     for data in figure.data:
         if "z" in data:
             assert 4.0 in itertools.chain.from_iterable(data["z"])

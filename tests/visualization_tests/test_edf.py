@@ -42,7 +42,8 @@ def test_plot_optimization_history(direction: str) -> None:
     # Test with a customized target value.
     study0 = create_study(direction=direction)
     study0.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
-    figure = plot_edf(study0, target=lambda t: t.params["x"])
+    with pytest.warns(UserWarning):
+        figure = plot_edf(study0, target=lambda t: t.params["x"])
     assert len(figure.data) == 1
 
     # Test with a customized target name.

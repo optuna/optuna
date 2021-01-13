@@ -1,4 +1,5 @@
 from collections import defaultdict
+import math
 from typing import Callable
 from typing import cast
 from typing import DefaultDict
@@ -13,7 +14,10 @@ from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
+from optuna.visualization.matplotlib._utils import _is_categorical
+from optuna.visualization.matplotlib._utils import _is_log_scale
 
 
 if _imports.is_successful():
@@ -81,11 +85,7 @@ def plot_parallel_coordinate(
     """
 
     _imports.check()
-    if target is None and study._is_multi_objective():
-        raise ValueError(
-            "If the `study` is being used for multi-objective optimization, "
-            "please specify the `target`."
-        )
+    _check_plot_args(study, target, target_name)
     return _get_parallel_coordinate_plot(study, params, target, target_name)
 
 
@@ -137,25 +137,38 @@ def _get_parallel_coordinate_plot(
     cat_param_names = []
     cat_param_values = []
     cat_param_ticks = []
+    log_param_names = []
     param_values = []
     var_names = [target_name]
     for p_name in sorted_params:
         values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
-        try:
-            tuple(map(float, values))
-        except (TypeError, ValueError):
+
+        if _is_log_scale(trials, p_name):
+            p_min = math.log10(min(values))
+            p_max = math.log10(max(values))
+            p_w = p_max - p_min
+            log_param_names.append(p_name)
+            for i, v in enumerate(values):
+                dims_obj_base[i].append((math.log10(v) - p_min) / p_w * obj_w + obj_min)
+        elif _is_categorical(trials, p_name):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
             values = [vocab[v] for v in values]
             cat_param_names.append(p_name)
             vocab_item_sorted = sorted(vocab.items(), key=lambda x: x[1])
             cat_param_values.append([v[0] for v in vocab_item_sorted])
             cat_param_ticks.append([v[1] for v in vocab_item_sorted])
+            p_min = min(values)
+            p_max = max(values)
+            p_w = p_max - p_min
+            for i, v in enumerate(values):
+                dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
+        else:
+            p_min = min(values)
+            p_max = max(values)
+            p_w = p_max - p_min
 
-        p_min = min(values)
-        p_max = max(values)
-        p_w = p_max - p_min
-        for i, v in enumerate(values):
-            dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
+            for i, v in enumerate(values):
+                dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
 
         var_names.append(p_name if len(p_name) < 20 else "{}...".format(p_name[:17]))
         param_values.append(values)
@@ -175,6 +188,8 @@ def _get_parallel_coordinate_plot(
     for i, p_name in enumerate(sorted_params):
         ax2 = ax.twinx()
         ax2.set_ylim(min(param_values[i]), max(param_values[i]))
+        if _is_log_scale(trials, p_name):
+            ax2.set_yscale("log")
         ax2.spines["top"].set_visible(False)
         ax2.spines["bottom"].set_visible(False)
         ax2.get_xaxis().set_visible(False)

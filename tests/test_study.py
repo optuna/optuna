@@ -571,6 +571,38 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
             assert df.user_attrs_train_loss[i] == 3
 
 
+@pytest.mark.parametrize(
+    "attrs",
+    [
+        ("value",),
+        ("values",),
+    ],
+)
+@pytest.mark.parametrize("multi_index", [True, False])
+def test_trials_dataframe_with_multi_objective_optimization(
+    attrs: Tuple[str, ...], multi_index: bool
+) -> None:
+    def f(trial: optuna.trial.Trial) -> Tuple[float, float]:
+
+        x = trial.suggest_float("x", 1, 1)
+        y = trial.suggest_float("y", 2, 2)
+
+        return x + y, x ** 2 + y ** 2  # 3, 5
+
+    study = optuna.create_study(directions=["minimize", "maximize"])
+    study.optimize(f, n_trials=3)
+    df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
+
+    if multi_index:
+        for i in range(3):
+            assert df.get("values")[0][i] == 3
+            assert df.get("values")[1][i] == 5
+    else:
+        for i in range(3):
+            assert df.values_0[i] == 3
+            assert df.values_1[i] == 5
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_study(storage_mode: str) -> None:
 
@@ -1277,8 +1309,26 @@ def test_storage_not_implemented_trial_number() -> None:
 
             # Storage missing implementation for method required to map trial numbers back to
             # trial IDs.
-            with pytest.raises(TypeError):
+            with pytest.warns(UserWarning):
                 study.tell(study.ask().number, 1.0)
 
+            # TODO(hvy): Fix to emit `UserWarning` instead.
             with pytest.raises(TypeError):
                 study.report(study.ask().number, 1.0, 1)
+
+
+def test_tell_pruned_values() -> None:
+    # See also `test_run_trial_with_trial_pruned`.
+    study = optuna.create_study()
+
+    trial = study.ask()
+
+    trial.report(2.0, step=1)
+
+    study.tell(trial, state=TrialState.PRUNED)
+    assert study.trials[-1].value == 2.0
+
+    trial = study.ask()
+
+    study.tell(trial, state=TrialState.PRUNED)
+    assert study.trials[-1].value is None

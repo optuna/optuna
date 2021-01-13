@@ -198,19 +198,14 @@ def _run_trial(
         value_or_values = func(trial)
     except exceptions.TrialPruned as e:
         # TODO(mamu): Handle multi-objective cases.
-        # Register the last intermediate value if present as the value of the trial.
-        # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
         state = TrialState.PRUNED
-        frozen_trial = study._storage.get_trial(trial._trial_id)
-        last_step = frozen_trial.last_step
-        if last_step is not None:
-            values = [frozen_trial.intermediate_values[last_step]]
         func_err = e
     except Exception as e:
         state = TrialState.FAIL
         func_err = e
         func_err_fail_exc_info = sys.exc_info()
     else:
+        # TODO(hvy): Avoid checking the values both here and inside `Study.tell`.
         values, values_conversion_failure_message = _check_and_convert_to_values(
             len(study.directions), value_or_values, trial.number
         )

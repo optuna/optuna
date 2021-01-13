@@ -77,7 +77,8 @@ class TrialIntermediateValueModel(BaseModel):
 
 def upgrade():
     bind = op.get_bind()
-    tables = Inspector.from_engine(bind).get_table_names()
+    inspector = Inspector.from_engine(bind)
+    tables = inspector.get_table_names()
 
     if "study_directions" not in tables:
         op.create_table(
@@ -167,6 +168,13 @@ def upgrade():
 
     with op.batch_alter_table("trials", schema=None) as batch_op:
         batch_op.drop_column("value")
+
+    for c in inspector.get_unique_constraints("trial_values"):
+        # MySQL changes the uniq constraint of (trial_id, step) to that of trial_id.
+        if c["column_names"] == ["trial_id"]:
+            with op.batch_alter_table("trial_values", schema=None) as batch_op:
+                batch_op.drop_constraint(c["name"], type_="unique")
+            break
 
 
 # TODO(imamura): Implement downgrade

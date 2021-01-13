@@ -9,6 +9,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Type
 from typing import Union
+import warnings
 
 from optuna import exceptions
 from optuna import logging
@@ -18,6 +19,7 @@ from optuna import storages
 from optuna import trial as trial_module
 from optuna._dataframe import _trials_dataframe
 from optuna._dataframe import pd
+from optuna._deprecated import deprecated
 from optuna._experimental import experimental
 from optuna._multi_objective import _get_pareto_front_trials
 from optuna._optimize import _check_and_convert_to_values
@@ -501,35 +503,72 @@ class Study(BaseStudy):
                 ``trial`` is a trial number but no
                 trial exists with that number.
         """
-        trial_id = self._get_trial_id(trial)
+        if not isinstance(trial, (trial_module.Trial, int)):
+            raise TypeError("Trial must be a trial object or trial number.")
 
         if state == TrialState.COMPLETE:
             if values is None:
                 raise ValueError(
                     "No values were told. Values are required when state is TrialState.COMPLETE."
                 )
-        elif state == TrialState.PRUNED:
-            pass
-        elif state == TrialState.FAIL:
+        elif state in (TrialState.PRUNED, TrialState.FAIL):
             if values is not None:
                 raise ValueError(
-                    "Values were told. Values cannot be stored when state is TrialState.FAIL."
+                    "Values were told. Values cannot be specified when state is "
+                    "TrialState.PRUNED or TrialState.FAIL."
                 )
         else:
             raise ValueError(f"Cannot tell with state {state}.")
 
-        if values is not None:
-            if isinstance(trial, trial_module.Trial):
-                trial_number = trial.number
-            elif isinstance(trial, int):
-                trial_number = trial
-            else:
-                assert False, "Should not reach."
+        if isinstance(trial, trial_module.Trial):
+            trial_number = trial.number
+            trial_id = trial._trial_id
+        elif isinstance(trial, int):
+            trial_number = trial
+            try:
+                trial_id = self._storage.get_trial_id_from_study_id_trial_number(
+                    self._study_id, trial_number
+                )
+            except NotImplementedError as e:
+                warnings.warn(
+                    "Study.tell may be slow because the trial was represented by its number but "
+                    f"the storage {self._storage.__class__.__name__} does not implement the "
+                    "method required to map numbers back. Please provide the trial object "
+                    "to avoid performance degradation."
+                )
 
+                trials = self.get_trials(deepcopy=False)
+
+                if len(trials) <= trial_number:
+                    raise ValueError(
+                        f"Cannot tell for trial with number {trial_number} since it has not been "
+                        "created."
+                    ) from e
+
+                trial_id = trials[trial_number]._trial_id
+            except KeyError as e:
+                raise ValueError(
+                    f"Cannot tell for trial with number {trial_number} since it has not been "
+                    "created."
+                ) from e
+        else:
+            assert False, "Should not reach."
+
+        frozen_trial = self._storage.get_trial(trial_id)
+
+        if state == TrialState.PRUNED:
+            # Register the last intermediate value if present as the value of the trial.
+            # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
+            assert values is None
+
+            last_step = frozen_trial.last_step
+            if last_step is not None:
+                values = [frozen_trial.intermediate_values[last_step]]
+
+        if values is not None:
             values, values_conversion_failure_message = _check_and_convert_to_values(
                 len(self.directions), values, trial_number
             )
-
             # When called from `Study.optimize` and `state` is pruned, the given `values` contains
             # the intermediate value with the largest step so far. In this case, the value is
             # allowed to be NaN and errors should not be raised.
@@ -538,7 +577,6 @@ class Study(BaseStudy):
 
         try:
             # Sampler defined trial post-processing.
-            frozen_trial = self._storage.get_trial(trial_id)
             study = pruners._filter_study(self, frozen_trial)
             self.sampler.after_trial(study, frozen_trial, state, values)
         except Exception:
@@ -718,6 +756,10 @@ class Study(BaseStudy):
 
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
+
+        Note:
+            If ``value`` is in ``attrs`` during multi-objective optimization, it is implicitly
+            replaced with ``values``.
         """
         return _trials_dataframe(self, attrs, multi_index)
 
@@ -879,14 +921,14 @@ class Study(BaseStudy):
 
         return None
 
+    @deprecated("2.5.0")
     def _ask(self) -> trial_module.Trial:
-        # TODO(hvy): Remove this method since `Study.ask` has been implemented.
         return self.ask()
 
+    @deprecated("2.5.0")
     def _tell(
         self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
     ) -> None:
-        # TODO(hvy): Remove this method since `Study.tell` has been implemented.
         self.tell(trial, values, state)
 
     def _log_completed_trial(self, trial: trial_module.Trial, values: Sequence[float]) -> None:

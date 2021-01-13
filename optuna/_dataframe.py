@@ -31,6 +31,9 @@ def _trials_dataframe(
     if not len(trials):
         return pd.DataFrame()
 
+    if "value" in attrs and study._is_multi_objective():
+        attrs = tuple("values" if attr == "value" else attr for attr in attrs)
+
     attrs_to_df_columns: Dict[str, str] = collections.OrderedDict()
     for attr in attrs:
         if attr.startswith("_"):
@@ -58,6 +61,11 @@ def _trials_dataframe(
                 value = str(value).split(".")[-1]
             if isinstance(value, dict):
                 for nested_attr, nested_value in value.items():
+                    record[(df_column, nested_attr)] = nested_value
+                    column_agg[attr].add((df_column, nested_attr))
+            elif isinstance(value, list):
+                # Expand trial.values.
+                for nested_attr, nested_value in enumerate(value):
                     record[(df_column, nested_attr)] = nested_value
                     column_agg[attr].add((df_column, nested_attr))
             else:
