@@ -9,6 +9,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Type
 from typing import Union
+import warnings
 
 from optuna import exceptions
 from optuna import logging
@@ -18,8 +19,10 @@ from optuna import storages
 from optuna import trial as trial_module
 from optuna._dataframe import _trials_dataframe
 from optuna._dataframe import pd
+from optuna._deprecated import deprecated
 from optuna._experimental import experimental
 from optuna._multi_objective import _get_pareto_front_trials
+from optuna._optimize import _check_and_convert_to_values
 from optuna._optimize import _optimize
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
@@ -381,6 +384,210 @@ class Study(BaseStudy):
             show_progress_bar=show_progress_bar,
         )
 
+    def ask(self) -> trial_module.Trial:
+        """Create a new trial from which hyperparameters can be suggested.
+
+        This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
+        controlling the lifetime of a trial outside the scope of ``func``. Each call to this
+        method should be followed by a call to :func:`~optuna.study.Study.tell` to finish the
+        created trial.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+
+                study = optuna.create_study()
+
+                trial = study.ask()
+
+                x = trial.suggest_float("x", -1, 1)
+
+                study.tell(trial, x ** 2)
+
+        Returns:
+            A :class:`~optuna.trial.Trial`.
+        """
+
+        # Sync storage once every trial.
+        self._storage.read_trials_from_remote_storage(self._study_id)
+
+        trial_id = self._pop_waiting_trial_id()
+        if trial_id is None:
+            trial_id = self._storage.create_new_trial(self._study_id)
+        return trial_module.Trial(self, trial_id)
+
+    def tell(
+        self,
+        trial: Union[trial_module.Trial, int],
+        values: Optional[Union[float, Sequence[float]]] = None,
+        state: TrialState = TrialState.COMPLETE,
+    ) -> None:
+        """Finish a trial created with :func:`~optuna.study.Study.ask`.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+                from optuna.trial import TrialState
+
+
+                def f(x):
+                    return (x - 2) ** 2
+
+
+                def df(x):
+                    return 2 * x - 4
+
+
+                study = optuna.create_study()
+
+                n_trials = 30
+
+                for _ in range(n_trials):
+                    trial = study.ask()
+
+                    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
+
+                    # Iterative gradient descent objective function.
+                    x = 3  # Initial value.
+                    for step in range(128):
+                        y = f(x)
+
+                        trial.report(y, step=step)
+
+                        if trial.should_prune():
+                            # Finish the trial with the pruned state.
+                            study.tell(trial, state=TrialState.PRUNED)
+                            break
+
+                        gy = df(x)
+                        x -= gy * lr
+                    else:
+                        # Finish the trial with the final value after all iterations.
+                        study.tell(trial, y)
+
+        Args:
+            trial:
+                A :class:`~optuna.trial.Trial` object or a trial number.
+            values:
+                Optional objective value or a sequence of such values in case the study is used
+                for multi-objective optimization. Argument must be provided if ``state`` is
+                :class:`~optuna.trial.TrialState.COMPLETE` and should be :obj:`None` if ``state``
+                is :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED`.
+            state:
+                State to be reported. Must be :class:`~optuna.trial.TrialState.COMPLETE`,
+                :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED`.
+
+        Raises:
+            TypeError:
+                If ``trial`` is not a :class:`~optuna.trial.Trial` or an :obj:`int`.
+            ValueError:
+                If any of the following.
+                ``values`` is a sequence but its length does not match the number of objectives
+                for its associated study.
+                ``state`` is :class:`~optuna.trial.TrialState.COMPLETE` but
+                ``values`` is :obj:`None`.
+                ``state`` is :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED` but
+                ``values`` is not :obj:`None`.
+                ``state`` is not
+                :class:`~optuna.trial.TrialState.COMPLETE`,
+                :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED`.
+                ``trial`` is a trial number but no
+                trial exists with that number.
+        """
+
+        if not isinstance(trial, (trial_module.Trial, int)):
+            raise TypeError("Trial must be a trial object or trial number.")
+
+        if state == TrialState.COMPLETE:
+            if values is None:
+                raise ValueError(
+                    "No values were told. Values are required when state is TrialState.COMPLETE."
+                )
+        elif state in (TrialState.PRUNED, TrialState.FAIL):
+            if values is not None:
+                raise ValueError(
+                    "Values were told. Values cannot be specified when state is "
+                    "TrialState.PRUNED or TrialState.FAIL."
+                )
+        else:
+            raise ValueError(f"Cannot tell with state {state}.")
+
+        if isinstance(trial, trial_module.Trial):
+            trial_number = trial.number
+            trial_id = trial._trial_id
+        elif isinstance(trial, int):
+            trial_number = trial
+            try:
+                trial_id = self._storage.get_trial_id_from_study_id_trial_number(
+                    self._study_id, trial_number
+                )
+            except NotImplementedError as e:
+                warnings.warn(
+                    "Study.tell may be slow because the trial was represented by its number but "
+                    f"the storage {self._storage.__class__.__name__} does not implement the "
+                    "method required to map numbers back. Please provide the trial object "
+                    "to avoid performance degradation."
+                )
+
+                trials = self.get_trials(deepcopy=False)
+
+                if len(trials) <= trial_number:
+                    raise ValueError(
+                        f"Cannot tell for trial with number {trial_number} since it has not been "
+                        "created."
+                    ) from e
+
+                trial_id = trials[trial_number]._trial_id
+            except KeyError as e:
+                raise ValueError(
+                    f"Cannot tell for trial with number {trial_number} since it has not been "
+                    "created."
+                ) from e
+        else:
+            assert False, "Should not reach."
+
+        frozen_trial = self._storage.get_trial(trial_id)
+
+        if state == TrialState.PRUNED:
+            # Register the last intermediate value if present as the value of the trial.
+            # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
+            assert values is None
+
+            last_step = frozen_trial.last_step
+            if last_step is not None:
+                values = [frozen_trial.intermediate_values[last_step]]
+
+        if values is not None:
+            values, values_conversion_failure_message = _check_and_convert_to_values(
+                len(self.directions), values, trial_number
+            )
+            # When called from `Study.optimize` and `state` is pruned, the given `values` contains
+            # the intermediate value with the largest step so far. In this case, the value is
+            # allowed to be NaN and errors should not be raised.
+            if state != TrialState.PRUNED and values_conversion_failure_message is not None:
+                raise ValueError(values_conversion_failure_message)
+
+        try:
+            # Sampler defined trial post-processing.
+            study = pruners._filter_study(self, frozen_trial)
+            self.sampler.after_trial(study, frozen_trial, state, values)
+        except Exception:
+            raise
+        finally:
+            if values is not None:
+                self._storage.set_trial_values(trial_id, values)
+
+            self._storage.set_trial_state(trial_id, state)
+
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
 
@@ -656,23 +863,15 @@ class Study(BaseStudy):
 
         return None
 
+    @deprecated("2.5.0")
     def _ask(self) -> trial_module.Trial:
-        # Sync storage once at the beginning of the objective evaluation.
-        self._storage.read_trials_from_remote_storage(self._study_id)
+        return self.ask()
 
-        trial_id = self._pop_waiting_trial_id()
-        if trial_id is None:
-            trial_id = self._storage.create_new_trial(self._study_id)
-        return trial_module.Trial(self, trial_id)
-
+    @deprecated("2.5.0")
     def _tell(
         self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
     ) -> None:
-        if state == TrialState.COMPLETE:
-            assert values is not None
-        if values is not None:
-            self._storage.set_trial_values(trial._trial_id, values)
-        self._storage.set_trial_state(trial._trial_id, state)
+        self.tell(trial, values, state)
 
     def _log_completed_trial(self, trial: trial_module.Trial, values: Sequence[float]) -> None:
 

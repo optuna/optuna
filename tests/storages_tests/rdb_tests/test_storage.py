@@ -352,10 +352,10 @@ def test_kill_stale_trials() -> None:
     storage = create_test_storage(heartbeat_interval=heartbeat_interval, grace_period=grace_period)
     assert isinstance(storage, RDBStorage)
     study = create_study(storage=storage)
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         study.optimize(objective, n_trials=n_trials)
 
-    # The `study.optimize` fails in the first trial due to the RuntimeError.
+    # The `study.optimize` fails in the first trial due to the ValueError.
     # This is because the trial state is set `TrialState.FAIL` before the objective computation
     # by `storage.kill_stale_trials` for `grace_period = 0`.
     assert len(study.trials) == 1

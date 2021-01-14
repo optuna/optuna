@@ -530,11 +530,9 @@ class BoTorchSampler(BaseSampler):
         for name, param in params.items():
             distribution = search_space[name]
             if isinstance(distribution, UniformDistribution):
-                params[name] = min(params[name], search_space[name].high - 1e-8)
+                params[name] = min(params[name], distribution.high - 1e-8)
             elif isinstance(distribution, LogUniformDistribution):
-                params[name] = min(
-                    params[name], math.exp(math.log(search_space[name].high) - 1e-8)
-                )
+                params[name] = min(params[name], math.exp(math.log(distribution.high) - 1e-8))
 
         return params
 
