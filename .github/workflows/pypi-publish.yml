@@ -22,7 +22,7 @@ jobs:
         python -m pip install -U twine wheel
 
     - name: Build a tar ball
-      run: >-
+      run: |
         python setup.py sdist
         python setup.py bdist_wheel
 

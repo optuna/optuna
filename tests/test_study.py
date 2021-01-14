@@ -25,6 +25,7 @@ from optuna import _optimize
 from optuna import create_trial
 from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
+from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -570,6 +571,38 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
             assert df.user_attrs_train_loss[i] == 3
 
 
+@pytest.mark.parametrize(
+    "attrs",
+    [
+        ("value",),
+        ("values",),
+    ],
+)
+@pytest.mark.parametrize("multi_index", [True, False])
+def test_trials_dataframe_with_multi_objective_optimization(
+    attrs: Tuple[str, ...], multi_index: bool
+) -> None:
+    def f(trial: optuna.trial.Trial) -> Tuple[float, float]:
+
+        x = trial.suggest_float("x", 1, 1)
+        y = trial.suggest_float("y", 2, 2)
+
+        return x + y, x ** 2 + y ** 2  # 3, 5
+
+    study = optuna.create_study(directions=["minimize", "maximize"])
+    study.optimize(f, n_trials=3)
+    df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
+
+    if multi_index:
+        for i in range(3):
+            assert df.get("values")[0][i] == 3
+            assert df.get("values")[1][i] == 5
+    else:
+        for i in range(3):
+            assert df.values_0[i] == 3
+            assert df.values_1[i] == 5
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_create_study(storage_mode: str) -> None:
 
@@ -1105,3 +1138,146 @@ def test_wrong_n_objectives() -> None:
 
     for trial in study.trials:
         assert trial.state is TrialState.FAIL
+
+
+def test_ask() -> None:
+    study = optuna.create_study()
+
+    trial = study.ask()
+    assert isinstance(trial, Trial)
+
+
+def test_ask_enqueue_trial() -> None:
+    study = optuna.create_study()
+
+    study.enqueue_trial({"x": 0.5})
+
+    trial = study.ask()
+    assert trial.suggest_float("x", 0, 1) == 0.5
+
+
+def test_tell() -> None:
+    study = optuna.create_study()
+    assert len(study.trials) == 0
+
+    trial = study.ask()
+    assert len(study.trials) == 1
+    assert len(study.get_trials(states=(TrialState.COMPLETE,))) == 0
+
+    study.tell(trial, 1.0)
+    assert len(study.trials) == 1
+    assert len(study.get_trials(states=(TrialState.COMPLETE,))) == 1
+
+    study.tell(study.ask(), state=TrialState.PRUNED)
+    assert len(study.trials) == 2
+    assert len(study.get_trials(states=(TrialState.PRUNED,))) == 1
+
+    study.tell(study.ask(), state=TrialState.FAIL)
+    assert len(study.trials) == 3
+    assert len(study.get_trials(states=(TrialState.FAIL,))) == 1
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), state=TrialState.RUNNING)
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), state=TrialState.WAITING)
+
+
+def test_tell_trial_variations() -> None:
+    study = optuna.create_study()
+
+    study.tell(study.ask().number, 1.0)
+
+    # Trial that has not been asked for cannot be told.
+    with pytest.raises(ValueError):
+        study.tell(study.ask().number + 1, 1.0)
+
+    with pytest.raises(TypeError):
+        study.tell("1", 1.0)  # type: ignore
+
+
+def test_tell_duplicate_tell() -> None:
+    study = optuna.create_study()
+
+    trial = study.ask()
+    study.tell(trial, 1.0)
+
+    with pytest.raises(RuntimeError):
+        study.tell(trial, 1.0)
+
+
+def test_tell_values() -> None:
+    study = optuna.create_study()
+
+    study.tell(study.ask(), 1.0)
+
+    study.tell(study.ask(), [1.0])
+
+    # Check invalid values, e.g. ones that cannot be cast to float.
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), "a")  # type: ignore
+
+    # Check number of values.
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [])
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [1.0, 2.0])
+
+    study = optuna.create_study(directions=["minimize", "maximize"])
+    study.tell(study.ask(), [1.0, 2.0])
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [])
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [1.0])
+
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), [1.0, 2.0, 3.0])
+
+    # Missing values for completions.
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), state=TrialState.COMPLETE)
+
+    # Default state is `TrialState.COMPLETE` for which values are required.
+    with pytest.raises(ValueError):
+        study.tell(study.ask())
+
+
+def test_tell_storage_not_implemented_trial_number() -> None:
+    with StorageSupplier("inmemory") as storage:
+
+        with patch.object(
+            storage,
+            "get_trial_id_from_study_id_trial_number",
+            side_effect=NotImplementedError,
+        ):
+            study = optuna.create_study(storage=storage)
+
+            study.tell(study.ask(), 1.0)
+
+            # Storage missing implementation for method required to map trial numbers back to
+            # trial IDs.
+            with pytest.warns(UserWarning):
+                study.tell(study.ask().number, 1.0)
+
+            with pytest.raises(ValueError):
+                study.tell(study.ask().number + 1, 1.0)
+
+
+def test_tell_pruned_values() -> None:
+    # See also `test_run_trial_with_trial_pruned`.
+    study = optuna.create_study()
+
+    trial = study.ask()
+
+    trial.report(2.0, step=1)
+
+    study.tell(trial, state=TrialState.PRUNED)
+    assert study.trials[-1].value == 2.0
+
+    trial = study.ask()
+
+    study.tell(trial, state=TrialState.PRUNED)
+    assert study.trials[-1].value is None
