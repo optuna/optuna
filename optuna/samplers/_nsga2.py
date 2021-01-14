@@ -414,7 +414,7 @@ def _constrained_dominates(
     constraints1 = trial1.system_attrs.get(_CONSTRAINTS_KEY)
 
     if constraints0 is None and constraints1 is None:
-        # Neither Trial x nor y has constraints values
+        # Neither trial x nor y has constraints values
         return _dominates(trial0, trial1, directions)
 
     if constraints0 is not None and constraints1 is None:
