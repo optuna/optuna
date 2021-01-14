@@ -269,9 +269,13 @@ class TrialModel(BaseModel):
         return trial_count.scalar()
 
     @classmethod
-    def find_by_state(cls, state: TrialState, session: orm.Session) -> List["TrialModel"]:
-        trials = session.query(cls).filter(cls.state == state).all()
-        return trials
+    def whether_to_be_killed(
+        cls, trial_id: int, current_timestamp: datetime, grace_period: int, session: orm.Session
+    ) -> bool:
+
+        timestamp = TrialTimestampModel.where_trial_id(trial_id, session)
+        assert timestamp is not None
+        return (current_timestamp - timestamp.timestamp).seconds > grace_period
 
 
 class TrialUserAttributeModel(BaseModel):
@@ -485,7 +489,7 @@ class TrialIntermediateValueModel(BaseModel):
         return trial_intermediate_values
 
 
-class TrialTimeStampModel(BaseModel):
+class TrialTimestampModel(BaseModel):
     __tablename__ = "trial_timestamps"
     __table_args__: Any = (UniqueConstraint("trial_id"),)
     trial_timestamp_id = Column(Integer, primary_key=True)
@@ -499,7 +503,7 @@ class TrialTimeStampModel(BaseModel):
     @classmethod
     def where_trial_id(
         cls, trial_id: int, session: orm.Session
-    ) -> Optional["TrialTimeStampModel"]:
+    ) -> Optional["TrialTimestampModel"]:
         return session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
 
 

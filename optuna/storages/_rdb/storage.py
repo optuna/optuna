@@ -18,6 +18,7 @@ import alembic.command
 import alembic.config
 import alembic.migration
 import alembic.script
+from sqlalchemy import func
 from sqlalchemy import orm
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
@@ -1154,11 +1155,12 @@ class RDBStorage(BaseStorage):
         """
 
         with _create_scoped_session(self.scoped_session, True) as session:
-            timestamp = models.TrialTimeStampModel.where_trial_id(trial_id, session)
-            if timestamp is not None:
-                session.delete(timestamp)
-            new_timestamp = models.TrialTimeStampModel(trial_id=trial_id)
-            session.add(new_timestamp)
+            timestamp = models.TrialTimestampModel.where_trial_id(trial_id, session)
+            if timestamp is None:
+                timestamp = models.TrialTimestampModel(trial_id=trial_id)
+                session.add(timestamp)
+            else:
+                timestamp.timestamp = session.execute(func.now()).scalar()
 
     def kill_stale_trials(self) -> List[int]:
         """Kill stale trials.
@@ -1176,21 +1178,20 @@ class RDBStorage(BaseStorage):
         killed_trial_ids = []
 
         with _create_scoped_session(self.scoped_session, True) as session:
-            # Assume there is no trial whose ID is -1.
-            assert models.TrialTimeStampModel.where_trial_id(-1, session) is None
-            current_timestamp = models.TrialTimeStampModel(trial_id=-1)
-            session.add(current_timestamp)
+            current_timestamp = session.execute(func.now()).scalar()
 
-            running_trials = models.TrialModel.find_by_state(TrialState.RUNNING, session)
+        with _create_scoped_session(self.scoped_session, True) as session:
+            running_trials = (
+                session.query(models.TrialModel)
+                .filter(models.TrialModel.state == TrialState.RUNNING)
+                .all()
+            )
             for trial in running_trials:
-                self.check_trial_is_updatable(trial.trial_id, trial.state)
-                timestamp = models.TrialTimeStampModel.where_trial_id(trial.trial_id, session)
-                assert timestamp is not None
-                if (current_timestamp.timestamp - timestamp.timestamp).seconds > grace_period:
+                if models.TrialModel.whether_to_be_killed(
+                    trial.trial_id, current_timestamp, grace_period, session
+                ):
                     trial.state = TrialState.FAIL
                     killed_trial_ids.append(trial.trial_id)
-
-            session.delete(current_timestamp)
 
         return killed_trial_ids
 

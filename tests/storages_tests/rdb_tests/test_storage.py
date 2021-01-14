@@ -19,7 +19,7 @@ from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import StudyModel
 from optuna.storages._rdb.models import TrialModel
-from optuna.storages._rdb.models import TrialTimeStampModel
+from optuna.storages._rdb.models import TrialTimestampModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
 from optuna.trial import FrozenTrial
@@ -327,7 +327,7 @@ def test_record_heartbeat() -> None:
             .all()
         )
         for trial_id_tuple in trial_ids:
-            timestamp_model = TrialTimeStampModel.where_trial_id(trial_id_tuple[0], session)
+            timestamp_model = TrialTimestampModel.where_trial_id(trial_id_tuple[0], session)
             assert timestamp_model is not None
             trial_timestamps.append(timestamp_model.timestamp)
 

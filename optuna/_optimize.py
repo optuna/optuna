@@ -334,7 +334,7 @@ def _record_heartbeat(
 ) -> None:
     assert storage.heartbeat_interval is not None
     while True:
+        storage.record_timestamp(trial_id)
         if stop_event.is_set():
             return
-        storage.record_timestamp(trial_id)
         time.sleep(storage.heartbeat_interval)
