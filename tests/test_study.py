@@ -1245,57 +1245,7 @@ def test_tell_values() -> None:
         study.tell(study.ask())
 
 
-def test_report() -> None:
-    # See tests/test_trial.py for corresponding tests for `Trial.report`.
-
-    study = optuna.create_study()
-    trial = Trial(study, study._storage.create_new_trial(study._study_id))
-
-    # Report values that can be cast to `float` (OK).
-    study.report(trial, 1.23, 1)
-    study.report(trial, float("nan"), 2)
-    study.report(trial, "1.23", 3)  # type: ignore
-    study.report(trial, "inf", 4)  # type: ignore
-    study.report(trial, 1, 5)
-
-    # Report values that cannot be cast to `float` or steps that are negative (Error).
-    with pytest.raises(TypeError):
-        study.report(trial, None, 7)  # type: ignore
-
-    with pytest.raises(TypeError):
-        study.report(trial, "foo", 7)  # type: ignore
-
-    with pytest.raises(TypeError):
-        study.report(trial, [1, 2, 3], 7)  # type: ignore
-
-    with pytest.raises(TypeError):
-        study.report(trial, "foo", -1)  # type: ignore
-
-    with pytest.raises(ValueError):
-        study.report(trial, 1.23, -1)
-
-
-def test_report_trial_variations() -> None:
-    study = optuna.create_study()
-
-    study.report(study.ask().number, 1.0, 1)
-
-    # Trial that has not been asked for cannot be reported.
-    with pytest.raises(ValueError):
-        study.report(study.ask().number + 1, 1.0, 2)
-
-    with pytest.raises(TypeError):
-        study.report("1", 1.0, 3)  # type: ignore
-
-
-def test_raise_error_for_report_with_multi_objectives() -> None:
-    study = optuna.create_study(directions=["maximize", "maximize"])
-
-    with pytest.raises(NotImplementedError):
-        study.report(study.ask(), 1.0, 0)
-
-
-def test_storage_not_implemented_trial_number() -> None:
+def test_tell_storage_not_implemented_trial_number() -> None:
     with StorageSupplier("inmemory") as storage:
 
         with patch.object(
@@ -1312,8 +1262,8 @@ def test_storage_not_implemented_trial_number() -> None:
             with pytest.warns(UserWarning):
                 study.tell(study.ask().number, 1.0)
 
-            with pytest.warns(UserWarning):
-                study.report(study.ask().number, 1.0, 1)
+            with pytest.raises(ValueError):
+                study.tell(study.ask().number + 1, 1.0)
 
 
 def test_tell_pruned_values() -> None:
