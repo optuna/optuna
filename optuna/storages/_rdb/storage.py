@@ -1176,7 +1176,7 @@ class RDBStorage(BaseStorage):
         killed_trial_ids = []
 
         with _create_scoped_session(self.scoped_session, True) as session:
-            # Assume there is no trial whose if is -1.
+            # Assume there is no trial whose ID is -1.
             assert models.TrialTimeStampModel.where_trial_id(-1, session) is None
             current_timestamp = models.TrialTimeStampModel(trial_id=-1)
             session.add(current_timestamp)
