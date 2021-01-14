@@ -448,13 +448,10 @@ class _CachedStorage(BaseStorage):
         Call :meth:`~optuna.storages.RDBStorage.kill_stale_trials` and take consistency of the
         cached trial and the trial stored in the backend.
 
-        This method is only available when the backend is :class:`~optuna.storages.RDBStorage`.
-
         Returns:
             List of trial IDs of the killed trials.
         """
 
-        assert isinstance(self._backend, RDBStorage)
         killed_trial_ids = self._backend.kill_stale_trials()
 
         with self._lock:
