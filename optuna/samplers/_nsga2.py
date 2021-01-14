@@ -413,17 +413,11 @@ def _constrained_dominates(
     constraints0 = trial0.system_attrs.get(_CONSTRAINTS_KEY)
     constraints1 = trial1.system_attrs.get(_CONSTRAINTS_KEY)
 
-    if constraints0 is None and constraints1 is None:
-        # Neither trial x nor y has constraints values
-        return _dominates(trial0, trial1, directions)
+    if constraints0 is None:
+        raise ValueError(f"Trial {trial0.number} does not have constraint values.")
 
-    if constraints0 is not None and constraints1 is None:
-        # Trial x has constraint values, but y doesn't.
-        return True
-
-    if constraints0 is None and constraints1 is not None:
-        # If Trial y has constraint values, but x doesn't.
-        return False
+    if constraints1 is None:
+        raise ValueError(f"Trial {trial1.number} does not have constraint values.")
 
     assert isinstance(constraints0, (list, tuple))
     assert isinstance(constraints1, (list, tuple))
