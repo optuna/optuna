@@ -30,7 +30,6 @@ optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout)
 
 
 class StopWhenTrialKeepBeingPrunedCallback:
-
     def __init__(self, threshold: int):
         self.threshold = threshold
         self._consequtive_pruned_count = 0
