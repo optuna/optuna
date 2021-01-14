@@ -410,8 +410,20 @@ def _constrained_dominates(
     3) Trial x and y are feasible and trial x dominates trial y.
     """
 
-    constraints0 = trial0.system_attrs[_CONSTRAINTS_KEY]
-    constraints1 = trial1.system_attrs[_CONSTRAINTS_KEY]
+    constraints0 = trial0.system_attrs.get(_CONSTRAINTS_KEY)
+    constraints1 = trial1.system_attrs.get(_CONSTRAINTS_KEY)
+
+    if constraints0 is None and constraints1 is None:
+        # Neither Trial x nor y has constraints values
+        return _dominates(trial0, trial1, directions)
+
+    if constraints0 is not None and constraints1 is None:
+        # Trial x has constraint values, but y doesn't.
+        return True
+
+    if constraints0 is None and constraints1 is not None:
+        # If Trial y has constraint values, but x doesn't.
+        return False
 
     assert isinstance(constraints0, (list, tuple))
     assert isinstance(constraints1, (list, tuple))

@@ -345,6 +345,47 @@ def test_fast_non_dominated_sort_constrained_feasible_infeasible() -> None:
     ]
 
 
+def test_fast_non_dominated_sort_missing_constraint_values() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = NSGAIISampler(constraints_func=lambda _: [0])
+
+    # Single objective.
+    directions = [StudyDirection.MINIMIZE]
+    trials = [
+        _create_frozen_trial(0, [10]),
+        _create_frozen_trial(1, [20]),
+        _create_frozen_trial(2, [20], [0]),
+        _create_frozen_trial(3, [20], [1]),
+        _create_frozen_trial(4, [30], [-1]),
+    ]
+    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
+    assert [{t.number for t in population} for population in population_per_rank] == [
+        {2},
+        {4},
+        {3},
+        {0},
+        {1},
+    ]
+
+    # Two objectives.
+    directions = [StudyDirection.MAXIMIZE, StudyDirection.MAXIMIZE]
+    trials = [
+        _create_frozen_trial(0, [50, 30]),
+        _create_frozen_trial(1, [30, 50]),
+        _create_frozen_trial(2, [20, 20], [3, 3]),
+        _create_frozen_trial(3, [30, 10], [0, -1]),
+        _create_frozen_trial(4, [15, 15], [4, 4]),
+    ]
+    population_per_rank = sampler._fast_non_dominated_sort(trials, directions)
+    assert [{t.number for t in population} for population in population_per_rank] == [
+        {3},
+        {2},
+        {4},
+        {0, 1},
+    ]
+
+
 def test_crowding_distance_sort() -> None:
     trials = [
         _create_frozen_trial(0, [5]),
