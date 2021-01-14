@@ -4,13 +4,26 @@
 Specify Hyperparameters Manually
 ================================
 
-Sometimes, it is natural for you to try some experiments with your out-of-box hyperparameters.
-For example, you have some specific sets of hyperparameters to try in your mind before using Optuna for the best hyperparameters.
+It's natural that you have some specific sets of hyperparameters to try first such as initial learning rate
+values and the number of leaves.
+Also, it's also possible that you've already tried those sets before having Optuna find better
+sets of hyperparameters.
 
-First scenario: Add hyperparameter sets to be evaluated
--------------------------------------------------------
+Optuna provides two APIs to support such cases:
 
-Try some sets of hyperparameters with :func:`optuna.study.Study.enqueue_trial`.
+1. Passing those sets of hyperparameters and let Optuna evaluate them - :func:`~optuna.study.Study.enqueue_trial`
+2. Adding the results of those sets as completed ``Trial``\\s - :func:`~optuna.study.Study.add_trial`
+
+First Scenario: Have Optuna evaluate your hyperparameters
+---------------------------------------------------------
+
+In this scenario, let's assume you have some out-of-box sets of hyperparameters but have not
+evaluate them yet and decided to use Optuna to find better sets of hyperparameters.
+
+Optuna has :func:`optuna.study.Study.enqueue_trial` which lets you pass those sets of
+hyperparameters to Optuna and Optuna will evaluate them.
+
+This section walks you through how to use this lit API with `LightGBM <https://lightgbm.readthedocs.io/en/latest/>`_.
 """
 
 import lightgbm as lgb
@@ -53,13 +66,13 @@ def objective(trial):
 
 
 ###################################################################################################
-# When you have some sets of hyperparameters that you want to try,
-# :func:`~optuna.study.Study.enqueue_trial` does the thing.
+# Then, construct ``Study`` for hyperparameter optimization.
 
 study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
 
 ###################################################################################################
-# First, try the default hyperparameters and try some larger ``"bagging_fraq"`` value.
+# Here, we get Optuna evaluate some sets with larger ``"bagging_fraq"`` value and
+# the default values.
 
 study.enqueue_trial(
     {
@@ -80,16 +93,22 @@ study.enqueue_trial(
 import logging
 import sys
 
-# Add stream handler of stdout to show the messages
+# Add stream handler of stdout to show the messages to see Optuna works expectedly.
 optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 study.optimize(objective, n_trials=100, timeout=600)
 
 ###################################################################################################
-# Second scenario: Add hyperparameters that are already evaluated
-# ---------------------------------------------------------------
+# Second scenario: Have Optuna utilize already evaluated hyperparameters
+# ----------------------------------------------------------------------
 #
-# You have tried some sets of hyperparameters manually and then you want to have Optuna find better sets of hyperparameters.
-# If this is the case, :func:`optuna.study.Study.add_trial` plays the role.
+# In this scenario, let's assume you have some out-of-box sets of hyperparameters and
+# you have already evaluated them but the results are not desirable so that you are thinking of
+# using Optuna.
+#
+# Optuna has :func:`optuna.study.Study.add_trial` which lets you register those results
+# to Optuna and then Optuna will sample hyperparameters taking them into account.
+#
+# In this section, ``objective`` is the same as the first scenario.
 
 study = optuna.create_study(direction="maximize", pruner=optuna.pruners.MedianPruner())
 study.add_trial(
