@@ -13,6 +13,7 @@ from optuna.storages._rdb.models import StudySystemAttributeModel
 from optuna.storages._rdb.models import TrialIntermediateValueModel
 from optuna.storages._rdb.models import TrialModel
 from optuna.storages._rdb.models import TrialSystemAttributeModel
+from optuna.storages._rdb.models import TrialTimeStampModel
 from optuna.storages._rdb.models import TrialUserAttributeModel
 from optuna.storages._rdb.models import TrialValueModel
 from optuna.storages._rdb.models import VersionInfoModel
@@ -206,6 +207,21 @@ class TestTrialModel(object):
 
         assert 0 == TrialModel.count(session, study)
 
+    @staticmethod
+    def test_find_by_state(session: Session) -> None:
+
+        study_id = 1
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
+        study = StudyModel(study_id=study_id, study_name="test-study", directions=[direction])
+        study.trials.append(TrialModel(study_id=study.study_id, state=TrialState.COMPLETE))
+        study.trials.append(TrialModel(study_id=study.study_id, state=TrialState.COMPLETE))
+        study.trials.append(TrialModel(study_id=study.study_id, state=TrialState.RUNNING))
+        session.add(study)
+        session.commit()
+
+        assert TrialModel.count(session, state=TrialState.COMPLETE) == 2
+        assert TrialModel.count(session, state=TrialState.RUNNING) == 1
+
 
 class TestTrialUserAttributeModel(object):
     @staticmethod
@@ -389,6 +405,42 @@ class TestTrialIntermediateValueModel(object):
         session.commit()
 
         assert 0 == len(TrialIntermediateValueModel.where_trial_id(trial.trial_id, session))
+
+
+class TestTrialTimeStampModel(object):
+    @staticmethod
+    def _create_model(session: Session) -> TrialModel:
+
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
+        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
+        session.add(study)
+        session.add(trial)
+        session.add(TrialTimeStampModel(trial_id=trial.trial_id))
+        session.commit()
+        return trial
+
+    @staticmethod
+    def test_where_trial_id(session: Session) -> None:
+
+        trial = TestTrialTimeStampModel._create_model(session)
+        trial_timestamps = TrialTimeStampModel.where_trial_id(trial.trial_id, session)
+        assert 1 == len(trial_timestamps)
+        assert isinstance(trial_timestamps[0].timestamp, datetime)
+
+    @staticmethod
+    def test_cascade_delete_on_trial(session: Session) -> None:
+
+        trial = TestTrialTimeStampModel._create_model(session)
+        trial.timestamps.append(TrialTimeStampModel(trial_id=trial.trial_id))
+        session.commit()
+
+        assert 2 == len(TrialTimeStampModel.where_trial_id(trial.trial_id, session))
+
+        session.delete(trial)
+        session.commit()
+
+        assert 0 == len(TrialTimeStampModel.where_trial_id(trial.trial_id, session))
 
 
 class TestVersionInfoModel(object):
