@@ -424,23 +424,22 @@ class TestTrialTimeStampModel(object):
     def test_where_trial_id(session: Session) -> None:
 
         trial = TestTrialTimeStampModel._create_model(session)
-        trial_timestamps = TrialTimeStampModel.where_trial_id(trial.trial_id, session)
-        assert 1 == len(trial_timestamps)
-        assert isinstance(trial_timestamps[0].timestamp, datetime)
+        trial_timestamp = TrialTimeStampModel.where_trial_id(trial.trial_id, session)
+        assert trial_timestamp is not None
+        assert isinstance(trial_timestamp.timestamp, datetime)
 
     @staticmethod
     def test_cascade_delete_on_trial(session: Session) -> None:
 
         trial = TestTrialTimeStampModel._create_model(session)
-        trial.timestamps.append(TrialTimeStampModel(trial_id=trial.trial_id))
         session.commit()
 
-        assert 2 == len(TrialTimeStampModel.where_trial_id(trial.trial_id, session))
+        assert TrialTimeStampModel.where_trial_id(trial.trial_id, session) is not None
 
         session.delete(trial)
         session.commit()
 
-        assert 0 == len(TrialTimeStampModel.where_trial_id(trial.trial_id, session))
+        assert TrialTimeStampModel.where_trial_id(trial.trial_id, session) is None
 
 
 class TestVersionInfoModel(object):
