@@ -5,6 +5,7 @@ import warnings
 import pytest
 
 import optuna
+from optuna.samplers import GridSampler
 from optuna.samplers import PartialFixedSampler
 from optuna.samplers import RandomSampler
 from optuna.trial import Trial
@@ -115,3 +116,40 @@ def test_reseed_rng() -> None:
         sampler.reseed_rng()
         assert mock_object.call_count == 1
         assert original_seed != base_sampler._rng.seed
+
+
+def test_with_grid_sampler() -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_float("x", -10, 10)
+        y = trial.suggest_float("y", -10, 10)
+        return x ** 2 + y ** 2
+
+    search_space = {"x": list(range(-10, 10, 5)), "y": list(range(-10, 10, 5))}
+    study0 = optuna.create_study()
+    study0.sampler = GridSampler(search_space)
+    study0.optimize(objective, n_trials=20)
+
+    # Fix parameter ``y`` as 0.
+    study1 = optuna.create_study()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        study1.sampler = PartialFixedSampler(
+            fixed_params={"y": 0}, base_sampler=GridSampler(search_space)
+        )
+    study1.optimize(objective, n_trials=20)
+    y_sampled1 = study1.trials[0].params["y"]
+    assert y_sampled1 == 0
+
+    # x_sampled0 = study0.trials[0].params["x"]
+    # x_sampled1 = study1.trials[0].params["x"]
+    # TODO(HideakiImamura): assert x_sampled1 == x_sampled0 if `seed` is introduced to GridSampler
+
+    # The number of grids is 4 * 4 is smaller than the number of trials 20
+    # if GridSampler.after_trial correctly works.
+    assert len(study0.trials) < 20
+    assert len(study1.trials) < 20
+    # In the current implementation of PartialFixedSampler, there is no mechanism to reduce
+    # the number of grids. It is a future work.
+    # TODO(HideakiImamura): assert len(study0.trials) > len(study1.trials) if # of grids reducing
+    #  mechanism is introduced to GridSampler
+    assert len(study0.trials) == len(study1.trials)
