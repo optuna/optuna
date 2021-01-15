@@ -21,6 +21,7 @@ from optuna._dataframe import _trials_dataframe
 from optuna._dataframe import pd
 from optuna._deprecated import deprecated
 from optuna._experimental import experimental
+from optuna._experimental import ExperimentalWarning
 from optuna._multi_objective import _get_pareto_front_trials
 from optuna._optimize import _check_and_convert_to_values
 from optuna._optimize import _optimize
@@ -384,7 +385,7 @@ class Study(BaseStudy):
             show_progress_bar=show_progress_bar,
         )
 
-    def ask(self) -> trial_module.Trial:
+    def ask(self, trial_number: Optional[int] = None) -> trial_module.Trial:
         """Create a new trial from which hyperparameters can be suggested.
 
         This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
@@ -406,17 +407,67 @@ class Study(BaseStudy):
                 x = trial.suggest_float("x", -1, 1)
 
                 study.tell(trial, x ** 2)
+        Args:
+            trial_number:
+                Optional trial number. If not :obj:`None`, tries to restore and return the trial
+                associated with the trial number, instead of creating a new one.
+
+                .. note::
+                    Added in v2.5.0 as an experimental feature. The interface may change in newer
+                    versions without prior notice. See
+                    https://github.com/optuna/optuna/releases/tag/v2.5.0.
 
         Returns:
             A :class:`~optuna.trial.Trial`.
         """
 
+        if trial_number is not None:
+            warnings.warn(
+                "The trial_number option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
         # Sync storage once every trial.
         self._storage.read_trials_from_remote_storage(self._study_id)
 
-        trial_id = self._pop_waiting_trial_id()
-        if trial_id is None:
-            trial_id = self._storage.create_new_trial(self._study_id)
+        trial_id: Optional[int]
+
+        if trial_number is not None:
+            # TODO(hvy): DRY with `Study.tell`.
+            try:
+                trial_id = self._storage.get_trial_id_from_study_id_trial_number(
+                    self._study_id, trial_number
+                )
+            except NotImplementedError as e:
+                warnings.warn(
+                    "Study.tell may be slow because the trial was represented by its number but "
+                    f"the storage {self._storage.__class__.__name__} does not implement the "
+                    "method required to map numbers back. Please provide the trial object "
+                    "to avoid performance degradation."
+                )
+
+                trials = self.get_trials(deepcopy=False)
+
+                if len(trials) <= trial_number:
+                    raise ValueError(
+                        f"Cannot tell for trial with number {trial_number} since it has not been "
+                        "created."
+                    ) from e
+
+                trial_id = trials[trial_number]._trial_id
+            except KeyError as e:
+                raise ValueError(
+                    f"Cannot tell for trial with number {trial_number} since it has not been "
+                    "created."
+                ) from e
+        else:
+            trial_id = self._pop_waiting_trial_id()
+            if trial_id is None:
+                trial_id = self._storage.create_new_trial(self._study_id)
+
+        assert trial_id is not None
+
         return trial_module.Trial(self, trial_id)
 
     def tell(
