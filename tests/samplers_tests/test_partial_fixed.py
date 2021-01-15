@@ -148,8 +148,8 @@ def test_with_grid_sampler() -> None:
     # if GridSampler.after_trial correctly works.
     assert len(study0.trials) < 20
     assert len(study1.trials) < 20
-    # In the current implementation of PartialFixedSampler, there is no mechanism to reduce
-    # the number of grids. It is a future work.
-    # TODO(HideakiImamura): assert len(study0.trials) > len(study1.trials) if # of grids reducing
-    #  mechanism is introduced to GridSampler
+    # In the current implementation of PartialFixedSampler and GridSampler, GridSampler does not
+    # care about the fixed parameters.
+    # TODO(HideakiImamura): assert len(study0.trials) > len(study1.trials) if GridSampler cares
+    #  about the fixed parameters.
     assert len(study0.trials) == len(study1.trials)
