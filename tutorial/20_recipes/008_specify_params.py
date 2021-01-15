@@ -78,7 +78,7 @@ study.enqueue_trial(
     {
         "bagging_fraction": 1.0,
         "bagging_freq": 0,
-        "min_child_sample": 20,
+        "min_child_samples": 20,
     }
 )
 
@@ -86,7 +86,7 @@ study.enqueue_trial(
     {
         "bagging_fraction": 0.75,
         "bagging_freq": 5,
-        "min_child_sample": 20,
+        "min_child_samples": 20,
     }
 )
 
@@ -116,10 +116,12 @@ study.add_trial(
         params={
             "bagging_fraction": 1.0,
             "bagging_freq": 0,
+            "min_child_samples": 20,
         },
         distributions={
             "bagging_fraction": optuna.distributions.UniformDistribution(0.4, 1.0 + 1e-12),
             "bagging_freq": optuna.distributions.IntUniformDistribution(0, 7),
+            "min_child_samples": optuna.distributions.IntUniformDistribution(5, 100),
         },
         value=0.94,
     )
@@ -129,10 +131,12 @@ study.add_trial(
         params={
             "bagging_fraction": 0.75,
             "bagging_freq": 5,
+            "min_child_samples": 20,
         },
         distributions={
             "bagging_fraction": optuna.distributions.UniformDistribution(0.4, 1.0 + 1e-12),
             "bagging_freq": optuna.distributions.IntUniformDistribution(0, 7),
+            "min_child_samples": optuna.distributions.IntUniformDistribution(5, 100),
         },
         value=0.95,
     )
