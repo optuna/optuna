@@ -6,7 +6,7 @@ Callback for Study.optimize
 
 This tutorial showcases how to use & implement Optuna ``Callback`` for :func:`~optuna.study.Study.optimize`.
 
-``Callback`` is called after the every evaluation of ``objective``, and
+``Callback`` is called after every evaluation of ``objective``, and
 it takes :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial` as arguments, and does some work.
 
 :class:`~optuna.integration.MLflowCallback` is a great example.
@@ -25,7 +25,7 @@ optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout)
 # -------------------------------------------------------
 #
 # This example implements a stateful callback which stops the optimization
-# if certain number of trials are pruned in a row.
+# if a certain number of trials are pruned in a row.
 # The number of trials pruned in a row is specified by ``threshold``.
 
 
@@ -54,7 +54,7 @@ def objective(trial):
 
 
 ###################################################################################################
-# Here, we set threshold to ``2``: optimization finishes once two trials are pruned in a row.
+# Here, we set the threshold to ``2``: optimization finishes once two trials are pruned in a row.
 # So, we expect this study to stop after 7 trials.
 study_stop_cb = StopWhenTrialKeepBeingPrunedCallback(2)
 study = optuna.create_study()
