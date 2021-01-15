@@ -511,8 +511,7 @@ class Trial(BaseTrial):
         pruned.
 
         .. seealso::
-            Please refer to :class:`~optuna.pruners.BasePruner` and
-            :func:`~optuna.study.Study.report` for an alternative interface.
+            Please refer to :class:`~optuna.pruners.BasePruner`.
 
         .. note::
             The reported value is converted to ``float`` type by applying ``float()``
@@ -567,7 +566,32 @@ class Trial(BaseTrial):
                 If trial is being used for multi-objective optimization.
         """
 
-        return self.study.report(self, value=value, step=step)
+        if len(self.study.directions) > 1:
+            raise NotImplementedError(
+                "Trial.report is not supported for multi-objective optimization."
+            )
+
+        try:
+            # For convenience, we allow users to report a value that can be cast to `float`.
+            value = float(value)
+        except (TypeError, ValueError):
+            message = "The `value` argument is of type '{}' but supposed to be a float.".format(
+                type(value).__name__
+            )
+            raise TypeError(message) from None
+
+        if step < 0:
+            raise ValueError("The `step` argument is {} but cannot be negative.".format(step))
+
+        intermediate_values = self.storage.get_trial(self._trial_id).intermediate_values
+
+        if step in intermediate_values:
+            # Do nothing if already reported.
+            # TODO(hvy): Consider raising a warning or an error.
+            # See https://github.com/optuna/optuna/issues/852.
+            return
+
+        self.storage.set_trial_intermediate_value(self._trial_id, step, value)
 
     def should_prune(self) -> bool:
         """Suggest whether the trial should be pruned or not.
