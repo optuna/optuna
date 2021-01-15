@@ -1,6 +1,7 @@
 import copy
 import datetime
 import math
+import tempfile
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -26,6 +27,7 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.study import create_study
+from optuna.study import load_study
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import BaseTrial
@@ -1341,3 +1343,22 @@ def test_raise_error_for_should_prune_multi_objectives() -> None:
         return 1.0, 1.0
 
     study.optimize(objective, n_trials=1)
+
+
+def test_persisted_param() -> None:
+    study_name = "my_study"
+
+    with tempfile.NamedTemporaryFile() as fp:
+        storage = f"sqlite:///{fp.name}"
+        study = create_study(storage=storage, study_name=study_name)
+        assert isinstance(study._storage, optuna.storages._CachedStorage), "Pre-condition."
+
+        # Test more than one trial. The `_CachedStorage` does a cache miss for the first trial and
+        # thus behaves differently for the first trial in comparisons to the following.
+        for _ in range(3):
+            trial = study.ask()
+            trial.suggest_float("x", 0, 1)
+
+        study = load_study(storage=storage, study_name=study_name)
+
+        assert all("x" in t.params for t in study.trials)
