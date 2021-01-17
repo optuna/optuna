@@ -1174,6 +1174,7 @@ class RDBStorage(BaseStorage):
                     trial.trial_id, current_timestamp, grace_period, session
                 ):
                     trial.state = TrialState.FAIL
+                    trial.datetime_complete = current_timestamp
                     killed_trial_ids.append(trial.trial_id)
 
         return killed_trial_ids

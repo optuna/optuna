@@ -463,8 +463,9 @@ class _CachedStorage(BaseStorage):
                 updates = self._get_updates(trial_id)
                 cached_trial.state = TrialState.FAIL
                 updates.state = TrialState.FAIL
-                updates.datetime_complete = datetime.datetime.now()
-                cached_trial.datetime_complete = datetime.datetime.now()
+                datetime_complete = datetime.datetime.now()
+                updates.datetime_complete = datetime_complete
+                cached_trial.datetime_complete = datetime_complete
 
                 del study.updates[number]
 
