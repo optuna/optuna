@@ -199,12 +199,12 @@ def _run_trial(
     thread: Optional[threading.Thread] = None
 
     if (
-        isinstance(study._storage, storages._CachedStorage)
-        and study._storage._backend.heartbeat_interval is not None
+        study._storage.check_heartbeat_support()
+        and study._storage.get_heartbeat_interval() is not None
     ):
         stop_event = threading.Event()
         thread = threading.Thread(
-            target=_record_heartbeat, args=(trial._trial_id, study._storage._backend, stop_event)
+            target=_record_heartbeat, args=(trial._trial_id, study._storage, stop_event)
         )
         thread.start()
         study._storage.kill_stale_trials()
@@ -230,8 +230,8 @@ def _run_trial(
             state = TrialState.COMPLETE
 
     if (
-        isinstance(study._storage, storages._CachedStorage)
-        and study._storage._backend.heartbeat_interval is not None
+        study._storage.check_heartbeat_support()
+        and study._storage.get_heartbeat_interval() is not None
     ):
         assert stop_event is not None
         assert thread is not None
@@ -330,11 +330,12 @@ def _check_single_value(
 
 
 def _record_heartbeat(
-    trial_id: int, storage: storages.RDBStorage, stop_event: threading.Event
+    trial_id: int, storage: storages.BaseStorage, stop_event: threading.Event
 ) -> None:
-    assert storage.heartbeat_interval is not None
+    heartbeat_interval = storage.get_heartbeat_interval()
+    assert heartbeat_interval is not None
     while True:
         storage.record_timestamp(trial_id)
         if stop_event.is_set():
             return
-        time.sleep(storage.heartbeat_interval)
+        time.sleep(heartbeat_interval)

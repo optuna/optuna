@@ -1145,14 +1145,6 @@ class RDBStorage(BaseStorage):
         return self._version_manager.get_all_versions()
 
     def record_timestamp(self, trial_id: int) -> None:
-        """Record the timestamp of the trial.
-
-        This method is specific to RDBStorage.
-
-        Args:
-            trial_id:
-                ID of the trial.
-        """
 
         with _create_scoped_session(self.scoped_session, True) as session:
             timestamp = models.TrialTimestampModel.where_trial_id(trial_id, session)
@@ -1163,15 +1155,6 @@ class RDBStorage(BaseStorage):
                 timestamp.timestamp = session.execute(func.now()).scalar()
 
     def kill_stale_trials(self) -> List[int]:
-        """Kill stale trials.
-
-        The running trials whose timestamp has not been updated for a long time will be killed,
-        that is, those states will be changed to :obj:`~optuna.trial.TrialState.FAIL`.
-        The grace period is ``2 * heartbeat_interval``.
-
-        Returns:
-            List of trial IDs of the killed trials.
-        """
 
         assert self.heartbeat_interval is not None
         grace_period = self.grace_period or 2 * self.heartbeat_interval
@@ -1194,6 +1177,14 @@ class RDBStorage(BaseStorage):
                     killed_trial_ids.append(trial.trial_id)
 
         return killed_trial_ids
+
+    def check_heartbeat_support(self) -> bool:
+
+        return True
+
+    def get_heartbeat_interval(self) -> Optional[int]:
+
+        return self.heartbeat_interval
 
 
 class _VersionManager(object):
