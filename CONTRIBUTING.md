@@ -144,12 +144,13 @@ The title of your pull request should
 
 - briefly describe and reflect the changes
 - wrap any code with backticks
+- not end with a period
 
 *The title will be directly visible in the release notes.*
 
 #### Example
 
-Introduces Tree-structured Parzen Estimator to `optuna.samplers`.
+Introduces Tree-structured Parzen Estimator to `optuna.samplers`
 
 ### Description
 
