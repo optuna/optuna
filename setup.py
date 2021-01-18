@@ -113,6 +113,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "jax",
             "optax",
             "dm-haiku",
+        ]
+        if sys.version_info[:2] < (3, 9)
+        else [
+            "torch==1.7.1 ; sys_platform=='darwin'",
+            "torch==1.7.1+cpu ; sys_platform!='darwin'",
+            "torchvision==0.8.2 ; sys_platform=='darwin'",
+            "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
+            "torchaudio==0.7.2",
         ],
         "experimental": ["redis"],
         "testing": [
