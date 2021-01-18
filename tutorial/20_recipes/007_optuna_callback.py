@@ -24,6 +24,7 @@ it takes :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial` as 
 
 import optuna
 
+
 class StopWhenTrialKeepBeingPrunedCallback:
     def __init__(self, threshold: int):
         self.threshold = threshold
