@@ -605,9 +605,7 @@ def _get_observation_pairs(
     treated as minimization in the MOTPE algorithm.
     """
 
-    trials = study._storage.get_all_trials(
-        study._study_id, deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,)
-    )
+    trials = study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,))
     values = []
     scores = []
     for trial in trials:
