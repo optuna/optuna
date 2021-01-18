@@ -1,14 +1,18 @@
-name: Publish distributions to PyPI
+name: Publish distributions to TestPyPI and PyPI
 
-# Only activate if the release is published.
+# Only activate for TestPyPI on the master push.
+# Only activate for PyPI if the release is published.
 on:
+  push:
+    branches:
+      - master
   release:
     types:
       - published
 
 jobs:
   build-n-publish:
-    name: Build and publish Python distributions to PyPI
+    name: Build and publish Python distributions to TestPyPI and PyPI
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
@@ -29,9 +33,18 @@ jobs:
     - name: Verify the distributions
       run: twine check dist/*
 
-    - name: Publish distribution to PyPI
+    - name: Publish distribution to TestPyPI only on the master push
       # The following upload action cannot be executed in the forked repository.
-      if: github.repository == 'optuna/optuna'
+      if: (github.repository == 'optuna/optuna') && (github.event_name == 'push')
+      uses: pypa/gh-action-pypi-publish@v1.1.0
+      with:
+        user: __token__
+        password: ${{ secrets.test_pypi_password }}
+        repository_url: https://test.pypi.org/legacy/
+
+    - name: Publish distribution to PyPI only if the release is published
+      # The following upload action cannot be executed in the forked repository.
+      if: (github.repository == 'optuna/optuna') && (github.event_name == 'release')
       uses: pypa/gh-action-pypi-publish@v1.1.0
       with:
         user: __token__
