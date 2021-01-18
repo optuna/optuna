@@ -131,7 +131,7 @@ class UniformDistribution(BaseDistribution):
         if self.low == self.high:
             return value == self.low
         else:
-            return self.low <= value < self.high
+            return self.low <= value <= self.high
 
 
 class LogUniformDistribution(BaseDistribution):
@@ -178,7 +178,7 @@ class LogUniformDistribution(BaseDistribution):
         if self.low == self.high:
             return value == self.low
         else:
-            return self.low <= value < self.high
+            return self.low <= value <= self.high
 
 
 class DiscreteUniformDistribution(BaseDistribution):
