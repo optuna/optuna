@@ -12,13 +12,6 @@ it takes :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial` as 
 :class:`~optuna.integration.MLflowCallback` is a great example.
 """
 
-import logging
-import sys
-
-import optuna
-
-# Add stream handler of stdout to show the messages
-optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 
 ###################################################################################################
 # Stop optimization after some trials are pruned in a row
@@ -27,6 +20,9 @@ optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout)
 # This example implements a stateful callback which stops the optimization
 # if a certain number of trials are pruned in a row.
 # The number of trials pruned in a row is specified by ``threshold``.
+
+
+import optuna
 
 
 class StopWhenTrialKeepBeingPrunedCallback:
@@ -56,6 +52,12 @@ def objective(trial):
 ###################################################################################################
 # Here, we set the threshold to ``2``: optimization finishes once two trials are pruned in a row.
 # So, we expect this study to stop after 7 trials.
+import logging
+import sys
+
+# Add stream handler of stdout to show the messages
+optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
+
 study_stop_cb = StopWhenTrialKeepBeingPrunedCallback(2)
 study = optuna.create_study()
 study.optimize(objective, n_trials=10, callbacks=[study_stop_cb])
