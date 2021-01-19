@@ -55,7 +55,7 @@ jobs:
         elif [ ${{ matrix.python-version }} = 3.8 ]; then
           IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|allennlp|rapids_.*'
         elif [ ${{ matrix.python-version }} = 3.9 ]; then
-          IGNORES='botorch_*|catalyst_*|catboost_*|chainer_*|chainermn_.*|dask_ml_.*|fastai*|gluon_*|haiku_*|keras_*|lightgbm_*|mxnet_*|optuna_search_cv_*|pytorch_ignite_*|pytorch_lightning_*|rapids_*|skimage_lbp_*|sklearn_*|skorch_*|tensorboard_*|tensorflow_*|tfkeras_*|xgboost_*'
+          IGNORES='allennlp_*|botorch_*|catalyst_*|catboost_*|chainer_*|chainermn_.*|dask_ml_.*|fastai*|gluon_*|haiku_*|keras_*|lightgbm_*|mxnet_*|optuna_search_cv_*|pytorch_ignite_*|pytorch_lightning_*|rapids_*|sb3_*|skimage_lbp_*|sklearn_*|skorch_*|tensorboard_*|tensorflow_*|tfkeras_*|xgboost_*'
         else
           IGNORES='chainermn_.*|fastai*|rapids_.*'
         fi
