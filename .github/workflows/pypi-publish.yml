@@ -31,7 +31,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         echo ${{ github.event.ref }}
-        echo ${{ github.event.push }}
+        echo ${{ github.event.push.ref }}
         echo ${{ github.event.push.head }}
         git config --local user.email gohome.x105.gn@gmail.com
         git config --local user.name HideakiImamura
