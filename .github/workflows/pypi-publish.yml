@@ -27,10 +27,11 @@ jobs:
 
     - name: Only on the master push, create a development branch and change the version file
       if: (github.repository == 'HideakiImamura/optuna') && (github.event_name == 'push')
-      uses: HideakiImamura/gha-git-credentials@v2-latest
-      with:
-        token: '${{ secrets.GITHUB_TOKEN }}'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        git config --local user.email gohome.x105.gn@gmail.com
+        git config --local user.name HideakiImamura
         OPTUNA_VERSION=$( cat optuna/version.py | cut -d "\"" -f 2 )
         git checkout -b ${OPTUNA_VERSION}dev${{ github.event.push.head }}
         echo __version__\ =\ \"${OPTUNA_VERSION}dev${{ github.event.push.head }}\" > optuna/version.py
