@@ -26,7 +26,7 @@ jobs:
         python -m pip install -U twine wheel
 
     - name: Only on the master push, create a development branch and change the version file
-      if: (github.repository == 'HideakiImamura/optuna') && (github.event_name == 'push')
+      if: (github.repository == 'optuna/optuna') && (github.event_name == 'push')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -49,7 +49,7 @@ jobs:
 
     - name: Only on the master push, publish distribution to TestPyPI
       # The following upload action cannot be executed in the forked repository.
-      if: (github.repository == 'HideakiImamura/optuna') && (github.event_name == 'push')
+      if: (github.repository == 'optuna/optuna') && (github.event_name == 'push')
       uses: pypa/gh-action-pypi-publish@v1.1.0
       with:
         user: __token__
@@ -57,7 +57,7 @@ jobs:
         repository_url: https://test.pypi.org/legacy/
 
     - name: Only on the master push, remove the development branch
-      if: (github.repository == 'HideakiImamura/optuna') && (github.event_name == 'push')
+      if: (github.repository == 'optuna/optuna') && (github.event_name == 'push')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
