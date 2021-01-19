@@ -1,11 +1,10 @@
 name: Publish distributions to TestPyPI and PyPI
 
-# Only activate for TestPyPI on the master push.
+# TestPyPI upload is scheduled in each weekday.
 # Only activate for PyPI if the release is published.
 on:
-  push:
-    branches:
-      - master
+  schedule:
+    - cron: '0 15 * * *'
   release:
     types:
       - published
@@ -25,16 +24,19 @@ jobs:
       run: >-
         python -m pip install -U twine wheel
 
-    - name: Only on the master push, create a development branch and change the version file
-      if: (github.repository == 'optuna/optuna') && (github.event_name == 'push')
+    - name: Create a branch and change the version file for TestPyPI upload
+      if: (github.repository == 'optuna/optuna') && (github.event_name == 'schedule')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        git config --local user.email gohome.x105.gn@gmail.com
+        git config --local user.name HideakiImamura
         OPTUNA_VERSION=$( cat optuna/version.py | cut -d "\"" -f 2 )
-        git checkout -b ${OPTUNA_VERSION}dev${{ github.event.push.head }}
-        echo __version__\ =\ \"${OPTUNA_VERSION}dev${{ github.event.push.head }}\" > optuna/version.py
+        DATE=`date +"%Y%m%d"`
+        git checkout -b ${OPTUNA_VERSION}.dev${DATE}
+        echo __version__\ =\ \"${OPTUNA_VERSION}.dev${DATE}\" > optuna/version.py
         git add optuna/version.py
-        git commit -m "Prepare TestPyPI upload"
+        git commit -m "Prepare TestPyPI upload. The version is ${OPTUNA_VERSION}.dev${DATE}"
 
     - name: Build a tar ball
       run: |
@@ -44,24 +46,16 @@ jobs:
     - name: Verify the distributions
       run: twine check dist/*
 
-    - name: Only on the master push, publish distribution to TestPyPI
+    - name: Publish distribution to TestPyPI
       # The following upload action cannot be executed in the forked repository.
-      if: (github.repository == 'optuna/optuna') && (github.event_name == 'push')
+      if: (github.repository == 'optuna/optuna') && (github.event_name == 'schedule')
       uses: pypa/gh-action-pypi-publish@v1.1.0
       with:
         user: __token__
         password: ${{ secrets.test_pypi_password }}
         repository_url: https://test.pypi.org/legacy/
 
-    - name: Only on the master push, remove the development branch
-      if: (github.repository == 'optuna/optuna') && (github.event_name == 'push')
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        git checkout master
-        git branch -d ${OPTUNA_VERSION}dev${{ github.event.push.head }}
-
-    - name: Only if the release is published, publish distribution to PyPI
+    - name: Publish distribution to PyPI
       # The following upload action cannot be executed in the forked repository.
       if: (github.repository == 'optuna/optuna') && (github.event_name == 'release')
       uses: pypa/gh-action-pypi-publish@v1.1.0
