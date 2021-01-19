@@ -34,8 +34,8 @@ jobs:
         git config --local user.email gohome.x105.gn@gmail.com
         git config --local user.name HideakiImamura
         OPTUNA_VERSION=$( cat optuna/version.py | cut -d "\"" -f 2 )
-        git checkout -b ${OPTUNA_VERSION}dev{GITHUB_SHA}
-        echo __version__\ =\ \"${OPTUNA_VERSION}dev{GITHUB_SHA}\" > optuna/version.py
+        git checkout -b ${OPTUNA_VERSION}dev${GITHUB_SHA}
+        echo __version__\ =\ \"${OPTUNA_VERSION}dev${GITHUB_SHA}\" > optuna/version.py
         git add optuna/version.py
         git commit -m "Prepare TestPyPI upload"
 
@@ -62,7 +62,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git checkout master
-        git branch -d ${OPTUNA_VERSION}dev{GITHUB_SHA}
+        git branch -d ${OPTUNA_VERSION}dev${GITHUB_SHA}
 
     - name: Only if the release is published, publish distribution to PyPI
       # The following upload action cannot be executed in the forked repository.
