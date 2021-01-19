@@ -29,6 +29,7 @@ class _TrialUpdate:
         self.params: Dict[str, Any] = {}
         self.distributions: Dict[str, distributions.BaseDistribution] = {}
         self.datetime_complete: Optional[datetime.datetime] = None
+        self.datetime_start: Optional[datetime.datetime] = None
 
 
 class _StudyInfo:
