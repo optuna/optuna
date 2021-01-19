@@ -30,6 +30,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        echo ${{ github.event }}
+        echo ${{ github.event.push }}
+        echo ${{ github.event.push.head }}
         git config --local user.email gohome.x105.gn@gmail.com
         git config --local user.name HideakiImamura
         OPTUNA_VERSION=$( cat optuna/version.py | cut -d "\"" -f 2 )
