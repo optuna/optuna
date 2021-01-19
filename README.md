@@ -111,13 +111,13 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 
 The new Web dashboard is under the development at [optuna-dashboard](https://github.com/optuna/optuna-dashboard).
 It is still experimental, but much better in many regards.
-Any feature requests and bug reports are welcome!
+Feature requests and bug reports welcome!
 
 | Manage studies | Visualize with interactive graphs |
 | -------------- | --------------------------------- |
 | ![manage-studies](https://user-images.githubusercontent.com/5564044/97099702-4107be80-16cf-11eb-9d97-f5ceec98ce52.gif) | ![optuna-realtime-graph](https://user-images.githubusercontent.com/5564044/97099797-66e19300-16d0-11eb-826c-6977e3941fb0.gif) |
 
-You can install `optuna-dashboard` via pip and the usage is like this:
+Install `optuna-dashboard` via pip:
 
 ```
 $ pip install optuna-dashboard
