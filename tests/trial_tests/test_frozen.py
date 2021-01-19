@@ -30,7 +30,7 @@ parametrize_storage = pytest.mark.parametrize(
 )
 
 
-def test_frozen_trial_eq_ne() -> None:
+def test_eq_ne() -> None:
 
     trial = _create_frozen_trial()
 
@@ -41,7 +41,7 @@ def test_frozen_trial_eq_ne() -> None:
     assert trial != trial_other
 
 
-def test_frozen_trial_lt() -> None:
+def test_lt() -> None:
 
     trial = _create_frozen_trial()
 
@@ -85,7 +85,7 @@ def _create_frozen_trial() -> FrozenTrial:
     )
 
 
-def test_frozen_trial_repr() -> None:
+def test_repr() -> None:
 
     trial = FrozenTrial(
         number=0,
@@ -105,7 +105,7 @@ def test_frozen_trial_repr() -> None:
 
 
 @parametrize_storage
-def test_frozen_trial_sampling(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
+def test_sampling(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
     def objective(trial: BaseTrial) -> float:
 
         a = trial.suggest_uniform("a", 0.0, 10.0)
@@ -129,7 +129,7 @@ def test_frozen_trial_sampling(storage_init_func: Callable[[], storages.BaseStor
     assert v == best_trial.value
 
 
-def test_frozen_trial_suggest_float() -> None:
+def test_suggest_float() -> None:
 
     trial = FrozenTrial(
         number=0,
@@ -154,7 +154,7 @@ def test_frozen_trial_suggest_float() -> None:
         trial.suggest_float("y", 0.0, 1.0)
 
 
-def test_frozen_trial_suggest_uniform() -> None:
+def test_suggest_uniform() -> None:
 
     trial = FrozenTrial(
         number=0,
@@ -176,7 +176,7 @@ def test_frozen_trial_suggest_uniform() -> None:
         trial.suggest_uniform("y", 0.0, 1.0)
 
 
-def test_frozen_trial_suggest_loguniform() -> None:
+def test_suggest_loguniform() -> None:
 
     trial = FrozenTrial(
         number=0,
@@ -197,7 +197,7 @@ def test_frozen_trial_suggest_loguniform() -> None:
         trial.suggest_loguniform("y", 0.0, 1.0)
 
 
-def test_frozen_trial_suggest_discrete_uniform() -> None:
+def test_suggest_discrete_uniform() -> None:
 
     trial = FrozenTrial(
         number=0,
@@ -218,7 +218,7 @@ def test_frozen_trial_suggest_discrete_uniform() -> None:
         trial.suggest_discrete_uniform("y", 0.0, 1.0, 0.1)
 
 
-def test_frozen_trial_suggest_int() -> None:
+def test_suggest_int() -> None:
 
     trial = FrozenTrial(
         number=0,
@@ -240,7 +240,7 @@ def test_frozen_trial_suggest_int() -> None:
         trial.suggest_int("y", 0, 10)
 
 
-def test_frozen_trial_suggest_int_log() -> None:
+def test_suggest_int_log() -> None:
 
     trial = FrozenTrial(
         number=0,
@@ -265,7 +265,7 @@ def test_frozen_trial_suggest_int_log() -> None:
         trial.suggest_int("y", 1, 10, log=True)
 
 
-def test_frozen_trial_suggest_categorical() -> None:
+def test_suggest_categorical() -> None:
 
     # Integer categories.
     trial = FrozenTrial(
@@ -316,7 +316,7 @@ def test_frozen_trial_suggest_categorical() -> None:
             trial.suggest_categorical("x", [{"foo": "bar"}])  # type: ignore
 
 
-def test_frozen_trial_report() -> None:
+def test_report() -> None:
 
     # FrozenTrial ignores reported values.
     trial = _create_frozen_trial()
@@ -324,34 +324,34 @@ def test_frozen_trial_report() -> None:
     trial.report(2.0, 2)
 
 
-def test_frozen_trial_should_prune() -> None:
+def test_should_prune() -> None:
 
     # FrozenTrial never prunes trials.
     assert _create_frozen_trial().should_prune() is False
 
 
-def test_frozen_trial_set_user_attrs() -> None:
+def test_set_user_attrs() -> None:
 
     trial = _create_frozen_trial()
     trial.set_user_attr("data", "MNIST")
     assert trial.user_attrs["data"] == "MNIST"
 
 
-def test_frozen_trial_set_system_attrs() -> None:
+def test_set_system_attrs() -> None:
 
     trial = _create_frozen_trial()
     trial.set_system_attr("system_message", "test")
     assert trial.system_attrs["system_message"] == "test"
 
 
-def test_frozen_trial_set_value() -> None:
+def test_set_value() -> None:
 
     trial = _create_frozen_trial()
     trial.value = 0.1
     assert trial.value == 0.1
 
 
-def test_frozen_trial_set_values() -> None:
+def test_set_values() -> None:
 
     trial = _create_frozen_trial()
     trial.values = (0.1, 0.2)
@@ -362,7 +362,7 @@ def test_frozen_trial_set_values() -> None:
     assert trial.values == [0.1, 0.2]
 
 
-def test_frozen_trial_validate() -> None:
+def test_validate() -> None:
 
     # Valid.
     valid_trial = _create_frozen_trial()
@@ -412,7 +412,7 @@ def test_frozen_trial_validate() -> None:
             invalid_trial._validate()
 
 
-def test_frozen_trial_number() -> None:
+def test_number() -> None:
 
     trial = _create_frozen_trial()
     assert trial.number == 0
@@ -421,7 +421,7 @@ def test_frozen_trial_number() -> None:
     assert trial.number == 2
 
 
-def test_frozen_trial_datetime_start() -> None:
+def test_datetime_start() -> None:
 
     trial = _create_frozen_trial()
     assert trial.datetime_start is not None
@@ -430,7 +430,7 @@ def test_frozen_trial_datetime_start() -> None:
     assert trial.datetime_complete != old_date_time_start
 
 
-def test_frozen_trial_params() -> None:
+def test_params() -> None:
 
     params = {"x": 1}
     trial = FrozenTrial(
@@ -456,7 +456,7 @@ def test_frozen_trial_params() -> None:
     assert trial.params == params
 
 
-def test_frozen_trial_distributions() -> None:
+def test_distributions() -> None:
 
     distributions = {"x": UniformDistribution(0, 10)}
     trial = FrozenTrial(
@@ -479,7 +479,7 @@ def test_frozen_trial_distributions() -> None:
     assert trial.distributions == distributions
 
 
-def test_frozen_trial_user_attrs() -> None:
+def test_user_attrs() -> None:
 
     trial = _create_frozen_trial()
     assert trial.user_attrs == {}
@@ -489,7 +489,7 @@ def test_frozen_trial_user_attrs() -> None:
     assert trial.user_attrs == user_attrs
 
 
-def test_frozen_trial_system_attrs() -> None:
+def test_system_attrs() -> None:
 
     trial = _create_frozen_trial()
     assert trial.system_attrs == {}
@@ -499,7 +499,7 @@ def test_frozen_trial_system_attrs() -> None:
     assert trial.system_attrs == system_attrs
 
 
-def test_frozen_called_single_methods_when_multi() -> None:
+def test_called_single_methods_when_multi() -> None:
 
     state = TrialState.COMPLETE
     values = (0.2, 0.3)
@@ -529,7 +529,7 @@ def test_frozen_called_single_methods_when_multi() -> None:
         trial.value = [0.1]
 
 
-def test_frozen_init() -> None:
+def test_init() -> None:
     def _create_trial(value: Optional[float], values: Optional[List[float]]) -> FrozenTrial:
 
         return FrozenTrial(

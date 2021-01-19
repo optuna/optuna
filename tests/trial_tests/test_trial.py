@@ -482,7 +482,7 @@ def test_distributions(storage_init_func: Callable[[], storages.BaseStorage]) ->
     }
 
 
-def test_trial_should_prune() -> None:
+def test_should_prune() -> None:
 
     pruner = DeterministicPruner(True)
     study = create_study(pruner=pruner)
@@ -557,7 +557,7 @@ def test_datetime_start(storage_init_func: Callable[[], storages.BaseStorage]) -
     assert study.trials[0].datetime_start == trial_datetime_start[0]
 
 
-def test_trial_report() -> None:
+def test_report() -> None:
 
     study = create_study()
     trial = Trial(study, study._storage.create_new_trial(study._study_id))
