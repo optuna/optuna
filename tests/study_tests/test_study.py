@@ -31,19 +31,13 @@ from optuna import TrialPruned
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import get_storage
 from optuna.study import StudyDirection
+from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
 CallbackFuncType = Callable[[Study, FrozenTrial], None]
-
-STORAGE_MODES = [
-    "inmemory",
-    "sqlite",
-    "cache",
-    "redis",
-]
 
 
 def func(trial: Trial, x_max: float = 1.0) -> float:
