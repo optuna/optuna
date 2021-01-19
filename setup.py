@@ -182,7 +182,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2 ; sys_platform=='darwin'",
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
-            "allennlp ; python_version<'3.8'",
+            "allennlp",
             "botorch ; python_version>'3.6'",
             "fastai",
         ],
