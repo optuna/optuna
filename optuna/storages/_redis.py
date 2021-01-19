@@ -352,6 +352,10 @@ class RedisStorage(BaseStorage):
             return False
 
         trial.state = state
+
+        if state == TrialState.RUNNING:
+            trial.datetime_start = datetime.now()
+
         if state.is_finished():
             trial.datetime_complete = datetime.now()
             self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))

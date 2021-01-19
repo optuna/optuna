@@ -199,6 +199,11 @@ class _CachedStorage(BaseStorage):
                 updates = self._get_updates(trial_id)
                 cached_trial.state = state
                 updates.state = state
+
+                if state == TrialState.RUNNING:
+                    updates.datetime_start = datetime.datetime.now()
+                    cached_trial.datetime_start = datetime.datetime.now()
+
                 if cached_trial.state.is_finished():
                     updates.datetime_complete = datetime.datetime.now()
                     cached_trial.datetime_complete = datetime.datetime.now()

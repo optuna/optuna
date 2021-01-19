@@ -751,6 +751,10 @@ class RDBStorage(BaseStorage):
                     return False
 
                 trial.state = state
+
+                if state == TrialState.RUNNING:
+                    trial.datetime_start = datetime.now()
+
                 if state.is_finished():
                     trial.datetime_complete = datetime.now()
         except IntegrityError:
