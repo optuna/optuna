@@ -96,7 +96,7 @@ def test_search_space_transform_numerical(
     expected_high = distribution.high  # type: ignore
 
     if isinstance(distribution, UniformDistribution) or isinstance(distribution, LogUniformDistribution):
-        expected_high = numpy.nextafter(expected_high, expected_high + 1)
+        expected_high = numpy.nextafter(expected_high, expected_high - 1)
 
     if isinstance(distribution, LogUniformDistribution):
         if transform_log:
