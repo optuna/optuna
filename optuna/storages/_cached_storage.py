@@ -442,11 +442,11 @@ class _CachedStorage(BaseStorage):
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
 
-    def record_timestamp(self, trial_id: int) -> None:
-        self._backend.record_timestamp(trial_id)
+    def record_heartbeat(self, trial_id: int) -> None:
+        self._backend.record_heartbeat(trial_id)
 
-    def kill_stale_trials(self) -> List[int]:
-        killed_trial_ids = self._backend.kill_stale_trials()
+    def fail_stale_trials(self) -> List[int]:
+        killed_trial_ids = self._backend.fail_stale_trials()
 
         with self._lock:
             for trial_id in killed_trial_ids:
@@ -471,8 +471,8 @@ class _CachedStorage(BaseStorage):
 
         return killed_trial_ids
 
-    def check_heartbeat_support(self) -> bool:
-        return True
+    def is_heartbeat_supported(self) -> bool:
+        return self._backend.is_heartbeat_supported()
 
     def get_heartbeat_interval(self) -> Optional[int]:
         return self._backend.heartbeat_interval

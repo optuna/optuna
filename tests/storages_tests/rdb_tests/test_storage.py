@@ -18,8 +18,8 @@ from optuna.distributions import UniformDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import StudyModel
+from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import TrialModel
-from optuna.storages._rdb.models import TrialTimestampModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
 from optuna.trial import FrozenTrial
@@ -316,7 +316,7 @@ def test_record_heartbeat() -> None:
     study = create_study(storage=storage)
     study.optimize(objective, n_trials=n_trials)
 
-    trial_timestamps = []
+    trial_heartbeats = []
 
     with _create_scoped_session(storage.scoped_session) as session:
         StudyModel.find_or_raise_by_id(study._study_id, session)
@@ -327,21 +327,21 @@ def test_record_heartbeat() -> None:
             .all()
         )
         for trial_id_tuple in trial_ids:
-            timestamp_model = TrialTimestampModel.where_trial_id(trial_id_tuple[0], session)
-            assert timestamp_model is not None
-            trial_timestamps.append(timestamp_model.timestamp)
+            heartbeat_model = TrialHeartbeatModel.where_trial_id(trial_id_tuple[0], session)
+            assert heartbeat_model is not None
+            trial_heartbeats.append(heartbeat_model.heartbeat)
 
     for trial in study.trials:
         assert trial.state is TrialState.COMPLETE
 
-    assert len(trial_timestamps) == n_trials
+    assert len(trial_heartbeats) == n_trials
     for i in range(n_trials - 1):
         assert (
-            trial_timestamps[i + 1] - trial_timestamps[i]
+            trial_heartbeats[i + 1] - trial_heartbeats[i]
         ).seconds - heartbeat_interval * 2 <= 1
 
 
-def test_kill_stale_trials() -> None:
+def test_fail_stale_trials() -> None:
     heartbeat_interval = 1
     grace_period = -1
     n_trials = 10
@@ -354,7 +354,7 @@ def test_kill_stale_trials() -> None:
 
     # The `study.optimize` fails in the first trial due to the ValueError.
     # This is because the trial state is set `TrialState.FAIL` before the objective computation
-    # by `storage.kill_stale_trials` for `grace_period = 0`.
+    # by `storage.fail_stale_trials` for `grace_period = 0`.
     assert len(study.trials) == 1
     for trial in study.trials:
         assert trial.state is TrialState.FAIL

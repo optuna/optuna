@@ -269,13 +269,13 @@ class TrialModel(BaseModel):
         return trial_count.scalar()
 
     @classmethod
-    def whether_to_be_killed(
-        cls, trial_id: int, current_timestamp: datetime, grace_period: int, session: orm.Session
+    def is_trial_stale(
+        cls, trial_id: int, current_heartbeat: datetime, grace_period: int, session: orm.Session
     ) -> bool:
 
-        timestamp = TrialTimestampModel.where_trial_id(trial_id, session)
-        assert timestamp is not None
-        return (current_timestamp - timestamp.timestamp).seconds > grace_period
+        heartbeat = TrialHeartbeatModel.where_trial_id(trial_id, session)
+        assert heartbeat is not None
+        return (current_heartbeat - heartbeat.heartbeat).seconds > grace_period
 
 
 class TrialUserAttributeModel(BaseModel):
@@ -489,21 +489,21 @@ class TrialIntermediateValueModel(BaseModel):
         return trial_intermediate_values
 
 
-class TrialTimestampModel(BaseModel):
-    __tablename__ = "trial_timestamps"
+class TrialHeartbeatModel(BaseModel):
+    __tablename__ = "trial_heartbeats"
     __table_args__: Any = (UniqueConstraint("trial_id"),)
-    trial_timestamp_id = Column(Integer, primary_key=True)
+    trial_heartbeat_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
-    timestamp = Column(DateTime, nullable=False, default=func.current_timestamp())
+    heartbeat = Column(DateTime, nullable=False, default=func.current_timestamp())
 
     trial = orm.relationship(
-        TrialModel, backref=orm.backref("timestamps", cascade="all, delete-orphan")
+        TrialModel, backref=orm.backref("heartbeats", cascade="all, delete-orphan")
     )
 
     @classmethod
     def where_trial_id(
         cls, trial_id: int, session: orm.Session
-    ) -> Optional["TrialTimestampModel"]:
+    ) -> Optional["TrialHeartbeatModel"]:
         return session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
 
 

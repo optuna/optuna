@@ -720,8 +720,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
 
-    def record_timestamp(self, trial_id: int) -> None:
-        """Record the timestamp of the trial.
+    def record_heartbeat(self, trial_id: int) -> None:
+        """Record the heartbeat of the trial.
 
         Args:
             trial_id:
@@ -729,10 +729,10 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         pass
 
-    def kill_stale_trials(self) -> List[int]:
+    def fail_stale_trials(self) -> List[int]:
         """Kill stale trials.
 
-        The running trials whose timestamp has not been updated for a long time will be killed,
+        The running trials whose heartbeat has not been updated for a long time will be killed,
         that is, those states will be changed to :obj:`~optuna.trial.TrialState.FAIL`.
         The grace period is ``2 * heartbeat_interval``.
 
@@ -741,7 +741,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         pass
 
-    def check_heartbeat_support(self) -> bool:
+    def is_heartbeat_supported(self) -> bool:
         """Check whether the storage supports the heartbeat.
 
         Returns:
