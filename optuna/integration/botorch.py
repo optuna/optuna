@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import math
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -14,8 +13,6 @@ from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import IntersectionSearchSpace
 from optuna.samplers import RandomSampler
