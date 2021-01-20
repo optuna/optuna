@@ -106,6 +106,27 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 * [tf.keras](./examples/pruning/tfkeras_integration.py)
 * [XGBoost](./examples/pruning/xgboost_integration.py)
 
+
+## Web Dashboard (experimental)
+
+The new Web dashboard is under the development at [optuna-dashboard](https://github.com/optuna/optuna-dashboard).
+It is still experimental, but much better in many regards.
+Feature requests and bug reports welcome!
+
+| Manage studies | Visualize with interactive graphs |
+| -------------- | --------------------------------- |
+| ![manage-studies](https://user-images.githubusercontent.com/5564044/97099702-4107be80-16cf-11eb-9d97-f5ceec98ce52.gif) | ![optuna-realtime-graph](https://user-images.githubusercontent.com/5564044/97099797-66e19300-16d0-11eb-826c-6977e3941fb0.gif) |
+
+Install `optuna-dashboard` via pip:
+
+```
+$ pip install optuna-dashboard
+$ optuna-dashboard sqlite:///db.sqlite3
+...
+Listening on http://localhost:8080/
+Hit Ctrl-C to quit.
+```
+
 ## Installation
 
 Optuna is available at [the Python Package Index](https://pypi.org/project/optuna/) and on [Anaconda Cloud](https://anaconda.org/conda-forge/optuna).
