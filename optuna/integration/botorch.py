@@ -525,15 +525,6 @@ class BoTorchSampler(BaseSampler):
 
         params = trans.untransform(candidates)
 
-        # Exclude upper bounds for parameters that should have their upper bounds excluded.
-        # TODO(hvy): Remove this exclusion logic when it is handled by the data transformer.
-        for name, param in params.items():
-            distribution = search_space[name]
-            if isinstance(distribution, UniformDistribution):
-                params[name] = min(params[name], distribution.high - 1e-8)
-            elif isinstance(distribution, LogUniformDistribution):
-                params[name] = min(params[name], math.exp(math.log(distribution.high) - 1e-8))
-
         return params
 
     def sample_independent(
