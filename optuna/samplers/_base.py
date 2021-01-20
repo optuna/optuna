@@ -49,7 +49,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         """Infer the search space that will be used by relative sampling in the target trial.
 
         This method is called right before :func:`~optuna.samplers.BaseSampler.sample_relative`
-        method, and the search space returned by this method is pass to it. The parameters not
+        method, and the search space returned by this method is passed to it. The parameters not
         contained in the search space will be sampled by using
         :func:`~optuna.samplers.BaseSampler.sample_independent` method.
 
