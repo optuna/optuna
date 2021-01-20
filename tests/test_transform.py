@@ -85,17 +85,16 @@ def test_search_space_transform_encoding() -> None:
     ],
 )
 def test_search_space_transform_numerical(
-    transform_log: bool,
-    transform_step: bool,
-    param: Any,
-    distribution: BaseDistribution,
+    transform_log: bool, transform_step: bool, param: Any, distribution: BaseDistribution,
 ) -> None:
     trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)
 
     expected_low = distribution.low  # type: ignore
     expected_high = distribution.high  # type: ignore
 
-    if isinstance(distribution, UniformDistribution) or isinstance(distribution, LogUniformDistribution):
+    if isinstance(distribution, UniformDistribution) or isinstance(
+        distribution, LogUniformDistribution
+    ):
         expected_high = numpy.nextafter(expected_high, expected_high - 1)
 
     if isinstance(distribution, LogUniformDistribution):
