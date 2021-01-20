@@ -109,13 +109,15 @@ def test_contains() -> None:
     assert not u._contains(0.9)
     assert u._contains(1)
     assert u._contains(1.5)
-    assert not u._contains(2)
+    assert u._contains(2)
+    assert not u._contains(2.1)
 
     lu = distributions.LogUniformDistribution(low=0.001, high=100)
     assert not lu._contains(0.0)
     assert lu._contains(0.001)
     assert lu._contains(12.3)
-    assert not lu._contains(100)
+    assert lu._contains(100)
+    assert not lu._contains(1000)
 
     with warnings.catch_warnings():
         # UserWarning will be raised since the range is not divisible by 2.
