@@ -85,7 +85,10 @@ def test_search_space_transform_encoding() -> None:
     ],
 )
 def test_search_space_transform_numerical(
-    transform_log: bool, transform_step: bool, param: Any, distribution: BaseDistribution,
+    transform_log: bool,
+    transform_step: bool,
+    param: Any,
+    distribution: BaseDistribution,
 ) -> None:
     trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)
 
