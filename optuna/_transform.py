@@ -238,8 +238,10 @@ def _transform_search_space(
 
 
 def _transform_numerical_param(
-        param: Union[int, float], distribution: BaseDistribution, transform_log: bool,
-        clip: bool = False
+    param: Union[int, float],
+    distribution: BaseDistribution,
+    transform_log: bool,
+    clip: bool = False,
 ) -> float:
     d = distribution
 
