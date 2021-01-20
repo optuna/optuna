@@ -27,9 +27,9 @@ jobs:
     - name: Change the version file for TestPyPI upload
       if: (github.repository == 'optuna/optuna') && (github.event_name == 'schedule')
       run: |
-        OPTUNA_VERSION=$( cat optuna/version.py | cut -d "\"" -f 2 )
+        OPTUNA_VERSION=$( cat optuna/version.py )
         DATE=`date +"%Y%m%d"`
-        echo __version__\ =\ \"${OPTUNA_VERSION}.dev${DATE}\" > optuna/version.py
+        echo __version__\ =\ \"${OPTUNA_VERSION}${DATE}\" > optuna/version.py
 
     - name: Build a tar ball
       run: |
