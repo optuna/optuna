@@ -28,7 +28,6 @@ from sqlalchemy.sql import functions
 
 import optuna
 from optuna import distributions
-from optuna import version
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
 from optuna.storages._base import BaseStorage
@@ -1150,7 +1149,7 @@ class _VersionManager(object):
                 return
 
             version_info = models.VersionInfoModel(
-                schema_version=models.SCHEMA_VERSION, library_version=version.__version__
+                schema_version=models.SCHEMA_VERSION, library_version=optuna.__version__
             )
             session.add(version_info)
 
@@ -1195,7 +1194,7 @@ class _VersionManager(object):
 
         message = (
             "The runtime optuna version {} is no longer compatible with the table schema "
-            "(set up by optuna {}). ".format(version.__version__, version_info.library_version)
+            "(set up by optuna {}). ".format(optuna.__version__, version_info.library_version)
         )
         known_versions = self.get_all_versions()
         if current_version in known_versions:

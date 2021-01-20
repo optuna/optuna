@@ -9,21 +9,17 @@ from setuptools import find_packages
 from setuptools import setup
 
 
-def get_version() -> str:
-
-    version_filepath = os.path.join(os.path.dirname(__file__), "optuna", "version.py")
-    with open(version_filepath) as f:
-        for line in f:
-            if line.startswith("__version__"):
-                return line.strip().split()[-1][1:-1]
-    assert False
-
-
 def get_long_description() -> str:
 
     readme_filepath = os.path.join(os.path.dirname(__file__), "README.md")
     with open(readme_filepath) as f:
         return f.read()
+
+
+def get_setup_requires() -> List[str]:
+    return [
+        "setuptools_scm[toml]>=3.4",
+    ]
 
 
 def get_install_requires() -> List[str]:
@@ -203,7 +199,6 @@ def find_any_distribution(pkgs: List[str]) -> Optional[pkg_resources.Distributio
 
 setup(
     name="optuna",
-    version=get_version(),
     description="A hyperparameter optimization framework",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
@@ -220,6 +215,7 @@ setup(
         ]
     },
     python_requires=">=3.6",
+    setup_requires=get_setup_requires(),
     install_requires=get_install_requires(),
     tests_require=get_tests_require(),
     extras_require=get_extras_require(),

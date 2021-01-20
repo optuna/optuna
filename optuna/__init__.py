@@ -24,7 +24,7 @@ from optuna.study import load_study
 from optuna.study import Study
 from optuna.trial import create_trial
 from optuna.trial import Trial
-from optuna.version import __version__
+from optuna.version import version as __version__
 
 
 __all__ = [

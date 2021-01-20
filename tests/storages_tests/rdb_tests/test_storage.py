@@ -10,7 +10,7 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from optuna import version
+import optuna
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
 from optuna.storages import RDBStorage
@@ -28,7 +28,7 @@ def test_init() -> None:
 
     version_info = session.query(VersionInfoModel).first()
     assert version_info.schema_version == SCHEMA_VERSION
-    assert version_info.library_version == version.__version__
+    assert version_info.library_version == optuna.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
     assert storage.get_all_versions() == ["v2.4.0.a", "v1.3.0.a", "v1.2.0.a", "v0.9.0.a"]
