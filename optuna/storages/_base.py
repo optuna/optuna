@@ -81,7 +81,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     of `Study` and writes on `state` of `Trial` are guaranteed to be persistent.
     Additionally, any preceding writes on any attributes of `Trial` are guaranteed to
     be written into a persistent storage before writes on `state` of `Trial` succeed.
-    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+    The same applies for `param`, `user_attrs', 'system_attrs' and 'intermediate_values`
+    attributes.
 
     .. note::
 
