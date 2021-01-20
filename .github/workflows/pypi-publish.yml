@@ -24,19 +24,12 @@ jobs:
       run: >-
         python -m pip install -U twine wheel
 
-    - name: Create a branch and change the version file for TestPyPI upload
+    - name: Change the version file for TestPyPI upload
       if: (github.repository == 'optuna/optuna') && (github.event_name == 'schedule')
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git config --local user.email gohome.x105.gn@gmail.com
-        git config --local user.name HideakiImamura
         OPTUNA_VERSION=$( cat optuna/version.py | cut -d "\"" -f 2 )
         DATE=`date +"%Y%m%d"`
-        git checkout -b ${OPTUNA_VERSION}.dev${DATE}
         echo __version__\ =\ \"${OPTUNA_VERSION}.dev${DATE}\" > optuna/version.py
-        git add optuna/version.py
-        git commit -m "Prepare TestPyPI upload. The version is ${OPTUNA_VERSION}.dev${DATE}"
 
     - name: Build a tar ball
       run: |
