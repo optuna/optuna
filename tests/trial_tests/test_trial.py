@@ -627,6 +627,18 @@ def test_create_trial(state: TrialState) -> None:
     assert trial.datetime_start is not None
     assert (trial.datetime_complete is not None) == (state is None or state.is_finished())
 
+    with pytest.raises(ValueError):
+        create_trial(state=state, value=value, values=(value,))
+
+    if state is None:
+        with pytest.raises(ValueError):
+            create_trial(state=state, value=None, values=None)
+        # Raise `ValueError` when either `params` or `distributions` is `None`.
+        with pytest.raises(ValueError):
+            create_trial(state=state, value=value, params=params, distributions=None)
+        with pytest.raises(ValueError):
+            create_trial(state=state, value=value, params=None, distributions=distributions)
+
 
 def test_suggest_with_multi_objectives() -> None:
     study = create_study(directions=["maximize", "maximize"])
