@@ -1011,6 +1011,7 @@ def test_tell_pruned_values() -> None:
     study.tell(trial, state=TrialState.PRUNED)
     assert study.trials[-1].value is None
 
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_trial_duration_calculation(storage_mode: str) -> None:
 
