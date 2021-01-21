@@ -593,6 +593,7 @@ class RDBStorage(BaseStorage):
                 )
 
             trial.state = template_trial.state
+            trial.datetime_start = template_trial.datetime_start
 
         trial.number = trial.count_past_trials(session)
         session.add(trial)
