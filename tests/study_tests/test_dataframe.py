@@ -5,15 +5,8 @@ import pytest
 
 from optuna import create_study
 from optuna import Trial
+from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
-
-
-STORAGE_MODES = [
-    "inmemory",
-    "sqlite",
-    "cache",
-    "redis",
-]
 
 
 def test_study_trials_dataframe_with_no_trials() -> None:

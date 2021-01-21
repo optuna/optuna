@@ -10,6 +10,13 @@ import fakeredis
 import optuna
 
 
+STORAGE_MODES = [
+    "inmemory",
+    "sqlite",
+    "cache",
+    "redis",
+]
+
 SQLITE3_TIMEOUT = 300
 
 
