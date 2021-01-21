@@ -1010,3 +1010,36 @@ def test_tell_pruned_values() -> None:
 
     study.tell(trial, state=TrialState.PRUNED)
     assert study.trials[-1].value is None
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_trial_duration_calculation(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+
+        def objective(trial: Trial) -> float:
+            time.sleep(1)
+            x = trial.suggest_int("x", -10, 10)
+            return x
+
+        study.enqueue_trial(params={"x": 1})
+        # Delayed evaluation for enqueued trial
+        time.sleep(2)
+
+        study.optimize(objective, n_trials=2)
+
+        trial = study.ask()
+        values = objective(trial)
+        study.tell(trial, values=values)
+
+        t0 = study.trials[0]
+        duration_error0 = abs((t0.datetime_complete - t0.datetime_start).total_seconds() - 1)
+        assert duration_error0 < 0.1
+
+        t1 = study.trials[1]
+        duration_error1 = abs((t1.datetime_complete - t1.datetime_start).total_seconds() - 1)
+        assert duration_error1 < 0.1
+
+        t2 = study.trials[2]
+        duration_error2 = abs((t2.datetime_complete - t2.datetime_start).total_seconds() - 1)
+        assert duration_error2 < 0.1
