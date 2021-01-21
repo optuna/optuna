@@ -9,16 +9,9 @@ from optuna import Trial
 from optuna import TrialPruned
 from optuna.exceptions import TrialPruned as TrialPruned_in_exceptions
 from optuna.structs import TrialPruned as TrialPruned_in_structs
+from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import TrialState
-
-
-STORAGE_MODES = [
-    "inmemory",
-    "sqlite",
-    "cache",
-    "redis",
-]
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
