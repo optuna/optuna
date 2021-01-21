@@ -730,7 +730,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         pass
 
     def fail_stale_trials(self) -> List[int]:
-        """Kill stale trials.
+        """Fail stale trials.
 
         The running trials whose heartbeat has not been updated for a long time will be failed,
         that is, those states will be changed to :obj:`~optuna.trial.TrialState.FAIL`.

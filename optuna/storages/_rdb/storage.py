@@ -1144,11 +1144,6 @@ class RDBStorage(BaseStorage):
         return self._version_manager.get_all_versions()
 
     def record_heartbeat(self, trial_id: int) -> None:
-        # The `record_heartbeat` function is called in the spawned threads.
-        # We need to create the tables in each spawned thread.
-        # See　https://github.com/optuna/optuna/pull/2190#discussion_r560727140.
-        models.BaseModel.metadata.create_all(self.engine)
-
         with _create_scoped_session(self.scoped_session, True) as session:
             heartbeat = models.TrialHeartbeatModel.where_trial_id(trial_id, session)
             if heartbeat is None:
@@ -1167,7 +1162,10 @@ class RDBStorage(BaseStorage):
 
     def _get_stale_trial_ids(self) -> List[int]:
         assert self.heartbeat_interval is not None
-        grace_period = self.grace_period or 2 * self.heartbeat_interval
+        if self.grace_period is None:
+            grace_period = 2 * self.heartbeat_interval
+        else:
+            grace_period = self.grace_period
         stale_trial_ids = []
 
         with _create_scoped_session(self.scoped_session, True) as session:
