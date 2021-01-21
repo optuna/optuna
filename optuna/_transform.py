@@ -45,7 +45,12 @@ class _SearchSpaceTransform:
 
     Attributes:
         bounds:
-            Constructed bounds from the given search space.
+            Constructed bounds from the given search space. For
+            :class:`~optuna.distributions.UniformDistribution` and
+            :class:`~optuna.distributions.LogUniformDistribution`,
+            the high bound of the search space is reduced by the
+            minimal amount possible, to ensure the high boundary value is not suggested, as
+            per the definitions of those distributions.
         column_to_encoded_columns:
             Constructed mapping from original parameter column index to encoded column indices.
         encoded_column_to_column:
