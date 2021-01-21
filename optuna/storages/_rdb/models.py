@@ -268,15 +268,6 @@ class TrialModel(BaseModel):
         )
         return trial_count.scalar()
 
-    @classmethod
-    def is_trial_stale(
-        cls, trial_id: int, current_heartbeat: datetime, grace_period: int, session: orm.Session
-    ) -> bool:
-
-        heartbeat = TrialHeartbeatModel.where_trial_id(trial_id, session)
-        assert heartbeat is not None
-        return (current_heartbeat - heartbeat.heartbeat).seconds > grace_period
-
 
 class TrialUserAttributeModel(BaseModel):
     __tablename__ = "trial_user_attributes"

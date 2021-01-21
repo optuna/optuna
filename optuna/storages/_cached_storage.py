@@ -446,30 +446,12 @@ class _CachedStorage(BaseStorage):
         self._backend.record_heartbeat(trial_id)
 
     def fail_stale_trials(self) -> List[int]:
-        killed_trial_ids = self._backend.fail_stale_trials()
+        failed_trial_ids = self._backend._get_stale_trial_ids()
 
-        with self._lock:
-            for trial_id in killed_trial_ids:
-                if trial_id not in self._trial_id_to_study_id_and_number:
-                    continue
-                study_id, number = self._trial_id_to_study_id_and_number[trial_id]
-                study = self._studies[study_id]
+        for trial_id in failed_trial_ids:
+            self.set_trial_state(trial_id, TrialState.FAIL)
 
-                if trial_id not in study.owned_or_finished_trial_ids:
-                    continue
-
-                cached_trial = study.trials[number]
-                self._check_trial_is_updatable(cached_trial)
-                updates = self._get_updates(trial_id)
-                cached_trial.state = TrialState.FAIL
-                updates.state = TrialState.FAIL
-                datetime_complete = datetime.datetime.now()
-                updates.datetime_complete = datetime_complete
-                cached_trial.datetime_complete = datetime_complete
-
-                del study.updates[number]
-
-        return killed_trial_ids
+        return failed_trial_ids
 
     def is_heartbeat_supported(self) -> bool:
         return self._backend.is_heartbeat_supported()

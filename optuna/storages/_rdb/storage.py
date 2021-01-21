@@ -112,7 +112,7 @@ class RDBStorage(BaseStorage):
         heartbeat_interval:
             Interval to record the heartbeat. It is recorded every ``interval`` seconds.
         grace_period:
-            Grace period before a running trial is killed from the last heartbeat.
+            Grace period before a running trial is failed from the last heartbeat.
             If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
 
     .. _sqlalchemy.engine.create_engine:
@@ -585,7 +585,6 @@ class RDBStorage(BaseStorage):
             trial.state = template_trial.state
 
         trial.number = trial.count_past_trials(session)
-        self.record_heartbeat(trial.trial_id)
         session.add(trial)
 
         return trial
@@ -1145,6 +1144,10 @@ class RDBStorage(BaseStorage):
         return self._version_manager.get_all_versions()
 
     def record_heartbeat(self, trial_id: int) -> None:
+        # The `record_heartbeat` function is called in the spawned threads.
+        # We need to create the tables in each spawned thread.
+        # See　https://github.com/optuna/optuna/pull/2190#discussion_r560727140.
+        models.BaseModel.metadata.create_all(self.engine)
 
         with _create_scoped_session(self.scoped_session, True) as session:
             heartbeat = models.TrialHeartbeatModel.where_trial_id(trial_id, session)
@@ -1155,29 +1158,30 @@ class RDBStorage(BaseStorage):
                 heartbeat.heartbeat = session.execute(func.now()).scalar()
 
     def fail_stale_trials(self) -> List[int]:
+        stale_trial_ids = self._get_stale_trial_ids()
 
+        for trial_id in stale_trial_ids:
+            self.set_trial_state(trial_id, TrialState.FAIL)
+
+        return stale_trial_ids
+
+    def _get_stale_trial_ids(self) -> List[int]:
         assert self.heartbeat_interval is not None
         grace_period = self.grace_period or 2 * self.heartbeat_interval
-        killed_trial_ids = []
+        stale_trial_ids = []
 
         with _create_scoped_session(self.scoped_session, True) as session:
-            current_heartbeat = session.execute(func.now()).scalar()
-
-        with _create_scoped_session(self.scoped_session, True) as session:
-            running_trials = (
+            stale_trials = (
                 session.query(models.TrialModel)
+                .join(models.TrialModel.heartbeats)
                 .filter(models.TrialModel.state == TrialState.RUNNING)
+                .filter(func.now() - models.TrialHeartbeatModel.heartbeat > grace_period)
                 .all()
             )
-            for trial in running_trials:
-                if models.TrialModel.is_trial_stale(
-                    trial.trial_id, current_heartbeat, grace_period, session
-                ):
-                    trial.state = TrialState.FAIL
-                    trial.datetime_complete = current_heartbeat
-                    killed_trial_ids.append(trial.trial_id)
+            for trial in stale_trials:
+                stale_trial_ids.append(trial.trial_id)
 
-        return killed_trial_ids
+        return stale_trial_ids
 
     def is_heartbeat_supported(self) -> bool:
 

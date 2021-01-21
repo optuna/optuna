@@ -22,6 +22,7 @@ from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import TrialModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
+from optuna.testing.threading import _TestableThread
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -314,7 +315,8 @@ def test_record_heartbeat() -> None:
     storage = create_test_storage(heartbeat_interval=heartbeat_interval)
     assert isinstance(storage, RDBStorage)
     study = create_study(storage=storage)
-    study.optimize(objective, n_trials=n_trials)
+    with patch("optuna._optimize.Thread", _TestableThread):
+        study.optimize(objective, n_trials=n_trials)
 
     trial_heartbeats = []
 
@@ -349,8 +351,9 @@ def test_fail_stale_trials() -> None:
     storage = create_test_storage(heartbeat_interval=heartbeat_interval, grace_period=grace_period)
     assert isinstance(storage, RDBStorage)
     study = create_study(storage=storage)
-    with pytest.raises(ValueError):
-        study.optimize(lambda _: 1.0, n_trials=n_trials)
+    with patch("optuna._optimize.Thread", _TestableThread):
+        with pytest.raises(ValueError):
+            study.optimize(lambda _: 1.0, n_trials=n_trials)
 
     # The `study.optimize` fails in the first trial due to the ValueError.
     # This is because the trial state is set `TrialState.FAIL` before the objective computation
