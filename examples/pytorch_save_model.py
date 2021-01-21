@@ -76,7 +76,7 @@ def objective(trial):
 
     if TRAIN:
         epochs = range(TRIAL_EPOCHS, TRAIN_EPOCHS)
-        model.load_state_dict(torch.load('./model.pt'))
+        model.load_state_dict(torch.load("./model.pt"))
     else:
         epochs = range(TRIAL_EPOCHS)
 
@@ -129,9 +129,9 @@ def objective(trial):
 
     try:
         if TRAIN or accuracy > trial.study.best_value:
-            torch.save(model.state_dict(), './model.pt')
+            torch.save(model.state_dict(), "./model.pt")
     except ValueError:
-        print('First trial, or save issue')
+        print("First trial, or save issue")
 
     return accuracy
 
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
 
-    print('Beginning training with best hyperparameters and model')
+    print("Beginning training with best hyperparameters and model")
     TRAIN = True
     accuracy = objective(study.best_trial)
 
