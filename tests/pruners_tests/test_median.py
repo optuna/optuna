@@ -121,14 +121,14 @@ def test_median_pruner_interval_steps(
     pruner = optuna.pruners.MedianPruner(0, n_warmup_steps, interval_steps)
     study = optuna.study.create_study()
 
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial = study.ask()
     last_step = max(expected_prune_steps) + 1
 
     for i in range(last_step):
         trial.report(0, i)
     study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
 
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial = study.ask()
 
     pruned = []
     for i in range(last_step):
