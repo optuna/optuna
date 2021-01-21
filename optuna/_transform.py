@@ -45,12 +45,7 @@ class _SearchSpaceTransform:
 
     Attributes:
         bounds:
-            Constructed bounds from the given search space. For
-            :class:`~optuna.distributions.UniformDistribution` and
-            :class:`~optuna.distributions.LogUniformDistribution`,
-            the high bound of the search space is reduced by the
-            minimal amount possible, to ensure the high boundary value is not suggested, as
-            per the definitions of those distributions.
+            Constructed bounds from the given search space.
         column_to_encoded_columns:
             Constructed mapping from original parameter column index to encoded column indices.
         encoded_column_to_column:
@@ -107,7 +102,10 @@ class _SearchSpaceTransform:
 
         Returns:
             A 1-dimensional ``numpy.ndarray`` holding the transformed parameters in the
-            configuration.
+            configuration. For :class:`~optuna.distributions.UniformDistribution` and
+            :class:`~optuna.distributions.LogUniformDistribution`, the high bound of the
+            search space is reduced by the minimal amount possible, to ensure the high
+            boundary value is not suggested, as per the definitions of those distributions.
 
         """
         trans_params = numpy.zeros(self._bounds.shape[0], dtype=numpy.float64)
