@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     services:
       mysql:
@@ -82,7 +82,7 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --progress-bar off .[testing] -f https://download.pytorch.org/whl/torch_stable.html
+        pip install --progress-bar off .[tests]
 
     - name: Install RDB bindings
       run: |
