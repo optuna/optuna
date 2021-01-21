@@ -76,7 +76,7 @@ def objective(trial):
 
     if TRAIN:
         epochs = range(TRIAL_EPOCHS, TRAIN_EPOCHS)
-        model.load_state_dict(torch.load())
+        model.load_state_dict(torch.load('./model.pt'))
     else:
         epochs = range(TRIAL_EPOCHS)
 
@@ -88,7 +88,6 @@ def objective(trial):
     # Get the MNIST dataset.
     train_loader, valid_loader = get_mnist()
 
-    epochs = TRAIN_EPOCHS if TRAIN else TRIAL_EPOCHS
     # Training of the model.
     for epoch in epochs:
         model.train()
@@ -128,9 +127,12 @@ def objective(trial):
             if trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
 
-    if TRAIN or accuracy > trial.study.best_value:
-        torch.save(model.state_dict())
-        
+    try:
+        if TRAIN or accuracy > trial.study.best_value:
+            torch.save(model.state_dict(), './model.pt')
+    except ValueError:
+        print('First trial, or save issue')
+
     return accuracy
 
 
@@ -157,4 +159,6 @@ if __name__ == "__main__":
 
     print('Beginning training with best hyperparameters and model')
     TRAIN = True
-    objective(study.best_trial)
+    accuracy = objective(study.best_trial)
+
+    print("After training accuracy:", accuracy)
