@@ -308,9 +308,10 @@ def test_get_trials_excluded_trial_ids() -> None:
 def test_record_heartbeat() -> None:
     heartbeat_interval = 1
     n_trials = 2
+    sleep_sec = 2
 
     def objective(trial: Trial) -> float:
-        time.sleep(2)
+        time.sleep(sleep_sec)
         return 1.0
 
     with StorageSupplier("sqlite") as storage:
@@ -323,45 +324,33 @@ def test_record_heartbeat() -> None:
         trial_heartbeats = []
 
         with _create_scoped_session(storage.scoped_session) as session:
-            StudyModel.find_or_raise_by_id(study._study_id, session)
-            trial_ids = (
-                session.query(TrialModel.trial_id)
-                .filter(TrialModel.study_id == study._study_id)
-                .filter(TrialModel.state.in_((TrialState.COMPLETE,)))
-                .all()
-            )
-            for trial_id_tuple in trial_ids:
-                heartbeat_model = TrialHeartbeatModel.where_trial_id(trial_id_tuple[0], session)
+            trial_ids = [trial._trial_id for trial in study.trials]
+            for trial_id in trial_ids:
+                heartbeat_model = TrialHeartbeatModel.where_trial_id(trial_id, session)
                 assert heartbeat_model is not None
                 trial_heartbeats.append(heartbeat_model.heartbeat)
 
-        for trial in study.trials:
-            assert trial.state is TrialState.COMPLETE
-
         assert len(trial_heartbeats) == n_trials
         for i in range(n_trials - 1):
-            assert (
-                trial_heartbeats[i + 1] - trial_heartbeats[i]
-            ).seconds - heartbeat_interval * 2 <= 1
+            assert (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds - sleep_sec <= 1
 
 
 def test_fail_stale_trials() -> None:
     heartbeat_interval = 1
-    grace_period = -1
-    n_trials = 10
+    grace_period = 1
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
         storage.heartbeat_interval = heartbeat_interval
         storage.grace_period = grace_period
         study = create_study(storage=storage)
-        with patch("optuna._optimize.Thread", _TestableThread):
-            with pytest.raises(ValueError):
-                study.optimize(lambda _: 1.0, n_trials=n_trials)
 
-        # The `study.optimize` fails in the first trial due to the ValueError.
-        # This is because the trial state is set `TrialState.FAIL` before the objective computation
-        # by `storage.fail_stale_trials` for `grace_period = 0`.
-        assert len(study.trials) == 1
-        for trial in study.trials:
-            assert trial.state is TrialState.FAIL
+        trial = study.ask()
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        with patch("optuna._optimize.Thread", _TestableThread):
+            study.optimize(lambda _: 1.0, n_trials=1)
+
+        trial = study.trials[0]
+        assert trial.state is TrialState.FAIL
