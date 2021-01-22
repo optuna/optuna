@@ -4,7 +4,7 @@ name: Publish distributions to TestPyPI and PyPI
 # PyPI upload is only activated if the release is published.
 on:
   schedule:
-    - cron: '0 15 * * *'
+    - cron: '0 15 * * ? *'
   release:
     types:
       - published
