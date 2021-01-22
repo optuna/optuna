@@ -199,17 +199,16 @@ def _run_trial(
     stop_event: Optional[Event] = None
     thread: Optional[Thread] = None
 
-    if (
-        study._storage.is_heartbeat_supported()
-        and study._storage.get_heartbeat_interval() is not None
-    ):
+    if study._storage.is_heartbeat_supported():
+        # Record the first heartbeat to ensure the current trial is not failed in the followed
+        # `study._storage.fail_stale_trials`.
         study._storage.record_heartbeat(trial._trial_id)
+        study._storage.fail_stale_trials()
         stop_event = Event()
         thread = Thread(
             target=_record_heartbeat, args=(trial._trial_id, study._storage, stop_event)
         )
         thread.start()
-        study._storage.fail_stale_trials()
 
     try:
         value_or_values = func(trial)
@@ -231,10 +230,7 @@ def _run_trial(
         else:
             state = TrialState.COMPLETE
 
-    if (
-        study._storage.is_heartbeat_supported()
-        and study._storage.get_heartbeat_interval() is not None
-    ):
+    if study._storage.is_heartbeat_supported():
         assert stop_event is not None
         assert thread is not None
         stop_event.set()

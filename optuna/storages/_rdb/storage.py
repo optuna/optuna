@@ -1183,7 +1183,7 @@ class RDBStorage(BaseStorage):
 
         return stale_trial_ids
 
-    def is_heartbeat_supported(self) -> bool:
+    def _is_heartbeat_supported(self) -> bool:
 
         return True
 

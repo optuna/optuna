@@ -453,7 +453,7 @@ class _CachedStorage(BaseStorage):
 
         return failed_trial_ids
 
-    def is_heartbeat_supported(self) -> bool:
+    def _is_heartbeat_supported(self) -> bool:
         return self._backend.is_heartbeat_supported()
 
     def get_heartbeat_interval(self) -> Optional[int]:

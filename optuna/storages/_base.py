@@ -747,6 +747,9 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         Returns:
             :obj:`True` if the storage supports the heartbeat, otherwise :obj:`False`.
         """
+        return self._is_heartbeat_supported() and self.get_heartbeat_interval() is not None
+
+    def _is_heartbeat_supported(self) -> bool:
         return False
 
     def get_heartbeat_interval(self) -> Optional[int]:
