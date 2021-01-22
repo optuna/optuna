@@ -1169,15 +1169,17 @@ class RDBStorage(BaseStorage):
         stale_trial_ids = []
 
         with _create_scoped_session(self.scoped_session, True) as session:
-            stale_trials = (
+            current_heartbeat = session.execute(func.now()).scalar()
+
+            running_trials = (
                 session.query(models.TrialModel)
-                .join(models.TrialModel.heartbeats)
+                .options(orm.selectinload(models.TrialModel.heartbeats))
                 .filter(models.TrialModel.state == TrialState.RUNNING)
-                .filter(func.now() - models.TrialHeartbeatModel.heartbeat > grace_period)
                 .all()
             )
-            for trial in stale_trials:
-                stale_trial_ids.append(trial.trial_id)
+            for trial in running_trials:
+                if (current_heartbeat - trial.heartbeats[0].heartbeat).seconds > grace_period:
+                    stale_trial_ids.append(trial.trial_id)
 
         return stale_trial_ids
 

@@ -349,6 +349,9 @@ def test_fail_stale_trials() -> None:
         storage.record_heartbeat(trial._trial_id)
         time.sleep(grace_period + 1)
 
+        trial = study.trials[0]
+        assert trial.state is TrialState.RUNNING
+
         with patch("optuna._optimize.Thread", _TestableThread):
             study.optimize(lambda _: 1.0, n_trials=1)
 
