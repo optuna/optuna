@@ -55,7 +55,9 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["black", "hacking", "isort", "mypy", "blackdoc"],
+        # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
+        # examples and tutorials.
+        "checking": ["black", "hacking", "isort", "mypy==0.790", "blackdoc"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
@@ -104,7 +106,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2 ; sys_platform=='darwin'",
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
-            "allennlp==1.2.0",
+            "allennlp",
             "dask[dataframe]",
             "dask-ml",
             "botorch ; python_version>'3.6'",
@@ -144,7 +146,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2 ; sys_platform=='darwin'",
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
-            "allennlp==1.2.0",
+            "allennlp",
             "botorch ; python_version>'3.6'",
             "fastai",
         ],
@@ -182,7 +184,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2 ; sys_platform=='darwin'",
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
-            "allennlp==1.2.0 ; python_version<'3.8'",
+            "allennlp",
             "botorch ; python_version>'3.6'",
             "fastai",
         ],

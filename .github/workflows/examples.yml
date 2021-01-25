@@ -53,7 +53,7 @@ jobs:
         if [ ${{ matrix.python-version }} = 3.6 ]; then
           IGNORES='chainermn_.*|fastai*|rapids_.*|botorch_.*'
         elif [ ${{ matrix.python-version }} = 3.8 ]; then
-          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|allennlp|rapids_.*'
+          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|rapids_.*'
         else
           IGNORES='chainermn_.*|fastai*|rapids_.*'
         fi

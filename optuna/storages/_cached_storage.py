@@ -256,6 +256,7 @@ class _CachedStorage(BaseStorage):
                     updates = self._get_updates(trial_id)
                     updates.params[param_name] = param_value_internal
                     updates.distributions[param_name] = distribution
+                    self._flush_trial(trial_id)
                 return
 
         self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)

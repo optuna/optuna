@@ -23,6 +23,7 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -35,13 +36,6 @@ EXAMPLE_ATTRS = {
     "none": None,
     "json_serializable": {"baseline_score": 0.001, "tags": ["image", "classification"]},
 }
-
-STORAGE_MODES = [
-    "inmemory",
-    "sqlite",
-    "redis",
-    "cache",
-]
 
 
 def test_get_storage() -> None:
