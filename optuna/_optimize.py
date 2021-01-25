@@ -1,8 +1,10 @@
+from concurrent.futures import ThreadPoolExecutor
 import copy
 import datetime
 import gc
 import math
 import sys
+import threading
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -13,10 +15,6 @@ from typing import Tuple
 from typing import Type
 from typing import Union
 import warnings
-
-import joblib
-from joblib import delayed
-from joblib import Parallel
 
 import optuna
 from optuna import exceptions
@@ -91,32 +89,23 @@ def _optimize(
             else:
                 _iter = iter(_should_stop, True)
 
-            with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
-                if not isinstance(
-                    parallel._backend, joblib.parallel.ThreadingBackend
-                ) and isinstance(study._storage, storages.InMemoryStorage):
-                    warnings.warn(
-                        "The default storage cannot be shared by multiple processes. "
-                        "Please use an RDB (RDBStorage) when you use joblib for "
-                        "multi-processing. The usage of RDBStorage can be found in "
-                        "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html.",
-                        UserWarning,
+            with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+                executor.map(
+                    _optimize_sequential,
+                    (
+                        (
+                            study,
+                            func,
+                            1,
+                            timeout,
+                            catch,
+                            callbacks,
+                            gc_after_trial,
+                            True,
+                            time_start,
+                            None,
+                        ) for _ in _iter
                     )
-
-                parallel(
-                    delayed(_optimize_sequential)(
-                        study,
-                        func,
-                        1,
-                        timeout,
-                        catch,
-                        callbacks,
-                        gc_after_trial,
-                        reseed_sampler_rng=True,
-                        time_start=time_start,
-                        progress_bar=None,
-                    )
-                    for _ in _iter
                 )
     finally:
         study._optimize_lock.release()
