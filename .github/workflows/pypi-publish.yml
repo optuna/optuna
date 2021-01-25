@@ -1,4 +1,4 @@
-name: Publish distributions to TestPyPI or PyPI
+name: Publish distributions to PyPI or TestPyPI
 
 # TestPyPI upload is scheduled in each weekday.
 # PyPI upload is only activated if the release is published.
@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-n-publish:
-    name: Build and publish Python distributions to TestPyPI or PyPI
+    name: Build and publish Python distributions to PyPI or TestPyPI
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
