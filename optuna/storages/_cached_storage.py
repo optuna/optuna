@@ -446,12 +446,12 @@ class _CachedStorage(BaseStorage):
         self._backend.record_heartbeat(trial_id)
 
     def fail_stale_trials(self) -> List[int]:
-        failed_trial_ids = self._backend._get_stale_trial_ids()
+        stale_trial_ids = self._backend._get_stale_trial_ids()
 
-        for trial_id in failed_trial_ids:
+        for trial_id in stale_trial_ids:
             self.set_trial_state(trial_id, TrialState.FAIL)
 
-        return failed_trial_ids
+        return stale_trial_ids
 
     def _is_heartbeat_supported(self) -> bool:
         return self._backend.is_heartbeat_supported()

@@ -200,9 +200,6 @@ def _run_trial(
     thread: Optional[Thread] = None
 
     if study._storage.is_heartbeat_supported():
-        # Record the first heartbeat to ensure the current trial is not failed in the followed
-        # `study._storage.fail_stale_trials`.
-        study._storage.record_heartbeat(trial._trial_id)
         study._storage.fail_stale_trials()
         stop_event = Event()
         thread = Thread(

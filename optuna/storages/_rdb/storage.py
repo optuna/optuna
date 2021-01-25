@@ -1178,7 +1178,11 @@ class RDBStorage(BaseStorage):
                 .all()
             )
             for trial in running_trials:
-                if (current_heartbeat - trial.heartbeats[0].heartbeat).seconds > grace_period:
+                if len(trial.heartbeats) == 0:
+                    continue
+                assert len(trial.heartbeats) == 1
+                heartbeat = trial.heartbeats[0].heartbeat
+                if (current_heartbeat - heartbeat).seconds > grace_period:
                     stale_trial_ids.append(trial.trial_id)
 
         return stale_trial_ids
