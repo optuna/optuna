@@ -166,6 +166,21 @@ class StudySystemAttributeModel(BaseModel):
         return attribute
 
     @classmethod
+    def find_by_study_and_key_with_for_update(
+        cls, study, key, session, nowait
+    ) -> Optional["StudySystemAttributeModel"]:
+
+        attribute = (
+            session.query(cls)
+            .filter(cls.study_id == study.study_id)
+            .filter(cls.key == key)
+            .with_for_update(nowait=nowait)
+            .one_or_none()
+        )
+
+        return attribute
+
+    @classmethod
     def where_study_id(
         cls, study_id: int, session: orm.Session
     ) -> List["StudySystemAttributeModel"]:

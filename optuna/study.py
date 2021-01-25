@@ -411,12 +411,19 @@ class Study(BaseStudy):
             A :class:`~optuna.trial.Trial`.
         """
 
+        if self._parallel_sampler == 1:
+            session = self._storage.lock_study_system_attr(self._session, self._study_id, "lock",nowait=False)
+
         # Sync storage once every trial.
         self._storage.read_trials_from_remote_storage(self._study_id)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
             trial_id = self._storage.create_new_trial(self._study_id)
+
+        self._session.commit()
+#        session.close()
+
         return trial_module.Trial(self, trial_id)
 
     def tell(
@@ -1027,6 +1034,10 @@ def create_study(
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
+    study._parallel_sampler = 0
+    if isinstance(sampler, samplers.CLSampler):
+        study._parallel_sampler = 1
+
     study._storage.set_study_directions(study_id, direction_objects)
 
     return study
@@ -1089,7 +1100,18 @@ def load_study(
 
     """
 
-    return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
+    study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
+    study._parallel_sampler = 0
+    if isinstance(sampler, samplers.CLSampler):
+        study._parallel_sampler = 1
+        study._session = study._storage.get_session()
+        try:
+            study.system_attrs["lock"]
+            study.system_attrs["lock_param"]
+        except:
+            study.set_system_attr("lock", 0)
+            study.set_system_attr("lock_param", 0)
+    return study
 
 
 def delete_study(

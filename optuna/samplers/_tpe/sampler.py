@@ -320,6 +320,92 @@ class TPESampler(BaseSampler):
                 )
             )
 
+    def clsamples_independent(
+        self,
+        study,
+        trial,
+        param_name,
+        param_distribution,
+        concurrency,
+        strategy,
+    ):
+        self._raise_error_if_multi_objective(study)
+
+        values, scores = _get_observation_pairs(study, param_name)
+
+        n = len(values)
+
+        if self._n_startup_trials - n > 0:
+            return [
+                self._random_sampler.sample_independent(
+                    study, trial, param_name, param_distribution
+                )
+                for _ in range(concurrency)
+            ]
+
+        if strategy == "min":
+            clvalue = min(scores)[1]
+        elif strategy == "mean":
+            clvalue = sum([score[1] for score in scores]) / len(scores)
+        elif strategy == "max":
+            clvalue = max(scores)[1]
+
+        param_values = []
+        for _ in range(concurrency):
+            param_value = self._sample_independent(param_distribution, values, scores)
+            values.append(param_value)
+            scores.append((-float("inf"), clvalue))
+            param_values.append(param_value)
+        return param_values
+
+    def _sample_independent(
+        self,
+        param_distribution,
+        values,
+        scores,
+    ):
+
+        below_param_values, above_param_values = self._split_observation_pairs(values, scores)
+
+        if isinstance(param_distribution, distributions.UniformDistribution):
+            return self._sample_uniform(param_distribution, below_param_values, above_param_values)
+        elif isinstance(param_distribution, distributions.LogUniformDistribution):
+            return self._sample_loguniform(
+                param_distribution, below_param_values, above_param_values
+            )
+        elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
+            return self._sample_discrete_uniform(
+                param_distribution, below_param_values, above_param_values
+            )
+        elif isinstance(param_distribution, distributions.IntUniformDistribution):
+            return self._sample_int(param_distribution, below_param_values, above_param_values)
+        elif isinstance(param_distribution, distributions.IntLogUniformDistribution):
+            return self._sample_int_loguniform(
+                param_distribution, below_param_values, above_param_values
+            )
+        elif isinstance(param_distribution, distributions.CategoricalDistribution):
+            index = self._sample_categorical_index(
+                param_distribution, below_param_values, above_param_values
+            )
+            return param_distribution.choices[index]
+        else:
+            distribution_list = [
+                distributions.UniformDistribution.__name__,
+                distributions.LogUniformDistribution.__name__,
+                distributions.DiscreteUniformDistribution.__name__,
+                distributions.IntUniformDistribution.__name__,
+                distributions.IntLogUniformDistribution.__name__,
+                distributions.CategoricalDistribution.__name__,
+            ]
+            raise NotImplementedError(
+                "The distribution {} is not implemented. "
+                "The parameter distribution should be one of the {}".format(
+                    param_distribution, distribution_list
+                )
+            )
+
+
+
     def _split_observation_pairs(
         self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]]
     ) -> Tuple[np.ndarray, np.ndarray]:

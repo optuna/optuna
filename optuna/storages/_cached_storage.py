@@ -116,6 +116,18 @@ class _CachedStorage(BaseStorage):
 
         self._backend.set_study_system_attr(study_id, key, value)
 
+    def get_session(self):
+
+        return self._backend.get_session()
+
+    def lock_study_system_attr(self, session, study_id, key, nowait=False) -> None:
+
+        return self._backend.lock_study_system_attr(session, study_id, key, nowait)
+
+    def unlock_study_system_attr(self, session) -> None:
+
+        return self._backend.unlock_study_system_attr(session)
+
     def get_study_id_from_name(self, study_name: str) -> int:
 
         return self._backend.get_study_id_from_name(study_name)

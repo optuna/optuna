@@ -21,8 +21,9 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
 from optuna.trial._state import TrialState
+from optuna.trial._frozen import create_trial
 
-
+import time
 _logger = logging.get_logger(__name__)
 
 
@@ -698,6 +699,9 @@ class Trial(BaseTrial):
         storage = self.storage
         trial_id = self._trial_id
 
+        if self.study._parallel_sampler == 1:
+            return self._suggest_parallel(name, distribution)
+
         trial = storage.get_trial(trial_id)
 
         if name in trial.distributions:
@@ -720,6 +724,55 @@ class Trial(BaseTrial):
             param_value_in_internal_repr = distribution.to_internal_repr(param_value)
             storage.set_trial_param(trial_id, name, param_value_in_internal_repr, distribution)
 
+        return param_value
+
+    def _suggest_parallel(self, name: str, distribution: BaseDistribution):
+        storage = self.storage
+        trial_id = self._trial_id
+        trial = storage.get_trial(trial_id)
+
+        system_attrs = storage.get_trial_system_attrs(trial_id)
+
+        if name in trial.distributions:
+            param_value = distribution.to_external_repr(storage.get_trial_param(trial_id, name))
+#            print("suggest_parallel_0", self._trial_id, param_value)
+        else:
+            study = pruners._filter_study(self.study, trial)
+            param_values = self.study.sampler.sample_independent(
+                study, trial, name, distribution,
+            )
+#            print("suggest_parallel0", self.number, name, param_values)
+            triad_nums = {}
+            aaa = ""
+            for i in range(len(param_values)):
+                try:
+                    aaa = "try"
+                    trial = storage.get_trial(trial_id)
+#                    print("try", trial.number)
+                except:
+                    aaa = "except"
+                    template_trial = create_trial(state=TrialState.WAITING)
+                    trial_id = storage.create_new_trial(self.study._study_id, template_trial)
+                    trial = storage.get_trial(trial_id)
+#                    print("except", trial.number)
+
+                if name in trial.distributions:
+                    distributions.check_distribution_compatibility(trial.distributions[name], distribution)
+                    param_value = distribution.to_external_repr(storage.get_trial_param(trial_id, name))
+                else:
+                    param_value = param_values[i]
+                    param_value_in_internal_repr = distribution.to_internal_repr(param_value)
+#                    try:
+                storage.set_trial_param(
+                             trial_id, name, param_value_in_internal_repr, distribution
+                )
+#                    except:
+#                        pass
+
+                triad_nums[trial.number] = aaa
+                trial_id = trial_id+1
+#            print("suggest_parallel1", self.number, name, triad_nums)
+            param_value = param_values[0]
         return param_value
 
     def _is_fixed_param(self, name: str, distribution: BaseDistribution) -> bool:

@@ -276,6 +276,22 @@ class RDBStorage(BaseStorage):
             else:
                 attribute.value_json = json.dumps(value)
 
+    def get_session(self):
+        session =  orm.scoped_session(orm.sessionmaker(bind=self.engine))
+        return session
+
+    def lock_study_system_attr(self, session, study_id, key, nowait) -> None:
+
+#        with _create_scoped_session(self.scoped_session, True) as session:
+        study = models.StudyModel.find_or_raise_by_id(study_id, session)
+        attribute = models.StudySystemAttributeModel.find_by_study_and_key_with_for_update(study, key, session, nowait)
+
+        return session
+
+    def unlock_study_system_attr(self, session) -> None:
+        session.commit()
+        session.close()
+
     def get_study_id_from_name(self, study_name: str) -> int:
 
         with _create_scoped_session(self.scoped_session) as session:
