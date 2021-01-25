@@ -268,10 +268,10 @@ def _untransform_numerical_param(
     if isinstance(d, CategoricalDistribution):
         assert False, "Should not reach. Should be one-hot encoded."
     elif isinstance(d, UniformDistribution):
-        param = min(trans_param, numpy.next_after(d.high, d.high - 1))
+        param = min(trans_param, numpy.nextafter(d.high, d.high - 1))
     elif isinstance(d, LogUniformDistribution):
         param = math.exp(trans_param) if transform_log else trans_param
-        param = min(param, numpy.next_after(d.high, d.high - 1))
+        param = min(param, numpy.nextafter(d.high, d.high - 1))
     elif isinstance(d, DiscreteUniformDistribution):
         # Clip since result may slightly exceed range due to round-off errors.
         param = float(
