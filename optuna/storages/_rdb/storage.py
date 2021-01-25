@@ -1170,6 +1170,7 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session, True) as session:
             current_heartbeat = session.execute(func.now()).scalar()
+            current_heartbeat = current_heartbeat.replace(tzinfo=None)
 
             running_trials = (
                 session.query(models.TrialModel)
