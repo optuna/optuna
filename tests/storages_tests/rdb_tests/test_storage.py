@@ -130,18 +130,9 @@ def test_check_table_schema_compatibility() -> None:
     #     storage._check_table_schema_compatibility()
 
 
-def create_test_storage(
-    engine_kwargs: Optional[Dict[str, Any]] = None,
-    heartbeat_interval: Optional[int] = None,
-    grace_period: Optional[int] = None,
-) -> RDBStorage:
+def create_test_storage(engine_kwargs: Optional[Dict[str, Any]] = None) -> RDBStorage:
 
-    storage = RDBStorage(
-        "sqlite:///:memory:",
-        engine_kwargs=engine_kwargs,
-        heartbeat_interval=heartbeat_interval,
-        grace_period=grace_period,
-    )
+    storage = RDBStorage("sqlite:///:memory:", engine_kwargs=engine_kwargs)
     return storage
 
 
@@ -304,6 +295,7 @@ def test_get_trials_excluded_trial_ids() -> None:
 
 
 def test_record_heartbeat() -> None:
+
     heartbeat_interval = 1
     n_trials = 2
     sleep_sec = 2
@@ -335,6 +327,7 @@ def test_record_heartbeat() -> None:
 
 
 def test_fail_stale_trials() -> None:
+
     heartbeat_interval = 1
     grace_period = 2
 
@@ -357,3 +350,12 @@ def test_fail_stale_trials() -> None:
 
         t = study.trials[0]
         assert t.state is TrialState.FAIL
+
+
+def test_invalid_heartbeat_interval_and_grace_period() -> None:
+
+    with pytest.raises(ValueError):
+        _ = RDBStorage("sqlite:///:memory:", heartbeat_interval=-1)
+
+    with pytest.raises(ValueError):
+        _ = RDBStorage("sqlite:///:memory:", grace_period=-1)

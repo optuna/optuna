@@ -142,6 +142,10 @@ class RDBStorage(BaseStorage):
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
+        if heartbeat_interval is not None and heartbeat_interval <= 0:
+            raise ValueError("The value of `heartbeat_interval` should be an positive integer.")
+        if grace_period is not None and grace_period <= 0:
+            raise ValueError("Teh value of `grace_period` should be an positive integer.")
         self.heartbeat_interval = heartbeat_interval
         self.grace_period = grace_period
 
