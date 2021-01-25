@@ -102,10 +102,7 @@ class _SearchSpaceTransform:
 
         Returns:
             A 1-dimensional ``numpy.ndarray`` holding the transformed parameters in the
-            configuration. For :class:`~optuna.distributions.UniformDistribution` and
-            :class:`~optuna.distributions.LogUniformDistribution`, the high bound of the
-            search space is reduced by the minimal amount possible, to ensure the high
-            boundary value is not suggested, as per the definitions of those distributions.
+            configuration.
 
         """
         trans_params = numpy.zeros(self._bounds.shape[0], dtype=numpy.float64)
@@ -199,12 +196,12 @@ def _transform_search_space(
             if isinstance(d, UniformDistribution):
                 bds = (
                     _transform_numerical_param(d.low, d, transform_log),
-                    _transform_numerical_param(d.high, d, transform_log, clip=True),
+                    _transform_numerical_param(d.high, d, transform_log),
                 )
             elif isinstance(d, LogUniformDistribution):
                 bds = (
                     _transform_numerical_param(d.low, d, transform_log),
-                    _transform_numerical_param(d.high, d, transform_log, clip=True),
+                    _transform_numerical_param(d.high, d, transform_log),
                 )
             elif isinstance(d, DiscreteUniformDistribution):
                 half_step = 0.5 * d.q if transform_step else 0.0
@@ -241,10 +238,7 @@ def _transform_search_space(
 
 
 def _transform_numerical_param(
-    param: Union[int, float],
-    distribution: BaseDistribution,
-    transform_log: bool,
-    clip: bool = False,
+    param: Union[int, float], distribution: BaseDistribution, transform_log: bool
 ) -> float:
     d = distribution
 
@@ -263,9 +257,6 @@ def _transform_numerical_param(
     else:
         assert False, "Should not reach. Unexpected distribution."
 
-    if clip:
-        trans_param = numpy.nextafter(trans_param, trans_param - 1)
-
     return trans_param
 
 
@@ -277,9 +268,10 @@ def _untransform_numerical_param(
     if isinstance(d, CategoricalDistribution):
         assert False, "Should not reach. Should be one-hot encoded."
     elif isinstance(d, UniformDistribution):
-        param = trans_param
+        param = min(trans_param, numpy.next_after(d.high, d.high - 1))
     elif isinstance(d, LogUniformDistribution):
         param = math.exp(trans_param) if transform_log else trans_param
+        param = min(param, numpy.next_after(d.high, d.high - 1))
     elif isinstance(d, DiscreteUniformDistribution):
         # Clip since result may slightly exceed range due to round-off errors.
         param = float(
