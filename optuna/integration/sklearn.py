@@ -737,7 +737,7 @@ class OptunaSearchCV(BaseEstimator):
         self,
         X: TwoDimArrayLikeType,
         y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]] = None,
-        **fit_params: Any
+        **fit_params: Any,
     ) -> "OptunaSearchCV":
 
         n_samples = _num_samples(X)
@@ -766,7 +766,7 @@ class OptunaSearchCV(BaseEstimator):
         X: TwoDimArrayLikeType,
         y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]] = None,
         groups: Optional[OneDimArrayLikeType] = None,
-        **fit_params: Any
+        **fit_params: Any,
     ) -> "OptunaSearchCV":
         """Run fit with all sets of parameters.
 

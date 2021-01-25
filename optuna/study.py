@@ -5,9 +5,11 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Type
 from typing import Union
+import warnings
 
 from optuna import exceptions
 from optuna import logging
@@ -17,7 +19,10 @@ from optuna import storages
 from optuna import trial as trial_module
 from optuna._dataframe import _trials_dataframe
 from optuna._dataframe import pd
+from optuna._deprecated import deprecated
 from optuna._experimental import experimental
+from optuna._multi_objective import _get_pareto_front_trials
+from optuna._optimize import _check_and_convert_to_values
 from optuna._optimize import _optimize
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
@@ -26,7 +31,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-ObjectiveFuncType = Callable[[trial_module.Trial], float]
+ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]]
 
 
 _logger = logging.get_logger(__name__)
@@ -44,6 +49,10 @@ class BaseStudy(object):
 
         Returns:
             A dictionary containing parameters of the best trial.
+
+        Raises:
+            :exc:`RuntimeError`:
+                If the study has more than one direction.
         """
 
         return self.best_trial.params
@@ -54,6 +63,10 @@ class BaseStudy(object):
 
         Returns:
             A float representing the best objective value.
+
+        Raises:
+            :exc:`RuntimeError`:
+                If the study has more than one direction.
         """
 
         best_value = self.best_trial.value
@@ -67,9 +80,33 @@ class BaseStudy(object):
 
         Returns:
             A :class:`~optuna.FrozenTrial` object of the best trial.
+
+        Raises:
+            :exc:`RuntimeError`:
+                If the study has more than one direction.
         """
 
+        if self._is_multi_objective():
+            raise RuntimeError(
+                "The best trial of a `study` is only supported for single-objective optimization."
+            )
+
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
+
+    @property
+    def best_trials(self) -> List[FrozenTrial]:
+        """Return trials located at the Pareto front in the study.
+
+        A trial is located at the Pareto front if there are no trials that dominate the trial.
+        It's called that a trial ``t0`` dominates another trial ``t1`` if
+        ``all(v0 <= v1) for v0, v1 in zip(t0.values, t1.values)`` and
+        ``any(v0 < v1) for v0, v1 in zip(t0.values, t1.values)`` are held.
+
+        Returns:
+            A list of :class:`~optuna.trial.FrozenTrial` objects.
+        """
+
+        return _get_pareto_front_trials(self)
 
     @property
     def direction(self) -> StudyDirection:
@@ -77,9 +114,29 @@ class BaseStudy(object):
 
         Returns:
             A :class:`~optuna.study.StudyDirection` object.
+
+        Raises:
+            :exc:`RuntimeError`:
+                If the study has more than one direction.
         """
 
-        return self._storage.get_study_direction(self._study_id)
+        if self._is_multi_objective():
+            raise RuntimeError(
+                "The single direction of a `study` is only supported for single-objective "
+                "optimization."
+            )
+
+        return self.directions[0]
+
+    @property
+    def directions(self) -> List[StudyDirection]:
+        """Return the directions of the study.
+
+        Returns:
+            A list of :class:`~optuna.study.StudyDirection` objects.
+        """
+
+        return self._storage.get_study_directions(self._study_id)
 
     @property
     def trials(self) -> List[FrozenTrial]:
@@ -87,21 +144,31 @@ class BaseStudy(object):
 
         The returned trials are ordered by trial number.
 
-        This is a short form of ``self.get_trials(deepcopy=True)``.
+        This is a short form of ``self.get_trials(deepcopy=True, states=None)``.
 
         Returns:
             A list of :class:`~optuna.FrozenTrial` objects.
         """
 
-        return self.get_trials()
+        return self.get_trials(deepcopy=True, states=None)
 
-    def get_trials(self, deepcopy: bool = True) -> List[FrozenTrial]:
+    def _is_multi_objective(self) -> bool:
+        """Return :obj:`True` if the study has multiple objectives.
+
+        Returns:
+            A boolean value indicates if `self.directions` has more than 1 element or not.
+        """
+
+        return len(self.directions) > 1
+
+    def get_trials(
+        self,
+        deepcopy: bool = True,
+        states: Optional[Tuple[TrialState, ...]] = None,
+    ) -> List[FrozenTrial]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
-
-        For library users, it's recommended to use more handy
-        :attr:`~optuna.study.Study.trials` property to get the trials instead.
 
         Example:
             .. testcode::
@@ -125,13 +192,15 @@ class BaseStudy(object):
                 Note that if you set the flag to :obj:`False`, you shouldn't mutate
                 any fields of the returned trial. Otherwise the internal state of
                 the study may corrupt and unexpected behavior may happen.
+            states:
+                Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
             A list of :class:`~optuna.FrozenTrial` objects.
         """
 
         self._storage.read_trials_from_remote_storage(self._study_id)
-        return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy)
+        return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
 
 
 class Study(BaseStudy):
@@ -315,6 +384,210 @@ class Study(BaseStudy):
             show_progress_bar=show_progress_bar,
         )
 
+    def ask(self) -> trial_module.Trial:
+        """Create a new trial from which hyperparameters can be suggested.
+
+        This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
+        controlling the lifetime of a trial outside the scope of ``func``. Each call to this
+        method should be followed by a call to :func:`~optuna.study.Study.tell` to finish the
+        created trial.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+
+                study = optuna.create_study()
+
+                trial = study.ask()
+
+                x = trial.suggest_float("x", -1, 1)
+
+                study.tell(trial, x ** 2)
+
+        Returns:
+            A :class:`~optuna.trial.Trial`.
+        """
+
+        # Sync storage once every trial.
+        self._storage.read_trials_from_remote_storage(self._study_id)
+
+        trial_id = self._pop_waiting_trial_id()
+        if trial_id is None:
+            trial_id = self._storage.create_new_trial(self._study_id)
+        return trial_module.Trial(self, trial_id)
+
+    def tell(
+        self,
+        trial: Union[trial_module.Trial, int],
+        values: Optional[Union[float, Sequence[float]]] = None,
+        state: TrialState = TrialState.COMPLETE,
+    ) -> None:
+        """Finish a trial created with :func:`~optuna.study.Study.ask`.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+                from optuna.trial import TrialState
+
+
+                def f(x):
+                    return (x - 2) ** 2
+
+
+                def df(x):
+                    return 2 * x - 4
+
+
+                study = optuna.create_study()
+
+                n_trials = 30
+
+                for _ in range(n_trials):
+                    trial = study.ask()
+
+                    lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
+
+                    # Iterative gradient descent objective function.
+                    x = 3  # Initial value.
+                    for step in range(128):
+                        y = f(x)
+
+                        trial.report(y, step=step)
+
+                        if trial.should_prune():
+                            # Finish the trial with the pruned state.
+                            study.tell(trial, state=TrialState.PRUNED)
+                            break
+
+                        gy = df(x)
+                        x -= gy * lr
+                    else:
+                        # Finish the trial with the final value after all iterations.
+                        study.tell(trial, y)
+
+        Args:
+            trial:
+                A :class:`~optuna.trial.Trial` object or a trial number.
+            values:
+                Optional objective value or a sequence of such values in case the study is used
+                for multi-objective optimization. Argument must be provided if ``state`` is
+                :class:`~optuna.trial.TrialState.COMPLETE` and should be :obj:`None` if ``state``
+                is :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED`.
+            state:
+                State to be reported. Must be :class:`~optuna.trial.TrialState.COMPLETE`,
+                :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED`.
+
+        Raises:
+            TypeError:
+                If ``trial`` is not a :class:`~optuna.trial.Trial` or an :obj:`int`.
+            ValueError:
+                If any of the following.
+                ``values`` is a sequence but its length does not match the number of objectives
+                for its associated study.
+                ``state`` is :class:`~optuna.trial.TrialState.COMPLETE` but
+                ``values`` is :obj:`None`.
+                ``state`` is :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED` but
+                ``values`` is not :obj:`None`.
+                ``state`` is not
+                :class:`~optuna.trial.TrialState.COMPLETE`,
+                :class:`~optuna.trial.TrialState.FAIL` or
+                :class:`~optuna.trial.TrialState.PRUNED`.
+                ``trial`` is a trial number but no
+                trial exists with that number.
+        """
+
+        if not isinstance(trial, (trial_module.Trial, int)):
+            raise TypeError("Trial must be a trial object or trial number.")
+
+        if state == TrialState.COMPLETE:
+            if values is None:
+                raise ValueError(
+                    "No values were told. Values are required when state is TrialState.COMPLETE."
+                )
+        elif state in (TrialState.PRUNED, TrialState.FAIL):
+            if values is not None:
+                raise ValueError(
+                    "Values were told. Values cannot be specified when state is "
+                    "TrialState.PRUNED or TrialState.FAIL."
+                )
+        else:
+            raise ValueError(f"Cannot tell with state {state}.")
+
+        if isinstance(trial, trial_module.Trial):
+            trial_number = trial.number
+            trial_id = trial._trial_id
+        elif isinstance(trial, int):
+            trial_number = trial
+            try:
+                trial_id = self._storage.get_trial_id_from_study_id_trial_number(
+                    self._study_id, trial_number
+                )
+            except NotImplementedError as e:
+                warnings.warn(
+                    "Study.tell may be slow because the trial was represented by its number but "
+                    f"the storage {self._storage.__class__.__name__} does not implement the "
+                    "method required to map numbers back. Please provide the trial object "
+                    "to avoid performance degradation."
+                )
+
+                trials = self.get_trials(deepcopy=False)
+
+                if len(trials) <= trial_number:
+                    raise ValueError(
+                        f"Cannot tell for trial with number {trial_number} since it has not been "
+                        "created."
+                    ) from e
+
+                trial_id = trials[trial_number]._trial_id
+            except KeyError as e:
+                raise ValueError(
+                    f"Cannot tell for trial with number {trial_number} since it has not been "
+                    "created."
+                ) from e
+        else:
+            assert False, "Should not reach."
+
+        frozen_trial = self._storage.get_trial(trial_id)
+
+        if state == TrialState.PRUNED:
+            # Register the last intermediate value if present as the value of the trial.
+            # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
+            assert values is None
+
+            last_step = frozen_trial.last_step
+            if last_step is not None:
+                values = [frozen_trial.intermediate_values[last_step]]
+
+        if values is not None:
+            values, values_conversion_failure_message = _check_and_convert_to_values(
+                len(self.directions), values, trial_number
+            )
+            # When called from `Study.optimize` and `state` is pruned, the given `values` contains
+            # the intermediate value with the largest step so far. In this case, the value is
+            # allowed to be NaN and errors should not be raised.
+            if state != TrialState.PRUNED and values_conversion_failure_message is not None:
+                raise ValueError(values_conversion_failure_message)
+
+        try:
+            # Sampler defined trial post-processing.
+            study = pruners._filter_study(self, frozen_trial)
+            self.sampler.after_trial(study, frozen_trial, state, values)
+        except Exception:
+            raise
+        finally:
+            if values is not None:
+                self._storage.set_trial_values(trial_id, values)
+
+            self._storage.set_trial_state(trial_id, state)
+
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
 
@@ -425,6 +698,10 @@ class Study(BaseStudy):
 
         .. _DataFrame: http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html
         .. _MultiIndex: https://pandas.pydata.org/pandas-docs/stable/advanced.html
+
+        Note:
+            If ``value`` is in ``attrs`` during multi-objective optimization, it is implicitly
+            replaced with ``values``.
         """
         return _trials_dataframe(self, attrs, multi_index)
 
@@ -586,35 +863,40 @@ class Study(BaseStudy):
 
         return None
 
+    @deprecated("2.5.0")
     def _ask(self) -> trial_module.Trial:
-        # Sync storage once at the beginning of the objective evaluation.
-        self._storage.read_trials_from_remote_storage(self._study_id)
+        return self.ask()
 
-        trial_id = self._pop_waiting_trial_id()
-        if trial_id is None:
-            trial_id = self._storage.create_new_trial(self._study_id)
-        return trial_module.Trial(self, trial_id)
+    @deprecated("2.5.0")
+    def _tell(
+        self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
+    ) -> None:
+        self.tell(trial, values, state)
 
-    def _tell(self, trial: trial_module.Trial, state: TrialState, value: Optional[float]) -> None:
-        if state == TrialState.COMPLETE:
-            assert value is not None
-        if value is not None:
-            self._storage.set_trial_value(trial._trial_id, value)
-        self._storage.set_trial_state(trial._trial_id, state)
-
-    def _log_completed_trial(self, trial: trial_module.Trial, value: float) -> None:
-        # This method is overwritten by `MultiObjectiveStudy` using `types.MethodType` so one must
-        # be careful modifying this method, e.g. making this a free function.
+    def _log_completed_trial(self, trial: trial_module.Trial, values: Sequence[float]) -> None:
 
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        _logger.info(
-            "Trial {} finished with value: {} and parameters: {}. "
-            "Best is trial {} with value: {}.".format(
-                trial.number, value, trial.params, self.best_trial.number, self.best_value
+        if len(values) > 1:
+            _logger.info(
+                "Trial {} finished with values: {} and parameters: {}. ".format(
+                    trial.number, values, trial.params
+                )
             )
-        )
+        elif len(values) == 1:
+            _logger.info(
+                "Trial {} finished with value: {} and parameters: {}. "
+                "Best is trial {} with value: {}.".format(
+                    trial.number,
+                    values[0],
+                    trial.params,
+                    self.best_trial.number,
+                    self.best_value,
+                )
+            )
+        else:
+            assert False, "Should not reach."
 
 
 def create_study(
@@ -622,8 +904,10 @@ def create_study(
     sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
     study_name: Optional[str] = None,
-    direction: str = "minimize",
+    direction: Optional[str] = None,
     load_if_exists: bool = False,
+    *,
+    directions: Optional[Sequence[str]] = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
@@ -661,8 +945,9 @@ def create_study(
 
         sampler:
             A sampler object that implements background algorithm for value suggestion.
-            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
-            as the default. See also :class:`~optuna.samplers`.
+            If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used during
+            single-objective optimization and :class:`~optuna.samplers.NSGAIISampler` during
+            multi-objective optimization. See also :class:`~optuna.samplers`.
         pruner:
             A pruner object that decides early stopping of unpromising trials. If :obj:`None`
             is specified, :class:`~optuna.pruners.MedianPruner` is used as the default. See
@@ -673,6 +958,12 @@ def create_study(
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
             maximization.
+
+            .. note::
+                If none of `direction` and `directions` are specified, the direction of the study
+                is set to "minimize".
+        directions:
+            A sequence of directions during multi-objective optimization.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
@@ -684,13 +975,36 @@ def create_study(
         A :class:`~optuna.study.Study` object.
 
     Raises:
-        ValueError:
-            If ``direction`` is neither 'minimize' nor 'maximize'.
+        :exc:`ValueError`:
+            If the length of ``directions`` is zero.
+            Or, if ``direction`` is neither 'minimize' nor 'maximize' when it is a string.
+            Or, if the element of ``directions`` is neither `minimize` nor `maximize`.
+            Or, if both ``direction`` and ``directions`` are specified.
 
     See also:
         :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
 
     """
+
+    if direction is None and directions is None:
+        directions = ["minimize"]
+    elif direction is not None and directions is not None:
+        raise ValueError("Specify only one of `direction` and `directions`.")
+    elif direction is not None:
+        directions = [direction]
+    elif directions is not None:
+        directions = list(directions)
+    else:
+        assert False
+
+    if len(directions) < 1:
+        raise ValueError("The number of objectives must be greater than 0.")
+    elif any(d != "minimize" and d != "maximize" for d in directions):
+        raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
+
+    direction_objects = [
+        StudyDirection.MINIMIZE if d == "minimize" else StudyDirection.MAXIMIZE for d in directions
+    ]
 
     storage = storages.get_storage(storage)
     try:
@@ -707,17 +1021,13 @@ def create_study(
         else:
             raise
 
+    if sampler is None and len(direction_objects) > 1:
+        sampler = samplers.NSGAIISampler()
+
     study_name = storage.get_study_name_from_id(study_id)
     study = Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
-    if direction == "minimize":
-        _direction = StudyDirection.MINIMIZE
-    elif direction == "maximize":
-        _direction = StudyDirection.MAXIMIZE
-    else:
-        raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
-
-    study._storage.set_study_direction(study_id, _direction)
+    study._storage.set_study_directions(study_id, direction_objects)
 
     return study
 

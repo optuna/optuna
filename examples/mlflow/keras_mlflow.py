@@ -1,6 +1,6 @@
 """
 Optuna example that optimizes a neural network regressor for the
-wine quality dataset using Keras and records hyperparamters and metrics using MLflow.
+wine quality dataset using Keras and records hyperparameters and metrics using MLflow.
 
 In this example, we optimize the learning rate and momentum of
 stochastic gradient descent optimizer to minimize the validation mean squared error

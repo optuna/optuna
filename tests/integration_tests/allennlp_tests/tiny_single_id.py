@@ -5,7 +5,7 @@ from typing import Optional
 
 from allennlp.data.token_indexers.token_indexer import IndexedTokenList
 from allennlp.data.token_indexers.token_indexer import TokenIndexer
-from allennlp.data.tokenizers.token import Token
+from allennlp.data.tokenizers.token_class import Token
 from allennlp.data.vocabulary import Vocabulary
 
 
@@ -34,6 +34,8 @@ class SingleIdTokenIndexer(TokenIndexer):
 
     def count_vocab_items(self, token: Token, counter: Dict[str, Dict[str, int]]) -> None:
         text = token.text
+        assert isinstance(text, str)
+
         if self.lowercase_tokens:
             text = text.lower()
         counter["tokens"][text] += 1
@@ -45,6 +47,8 @@ class SingleIdTokenIndexer(TokenIndexer):
 
         for token in itertools.chain(self._start_tokens, tokens, self._end_tokens):
             text = token.text
+            assert isinstance(text, str)
+
             if self.lowercase_tokens:
                 text = text.lower()
             indices.append(vocabulary.get_token_index(text, "tokens"))

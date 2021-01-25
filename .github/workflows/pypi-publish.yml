@@ -1,14 +1,17 @@
-name: Publish distributions to TestPyPI and PyPI
+name: Publish distributions to PyPI or TestPyPI
 
-# Only activate if the release is published.
+# TestPyPI upload is scheduled in each weekday.
+# PyPI upload is only activated if the release is published.
 on:
+  schedule:
+    - cron: '0 15 * * *'
   release:
     types:
       - published
 
 jobs:
   build-n-publish:
-    name: Build and publish Python distributions to TestPyPI and PyPI
+    name: Build and publish Python distributions to PyPI or TestPyPI
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
@@ -19,18 +22,26 @@ jobs:
 
     - name: Install twine
       run: >-
-        python -m pip install -U twine
+        python -m pip install -U twine wheel
+
+    - name: Change the version file for TestPyPI upload
+      if: (github.repository == 'optuna/optuna') && (github.event_name == 'schedule')
+      run: |
+        OPTUNA_VERSION=$(cut -d '"' -f 2 optuna/version.py)
+        DATE=`date +"%Y%m%d"`
+        echo "__version__ = \"${OPTUNA_VERSION}${DATE}\"" > optuna/version.py
 
     - name: Build a tar ball
-      run: >-
+      run: |
         python setup.py sdist
+        python setup.py bdist_wheel
 
     - name: Verify the distributions
       run: twine check dist/*
 
-    - name: Publish distribution to Test PyPI
+    - name: Publish distribution to TestPyPI
       # The following upload action cannot be executed in the forked repository.
-      if: github.repository == 'optuna/optuna'
+      if: (github.repository == 'optuna/optuna') && (github.event_name == 'schedule')
       uses: pypa/gh-action-pypi-publish@v1.1.0
       with:
         user: __token__
@@ -39,7 +50,7 @@ jobs:
 
     - name: Publish distribution to PyPI
       # The following upload action cannot be executed in the forked repository.
-      if: github.repository == 'optuna/optuna'
+      if: (github.repository == 'optuna/optuna') && (github.event_name == 'release')
       uses: pypa/gh-action-pypi-publish@v1.1.0
       with:
         user: __token__

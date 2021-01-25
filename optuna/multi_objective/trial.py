@@ -7,7 +7,7 @@ from typing import Sequence
 from typing import Union
 
 from optuna import multi_objective
-from optuna._experimental import experimental
+from optuna._deprecated import deprecated
 from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
 from optuna.trial import FrozenTrial
@@ -18,7 +18,7 @@ from optuna.trial import TrialState
 CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
-@experimental("1.4.0")
+@deprecated("2.4.0", "4.0.0")
 class MultiObjectiveTrial(object):
     """A trial is a process of evaluating an objective function.
 
@@ -49,7 +49,7 @@ class MultiObjectiveTrial(object):
         high: float,
         *,
         step: Optional[float] = None,
-        log: bool = False
+        log: bool = False,
     ) -> float:
         """Suggest a value for the floating point parameter.
 
@@ -240,7 +240,7 @@ class MultiObjectiveTrial(object):
         return [trial.intermediate_values.get(i) for i in range(self._n_objectives)]
 
 
-@experimental("1.4.0")
+@deprecated("2.4.0", "4.0.0")
 class FrozenMultiObjectiveTrial(object):
     """Status and results of a :class:`~optuna.multi_objective.trial.MultiObjectiveTrial`.
 

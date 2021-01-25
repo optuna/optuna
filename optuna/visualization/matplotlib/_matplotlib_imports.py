@@ -13,6 +13,7 @@ with try_import() as _imports:  # NOQA
     from matplotlib.collections import LineCollection  # NOQA
     from matplotlib.collections import PathCollection  # NOQA
     from matplotlib.colors import Colormap  # NOQA
+    from matplotlib.contour import ContourSet  # NOQA
     from matplotlib.patches import Rectangle  # NOQA
 
     # TODO(ytknzw): Set precise version.

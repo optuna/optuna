@@ -95,6 +95,17 @@ def test_study_optimize_with_exceeding_number_of_trials() -> None:
     assert len(study.trials) == 3
 
 
+def test_study_optimize_with_pruning() -> None:
+    def objective(trial: Trial) -> float:
+        raise optuna.TrialPruned
+
+    # Pruned trials should count towards grid consumption.
+    search_space: Dict[str, List[GridValueType]] = {"a": [0, 50]}
+    study = optuna.create_study(sampler=samplers.GridSampler(search_space))
+    study.optimize(objective, n_trials=None)
+    assert len(study.trials) == 2
+
+
 def test_study_optimize_with_multiple_search_spaces() -> None:
     def objective(trial: Trial) -> float:
 

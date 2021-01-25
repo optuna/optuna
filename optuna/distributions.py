@@ -128,10 +128,7 @@ class UniformDistribution(BaseDistribution):
     def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
-        if self.low == self.high:
-            return value == self.low
-        else:
-            return self.low <= value < self.high
+        return self.low <= value <= self.high
 
 
 class LogUniformDistribution(BaseDistribution):
@@ -175,10 +172,7 @@ class LogUniformDistribution(BaseDistribution):
     def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
-        if self.low == self.high:
-            return value == self.low
-        else:
-            return self.low <= value < self.high
+        return self.low <= value <= self.high
 
 
 class DiscreteUniformDistribution(BaseDistribution):
@@ -190,7 +184,7 @@ class DiscreteUniformDistribution(BaseDistribution):
     .. note::
         If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by :math:`q`,
         :math:`\\mathsf{high}` will be replaced with the maximum of :math:`k q + \\mathsf{low}
-        \\lt \\mathsf{high}`, where :math:`k` is an integer.
+        < \\mathsf{high}`, where :math:`k` is an integer.
 
     Attributes:
         low:
@@ -244,7 +238,7 @@ class IntUniformDistribution(BaseDistribution):
     .. note::
         If the range :math:`[\\mathsf{low}, \\mathsf{high}]` is not divisible by
         :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced with the maximum of
-        :math:`k \\times \\mathsf{step} + \\mathsf{low} \\lt \\mathsf{high}`, where :math:`k` is
+        :math:`k \\times \\mathsf{step} + \\mathsf{low} < \\mathsf{high}`, where :math:`k` is
         an integer.
 
     Attributes:

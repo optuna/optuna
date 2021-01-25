@@ -1,5 +1,8 @@
 import itertools
+from typing import Callable
+from typing import cast
 from typing import List
+from typing import Optional
 from typing import Sequence
 from typing import Union
 
@@ -7,8 +10,10 @@ import numpy as np
 
 from optuna.logging import get_logger
 from optuna.study import Study
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
+from optuna.visualization._utils import _check_plot_args
 
 
 if _imports.is_successful():
@@ -17,7 +22,12 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
+def plot_edf(
+    study: Union[Study, Sequence[Study]],
+    *,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "go.Figure":
     """Plot the objective value EDF (empirical distribution function) of a study.
 
     Note that only the complete trials are considered when plotting the EDF.
@@ -56,7 +66,7 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
                 return ackley(x, y)
 
 
-            sampler = optuna.samplers.RandomSampler()
+            sampler = optuna.samplers.RandomSampler(seed=10)
 
             # Widest search space.
             study0 = optuna.create_study(study_name="x=[0,5), y=[0,5)", sampler=sampler)
@@ -76,9 +86,22 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
         study:
             A target :class:`~optuna.study.Study` object.
             You can pass multiple studies if you want to compare those EDFs.
+        target:
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is being
+            used for single-objective optimization, the objective values are plotted.
+
+            .. note::
+                Specify this argument if ``study`` is being used for multi-objective optimization.
+        target_name:
+            Target's name to display on the axis label.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
+            optimization.
     """
 
     _imports.check()
@@ -88,13 +111,19 @@ def plot_edf(study: Union[Study, Sequence[Study]]) -> "go.Figure":
     else:
         studies = list(study)
 
-    return _get_edf_plot(studies)
+    _check_plot_args(studies, target, target_name)
+
+    return _get_edf_plot(studies, target, target_name)
 
 
-def _get_edf_plot(studies: List[Study]) -> "go.Figure":
+def _get_edf_plot(
+    studies: List[Study],
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
+) -> "go.Figure":
     layout = go.Layout(
         title="Empirical Distribution Function Plot",
-        xaxis={"title": "Objective Value"},
+        xaxis={"title": target_name},
         yaxis={"title": "Cumulative Probability"},
     )
 
@@ -117,15 +146,22 @@ def _get_edf_plot(studies: List[Study]) -> "go.Figure":
         _logger.warning("There are no complete trials.")
         return go.Figure(data=[], layout=layout)
 
-    min_x_value = min(trial.value for trial in all_trials)
-    max_x_value = max(trial.value for trial in all_trials)
+    if target is None:
+
+        def _target(t: FrozenTrial) -> float:
+            return cast(float, t.value)
+
+        target = _target
+
+    min_x_value = min(target(trial) for trial in all_trials)
+    max_x_value = max(target(trial) for trial in all_trials)
     x_values = np.linspace(min_x_value, max_x_value, 100)
 
     traces = []
     for study in studies:
         values = np.asarray(
             [
-                trial.value
+                target(trial)
                 for trial in study.get_trials(deepcopy=False)
                 if trial.state == TrialState.COMPLETE
             ]

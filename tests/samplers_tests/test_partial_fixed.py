@@ -115,3 +115,14 @@ def test_reseed_rng() -> None:
         sampler.reseed_rng()
         assert mock_object.call_count == 1
         assert original_seed != base_sampler._rng.seed
+
+
+def test_call_after_trial_of_base_sampler() -> None:
+    base_sampler = RandomSampler()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = PartialFixedSampler(fixed_params={}, base_sampler=base_sampler)
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(base_sampler, "after_trial", wraps=base_sampler.after_trial) as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1

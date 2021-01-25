@@ -26,11 +26,13 @@ This page contains a list of example codes written with Optuna.
 * [Tensorflow](./tensorflow_estimator_simple.py)
 * [Tensorflow (eager)](./tensorflow_eager_simple.py)
 * [Keras](./keras_simple.py)
-* [FastAI](./fastai_simple.py)
+* [FastAI V1](./fastaiv1_simple.py)
+* [FastAI V2](./fastaiv2_simple.py)
 * [AllenNLP](./allennlp/allennlp_simple.py)
 * [AllenNLP (Jsonnet)](./allennlp/allennlp_jsonnet.py)
 * [SKORCH](./skorch_simple.py)
 * [RAPIDS](./rapids_simple.py)
+* [Haiku](./haiku_simple.py)
 
 ### An example where an objective function uses additional arguments
 
@@ -49,11 +51,12 @@ In addition, integration modules are available for the following libraries, prov
 * [Pruning with Catboost integration module](./catboost_simple.py)
 * [Pruning with Chainer integration module](./pruning/chainer_integration.py)
 * [Pruning with ChainerMN integration module](./pruning/chainermn_integration.py)
-* [Pruning with FastAI integration module](./fastai_simple.py)
+* [Pruning with FastAI V1 integration module](./fastaiv1_simple.py)
+* [Pruning with FastAI V2 integration module](./fastaiv2_simple.py)
 * [Pruning with Keras integration module](./pruning/keras_integration.py)
 * [Pruning with LightGBM integration module](./pruning/lightgbm_integration.py)
 * [Pruning with MXNet integration module](./pruning/mxnet_integration.py)
-* [Pruning with PyTorch integration module](./pruning/pytorch_simple.py)
+* [Pruning with PyTorch integration module](./pytorch_simple.py)
 * [Pruning with PyTorch Ignite integration module](./pytorch_ignite_simple.py)
 * [Pruning with PyTorch Lightning integration module](./pytorch_lightning_simple.py)
 * [Pruning with Tensorflow integration module](./pruning/tensorflow_estimator_integration.py)
@@ -68,13 +71,17 @@ In addition, integration modules are available for the following libraries, prov
 
 * [Visualizing study](https://colab.research.google.com/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
 
+### An example to enqueue trials with given parameter values
+
+* [Enqueuing trials with given parameters](./enqueue_trial.py)
+
 ### Examples of MLflow
 
 * [Tracking optimization process with MLflow](./mlflow/keras_mlflow.py)
 
 ### Examples of Distributed Optimization
 
-* [Optimizing on Kubernetes](./distributed/kubernetes/README.md)
+* [Optimizing on Kubernetes](./kubernetes/README.md)
 
 ### External projects using Optuna
 

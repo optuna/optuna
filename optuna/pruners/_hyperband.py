@@ -1,6 +1,7 @@
 import math
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 import optuna
@@ -53,8 +54,8 @@ class HyperbandPruner(BasePruner):
         of Hyperband and is automatically determined by ``min_resource``, ``max_resource`` and
         ``reduction_factor`` as
         `The number of brackets = floor(log_{reduction_factor}(max_resource / min_resource)) + 1`.
-        Please set ``reduction_factor`` so that the number of brackets is not too large　(about 4 ~
-        6 in most use cases).　Please see Section 3.6 of the `original paper
+        Please set ``reduction_factor`` so that the number of brackets is not too large (about 4 ~
+        6 in most use cases). Please see Section 3.6 of the `original paper
         <http://www.jmlr.org/papers/volume18/16-558/16-558.pdf>`_ for the detail.
 
     .. seealso::
@@ -129,6 +130,10 @@ class HyperbandPruner(BasePruner):
             A parameter for specifying reduction factor of promotable trials noted as
             :math:`\\eta` in the paper.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
+        bootstrap_count:
+            Parameter specifying the number of trials required in a rung before any trial can be
+            promoted. Incompatible with ``max_resouce`` is ``"auto"``.
+            See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
     """
 
     def __init__(
@@ -136,12 +141,14 @@ class HyperbandPruner(BasePruner):
         min_resource: int = 1,
         max_resource: Union[str, int] = "auto",
         reduction_factor: int = 3,
+        bootstrap_count: int = 0,
     ) -> None:
 
         self._min_resource = min_resource
         self._max_resource = max_resource
         self._reduction_factor = reduction_factor
         self._pruners: List[SuccessiveHalvingPruner] = []
+        self._bootstrap_count = bootstrap_count
         self._total_trial_allocation_budget = 0
         self._trial_allocation_budgets: List[int] = []
         self._n_brackets: Optional[int] = None
@@ -150,6 +157,12 @@ class HyperbandPruner(BasePruner):
             raise ValueError(
                 "The 'max_resource' should be integer or 'auto'. "
                 "But max_resource = {}".format(self._max_resource)
+            )
+
+        if self._bootstrap_count > 0 and self._max_resource == "auto":
+            raise ValueError(
+                "bootstrap_count > 0 and max_resource == 'auto' "
+                "are mutually incompatible, bootstrap_count is {}".format(self._bootstrap_count)
             )
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
@@ -205,6 +218,7 @@ class HyperbandPruner(BasePruner):
                 min_resource=self._min_resource,
                 reduction_factor=self._reduction_factor,
                 min_early_stopping_rate=bracket_id,
+                bootstrap_count=self._bootstrap_count,
             )
             self._pruners.append(pruner)
 
@@ -256,6 +270,7 @@ class HyperbandPruner(BasePruner):
 
             _VALID_ATTRS = (
                 "get_trials",
+                "directions",
                 "direction",
                 "_storage",
                 "_study_id",
@@ -264,6 +279,7 @@ class HyperbandPruner(BasePruner):
                 "_bracket_id",
                 "sampler",
                 "trials",
+                "_is_multi_objective",
             )
 
             def __init__(self, study: "optuna.study.Study", bracket_id: int) -> None:
@@ -275,8 +291,12 @@ class HyperbandPruner(BasePruner):
                 )
                 self._bracket_id = bracket_id
 
-            def get_trials(self, deepcopy: bool = True) -> List["optuna.trial.FrozenTrial"]:
-                trials = super().get_trials(deepcopy=deepcopy)
+            def get_trials(
+                self,
+                deepcopy: bool = True,
+                states: Optional[Tuple[TrialState, ...]] = None,
+            ) -> List["optuna.trial.FrozenTrial"]:
+                trials = super().get_trials(deepcopy=deepcopy, states=states)
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
                 return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]

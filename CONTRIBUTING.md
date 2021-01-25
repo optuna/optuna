@@ -43,16 +43,24 @@ Coding style is checked with [flake8](http://flake8.pycqa.org) and [isort](https
 and additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked with [mypy](http://mypy-lang.org/).
 
-You can check the format, coding style, and type hint at the same time just by executing a script `checks.sh`.
-If your environment misses some dependencies such as black, flake8, isort or mypy, 
+You can check the format, coding style, and type hint at the same time just by executing a script `formats.sh`.
+If your environment misses some dependencies such as black, blackdoc, flake8, isort or mypy,
 you will be asked to install them.
 
-```bash
-# Without any fixes.
-bash checks.sh
+You can also check them using [tox](https://tox.readthedocs.io/en/latest/) like below.
 
-# With fixes on the format by `black` and the import order by `isort`.
-bash checks.sh -u
+```
+$ pip install tox
+$ tox -e flake8 -e black -e blackdoc -e isort -e mypy
+```
+
+If you catch format errors, you can automatically fix them by auto-formatters.
+
+```bash
+# Install auto-formatters.
+$ pip install .[checking]
+
+$ ./formats.sh 
 ```
 
 ### Documentation
@@ -94,7 +102,13 @@ pytest tests/${TARGET_TEST_FILE_NAME}
 
 ## Continuous Integration and Local Verification
 
+Optuna repository uses GitHub Actions and CircleCI.
+
 CircleCI is used for continuous integration.
+
+Currently, we are migrating to GitHub Actions but still we use CirclCI for a few tests listed below.
+`document` still exists because it makes it much easier to check built documentation and `tests-rdbstorage`
+is there because CircleCI supports more various RDB storages than GitHub Actions as of November 2020.
 
 ### Local Verification
 
@@ -106,26 +120,18 @@ circleci build --job <job_name>
 
 You can run the following jobs.
 
-- `tests-python36`
-  - Runs unit tests under Python 3.6
-- `tests-python37`
-  - Runs unit tests under Python 3.7
-- `tests-python38`
-  - Runs unit tests under Python 3.8
-- `checks`
-  - Checks guidelines
+- `tests-rdbstorage`
+  - Runs unit tests with RDB storages with Python 3.7
 - `document`
   - Checks documentation build
-- `doctest`
-  - Checks doctest validity
 
 #### Example
 
-The following `circleci` job runs all unit tests in Python 3.7:
+The following `circleci` job runs all unit tests with RDB storages:
 Note that this job will download several hundred megabytes of data to install all the packages required for testing, and take several tens of minutes to complete all tests.
 
 ```bash
-circleci build --job tests-python37
+circleci build --job tests-rdbstorage
 ```
 
 ## Creating a Pull Request
@@ -138,12 +144,13 @@ The title of your pull request should
 
 - briefly describe and reflect the changes
 - wrap any code with backticks
+- not end with a period
 
 *The title will be directly visible in the release notes.*
 
 #### Example
 
-Introduces Tree-structured Parzen Estimator to `optuna.samplers`.
+Introduces Tree-structured Parzen Estimator to `optuna.samplers`
 
 ### Description
 
