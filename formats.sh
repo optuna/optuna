@@ -16,7 +16,9 @@ if [ ! "$(echo $res_pip_list | grep isort)" ] ; then
   missing_dependencies+=(isort)
 fi
 if [ ! "$(echo $res_pip_list | grep mypy)" ] ; then
-  missing_dependencies+=(mypy)
+  # TODO(toshihikoyanase): Unpin mypy after resolving the following issue:
+  # https://github.com/optuna/optuna/issues/2240.
+  missing_dependencies+=(mypy==0.790)
 fi
 if [ ! ${#missing_dependencies[@]} -eq 0 ]; then
   echo "The following dependencies are missing:" "${missing_dependencies[@]}"
