@@ -742,11 +742,13 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         pass
 
-    def is_heartbeat_supported(self) -> bool:
-        """Check whether the storage supports the heartbeat.
+    def is_heartbeat_enabled(self) -> bool:
+        """Check whether the storage enables the heartbeat.
 
         Returns:
-            :obj:`True` if the storage supports the heartbeat, otherwise :obj:`False`.
+            :obj:`True` if the storage supports the heartbeat and the return value of
+            :meth:`~optuna.storages.BaseStorage.get_heartbeat_interval` is an integer,
+            otherwise :obj:`False`.
         """
         return self._is_heartbeat_supported() and self.get_heartbeat_interval() is not None
 

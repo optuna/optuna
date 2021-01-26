@@ -127,6 +127,10 @@ class RDBStorage(BaseStorage):
     .. _pool_pre_ping:
         https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.create_engine.params.
         pool_pre_ping
+
+    Raises:
+        :exc:`ValueError`:
+            If the given `heartbeat_interval` or `grace_period` is not a positive integer.
     """
 
     def __init__(
@@ -143,9 +147,9 @@ class RDBStorage(BaseStorage):
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
         if heartbeat_interval is not None and heartbeat_interval <= 0:
-            raise ValueError("The value of `heartbeat_interval` should be an positive integer.")
+            raise ValueError("The value of `heartbeat_interval` should be a positive integer.")
         if grace_period is not None and grace_period <= 0:
-            raise ValueError("Teh value of `grace_period` should be an positive integer.")
+            raise ValueError("The value of `grace_period` should be a positive integer.")
         self.heartbeat_interval = heartbeat_interval
         self.grace_period = grace_period
 
@@ -1174,6 +1178,9 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session, True) as session:
             current_heartbeat = session.execute(func.now()).scalar()
+            # Added the following line to prevent mixing of timezone-aware and timezone-naive
+            # `datetime` in PostgreSQL. See
+            # https://github.com/optuna/optuna/pull/2190#issuecomment-766605088 for details
             current_heartbeat = current_heartbeat.replace(tzinfo=None)
 
             running_trials = (

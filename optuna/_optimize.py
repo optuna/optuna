@@ -199,7 +199,7 @@ def _run_trial(
     stop_event: Optional[Event] = None
     thread: Optional[Thread] = None
 
-    if study._storage.is_heartbeat_supported():
+    if study._storage.is_heartbeat_enabled():
         study._storage.fail_stale_trials()
         stop_event = Event()
         thread = Thread(
@@ -227,7 +227,7 @@ def _run_trial(
         else:
             state = TrialState.COMPLETE
 
-    if study._storage.is_heartbeat_supported():
+    if study._storage.is_heartbeat_enabled():
         assert stop_event is not None
         assert thread is not None
         stop_event.set()
