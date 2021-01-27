@@ -84,7 +84,7 @@ def test_init_multivariate_parzen_estimator(consider_prior: bool) -> None:
         else np.array([[0.25, 0.5, 0.25]]),
     }
 
-    for param_name in mpe._sigmas.keys():
+    for param_name in mpe._sigmas:
         np.testing.assert_equal(
             mpe._sigmas[param_name],
             expected_sigmas[param_name],
@@ -117,7 +117,7 @@ def test_sample_multivariate_parzen_estimator() -> None:
 
     # Test the shape of the samples.
     output_multivariate_samples = mpe.sample(np.random.RandomState(0), 3)
-    for param_name in output_multivariate_samples.keys():
+    for param_name in output_multivariate_samples:
         assert output_multivariate_samples[param_name].shape == (3,)
 
     # Test the values of the output.

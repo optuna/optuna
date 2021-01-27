@@ -37,7 +37,7 @@ EXAMPLE_JSONS = {
 
 def test_json_to_distribution() -> None:
 
-    for key in EXAMPLE_JSONS.keys():
+    for key in EXAMPLE_JSONS:
         distribution_actual = distributions.json_to_distribution(EXAMPLE_JSONS[key])
         assert distribution_actual == EXAMPLE_DISTRIBUTIONS[key]
 
@@ -55,7 +55,7 @@ def test_backward_compatibility_int_uniform_distribution() -> None:
 
 def test_distribution_to_json() -> None:
 
-    for key in EXAMPLE_JSONS.keys():
+    for key in EXAMPLE_JSONS:
         json_actual = distributions.distribution_to_json(EXAMPLE_DISTRIBUTIONS[key])
         assert json.loads(json_actual) == json.loads(EXAMPLE_JSONS[key])
 
@@ -63,7 +63,7 @@ def test_distribution_to_json() -> None:
 def test_check_distribution_compatibility() -> None:
 
     # test the same distribution
-    for key in EXAMPLE_JSONS.keys():
+    for key in EXAMPLE_JSONS:
         distributions.check_distribution_compatibility(
             EXAMPLE_DISTRIBUTIONS[key], EXAMPLE_DISTRIBUTIONS[key]
         )
