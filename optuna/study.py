@@ -26,6 +26,7 @@ from optuna._optimize import _check_and_convert_to_values
 from optuna._optimize import _optimize
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
+from optuna.distributions import BaseDistribution
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -384,7 +385,9 @@ class Study(BaseStudy):
             show_progress_bar=show_progress_bar,
         )
 
-    def ask(self) -> trial_module.Trial:
+    def ask(
+        self, fixed_distributions: Optional[Dict[str, BaseDistribution]] = None
+    ) -> trial_module.Trial:
         """Create a new trial from which hyperparameters can be suggested.
 
         This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
@@ -393,6 +396,8 @@ class Study(BaseStudy):
         created trial.
 
         Example:
+
+            Getting the trial object with the :func:`~optuna.study.Study.ask` method.
 
             .. testcode::
 
@@ -407,9 +412,49 @@ class Study(BaseStudy):
 
                 study.tell(trial, x ** 2)
 
+        Example:
+
+            Passing previously defined distributions to the :func:`~optuna.study.Study.ask`
+            method.
+
+            .. testcode::
+
+                import optuna
+
+
+                study = optuna.create_study()
+
+                # For example, the distributions are previously defined when using `create_trial`.
+                distributions = {
+                    "optimizer": optuna.distributions.CategoricalDistribution(["adam", "sgd"]),
+                    "lr": optuna.distributions.LogUniformDistribution(0.0001, 0.1),
+                }
+                trial = optuna.trial.create_trial(
+                    params={"optimizer": "adam", "lr": 0.0001},
+                    distributions=distributions,
+                    value=0.5,
+                )
+                study.add_trial(trial)
+
+                # You can pass the distributions previously defined.
+                trial = study.ask(fixed_distributions=distributions)
+
+                # `optimizer` and `lr` are already suggested and accessible with `trial.params`.
+                assert "optimizer" in trial.params
+                assert "lr" in trial.params
+
+        Args:
+            fixed_distributions:
+                A dictionary containing the parameter names and parameter's distributions. Each
+                parameter in this dictionary is automatically suggested for the returned trial,
+                even when the suggest method is not explicitly invoked by the user. If this
+                argument is set to :obj:`None`, no parameter is automatically suggested.
+
         Returns:
             A :class:`~optuna.trial.Trial`.
         """
+
+        fixed_distributions = fixed_distributions or {}
 
         # Sync storage once every trial.
         self._storage.read_trials_from_remote_storage(self._study_id)
@@ -417,7 +462,12 @@ class Study(BaseStudy):
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
             trial_id = self._storage.create_new_trial(self._study_id)
-        return trial_module.Trial(self, trial_id)
+        trial = trial_module.Trial(self, trial_id)
+
+        for name, param in fixed_distributions.items():
+            trial._suggest(name, param)
+
+        return trial
 
     def tell(
         self,

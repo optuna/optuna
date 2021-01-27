@@ -22,6 +22,7 @@ import pytest
 from optuna import create_study
 from optuna import create_trial
 from optuna import delete_study
+from optuna import distributions
 from optuna import get_all_study_summaries
 from optuna import load_study
 from optuna import logging
@@ -857,6 +858,21 @@ def test_ask_enqueue_trial() -> None:
 
     trial = study.ask()
     assert trial.suggest_float("x", 0, 1) == 0.5
+
+
+def test_ask_fixed_search_space() -> None:
+    fixed_distributions = {
+        "x": distributions.UniformDistribution(0, 1),
+        "y": distributions.CategoricalDistribution(["bacon", "spam"]),
+    }
+
+    study = create_study()
+    trial = study.ask(fixed_distributions=fixed_distributions)
+
+    params = trial.params
+    assert len(trial.params) == 2
+    assert 0 <= params["x"] < 1
+    assert params["y"] in ["bacon", "spam"]
 
 
 def test_tell() -> None:
