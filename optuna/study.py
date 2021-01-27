@@ -3,6 +3,7 @@ import threading
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -849,7 +850,7 @@ class Study(BaseStudy):
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
     @experimental("2.5.0")
-    def add_trials(self, trials: Sequence[FrozenTrial]) -> "Study":
+    def add_trials(self, trials: Iterable[FrozenTrial]) -> "Study":
         """Add trials to study.
 
         The trials are validated before being added.
