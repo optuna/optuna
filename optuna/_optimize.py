@@ -1,10 +1,12 @@
+from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 import copy
 import datetime
 import gc
 import math
+import multiprocessing
 import sys
-import threading
+import time
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -20,7 +22,6 @@ import optuna
 from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
-from optuna import storages
 from optuna import trial as trial_module
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -71,42 +72,52 @@ def _optimize(
             if show_progress_bar:
                 warnings.warn("Progress bar only supports serial execution (`n_jobs=1`).")
 
+            if n_jobs == -1:
+                n_jobs = multiprocessing.cpu_count()
+
             time_start = datetime.datetime.now()
-
-            def _should_stop() -> bool:
-                if study._stop_flag:
-                    return True
-
-                if timeout is not None:
-                    # This is needed for mypy.
-                    t: float = timeout
-                    return (datetime.datetime.now() - time_start).total_seconds() > t
-
-                return False
-
-            if n_trials is not None:
-                _iter = iter(range(n_trials))
-            else:
-                _iter = iter(_should_stop, True)
+            n_submitted_trials = 0
+            futures: List[Future] = []
 
             with ThreadPoolExecutor(max_workers=n_jobs) as executor:
-                executor.map(
-                    _optimize_sequential,
-                    (
-                        (
-                            study,
-                            func,
-                            1,
-                            timeout,
-                            catch,
-                            callbacks,
-                            gc_after_trial,
-                            True,
-                            time_start,
-                            None,
-                        ) for _ in _iter
-                    )
-                )
+                while True:
+                    if study._stop_flag:
+                        break
+
+                    if timeout is not None:
+                        # This is needed for mypy.
+                        t: float = timeout
+                        if (datetime.datetime.now() - time_start).total_seconds() > t:
+                            break
+
+                    if n_trials is not None:
+                        if n_submitted_trials >= n_trials:
+                            break
+
+                    for f in futures:
+                        if f.done():
+                            f.result()
+                            futures.remove(f)
+
+                    if len(futures) >= n_jobs:
+                        time.sleep(1)
+                    else:
+                        futures.append(
+                            executor.submit(
+                                _optimize_sequential,
+                                study,
+                                func,
+                                1,
+                                timeout,
+                                catch,
+                                callbacks,
+                                gc_after_trial,
+                                True,
+                                time_start,
+                                None,
+                            )
+                        )
+                        n_submitted_trials += 1
     finally:
         study._optimize_lock.release()
         progress_bar.close()
