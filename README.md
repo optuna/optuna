@@ -95,7 +95,7 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 * [Catalyst](./examples/catalyst_simple.py)
 * [Catboost](./examples/catboost_simple.py)
 * [Chainer](./examples/pruning/chainer_integration.py)
-* [FastAI](./examples/fastaiv2_simple.py)
+* FastAI ([V1](./examples/fastaiv1_simple.py), [V2](./examples/fastaiv2_simple.py))
 * [Keras](./examples/pruning/keras_integration.py)
 * [LightGBM](./examples/pruning/lightgbm_integration.py)
 * [MXNet](./examples/pruning/mxnet_integration.py)
