@@ -84,15 +84,14 @@ def _optimize(
                     if study._stop_flag:
                         break
 
-                    if timeout is not None:
-                        # This is needed for mypy.
-                        t: float = timeout
-                        if (datetime.datetime.now() - time_start).total_seconds() > t:
-                            break
+                    if (
+                        timeout is not None
+                        and (datetime.datetime.now() - time_start).total_seconds() > timeout
+                    ):
+                        break
 
-                    if n_trials is not None:
-                        if n_submitted_trials >= n_trials:
-                            break
+                    if n_trials is not None and n_submitted_trials >= n_trials:
+                        break
 
                     for f in futures:
                         if f.done():
