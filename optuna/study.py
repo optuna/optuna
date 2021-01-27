@@ -884,6 +884,12 @@ class Study(BaseStudy):
         Args:
             trials: Trials to add.
 
+        Returns:
+            Return self.
+
+        Raises:
+            :exc:`ValueError`:
+                If ``trials`` include invalid trial.
         """
 
         for trial in trials:
