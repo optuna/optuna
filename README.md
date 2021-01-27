@@ -39,7 +39,7 @@ Optuna has modern functionalities as follows:
   - Adopt state-of-the-art algorithms for sampling hyper parameters and efficiently pruning unpromising trials.
 - [Easy parallelization](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html)
   - Scale studies to tens or hundreds or workers with little or no changes to the code.
-- [Quick visualization](https://optuna.readthedocs.io/en/stable/reference/visualization/index.html)
+- [Quick visualization](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/005_visualization.html)
   - Inspect optimization histories from a variety of plotting functions.
 
 
