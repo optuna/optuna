@@ -879,7 +879,7 @@ class Study(BaseStudy):
 
         .. seealso::
 
-            See :func:`~optuna.study.add_trial` for addition of each trial.
+            See :func:`~optuna.study.Study.add_trial` for addition of each trial.
 
         Args:
             trials: Trials to add.
