@@ -570,7 +570,7 @@ def test_calculate_nondomination_rank() -> None:
 def test_calculate_weights_below() -> None:
     sampler = MOTPESampler()
 
-    # Two samples
+    # Two samples.
     weights_below = sampler._calculate_weights_below(
         np.array([[0.2, 0.5], [0.9, 0.4], [1, 1]]), np.array([0, 1])
     )
@@ -578,7 +578,7 @@ def test_calculate_weights_below() -> None:
     assert weights_below[0] > weights_below[1]
     assert sum(weights_below) > 0
 
-    # Two equally contributed samples
+    # Two equally contributed samples.
     weights_below = sampler._calculate_weights_below(
         np.array([[0.2, 0.8], [0.8, 0.2], [1, 1]]), np.array([0, 1])
     )
@@ -586,7 +586,7 @@ def test_calculate_weights_below() -> None:
     assert weights_below[0] == weights_below[1]
     assert sum(weights_below) > 0
 
-    # Duplicated samples
+    # Duplicated samples.
     weights_below = sampler._calculate_weights_below(
         np.array([[0.2, 0.8], [0.2, 0.8], [1, 1]]), np.array([0, 1])
     )
@@ -594,7 +594,7 @@ def test_calculate_weights_below() -> None:
     assert weights_below[0] == weights_below[1]
     assert sum(weights_below) > 0
 
-    # Three samples
+    # Three samples.
     weights_below = sampler._calculate_weights_below(
         np.array([[0.3, 0.3], [0.2, 0.8], [0.8, 0.2], [1, 1]]), np.array([0, 1, 2])
     )
