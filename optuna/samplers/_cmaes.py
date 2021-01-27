@@ -320,17 +320,6 @@ class CmaEsSampler(BaseSampler):
 
         external_values = trans.untransform(params)
 
-        # Exclude upper bounds for parameters that should have their upper bounds excluded.
-        # TODO(hvy): Remove this exclusion logic when it is handled by the data transformer.
-        for name, param in external_values.items():
-            distribution = search_space[name]
-            if isinstance(distribution, optuna.distributions.UniformDistribution):
-                external_values[name] = min(external_values[name], distribution.high - _EPS)
-            elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
-                external_values[name] = min(
-                    external_values[name], math.exp(math.log(distribution.high) - _EPS)
-                )
-
         return external_values
 
     def _restore_optimizer(
