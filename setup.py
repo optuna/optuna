@@ -33,7 +33,6 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.6.0",
         "colorlog",
-        "joblib",
         "numpy",
         "packaging>=20.0",
         "scipy!=1.4.0",
