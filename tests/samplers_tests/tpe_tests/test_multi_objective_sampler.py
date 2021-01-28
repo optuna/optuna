@@ -567,6 +567,44 @@ def test_calculate_nondomination_rank() -> None:
     assert ranks == [0, 1, 0, 2, 0, 1]
 
 
+def test_calculate_weights_below() -> None:
+    sampler = MOTPESampler()
+
+    # Two samples.
+    weights_below = sampler._calculate_weights_below(
+        np.array([[0.2, 0.5], [0.9, 0.4], [1, 1]]), np.array([0, 1])
+    )
+    assert len(weights_below) == 2
+    assert weights_below[0] > weights_below[1]
+    assert sum(weights_below) > 0
+
+    # Two equally contributed samples.
+    weights_below = sampler._calculate_weights_below(
+        np.array([[0.2, 0.8], [0.8, 0.2], [1, 1]]), np.array([0, 1])
+    )
+    assert len(weights_below) == 2
+    assert weights_below[0] == weights_below[1]
+    assert sum(weights_below) > 0
+
+    # Duplicated samples.
+    weights_below = sampler._calculate_weights_below(
+        np.array([[0.2, 0.8], [0.2, 0.8], [1, 1]]), np.array([0, 1])
+    )
+    assert len(weights_below) == 2
+    assert weights_below[0] == weights_below[1]
+    assert sum(weights_below) > 0
+
+    # Three samples.
+    weights_below = sampler._calculate_weights_below(
+        np.array([[0.3, 0.3], [0.2, 0.8], [0.8, 0.2], [1, 1]]), np.array([0, 1, 2])
+    )
+    assert len(weights_below) == 3
+    assert weights_below[0] > weights_below[1]
+    assert weights_below[0] > weights_below[2]
+    assert weights_below[1] == weights_below[2]
+    assert sum(weights_below) > 0
+
+
 def test_solve_hssp() -> None:
     sampler = MOTPESampler(seed=0)
 
