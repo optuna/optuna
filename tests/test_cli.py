@@ -134,7 +134,7 @@ def test_study_set_user_attr_command() -> None:
         study_id = storage.get_study_id_from_name(study_name)
         study_user_attrs = storage.get_study_user_attrs(study_id)
         assert len(study_user_attrs) == 2
-        assert all([study_user_attrs[k] == v for k, v in example_attrs.items()])
+        assert all(study_user_attrs[k] == v for k, v in example_attrs.items())
 
 
 def test_studies_command() -> None:

@@ -131,7 +131,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             importances[name] = importance
 
         total_importance = sum(importances.values())
-        for name in importances.keys():
+        for name in importances:
             importances[name] /= total_importance
 
         sorted_importances = OrderedDict(

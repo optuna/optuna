@@ -557,9 +557,10 @@ class MOTPESampler(TPESampler):
                     - self._compute_hypervolume(
                         np.asarray(lvals_below[:i] + lvals_below[i + 1 :]), reference_point
                     )
-                    for i in range(len(lvals))
+                    for i in range(n_below)
                 ]
             )
+            contributions += EPS
             weights_below = np.clip(contributions / np.max(contributions), 0, 1)
             return weights_below
 

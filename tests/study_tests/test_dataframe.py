@@ -4,9 +4,11 @@ import pandas as pd
 import pytest
 
 from optuna import create_study
+from optuna import create_trial
 from optuna import Trial
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
+from optuna.trial import TrialState
 
 
 def test_study_trials_dataframe_with_no_trials() -> None:
@@ -183,3 +185,29 @@ def test_trials_dataframe_with_multi_objective_optimization(
         for i in range(3):
             assert df.values_0[i] == 3
             assert df.values_1[i] == 5
+
+
+@pytest.mark.parametrize(
+    "attrs",
+    [
+        ("value",),
+        ("values",),
+    ],
+)
+@pytest.mark.parametrize("multi_index", [True, False])
+def test_trials_dataframe_with_multi_objective_optimization_with_fail_and_pruned(
+    attrs: Tuple[str, ...], multi_index: bool
+) -> None:
+    study = create_study(directions=["minimize", "maximize"])
+    study.add_trial(create_trial(state=TrialState.FAIL))
+    study.add_trial(create_trial(state=TrialState.PRUNED))
+    df = study.trials_dataframe(attrs=attrs, multi_index=multi_index)
+
+    if multi_index:
+        for i in range(2):
+            assert df.get("values")[0][i] is None
+            assert df.get("values")[1][i] is None
+    else:
+        for i in range(2):
+            assert df.values_0[i] is None
+            assert df.values_1[i] is None
