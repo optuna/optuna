@@ -68,12 +68,18 @@ def _trials_dataframe(
                 for nested_attr, nested_value in enumerate(value):
                     record[(df_column, nested_attr)] = nested_value
                     column_agg[attr].add((df_column, nested_attr))
+            elif attr == "values":
+                # trial.values should be None when the trial's state is FAIL or PRUNED.
+                assert value is None
+                for nested_attr in range(len(study.directions)):
+                    record[(df_column, nested_attr)] = None
+                    column_agg[attr].add((df_column, nested_attr))
             else:
                 record[(df_column, non_nested_attr)] = value
                 column_agg[attr].add((df_column, non_nested_attr))
         return record
 
-    records = list([_create_record_and_aggregate_column(trial) for trial in trials])
+    records = [_create_record_and_aggregate_column(trial) for trial in trials]
 
     columns: List[Tuple[str, str]] = sum(
         (sorted(column_agg[k]) for k in attrs if k in column_agg), []
