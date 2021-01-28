@@ -131,6 +131,8 @@ class RDBStorage(BaseStorage):
     Raises:
         :exc:`ValueError`:
             If the given `heartbeat_interval` or `grace_period` is not a positive integer.
+        :exc:`RuntimeError`:
+            If the a process that was failed by heartbeat but was actually running.
     """
 
     def __init__(
