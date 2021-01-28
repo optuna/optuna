@@ -442,3 +442,20 @@ class _CachedStorage(BaseStorage):
             raise RuntimeError(
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
+
+    def record_heartbeat(self, trial_id: int) -> None:
+        self._backend.record_heartbeat(trial_id)
+
+    def fail_stale_trials(self) -> List[int]:
+        stale_trial_ids = self._backend._get_stale_trial_ids()
+
+        for trial_id in stale_trial_ids:
+            self.set_trial_state(trial_id, TrialState.FAIL)
+
+        return stale_trial_ids
+
+    def _is_heartbeat_supported(self) -> bool:
+        return self._backend._is_heartbeat_supported()
+
+    def get_heartbeat_interval(self) -> Optional[int]:
+        return self._backend.get_heartbeat_interval()
