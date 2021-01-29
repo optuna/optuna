@@ -1,7 +1,13 @@
+from concurrent.futures import FIRST_COMPLETED
+from concurrent.futures import Future
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import wait
 import copy
 import datetime
 import gc
+import itertools
 import math
+import os
 import sys
 from threading import Event
 from threading import Thread
@@ -12,14 +18,11 @@ from typing import cast
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import Union
 import warnings
-
-import joblib
-from joblib import delayed
-from joblib import Parallel
 
 import optuna
 from optuna import exceptions
@@ -76,51 +79,47 @@ def _optimize(
             if show_progress_bar:
                 warnings.warn("Progress bar only supports serial execution (`n_jobs=1`).")
 
+            if n_jobs == -1:
+                n_jobs = os.cpu_count() or 1
+
             time_start = datetime.datetime.now()
+            futures: Set[Future] = set()
 
-            def _should_stop() -> bool:
-                if study._stop_flag:
-                    return True
+            with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+                for n_submitted_trials in itertools.count():
+                    if study._stop_flag:
+                        break
 
-                if timeout is not None:
-                    # This is needed for mypy.
-                    t: float = timeout
-                    return (datetime.datetime.now() - time_start).total_seconds() > t
+                    if (
+                        timeout is not None
+                        and (datetime.datetime.now() - time_start).total_seconds() > timeout
+                    ):
+                        break
 
-                return False
+                    if n_trials is not None and n_submitted_trials >= n_trials:
+                        break
 
-            if n_trials is not None:
-                _iter = iter(range(n_trials))
-            else:
-                _iter = iter(_should_stop, True)
+                    if len(futures) >= n_jobs:
+                        completed, futures = wait(futures, return_when=FIRST_COMPLETED)
+                        # Raise if exception occurred in executing the completed futures.
+                        for f in completed:
+                            f.result()
 
-            with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
-                if not isinstance(
-                    parallel._backend, joblib.parallel.ThreadingBackend
-                ) and isinstance(study._storage, storages.InMemoryStorage):
-                    warnings.warn(
-                        "The default storage cannot be shared by multiple processes. "
-                        "Please use an RDB (RDBStorage) when you use joblib for "
-                        "multi-processing. The usage of RDBStorage can be found in "
-                        "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html.",
-                        UserWarning,
+                    futures.add(
+                        executor.submit(
+                            _optimize_sequential,
+                            study,
+                            func,
+                            1,
+                            timeout,
+                            catch,
+                            callbacks,
+                            gc_after_trial,
+                            True,
+                            time_start,
+                            None,
+                        )
                     )
-
-                parallel(
-                    delayed(_optimize_sequential)(
-                        study,
-                        func,
-                        1,
-                        timeout,
-                        catch,
-                        callbacks,
-                        gc_after_trial,
-                        reseed_sampler_rng=True,
-                        time_start=time_start,
-                        progress_bar=None,
-                    )
-                    for _ in _iter
-                )
     finally:
         study._optimize_lock.release()
         progress_bar.close()
