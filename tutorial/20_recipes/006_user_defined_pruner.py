@@ -104,7 +104,7 @@ def objective(trial):
     classes = np.unique(iris.target)
     X_train, X_valid, y_train, y_valid = train_test_split(
         iris.data, iris.target, train_size=100, test_size=50, random_state=0
-        )
+    )
 
     loss = trial.suggest_categorical("loss", ["hinge", "log", "perceptron"])
     alpha = trial.suggest_float("alpha", 0.00001, 0.001, log=True)
