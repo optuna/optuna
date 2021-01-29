@@ -1,8 +1,11 @@
+from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import wait
 import copy
 import datetime
 import gc
+import itertools
 import math
 import multiprocessing
 import sys
@@ -15,6 +18,7 @@ from typing import cast
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import Union
@@ -79,11 +83,10 @@ def _optimize(
                 n_jobs = multiprocessing.cpu_count()
 
             time_start = datetime.datetime.now()
-            n_submitted_trials = 0
-            futures: List[Future] = []
+            futures: Set[Future] = set()
 
             with ThreadPoolExecutor(max_workers=n_jobs) as executor:
-                while True:
+                for n_submitted_trials in itertools.count():
                     if study._stop_flag:
                         break
 
@@ -96,30 +99,27 @@ def _optimize(
                     if n_trials is not None and n_submitted_trials >= n_trials:
                         break
 
-                    for f in futures:
-                        if f.done():
-                            f.result()
-                            futures.remove(f)
-
                     if len(futures) >= n_jobs:
-                        time.sleep(1)
-                    else:
-                        futures.append(
-                            executor.submit(
-                                _optimize_sequential,
-                                study,
-                                func,
-                                1,
-                                timeout,
-                                catch,
-                                callbacks,
-                                gc_after_trial,
-                                True,
-                                time_start,
-                                None,
-                            )
+                        completed, futures = wait(futures, return_when=FIRST_COMPLETED)
+                        # Raise if exception occurred in executing the completed futures.
+                        for f in completed:
+                            f.result()
+
+                    futures.add(
+                        executor.submit(
+                            _optimize_sequential,
+                            study,
+                            func,
+                            1,
+                            timeout,
+                            catch,
+                            callbacks,
+                            gc_after_trial,
+                            True,
+                            time_start,
+                            None,
                         )
-                        n_submitted_trials += 1
+                    )
     finally:
         study._optimize_lock.release()
         progress_bar.close()
