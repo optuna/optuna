@@ -10,6 +10,13 @@ import fakeredis
 import optuna
 
 
+STORAGE_MODES = [
+    "inmemory",
+    "sqlite",
+    "cache",
+    "redis",
+]
+
 SQLITE3_TIMEOUT = 300
 
 
@@ -17,7 +24,7 @@ class StorageSupplier(object):
     def __init__(self, storage_specifier: str) -> None:
 
         self.storage_specifier = storage_specifier
-        self.tempfile = None  # type: Optional[IO[Any]]
+        self.tempfile: Optional[IO[Any]] = None
 
     def __enter__(self) -> optuna.storages.BaseStorage:
 

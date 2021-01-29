@@ -1,5 +1,7 @@
 from typing import List
 
+from optuna._experimental import experimental
+from optuna.distributions import CategoricalDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.trial import FrozenTrial
 from optuna.visualization.matplotlib import _matplotlib_imports
@@ -8,8 +10,9 @@ from optuna.visualization.matplotlib import _matplotlib_imports
 __all__ = ["is_available"]
 
 
+@experimental("2.2.0")
 def is_available() -> bool:
-    """Returns whether visualization with ``matplotlib`` is available or not.
+    """Returns whether visualization with Matplotlib is available or not.
 
     .. note::
 
@@ -19,7 +22,7 @@ def is_available() -> bool:
         matplotlib>=3.0.0`` to install Matplotlib.
 
     Returns:
-        :obj:`True` if visualization with ``matplotlib`` is available, :obj:`False` otherwise.
+        :obj:`True` if visualization with Matplotlib is available, :obj:`False` otherwise.
     """
 
     return _matplotlib_imports._imports.is_successful()
@@ -29,6 +32,15 @@ def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
 
     return any(
         isinstance(t.distributions[param], LogUniformDistribution)
+        for t in trials
+        if param in t.params
+    )
+
+
+def _is_categorical(trials: List[FrozenTrial], param: str) -> bool:
+
+    return any(
+        isinstance(t.distributions[param], CategoricalDistribution)
         for t in trials
         if param in t.params
     )

@@ -34,12 +34,14 @@ class FixedTrial(BaseTrial):
 
             import optuna
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -100, 100)
-                y = trial.suggest_categorical('y', [-1, 0, 1])
+                x = trial.suggest_uniform("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
 
-            assert objective(optuna.trial.FixedTrial({'x': 1, 'y': 0})) == 1
+
+            assert objective(optuna.trial.FixedTrial({"x": 1, "y": 0})) == 1
 
 
     .. note::
@@ -56,10 +58,10 @@ class FixedTrial(BaseTrial):
     def __init__(self, params: Dict[str, Any], number: int = 0) -> None:
 
         self._params = params
-        self._suggested_params = {}  # type: Dict[str, Any]
-        self._distributions = {}  # type: Dict[str, BaseDistribution]
-        self._user_attrs = {}  # type: Dict[str, Any]
-        self._system_attrs = {}  # type: Dict[str, Any]
+        self._suggested_params: Dict[str, Any] = {}
+        self._distributions: Dict[str, BaseDistribution] = {}
+        self._user_attrs: Dict[str, Any] = {}
+        self._system_attrs: Dict[str, Any] = {}
         self._datetime_start = datetime.datetime.now()
         self._number = number
 
@@ -70,7 +72,7 @@ class FixedTrial(BaseTrial):
         high: float,
         *,
         step: Optional[float] = None,
-        log: bool = False
+        log: bool = False,
     ) -> float:
 
         if step is not None:
@@ -104,9 +106,9 @@ class FixedTrial(BaseTrial):
                     "The specified `step` is {}.".format(step)
                 )
             else:
-                distribution = IntUniformDistribution(
-                    low=low, high=high, step=step
-                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+                distribution: Union[
+                    IntUniformDistribution, IntLogUniformDistribution
+                ] = IntUniformDistribution(low=low, high=high, step=step)
         else:
             if log:
                 distribution = IntLogUniformDistribution(low=low, high=high)

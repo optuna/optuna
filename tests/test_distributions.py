@@ -10,7 +10,7 @@ import pytest
 from optuna import distributions
 
 
-EXAMPLE_DISTRIBUTIONS = {
+EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
     "u": distributions.UniformDistribution(low=1.0, high=2.0),
     "l": distributions.LogUniformDistribution(low=0.001, high=100),
     "du": distributions.DiscreteUniformDistribution(low=1.0, high=9.0, q=2.0),
@@ -19,7 +19,7 @@ EXAMPLE_DISTRIBUTIONS = {
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
     "c3": distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"]),
     "ilu": distributions.IntLogUniformDistribution(low=2, high=12, step=2),
-}  # type: Dict[str, Any]
+}
 
 EXAMPLE_JSONS = {
     "u": '{"name": "UniformDistribution", "attributes": {"low": 1.0, "high": 2.0}}',
@@ -37,7 +37,7 @@ EXAMPLE_JSONS = {
 
 def test_json_to_distribution() -> None:
 
-    for key in EXAMPLE_JSONS.keys():
+    for key in EXAMPLE_JSONS:
         distribution_actual = distributions.json_to_distribution(EXAMPLE_JSONS[key])
         assert distribution_actual == EXAMPLE_DISTRIBUTIONS[key]
 
@@ -55,7 +55,7 @@ def test_backward_compatibility_int_uniform_distribution() -> None:
 
 def test_distribution_to_json() -> None:
 
-    for key in EXAMPLE_JSONS.keys():
+    for key in EXAMPLE_JSONS:
         json_actual = distributions.distribution_to_json(EXAMPLE_DISTRIBUTIONS[key])
         assert json.loads(json_actual) == json.loads(EXAMPLE_JSONS[key])
 
@@ -63,7 +63,7 @@ def test_distribution_to_json() -> None:
 def test_check_distribution_compatibility() -> None:
 
     # test the same distribution
-    for key in EXAMPLE_JSONS.keys():
+    for key in EXAMPLE_JSONS:
         distributions.check_distribution_compatibility(
             EXAMPLE_DISTRIBUTIONS[key], EXAMPLE_DISTRIBUTIONS[key]
         )
@@ -109,13 +109,15 @@ def test_contains() -> None:
     assert not u._contains(0.9)
     assert u._contains(1)
     assert u._contains(1.5)
-    assert not u._contains(2)
+    assert u._contains(2)
+    assert not u._contains(2.1)
 
     lu = distributions.LogUniformDistribution(low=0.001, high=100)
     assert not lu._contains(0.0)
     assert lu._contains(0.001)
     assert lu._contains(12.3)
-    assert not lu._contains(100)
+    assert lu._contains(100)
+    assert not lu._contains(1000)
 
     with warnings.catch_warnings():
         # UserWarning will be raised since the range is not divisible by 2.
@@ -222,7 +224,7 @@ def test_single() -> None:
     with warnings.catch_warnings():
         # UserWarning will be raised since the range is not divisible by step.
         warnings.simplefilter("ignore", category=UserWarning)
-        single_distributions = [
+        single_distributions: List[distributions.BaseDistribution] = [
             distributions.UniformDistribution(low=1.0, high=1.0),
             distributions.LogUniformDistribution(low=7.3, high=7.3),
             distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
@@ -231,11 +233,11 @@ def test_single() -> None:
             distributions.IntUniformDistribution(low=-123, high=-120, step=4),
             distributions.CategoricalDistribution(choices=("foo",)),
             distributions.IntLogUniformDistribution(low=2, high=2),
-        ]  # type: List[distributions.BaseDistribution]
+        ]
     for distribution in single_distributions:
         assert distribution.single()
 
-    nonsingle_distributions = [
+    nonsingle_distributions: List[distributions.BaseDistribution] = [
         distributions.UniformDistribution(low=1.0, high=1.001),
         distributions.LogUniformDistribution(low=7.3, high=10),
         distributions.DiscreteUniformDistribution(low=-30, high=-20, q=2),
@@ -247,7 +249,7 @@ def test_single() -> None:
         distributions.IntUniformDistribution(low=-123, high=0, step=123),
         distributions.CategoricalDistribution(choices=("foo", "bar")),
         distributions.IntLogUniformDistribution(low=2, high=4),
-    ]  # type: List[distributions.BaseDistribution]
+    ]
     for distribution in nonsingle_distributions:
         assert not distribution.single()
 

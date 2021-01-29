@@ -28,7 +28,7 @@ def objective(trial):
     dvalid = xgb.DMatrix(valid_x, label=valid_y)
 
     param = {
-        "silent": 1,
+        "verbosity": 0,
         "objective": "binary:logistic",
         "eval_metric": "auc",
         "booster": trial.suggest_categorical("booster", ["gbtree", "gblinear", "dart"]),

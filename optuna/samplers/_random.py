@@ -24,15 +24,17 @@ class RandomSampler(BaseSampler):
             import optuna
             from optuna.samplers import RandomSampler
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -5, 5)
-                return x**2
+                x = trial.suggest_uniform("x", -5, 5)
+                return x ** 2
+
 
             study = optuna.create_study(sampler=RandomSampler())
             study.optimize(objective, n_trials=10)
 
-        Args:
-            seed: Seed for random number generator.
+    Args:
+        seed: Seed for random number generator.
     """
 
     def __init__(self, seed: Optional[int] = None) -> None:

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Callable
 from typing import List
 from typing import Optional
 
@@ -13,8 +14,10 @@ from optuna.distributions import UniformDistribution
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
 from optuna.study import Study
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
+from optuna.visualization._utils import _check_plot_args
 
 
 if _imports.is_successful():
@@ -40,6 +43,9 @@ def plot_param_importances(
     study: Study,
     evaluator: Optional[BaseImportanceEvaluator] = None,
     params: Optional[List[str]] = None,
+    *,
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    target_name: str = "Objective Value",
 ) -> "go.Figure":
     """Plot hyperparameter importances.
 
@@ -47,9 +53,10 @@ def plot_param_importances(
 
         The following code snippet shows how to plot hyperparameter importances.
 
-        .. testcode::
+        .. plotly::
 
             import optuna
+
 
             def objective(trial):
                 x = trial.suggest_int("x", 0, 2)
@@ -57,16 +64,12 @@ def plot_param_importances(
                 z = trial.suggest_float("z", 0.0, 1.5)
                 return x ** 2 + y ** 3 - z ** 4
 
-            study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
+
+            sampler = optuna.samplers.RandomSampler(seed=10)
+            study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=100)
 
             optuna.visualization.plot_param_importances(study)
-
-        .. raw:: html
-
-            <iframe src="../../_static/plot_param_importances.html"
-             width="100%" height="500px" frameborder="0">
-            </iframe>
 
     .. seealso::
 
@@ -84,16 +87,30 @@ def plot_param_importances(
             A list of names of parameters to assess.
             If :obj:`None`, all parameters that are present in all of the completed trials are
             assessed.
+        target:
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is being
+            used for single-objective optimization, the objective values are plotted.
+
+            .. note::
+                Specify this argument if ``study`` is being used for multi-objective optimization.
+        target_name:
+            Target's name to display on the axis label.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
+
+    Raises:
+        :exc:`ValueError`:
+            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
+            optimization.
     """
 
     _imports.check()
+    _check_plot_args(study, target, target_name)
 
     layout = go.Layout(
         title="Hyperparameter Importances",
-        xaxis={"title": "Importance"},
+        xaxis={"title": f"Importance for {target_name}"},
         yaxis={"title": "Hyperparameter"},
         showlegend=False,
     )
@@ -106,7 +123,7 @@ def plot_param_importances(
         return go.Figure(data=[], layout=layout)
 
     importances = optuna.importance.get_param_importances(
-        study, evaluator=evaluator, params=params
+        study, evaluator=evaluator, params=params, target=target
     )
 
     importances = OrderedDict(reversed(list(importances.items())))

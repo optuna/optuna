@@ -23,9 +23,9 @@ class IntersectionSearchSpace(object):
     """
 
     def __init__(self) -> None:
-        self._cursor = -1  # type: int
-        self._search_space = None  # type: Optional[Dict[str, BaseDistribution]]
-        self._study_id = None  # type: Optional[int]
+        self._cursor: int = -1
+        self._search_space: Optional[Dict[str, BaseDistribution]] = None
+        self._study_id: Optional[int] = None
 
     def calculate(
         self, study: BaseStudy, ordered_dict: bool = False
@@ -43,6 +43,10 @@ class IntersectionSearchSpace(object):
 
         Returns:
             A dictionary containing the parameter names and parameter's distributions.
+
+        Raises:
+            ValueError:
+                If different studies are passed into this method.
         """
 
         if self._study_id is None:
@@ -54,7 +58,7 @@ class IntersectionSearchSpace(object):
                 raise ValueError("`IntersectionSearchSpace` cannot handle multiple studies.")
 
         next_cursor = self._cursor
-        for trial in reversed(study._storage.get_all_trials(study._study_id, deepcopy=False)):
+        for trial in reversed(study.get_trials(deepcopy=False)):
             if self._cursor > trial.number:
                 break
 

@@ -165,7 +165,7 @@ class _Studies(Lister):
                 if s.datetime_start is not None
                 else None
             )
-            row = (s.study_name, s.direction.name, s.n_trials, start)
+            row = (s.study_name, tuple(d.name for d in s.directions), s.n_trials, start)
             rows.append(row)
 
         return self._study_list_header, tuple(rows)

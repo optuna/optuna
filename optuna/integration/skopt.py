@@ -34,16 +34,18 @@ class SkoptSampler(BaseSampler):
 
         .. testcode::
 
-                import optuna
+            import optuna
 
-                def objective(trial):
-                    x = trial.suggest_uniform('x', -10, 10)
-                    y = trial.suggest_int('y', 0, 10)
-                    return x**2 + y
 
-                sampler = optuna.integration.SkoptSampler()
-                study = optuna.create_study(sampler=sampler)
-                study.optimize(objective, n_trials=10)
+            def objective(trial):
+                x = trial.suggest_uniform("x", -10, 10)
+                y = trial.suggest_int("y", 0, 10)
+                return x ** 2 + y
+
+
+            sampler = optuna.integration.SkoptSampler()
+            study = optuna.create_study(sampler=sampler)
+            study.optimize(objective, n_trials=10)
 
     Args:
         independent_sampler:
@@ -104,7 +106,7 @@ class SkoptSampler(BaseSampler):
         skopt_kwargs: Optional[Dict[str, Any]] = None,
         n_startup_trials: int = 1,
         *,
-        consider_pruned_trials: bool = False
+        consider_pruned_trials: bool = False,
     ) -> None:
 
         _imports.check()
@@ -155,6 +157,8 @@ class SkoptSampler(BaseSampler):
         search_space: Dict[str, distributions.BaseDistribution],
     ) -> Dict[str, Any]:
 
+        self._raise_error_if_multi_objective(study)
+
         if len(search_space) == 0:
             return {}
 
@@ -173,6 +177,8 @@ class SkoptSampler(BaseSampler):
         param_name: str,
         param_distribution: distributions.BaseDistribution,
     ) -> Any:
+
+        self._raise_error_if_multi_objective(study)
 
         if self._warn_independent_sampling:
             complete_trials = self._get_trials(study)

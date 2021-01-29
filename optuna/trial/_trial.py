@@ -20,6 +20,7 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
+from optuna.trial._state import TrialState
 
 
 _logger = logging.get_logger(__name__)
@@ -73,7 +74,7 @@ class Trial(BaseTrial):
         high: float,
         *,
         step: Optional[float] = None,
-        log: bool = False
+        log: bool = False,
     ) -> float:
         """Suggest a value for the floating point parameter.
 
@@ -105,19 +106,27 @@ class Trial(BaseTrial):
                 X, y = load_iris(return_X_y=True)
                 X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
+
                 def objective(trial):
-                    momentum = trial.suggest_float('momentum', 0.0, 1.0)
-                    learning_rate_init = trial.suggest_float('learning_rate_init',
-                                                             1e-5, 1e-3, log=True)
-                    power_t = trial.suggest_float('power_t', 0.2, 0.8, step=0.1)
-                    clf = MLPClassifier(hidden_layer_sizes=(100, 50), momentum=momentum,
-                                        learning_rate_init=learning_rate_init,
-                                        solver='sgd', random_state=0, power_t=power_t)
+                    momentum = trial.suggest_float("momentum", 0.0, 1.0)
+                    learning_rate_init = trial.suggest_float(
+                        "learning_rate_init", 1e-5, 1e-3, log=True
+                    )
+                    power_t = trial.suggest_float("power_t", 0.2, 0.8, step=0.1)
+                    clf = MLPClassifier(
+                        hidden_layer_sizes=(100, 50),
+                        momentum=momentum,
+                        learning_rate_init=learning_rate_init,
+                        solver="sgd",
+                        random_state=0,
+                        power_t=power_t,
+                    )
                     clf.fit(X_train, y_train)
 
                     return clf.score(X_valid, y_valid)
 
-                study = optuna.create_study(direction='maximize')
+
+                study = optuna.create_study(direction="maximize")
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -128,6 +137,11 @@ class Trial(BaseTrial):
             high:
                 Upper endpoint of the range of suggested values. ``high`` is excluded from the
                 range.
+
+                .. note::
+                    If ``step`` is specified, ``high`` is included as well as ``low`` because
+                    this method falls back to :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
+
             step:
                 A step of discretization.
 
@@ -186,15 +200,21 @@ class Trial(BaseTrial):
                 X, y = load_iris(return_X_y=True)
                 X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
+
                 def objective(trial):
-                    momentum = trial.suggest_uniform('momentum', 0.0, 1.0)
-                    clf = MLPClassifier(hidden_layer_sizes=(100, 50), momentum=momentum,
-                                        solver='sgd', random_state=0)
+                    momentum = trial.suggest_uniform("momentum", 0.0, 1.0)
+                    clf = MLPClassifier(
+                        hidden_layer_sizes=(100, 50),
+                        momentum=momentum,
+                        solver="sgd",
+                        random_state=0,
+                    )
                     clf.fit(X_train, y_train)
 
                     return clf.score(X_valid, y_valid)
 
-                study = optuna.create_study(direction='maximize')
+
+                study = optuna.create_study(direction="maximize")
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -240,13 +260,15 @@ class Trial(BaseTrial):
                 X, y = load_iris(return_X_y=True)
                 X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
+
                 def objective(trial):
-                    c = trial.suggest_loguniform('c', 1e-5, 1e2)
-                    clf = SVC(C=c, gamma='scale', random_state=0)
+                    c = trial.suggest_loguniform("c", 1e-5, 1e2)
+                    clf = SVC(C=c, gamma="scale", random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_valid, y_valid)
 
-                study = optuna.create_study(direction='maximize')
+
+                study = optuna.create_study(direction="maximize")
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -298,13 +320,15 @@ class Trial(BaseTrial):
                 X, y = load_iris(return_X_y=True)
                 X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
+
                 def objective(trial):
-                    subsample = trial.suggest_discrete_uniform('subsample', 0.1, 1.0, 0.1)
+                    subsample = trial.suggest_discrete_uniform("subsample", 0.1, 1.0, 0.1)
                     clf = GradientBoostingClassifier(subsample=subsample, random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_valid, y_valid)
 
-                study = optuna.create_study(direction='maximize')
+
+                study = optuna.create_study(direction="maximize")
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -349,13 +373,15 @@ class Trial(BaseTrial):
                 X, y = load_iris(return_X_y=True)
                 X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
+
                 def objective(trial):
-                    n_estimators = trial.suggest_int('n_estimators', 50, 400)
+                    n_estimators = trial.suggest_int("n_estimators", 50, 400)
                     clf = RandomForestClassifier(n_estimators=n_estimators, random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_valid, y_valid)
 
-                study = optuna.create_study(direction='maximize')
+
+                study = optuna.create_study(direction="maximize")
                 study.optimize(objective, n_trials=3)
 
         Args:
@@ -412,9 +438,9 @@ class Trial(BaseTrial):
                     "The specified `step` is {}.".format(step)
                 )
             else:
-                distribution = IntUniformDistribution(
-                    low=low, high=high, step=step
-                )  # type: Union[IntUniformDistribution, IntLogUniformDistribution]
+                distribution: Union[
+                    IntUniformDistribution, IntLogUniformDistribution
+                ] = IntUniformDistribution(low=low, high=high, step=step)
         else:
             if log:
                 distribution = IntLogUniformDistribution(low=low, high=high)
@@ -449,13 +475,15 @@ class Trial(BaseTrial):
                 X, y = load_iris(return_X_y=True)
                 X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
+
                 def objective(trial):
-                    kernel = trial.suggest_categorical('kernel', ['linear', 'poly', 'rbf'])
-                    clf = SVC(kernel=kernel, gamma='scale', random_state=0)
+                    kernel = trial.suggest_categorical("kernel", ["linear", "poly", "rbf"])
+                    clf = SVC(kernel=kernel, gamma="scale", random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_valid, y_valid)
 
-                study = optuna.create_study(direction='maximize')
+
+                study = optuna.create_study(direction="maximize")
                 study.optimize(objective, n_trials=3)
 
 
@@ -507,6 +535,7 @@ class Trial(BaseTrial):
                 X, y = load_iris(return_X_y=True)
                 X_train, X_valid, y_train, y_valid = train_test_split(X, y)
 
+
                 def objective(trial):
                     clf = SGDClassifier(random_state=0)
                     for step in range(100):
@@ -518,7 +547,8 @@ class Trial(BaseTrial):
 
                     return clf.score(X_valid, y_valid)
 
-                study = optuna.create_study(direction='maximize')
+
+                study = optuna.create_study(direction="maximize")
                 study.optimize(objective, n_trials=3)
 
 
@@ -530,7 +560,16 @@ class Trial(BaseTrial):
                 assume that ``step`` starts at zero. For example,
                 :class:`~optuna.pruners.MedianPruner` simply checks if ``step`` is less than
                 ``n_warmup_steps`` as the warmup mechanism.
+
+        Raises:
+            :exc:`NotImplementedError`:
+                If trial is being used for multi-objective optimization.
         """
+
+        if len(self.study.directions) > 1:
+            raise NotImplementedError(
+                "Trial.report is not supported for multi-objective optimization."
+            )
 
         try:
             # For convenience, we allow users to report a value that can be cast to `float`.
@@ -572,7 +611,16 @@ class Trial(BaseTrial):
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
             configured pruning algorithm. Otherwise, the trial should continue.
+
+        Raises:
+            :exc:`NotImplementedError`:
+                If trial is being used for multi-objective optimization.
         """
+
+        if len(self.study.directions) > 1:
+            raise NotImplementedError(
+                "Trial.should_prune is not supported for multi-objective optimization."
+            )
 
         trial = self.study._storage.get_trial(self._trial_id)
         return self.study.pruner.prune(self.study, trial)
@@ -598,20 +646,26 @@ class Trial(BaseTrial):
                 X, y = load_iris(return_X_y=True)
                 X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=0)
 
+
                 def objective(trial):
-                    trial.set_user_attr('BATCHSIZE', 128)
-                    momentum = trial.suggest_uniform('momentum', 0, 1.0)
-                    clf = MLPClassifier(hidden_layer_sizes=(100, 50),
-                                        batch_size=trial.user_attrs['BATCHSIZE'],
-                                        momentum=momentum, solver='sgd', random_state=0)
+                    trial.set_user_attr("BATCHSIZE", 128)
+                    momentum = trial.suggest_uniform("momentum", 0, 1.0)
+                    clf = MLPClassifier(
+                        hidden_layer_sizes=(100, 50),
+                        batch_size=trial.user_attrs["BATCHSIZE"],
+                        momentum=momentum,
+                        solver="sgd",
+                        random_state=0,
+                    )
                     clf.fit(X_train, y_train)
 
                     return clf.score(X_valid, y_valid)
 
-                study = optuna.create_study(direction='maximize')
+
+                study = optuna.create_study(direction="maximize")
                 study.optimize(objective, n_trials=3)
-                assert 'BATCHSIZE' in study.best_trial.user_attrs.keys()
-                assert study.best_trial.user_attrs['BATCHSIZE'] == 128
+                assert "BATCHSIZE" in study.best_trial.user_attrs.keys()
+                assert study.best_trial.user_attrs["BATCHSIZE"] == 128
 
 
         Args:
@@ -722,6 +776,16 @@ class Trial(BaseTrial):
                 "Using these values: {}".format(name, old_distribution._asdict()),
                 RuntimeWarning,
             )
+
+    def _after_func(self, state: TrialState, values: Optional[Sequence[float]]) -> None:
+        # This method is called right before `Study._tell`.
+        storage = self.storage
+        trial_id = self._trial_id
+
+        trial = storage.get_trial(trial_id)
+
+        study = pruners._filter_study(self.study, trial)
+        self.study.sampler.after_trial(study, trial, state, values)
 
     @property
     def params(self) -> Dict[str, Any]:

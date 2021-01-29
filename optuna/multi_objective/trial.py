@@ -7,7 +7,7 @@ from typing import Sequence
 from typing import Union
 
 from optuna import multi_objective
-from optuna._experimental import experimental
+from optuna._deprecated import deprecated
 from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
 from optuna.trial import FrozenTrial
@@ -18,7 +18,7 @@ from optuna.trial import TrialState
 CategoricalChoiceType = Union[None, bool, int, float, str]
 
 
-@experimental("1.4.0")
+@deprecated("2.4.0", "4.0.0")
 class MultiObjectiveTrial(object):
     """A trial is a process of evaluating an objective function.
 
@@ -49,7 +49,7 @@ class MultiObjectiveTrial(object):
         high: float,
         *,
         step: Optional[float] = None,
-        log: bool = False
+        log: bool = False,
     ) -> float:
         """Suggest a value for the floating point parameter.
 
@@ -240,7 +240,7 @@ class MultiObjectiveTrial(object):
         return [trial.intermediate_values.get(i) for i in range(self._n_objectives)]
 
 
-@experimental("1.4.0")
+@deprecated("2.4.0", "4.0.0")
 class FrozenMultiObjectiveTrial(object):
     """Status and results of a :class:`~optuna.multi_objective.trial.MultiObjectiveTrial`.
 
@@ -278,14 +278,14 @@ class FrozenMultiObjectiveTrial(object):
 
         self.values = tuple(trial.intermediate_values.get(i) for i in range(n_objectives))
 
-        intermediate_values = {}  # type: Dict[int, List[Optional[float]]]
+        intermediate_values: Dict[int, List[Optional[float]]] = {}
         for key, value in trial.intermediate_values.items():
             if key < n_objectives:
                 continue
 
             step = key // n_objectives - 1
             if step not in intermediate_values:
-                intermediate_values[step] = list(None for _ in range(n_objectives))
+                intermediate_values[step] = [None for _ in range(n_objectives)]
 
             intermediate_values[step][key % n_objectives] = value
         self.intermediate_values = {k: tuple(v) for k, v in intermediate_values.items()}
@@ -358,7 +358,7 @@ class FrozenMultiObjectiveTrial(object):
         if values0 == values1:
             return False
 
-        return all([v0 <= v1 for v0, v1 in zip(values0, values1)])
+        return all(v0 <= v1 for v0, v1 in zip(values0, values1))
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, FrozenMultiObjectiveTrial):

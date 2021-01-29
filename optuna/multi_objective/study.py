@@ -10,12 +10,14 @@ from typing import Tuple
 from typing import Type
 from typing import Union
 
-import optuna
 from optuna import logging
 from optuna import multi_objective
-from optuna._experimental import experimental
+from optuna._deprecated import deprecated
 from optuna._study_direction import StudyDirection
+from optuna.pruners import NopPruner
 from optuna.storages import BaseStorage
+from optuna.study import create_study as _create_study
+from optuna.study import load_study as _load_study
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
@@ -39,7 +41,7 @@ _logger = logging.get_logger(__name__)
 #
 # TODO(ohta): Consider to add `objective_labels` argument.
 # See: https://github.com/optuna/optuna/pull/1054#issuecomment-616382152
-@experimental("1.4.0")
+@deprecated("2.4.0", "4.0.0")
 def create_study(
     directions: List[str],
     study_name: Optional[str] = None,
@@ -55,6 +57,7 @@ def create_study(
 
             import optuna
 
+
             def objective(trial):
                 # Binh and Korn function.
                 x = trial.suggest_float("x", 0, 5)
@@ -63,6 +66,7 @@ def create_study(
                 v0 = 4 * x ** 2 + 4 * y ** 2
                 v1 = (x - 5) ** 2 + (y - 5) ** 2
                 return v0, v1
+
 
             study = optuna.multi_objective.create_study(["minimize", "minimize"])
             study.optimize(objective, n_trials=3)
@@ -116,11 +120,11 @@ def create_study(
     if not all(d in ["minimize", "maximize"] for d in directions):
         raise ValueError("`directions` includes unknown direction names.")
 
-    study = optuna.create_study(
+    study = _create_study(
         study_name=study_name,
         storage=storage,
         sampler=sampler_adapter,
-        pruner=optuna.pruners.NopPruner(),
+        pruner=NopPruner(),
         load_if_exists=load_if_exists,
     )
 
@@ -129,7 +133,7 @@ def create_study(
     return MultiObjectiveStudy(study)
 
 
-@experimental("1.4.0")
+@deprecated("2.4.0", "4.0.0")
 def load_study(
     study_name: str,
     storage: Union[str, BaseStorage],
@@ -150,6 +154,7 @@ def load_study(
 
             import optuna
 
+
             def objective(trial):
                 # Binh and Korn function.
                 x = trial.suggest_float("x", 0, 5)
@@ -159,16 +164,16 @@ def load_study(
                 v1 = (x - 5) ** 2 + (y - 5) ** 2
                 return v0, v1
 
+
             study = optuna.multi_objective.create_study(
                 directions=["minimize", "minimize"],
                 study_name="my_study",
-                storage="sqlite:///example.db"
+                storage="sqlite:///example.db",
             )
             study.optimize(objective, n_trials=3)
 
             loaded_study = optuna.multi_objective.study.load_study(
-                study_name="my_study",
-                storage="sqlite:///example.db"
+                study_name="my_study", storage="sqlite:///example.db"
             )
             assert len(loaded_study.trials) == len(study.trials)
 
@@ -195,12 +200,12 @@ def load_study(
     mo_sampler = sampler or multi_objective.samplers.RandomMultiObjectiveSampler()
     sampler_adapter = multi_objective.samplers._MultiObjectiveSamplerAdapter(mo_sampler)
 
-    study = optuna.load_study(study_name=study_name, storage=storage, sampler=sampler_adapter)
+    study = _load_study(study_name=study_name, storage=storage, sampler=sampler_adapter)
 
     return MultiObjectiveStudy(study)
 
 
-@experimental("1.4.0")
+@deprecated("2.4.0", "4.0.0")
 class MultiObjectiveStudy(object):
     """A study corresponds to a multi-objective optimization task, i.e., a set of trials.
 
@@ -292,6 +297,7 @@ class MultiObjectiveStudy(object):
 
                 import optuna
 
+
                 def objective(trial):
                     # Binh and Korn function.
                     x = trial.suggest_float("x", 0, 5)
@@ -300,6 +306,7 @@ class MultiObjectiveStudy(object):
                     v0 = 4 * x ** 2 + 4 * y ** 2
                     v1 = (x - 5) ** 2 + (y - 5) ** 2
                     return v0, v1
+
 
                 study = optuna.multi_objective.create_study(["minimize", "minimize"])
                 study.optimize(objective, n_trials=3)
@@ -401,24 +408,22 @@ class MultiObjectiveStudy(object):
 
         The returned trials are ordered by trial number.
 
-        This is a short form of ``self.get_trials(deepcopy=True)``.
+        This is a short form of ``self.get_trials(deepcopy=True, states=None)``.
 
         Returns:
             A list of :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` objects.
         """
 
-        return self.get_trials(deepcopy=True)
+        return self.get_trials(deepcopy=True, states=None)
 
     def get_trials(
-        self, deepcopy: bool = True
+        self,
+        deepcopy: bool = True,
+        states: Optional[Tuple[TrialState, ...]] = None,
     ) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
-
-        For library users, it's recommended to use more handy
-        :attr:`~optuna.multi_objective.study.MultiObjectiveStudy.trials`
-        property to get the trials instead.
 
         Args:
             deepcopy:
@@ -426,6 +431,8 @@ class MultiObjectiveStudy(object):
                 Note that if you set the flag to :obj:`False`, you shouldn't mutate
                 any fields of the returned trial. Otherwise the internal state of
                 the study may corrupt and unexpected behavior may happen.
+            states:
+                Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
             A list of :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` objects.
@@ -433,7 +440,7 @@ class MultiObjectiveStudy(object):
 
         return [
             multi_objective.trial.FrozenMultiObjectiveTrial(self.n_objectives, t)
-            for t in self._study.get_trials(deepcopy=deepcopy)
+            for t in self._study.get_trials(deepcopy=deepcopy, states=states)
         ]
 
     def get_pareto_front_trials(self) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
@@ -473,13 +480,13 @@ class MultiObjectiveStudy(object):
         return self._study._study_id
 
 
-def _log_completed_trial(self: Study, trial: Trial, result: float) -> None:
+def _log_completed_trial(self: Study, trial: Trial, values: Sequence[float]) -> None:
     if not _logger.isEnabledFor(logging.INFO):
         return
 
-    values = multi_objective.trial.MultiObjectiveTrial(trial)._get_values()
+    actual_values = multi_objective.trial.MultiObjectiveTrial(trial)._get_values()
     _logger.info(
         "Trial {} finished with values: {} with parameters: {}.".format(
-            trial.number, values, trial.params
+            trial.number, actual_values, trial.params
         )
     )

@@ -43,7 +43,7 @@ PRUNER_INIT_FUNCS = [lambda: pruners.MedianPruner(), lambda: pruners.SuccessiveH
 class Func(object):
     def __init__(self) -> None:
 
-        self.suggested_values = {}  # type: Dict[int, Dict[str, Any]]
+        self.suggested_values: Dict[int, Dict[str, Any]] = {}
 
     def __call__(self, trial: ChainerMNTrial, comm: CommunicatorBase) -> float:
 
@@ -64,7 +64,7 @@ class MultiNodeStorageSupplier(StorageSupplier):
 
         super(MultiNodeStorageSupplier, self).__init__(storage_specifier)
         self.comm = comm
-        self.storage = None  # type: Optional[RDBStorage]
+        self.storage: Optional[RDBStorage] = None
 
     def __enter__(self) -> RDBStorage:
 

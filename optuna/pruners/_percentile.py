@@ -33,19 +33,19 @@ def _get_percentile_intermediate_result_over_trials(
     if len(completed_trials) == 0:
         raise ValueError("No trials have been completed.")
 
+    intermediate_values = [
+        t.intermediate_values[step] for t in completed_trials if step in t.intermediate_values
+    ]
+
+    if not intermediate_values:
+        return math.nan
+
     if direction == StudyDirection.MAXIMIZE:
         percentile = 100 - percentile
 
     return float(
         np.nanpercentile(
-            np.array(
-                [
-                    t.intermediate_values[step]
-                    for t in completed_trials
-                    if step in t.intermediate_values
-                ],
-                np.float,
-            ),
+            np.array(intermediate_values, np.float),
             percentile,
         )
     )
@@ -90,8 +90,9 @@ class PercentilePruner(BasePruner):
             X_train, X_valid, y_train, y_valid = train_test_split(X, y)
             classes = np.unique(y)
 
+
             def objective(trial):
-                alpha = trial.suggest_uniform('alpha', 0.0, 1.0)
+                alpha = trial.suggest_uniform("alpha", 0.0, 1.0)
                 clf = SGDClassifier(alpha=alpha)
                 n_train_iter = 100
 
@@ -106,10 +107,13 @@ class PercentilePruner(BasePruner):
 
                 return clf.score(X_valid, y_valid)
 
+
             study = optuna.create_study(
-                direction='maximize',
-                pruner=optuna.pruners.PercentilePruner(25.0, n_startup_trials=5,
-                                                       n_warmup_steps=30, interval_steps=10))
+                direction="maximize",
+                pruner=optuna.pruners.PercentilePruner(
+                    25.0, n_startup_trials=5, n_warmup_steps=30, interval_steps=10
+                ),
+            )
             study.optimize(objective, n_trials=20)
 
     Args:

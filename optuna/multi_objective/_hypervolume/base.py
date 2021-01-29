@@ -22,8 +22,10 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
             import optuna
             from optuna.multi_objective._hypervolume import WFG
 
+
             def objective(trial):
                 return trial.suggest_float("x", 0, 1), trial.suggest_float("y", 0, 1)
+
 
             study = optuna.multi_objective.create_study(["maximize", "minimize"])
             study.optimize(objective, n_trials=10)

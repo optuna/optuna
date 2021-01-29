@@ -4,12 +4,12 @@ from typing import Optional
 
 import optuna
 from optuna import multi_objective
-from optuna._experimental import experimental
+from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
 
-@experimental("1.4.0")
+@deprecated("2.4.0", "4.0.0")
 class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
     """Multi-objective sampler using random sampling.
 
@@ -24,14 +24,15 @@ class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
             import optuna
             from optuna.multi_objective.samplers import RandomMultiObjectiveSampler
 
+
             def objective(trial):
-                x = trial.suggest_uniform('x', -5, 5)
-                y = trial.suggest_uniform('y', -5, 5)
+                x = trial.suggest_uniform("x", -5, 5)
+                y = trial.suggest_uniform("y", -5, 5)
                 return x ** 2, y + 10
 
+
             study = optuna.multi_objective.create_study(
-                ["minimize", "minimize"],
-                sampler=RandomMultiObjectiveSampler()
+                ["minimize", "minimize"], sampler=RandomMultiObjectiveSampler()
             )
             study.optimize(objective, n_trials=10)
 
