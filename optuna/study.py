@@ -850,7 +850,7 @@ class Study(BaseStudy):
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
     @experimental("2.5.0")
-    def add_trials(self, trials: Iterable[FrozenTrial]) -> "Study":
+    def add_trials(self, trials: Iterable[FrozenTrial]) -> None:
         """Add trials to study.
 
         The trials are validated before being added.
@@ -872,7 +872,8 @@ class Study(BaseStudy):
                 study.optimize(objective, n_trials=3)
                 assert len(study.trials) == 3
 
-                other_study = optuna.create_study().add_trials(study.trials)
+                other_study = optuna.create_study()
+                other_study.add_trials(study.trials)
                 assert len(other_study.trials) == len(study.trials)
 
                 other_study.optimize(objective, n_trials=2)
@@ -885,9 +886,6 @@ class Study(BaseStudy):
         Args:
             trials: Trials to add.
 
-        Returns:
-            Return self.
-
         Raises:
             :exc:`ValueError`:
                 If ``trials`` include invalid trial.
@@ -895,8 +893,6 @@ class Study(BaseStudy):
 
         for trial in trials:
             self.add_trial(trial)
-
-        return self
 
     def _pop_waiting_trial_id(self) -> Optional[int]:
 

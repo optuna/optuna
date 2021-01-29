@@ -506,7 +506,8 @@ def test_add_trials(storage_mode: str) -> None:
             assert trial.number == i
             assert trial.value == i
 
-        other_study = create_study(storage=storage).add_trials(study.trials)
+        other_study = create_study(storage=storage)
+        other_study.add_trials(study.trials)
         assert len(other_study.trials) == 3
         for i, trial in enumerate(other_study.trials):
             assert trial.number == i
