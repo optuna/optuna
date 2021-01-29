@@ -3,6 +3,7 @@ import threading
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -847,6 +848,51 @@ class Study(BaseStudy):
         trial._validate()
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
+
+    @experimental("2.5.0")
+    def add_trials(self, trials: Iterable[FrozenTrial]) -> None:
+        """Add trials to study.
+
+        The trials are validated before being added.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+                from optuna.distributions import UniformDistribution
+
+
+                def objective(trial):
+                    x = trial.suggest_uniform("x", 0, 10)
+                    return x ** 2
+
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+                assert len(study.trials) == 3
+
+                other_study = optuna.create_study()
+                other_study.add_trials(study.trials)
+                assert len(other_study.trials) == len(study.trials)
+
+                other_study.optimize(objective, n_trials=2)
+                assert len(other_study.trials) == len(study.trials) + 2
+
+        .. seealso::
+
+            See :func:`~optuna.study.Study.add_trial` for addition of each trial.
+
+        Args:
+            trials: Trials to add.
+
+        Raises:
+            :exc:`ValueError`:
+                If ``trials`` include invalid trial.
+        """
+
+        for trial in trials:
+            self.add_trial(trial)
 
     def _pop_waiting_trial_id(self) -> Optional[int]:
 

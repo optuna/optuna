@@ -490,6 +490,31 @@ def test_add_trial(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_add_trials(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.add_trials([])
+        assert len(study.trials) == 0
+
+        trials = [create_trial(value=i) for i in range(3)]
+        study.add_trials(trials)
+        assert len(study.trials) == 3
+        for i, trial in enumerate(study.trials):
+            assert trial.number == i
+            assert trial.value == i
+
+        other_study = create_study(storage=storage)
+        other_study.add_trials(study.trials)
+        assert len(other_study.trials) == 3
+        for i, trial in enumerate(other_study.trials):
+            assert trial.number == i
+            assert trial.value == i
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_enqueue_trial_properly_sets_param_values(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
