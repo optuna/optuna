@@ -7,7 +7,7 @@ import datetime
 import gc
 import itertools
 import math
-import multiprocessing
+import os
 import sys
 from threading import Event
 from threading import Thread
@@ -80,7 +80,7 @@ def _optimize(
                 warnings.warn("Progress bar only supports serial execution (`n_jobs=1`).")
 
             if n_jobs == -1:
-                n_jobs = multiprocessing.cpu_count()
+                n_jobs = os.cpu_count() or 1
 
             time_start = datetime.datetime.now()
             futures: Set[Future] = set()
