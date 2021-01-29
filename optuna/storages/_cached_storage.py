@@ -450,7 +450,8 @@ class _CachedStorage(BaseStorage):
         stale_trial_ids = self._backend._get_stale_trial_ids()
 
         for trial_id in stale_trial_ids:
-            self.set_trial_state(trial_id, TrialState.FAIL)
+            if not self.set_trial_state(trial_id, TrialState.FAIL):
+                stale_trial_ids.remove(trial_id)
 
         return stale_trial_ids
 
