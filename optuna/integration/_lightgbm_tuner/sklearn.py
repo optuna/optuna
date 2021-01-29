@@ -81,7 +81,7 @@ def check_fit_params(
     y: OneDimArrayLikeType,
     sample_weight: Optional[OneDimArrayLikeType] = None,
     estimator: Optional[BaseEstimator] = None,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Tuple[TwoDimArrayLikeType, OneDimArrayLikeType, OneDimArrayLikeType]:
     """Check ``X``, ``y`` and ``sample_weight``.
 
@@ -165,7 +165,7 @@ class LGBMModel(lgb.LGBMModel):
         study: Optional[study_module.Study] = None,
         timeout: Optional[int] = None,
         model_dir: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             boosting_type=boosting_type,
@@ -229,7 +229,7 @@ class LGBMModel(lgb.LGBMModel):
         categorical_feature: Union[List[int], List[str], str] = "auto",
         callbacks: Optional[List[Callable]] = None,
         init_model: Optional[Union[lgb.Booster, lgb.LGBMModel, str]] = None,
-        **fit_params: Any
+        **fit_params: Any,
     ) -> "LGBMModel":
         """Fit the model according to the given training data.
 
@@ -617,7 +617,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
         categorical_feature: Union[List[int], List[str], str] = "auto",
         callbacks: Optional[List[Callable]] = None,
         init_model: Optional[Union[lgb.Booster, lgb.LGBMModel, str]] = None,
-        **fit_params: Any
+        **fit_params: Any,
     ) -> "LGBMClassifier":
         """Docstring is inherited from the LGBMModel."""
         self.encoder_ = LabelEncoder()
@@ -658,7 +658,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
         num_iteration: Optional[int] = None,
         pred_leaf: bool = False,
         pred_contrib: bool = False,
-        **predict_params: Any
+        **predict_params: Any,
     ) -> np.ndarray:
         """Docstring is inherited from the LGBMModel."""
         result = self.predict_proba(
@@ -686,7 +686,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
         num_iteration: Optional[int] = None,
         pred_leaf: bool = False,
         pred_contrib: bool = False,
-        **predict_params: Any
+        **predict_params: Any,
     ) -> np.ndarray:
         """Predict class probabilities.
 
