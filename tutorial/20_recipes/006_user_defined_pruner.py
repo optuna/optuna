@@ -107,7 +107,7 @@ def objective(trial):
 
     loss = trial.suggest_categorical("loss", ["hinge", "log", "perceptron"])
     alpha = trial.suggest_float("alpha", 0.00001, 0.001, log=True)
-    clf = SGDClassifier(loss=loss, alpha=alpha, random_state=0)
+    clf = SGDClassifier(alpha=alpha)
     score = 0
 
     for step in range(0, 5):
