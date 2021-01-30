@@ -1,13 +1,13 @@
 """
 .. _multi_objective_lgbm:
 
-Multi-objective optimization example with LightGBM
+Multi-objective Optimization Example with LightGBM
 ==================================================
 
 This tutorial is an example of multi-objective optimization with Optuna which optimizes
-precision and recall while it would be more common to use F-measure and (ROC-)AUC instead.
+precision and recall. In practice, it is more common to use F-measure and (ROC-)AUC.
 
-As of `v2.4.0 <https://github.com/optuna/optuna/releases/tag/v2.4.0>`_, :class:`~optuna.multi_objective.MultiObjectiveStudy` is merged into :class:`~optuna.study.Study`.
+Starting from `v2.4.0 <https://github.com/optuna/optuna/releases/tag/v2.4.0>`_, :class:`~optuna.multi_objective.MultiObjectiveStudy` is made available with :class:`~optuna.study.Study`.
 """
 
 
@@ -23,7 +23,7 @@ import optuna
 
 
 ###################################################################################################
-# In the ``objective`` below, we train a model using Breast cancer dataset before
+# In the ``objective`` below, we train a model using the Breast cancer dataset before
 # calculating precision and recall.
 def objective(trial):
     data, target = datasets.load_breast_cancer(return_X_y=True)
