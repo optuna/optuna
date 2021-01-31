@@ -21,7 +21,7 @@ def test_wfg_3d() -> None:
     s = [np.hstack((np.zeros(i), [1], np.zeros(n - i - 1))) for i in range(n)]
     for _ in range(10):
         s.append(np.random.randint(1, 10, size=(n,)))
-    s = np.asarray(s)
+    s = np.array(s)
     np.random.shuffle(s)
     v = optuna.multi_objective._hypervolume.WFG().compute(s, r)
     assert v == 10 ** n - 1

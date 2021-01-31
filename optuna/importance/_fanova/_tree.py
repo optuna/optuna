@@ -229,7 +229,7 @@ class _FanovaTree(object):
 
         return sorted_all_split_values
 
-    def _precompute_subtree_active_features(self) -> List[Set[int]]:
+    def _precompute_subtree_active_features(self) -> numpy.ndarray:
         subtree_active_features = numpy.full((self._n_nodes, self._n_features), fill_value=False)
 
         for node_index in reversed(range(self._n_nodes)):

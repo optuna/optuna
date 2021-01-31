@@ -2,7 +2,6 @@ from logging import DEBUG
 from logging import INFO
 from logging import WARNING
 from numbers import Integral
-from numbers import Number
 from time import time
 from typing import Any
 from typing import Callable
@@ -51,6 +50,7 @@ with try_import() as _imports:
 if not _imports.is_successful():
     BaseEstimator = object  # NOQA
 
+Number = Union[int, float]
 ArrayLikeType = Union[List, np.ndarray, "pd.Series", spmatrix]
 OneDimArrayLikeType = Union[List[float], np.ndarray, "pd.Series"]
 TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, "pd.DataFrame", spmatrix]

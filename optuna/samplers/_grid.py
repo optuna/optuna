@@ -1,5 +1,6 @@
 import collections
 import itertools
+import numpy
 import random
 from typing import Any
 from typing import cast
@@ -223,7 +224,9 @@ class GridSampler(BaseSampler):
 
         return list(unvisited_grids)
 
-    def _same_search_space(self, search_space: Mapping[str, Sequence[GridValueType]]) -> bool:
+    def _same_search_space(
+        self, search_space: Mapping[str, Union[Sequence[GridValueType]], numpy.ndarray]
+    ) -> bool:
 
         if set(search_space.keys()) != set(self._search_space.keys()):
             return False
