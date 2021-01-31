@@ -89,7 +89,8 @@ class BaseStudy(object):
 
         if self._is_multi_objective():
             raise RuntimeError(
-                "The best trial of a `study` is only supported for single-objective optimization."
+                "A single best trial cannot be retrieved from a multi-objective study. Consider "
+                "using Study.best_trials to retrieve a list containing the best trials."
             )
 
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
@@ -123,8 +124,8 @@ class BaseStudy(object):
 
         if self._is_multi_objective():
             raise RuntimeError(
-                "The single direction of a `study` is only supported for single-objective "
-                "optimization."
+                "A single direction cannot be retrieved from a multi-objective study. Consider "
+                "using Study.directions to retrieve a list containing all directions."
             )
 
         return self.directions[0]
