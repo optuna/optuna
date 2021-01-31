@@ -181,11 +181,12 @@ class DDPTrial(optuna.trial.BaseTrial):
 
     def _call_and_communicate(self, func: Callable, dtype) -> Any:
         buffer = torch.empty(1, dtype=dtype)
-        if dist.get_rank() == 0:
+        rank = dist.get_rank()
+        if rank == 0:
             result = func()
             buffer[0] = result
         if dist.get_backend() == "nccl":
-            buffer = buffer.cuda()
+            buffer = buffer.cuda(torch.device(rank))
         print(f"{dist.get_rank()}/{dist.get_world_size()}: broadcasting")
         dist.broadcast(buffer, src=0)
         print(f"{dist.get_rank()}/{dist.get_world_size()}: broadcasted")
@@ -194,19 +195,20 @@ class DDPTrial(optuna.trial.BaseTrial):
     def _call_and_communicate_obj(self, func: Callable) -> Any:
         buffer = None
         size_buffer = torch.empty(1, dtype=torch.int)
-        if dist.get_rank() == 0:
+        rank = dist.get_rank()
+        if rank == 0:
             result = func()
             buffer = to_tensor(result)
             size_buffer[0] = buffer.shape[0]
         if dist.get_backend() == "nccl":
-            size_buffer = size_buffer.cuda()
+            size_buffer = size_buffer.cuda(torch.device(rank))
         dist.broadcast(size_buffer, src=0)
         buffer_size = size_buffer.cpu().numpy().tolist()[0]
-        if dist.get_rank() != 0:
+        if rank != 0:
             buffer = torch.empty(buffer_size, dtype=torch.uint8)
         assert buffer is not None
         if dist.get_backend() == "nccl":
-            buffer = buffer.cuda()
+            buffer = buffer.cuda(torch.device(rank))
         dist.broadcast(buffer, src=0)
         return from_tensor(buffer)
 
