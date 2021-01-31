@@ -225,7 +225,7 @@ class GridSampler(BaseSampler):
         return list(unvisited_grids)
 
     def _same_search_space(
-        self, search_space: Mapping[str, Union[Sequence[GridValueType]], numpy.ndarray]
+        self, search_space: Mapping[str, Union[Sequence[GridValueType], numpy.ndarray]]
     ) -> bool:
 
         if set(search_space.keys()) != set(self._search_space.keys()):
