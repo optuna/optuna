@@ -186,9 +186,9 @@ class DDPTrial(optuna.trial.BaseTrial):
             buffer[0] = result
         if dist.get_backend() == "nccl":
             buffer = buffer.cuda()
-        print(f"{dist.get_backend()}: broadcasting")
+        print(f"{dist.get_rank()}/{dist.get_world_size()}: broadcasting")
         dist.broadcast(buffer, src=0)
-        print(f"{dist.get_backend()}: broadcasted")
+        print(f"{dist.get_rank()}/{dist.get_world_size()}: broadcasted")
         return buffer.cpu().numpy().tolist()[0]
 
     def _call_and_communicate_obj(self, func: Callable) -> Any:
