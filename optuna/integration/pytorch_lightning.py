@@ -42,7 +42,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
 
     def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
 
-        # To correct check if need to stop TPU and save train metrics
+        # To check if we saved the internal states correctly, moved states from TPU to CPU etc.
         super().on_validation_end(trainer=trainer, pl_module=pl_module)
         logs = trainer.callback_metrics
         epoch = pl_module.current_epoch
