@@ -29,18 +29,21 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             ``pytorch_lightning.LightningModule.training_step`` or
             ``pytorch_lightning.LightningModule.validation_epoch_end`` and the names thus depend on
             how this dictionary is formatted.
+        **kwargs: Additional kwargs for ``pytorch_lightning.callbacks.EarlyStopping``
     """
 
-    def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
+    def __init__(self, trial: optuna.trial.Trial, monitor: str, **kwargs) -> None:
 
         _imports.check()
 
-        super(PyTorchLightningPruningCallback, self).__init__(monitor=monitor)
+        super(PyTorchLightningPruningCallback, self).__init__(monitor=monitor, **kwargs)
 
         self._trial = trial
 
     def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
 
+        # To correct check if need to stop TPU and save train metrics
+        super().on_validation_end(trainer=trainer, pl_module=pl_module)
         logs = trainer.callback_metrics
         epoch = pl_module.current_epoch
         current_score = logs.get(self.monitor)
