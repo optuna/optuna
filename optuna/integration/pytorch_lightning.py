@@ -1,3 +1,5 @@
+from typing import Any
+
 import optuna
 
 
@@ -32,7 +34,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
         **kwargs: Additional kwargs for ``pytorch_lightning.callbacks.EarlyStopping``
     """
 
-    def __init__(self, trial: optuna.trial.Trial, monitor: str, **kwargs) -> None:
+    def __init__(self, trial: optuna.trial.Trial, monitor: str, **kwargs: Any) -> None:
 
         _imports.check()
 
