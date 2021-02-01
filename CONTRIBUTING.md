@@ -106,7 +106,7 @@ some other requirements like [LightGBM](https://github.com/microsoft/LightGBM) m
 all .py files in `tutorial` directory are run during the documentation build if there's no build cache.
 Whether you edit any tutorial or not doesn't matter.
 
-To avoid the run of tutorial, we recommend that you download build artifacts from our CI and put them to `docs/build`.
+To avoid having to run the tutorials, you may download build artifacts from our CI and put them in `docs/build`.
 
 ## Continuous Integration and Local Verification
 
