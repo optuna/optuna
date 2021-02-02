@@ -124,6 +124,7 @@ PyTorch
 
    optuna.integration.PyTorchIgnitePruningHandler
    optuna.integration.PyTorchLightningPruningCallback
+   optuna.integration.TorchDistributedTrial
 
 scikit-learn
 ------------

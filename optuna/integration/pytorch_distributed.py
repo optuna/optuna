@@ -18,6 +18,20 @@ from optuna.distributions import CategoricalChoiceType
 
 @experimental("2.6.0")
 class TorchDistributedTrial(optuna.trial.BaseTrial):
+    """A wrapper of :class:`~optuna.trial.Trial` to incorporate Optuna with PyTorch distributed
+    data parallel.
+
+    .. seealso::
+        :class:`~optuna.integration.TorchDistributedTrial` provides the same interface as
+        :class:`~optuna.trial.Trial`. Please refer to :class:`optuna.trial.Trial` for further
+        details.
+
+    Args:
+        trial:
+            A :class:`~optuna.trial.Trial` object or :obj:`None`. Please set trial objece in
+            rank-0 node and set :obj:`None` in the other rank node.
+    """
+
     def __init__(self, trial: Optional[optuna.trial.Trial]) -> None:
         self.delegate = trial
 

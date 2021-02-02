@@ -15,6 +15,10 @@ from optuna.testing.storage import StorageSupplier
 
 @pytest.fixture(scope="session", autouse=True)
 def init_process_group() -> None:
+
+    if "OMPI_COMM_WORLD_SIZE" not in os.environ:
+        pytest.skip("This test is expected to be launch with mpirun.")
+
     # This function is automatically called at the beginning of the pytest session.
     os.environ["WORLD_SIZE"] = os.environ["OMPI_COMM_WORLD_SIZE"]
     os.environ["RANK"] = os.environ["OMPI_COMM_WORLD_RANK"]
