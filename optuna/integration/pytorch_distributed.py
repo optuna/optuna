@@ -188,9 +188,7 @@ def _call_and_communicate(func: Callable, dtype: torch.dtype) -> Any:
         buffer[0] = result
     if dist.get_backend() == "nccl":
         buffer = buffer.cuda(torch.device(rank))
-    print(f"{dist.get_rank()}/{dist.get_world_size()}: broadcasting")
     dist.broadcast(buffer, src=0)
-    print(f"{dist.get_rank()}/{dist.get_world_size()}: broadcasted")
     return buffer.cpu().numpy().tolist()[0]
 
 
