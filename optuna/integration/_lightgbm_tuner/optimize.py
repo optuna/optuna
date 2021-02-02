@@ -146,7 +146,14 @@ class _BaseTuner(object):
     def higher_is_better(self) -> bool:
 
         metric_name = self.lgbm_params.get("metric", "binary_logloss")
-        return metric_name in ("auc", "ndcg", "map")
+        supported_higher_is_better = [
+            "auc",
+            "auc_mu",
+            "ndcg",
+            "map",
+            "average_precision",
+        ]
+        return metric_name in supported_higher_is_better
 
     def compare_validation_metrics(self, val_score: float, best_score: float) -> bool:
 
