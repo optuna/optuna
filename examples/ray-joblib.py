@@ -20,8 +20,10 @@ import sklearn.svm
 import optuna
 
 
+# Get a URL of the Ray dashboard.
+ray.init()
 # TODO(HideakiImamura): Enable the warning after https://github.com/ray-project/ray/issues/13855.
-ray.init(logging_level=logging.ERROR)
+ray.init(logging_level=logging.ERROR, ignore_reinit_error=True)
 register_ray()
 
 
