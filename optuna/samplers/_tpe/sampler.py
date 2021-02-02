@@ -324,8 +324,8 @@ class TPESampler(BaseSampler):
         self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]]
     ) -> Tuple[np.ndarray, np.ndarray]:
 
-        config_vals = np.asarray(config_vals)
-        loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
+        config_vals = np.asarray(config_vals, dtype= float).tolist()
+        loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)]).tolist()
 
         n_below = self._gamma(len(config_vals))
         loss_ascending = np.argsort(loss_vals)
@@ -341,8 +341,8 @@ class TPESampler(BaseSampler):
         loss_vals: List[Tuple[float, float]],
     ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
 
-        config_vals = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
-        loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
+        config_vals = {k: np.asarray(v, dtype=float).tolist() for k, v in config_vals.items()}
+        loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)]).tolist()
 
         n_below = self._gamma(len(loss_vals))
         index_loss_ascending = np.argsort(loss_vals)
@@ -482,8 +482,8 @@ class TPESampler(BaseSampler):
     ) -> int:
 
         choices = distribution.choices
-        below = list(map(int, below))
-        above = list(map(int, above))
+        below = np.ndarray(list(map(int, below)))
+        above = np.ndarray(list(map(int, above)))
         upper = len(choices)
 
         # We can use `np.arange(len(distribution.choices))` instead of sampling from `l(x)`

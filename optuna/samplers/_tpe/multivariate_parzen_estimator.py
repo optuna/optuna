@@ -265,18 +265,18 @@ class _MultivariateParzenEstimator:
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 q = self._q[param_name]
                 samples = np.round((samples - distribution.low) / q) * q + distribution.low
-                transformed[param_name] = np.clip(samples, distribution.low, distribution.high)
+                np.clip(samples, distribution.low, distribution.high,out=transformed[param_name])
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 q = self._q[param_name]
                 samples = np.round(samples / q) * q
-                transformed[param_name] = np.clip(
-                    samples, distribution.low, distribution.high
-                ).astype(int)
+                np.clip(
+                    samples, distribution.low, distribution.high,
+                out=transformed[param_name]).astype(int)
             elif isinstance(distribution, distributions.IntLogUniformDistribution):
                 samples = np.round(np.exp(samples))
-                transformed[param_name] = np.clip(
-                    samples, distribution.low, distribution.high
-                ).astype(int)
+                np.clip(
+                    samples, distribution.low, distribution.high,
+                out=transformed[param_name] ).astype(int)
             elif isinstance(distribution, distributions.CategoricalDistribution):
                 transformed[param_name] = samples
 
@@ -360,7 +360,7 @@ class _MultivariateParzenEstimator:
             minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(mus)))
         else:
             minsigma = EPS
-        sigmas = np.clip(sigmas, minsigma, maxsigma)
+        np.clip(sigmas, minsigma, maxsigma,out=sigmas)
 
         return mus, sigmas
 
