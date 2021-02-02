@@ -208,9 +208,9 @@ def _get_contour_plot(
                 figure.update_xaxes(range=param_values_range[x_param], row=y_i + 1, col=x_i + 1)
                 figure.update_yaxes(range=param_values_range[y_param], row=y_i + 1, col=x_i + 1)
 
-                if update_category_axes.get(x_param, False):
+                if _is_categorical(trials, x_param):
                     figure.update_xaxes(type="category", row=y_i + 1, col=x_i + 1)
-                if update_category_axes.get(y_param, False):
+                if _is_categorical(trials, y_param):
                     figure.update_yaxes(type="category", row=y_i + 1, col=x_i + 1)
 
                 if _is_log_scale(trials, x_param):
