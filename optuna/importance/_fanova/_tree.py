@@ -73,8 +73,8 @@ class _FanovaTree(object):
             value, weight = self._get_marginalized_statistics(sample)
             weight *= float(numpy.prod(sizes))
 
-            values=numpy.append(values,value)
-            weights=numpy.append(weights,weight)
+            values = numpy.append(values, value)
+            weights = numpy.append(weights, weight)
 
         weights = numpy.array(weights)
         values = numpy.array(values)

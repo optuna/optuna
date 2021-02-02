@@ -324,7 +324,7 @@ class TPESampler(BaseSampler):
         self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]]
     ) -> Tuple[np.ndarray, np.ndarray]:
 
-        config_vals = np.asarray(config_vals, dtype= float).tolist()
+        config_vals = np.asarray(config_vals, dtype=float).tolist()
         loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)]).tolist()
 
         n_below = self._gamma(len(config_vals))
