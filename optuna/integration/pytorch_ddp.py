@@ -1,6 +1,6 @@
 from optuna.exceptions import TrialPruned
 from datetime import datetime
-import pickle
+import json
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -214,10 +214,10 @@ class DDPTrial(optuna.trial.BaseTrial):
 
 
 def to_tensor(obj: Any) -> torch.Tensor:
-    b = bytearray(pickle.dumps(obj))
+    b = bytearray(json.dumps(obj).encode("utf-8"))
     return torch.tensor(b, dtype=torch.uint8)
 
 
 def from_tensor(tensor: torch.Tensor) -> Any:
     b = bytearray(tensor.to("cpu").numpy().tolist())
-    return pickle.loads(b)
+    return json.loads(b.decode("utf-8"))
