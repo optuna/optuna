@@ -16,7 +16,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 
 
-class DDPTrial(optuna.trial.BaseTrial):
+class TorchDistributedTrial(optuna.trial.BaseTrial):
     def __init__(self, trial: Optional[optuna.trial.Trial]) -> None:
         self.delegate = trial
         pass
