@@ -117,13 +117,10 @@ $JOB_NAME=checks
 act -j $JOB_NAME
 ```
 
-Currently, youcan run the following jobs:
+Currently, you can run the following jobs:
 
 - `checks`    
   - Runs unit tests with RDB storages with Python 3.7   
-- `document`  
-  - Checks documentation build
-
 
 ## Creating a Pull Request
 
