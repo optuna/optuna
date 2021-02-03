@@ -215,7 +215,7 @@ def _call_and_communicate(func: Callable, dtype: "torch.dtype") -> Any:
     if dist.get_backend() == "nccl":
         buffer = buffer.cuda(torch.device(rank))
     dist.broadcast(buffer, src=0)
-    return buffer.cpu().numpy().tolist()[0]
+    return buffer.item()
 
 
 def _call_and_communicate_obj(func: Callable) -> Any:
@@ -229,7 +229,7 @@ def _call_and_communicate_obj(func: Callable) -> Any:
     if dist.get_backend() == "nccl":
         size_buffer = size_buffer.cuda(torch.device(rank))
     dist.broadcast(size_buffer, src=0)
-    buffer_size = size_buffer.cpu().numpy().tolist()[0]
+    buffer_size = size_buffer.item()
     if rank != 0:
         buffer = torch.empty(buffer_size, dtype=torch.uint8)
     assert buffer is not None
@@ -245,5 +245,5 @@ def _to_tensor(obj: Any) -> "torch.Tensor":
 
 
 def _from_tensor(tensor: "torch.Tensor") -> Any:
-    b = bytearray(tensor.to("cpu").numpy().tolist())
+    b = bytearray(tensor.tolist())
     return pickle.loads(b)
