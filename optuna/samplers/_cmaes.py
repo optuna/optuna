@@ -8,7 +8,7 @@ from typing import Optional
 from typing import Tuple
 import warnings
 
-from cmaes import CMA
+from cmaes import CMA, get_warm_start_mgd
 import numpy as np
 
 import optuna
@@ -144,6 +144,14 @@ class CmaEsSampler(BaseSampler):
                 used. Please see `the benchmark result
                 <https://github.com/optuna/optuna/pull/1229>`_ for the details.
 
+        source_trials:
+            ...
+
+            .. note::
+                Added in v2.6.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.6.0.
+
     Raises:
         ValueError:
             If ``restart_strategy`` is not 'ipop' or :obj:`None`.
@@ -161,6 +169,7 @@ class CmaEsSampler(BaseSampler):
         consider_pruned_trials: bool = False,
         restart_strategy: Optional[str] = None,
         inc_popsize: int = 2,
+        source_trials: Optional[List[FrozenTrial]] = None,
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
@@ -172,6 +181,7 @@ class CmaEsSampler(BaseSampler):
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
         self._inc_popsize = inc_popsize
+        self._source_trials = source_trials
 
         if self._restart_strategy:
             warnings.warn(
@@ -185,6 +195,19 @@ class CmaEsSampler(BaseSampler):
                 "`consider_pruned_trials` option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
+            )
+
+        if self._source_trials is not None:
+            warnings.warn(
+                "`source_trials` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
+        if (self._x0 is not None or self._sigma0 is not None) and self._source_trials is not None:
+            raise ValueError(
+                "It is prohibited to pass `source_trials` argument when "
+                "x0 or sigma0 is specified."
             )
 
         # TODO(c-bata): Support BIPOP-CMA-ES.
@@ -356,24 +379,32 @@ class CmaEsSampler(BaseSampler):
         upper_bounds = trans.bounds[:, 1]
         n_dimension = len(trans.bounds)
 
-        if randomize_start_point:
-            mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rand(n_dimension)
-        elif self._x0 is None:
-            mean = lower_bounds + (upper_bounds - lower_bounds) / 2
-        else:
-            # `self._x0` is external representations.
-            mean = trans.transform(self._x0)
+        if self._source_trials is None:
+            if randomize_start_point:
+                mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rand(n_dimension)
+            elif self._x0 is None:
+                mean = lower_bounds + (upper_bounds - lower_bounds) / 2
+            else:
+                # `self._x0` is external representations.
+                mean = trans.transform(self._x0)
 
-        if self._sigma0 is None:
-            sigma0 = np.min((upper_bounds - lower_bounds) / 6)
+            if self._sigma0 is None:
+                sigma0 = np.min((upper_bounds - lower_bounds) / 6)
+            else:
+                sigma0 = self._sigma0
+
+            cov = None
         else:
-            sigma0 = self._sigma0
+            # TODO(c-bata): Add options to change prior parameters (alpha and gamma).
+            source_solutions = [(trans.transform(t.params), t.value) for t in self._source_trials]
+            mean, sigma0, cov = get_warm_start_mgd(source_solutions)
 
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
         return CMA(
             mean=mean,
             sigma=sigma0,
+            cov=cov,
             bounds=trans.bounds,
             seed=self._cma_rng.randint(1, 2 ** 31 - 2),
             n_max_resampling=10 * n_dimension,
