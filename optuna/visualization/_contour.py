@@ -303,12 +303,12 @@ def _generate_contour_subplot(
         y=y_indices,
         z=z,
         colorbar={"title": target_name},
-        colorscale="blues",
+        colorscale=plotly.colors.PLOTLY_SCALES["Blues"],
         connectgaps=True,
         contours_coloring="heatmap",
         hoverinfo="none",
         line_smoothing=1.3,
-        reversescale=True if direction == StudyDirection.MAXIMIZE else False,
+        reversescale=True if direction == StudyDirection.MINIMIZE else False,
     )
 
     scatter = go.Scatter(
