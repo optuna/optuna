@@ -454,7 +454,7 @@ class _CachedStorage(BaseStorage):
             if self.set_trial_state(trial_id, TrialState.FAIL):
                 confirmed_stale_trial_ids.append(trial_id)
 
-        return stale_trial_ids
+        return confirmed_stale_trial_ids
 
     def _is_heartbeat_supported(self) -> bool:
         return self._backend._is_heartbeat_supported()

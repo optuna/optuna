@@ -1170,7 +1170,7 @@ class RDBStorage(BaseStorage):
             if self.set_trial_state(trial_id, TrialState.FAIL):
                 confirmed_stale_trial_ids.append(trial_id)
 
-        return stale_trial_ids
+        return confirmed_stale_trial_ids
 
     def _get_stale_trial_ids(self) -> List[int]:
         assert self.heartbeat_interval is not None
