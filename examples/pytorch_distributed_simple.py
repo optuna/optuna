@@ -129,7 +129,7 @@ def objective(single_trial):
 
         correct_tensor = torch.tensor([correct], dtype=torch.int).to(DEVICE)
         dist.all_reduce(correct_tensor)
-        total_correct = correct_tensor.numpy().tolist()[0]
+        total_correct = correct_tensor.item()
         accuracy = total_correct / len(valid_loader.dataset)
 
         trial.report(accuracy, epoch)
