@@ -127,7 +127,7 @@ def objective(single_trial):
                 pred = output.argmax(dim=1, keepdim=True)
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
-        correct_tensor = torch.tensor([correct], dtype=torch.int)
+        correct_tensor = torch.tensor([correct], dtype=torch.int).to(DEVICE)
         dist.all_reduce(correct_tensor)
         total_correct = correct_tensor.numpy().tolist()[0]
         accuracy = total_correct / len(valid_loader.dataset)
