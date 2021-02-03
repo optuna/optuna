@@ -206,7 +206,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return _call_and_communicate_obj(func)
 
 
-def _call_and_communicate(func: Callable, dtype: torch.dtype) -> Any:
+def _call_and_communicate(func: Callable, dtype: "torch.dtype") -> Any:
     buffer = torch.empty(1, dtype=dtype)
     rank = dist.get_rank()
     if rank == 0:
@@ -224,7 +224,7 @@ def _call_and_communicate_obj(func: Callable) -> Any:
     rank = dist.get_rank()
     if rank == 0:
         result = func()
-        buffer = to_tensor(result)
+        buffer = _to_tensor(result)
         size_buffer[0] = buffer.shape[0]
     if dist.get_backend() == "nccl":
         size_buffer = size_buffer.cuda(torch.device(rank))
@@ -236,14 +236,14 @@ def _call_and_communicate_obj(func: Callable) -> Any:
     if dist.get_backend() == "nccl":
         buffer = buffer.cuda(torch.device(rank))
     dist.broadcast(buffer, src=0)
-    return from_tensor(buffer)
+    return _from_tensor(buffer)
 
 
-def to_tensor(obj: Any) -> torch.Tensor:
+def _to_tensor(obj: Any) -> "torch.Tensor":
     b = bytearray(pickle.dumps(obj))
     return torch.tensor(b, dtype=torch.uint8)
 
 
-def from_tensor(tensor: torch.Tensor) -> Any:
+def _from_tensor(tensor: "torch.Tensor") -> Any:
     b = bytearray(tensor.to("cpu").numpy().tolist())
     return pickle.loads(b)
