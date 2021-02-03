@@ -19,6 +19,7 @@ import torchvision
 
 import optuna
 
+
 DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 DIR = ".."
 BATCHSIZE = 128
@@ -112,5 +113,4 @@ print("Number of finished trials: ", len(study.trials))
 
 ###################################################################################################
 # Check trials on pareto front visually
-
 optuna.multi_objective.visualization.plot_pareto_front(study)
