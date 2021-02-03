@@ -307,6 +307,7 @@ class Study(BaseStudy):
         callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
+        fixed_distributions: Optional[Dict[str, BaseDistribution]] = None,
     ) -> None:
         """Optimize an objective function.
 
@@ -370,6 +371,11 @@ class Study(BaseStudy):
                 Flag to show progress bars or not. To disable progress bar, set this ``False``.
                 Currently, progress bar is experimental feature and disabled
                 when ``n_jobs`` :math:`\\ne 1`.
+            fixed_distributions:
+                A dictionary containing the parameter names and parameter's distributions. Each
+                parameter in this dictionary is automatically suggested for the returned trial,
+                even when the suggest method is not explicitly invoked by the user. If this
+                argument is set to :obj:`None`, no parameter is automatically suggested.
 
         Raises:
             RuntimeError:
@@ -385,6 +391,7 @@ class Study(BaseStudy):
             callbacks=callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
+            fixed_distributions=fixed_distributions,
         )
 
     def ask(

@@ -15,6 +15,7 @@ import time
 from typing import Any
 from typing import Callable
 from typing import cast
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -30,6 +31,7 @@ from optuna import logging
 from optuna import progress_bar as pbar_module
 from optuna import storages
 from optuna import trial as trial_module
+from optuna.distributions import BaseDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -47,6 +49,7 @@ def _optimize(
     callbacks: Optional[List[Callable[["optuna.Study", FrozenTrial], None]]] = None,
     gc_after_trial: bool = False,
     show_progress_bar: bool = False,
+    fixed_distributions: Optional[Dict[str, BaseDistribution]] = None,
 ) -> None:
     if not isinstance(catch, tuple):
         raise TypeError(
@@ -74,6 +77,7 @@ def _optimize(
                 reseed_sampler_rng=False,
                 time_start=None,
                 progress_bar=progress_bar,
+                fixed_distributions=fixed_distributions,
             )
         else:
             if show_progress_bar:
@@ -118,6 +122,7 @@ def _optimize(
                             True,
                             time_start,
                             None,
+                            fixed_distributions,
                         )
                     )
     finally:
@@ -136,6 +141,7 @@ def _optimize_sequential(
     reseed_sampler_rng: bool,
     time_start: Optional[datetime.datetime],
     progress_bar: Optional[pbar_module._ProgressBar],
+    fixed_distributions: Optional[Dict[str, BaseDistribution]] = None,
 ) -> None:
     if reseed_sampler_rng:
         study.sampler.reseed_rng()
@@ -160,7 +166,7 @@ def _optimize_sequential(
                 break
 
         try:
-            trial = _run_trial(study, func, catch)
+            trial = _run_trial(study, func, catch, fixed_distributions)
         except Exception:
             raise
         finally:
@@ -186,8 +192,9 @@ def _run_trial(
     study: "optuna.Study",
     func: "optuna.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
+    fixed_distributions: Optional[Dict[str, BaseDistribution]] = None,
 ) -> trial_module.Trial:
-    trial = study.ask()
+    trial = study.ask(fixed_distributions)
 
     state: Optional[TrialState] = None
     values: Optional[List[float]] = None

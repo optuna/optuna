@@ -249,6 +249,23 @@ def test_optimize_with_reseeding(n_jobs: int, storage_mode: str) -> None:
             assert mock_object.call_count == 1
 
 
+@pytest.mark.parametrize("n_jobs", (1, 2))
+def test_optimize_with_fixed_dstributions(n_jobs: int) -> None:
+    fixed_distributions = {
+        "x": distributions.UniformDistribution(0, 1),
+        "y": distributions.CategoricalDistribution(["bacon", "egg"]),
+    }
+    study = create_study()
+    study.optimize(
+        lambda t: t.params["x"], n_trials=3, fixed_distributions=fixed_distributions, n_jobs=n_jobs
+    )
+    for trial in study.trials:
+        params = trial.params
+        assert len(trial.params) == 2
+        assert 0 <= params["x"] < 1
+        assert params["y"] in ["bacon", "egg"]
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_study_set_and_get_user_attrs(storage_mode: str) -> None:
 
