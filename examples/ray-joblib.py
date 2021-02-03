@@ -26,6 +26,8 @@ try:
 except ConnectionError:
     ray.init()
 # Disable the warning to suppress the log.
+# TODO(HideakiImamura): enable warning after https://github.com/ray-project/ray/pull/13865 and
+# the new release of Ray.
 ray.init(logging_level=logging.ERROR, ignore_reinit_error=True)
 register_ray()
 
