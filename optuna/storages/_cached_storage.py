@@ -448,10 +448,11 @@ class _CachedStorage(BaseStorage):
 
     def fail_stale_trials(self) -> List[int]:
         stale_trial_ids = self._backend._get_stale_trial_ids()
+        confirmed_stale_trial_ids = []
 
         for trial_id in stale_trial_ids:
-            if not self.set_trial_state(trial_id, TrialState.FAIL):
-                stale_trial_ids.remove(trial_id)
+            if self.set_trial_state(trial_id, TrialState.FAIL):
+                confirmed_stale_trial_ids.append(trial_id)
 
         return stale_trial_ids
 
