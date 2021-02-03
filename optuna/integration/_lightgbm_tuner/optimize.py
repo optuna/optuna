@@ -682,9 +682,7 @@ class _LightGBMBaseTuner(_BaseTuner):
                 self._step_name = step_name
 
             def get_trials(
-                self,
-                deepcopy: bool = True,
-                states: Optional[Tuple[TrialState, ...]] = None,
+                self, deepcopy: bool = True, states: Optional[Tuple[TrialState, ...]] = None,
             ) -> List[optuna.trial.FrozenTrial]:
 
                 trials = super().get_trials(deepcopy=deepcopy, states=states)
@@ -877,8 +875,8 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
     :class:`~optuna.integration.lightgbm.LightGBMTunerCV` invokes `lightgbm.cv()`_ to train
     and validate boosters while :class:`~optuna.integration.lightgbm.LightGBMTuner` invokes
     `lightgbm.train()`_. See
-    `a simple example <https://github.com/optuna/optuna/blob/master/examples/lightgbm/lightgbm_tuner_cv.
-    py>`_ which optimizes the validation log loss of cancer detection.
+    `a simple example <https://github.com/optuna/optuna/blob/master/examples/lightgbm/
+    lightgbm_tuner_cv.py>`_ which optimizes the validation log loss of cancer detection.
 
     Arguments and keyword arguments for `lightgbm.cv()`_ can be passed except
     ``metrics``, ``init_model`` and ``eval_train_metric``.
