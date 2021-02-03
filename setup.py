@@ -113,7 +113,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "jax",
             "optax",
             "dm-haiku",
-            "hydra-core",
             "hydra-optuna-sweeper",
         ],
         "experimental": ["redis"],
