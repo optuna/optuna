@@ -40,7 +40,7 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             training will stop when the quantity
             monitored has stopped decreasing; in ``max``
             mode it will stop when the quantity
-            monitored has stopped increasing.
+            monitored has stopped increasing. Default: ``min``.
         strict: whether to crash the training if ``monitor`` is
             not found in the validation metrics. Default: ``True``.
     """
