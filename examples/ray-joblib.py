@@ -21,8 +21,11 @@ import optuna
 
 
 # Get a URL of the Ray dashboard.
-ray.init()
-# TODO(HideakiImamura): Enable the warning after https://github.com/ray-project/ray/issues/13855.
+try:
+    ray.init(address="auto")
+except ConnectionError:
+    ray.init()
+# Disable the warning to suppress the log.
 ray.init(logging_level=logging.ERROR, ignore_reinit_error=True)
 register_ray()
 
@@ -49,18 +52,19 @@ def objective(trial):
 
 
 if __name__ == "__main__":
-    n_jobs = 3
     study = optuna.create_study(direction="maximize")
-    with joblib.parallel_backend("ray", n_jobs=n_jobs):
+    with joblib.parallel_backend("ray", n_jobs=-1):
         study.optimize(objective, n_trials=100)
 
-    print("Number of finished trials: ", len(study.trials))
+    print(f"Number of finished trials: {len(study.trials)}")
+
+    print(f"Elapsed time: {study.trials[-1].datetime_complete - study.trials[0].datetime_start}")
 
     print("Best trial:")
     trial = study.best_trial
 
-    print("  Value: ", trial.value)
+    print(f"  Value: {trial.value}")
 
     print("  Params: ")
     for key, value in trial.params.items():
-        print("    {}: {}".format(key, value))
+        print(f"    {key}: {value}")
