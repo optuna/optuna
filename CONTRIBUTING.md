@@ -113,7 +113,7 @@ By installing [`act`](https://github.com/nektos/act#installation) and Docker, yo
 tests written for GitHub Actions locally.
 
 ```bash
-$JOB_NAME=checks
+JOB_NAME=checks
 act -j $JOB_NAME
 ```
 
