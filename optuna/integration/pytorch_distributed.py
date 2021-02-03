@@ -7,7 +7,6 @@ from typing import Optional
 from typing import Sequence
 import warnings
 
-
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
