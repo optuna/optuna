@@ -26,6 +26,11 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         :class:`~optuna.trial.Trial`. Please refer to :class:`optuna.trial.Trial` for further
         details.
 
+    See `the example <https://github.com/optuna/optuna/blob/master/
+    examples/pytorch_distributed_simple.py>`__
+    if you want to optimize an objective function that trains neural network
+    written with PyTorch distributed data parallel.
+
     Args:
         trial:
             A :class:`~optuna.trial.Trial` object or :obj:`None`. Please set trial objece in
@@ -102,8 +107,11 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         def func() -> bool:
 
             assert self.delegate is not None
-            return self.delegate.should_prune()
+            # Some pruners return numpy.bool_, which is incompatible with bool.
+            return bool(self.delegate.should_prune())
 
+        # torch.bool seems to be the correct type, but the communication fails
+        # due to the RuntimeError.
         return _call_and_communicate(func, torch.int)
 
     def set_user_attr(self, key: str, value: Any) -> None:

@@ -51,13 +51,13 @@ jobs:
     - name: Run examples
       run: |
         if [ ${{ matrix.python-version }} = 3.6 ]; then
-          IGNORES='chainermn_.*|fastai*|rapids_.*|botorch_.*'
+          IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*|botorch_.*'
         elif [ ${{ matrix.python-version }} = 3.8 ]; then
-          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|rapids_.*'
+          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|pytorch_distributed_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|rapids_.*'
         elif [ ${{ matrix.python-version }} = 3.9 ]; then
-          IGNORES='allennlp_*|botorch_*|catalyst_*|catboost_*|chainer_*|chainermn_.*|dask_ml_.*|fastai*|gluon_*|haiku_*|hydra_*|keras_*|lightgbm_*|mxnet_*|optuna_search_cv_*|pytorch_ignite_*|pytorch_lightning_*|rapids_*|sb3_*|skimage_lbp_*|sklearn_*|skorch_*|tensorboard_*|tensorflow_*|tfkeras_*|xgboost_*|pruning/simple*|enqueue_trial*|visualization/plot_pareto_front*|visualization/plot_study*|multi_objective/pytorch_simple*'
+          IGNORES='allennlp_*|botorch_*|catalyst_*|catboost_*|chainer_*|chainermn_.*|dask_ml_.*|fastai*|gluon_*|haiku_*|hydra_*|keras_*|lightgbm_*|mxnet_*|optuna_search_cv_*|pytorch_distributed_.*|pytorch_ignite_*|pytorch_lightning_*|rapids_*|sb3_*|skimage_lbp_*|sklearn_*|skorch_*|tensorboard_*|tensorflow_*|tfkeras_*|xgboost_*|pruning/simple*|enqueue_trial*|visualization/plot_pareto_front*|visualization/plot_study*|multi_objective/pytorch_simple*'
         else
-          IGNORES='chainermn_.*|fastai*|rapids_.*'
+          IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*'
         fi
 
         for file in `find examples -name '*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`
@@ -89,6 +89,7 @@ jobs:
           STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
           mpirun -n 2 -- python $file $STUDY_NAME $STORAGE_URL > /dev/null
         done
+        mpirun -n 2 -- python examples/pytorch_distributed_simple.py
       env:
         OMP_NUM_THREADS: 1
     - name: Run Hydra examples
