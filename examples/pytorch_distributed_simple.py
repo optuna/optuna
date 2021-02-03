@@ -1,11 +1,10 @@
 """
-Optuna example that optimizes multi-layer perceptrons using PyTorch distributed data parallel
-(DDP).
+Optuna example that optimizes multi-layer perceptrons using PyTorch distributed.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-PyTorch DDP and MNIST. We optimize the neural network architecture as well as the optimizer
-configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
-subset of it.
+PyTorch distributed data parallel and MNIST. We optimize the neural network architecture as well
+as the optimizer configuration. As it is too time consuming to use the whole MNIST dataset, we
+here use a small subset of it.
 
 You can execute this example with mpirun command as follows:
     $ mpirun -n 2 -- python pytorch_distributed_simple.py

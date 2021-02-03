@@ -18,8 +18,7 @@ from optuna.distributions import CategoricalChoiceType
 
 @experimental("2.6.0")
 class TorchDistributedTrial(optuna.trial.BaseTrial):
-    """A wrapper of :class:`~optuna.trial.Trial` to incorporate Optuna with PyTorch distributed
-    data parallel.
+    """A wrapper of :class:`~optuna.trial.Trial` to incorporate Optuna with PyTorch distributed.
 
     .. seealso::
         :class:`~optuna.integration.TorchDistributedTrial` provides the same interface as
