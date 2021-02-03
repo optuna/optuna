@@ -104,11 +104,11 @@ def objective(trial):
 ###################################################################################################
 # Run multi-objective optimization
 # --------------------------------
-
 study = optuna.multi_objective.create_study(["minimize", "maximize"])
 study.optimize(objective, n_trials=30, timeout=300)
 
 print("Number of finished trials: ", len(study.trials))
+
 
 ###################################################################################################
 # Check trials on pareto front visually
