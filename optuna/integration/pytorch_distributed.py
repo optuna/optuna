@@ -7,13 +7,17 @@ from typing import Optional
 from typing import Sequence
 import warnings
 
-import torch
-import torch.distributed as dist
 
 import optuna
 from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
+
+
+with try_import() as _imports:
+    import torch
+    import torch.distributed as dist
 
 
 @experimental("2.6.0")
@@ -37,6 +41,8 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     """
 
     def __init__(self, trial: Optional[optuna.trial.Trial]) -> None:
+
+        _imports.check()
         self.delegate = trial
 
     def suggest_float(
