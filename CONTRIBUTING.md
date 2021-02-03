@@ -100,12 +100,30 @@ pytest
 pytest tests/${TARGET_TEST_FILE_NAME}
 ```
 
-## Continuous Integration
+## Continuous Integration and Local Verification
 
 Optuna repository uses GitHub Actions and CircleCI.
 
 Currently, we are migrating to GitHub Actions but still we use CirclCI for a test of `document`
 because it makes it much easier to check built documentation.
+
+### Local Verification
+
+By installing [`act`](https://github.com/nektos/act#installation) and Docker, you can run
+tests written for GitHub Actions locally.
+
+```bash
+$JOB_NAME=checks
+act -j $JOB_NAME
+```
+
+Currently, youcan run the following jobs:
+
+- `checks`    
+  - Runs unit tests with RDB storages with Python 3.7   
+- `document`  
+  - Checks documentation build
+
 
 ## Creating a Pull Request
 
