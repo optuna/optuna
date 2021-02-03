@@ -1,5 +1,5 @@
 defaults:
-  - override hydra/sweeper: optuna
+  - hydra/sweeper: optuna
 
 hydra:
   sweeper:
