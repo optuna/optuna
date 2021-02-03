@@ -35,7 +35,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` object or :obj:`None`. Please set trial objece in
+            A :class:`~optuna.trial.Trial` object or :obj:`None`. Please set trial object in
             rank-0 node and set :obj:`None` in the other rank node.
     """
 
