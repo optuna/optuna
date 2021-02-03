@@ -7,7 +7,7 @@ as the optimizer configuration. As it is too time consuming to use the whole MNI
 here use a small subset of it.
 
 You can execute this example with mpirun command as follows:
-    $ mpirun -n 2 -- python pytorch_distributed_simple.py
+    $ mpirun -n 2 python pytorch_distributed_simple.py
 
 """
 
@@ -140,8 +140,18 @@ def objective(single_trial):
 
 if __name__ == "__main__":
     # Set environmental variables required by torch.distributed.
-    os.environ["WORLD_SIZE"] = os.environ["OMPI_COMM_WORLD_SIZE"]
-    os.environ["RANK"] = os.environ["OMPI_COMM_WORLD_RANK"]
+    world_size = os.environ.get("OMPI_COMM_WORLD_SIZE")
+    if world_size is None:
+        world_size = os.environ.get("PMI_SIZE")
+    if world_size is None:
+        raise RuntimeError("Neither MPICH nor OpenMPI is avaliable.")
+    os.environ["WORLD_SIZE"] = str(world_size)
+
+    rank = os.environ.get("OMPI_COMM_WORLD_RANK")
+    if rank is None:
+        rank = os.environ.get("PMI_RANK")
+    os.environ["RANK"] = str(rank)
+
     os.environ["MASTER_ADDR"] = "127.0.0.1"
     os.environ["MASTER_PORT"] = "20000"
 
