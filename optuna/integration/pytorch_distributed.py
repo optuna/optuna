@@ -116,7 +116,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
         # torch.bool seems to be the correct type, but the communication fails
         # due to the RuntimeError.
-        return _call_and_communicate(func, torch.int)
+        return _call_and_communicate(func, torch.uint8)
 
     def set_user_attr(self, key: str, value: Any) -> None:
 
