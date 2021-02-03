@@ -10,6 +10,7 @@ from optuna.storages._rdb.models import BaseModel
 from optuna.storages._rdb.models import StudyDirectionModel
 from optuna.storages._rdb.models import StudyModel
 from optuna.storages._rdb.models import StudySystemAttributeModel
+from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import TrialIntermediateValueModel
 from optuna.storages._rdb.models import TrialModel
 from optuna.storages._rdb.models import TrialSystemAttributeModel
@@ -389,6 +390,41 @@ class TestTrialIntermediateValueModel(object):
         session.commit()
 
         assert 0 == len(TrialIntermediateValueModel.where_trial_id(trial.trial_id, session))
+
+
+class TestTrialHeartbeatModel(object):
+    @staticmethod
+    def _create_model(session: Session) -> TrialModel:
+
+        direction = StudyDirectionModel(direction=StudyDirection.MINIMIZE, objective=0)
+        study = StudyModel(study_id=1, study_name="test-study", directions=[direction])
+        trial = TrialModel(trial_id=1, study_id=study.study_id, state=TrialState.COMPLETE)
+        session.add(study)
+        session.add(trial)
+        session.add(TrialHeartbeatModel(trial_id=trial.trial_id))
+        session.commit()
+        return trial
+
+    @staticmethod
+    def test_where_trial_id(session: Session) -> None:
+
+        trial = TestTrialHeartbeatModel._create_model(session)
+        trial_heartbeat = TrialHeartbeatModel.where_trial_id(trial.trial_id, session)
+        assert trial_heartbeat is not None
+        assert isinstance(trial_heartbeat.heartbeat, datetime)
+
+    @staticmethod
+    def test_cascade_delete_on_trial(session: Session) -> None:
+
+        trial = TestTrialHeartbeatModel._create_model(session)
+        session.commit()
+
+        assert TrialHeartbeatModel.where_trial_id(trial.trial_id, session) is not None
+
+        session.delete(trial)
+        session.commit()
+
+        assert TrialHeartbeatModel.where_trial_id(trial.trial_id, session) is None
 
 
 class TestVersionInfoModel(object):

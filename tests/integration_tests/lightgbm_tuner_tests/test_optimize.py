@@ -137,6 +137,7 @@ class TestBaseTuner(object):
 
         for metric in [
             "auc",
+            "auc_mu",
             "ndcg",
             "lambdarank",
             "rank_xendcg",
@@ -146,11 +147,20 @@ class TestBaseTuner(object):
             "xendcg_mart",
             "map",
             "mean_average_precision",
+            "average_precision",
         ]:
             tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert tuner.higher_is_better()
 
-        for metric in ["rmsle", "rmse", "binary_logloss", "mape"]:
+        for metric in [
+            "mae",
+            "rmse",
+            "quantile",
+            "mape",
+            "binary_logloss",
+            "multi_logloss",
+            "cross_entropy",
+        ]:
             tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert not tuner.higher_is_better()
 

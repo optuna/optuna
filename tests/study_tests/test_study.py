@@ -15,8 +15,6 @@ from unittest.mock import patch
 import uuid
 
 import _pytest.capture
-from _pytest.recwarn import WarningsRecorder
-import joblib
 import pytest
 
 from optuna import create_study
@@ -234,19 +232,6 @@ def test_optimize_with_catch_invalid_type(catch: Any) -> None:
 
     with pytest.raises(TypeError):
         study.optimize(func_value_error, n_trials=20, catch=catch)
-
-
-def test_optimize_parallel_storage_warning(recwarn: WarningsRecorder) -> None:
-
-    study = create_study()
-
-    # Default joblib backend is threading and no warnings will be captured.
-    study.optimize(lambda t: t.suggest_uniform("x", 0, 1), n_trials=20, n_jobs=2)
-    assert len(recwarn) == 0
-
-    with pytest.warns(UserWarning):
-        with joblib.parallel_backend("loky"):
-            study.optimize(lambda t: t.suggest_uniform("x", 0, 1), n_trials=20, n_jobs=2)
 
 
 @pytest.mark.parametrize(
@@ -488,6 +473,31 @@ def test_add_trial(storage_mode: str) -> None:
         assert len(study.trials) == 1
         assert study.trials[0].number == 0
         assert study.best_value == 0.8
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_add_trials(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.add_trials([])
+        assert len(study.trials) == 0
+
+        trials = [create_trial(value=i) for i in range(3)]
+        study.add_trials(trials)
+        assert len(study.trials) == 3
+        for i, trial in enumerate(study.trials):
+            assert trial.number == i
+            assert trial.value == i
+
+        other_study = create_study(storage=storage)
+        other_study.add_trials(study.trials)
+        assert len(other_study.trials) == 3
+        for i, trial in enumerate(other_study.trials):
+            assert trial.number == i
+            assert trial.value == i
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
