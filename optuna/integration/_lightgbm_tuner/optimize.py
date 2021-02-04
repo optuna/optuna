@@ -682,7 +682,9 @@ class _LightGBMBaseTuner(_BaseTuner):
                 self._step_name = step_name
 
             def get_trials(
-                self, deepcopy: bool = True, states: Optional[Tuple[TrialState, ...]] = None,
+                self,
+                deepcopy: bool = True,
+                states: Optional[Tuple[TrialState, ...]] = None,
             ) -> List[optuna.trial.FrozenTrial]:
 
                 trials = super().get_trials(deepcopy=deepcopy, states=states)
