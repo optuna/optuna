@@ -142,15 +142,12 @@ class TestTrialModel(object):
     @staticmethod
     def test_default_datetime(session: Session) -> None:
 
-        datetime_1 = datetime.now()
-
-        session.add(TrialModel(state=TrialState.RUNNING))
+        session.add(TrialModel(state=TrialState.WAITING))
         session.commit()
 
-        datetime_2 = datetime.now()
-
         trial_model = session.query(TrialModel).first()
-        assert datetime_1 < trial_model.datetime_start < datetime_2
+
+        assert trial_model.datetime_start is None
         assert trial_model.datetime_complete is None
 
     @staticmethod

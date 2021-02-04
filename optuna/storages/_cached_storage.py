@@ -430,6 +430,7 @@ class _CachedStorage(BaseStorage):
             distributions_=updates.distributions,
             user_attrs=updates.user_attrs,
             system_attrs=updates.system_attrs,
+            datetime_start=updates.datetime_start,
             datetime_complete=updates.datetime_complete,
         )
 
