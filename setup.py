@@ -33,7 +33,7 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.6.0",
         "colorlog",
-        "numpy<1.20.0",
+        "numpy",
         "packaging>=20.0",
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
