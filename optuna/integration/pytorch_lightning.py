@@ -29,50 +29,18 @@ class PyTorchLightningPruningCallback(EarlyStopping):
             ``pytorch_lightning.LightningModule.training_step`` or
             ``pytorch_lightning.LightningModule.validation_epoch_end`` and the names thus depend on
             how this dictionary is formatted.
-        min_delta: minimum change in the monitored quantity
-            to qualify as an improvement, i.e. an absolute
-            change of less than ``min_delta``, will count as no
-            improvement. Default: ``0.0``.
-        patience: number of validation epochs with no improvement
-            after which training will be stopped. Default: ``3``.
-        verbose: verbosity mode. Default: ``False``.
-        mode: one of {``min``, ``max``}. In ``min`` mode,
-            training will stop when the quantity
-            monitored has stopped decreasing; in ``max``
-            mode it will stop when the quantity
-            monitored has stopped increasing. Default: ``min``.
-        strict: whether to crash the training if ``monitor`` is
-            not found in the validation metrics. Default: ``True``.
     """
 
-    def __init__(
-        self,
-        trial: optuna.trial.Trial,
-        monitor: str,
-        min_delta: float = 0.0,
-        patience: int = 3,
-        verbose: bool = False,
-        mode: str = "min",
-        strict: bool = True,
-    ) -> None:
+    def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
 
         _imports.check()
 
-        super(PyTorchLightningPruningCallback, self).__init__(
-            monitor=monitor,
-            min_delta=min_delta,
-            patience=patience,
-            verbose=verbose,
-            mode=mode,
-            strict=strict,
-        )
+        super(PyTorchLightningPruningCallback, self).__init__(monitor=monitor)
 
         self._trial = trial
 
     def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
 
-        # To check if we saved the internal states correctly, moved states from TPU to CPU etc.
-        super().on_validation_end(trainer=trainer, pl_module=pl_module)
         logs = trainer.callback_metrics
         epoch = pl_module.current_epoch
         current_score = logs.get(self.monitor)
