@@ -56,8 +56,8 @@ class _FanovaTree(object):
 
         # For each midpoint along the given dimensions, traverse this tree to compute the
         # marginal predictions.
-        midpoints = [self._split_midpoints[f] for f in features]
-        sizes = [self._split_sizes[f] for f in features]
+        midpoints = [self._split_midpoints[int(f)] for f in features]
+        sizes = [self._split_sizes[int(f)] for f in features]
 
         product_midpoints = itertools.product(*midpoints)
         product_sizes = itertools.product(*sizes)
@@ -71,7 +71,7 @@ class _FanovaTree(object):
             sample[features] = numpy.array(midpoints)
 
             value, weight = self._get_marginalized_statistics(sample)
-            weight *= float(numpy.prod(sizes))
+            weight *= numpy.prod(sizes)
 
             values = numpy.append(values, value)
             weights = numpy.append(weights, weight)
