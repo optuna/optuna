@@ -15,7 +15,7 @@ def _get_best_intermediate_result_over_steps(
     trial: "optuna.trial.FrozenTrial", direction: StudyDirection
 ) -> float:
 
-    values = np.array(list(trial.intermediate_values.values()), np.float)
+    values = np.array(list(trial.intermediate_values.values()), dtype=float)
     if direction == StudyDirection.MAXIMIZE:
         return np.nanmax(values)
     return np.nanmin(values)
@@ -45,7 +45,7 @@ def _get_percentile_intermediate_result_over_trials(
 
     return float(
         np.nanpercentile(
-            np.array(intermediate_values, np.float),
+            np.array(intermediate_values, dtype=float),
             percentile,
         )
     )

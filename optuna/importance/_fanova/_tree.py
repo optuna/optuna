@@ -71,10 +71,10 @@ class _FanovaTree(object):
             sample[features] = numpy.array(midpoints)
 
             value, weight = self._get_marginalized_statistics(sample)
-            weight *= numpy.prod(sizes)
+            weight *= float(numpy.prod(sizes))
 
-            values.append(value)
-            weights.append(weight)
+            values = numpy.append(values, value)
+            weights = numpy.append(weights, weight)
 
         weights = numpy.array(weights)
         values = numpy.array(values)
@@ -136,8 +136,8 @@ class _FanovaTree(object):
             node_indices.append(node_index)
             active_features_cardinalities.append(_get_cardinality(search_spaces))
 
-        node_indices = numpy.array(node_indices, dtype=numpy.int32)
-        active_features_cardinalities = numpy.array(active_features_cardinalities)
+        node_indices = numpy.array(node_indices, dtype=numpy.int32).tolist()
+        active_features_cardinalities = numpy.array(active_features_cardinalities).tolist()
 
         statistics = self._statistics[node_indices]
         values = statistics[:, 0]
@@ -155,13 +155,12 @@ class _FanovaTree(object):
         # Holds for each node, its weighted average value and the sum of weights.
         statistics = numpy.empty((n_nodes, 2), dtype=numpy.float64)
 
-        subspaces = [None for _ in range(n_nodes)]
+        subspaces = numpy.array([None for _ in range(n_nodes)])
         subspaces[0] = self._search_spaces
 
         # Compute marginals for leaf nodes.
         for node_index in range(n_nodes):
-            subspace = subspaces[node_index]
-
+            subspace = numpy.array(subspaces[node_index])
             if self._is_node_leaf(node_index):
                 value = self._get_node_value(node_index)
                 weight = _get_cardinality(subspace)
@@ -183,7 +182,7 @@ class _FanovaTree(object):
                     child_values.append(statistics[child_node_index, 0])
                     child_weights.append(statistics[child_node_index, 1])
                 value = numpy.average(child_values, weights=child_weights)
-                weight = numpy.sum(child_weights)
+                weight = float(numpy.sum(child_weights))
                 statistics[node_index] = [value, weight]
 
         return statistics
@@ -229,7 +228,7 @@ class _FanovaTree(object):
 
         return sorted_all_split_values
 
-    def _precompute_subtree_active_features(self) -> List[Set[int]]:
+    def _precompute_subtree_active_features(self) -> numpy.ndarray:
         subtree_active_features = numpy.full((self._n_nodes, self._n_features), fill_value=False)
 
         for node_index in reversed(range(self._n_nodes)):

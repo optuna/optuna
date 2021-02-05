@@ -80,9 +80,9 @@ class _ParzenEstimator(object):
                 order: List[int] = []
             else:  # When mus.size is greater than 0.
                 # We decide the place of the  prior.
-                order = numpy.argsort(mus).astype(int)
+                order = numpy.argsort(mus).astype(int).tolist()
                 ordered_mus = mus[order]
-                prior_pos = numpy.searchsorted(ordered_mus, prior_mu)
+                prior_pos = int(numpy.searchsorted(ordered_mus, prior_mu))
                 # We decide the mus.
                 low_sorted_mus_high = numpy.zeros(len(mus) + 3)
                 sorted_mus = low_sorted_mus_high[1:-1]
@@ -90,7 +90,7 @@ class _ParzenEstimator(object):
                 sorted_mus[prior_pos] = prior_mu
                 sorted_mus[prior_pos + 1 :] = ordered_mus[prior_pos:]
         else:
-            order = numpy.argsort(mus)
+            order = numpy.argsort(mus).tolist()
             # We decide the mus.
             low_sorted_mus_high = numpy.zeros(len(mus) + 2)
             sorted_mus = low_sorted_mus_high[1:-1]
@@ -125,7 +125,7 @@ class _ParzenEstimator(object):
             minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(sorted_mus)))
         else:
             minsigma = EPS
-        sigma = numpy.clip(sigma, minsigma, maxsigma)
+        sigma = numpy.asarray(numpy.clip(sigma, minsigma, maxsigma))
         if consider_prior:
             sigma[prior_pos] = prior_sigma
 

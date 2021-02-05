@@ -48,11 +48,13 @@ class WFG(BaseHypervolume):
         return volume
 
     def _compute_exclusive_hv(self, point: np.ndarray, solution_set: np.ndarray) -> float:
-        volume = _compute_2points_volume(point, self._reference_point)
+        volume = _compute_2points_volume(point, np.array(self._reference_point))
         limited_solution_set = self._limit(point, solution_set)
         n_points_of_s = limited_solution_set.shape[0]
         if n_points_of_s == 1:
-            volume -= _compute_2points_volume(limited_solution_set[0], self._reference_point)
+            volume -= _compute_2points_volume(
+                limited_solution_set[0], np.array(self._reference_point)
+            )
         elif n_points_of_s > 1:
             volume -= self._compute_rec(limited_solution_set)
         return volume
