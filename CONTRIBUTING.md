@@ -120,7 +120,7 @@ act -j $JOB_NAME
 Currently, you can run the following jobs:
 
 - `checks`    
-  - Runs unit tests with RDB storages with Python 3.7   
+  - Checking the format, coding style, and type hings
 
 ## Creating a Pull Request
 
