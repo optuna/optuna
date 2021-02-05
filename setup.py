@@ -112,6 +112,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fastai",
             "optax",
             "dm-haiku",
+            "hydra-optuna-sweeper",
         ],
         "experimental": ["redis"],
         "testing": [
