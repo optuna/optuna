@@ -1034,13 +1034,19 @@ def test_trial_duration_calculation(storage_mode: str) -> None:
         study.tell(trial, values=values)
 
         t0 = study.trials[0]
+        assert t0.datetime_start is not None
+        assert t0.datetime_complete is not None
         duration_error0 = abs((t0.datetime_complete - t0.datetime_start).total_seconds() - 1)
         assert duration_error0 < 0.1
 
         t1 = study.trials[1]
+        assert t1.datetime_start is not None
+        assert t1.datetime_complete is not None
         duration_error1 = abs((t1.datetime_complete - t1.datetime_start).total_seconds() - 1)
         assert duration_error1 < 0.1
 
         t2 = study.trials[2]
+        assert t2.datetime_start is not None
+        assert t2.datetime_complete is not None
         duration_error2 = abs((t2.datetime_complete - t2.datetime_start).total_seconds() - 1)
         assert duration_error2 < 0.1
