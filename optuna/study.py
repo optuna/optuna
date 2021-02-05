@@ -426,17 +426,10 @@ class Study(BaseStudy):
 
                 study = optuna.create_study()
 
-                # For example, the distributions are previously defined when using `create_trial`.
                 distributions = {
                     "optimizer": optuna.distributions.CategoricalDistribution(["adam", "sgd"]),
                     "lr": optuna.distributions.LogUniformDistribution(0.0001, 0.1),
                 }
-                trial = optuna.trial.create_trial(
-                    params={"optimizer": "adam", "lr": 0.0001},
-                    distributions=distributions,
-                    value=0.5,
-                )
-                study.add_trial(trial)
 
                 # You can pass the distributions previously defined.
                 trial = study.ask(fixed_distributions=distributions)
