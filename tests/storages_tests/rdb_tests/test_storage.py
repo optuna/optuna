@@ -1,6 +1,7 @@
 import pickle
 import sys
 import tempfile
+import time
 from typing import Any
 from typing import Dict
 from typing import List
@@ -10,14 +11,19 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from optuna import create_study
 from optuna import version
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
 from optuna.storages import RDBStorage
 from optuna.storages._rdb.models import SCHEMA_VERSION
+from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import VersionInfoModel
 from optuna.storages._rdb.storage import _create_scoped_session
+from optuna.testing.storage import StorageSupplier
+from optuna.testing.threading import _TestableThread
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -286,3 +292,70 @@ def test_get_trials_excluded_trial_ids() -> None:
     # See https://github.com/optuna/optuna/issues/1457.
     trials = storage._get_trials(study_id, states=None, excluded_trial_ids=set(range(500000)))
     assert len(trials) == 0
+
+
+def test_record_heartbeat() -> None:
+
+    heartbeat_interval = 1
+    n_trials = 2
+    sleep_sec = 2
+
+    def objective(trial: Trial) -> float:
+        time.sleep(sleep_sec)
+        return 1.0
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage.heartbeat_interval = heartbeat_interval
+        study = create_study(storage=storage)
+        # Exceptions raised in spawned threads are caught by `_TestableThread`.
+        with patch("optuna._optimize.Thread", _TestableThread):
+            study.optimize(objective, n_trials=n_trials)
+
+        trial_heartbeats = []
+
+        with _create_scoped_session(storage.scoped_session) as session:
+            trial_ids = [trial._trial_id for trial in study.trials]
+            for trial_id in trial_ids:
+                heartbeat_model = TrialHeartbeatModel.where_trial_id(trial_id, session)
+                assert heartbeat_model is not None
+                trial_heartbeats.append(heartbeat_model.heartbeat)
+
+        assert len(trial_heartbeats) == n_trials
+        for i in range(n_trials - 1):
+            assert (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds - sleep_sec <= 1
+
+
+def test_fail_stale_trials() -> None:
+
+    heartbeat_interval = 1
+    grace_period = 2
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage.heartbeat_interval = heartbeat_interval
+        storage.grace_period = grace_period
+        study = create_study(storage=storage)
+
+        trial = study.ask()
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        t = study.trials[0]
+        assert t.state is TrialState.RUNNING
+
+        # Exceptions raised in spawned threads are caught by `_TestableThread`.
+        with patch("optuna._optimize.Thread", _TestableThread):
+            study.optimize(lambda _: 1.0, n_trials=1)
+
+        t = study.trials[0]
+        assert t.state is TrialState.FAIL
+
+
+def test_invalid_heartbeat_interval_and_grace_period() -> None:
+
+    with pytest.raises(ValueError):
+        _ = RDBStorage("sqlite:///:memory:", heartbeat_interval=-1)
+
+    with pytest.raises(ValueError):
+        _ = RDBStorage("sqlite:///:memory:", grace_period=-1)

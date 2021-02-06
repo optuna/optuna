@@ -18,6 +18,7 @@ import alembic.command
 import alembic.config
 import alembic.migration
 import alembic.script
+from sqlalchemy import func
 from sqlalchemy import orm
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine import Engine  # NOQA
@@ -108,6 +109,11 @@ class RDBStorage(BaseStorage):
             `sqlalchemy.engine.create_engine`_ function.
         skip_compatibility_check:
             Flag to skip schema compatibility check if set to True.
+        heartbeat_interval:
+            Interval to record the heartbeat. It is recorded every ``interval`` seconds.
+        grace_period:
+            Grace period before a running trial is failed from the last heartbeat.
+            If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -121,6 +127,12 @@ class RDBStorage(BaseStorage):
     .. _pool_pre_ping:
         https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.create_engine.params.
         pool_pre_ping
+
+    Raises:
+        :exc:`ValueError`:
+            If the given `heartbeat_interval` or `grace_period` is not a positive integer.
+        :exc:`RuntimeError`:
+            If the a process that was failed by heartbeat but was actually running.
     """
 
     def __init__(
@@ -128,11 +140,20 @@ class RDBStorage(BaseStorage):
         url: str,
         engine_kwargs: Optional[Dict[str, Any]] = None,
         skip_compatibility_check: bool = False,
+        *,
+        heartbeat_interval: Optional[int] = None,
+        grace_period: Optional[int] = None,
     ) -> None:
 
         self.engine_kwargs = engine_kwargs or {}
         self.url = self._fill_storage_url_template(url)
         self.skip_compatibility_check = skip_compatibility_check
+        if heartbeat_interval is not None and heartbeat_interval <= 0:
+            raise ValueError("The value of `heartbeat_interval` should be a positive integer.")
+        if grace_period is not None and grace_period <= 0:
+            raise ValueError("The value of `grace_period` should be a positive integer.")
+        self.heartbeat_interval = heartbeat_interval
+        self.grace_period = grace_period
 
         self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
@@ -1131,6 +1152,64 @@ class RDBStorage(BaseStorage):
         """Return the schema version list."""
 
         return self._version_manager.get_all_versions()
+
+    def record_heartbeat(self, trial_id: int) -> None:
+        with _create_scoped_session(self.scoped_session, True) as session:
+            heartbeat = models.TrialHeartbeatModel.where_trial_id(trial_id, session)
+            if heartbeat is None:
+                heartbeat = models.TrialHeartbeatModel(trial_id=trial_id)
+                session.add(heartbeat)
+            else:
+                heartbeat.heartbeat = session.execute(func.now()).scalar()
+
+    def fail_stale_trials(self) -> List[int]:
+        stale_trial_ids = self._get_stale_trial_ids()
+        confirmed_stale_trial_ids = []
+
+        for trial_id in stale_trial_ids:
+            if self.set_trial_state(trial_id, TrialState.FAIL):
+                confirmed_stale_trial_ids.append(trial_id)
+
+        return confirmed_stale_trial_ids
+
+    def _get_stale_trial_ids(self) -> List[int]:
+        assert self.heartbeat_interval is not None
+        if self.grace_period is None:
+            grace_period = 2 * self.heartbeat_interval
+        else:
+            grace_period = self.grace_period
+        stale_trial_ids = []
+
+        with _create_scoped_session(self.scoped_session, True) as session:
+            current_heartbeat = session.execute(func.now()).scalar()
+            # Added the following line to prevent mixing of timezone-aware and timezone-naive
+            # `datetime` in PostgreSQL. See
+            # https://github.com/optuna/optuna/pull/2190#issuecomment-766605088 for details
+            current_heartbeat = current_heartbeat.replace(tzinfo=None)
+
+            running_trials = (
+                session.query(models.TrialModel)
+                .options(orm.selectinload(models.TrialModel.heartbeats))
+                .filter(models.TrialModel.state == TrialState.RUNNING)
+                .all()
+            )
+            for trial in running_trials:
+                if len(trial.heartbeats) == 0:
+                    continue
+                assert len(trial.heartbeats) == 1
+                heartbeat = trial.heartbeats[0].heartbeat
+                if (current_heartbeat - heartbeat).seconds > grace_period:
+                    stale_trial_ids.append(trial.trial_id)
+
+        return stale_trial_ids
+
+    def _is_heartbeat_supported(self) -> bool:
+
+        return True
+
+    def get_heartbeat_interval(self) -> Optional[int]:
+
+        return self.heartbeat_interval
 
 
 class _VersionManager(object):

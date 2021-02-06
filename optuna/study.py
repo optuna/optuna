@@ -3,6 +3,7 @@ import threading
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -26,6 +27,7 @@ from optuna._optimize import _check_and_convert_to_values
 from optuna._optimize import _optimize
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
+from optuna.distributions import BaseDistribution
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -88,7 +90,8 @@ class BaseStudy(object):
 
         if self._is_multi_objective():
             raise RuntimeError(
-                "The best trial of a `study` is only supported for single-objective optimization."
+                "A single best trial cannot be retrieved from a multi-objective study. Consider "
+                "using Study.best_trials to retrieve a list containing the best trials."
             )
 
         return copy.deepcopy(self._storage.get_best_trial(self._study_id))
@@ -122,8 +125,8 @@ class BaseStudy(object):
 
         if self._is_multi_objective():
             raise RuntimeError(
-                "The single direction of a `study` is only supported for single-objective "
-                "optimization."
+                "A single direction cannot be retrieved from a multi-objective study. Consider "
+                "using Study.directions to retrieve a list containing all directions."
             )
 
         return self.directions[0]
@@ -384,7 +387,9 @@ class Study(BaseStudy):
             show_progress_bar=show_progress_bar,
         )
 
-    def ask(self) -> trial_module.Trial:
+    def ask(
+        self, fixed_distributions: Optional[Dict[str, BaseDistribution]] = None
+    ) -> trial_module.Trial:
         """Create a new trial from which hyperparameters can be suggested.
 
         This method is part of an alternative to :func:`~optuna.study.Study.optimize` that allows
@@ -393,6 +398,8 @@ class Study(BaseStudy):
         created trial.
 
         Example:
+
+            Getting the trial object with the :func:`~optuna.study.Study.ask` method.
 
             .. testcode::
 
@@ -407,9 +414,42 @@ class Study(BaseStudy):
 
                 study.tell(trial, x ** 2)
 
+        Example:
+
+            Passing previously defined distributions to the :func:`~optuna.study.Study.ask`
+            method.
+
+            .. testcode::
+
+                import optuna
+
+
+                study = optuna.create_study()
+
+                distributions = {
+                    "optimizer": optuna.distributions.CategoricalDistribution(["adam", "sgd"]),
+                    "lr": optuna.distributions.LogUniformDistribution(0.0001, 0.1),
+                }
+
+                # You can pass the distributions previously defined.
+                trial = study.ask(fixed_distributions=distributions)
+
+                # `optimizer` and `lr` are already suggested and accessible with `trial.params`.
+                assert "optimizer" in trial.params
+                assert "lr" in trial.params
+
+        Args:
+            fixed_distributions:
+                A dictionary containing the parameter names and parameter's distributions. Each
+                parameter in this dictionary is automatically suggested for the returned trial,
+                even when the suggest method is not explicitly invoked by the user. If this
+                argument is set to :obj:`None`, no parameter is automatically suggested.
+
         Returns:
             A :class:`~optuna.trial.Trial`.
         """
+
+        fixed_distributions = fixed_distributions or {}
 
         # Sync storage once every trial.
         self._storage.read_trials_from_remote_storage(self._study_id)
@@ -417,7 +457,12 @@ class Study(BaseStudy):
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
             trial_id = self._storage.create_new_trial(self._study_id)
-        return trial_module.Trial(self, trial_id)
+        trial = trial_module.Trial(self, trial_id)
+
+        for name, param in fixed_distributions.items():
+            trial._suggest(name, param)
+
+        return trial
 
     def tell(
         self,
@@ -847,6 +892,51 @@ class Study(BaseStudy):
         trial._validate()
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
+
+    @experimental("2.5.0")
+    def add_trials(self, trials: Iterable[FrozenTrial]) -> None:
+        """Add trials to study.
+
+        The trials are validated before being added.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+                from optuna.distributions import UniformDistribution
+
+
+                def objective(trial):
+                    x = trial.suggest_uniform("x", 0, 10)
+                    return x ** 2
+
+
+                study = optuna.create_study()
+                study.optimize(objective, n_trials=3)
+                assert len(study.trials) == 3
+
+                other_study = optuna.create_study()
+                other_study.add_trials(study.trials)
+                assert len(other_study.trials) == len(study.trials)
+
+                other_study.optimize(objective, n_trials=2)
+                assert len(other_study.trials) == len(study.trials) + 2
+
+        .. seealso::
+
+            See :func:`~optuna.study.Study.add_trial` for addition of each trial.
+
+        Args:
+            trials: Trials to add.
+
+        Raises:
+            :exc:`ValueError`:
+                If ``trials`` include invalid trial.
+        """
+
+        for trial in trials:
+            self.add_trial(trial)
 
     def _pop_waiting_trial_id(self) -> Optional[int]:
 

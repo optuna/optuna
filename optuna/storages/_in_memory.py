@@ -153,7 +153,7 @@ class InMemoryStorage(BaseStorage):
     def get_all_study_summaries(self) -> List[StudySummary]:
 
         with self._lock:
-            return [self._build_study_summary(study_id) for study_id in self._studies.keys()]
+            return [self._build_study_summary(study_id) for study_id in self._studies]
 
     def _build_study_summary(self, study_id: int) -> StudySummary:
         study = self._studies[study_id]

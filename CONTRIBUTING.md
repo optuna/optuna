@@ -100,39 +100,12 @@ pytest
 pytest tests/${TARGET_TEST_FILE_NAME}
 ```
 
-## Continuous Integration and Local Verification
+## Continuous Integration
 
 Optuna repository uses GitHub Actions and CircleCI.
 
-CircleCI is used for continuous integration.
-
-Currently, we are migrating to GitHub Actions but still we use CirclCI for a few tests listed below.
-`document` still exists because it makes it much easier to check built documentation and `tests-rdbstorage`
-is there because CircleCI supports more various RDB storages than GitHub Actions as of November 2020.
-
-### Local Verification
-
-By installing the [`circleci`](https://circleci.com/docs/2.0/local-cli/) local CLI and Docker, you can run tests locally.
-
-```bash
-circleci build --job <job_name>
-```
-
-You can run the following jobs.
-
-- `tests-rdbstorage`
-  - Runs unit tests with RDB storages with Python 3.7
-- `document`
-  - Checks documentation build
-
-#### Example
-
-The following `circleci` job runs all unit tests with RDB storages:
-Note that this job will download several hundred megabytes of data to install all the packages required for testing, and take several tens of minutes to complete all tests.
-
-```bash
-circleci build --job tests-rdbstorage
-```
+Currently, we are migrating to GitHub Actions but still we use CirclCI for a test of `document`
+because it makes it much easier to check built documentation.
 
 ## Creating a Pull Request
 

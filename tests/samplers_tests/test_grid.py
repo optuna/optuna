@@ -16,11 +16,6 @@ from optuna.samplers._grid import GridValueType
 from optuna.trial import Trial
 
 
-def _n_grids(search_space: Mapping[str, Sequence[Union[str, float, None]]]) -> int:
-
-    return int(np.prod([len(v) for v in search_space.values()]))
-
-
 def test_study_optimize_with_single_search_space() -> None:
     def objective(trial: Trial) -> float:
 
@@ -43,9 +38,8 @@ def test_study_optimize_with_single_search_space() -> None:
         "e": [0.1],
         "a": list(range(0, 100, 20)),
     }
-    n_grids = _n_grids(search_space)
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
-    study.optimize(objective, n_trials=n_grids)
+    study.optimize(objective)
 
     def sorted_values(
         d: Mapping[str, Sequence[GridValueType]]
@@ -56,9 +50,6 @@ def test_study_optimize_with_single_search_space() -> None:
     all_grids = itertools.product(*sorted_values(search_space))
     all_suggested_values = [tuple([p for p in sorted_values(t.params)]) for t in study.trials]
     assert set(all_grids) == set(all_suggested_values)
-
-    ids = sorted([t.system_attrs["grid_id"] for t in study.trials])
-    assert ids == list(range(n_grids))
 
     # Test a non-existing parameter name in the grid.
     search_space = {"a": list(range(0, 100, 20))}

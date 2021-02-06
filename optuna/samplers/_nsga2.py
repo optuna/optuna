@@ -199,7 +199,7 @@ class NSGAIISampler(BaseSampler):
         return param
 
     def _collect_parent_population(self, study: Study) -> Tuple[int, List[FrozenTrial]]:
-        trials = study._storage.get_all_trials(study._study_id, deepcopy=False)
+        trials = study.get_trials(deepcopy=False)
 
         generation_to_runnings = defaultdict(list)
         generation_to_population = defaultdict(list)
@@ -410,8 +410,32 @@ def _constrained_dominates(
     3) Trial x and y are feasible and trial x dominates trial y.
     """
 
-    constraints0 = trial0.system_attrs[_CONSTRAINTS_KEY]
-    constraints1 = trial1.system_attrs[_CONSTRAINTS_KEY]
+    constraints0 = trial0.system_attrs.get(_CONSTRAINTS_KEY)
+    constraints1 = trial1.system_attrs.get(_CONSTRAINTS_KEY)
+
+    if constraints0 is None:
+        warnings.warn(
+            f"Trial {trial0.number} does not have constraint values."
+            " It will be dominated by the other trials."
+        )
+
+    if constraints1 is None:
+        warnings.warn(
+            f"Trial {trial1.number} does not have constraint values."
+            " It will be dominated by the other trials."
+        )
+
+    if constraints0 is None and constraints1 is None:
+        # Neither Trial x nor y has constraints values
+        return _dominates(trial0, trial1, directions)
+
+    if constraints0 is not None and constraints1 is None:
+        # Trial x has constraint values, but y doesn't.
+        return True
+
+    if constraints0 is None and constraints1 is not None:
+        # If Trial y has constraint values, but x doesn't.
+        return False
 
     assert isinstance(constraints0, (list, tuple))
     assert isinstance(constraints1, (list, tuple))

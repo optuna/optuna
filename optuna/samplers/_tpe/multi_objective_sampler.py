@@ -557,9 +557,10 @@ class MOTPESampler(TPESampler):
                     - self._compute_hypervolume(
                         np.asarray(lvals_below[:i] + lvals_below[i + 1 :]), reference_point
                     )
-                    for i in range(len(lvals))
+                    for i in range(n_below)
                 ]
             )
+            contributions += EPS
             weights_below = np.clip(contributions / np.max(contributions), 0, 1)
             return weights_below
 
@@ -605,9 +606,7 @@ def _get_observation_pairs(
     treated as minimization in the MOTPE algorithm.
     """
 
-    trials = study._storage.get_all_trials(
-        study._study_id, deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,)
-    )
+    trials = study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,))
     values = []
     scores = []
     for trial in trials:
