@@ -5,6 +5,13 @@ from optuna.trial import Trial
 from optuna.visualization import plot_optimization_history
 
 
+def test_target_is_none_and_study_is_multi_obj() -> None:
+
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError):
+        plot_optimization_history(study)
+
+
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_plot_optimization_history(direction: str) -> None:
     # Test with no trial.
@@ -34,6 +41,20 @@ def test_plot_optimization_history(direction: str) -> None:
         assert figure.data[1].y == (1.0, 1.0, 0.0)
     else:
         assert figure.data[1].y == (1.0, 2.0, 2.0)
+    assert figure.data[0].name == "Objective Value"
+    assert figure.layout.yaxis.title.text == "Objective Value"
+
+    # Test customized target.
+    with pytest.warns(UserWarning):
+        figure = plot_optimization_history(study, target=lambda t: t.number)
+    assert len(figure.data) == 1
+    assert figure.data[0].x == (0, 1, 2)
+    assert figure.data[0].y == (0, 1, 2)
+
+    # Test customized target name.
+    figure = plot_optimization_history(study, target_name="Target Name")
+    assert figure.data[0].name == "Target Name"
+    assert figure.layout.yaxis.title.text == "Target Name"
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:

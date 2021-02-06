@@ -109,7 +109,8 @@ ENV/
 .mypy_cache
 
 # Sphinx
-tutorial/example.db
+tutorial/**/example.db
+tutorial/**/example-study.db
 docs/_build/
 docs/source/reference/generated/
 docs/source/reference/multi_objective/generated/

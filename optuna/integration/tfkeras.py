@@ -1,6 +1,7 @@
 from typing import Any
 from typing import Dict
 from typing import Optional
+import warnings
 
 import optuna
 
@@ -45,6 +46,11 @@ class TFKerasPruningCallback(Callback):
         current_score = logs.get(self._monitor)
 
         if current_score is None:
+            message = (
+                "The metric '{}' is not in the evaluation logs for pruning. "
+                "Please make sure you set the correct metric name.".format(self._monitor)
+            )
+            warnings.warn(message)
             return
 
         # Report current score and epoch to Optuna's trial.

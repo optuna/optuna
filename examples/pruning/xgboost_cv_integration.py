@@ -21,7 +21,7 @@ def objective(trial):
     dtrain = xgb.DMatrix(train_x, label=train_y)
 
     param = {
-        "silent": 1,
+        "verbosity": 0,
         "objective": "binary:logistic",
         "eval_metric": "auc",
         "booster": trial.suggest_categorical("booster", ["gbtree", "gblinear", "dart"]),

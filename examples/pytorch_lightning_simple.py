@@ -17,7 +17,6 @@ import shutil
 
 from packaging import version
 import pytorch_lightning as pl
-from pytorch_lightning import Callback
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -30,8 +29,8 @@ import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 
 
-if version.parse(pl.__version__) < version.parse("0.8.1"):
-    raise RuntimeError("PyTorch Lightning>=0.8.1 is required for this example.")
+if version.parse(pl.__version__) < version.parse("1.0.2"):
+    raise RuntimeError("PyTorch Lightning>=1.0.2 is required for this example.")
 
 PERCENT_VALID_EXAMPLES = 0.1
 BATCHSIZE = 128
@@ -39,17 +38,6 @@ CLASSES = 10
 EPOCHS = 10
 DIR = os.getcwd()
 MODEL_DIR = os.path.join(DIR, "result")
-
-
-class MetricsCallback(Callback):
-    """PyTorch Lightning metric callback."""
-
-    def __init__(self):
-        super().__init__()
-        self.metrics = []
-
-    def on_validation_end(self, trainer, pl_module):
-        self.metrics.append(trainer.callback_metrics)
 
 
 class Net(nn.Module):
@@ -101,19 +89,14 @@ class LightningNet(pl.LightningModule):
     def training_step(self, batch, batch_nb):
         data, target = batch
         output = self.forward(data)
-        return {"loss": F.nll_loss(output, target)}
+        return F.nll_loss(output, target)
 
     def validation_step(self, batch, batch_nb):
         data, target = batch
         output = self.forward(data)
         pred = output.argmax(dim=1, keepdim=True)
         accuracy = pred.eq(target.view_as(pred)).float().mean()
-        return {"batch_val_acc": accuracy}
-
-    def validation_epoch_end(self, outputs):
-        accuracy = sum(x["batch_val_acc"] for x in outputs) / len(outputs)
-        # Pass the accuracy to the `DictLogger` via the `'log'` key.
-        return {"log": {"val_acc": accuracy}}
+        self.log("val_acc", accuracy)
 
     def configure_optimizers(self):
         return Adam(self.model.parameters())
@@ -139,23 +122,19 @@ def objective(trial):
         os.path.join(MODEL_DIR, "trial_{}".format(trial.number), "{epoch}"), monitor="val_acc"
     )
 
-    # The default logger in PyTorch Lightning writes to event files to be consumed by
-    # TensorBoard. We don't use any logger here as it requires us to implement several abstract
-    # methods. Instead we setup a simple callback, that saves metrics from each validation step.
-    metrics_callback = MetricsCallback()
     trainer = pl.Trainer(
         logger=False,
         limit_val_batches=PERCENT_VALID_EXAMPLES,
         checkpoint_callback=checkpoint_callback,
         max_epochs=EPOCHS,
         gpus=1 if torch.cuda.is_available() else None,
-        callbacks=[metrics_callback, PyTorchLightningPruningCallback(trial, monitor="val_acc")],
+        callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_acc", mode="max")],
     )
 
     model = LightningNet(trial)
     trainer.fit(model)
 
-    return metrics_callback.metrics[-1]["val_acc"].item()
+    return trainer.callback_metrics["val_acc"].item()
 
 
 if __name__ == "__main__":

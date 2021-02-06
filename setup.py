@@ -28,18 +28,22 @@ def get_long_description() -> str:
 
 def get_install_requires() -> List[str]:
 
-    return [
+    requirements = [
         "alembic",
         "cliff",
         "cmaes>=0.6.0",
         "colorlog",
-        "joblib",
-        "numpy",
+        "numpy<1.20.0",
         "packaging>=20.0",
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
     ]
+    # NOTE (crcrpar): Some of the above libraries require Cython to be installed.
+    # I hope they will obviate it in the future releases.
+    if sys.version_info[:2] > (3, 8):
+        requirements.append("Cython")
+    return requirements
 
 
 def get_tests_require() -> List[str]:
@@ -50,7 +54,9 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["black", "hacking", "isort", "mypy==0.782", "blackdoc"],
+        # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
+        # examples and tutorials.
+        "checking": ["black", "hacking", "isort", "mypy==0.790", "blackdoc"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
@@ -62,17 +68,17 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow",
         ],
         "document": [
-            # TODO(hvy): Unpin `sphinx` version after:
-            # https://github.com/sphinx-doc/sphinx/issues/8105.
-            "sphinx==3.0.4",
-            # As reported in: https://github.com/readthedocs/sphinx_rtd_theme/issues/949,
-            # `sphinx_rtd_theme` 0.5.0 is still not compatible with `sphinx` >= 3.0.
-            "sphinx_rtd_theme<0.5.0",
+            "sphinx",
+            "sphinx_rtd_theme",
+            "sphinx-copybutton",
             "sphinx-gallery",
             "sphinx-plotly-directive",
             "pillow",
             "matplotlib",
             "scikit-learn",
+            "plotly>=4.0.0",  # optuna/visualization.
+            "pandas",
+            "lightgbm",
         ],
         "example": [
             "catboost",
@@ -90,27 +96,25 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow>=2.0.0",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "thop",
             "skorch",
             "stable-baselines3>=0.7.0",
             "catalyst",
-        ]
-        + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
-            if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        )
-        + (
-            [
-                "allennlp==1.2.0",
-                "fastai<2",
-                "dask[dataframe]",
-                "dask-ml",
-            ]
-            if sys.version_info[:2] < (3, 8)
-            else []
-        ),
+            "torch==1.7.1 ; sys_platform=='darwin'",
+            "torch==1.7.1+cpu ; sys_platform!='darwin'",
+            "torchvision==0.8.2 ; sys_platform=='darwin'",
+            "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
+            "torchaudio==0.7.2",
+            "allennlp<2.0.0",
+            "dask[dataframe]",
+            "dask-ml",
+            "botorch ; python_version>'3.6'",
+            "fastai",
+            "optax",
+            "dm-haiku",
+            "hydra-optuna-sweeper",
+        ],
         "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -135,16 +139,18 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
-        ]
-        + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
-            if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        )
-        + (["allennlp==1.2.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
+            "torch==1.7.1 ; sys_platform=='darwin'",
+            "torch==1.7.1+cpu ; sys_platform!='darwin'",
+            "torchvision==0.8.2 ; sys_platform=='darwin'",
+            "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
+            "torchaudio==0.7.2",
+            "allennlp<2.0.0",
+            "botorch ; python_version>'3.6'",
+            "fastai",
+        ],
         "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
@@ -172,16 +178,18 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=0.8.1",
+            "pytorch-lightning>=1.0.2",
             "skorch",
             "catalyst",
-        ]
-        + (
-            ["torch==1.7.0", "torchvision==0.8.1", "torchaudio==0.7.0"]
-            if sys.platform == "darwin"
-            else ["torch==1.7.0+cpu", "torchvision==0.8.1+cpu", "torchaudio==0.7.0"]
-        )
-        + (["allennlp==1.2.0", "fastai<2"] if sys.version_info[:2] < (3, 8) else []),
+            "torch==1.7.1 ; sys_platform=='darwin'",
+            "torch==1.7.1+cpu ; sys_platform!='darwin'",
+            "torchvision==0.8.2 ; sys_platform=='darwin'",
+            "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
+            "torchaudio==0.7.2",
+            "allennlp<2.0.0",
+            "botorch ; python_version>'3.6'",
+            "fastai",
+        ],
     }
 
     return requirements
@@ -206,7 +214,7 @@ setup(
     author="Takuya Akiba",
     author_email="akiba@preferred.jp",
     url="https://optuna.org/",
-    packages=find_packages(),
+    packages=find_packages(exclude=("tests", "tests.*")),
     package_data={
         "optuna": [
             "storages/_rdb/alembic.ini",
@@ -240,6 +248,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3 :: Only",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",

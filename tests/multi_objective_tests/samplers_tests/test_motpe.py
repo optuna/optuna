@@ -247,10 +247,7 @@ def test_sample_independent_misc_arguments() -> None:
         mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
-    def weights(i: int) -> np.array:
-        return np.asarray([i * 0.05 for _ in range(i)])
-
-    sampler = MOTPEMultiObjectiveSampler(weights=weights, seed=0)
+    sampler = MOTPEMultiObjectiveSampler(weights_above=lambda n: np.zeros(n), seed=0)
     attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
         study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
@@ -634,7 +631,7 @@ def frozen_trial_factory(
         distributions={"param-a": dist},
         user_attrs={},
         system_attrs={},
-        intermediate_values={i: v for i, v in enumerate(values)},
+        intermediate_values=dict(enumerate(values)),
     )
     return trial
 

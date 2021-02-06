@@ -180,6 +180,8 @@ class PyCmaSampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> float:
 
+        self._raise_error_if_multi_objective(study)
+
         if self._warn_independent_sampling:
             complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
             if len(complete_trials) >= self._n_startup_trials:
@@ -192,6 +194,8 @@ class PyCmaSampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, float]:
+
+        self._raise_error_if_multi_objective(study)
 
         if len(search_space) == 0:
             return {}
@@ -278,6 +282,7 @@ class PyCmaSampler(BaseSampler):
             "The parameter '{}' in trial#{} is sampled independently "
             "by using `{}` instead of `PyCmaSampler` "
             "(optimization performance may be degraded). "
+            "`PyCmaSampler` does not support dynamic search space or `CategoricalDistribution`. "
             "You can suppress this warning by setting `warn_independent_sampling` "
             "to `False` in the constructor of `PyCmaSampler`, "
             "if this independent sampling is intended behavior.".format(
@@ -308,7 +313,7 @@ class _Optimizer(object):
                 # TODO(Yanase): Support one-hot representation.
                 lows.append(-0.5)
                 highs.append(len(dist.choices) - 0.5)
-            elif isinstance(dist, UniformDistribution) or isinstance(dist, LogUniformDistribution):
+            elif isinstance(dist, (UniformDistribution, LogUniformDistribution)):
                 lows.append(self._to_cma_params(search_space, param_name, dist.low))
                 highs.append(self._to_cma_params(search_space, param_name, dist.high) - _EPS)
             elif isinstance(dist, DiscreteUniformDistribution):

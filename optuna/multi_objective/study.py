@@ -12,7 +12,7 @@ from typing import Union
 
 from optuna import logging
 from optuna import multi_objective
-from optuna._experimental import experimental
+from optuna._deprecated import deprecated
 from optuna._study_direction import StudyDirection
 from optuna.pruners import NopPruner
 from optuna.storages import BaseStorage
@@ -41,7 +41,7 @@ _logger = logging.get_logger(__name__)
 #
 # TODO(ohta): Consider to add `objective_labels` argument.
 # See: https://github.com/optuna/optuna/pull/1054#issuecomment-616382152
-@experimental("1.4.0")
+@deprecated("2.4.0", "4.0.0")
 def create_study(
     directions: List[str],
     study_name: Optional[str] = None,
@@ -133,7 +133,7 @@ def create_study(
     return MultiObjectiveStudy(study)
 
 
-@experimental("1.4.0")
+@deprecated("2.4.0", "4.0.0")
 def load_study(
     study_name: str,
     storage: Union[str, BaseStorage],
@@ -205,7 +205,7 @@ def load_study(
     return MultiObjectiveStudy(study)
 
 
-@experimental("1.4.0")
+@deprecated("2.4.0", "4.0.0")
 class MultiObjectiveStudy(object):
     """A study corresponds to a multi-objective optimization task, i.e., a set of trials.
 
@@ -408,24 +408,22 @@ class MultiObjectiveStudy(object):
 
         The returned trials are ordered by trial number.
 
-        This is a short form of ``self.get_trials(deepcopy=True)``.
+        This is a short form of ``self.get_trials(deepcopy=True, states=None)``.
 
         Returns:
             A list of :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` objects.
         """
 
-        return self.get_trials(deepcopy=True)
+        return self.get_trials(deepcopy=True, states=None)
 
     def get_trials(
-        self, deepcopy: bool = True
+        self,
+        deepcopy: bool = True,
+        states: Optional[Tuple[TrialState, ...]] = None,
     ) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
         """Return all trials in the study.
 
         The returned trials are ordered by trial number.
-
-        For library users, it's recommended to use more handy
-        :attr:`~optuna.multi_objective.study.MultiObjectiveStudy.trials`
-        property to get the trials instead.
 
         Args:
             deepcopy:
@@ -433,6 +431,8 @@ class MultiObjectiveStudy(object):
                 Note that if you set the flag to :obj:`False`, you shouldn't mutate
                 any fields of the returned trial. Otherwise the internal state of
                 the study may corrupt and unexpected behavior may happen.
+            states:
+                Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
             A list of :class:`~optuna.multi_objective.trial.FrozenMultiObjectiveTrial` objects.
@@ -440,7 +440,7 @@ class MultiObjectiveStudy(object):
 
         return [
             multi_objective.trial.FrozenMultiObjectiveTrial(self.n_objectives, t)
-            for t in self._study.get_trials(deepcopy=deepcopy)
+            for t in self._study.get_trials(deepcopy=deepcopy, states=states)
         ]
 
     def get_pareto_front_trials(self) -> List["multi_objective.trial.FrozenMultiObjectiveTrial"]:
@@ -480,13 +480,13 @@ class MultiObjectiveStudy(object):
         return self._study._study_id
 
 
-def _log_completed_trial(self: Study, trial: Trial, value: float) -> None:
+def _log_completed_trial(self: Study, trial: Trial, values: Sequence[float]) -> None:
     if not _logger.isEnabledFor(logging.INFO):
         return
 
-    values = multi_objective.trial.MultiObjectiveTrial(trial)._get_values()
+    actual_values = multi_objective.trial.MultiObjectiveTrial(trial)._get_values()
     _logger.info(
         "Trial {} finished with values: {} with parameters: {}.".format(
-            trial.number, values, trial.params
+            trial.number, actual_values, trial.params
         )
     )

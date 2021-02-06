@@ -2,12 +2,12 @@ import os
 import sys
 from types import ModuleType
 from typing import Any
-
-from optuna.type_checking import TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 
 _import_structure = {
     "allennlp": ["AllenNLPExecutor", "AllenNLPPruningCallback"],
+    "botorch": ["BoTorchSampler"],
     "catalyst": ["CatalystPruningCallback"],
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
@@ -26,7 +26,8 @@ _import_structure = {
     "tensorflow": ["TensorFlowPruningHook"],
     "tfkeras": ["TFKerasPruningCallback"],
     "xgboost": ["XGBoostPruningCallback"],
-    "fastai": ["FastAIPruningCallback"],
+    "fastaiv1": ["FastAIV1PruningCallback"],
+    "fastaiv2": ["FastAIV2PruningCallback", "FastAIPruningCallback"],
 }
 
 
@@ -36,13 +37,16 @@ __all__ = list(_import_structure.keys()) + sum(_import_structure.values(), [])
 if TYPE_CHECKING:
     from optuna.integration.allennlp import AllenNLPExecutor  # NOQA
     from optuna.integration.allennlp import AllenNLPPruningCallback  # NOQA
+    from optuna.integration.botorch import BoTorchSampler  # NOQA
     from optuna.integration.catalyst import CatalystPruningCallback  # NOQA
     from optuna.integration.chainer import ChainerPruningExtension  # NOQA
     from optuna.integration.chainermn import ChainerMNStudy  # NOQA
     from optuna.integration.cma import CmaEsSampler  # NOQA
     from optuna.integration.cma import PyCmaSampler  # NOQA
     from optuna.integration.dask import DaskStorage  # NOQA
-    from optuna.integration.fastai import FastAIPruningCallback  # NOQA
+    from optuna.integration.fastaiv1 import FastAIV1PruningCallback  # NOQA
+    from optuna.integration.fastaiv2 import FastAIPruningCallback  # NOQA
+    from optuna.integration.fastaiv2 import FastAIV2PruningCallback  # NOQA
     from optuna.integration.keras import KerasPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMTuner  # NOQA

@@ -12,6 +12,8 @@ jobs:
   tests-integration:
     runs-on: ubuntu-latest
 
+    # TODO (crcrpar): Add 3.9 to python-version matrix once libraries support it.
+    # ref: https://github.com/optuna/optuna/issues/2034
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
@@ -58,9 +60,11 @@ jobs:
 
     - name: Tests
       run: |
-        if [ ${{ matrix.python-version }} = 3.8 ]; then
+        if [ ${{ matrix.python-version }} = 3.6 ]; then
           pytest tests/integration_tests \
-            --ignore tests/integration_tests/test_fastai.py \
+            --ignore tests/integration_tests/test_botorch.py
+        elif [ ${{ matrix.python-version }} = 3.8 ]; then
+          pytest tests/integration_tests \
             --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
         else
           # pytest cannot collect allennlp tests with allennlp==1.0.0.

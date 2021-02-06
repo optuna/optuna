@@ -9,6 +9,13 @@ from optuna.trial import Trial
 from optuna.visualization.matplotlib import plot_contour
 
 
+def test_target_is_none_and_study_is_multi_obj() -> None:
+
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError):
+        plot_contour(study)
+
+
 @pytest.mark.parametrize(
     "params",
     [
@@ -59,4 +66,39 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
         assert figure.shape == (len(study.best_params), len(study.best_params))
     else:
         # TODO(ytknzw): Add more specific assertion with the test case.
+        assert figure.shape == (len(params), len(params))
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        ["param_a", "param_b"],
+        ["param_a", "param_b", "param_c"],
+    ],
+)
+def test_plot_contour_customized_target(params: List[str]) -> None:
+
+    study = prepare_study_with_trials(more_than_three=True)
+    with pytest.warns(UserWarning):
+        figure = plot_contour(study, params=params, target=lambda t: t.params["param_d"])
+    if len(params) == 2:
+        assert figure.has_data()
+    else:
+        assert figure.shape == (len(params), len(params))
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        ["param_a", "param_b"],
+        ["param_a", "param_b", "param_c"],
+    ],
+)
+def test_plot_contour_customized_target_name(params: List[str]) -> None:
+
+    study = prepare_study_with_trials(more_than_three=True)
+    figure = plot_contour(study, params=params, target_name="Target Name")
+    if len(params) == 2:
+        assert figure.has_data()
+    else:
         assert figure.shape == (len(params), len(params))

@@ -9,6 +9,13 @@ from optuna.trial import Trial
 from optuna.visualization import plot_slice
 
 
+def test_target_is_none_and_study_is_multi_obj() -> None:
+
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError):
+        plot_slice(study)
+
+
 def test_plot_slice() -> None:
 
     # Test with no trial.
@@ -25,12 +32,25 @@ def test_plot_slice() -> None:
     assert figure.data[0]["y"] == (0.0, 1.0)
     assert figure.data[1]["x"] == (2.0, 0.0, 1.0)
     assert figure.data[1]["y"] == (0.0, 2.0, 1.0)
+    assert figure.layout.yaxis.title.text == "Objective Value"
 
     # Test with a trial to select parameter.
     figure = plot_slice(study, params=["param_a"])
     assert len(figure.data) == 1
     assert figure.data[0]["x"] == (1.0, 2.5)
     assert figure.data[0]["y"] == (0.0, 1.0)
+
+    # Test with a customized target value.
+    with pytest.warns(UserWarning):
+        figure = plot_slice(study, params=["param_a"], target=lambda t: t.params["param_b"])
+    assert len(figure.data) == 1
+    assert figure.data[0]["x"] == (1.0, 2.5)
+    assert figure.data[0]["y"] == (2.0, 1.0)
+    assert figure.layout.yaxis.title.text == "Objective Value"
+
+    # Test with a customized target name.
+    figure = plot_slice(study, target_name="Target Name")
+    assert figure.layout.yaxis.title.text == "Target Name"
 
     # Test with wrong parameters.
     with pytest.raises(ValueError):
