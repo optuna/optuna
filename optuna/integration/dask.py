@@ -105,35 +105,36 @@ class _OptunaSchedulerExtension:
         self.scheduler = scheduler
         self.storages: Dict[str, BaseStorage] = {}
 
-        self.scheduler.handlers.update(
-            {
-                "optuna_create_new_study": self.create_new_study,
-                "optuna_delete_study": self.delete_study,
-                "optuna_set_study_user_attr": self.set_study_user_attr,
-                "optuna_set_study_system_attr": self.set_study_system_attr,
-                "optuna_set_study_directions": self.set_study_directions,
-                "optuna_get_study_id_from_name": self.get_study_id_from_name,
-                "optuna_get_study_id_from_trial_id": self.get_study_id_from_trial_id,
-                "optuna_get_study_name_from_id": self.get_study_name_from_id,
-                "optuna_read_trials_from_remote_storage": self.read_trials_from_remote_storage,
-                "optuna_get_study_directions": self.get_study_directions,
-                "optuna_get_study_user_attrs": self.get_study_user_attrs,
-                "optuna_get_study_system_attrs": self.get_study_system_attrs,
-                "optuna_get_all_study_summaries": self.get_all_study_summaries,
-                "optuna_create_new_trial": self.create_new_trial,
-                "optuna_set_trial_state": self.set_trial_state,
-                "optuna_set_trial_param": self.set_trial_param,
-                "optuna_get_trial_number_from_id": self.get_trial_number_from_id,
-                "optuna_get_trial_param": self.get_trial_param,
-                "optuna_set_trial_values": self.set_trial_values,
-                "optuna_set_trial_intermediate_value": self.set_trial_intermediate_value,
-                "optuna_set_trial_user_attr": self.set_trial_user_attr,
-                "optuna_set_trial_system_attr": self.set_trial_system_attr,
-                "optuna_get_trial": self.get_trial,
-                "optuna_get_all_trials": self.get_all_trials,
-                "optuna_get_n_trials": self.get_n_trials,
-            }
-        )
+        methods = [
+            "create_new_study",
+            "delete_study",
+            "set_study_user_attr",
+            "set_study_system_attr",
+            "set_study_directions",
+            "get_study_id_from_name",
+            "get_study_id_from_trial_id",
+            "get_study_name_from_id",
+            "read_trials_from_remote_storage",
+            "get_study_directions",
+            "get_study_user_attrs",
+            "get_study_system_attrs",
+            "get_all_study_summaries",
+            "create_new_trial",
+            "set_trial_state",
+            "set_trial_param",
+            "get_trial_id_from_study_id_trial_number",
+            "get_trial_number_from_id",
+            "get_trial_param",
+            "set_trial_values",
+            "set_trial_intermediate_value",
+            "set_trial_user_attr",
+            "set_trial_system_attr",
+            "get_trial",
+            "get_all_trials",
+            "get_n_trials",
+        ]
+        handlers = {f"optuna_{method}": getattr(self, method) for method in methods}
+        self.scheduler.handlers.update(handlers)
 
         self.scheduler.extensions["optuna"] = self
 
@@ -287,6 +288,14 @@ class _OptunaSchedulerExtension:
             param_name=param_name,
             param_value_internal=param_value_internal,
             distribution=json_to_distribution(distribution),
+        )
+
+    def get_trial_id_from_study_id_trial_number(
+        self, comm: "distributed.comm.tcp.TCP", storage_name: str, study_id: int, trial_number: int
+    ) -> int:
+        return self.get_storage(storage_name).get_trial_id_from_study_id_trial_number(
+            study_id=study_id,
+            trial_number=trial_number,
         )
 
     def get_trial_number_from_id(
@@ -642,6 +651,15 @@ class DaskStorage(optuna.storages.BaseStorage):
             param_name=param_name,
             param_value_internal=param_value_internal,
             distribution=distribution_to_json(distribution),
+        )
+
+    @_use_basestorage_doc
+    def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
+        return self.client.sync(
+            self.client.scheduler.optuna_get_trial_id_from_study_id_trial_number,
+            storage_name=self.name,
+            study_id=study_id,
+            trial_number=trial_number,
         )
 
     @_use_basestorage_doc
