@@ -84,6 +84,14 @@ make html
 HTML files are generated under `build/html` directory. Open `index.html` with the browser and see
 if it is rendered as expected.
 
+Optuna's tutorial is built with [Sphinx-Gallery](https://sphinx-gallery.github.io/stable/index.html) and
+some other requirements like [LightGBM](https://github.com/microsoft/LightGBM) meaning that
+all .py files in `tutorial` directory are run during the documentation build if there's no build cache.
+Whether you edit any tutorial or not doesn't matter.
+
+To avoid having to run the tutorials, you may download build artifacts from our CI and put them in `docs/build`.
+
+
 ## Unit Tests
 
 When adding a new feature or fixing a bug, you also need to write sufficient test code.
@@ -99,14 +107,6 @@ pytest
 # Run all the unit tests defined in the specified test file.
 pytest tests/${TARGET_TEST_FILE_NAME}
 ```
-
-## Documentation
-Optuna's tutorial is built with [Sphinx-Gallery](https://sphinx-gallery.github.io/stable/index.html) and
-some other requirements like [LightGBM](https://github.com/microsoft/LightGBM) meaning that
-all .py files in `tutorial` directory are run during the documentation build if there's no build cache.
-Whether you edit any tutorial or not doesn't matter.
-
-To avoid having to run the tutorials, you may download build artifacts from our CI and put them in `docs/build`.
 
 ## Continuous Integration and Local Verification
 
