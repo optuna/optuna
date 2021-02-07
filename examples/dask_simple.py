@@ -12,7 +12,6 @@ To run this example:
 """
 
 from dask.distributed import Client
-import joblib
 from sklearn.datasets import load_iris
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
@@ -41,7 +40,6 @@ if __name__ == "__main__":
         print(f"Dask dashboard is available at {client.dashboard_link}")
         storage = optuna.integration.dask.DaskStorage()
         study = optuna.create_study(storage=storage)
-        with joblib.parallel_backend("dask"):
-            study.optimize(objective, n_trials=100, n_jobs=-1)
+        study.optimize(objective, n_trials=100)
 
         print(f"Best params: {study.best_params}")

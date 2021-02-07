@@ -1,19 +1,29 @@
+import asyncio
 from contextlib import contextmanager
 import tempfile
+import time
 from typing import Iterator
 
 from distributed import Client
 from distributed import Scheduler
 from distributed import Worker
 from distributed.utils_test import gen_cluster
-import joblib
 import numpy as np
 import pytest
 
 import optuna
 from optuna.integration.dask import _OptunaSchedulerExtension
 from optuna.integration.dask import DaskStorage
+from optuna.integration.dask import DaskStudy
 from optuna.trial import Trial
+
+
+# Ensure experimental warnings related to the Dask integration
+# aren't included in the pytest warning summary for tests in this module
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:DaskStorage is experimental",
+    "ignore:DaskStudy is experimental",
+)
 
 
 STORAGE_MODES = ["inmemory", "sqlite"]
@@ -44,8 +54,18 @@ def objective(trial: Trial) -> float:
     return (x - 2) ** 2
 
 
-@gen_cluster(client=True)
-async def test_experimental(c: Client, s: Scheduler, a: Worker, b: Worker) -> None:
+def objective_slow(trial: Trial) -> float:
+    time.sleep(2)
+    return objective(trial)
+
+
+@pytest.fixture(scope="session")
+def client() -> Client:
+    with Client(dashboard_address=None) as client:
+        yield client
+
+
+def test_experimental(client: Client) -> None:
     with pytest.warns(optuna._experimental.ExperimentalWarning):
         DaskStorage()
 
@@ -57,7 +77,7 @@ async def test_daskstorage_registers_extension(
     assert "optuna" not in s.extensions
     await DaskStorage()
     assert "optuna" in s.extensions
-    assert isinstance(s.extensions["optuna"], _OptunaSchedulerExtension)
+    assert type(s.extensions["optuna"]) is _OptunaSchedulerExtension
 
 
 @gen_cluster(client=True)
@@ -65,59 +85,64 @@ async def test_name(c: Client, s: Scheduler, a: Worker, b: Worker) -> None:
     await DaskStorage(name="foo")
     ext = s.extensions["optuna"]
     assert len(ext.storages) == 1
-    assert isinstance(ext.storages["foo"], optuna.storages.InMemoryStorage)
+    assert type(ext.storages["foo"]) is optuna.storages.InMemoryStorage
 
     await DaskStorage(name="bar")
     assert len(ext.storages) == 2
-    assert isinstance(ext.storages["bar"], optuna.storages.InMemoryStorage)
+    assert type(ext.storages["bar"]) is optuna.storages.InMemoryStorage
 
 
-@gen_cluster(client=True)
-async def test_name_unique(c: Client, s: Scheduler, a: Worker, b: Worker) -> None:
-    s1 = await DaskStorage()
-    s2 = await DaskStorage()
+def test_name_unique(client: Client) -> None:
+    s1 = DaskStorage()
+    s2 = DaskStorage()
     assert s1.name != s2.name
 
 
-@pytest.mark.parametrize("storage_specifier", STORAGE_MODES)
-@pytest.mark.parametrize("processes", [True, False])
-def test_optuna_joblib_backend(storage_specifier: str, processes: bool) -> None:
-    with Client(processes=processes):
-        with get_storage_url(storage_specifier) as url:
-            storage = DaskStorage(url)
-            study = optuna.create_study(storage=storage)
-            with joblib.parallel_backend("dask"):
-                study.optimize(objective, n_trials=10, n_jobs=-1)
-            assert len(study.trials) == 10
+def test_create_study_daskstudy(client: Client) -> None:
+    storage = DaskStorage()
+    study = optuna.create_study(storage=storage)
+    assert type(study) is DaskStudy
+    assert type(study._storage) is DaskStorage
 
 
 @pytest.mark.parametrize("storage_specifier", STORAGE_MODES)
-def test_get_base_storage(storage_specifier: str) -> None:
-    with Client():
-        with get_storage_url(storage_specifier) as url:
-            dask_storage = DaskStorage(url)
-            storage = dask_storage.get_base_storage()
-            expected_type = type(optuna.storages.get_storage(url))
-            assert isinstance(storage, expected_type)
+def test_daskstudy_optimize(client: Client, storage_specifier: str) -> None:
+    with get_storage_url(storage_specifier) as url:
+        storage = DaskStorage(url)
+        study = optuna.create_study(storage=storage)
+        study.optimize(objective, n_trials=10)
+        assert len(study.trials) == 10
 
 
-@pytest.mark.parametrize("processes", [True, False])
+def test_daskstudy_optimize_timeout(client: Client) -> None:
+    study = optuna.create_study(storage=DaskStorage())
+    with pytest.raises(asyncio.TimeoutError):
+        study.optimize(objective_slow, n_trials=10, timeout=0.1)
+
+
+@pytest.mark.parametrize("storage_specifier", STORAGE_MODES)
+def test_get_base_storage(client: Client, storage_specifier: str) -> None:
+    with get_storage_url(storage_specifier) as url:
+        dask_storage = DaskStorage(url)
+        storage = dask_storage.get_base_storage()
+        expected_type = type(optuna.storages.get_storage(url))
+        assert type(storage) is expected_type
+
+
 @pytest.mark.parametrize("direction", ["maximize", "minimize"])
-def test_study_direction_best_value(processes: bool, direction: str) -> None:
+def test_study_direction_best_value(client: Client, direction: str) -> None:
     # Regression test for https://github.com/jrbourbeau/dask-optuna/issues/15
     pytest.importorskip("pandas")
-    with Client(processes=processes):
-        dask_storage = DaskStorage()
-        study = optuna.create_study(storage=dask_storage, direction=direction)
-        with joblib.parallel_backend("dask"):
-            study.optimize(objective, n_trials=10, n_jobs=-1)
+    dask_storage = DaskStorage()
+    study = optuna.create_study(storage=dask_storage, direction=direction)
+    study.optimize(objective, n_trials=10)
 
-        # Ensure that study.best_value matches up with the expected value from
-        # the trials DataFrame
-        trials_value = study.trials_dataframe()["value"]
-        if direction == "maximize":
-            expected = trials_value.max()
-        else:
-            expected = trials_value.min()
+    # Ensure that study.best_value matches up with the expected value from
+    # the trials DataFrame
+    trials_value = study.trials_dataframe()["value"]
+    if direction == "maximize":
+        expected = trials_value.max()
+    else:
+        expected = trials_value.min()
 
-        np.testing.assert_allclose(expected, study.best_value)
+    np.testing.assert_allclose(expected, study.best_value)

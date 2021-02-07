@@ -9,16 +9,20 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Type
 from typing import Union
 import uuid
 
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
+from optuna._optimize import _optimize
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.storages import BaseStorage
+from optuna.study import ObjectiveFuncType
+from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
 from optuna.trial import FrozenTrial
@@ -39,6 +43,14 @@ def _serialize_datetime(dt: datetime.datetime) -> dict:
 
 def _deserialize_datetime(data: dict) -> datetime.datetime:
     return datetime.datetime.strptime(data["as_str"], "%Y%m%dT%H:%M:%S.%f")
+
+
+def _serialize_trialstate(state: TrialState) -> str:
+    return state.name
+
+
+def _deserialize_trialstate(state: str) -> TrialState:
+    return getattr(TrialState, state)
 
 
 def _serialize_frozentrial(trial: FrozenTrial) -> dict:
@@ -65,7 +77,7 @@ def _serialize_frozentrial(trial: FrozenTrial) -> dict:
 
 
 def _deserialize_frozentrial(data: dict) -> FrozenTrial:
-    data["state"] = getattr(TrialState, data["state"])
+    data["state"] = _deserialize_trialstate(data["state"])
     data["distributions"] = {k: json_to_distribution(v) for k, v in data["distributions"].items()}
     if data["datetime_start"] is not None:
         data["datetime_start"] = _deserialize_datetime(data["datetime_start"])
@@ -271,7 +283,7 @@ class _OptunaSchedulerExtension:
     ) -> bool:
         return self.get_storage(storage_name).set_trial_state(
             trial_id=trial_id,
-            state=getattr(TrialState, state),
+            state=_deserialize_trialstate(state),
         )
 
     def set_trial_param(
@@ -387,12 +399,15 @@ class _OptunaSchedulerExtension:
         storage_name: str,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Tuple[str, ...]] = None,
     ) -> List[dict]:
+        deserialized_states = None
+        if states is not None:
+            deserialized_states = tuple(_deserialize_trialstate(s) for s in states)
         trials = self.get_storage(storage_name).get_all_trials(
             study_id=study_id,
             deepcopy=deepcopy,
-            states=states,
+            states=deserialized_states,
         )
         return [_serialize_frozentrial(t) for t in trials]
 
@@ -443,8 +458,8 @@ def _use_basestorage_doc(func: Callable) -> Callable:
     return func
 
 
-@experimental("2.4.0")
-class DaskStorage(optuna.storages.BaseStorage):
+@experimental("2.5.0")
+class DaskStorage(BaseStorage):
     """Dask-compatible storage class.
 
     This storage class wraps a Optuna storage class (e.g. Optuna’s in-memory or sqlite storage)
@@ -503,6 +518,9 @@ class DaskStorage(optuna.storages.BaseStorage):
 
     def __reduce__(self) -> tuple:
         return (DaskStorage, (None, self.name))
+
+    def get_study_class(self) -> Type[Study]:
+        return DaskStudy
 
     def get_base_storage(self) -> BaseStorage:
         def _(dask_scheduler: distributed.Scheduler, name: str = None) -> BaseStorage:
@@ -633,7 +651,7 @@ class DaskStorage(optuna.storages.BaseStorage):
             self.client.scheduler.optuna_set_trial_state,
             storage_name=self.name,
             trial_id=trial_id,
-            state=state.name,
+            state=_serialize_trialstate(state),
         )
 
     @_use_basestorage_doc
@@ -735,11 +753,14 @@ class DaskStorage(optuna.storages.BaseStorage):
     async def _get_all_trials(
         self, study_id: int, deepcopy: bool = True, states: Optional[Tuple[TrialState, ...]] = None
     ) -> List[FrozenTrial]:
+        serialized_states = None
+        if states is not None:
+            serialized_states = tuple(_serialize_trialstate(s) for s in states)
         serialized_trials = await self.client.scheduler.optuna_get_all_trials(
             storage_name=self.name,
             study_id=study_id,
             deepcopy=deepcopy,
-            states=states,
+            states=serialized_states,
         )
         return [_deserialize_frozentrial(t) for t in serialized_trials]
 
@@ -772,3 +793,43 @@ class DaskStorage(optuna.storages.BaseStorage):
             storage_name=self.name,
             study_id=study_id,
         )
+
+
+@experimental("2.5.0")
+class DaskStudy(Study):
+    def optimize(  # type: ignore
+        self,
+        func: ObjectiveFuncType,
+        n_trials: int = 1,
+        timeout: Optional[float] = None,
+        catch: Tuple[Type[Exception], ...] = (),
+        callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
+        gc_after_trial: bool = False,
+        client: distributed.Client = None,
+    ) -> None:
+
+        if not isinstance(self._storage, DaskStorage):
+            raise TypeError(
+                "Expected storage to be of type dask_optuna.DaskStorage "
+                f"but got {type(self._storage)} instead"
+            )
+
+        client = client or distributed.default_client()
+
+        futures = [
+            client.submit(
+                _optimize,
+                self,
+                func,
+                n_trials=1,
+                timeout=None,
+                n_jobs=1,
+                catch=catch,
+                callbacks=callbacks,
+                gc_after_trial=gc_after_trial,
+                pure=False,
+            )
+            for _ in range(n_trials)
+        ]
+
+        distributed.wait(futures, timeout=timeout)
