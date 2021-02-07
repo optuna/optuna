@@ -63,6 +63,7 @@ Dask
    :nosignatures:
 
    optuna.integration.DaskStorage
+   optuna.integration.DaskStudy
 
 fast.ai
 -------

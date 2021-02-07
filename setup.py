@@ -60,6 +60,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
+            "dask[distributed]",
             "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
@@ -68,6 +69,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow",
         ],
         "document": [
+            "dask[distributed]",
             "sphinx",
             "sphinx_rtd_theme",
             "sphinx-copybutton",
