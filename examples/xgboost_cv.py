@@ -35,15 +35,15 @@ def objective(trial):
         "booster": trial.suggest_categorical("booster", ["gbtree", "gblinear", "dart"]),
         "lambda": trial.suggest_loguniform("lambda", 1e-8, 1.0),
         "alpha": trial.suggest_loguniform("alpha", 1e-8, 1.0),
-         #sampling ratio for training data
-        'subsample': trial.suggest_float('subsample', 0.4,1.0),
-        #sampling according to each tree
-        'colsample_bytree': trial.suggest_float('colsample_bytree', 0.3,1.0),
+        # sampling ratio for training data
+        "subsample": trial.suggest_float("subsample", 1e-8, 1.0),
+        # sampling according to each tree
+        "colsample_bytree": trial.suggest_float("colsample_bytree", 1e-8, 1.0),
     }
 
     if param["booster"] == "gbtree" or param["booster"] == "dart":
         param["max_depth"] = trial.suggest_int("max_depth", 1, 9)
-        #minimum child weight, larger the term more conservative the tree
+        # minimum child weight, larger the term more conservative the tree
         param["min_child_weight"] = trial.suggest_int("min_child_weight", 3, 10)
         param["eta"] = trial.suggest_loguniform("eta", 1e-8, 1.0)
         param["gamma"] = trial.suggest_loguniform("gamma", 1e-8, 1.0)
