@@ -19,8 +19,6 @@ import optuna
 
 # FYI: Objective functions can take additional arguments
 # (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
-
-
 def objective(trial):
     (data, target) = sklearn.datasets.load_breast_cancer(return_X_y=True)
     train_x, valid_x, train_y, valid_y = train_test_split(data, target, test_size=0.25)
@@ -45,7 +43,7 @@ def objective(trial):
     }
 
     if param["booster"] == "gbtree" or param["booster"] == "dart":
-        # maximum depth of the tree,signifies complexity of the tree
+        # maximum depth of the tree, signifies complexity of the tree
         param["max_depth"] = trial.suggest_int("max_depth", 3, 9, step=2)
         # minimum child weight, larger the term more conservative the tree
         param["min_child_weight"] = trial.suggest_int("min_child_weight", 3, 10)
