@@ -141,7 +141,7 @@ class TestStudySystemAttributeModel(object):
 class TestTrialModel(object):
     @staticmethod
     def test_default_datetime(session: Session) -> None:
-
+        # Regardless of the initial state the trial created here should have null datetime_start
         session.add(TrialModel(state=TrialState.WAITING))
         session.commit()
 

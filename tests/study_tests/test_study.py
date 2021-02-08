@@ -1024,6 +1024,10 @@ def test_trial_duration_calculation(storage_mode: str) -> None:
             return x
 
         study.enqueue_trial(params={"x": 1})
+        # Make sure an enqueued trial is created with null datetime_start
+        t_tmp = study.trials[0]
+        assert t_tmp.datetime_start is None
+
         # Delayed evaluation for enqueued trial
         time.sleep(2)
 

@@ -368,11 +368,18 @@ def test_validate() -> None:
     valid_trial = _create_frozen_trial()
     valid_trial._validate()
 
-    # Invalid: `datetime_start` is not set.
-    invalid_trial = copy.copy(valid_trial)
-    invalid_trial.datetime_start = None
-    with pytest.raises(ValueError):
-        invalid_trial._validate()
+    # Invalid: `datetime_start` is not set when the trial is not in the waiting state.
+    for state in [
+        TrialState.RUNNING,
+        TrialState.COMPLETE,
+        TrialState.PRUNED,
+        TrialState.FAIL,
+    ]:
+        invalid_trial = copy.copy(valid_trial)
+        invalid_trial.state = state
+        invalid_trial.datetime_start = None
+        with pytest.raises(ValueError):
+            invalid_trial._validate()
 
     # Invalid: `state` is `RUNNING` and `datetime_complete` is set.
     invalid_trial = copy.copy(valid_trial)
