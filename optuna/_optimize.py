@@ -199,7 +199,7 @@ def _run_trial(
     thread: Optional[Thread] = None
 
     if study._storage.is_heartbeat_enabled():
-        study._storage.fail_stale_trials()
+        study._storage.fail_stale_trials(study._study_id)
         stop_event = Event()
         thread = Thread(
             target=_record_heartbeat, args=(trial._trial_id, study._storage, stop_event)

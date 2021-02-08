@@ -1162,8 +1162,8 @@ class RDBStorage(BaseStorage):
             else:
                 heartbeat.heartbeat = session.execute(func.now()).scalar()
 
-    def fail_stale_trials(self) -> List[int]:
-        stale_trial_ids = self._get_stale_trial_ids()
+    def fail_stale_trials(self, study_id: int) -> List[int]:
+        stale_trial_ids = self._get_stale_trial_ids(study_id)
         confirmed_stale_trial_ids = []
 
         for trial_id in stale_trial_ids:
@@ -1172,7 +1172,7 @@ class RDBStorage(BaseStorage):
 
         return confirmed_stale_trial_ids
 
-    def _get_stale_trial_ids(self) -> List[int]:
+    def _get_stale_trial_ids(self, study_id: int) -> List[int]:
         assert self.heartbeat_interval is not None
         if self.grace_period is None:
             grace_period = 2 * self.heartbeat_interval
@@ -1191,6 +1191,7 @@ class RDBStorage(BaseStorage):
                 session.query(models.TrialModel)
                 .options(orm.selectinload(models.TrialModel.heartbeats))
                 .filter(models.TrialModel.state == TrialState.RUNNING)
+                .filter(models.TrialModel.study_id == study_id)
                 .all()
             )
             for trial in running_trials:
