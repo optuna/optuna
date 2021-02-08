@@ -17,6 +17,7 @@ import shutil
 
 from packaging import version
 import pytorch_lightning as pl
+from pytorch_lightning import Callback
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -38,6 +39,17 @@ CLASSES = 10
 EPOCHS = 10
 DIR = os.getcwd()
 MODEL_DIR = os.path.join(DIR, "result")
+
+
+class MetricsCallback(Callback):
+    """PyTorch Lightning metric callback."""
+
+    def __init__(self):
+        super().__init__()
+        self.metrics = []
+
+    def on_validation_end(self, trainer, pl_module):
+        self.metrics.append(trainer.callback_metrics)
 
 
 class Net(nn.Module):
@@ -122,19 +134,23 @@ def objective(trial):
         os.path.join(MODEL_DIR, "trial_{}".format(trial.number), "{epoch}"), monitor="val_acc"
     )
 
+    # The default logger in PyTorch Lightning writes to event files to be consumed by
+    # TensorBoard. We don't use any logger here as it requires us to implement several abstract
+    # methods. Instead we setup a simple callback, that saves metrics from each validation step.
+    metrics_callback = MetricsCallback()
     trainer = pl.Trainer(
         logger=False,
         limit_val_batches=PERCENT_VALID_EXAMPLES,
         checkpoint_callback=checkpoint_callback,
         max_epochs=EPOCHS,
         gpus=1 if torch.cuda.is_available() else None,
-        callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_acc", mode="max")],
+        callbacks=[metrics_callback, PyTorchLightningPruningCallback(trial, monitor="val_acc")],
     )
 
     model = LightningNet(trial)
     trainer.fit(model)
 
-    return trainer.callback_metrics["val_acc"].item()
+    return metrics_callback.metrics[-1]["val_acc"].item()
 
 
 if __name__ == "__main__":
