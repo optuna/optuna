@@ -14,6 +14,7 @@ import sklearn.metrics
 from sklearn.model_selection import train_test_split
 import xgboost as xgb
 
+
 import optuna
 
 
@@ -42,7 +43,7 @@ def objective(trial):
         "colsample_bytree": trial.suggest_float("colsample_bytree", 1e-8, 1.0),
     }
 
-    if param["booster"] == "gbtree" or param["booster"] == "dart":
+    if param["booster"] in ["gbtree", "dart"]:
         # maximum depth of the tree, signifies complexity of the tree
         param["max_depth"] = trial.suggest_int("max_depth", 3, 9, step=2)
         # minimum child weight, larger the term more conservative the tree
