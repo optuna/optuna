@@ -36,9 +36,14 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         trial:
             A :class:`~optuna.trial.Trial` object or :obj:`None`. Please set trial object in
             rank-0 node and set :obj:`None` in the other rank node.
+        device:
+            A `torch.device` to communicate with the other nodes. Please set a CUDA device
+            assigned to the current node if you use "nccl" as `torch.distributed` backend.
     """
 
-    def __init__(self, trial: Optional[optuna.trial.Trial]) -> None:
+    def __init__(
+        self, trial: Optional[optuna.trial.Trial], device: Optional["torch.device"] = None
+    ) -> None:
 
         _imports.check()
 
@@ -55,6 +60,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
             assert trial is None, "error message"
         self._delegate = trial
+        self._device = device
 
     def suggest_float(
         self,
@@ -70,7 +76,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.suggest_float(name, low, high, step=step, log=log)
 
-        return _call_and_communicate(func, torch.float)
+        return _call_and_communicate(func, torch.float, self._device)
 
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         def func() -> float:
@@ -78,7 +84,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.suggest_uniform(name, low, high)
 
-        return _call_and_communicate(func, torch.float)
+        return _call_and_communicate(func, torch.float, self._device)
 
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         def func() -> float:
@@ -86,7 +92,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.suggest_loguniform(name, low, high)
 
-        return _call_and_communicate(func, torch.float)
+        return _call_and_communicate(func, torch.float, self._device)
 
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         def func() -> float:
@@ -94,7 +100,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.suggest_discrete_uniform(name, low, high, q=q)
 
-        return _call_and_communicate(func, torch.float)
+        return _call_and_communicate(func, torch.float, self._device)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         def func() -> float:
@@ -102,7 +108,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.suggest_int(name, low, high, step=step, log=log)
 
-        return _call_and_communicate(func, torch.int)
+        return _call_and_communicate(func, torch.int, self._device)
 
     def suggest_categorical(self, name: str, choices: Sequence["CategoricalChoiceType"]) -> Any:
         def func() -> CategoricalChoiceType:
@@ -110,7 +116,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.suggest_categorical(name, choices)
 
-        return _call_and_communicate_obj(func)
+        return _call_and_communicate_obj(func, self._device)
 
     def report(self, value: float, step: int) -> None:
 
@@ -128,7 +134,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
         # torch.bool seems to be the correct type, but the communication fails
         # due to the RuntimeError.
-        return _call_and_communicate(func, torch.uint8)
+        return _call_and_communicate(func, torch.uint8, self._device)
 
     def set_user_attr(self, key: str, value: Any) -> None:
 
@@ -151,7 +157,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.number
 
-        return _call_and_communicate(func, torch.int)
+        return _call_and_communicate(func, torch.int, self._device)
 
     @property
     def params(self) -> Dict[str, Any]:
@@ -160,7 +166,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.params
 
-        return _call_and_communicate_obj(func)
+        return _call_and_communicate_obj(func, self._device)
 
     @property
     def distributions(self) -> Dict[str, BaseDistribution]:
@@ -169,7 +175,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.distributions
 
-        return _call_and_communicate_obj(func)
+        return _call_and_communicate_obj(func, self._device)
 
     @property
     def user_attrs(self) -> Dict[str, Any]:
@@ -178,7 +184,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.user_attrs
 
-        return _call_and_communicate_obj(func)
+        return _call_and_communicate_obj(func, self._device)
 
     @property
     def system_attrs(self) -> Dict[str, Any]:
@@ -187,7 +193,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.system_attrs
 
-        return _call_and_communicate_obj(func)
+        return _call_and_communicate_obj(func, self._device)
 
     @property
     def datetime_start(self) -> Optional[datetime]:
@@ -196,22 +202,24 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
             assert self._delegate is not None
             return self._delegate.datetime_start
 
-        return _call_and_communicate_obj(func)
+        return _call_and_communicate_obj(func, self._device)
 
 
-def _call_and_communicate(func: Callable, dtype: "torch.dtype") -> Any:
+def _call_and_communicate(
+    func: Callable, dtype: "torch.dtype", device: Optional["torch.device"] = None
+) -> Any:
     buffer = torch.empty(1, dtype=dtype)
     rank = dist.get_rank()
     if rank == 0:
         result = func()
         buffer[0] = result
-    if dist.get_backend() == "nccl":
-        buffer = buffer.cuda(torch.device(rank))
+    if device is not None:
+        buffer = buffer.to(device)
     dist.broadcast(buffer, src=0)
     return buffer.item()
 
 
-def _call_and_communicate_obj(func: Callable) -> Any:
+def _call_and_communicate_obj(func: Callable, device: Optional["torch.device"] = None) -> Any:
     buffer = None
     size_buffer = torch.empty(1, dtype=torch.int)
     rank = dist.get_rank()
@@ -219,15 +227,15 @@ def _call_and_communicate_obj(func: Callable) -> Any:
         result = func()
         buffer = _to_tensor(result)
         size_buffer[0] = buffer.shape[0]
-    if dist.get_backend() == "nccl":
-        size_buffer = size_buffer.cuda(torch.device(rank))
+    if device is not None:
+        size_buffer = size_buffer.to(device)
     dist.broadcast(size_buffer, src=0)
     buffer_size = int(size_buffer.item())
     if rank != 0:
         buffer = torch.empty(buffer_size, dtype=torch.uint8)
     assert buffer is not None
-    if dist.get_backend() == "nccl":
-        buffer = buffer.cuda(torch.device(rank))
+    if device is not None:
+        buffer = buffer.to(device)
     dist.broadcast(buffer, src=0)
     return _from_tensor(buffer)
 
