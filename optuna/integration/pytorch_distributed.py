@@ -41,6 +41,11 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def __init__(self, trial: Optional[optuna.trial.Trial]) -> None:
 
         _imports.check()
+        
+        if dist.get_rank() == 0:
+            assert trial is not None, "error message"
+        else:
+            assert trial is None, "error message"
         self._delegate = trial
 
     def suggest_float(
