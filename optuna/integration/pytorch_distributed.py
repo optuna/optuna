@@ -5,7 +5,6 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-import warnings
 
 import optuna
 from optuna._experimental import experimental
@@ -142,25 +141,6 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return _call_and_communicate(func, torch.int)
 
     @property
-    def trial_id(self) -> int:
-
-        warnings.warn(
-            "The use of `TorchDistributedTrial.trial_id` is deprecated. "
-            "Please use `TorchDistributedTrial.number` instead.",
-            FutureWarning,
-        )
-        return self._trial_id
-
-    @property
-    def _trial_id(self) -> int:
-        def func() -> int:
-
-            assert self.delegate is not None
-            return self.delegate._trial_id
-
-        return _call_and_communicate(func, torch.int)
-
-    @property
     def params(self) -> Dict[str, Any]:
         def func() -> Dict[str, Any]:
 
@@ -229,7 +209,7 @@ def _call_and_communicate_obj(func: Callable) -> Any:
     if dist.get_backend() == "nccl":
         size_buffer = size_buffer.cuda(torch.device(rank))
     dist.broadcast(size_buffer, src=0)
-    buffer_size = size_buffer.item()
+    buffer_size = int(size_buffer.item())
     if rank != 0:
         buffer = torch.empty(buffer_size, dtype=torch.uint8)
     assert buffer is not None

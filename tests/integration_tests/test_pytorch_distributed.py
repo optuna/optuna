@@ -218,21 +218,6 @@ def test_number(storage_mode: str) -> None:
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
-@pytest.mark.filterwarnings("ignore::FutureWarning")
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_trial_id(storage_mode: str) -> None:
-    with StorageSupplier(storage_mode) as storage:
-        if dist.get_rank() == 0:
-            study = optuna.create_study(storage=storage)
-            trial = TorchDistributedTrial(study.ask())
-        else:
-            trial = TorchDistributedTrial(None)
-
-        assert isinstance(trial._trial_id, int)
-        assert isinstance(trial.trial_id, int)
-
-
-@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_datetime_start(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
