@@ -338,12 +338,10 @@ def test_fail_stale_trials() -> None:
         study1 = create_study(storage=storage)
         study2 = create_study(storage=storage)
 
-        trial = study1.ask()
-        storage.record_heartbeat(trial._trial_id)
-        time.sleep(grace_period + 1)
-
-        trial = study2.ask()
-        storage.record_heartbeat(trial._trial_id)
+        trial1 = study1.ask()
+        trial2 = study2.ask()
+        storage.record_heartbeat(trial1._trial_id)
+        storage.record_heartbeat(trial2._trial_id)
         time.sleep(grace_period + 1)
 
         assert study1.trials[0].state is TrialState.RUNNING
