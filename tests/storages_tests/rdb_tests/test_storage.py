@@ -335,21 +335,28 @@ def test_fail_stale_trials() -> None:
         assert isinstance(storage, RDBStorage)
         storage.heartbeat_interval = heartbeat_interval
         storage.grace_period = grace_period
-        study = create_study(storage=storage)
+        study1 = create_study(storage=storage)
+        study2 = create_study(storage=storage)
 
-        trial = study.ask()
+        trial = study1.ask()
         storage.record_heartbeat(trial._trial_id)
         time.sleep(grace_period + 1)
 
-        t = study.trials[0]
-        assert t.state is TrialState.RUNNING
+        trial = study2.ask()
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        assert study1.trials[0].state is TrialState.RUNNING
+        assert study2.trials[0].state is TrialState.RUNNING
+
+        assert storage._get_stale_trial_ids(study1._study_id) == [study1.trials[0]._trial_id]
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
         with patch("optuna._optimize.Thread", _TestableThread):
-            study.optimize(lambda _: 1.0, n_trials=1)
+            study1.optimize(lambda _: 1.0, n_trials=1)
 
-        t = study.trials[0]
-        assert t.state is TrialState.FAIL
+        assert study1.trials[0].state is TrialState.FAIL
+        assert study2.trials[0].state is TrialState.RUNNING
 
 
 def test_invalid_heartbeat_interval_and_grace_period() -> None:
