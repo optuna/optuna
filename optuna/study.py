@@ -457,8 +457,6 @@ class Study(BaseStudy):
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:
             trial_id = self._storage.create_new_trial(self._study_id)
-        else:
-            self._storage.set_trial_state(trial_id, TrialState.RUNNING)
         trial = trial_module.Trial(self, trial_id)
 
         for name, param in fixed_distributions.items():

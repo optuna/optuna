@@ -197,11 +197,12 @@ class _CachedStorage(BaseStorage):
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
+                previous_state = copy.copy(cached_trial.state)
                 updates = self._get_updates(trial_id)
                 cached_trial.state = state
                 updates.state = state
 
-                if state == TrialState.RUNNING:
+                if state == TrialState.RUNNING and previous_state == TrialState.WAITING:
                     updates.datetime_start = datetime.datetime.now()
                     cached_trial.datetime_start = datetime.datetime.now()
 
