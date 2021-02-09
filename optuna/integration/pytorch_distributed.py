@@ -41,7 +41,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def __init__(self, trial: Optional[optuna.trial.Trial]) -> None:
 
         _imports.check()
-        self.delegate = trial
+        self._delegate = trial
 
     def suggest_float(
         self,
