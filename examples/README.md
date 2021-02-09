@@ -25,7 +25,7 @@ This page contains a list of example codes written with Optuna.
 * [XGBoost](./xgboost/xgboost_simple.py)
 * [Tensorflow](./tensorflow/tensorflow_estimator_simple.py)
 * [Tensorflow (eager)](./tensorflow/tensorflow_eager_simple.py)
-* [Keras](./keras_simple.py)
+* [Keras](./keras/keras_simple.py)
 * [FastAI V1](./fastai/fastaiv1_simple.py)
 * [FastAI V2](./fastai/fastaiv2_simple.py)
 * [AllenNLP](./allennlp/allennlp_simple.py)
