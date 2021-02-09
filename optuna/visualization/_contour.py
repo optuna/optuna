@@ -125,7 +125,6 @@ def _get_contour_plot(
 
     padding_ratio = 0.05
     param_values_range = {}
-    update_category_axes = {}
     for p_name in sorted_params:
         values = _get_param_values(trials, p_name)
 
@@ -138,8 +137,6 @@ def _get_contour_plot(
             max_value = math.pow(10, math.log10(max_value) + padding)
 
         elif _is_categorical(trials, p_name):
-            # For numeric values, plotly does not automatically plot as "category" type.
-            update_category_axes[p_name] = any(_is_numeric(str(v)) for v in set(values))
 
             # Plotly>=4.12.0 draws contours using the indices of categorical variables instead of
             # raw values and the range should be updated based on the cardinality of categorical
@@ -166,9 +163,9 @@ def _get_contour_plot(
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
         figure.update_yaxes(title_text=y_param, range=param_values_range[y_param])
 
-        if update_category_axes.get(x_param, False):
+        if _is_categorical(trials, x_param):
             figure.update_xaxes(type="category")
-        if update_category_axes.get(y_param, False):
+        if _is_categorical(trials, y_param):
             figure.update_yaxes(type="category")
 
         if _is_log_scale(trials, x_param):
@@ -208,9 +205,9 @@ def _get_contour_plot(
                 figure.update_xaxes(range=param_values_range[x_param], row=y_i + 1, col=x_i + 1)
                 figure.update_yaxes(range=param_values_range[y_param], row=y_i + 1, col=x_i + 1)
 
-                if update_category_axes.get(x_param, False):
+                if _is_categorical(trials, x_param):
                     figure.update_xaxes(type="category", row=y_i + 1, col=x_i + 1)
-                if update_category_axes.get(y_param, False):
+                if _is_categorical(trials, y_param):
                     figure.update_yaxes(type="category", row=y_i + 1, col=x_i + 1)
 
                 if _is_log_scale(trials, x_param):
@@ -226,14 +223,6 @@ def _get_contour_plot(
                     figure.update_xaxes(title_text=x_param, row=y_i + 1, col=x_i + 1)
 
     return figure
-
-
-def _is_numeric(s: str) -> bool:
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
 
 
 def _generate_contour_subplot(
