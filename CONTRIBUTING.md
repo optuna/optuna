@@ -120,7 +120,11 @@ act -j $JOB_NAME
 Currently, you can run the following jobs:
 
 - `checks`    
-  - Checking the format, coding style, and type hings
+  - Checking the format, coding style, and type hints
+- `docuemtnation`
+  - Builds documentation including tutorial
+- `doctest`
+  - Runs doctest
 
 ## Creating a Pull Request
 
