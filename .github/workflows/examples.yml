@@ -53,7 +53,7 @@ jobs:
         if [ ${{ matrix.python-version }} = 3.6 ]; then
           IGNORES='chainermn_.*|fastai*|rapids_.*|botorch_.*'
         elif [ ${{ matrix.python-version }} = 3.8 ]; then
-          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|allennlp|rapids_.*'
+          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|rapids_.*'
         else
           IGNORES='chainermn_.*|fastai*|rapids_.*'
         fi
@@ -86,6 +86,15 @@ jobs:
           echo $file
           STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
           mpirun -n 2 -- python $file $STUDY_NAME $STORAGE_URL > /dev/null
+        done
+      env:
+        OMP_NUM_THREADS: 1
+    - name: Run Hydra examples
+      run: |
+        for file in `find examples/hydra -name '*.py'`
+        do
+          echo $file
+          python $file --multirun > /dev/null
         done
       env:
         OMP_NUM_THREADS: 1

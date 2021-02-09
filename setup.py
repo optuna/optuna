@@ -33,8 +33,7 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.7.0",
         "colorlog",
-        "joblib",
-        "numpy",
+        "numpy<1.20.0",
         "packaging>=20.0",
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
@@ -55,7 +54,9 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        "checking": ["black", "hacking", "isort", "mypy", "blackdoc"],
+        # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
+        # examples and tutorials.
+        "checking": ["black", "hacking", "isort", "mypy==0.790", "blackdoc"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
@@ -104,14 +105,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2 ; sys_platform=='darwin'",
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
-            "allennlp==1.2.0",
+            "allennlp<2.0.0",
             "dask[dataframe]",
             "dask-ml",
             "botorch ; python_version>'3.6'",
             "fastai",
-            "jax",
             "optax",
             "dm-haiku",
+            "hydra-optuna-sweeper",
         ],
         "experimental": ["redis"],
         "testing": [
@@ -144,7 +145,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2 ; sys_platform=='darwin'",
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
-            "allennlp==1.2.0",
+            "allennlp<2.0.0",
             "botorch ; python_version>'3.6'",
             "fastai",
         ],
@@ -182,7 +183,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2 ; sys_platform=='darwin'",
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
-            "allennlp==1.2.0 ; python_version<'3.8'",
+            "allennlp<2.0.0",
             "botorch ; python_version>'3.6'",
             "fastai",
         ],

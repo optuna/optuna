@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import math
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -14,8 +13,6 @@ from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import IntersectionSearchSpace
 from optuna.samplers import RandomSampler
@@ -525,15 +522,6 @@ class BoTorchSampler(BaseSampler):
 
         params = trans.untransform(candidates)
 
-        # Exclude upper bounds for parameters that should have their upper bounds excluded.
-        # TODO(hvy): Remove this exclusion logic when it is handled by the data transformer.
-        for name, param in params.items():
-            distribution = search_space[name]
-            if isinstance(distribution, UniformDistribution):
-                params[name] = min(params[name], distribution.high - 1e-8)
-            elif isinstance(distribution, LogUniformDistribution):
-                params[name] = min(params[name], math.exp(math.log(distribution.high) - 1e-8))
-
         return params
 
     def sample_independent(
@@ -564,7 +552,7 @@ class BoTorchSampler(BaseSampler):
                 con = self._constraints_func(trial)
                 if not isinstance(con, (tuple, list)):
                     warnings.warn(
-                        f"Constraints should be a sequence of floats but got {constraints}."
+                        f"Constraints should be a sequence of floats but got {type(con).__name__}."
                     )
                 constraints = tuple(con)
             except Exception:

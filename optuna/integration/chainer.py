@@ -55,10 +55,7 @@ class ChainerPruningExtension(Extension):
         self._trial = trial
         self._observation_key = observation_key
         self._pruner_trigger = chainer.training.get_trigger(pruner_trigger)
-        if not (
-            isinstance(self._pruner_trigger, IntervalTrigger)
-            or isinstance(self._pruner_trigger, ManualScheduleTrigger)
-        ):
+        if not isinstance(self._pruner_trigger, (IntervalTrigger, ManualScheduleTrigger)):
             pruner_type = type(self._pruner_trigger)
             raise TypeError(
                 "Invalid trigger class: " + str(pruner_type) + "\n"

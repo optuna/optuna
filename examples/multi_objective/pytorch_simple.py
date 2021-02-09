@@ -120,9 +120,7 @@ if __name__ == "__main__":
 
     print("Pareto front:")
 
-    trials = {str(trial.values): trial for trial in study.best_trials}
-    trials = list(trials.values())
-    trials.sort(key=lambda t: t.values)
+    trials = sorted(study.best_trials, key=lambda t: t.values)
 
     for trial in trials:
         print("  Trial#{}".format(trial.number))
