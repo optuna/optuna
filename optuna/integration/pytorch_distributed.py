@@ -41,10 +41,18 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def __init__(self, trial: Optional[optuna.trial.Trial]) -> None:
 
         _imports.check()
-        
+
         if dist.get_rank() == 0:
-            assert trial is not None, "error message"
+            if not isinstance(trial, optuna.trial.Trial):
+                raise ValueError(
+                    "Rank 0 node expects an optuna.trial.Trial instance as the trial argument."
+                )
         else:
+            if trial is not None:
+                raise ValueError(
+                    "Non-rank 0 node is supposed to recieve None as the trial argument."
+                )
+
             assert trial is None, "error message"
         self._delegate = trial
 

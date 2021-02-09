@@ -30,7 +30,21 @@ def init_process_group() -> None:
 
 def test_torch_distributed_trial_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
-        TorchDistributedTrial(None)
+        if dist.get_rank() == 0:
+            study = optuna.create_study()
+            TorchDistributedTrial(study.ask())
+        else:
+            TorchDistributedTrial(None)
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+def test_torch_distributed_trial_invalid_argument() -> None:
+    with pytest.raises(ValueError):
+        if dist.get_rank() == 0:
+            TorchDistributedTrial(None)
+        else:
+            study = optuna.create_study()
+            TorchDistributedTrial(study.ask())
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
