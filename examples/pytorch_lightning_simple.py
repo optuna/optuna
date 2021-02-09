@@ -10,18 +10,19 @@ argument.
     $ python pytorch_lightning_simple.py [--pruning]
 
 """
-
 import argparse
 import os
-import shutil
+from typing import List
+from typing import Optional
 
 from packaging import version
 import pytorch_lightning as pl
 import torch
-import torch.nn as nn
+from torch import nn
+from torch import optim
 import torch.nn.functional as F
-from torch.optim import Adam
-import torch.utils.data
+from torch.utils.data import DataLoader
+from torch.utils.data import random_split
 from torchvision import datasets
 from torchvision import transforms
 
@@ -37,40 +38,26 @@ BATCHSIZE = 128
 CLASSES = 10
 EPOCHS = 10
 DIR = os.getcwd()
-MODEL_DIR = os.path.join(DIR, "result")
 
 
 class Net(nn.Module):
-    def __init__(self, trial):
+    def __init__(self, dropout: float, output_dims: List[int]):
         super(Net, self).__init__()
-        self.layers = []
-        self.dropouts = []
+        layers = []
+        dropouts = []
 
-        # We optimize the number of layers, hidden units in each layer and dropouts.
-        n_layers = trial.suggest_int("n_layers", 1, 3)
-        dropout = trial.suggest_float("dropout", 0.2, 0.5)
         input_dim = 28 * 28
-        for i in range(n_layers):
-            output_dim = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
-            self.layers.append(nn.Linear(input_dim, output_dim))
-            self.dropouts.append(nn.Dropout(dropout))
+        for output_dim in output_dims:
+            layers.append(nn.Linear(input_dim, output_dim))
+            dropouts.append(nn.Dropout(dropout))
             input_dim = output_dim
 
-        self.layers.append(nn.Linear(input_dim, CLASSES))
+        layers.append(nn.Linear(input_dim, CLASSES))
 
-        # Assigning the layers as class variables (PyTorch requirement).
-        # Parameters of a layer are returned when calling model.parameters(),
-        # only if the layer is a class variable. Thus, assigning as class
-        # variable is necessary to make the layer parameters trainable.
-        for idx, layer in enumerate(self.layers):
-            setattr(self, "fc{}".format(idx), layer)
+        self.layers = nn.ModuleList(layers)
+        self.dropouts = nn.ModuleList(dropouts)
 
-        # Assigning the dropouts as class variables (PyTorch requirement), for
-        # the same reason as above.
-        for idx, dropout in enumerate(self.dropouts):
-            setattr(self, "drop{}".format(idx), dropout)
-
-    def forward(self, data):
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
         data = data.view(-1, 28 * 28)
         for layer, dropout in zip(self.layers, self.dropouts):
             data = F.relu(layer(data))
@@ -81,58 +68,80 @@ class Net(nn.Module):
 class LightningNet(pl.LightningModule):
     def __init__(self, trial):
         super(LightningNet, self).__init__()
-        self.model = Net(trial)
 
-    def forward(self, data):
+        # We optimize the number of layers, hidden units in each layer and dropouts.
+        n_layers = trial.suggest_int("n_layers", 1, 3)
+        dropout = trial.suggest_float("dropout", 0.2, 0.5)
+        output_dims = [
+            trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True) for i in range(n_layers)
+        ]
+
+        self.model = Net(dropout, output_dims)
+
+    def forward(self, data: torch.Tensor) -> torch.Tensor:
         return self.model(data)
 
-    def training_step(self, batch, batch_nb):
+    def training_step(self, batch, batch_idx: int) -> torch.Tensor:
         data, target = batch
-        output = self.forward(data)
+        output = self(data)
         return F.nll_loss(output, target)
 
-    def validation_step(self, batch, batch_nb):
+    def validation_step(self, batch, batch_idx: int) -> None:
         data, target = batch
-        output = self.forward(data)
+        output = self(data)
         pred = output.argmax(dim=1, keepdim=True)
         accuracy = pred.eq(target.view_as(pred)).float().mean()
         self.log("val_acc", accuracy)
 
-    def configure_optimizers(self):
-        return Adam(self.model.parameters())
+    def configure_optimizers(self) -> optim.Optimizer:
+        return optim.Adam(self.model.parameters())
 
-    def train_dataloader(self):
-        return torch.utils.data.DataLoader(
-            datasets.MNIST(DIR, train=True, download=True, transform=transforms.ToTensor()),
-            batch_size=BATCHSIZE,
-            shuffle=True,
+
+class MNISTDataModule(pl.LightningDataModule):
+    def __init__(self, data_dir: str, batch_size: int):
+        super().__init__()
+        self.data_dir = data_dir
+        self.batch_size = batch_size
+
+    def setup(self, stage: Optional[str] = None) -> None:
+        self.mnist_test = datasets.MNIST(
+            self.data_dir, train=False, download=True, transform=transforms.ToTensor()
+        )
+        mnist_full = datasets.MNIST(
+            self.data_dir, train=True, download=True, transform=transforms.ToTensor()
+        )
+        self.mnist_train, self.mnist_val = random_split(mnist_full, [55000, 5000])
+
+    def train_dataloader(self) -> DataLoader:
+        return DataLoader(
+            self.mnist_train, batch_size=self.batch_size, shuffle=True, pin_memory=True
         )
 
-    def val_dataloader(self):
-        return torch.utils.data.DataLoader(
-            datasets.MNIST(DIR, train=False, download=True, transform=transforms.ToTensor()),
-            batch_size=BATCHSIZE,
-            shuffle=False,
+    def val_dataloader(self) -> DataLoader:
+        return DataLoader(
+            self.mnist_val, batch_size=self.batch_size, shuffle=False, pin_memory=True
+        )
+
+    def test_dataloader(self) -> DataLoader:
+        return DataLoader(
+            self.mnist_test, batch_size=self.batch_size, shuffle=False, pin_memory=True
         )
 
 
-def objective(trial):
-    # Filenames for each trial must be made unique in order to access each checkpoint.
-    checkpoint_callback = pl.callbacks.ModelCheckpoint(
-        os.path.join(MODEL_DIR, "trial_{}".format(trial.number), "{epoch}"), monitor="val_acc"
-    )
+def objective(trial) -> float:
+
+    model = LightningNet(trial)
+    datamodule = MNISTDataModule(data_dir=DIR, batch_size=BATCHSIZE)
 
     trainer = pl.Trainer(
         logger=False,
         limit_val_batches=PERCENT_VALID_EXAMPLES,
-        checkpoint_callback=checkpoint_callback,
+        checkpoint_callback=False,
         max_epochs=EPOCHS,
-        gpus=1 if torch.cuda.is_available() else None,
-        callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_acc", mode="max")],
+        gpus=-1 if torch.cuda.is_available() else None,
+        callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_acc")],
     )
-
-    model = LightningNet(trial)
-    trainer.fit(model)
+    trainer.fit(model, datamodule=datamodule)
 
     return trainer.callback_metrics["val_acc"].item()
 
@@ -163,5 +172,3 @@ if __name__ == "__main__":
     print("  Params: ")
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
-
-    shutil.rmtree(MODEL_DIR)
