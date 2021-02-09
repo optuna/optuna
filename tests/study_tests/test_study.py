@@ -1057,7 +1057,7 @@ def test_trial_duration_calculation(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_studysummary_datetime_start_calculation(storage_mode: str) -> None:
+def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
 
