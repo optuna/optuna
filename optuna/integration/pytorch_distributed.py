@@ -54,64 +54,64 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     ) -> float:
         def func() -> float:
 
-            assert self.delegate is not None
-            return self.delegate.suggest_float(name, low, high, step=step, log=log)
+            assert self._delegate is not None
+            return self._delegate.suggest_float(name, low, high, step=step, log=log)
 
         return _call_and_communicate(func, torch.float)
 
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         def func() -> float:
 
-            assert self.delegate is not None
-            return self.delegate.suggest_uniform(name, low, high)
+            assert self._delegate is not None
+            return self._delegate.suggest_uniform(name, low, high)
 
         return _call_and_communicate(func, torch.float)
 
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         def func() -> float:
 
-            assert self.delegate is not None
-            return self.delegate.suggest_loguniform(name, low, high)
+            assert self._delegate is not None
+            return self._delegate.suggest_loguniform(name, low, high)
 
         return _call_and_communicate(func, torch.float)
 
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         def func() -> float:
 
-            assert self.delegate is not None
-            return self.delegate.suggest_discrete_uniform(name, low, high, q=q)
+            assert self._delegate is not None
+            return self._delegate.suggest_discrete_uniform(name, low, high, q=q)
 
         return _call_and_communicate(func, torch.float)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         def func() -> float:
 
-            assert self.delegate is not None
-            return self.delegate.suggest_int(name, low, high, step=step, log=log)
+            assert self._delegate is not None
+            return self._delegate.suggest_int(name, low, high, step=step, log=log)
 
         return _call_and_communicate(func, torch.int)
 
     def suggest_categorical(self, name: str, choices: Sequence["CategoricalChoiceType"]) -> Any:
         def func() -> CategoricalChoiceType:
 
-            assert self.delegate is not None
-            return self.delegate.suggest_categorical(name, choices)
+            assert self._delegate is not None
+            return self._delegate.suggest_categorical(name, choices)
 
         return _call_and_communicate_obj(func)
 
     def report(self, value: float, step: int) -> None:
 
         if dist.get_rank() == 0:
-            assert self.delegate is not None
-            self.delegate.report(value, step)
+            assert self._delegate is not None
+            self._delegate.report(value, step)
         dist.barrier()
 
     def should_prune(self) -> bool:
         def func() -> bool:
 
-            assert self.delegate is not None
+            assert self._delegate is not None
             # Some pruners return numpy.bool_, which is incompatible with bool.
-            return bool(self.delegate.should_prune())
+            return bool(self._delegate.should_prune())
 
         # torch.bool seems to be the correct type, but the communication fails
         # due to the RuntimeError.
@@ -120,23 +120,23 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def set_user_attr(self, key: str, value: Any) -> None:
 
         if dist.get_rank() == 0:
-            assert self.delegate is not None
-            self.delegate.set_user_attr(key, value)
+            assert self._delegate is not None
+            self._delegate.set_user_attr(key, value)
         dist.barrier()
 
     def set_system_attr(self, key: str, value: Any) -> None:
 
         if dist.get_rank() == 0:
-            assert self.delegate is not None
-            self.delegate.set_system_attr(key, value)
+            assert self._delegate is not None
+            self._delegate.set_system_attr(key, value)
         dist.barrier()
 
     @property
     def number(self) -> int:
         def func() -> int:
 
-            assert self.delegate is not None
-            return self.delegate.number
+            assert self._delegate is not None
+            return self._delegate.number
 
         return _call_and_communicate(func, torch.int)
 
@@ -144,8 +144,8 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def params(self) -> Dict[str, Any]:
         def func() -> Dict[str, Any]:
 
-            assert self.delegate is not None
-            return self.delegate.params
+            assert self._delegate is not None
+            return self._delegate.params
 
         return _call_and_communicate_obj(func)
 
@@ -153,8 +153,8 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def distributions(self) -> Dict[str, BaseDistribution]:
         def func() -> Dict[str, BaseDistribution]:
 
-            assert self.delegate is not None
-            return self.delegate.distributions
+            assert self._delegate is not None
+            return self._delegate.distributions
 
         return _call_and_communicate_obj(func)
 
@@ -162,8 +162,8 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def user_attrs(self) -> Dict[str, Any]:
         def func() -> Dict[str, Any]:
 
-            assert self.delegate is not None
-            return self.delegate.user_attrs
+            assert self._delegate is not None
+            return self._delegate.user_attrs
 
         return _call_and_communicate_obj(func)
 
@@ -171,8 +171,8 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def system_attrs(self) -> Dict[str, Any]:
         def func() -> Dict[str, Any]:
 
-            assert self.delegate is not None
-            return self.delegate.system_attrs
+            assert self._delegate is not None
+            return self._delegate.system_attrs
 
         return _call_and_communicate_obj(func)
 
@@ -180,8 +180,8 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     def datetime_start(self) -> Optional[datetime]:
         def func() -> Optional[datetime]:
 
-            assert self.delegate is not None
-            return self.delegate.datetime_start
+            assert self._delegate is not None
+            return self._delegate.datetime_start
 
         return _call_and_communicate_obj(func)
 
