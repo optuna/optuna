@@ -1054,3 +1054,27 @@ def test_trial_duration_calculation(storage_mode: str) -> None:
         assert t2.datetime_complete is not None
         duration_error2 = abs((t2.datetime_complete - t2.datetime_start).total_seconds() - 1)
         assert duration_error2 < 0.1
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_studysummary_datetime_start_calculation(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+
+        def objective(trial: Trial) -> float:
+            x = trial.suggest_int("x", -10, 10)
+            return x
+
+        # StudySummary datetime_start tests
+        study = create_study(storage=storage)
+        study.enqueue_trial(params={"x": 1})
+
+        # Study summary with only enqueued trials should have null datetime_start
+        summaries = study._storage.get_all_study_summaries()
+        assert summaries[0].datetime_start is None
+
+        # Study summary with completed trials should have nonnull datetime_start
+        study.optimize(objective, n_trials=1)
+        study.enqueue_trial(params={"x": 1})
+        summaries = study._storage.get_all_study_summaries()
+        assert summaries[0].datetime_start is not None
