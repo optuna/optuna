@@ -79,6 +79,10 @@ In addition, integration modules are available for the following libraries, prov
 
 * [Tracking optimization process with MLflow](./mlflow/keras_mlflow.py)
 
+### Examples of Hydra
+
+* [Optimization with Hydra](./hydra/simple.py)
+
 ### Examples of Distributed Optimization
 
 * [Optimizing on Kubernetes](./kubernetes/README.md)
@@ -89,6 +93,7 @@ In addition, integration modules are available for the following libraries, prov
 * [BBO-Rietveld: Automated crystal structure refinement](https://github.com/quantumbeam/BBO-Rietveld)
 * [Catalyst](https://github.com/catalyst-team/catalyst)
 * [CuPy](https://github.com/cupy/cupy)
+* [Hydra's Optuna Sweeper plugin](https://hydra.cc/docs/next/plugins/optuna_sweeper/)
 * [Mozilla Voice STT](https://github.com/mozilla/DeepSpeech)
 * [neptune.ai](https://neptune.ai)
 * [OptGBM: A scikit-learn compatible LightGBM estimator with Optuna](https://github.com/Y-oHr-N/OptGBM)
@@ -99,7 +104,7 @@ PRs to add additional projects welcome!
 
 ### Running with Optuna's Docker images?
 You can use our docker images with the tag ending with `-dev` to run most of the examples.
-For example, you can run [PyTorch Simple](./pytorch_simple.py) via `docker run --rm optuna/optuna:py3.7-dev python examples/pytorch_simple.py`.  
+For example, you can run [PyTorch Simple](./pytorch_simple.py) via `docker run --rm optuna/optuna:py3.7-dev python examples/pytorch_simple.py`.
 Also, you can try our visualization example in Jupyter Notebook by opening `localhost:8888` in your browser after executing this:
 
 ```bash
