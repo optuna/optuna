@@ -540,7 +540,7 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
             Number of parallel jobs. -1 means using all processors.
 
         silent:
-            If true, print messages while running boosting.
+            If False, print messages while running boosting.
 
         importance_type:
             Type of feature importances. If 'split', result contains numbers of
@@ -564,23 +564,26 @@ class LGBMClassifier(LGBMModel, ClassifierMixin):
         **kwargs:
             Other parameters for the model. See
             http:/lightgbm.readthedocs.io/en/latest/Parameters.html for more
-            parameters. Note, that **kwargs is not supported in sklearn, so it
-            may cause unexpected issues.
+            parameters. Note, that ``**kwargs`` is not supported in sklearn, so
+            it may cause unexpected issues.
 
     Attributes:
         encoder_:
             Label encoder.
 
     Examples:
-        >>> import optuna.integration.lightgbm as lgb
-        >>> from sklearn.datasets import load_iris
-        >>> from sklearn.model_selection import train_test_split
-        >>> clf = lgb.LGBMClassifier(random_state=0)
-        >>> X, y = load_iris(return_X_y=True)
-        >>> X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
-        >>> clf.fit(X, y, eval_set=[(X_valid, y_valid)])
-        LGBMClassifier(...)
-        >>> y_pred = clf.predict(X)
+
+        .. doctest::
+
+            >>> import optuna.integration.lightgbm as lgb
+            >>> from sklearn.datasets import load_iris
+            >>> from sklearn.model_selection import train_test_split
+            >>> clf = lgb.LGBMClassifier(random_state=0)
+            >>> X, y = load_iris(return_X_y=True)
+            >>> X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
+            >>> clf.fit(X, y, eval_set=[(X_valid, y_valid)], verbose=False)
+            LGBMClassifier(...)
+            >>> y_pred = clf.predict(X)
     """
 
     @property
@@ -815,7 +818,7 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
             Number of parallel jobs. -1 means using all processors.
 
         silent:
-            If true, print messages while running boosting.
+            If False, print messages while running boosting.
 
         importance_type:
             Type of feature importances. If 'split', result contains numbers of
@@ -839,16 +842,20 @@ class LGBMRegressor(LGBMModel, RegressorMixin):
         **kwargs:
             Other parameters for the model. See
             http:/lightgbm.readthedocs.io/en/latest/Parameters.html for more
-            parameters. Note, that **kwargs is not supported in sklearn, so it
-            may cause unexpected issues.
+            parameters. Note, that ``**kwargs`` is not supported in sklearn, so
+            it may cause unexpected issues.
 
-        >>> import optuna.integration.lightgbm as lgb
-        >>> from sklearn.datasets import load_boston
-        >>> from sklearn.model_selection import train_test_split
-        >>> reg = lgb.LGBMRegressor(random_state=0)
-        >>> X, y = load_boston(return_X_y=True)
-        >>> X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
-        >>> reg.fit(X, y, eval_set=[(X_valid, y_valid)])
-        LGBMRegressor(...)
-        >>> y_pred = reg.predict(X)
+    Examples:
+
+        .. doctest::
+
+            >>> import optuna.integration.lightgbm as lgb
+            >>> from sklearn.datasets import load_boston
+            >>> from sklearn.model_selection import train_test_split
+            >>> reg = lgb.LGBMRegressor(random_state=0)
+            >>> X, y = load_boston(return_X_y=True)
+            >>> X, X_valid, y, y_valid = train_test_split(X, y, random_state=0)
+            >>> reg.fit(X, y, eval_set=[(X_valid, y_valid)], verbose=False)
+            LGBMRegressor(...)
+            >>> y_pred = reg.predict(X)
     """
