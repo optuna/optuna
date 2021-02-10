@@ -421,7 +421,7 @@ class LGBMModel(lgb.LGBMModel):
                     categorical_feature=categorical_feature,
                 )
 
-            valid_sets.append(valid_set)
+                valid_sets.append(valid_set)
 
         evals_result = {}  # type: Dict[Any, Any]
         tuner = optimize.LightGBMTuner(
