@@ -44,8 +44,15 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: built-document
-        path: docs/build
+        name: built-html
+        path: |
+            docs/build/html
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: executed-tutorial
+        path: |
+            docs/source/tutorial
 
   doctest:
 
