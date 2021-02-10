@@ -43,30 +43,26 @@ DIR = os.getcwd()
 class Net(nn.Module):
     def __init__(self, dropout: float, output_dims: List[int]):
         super(Net, self).__init__()
-        layers = []
-        dropouts = []
+        layers: List[nn.Module] = []
 
-        input_dim = 28 * 28
+        input_dim: int = 28 * 28
         for output_dim in output_dims:
             layers.append(nn.Linear(input_dim, output_dim))
-            dropouts.append(nn.Dropout(dropout))
+            layers.append(nn.ReLU())
+            layers.append(nn.Dropout(dropout))
             input_dim = output_dim
 
         layers.append(nn.Linear(input_dim, CLASSES))
 
-        self.layers = nn.ModuleList(layers)
-        self.dropouts = nn.ModuleList(dropouts)
+        self.layers: nn.Module = nn.Sequential(*layers)
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:
-        data = data.view(-1, 28 * 28)
-        for layer, dropout in zip(self.layers, self.dropouts):
-            data = F.relu(layer(data))
-            data = dropout(data)
-        return F.log_softmax(self.layers[-1](data), dim=1)
+        logits = self.layers(data)
+        return F.log_softmax(logits, dim=1)
 
 
 class LightningNet(pl.LightningModule):
-    def __init__(self, trial):
+    def __init__(self, trial: optuna.trial.Trial):
         super(LightningNet, self).__init__()
 
         # We optimize the number of layers, hidden units in each layer and dropouts.
@@ -79,7 +75,7 @@ class LightningNet(pl.LightningModule):
         self.model = Net(dropout, output_dims)
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:
-        return self.model(data)
+        return self.model(data.view(-1, 28 * 28))
 
     def training_step(self, batch, batch_idx: int) -> torch.Tensor:
         data, target = batch
@@ -128,7 +124,7 @@ class MNISTDataModule(pl.LightningDataModule):
         )
 
 
-def objective(trial) -> float:
+def objective(trial: optuna.trial.Trial) -> float:
 
     model = LightningNet(trial)
     datamodule = MNISTDataModule(data_dir=DIR, batch_size=BATCHSIZE)
@@ -157,7 +153,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    pruner = optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
+    pruner: optuna.pruners.BasePruner = (
+        optuna.pruners.MedianPruner() if args.pruning else optuna.pruners.NopPruner()
+    )
 
     study = optuna.create_study(direction="maximize", pruner=pruner)
     study.optimize(objective, n_trials=100, timeout=600)
