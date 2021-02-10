@@ -90,9 +90,10 @@ some other requirements like [LightGBM](https://github.com/microsoft/LightGBM) a
 all .py files in `tutorial` directory are run during the documentation build if there's no build cache.
 Whether you edit any tutorial or not doesn't matter.
 
-To avoid having to run the tutorials, you may download executed tutorial artifacts nanmed "tutorial.zip" from our CI and put them in `docs/build` before
+To avoid having to run the tutorials, you may download executed tutorial artifacts nanmed "tutorial" from our CI (see the capture below) and put them in `docs/build` before
 extract the files in the zip to `docs/source/tutorial` directory.
 
+![image](https://user-images.githubusercontent.com/16191443/107472296-0b211400-6bb2-11eb-9203-e2c42ce499ad.png)
 
 ## Unit Tests
 
