@@ -67,7 +67,7 @@ class TensorBoardCallback(object):
                 )
             elif isinstance(param_distribution, optuna.distributions.DiscreteUniformDistribution):
                 self._hp_params[param_name] = hp.HParam(
-                    param_name, hp.Discrete(param_distribution.low, param_distribution.high)
+                    param_name, hp.RealInterval(param_distribution.low, param_distribution.high)
                 )
             elif isinstance(param_distribution, optuna.distributions.IntUniformDistribution):
                 self._hp_params[param_name] = hp.HParam(
