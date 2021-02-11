@@ -89,3 +89,12 @@ jobs:
         done
       env:
         OMP_NUM_THREADS: 1
+    - name: Run Hydra examples
+      run: |
+        for file in `find examples/hydra -name '*.py'`
+        do
+          echo $file
+          python $file --multirun > /dev/null
+        done
+      env:
+        OMP_NUM_THREADS: 1
