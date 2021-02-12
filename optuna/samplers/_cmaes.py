@@ -354,22 +354,33 @@ class CmaEsSampler(BaseSampler):
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
     ) -> Tuple[Optional[CmaClass], int]:
+        if not self._use_separable_cma:
+            attr_key_optimizer = "cma:optimizer"
+            attr_key_n_restarts = "cma:n_restarts"
+        else:
+            attr_key_optimizer = "sepcma:optimizer"
+            attr_key_n_restarts = "sepcma:n_restarts"
+
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
                 key: value
                 for key, value in trial.system_attrs.items()
-                if key.startswith("cma:optimizer")
+                if key.startswith(attr_key_optimizer)
             }
             if len(optimizer_attrs) == 0:
                 continue
 
-            # Check "cma:optimizer" key for backward compatibility.
-            optimizer_str = optimizer_attrs.get("cma:optimizer", None)
+            if not self._use_separable_cma:
+                # Check "cma:optimizer" key for backward compatibility.
+                optimizer_str = optimizer_attrs.get("cma:optimizer", None)
+            else:
+                optimizer_str = None
+
             if optimizer_str is None:
                 optimizer_str = _concat_optimizer_attrs(optimizer_attrs)
 
-            n_restarts: int = trial.system_attrs.get("cma:n_restarts", 0)
+            n_restarts: int = trial.system_attrs.get(attr_key_n_restarts, 0)
             return pickle.loads(bytes.fromhex(optimizer_str)), n_restarts
         return None, 0
 
