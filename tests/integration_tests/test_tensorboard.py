@@ -39,6 +39,23 @@ def test_study_name() -> None:
         shutil.rmtree(dirname)
 
 
+def test_cast_float() -> None:
+    def objective(trial: optuna.trial.Trial) -> float:
+        x = trial.suggest_float("x", 1, 2)
+        y = trial.suggest_float("y", 1, 2, log=True)
+        assert isinstance(x, float)
+        assert isinstance(y, float)
+        return x + y
+
+    dirname = tempfile.mkdtemp()
+    metric_name = "target"
+    study_name = "test_tensorboard_integration"
+
+    tbcallback = TensorBoardCallback(dirname, metric_name)
+    study = optuna.create_study(study_name=study_name)
+    study.optimize(objective, n_trials=1, callbacks=[tbcallback])
+
+
 def test_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         TensorBoardCallback(dirname="", metric_name="")
