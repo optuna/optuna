@@ -35,6 +35,19 @@ If you choose to write some code, we have some conventions as follows.
 
 ## Guidelines
 
+### Setup Optuna
+
+First of all, fork Optuna on GitHub.
+You can learn about fork in the official [documentation](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo).
+
+After forking, download and install Optuna on your computer.
+
+```bash
+git clone git@github.com:optuna/optuna.git
+cd optuna
+pip install -e .
+```
+
 ### Checking the Format, Coding Style, and Type Hints
 
 Code is formatted with [black](https://github.com/psf/black),
