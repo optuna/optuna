@@ -71,6 +71,8 @@ def _create_scoped_session(
     except Exception:
         session.rollback()
         raise
+    finally:
+        session.close()
 
 
 class RDBStorage(BaseStorage):
