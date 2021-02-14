@@ -371,13 +371,10 @@ class CmaEsSampler(BaseSampler):
             if len(optimizer_attrs) == 0:
                 continue
 
-            if not self._use_separable_cma:
+            if not self._use_separable_cma and "cma:optimizer" in optimizer_attrs:
                 # Check "cma:optimizer" key for backward compatibility.
-                optimizer_str = optimizer_attrs.get("cma:optimizer", None)
+                optimizer_str = optimizer_attrs["cma:optimizer"]
             else:
-                optimizer_str = None
-
-            if optimizer_str is None:
                 optimizer_str = _concat_optimizer_attrs(optimizer_attrs)
 
             n_restarts: int = trial.system_attrs.get(attr_key_n_restarts, 0)
