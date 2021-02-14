@@ -47,7 +47,7 @@ def objective(trial):
             flip_vert=False,
             max_rotate=trial.suggest_int("max_rotate", 0, 45),
             max_zoom=trial.suggest_float("max_zoom", 1, 2),
-            p_affine=trial.suggest_discrete_uniform("p_affine", 0.1, 1.0, 0.1),
+            p_affine=trial.suggest_float("p_affine", 0.1, 1.0, step=0.1),
         )
     data = ImageDataLoaders.from_folder(
         path, bs=BATCHSIZE, batch_tfms=tfms if apply_tfms else None

@@ -42,7 +42,7 @@ def objective(trial):
             flip_vert=False,
             max_rotate=trial.suggest_int("max_rotate", -45, 45),
             max_zoom=trial.suggest_float("max_zoom", 1, 2),
-            p_affine=trial.suggest_discrete_uniform("p_affine", 0.1, 1.0, 0.1),
+            p_affine=trial.suggest_float("p_affine", 0.1, 1.0, step=0.1),
         )
     data = vision.ImageDataBunch.from_folder(
         path, bs=BATCHSIZE, ds_tfms=tfms if apply_tfms else None

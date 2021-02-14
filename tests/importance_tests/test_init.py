@@ -34,15 +34,15 @@ def test_get_param_importancetarget_target_is_none_and_study_is_multi_obj(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
     def objective(trial: Trial) -> Tuple[float, float]:
-        x1 = trial.suggest_uniform("x1", 0.1, 3)
-        x2 = trial.suggest_loguniform("x2", 0.1, 3)
-        x3 = trial.suggest_discrete_uniform("x3", 0, 3, 1)
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+        x3 = trial.suggest_float("x3", 0, 3, step=1)
         x4 = trial.suggest_int("x4", -3, 3)
         x5 = trial.suggest_int("x5", 1, 5, log=True)
         x6 = trial.suggest_categorical("x6", [1.0, 1.1, 1.2])
         if trial.number % 2 == 0:
             # Conditional parameters are ignored unless `params` is specified and is not `None`.
-            x7 = trial.suggest_uniform("x7", 0.1, 3)
+            x7 = trial.suggest_float("x7", 0.1, 3)
 
         assert isinstance(x6, float)
         value = x1 ** 4 + x2 + x3 - x4 ** 2 - x5 + x6
@@ -64,15 +64,15 @@ def test_get_param_importances(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
     def objective(trial: Trial) -> float:
-        x1 = trial.suggest_uniform("x1", 0.1, 3)
-        x2 = trial.suggest_loguniform("x2", 0.1, 3)
-        x3 = trial.suggest_discrete_uniform("x3", 0, 3, 1)
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+        x3 = trial.suggest_float("x3", 0, 3, step=1)
         x4 = trial.suggest_int("x4", -3, 3)
         x5 = trial.suggest_int("x5", 1, 5, log=True)
         x6 = trial.suggest_categorical("x6", [1.0, 1.1, 1.2])
         if trial.number % 2 == 0:
             # Conditional parameters are ignored unless `params` is specified and is not `None`.
-            x7 = trial.suggest_uniform("x7", 0.1, 3)
+            x7 = trial.suggest_float("x7", 0.1, 3)
 
         assert isinstance(x6, float)
         value = x1 ** 4 + x2 + x3 - x4 ** 2 - x5 + x6
@@ -108,11 +108,11 @@ def test_get_param_importances_with_params(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
     def objective(trial: Trial) -> float:
-        x1 = trial.suggest_uniform("x1", 0.1, 3)
-        x2 = trial.suggest_loguniform("x2", 0.1, 3)
-        x3 = trial.suggest_discrete_uniform("x3", 0, 3, 1)
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+        x3 = trial.suggest_float("x3", 0, 3, step=1)
         if trial.number % 2 == 0:
-            x4 = trial.suggest_uniform("x4", 0.1, 3)
+            x4 = trial.suggest_float("x4", 0.1, 3)
 
         value = x1 ** 4 + x2 + x3
         if trial.number % 2 == 0:
@@ -141,11 +141,11 @@ def test_get_param_importances_with_target(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
     def objective(trial: Trial) -> float:
-        x1 = trial.suggest_uniform("x1", 0.1, 3)
-        x2 = trial.suggest_loguniform("x2", 0.1, 3)
-        x3 = trial.suggest_discrete_uniform("x3", 0, 3, 1)
+        x1 = trial.suggest_float("x1", 0.1, 3)
+        x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+        x3 = trial.suggest_float("x3", 0, 3, step=1)
         if trial.number % 2 == 0:
-            x4 = trial.suggest_uniform("x4", 0.1, 3)
+            x4 = trial.suggest_float("x4", 0.1, 3)
 
         value = x1 ** 4 + x2 + x3
         if trial.number % 2 == 0:
@@ -197,7 +197,7 @@ def test_get_param_importances_invalid_single_trial(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
 ) -> None:
     def objective(trial: Trial) -> float:
-        x1 = trial.suggest_uniform("x1", 0.1, 3)
+        x1 = trial.suggest_float("x1", 0.1, 3)
         return x1 ** 2
 
     study = create_study()
@@ -209,7 +209,7 @@ def test_get_param_importances_invalid_single_trial(
 
 def test_get_param_importances_invalid_evaluator_type() -> None:
     def objective(trial: Trial) -> float:
-        x1 = trial.suggest_uniform("x1", 0.1, 3)
+        x1 = trial.suggest_float("x1", 0.1, 3)
         return x1 ** 2
 
     study = create_study()
@@ -224,9 +224,9 @@ def test_get_param_importances_invalid_no_completed_trials_params(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
 ) -> None:
     def objective(trial: Trial) -> float:
-        x1 = trial.suggest_uniform("x1", 0.1, 3)
+        x1 = trial.suggest_float("x1", 0.1, 3)
         if trial.number % 2 == 0:
-            _ = trial.suggest_loguniform("x2", 0.1, 3)
+            _ = trial.suggest_float("x2", 0.1, 3, log=True)
             raise optuna.TrialPruned
         return x1 ** 2
 
@@ -251,7 +251,7 @@ def test_get_param_importances_invalid_dynamic_search_space_params(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
 ) -> None:
     def objective(trial: Trial) -> float:
-        x1 = trial.suggest_uniform("x1", 0.1, trial.number + 0.1)
+        x1 = trial.suggest_float("x1", 0.1, trial.number + 0.1)
         return x1 ** 2
 
     study = create_study()
@@ -266,7 +266,7 @@ def test_get_param_importances_invalid_params_type(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
 ) -> None:
     def objective(trial: Trial) -> float:
-        x1 = trial.suggest_uniform("x1", 0.1, 3)
+        x1 = trial.suggest_float("x1", 0.1, 3)
         return x1 ** 2
 
     study = create_study()

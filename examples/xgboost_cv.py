@@ -33,21 +33,21 @@ def objective(trial):
         "objective": "binary:logistic",
         "eval_metric": "auc",
         "booster": trial.suggest_categorical("booster", ["gbtree", "gblinear", "dart"]),
-        "lambda": trial.suggest_loguniform("lambda", 1e-8, 1.0),
-        "alpha": trial.suggest_loguniform("alpha", 1e-8, 1.0),
+        "lambda": trial.suggest_float("lambda", 1e-8, 1.0, log=True),
+        "alpha": trial.suggest_float("alpha", 1e-8, 1.0, log=True),
     }
 
     if param["booster"] == "gbtree" or param["booster"] == "dart":
         param["max_depth"] = trial.suggest_int("max_depth", 1, 9)
-        param["eta"] = trial.suggest_loguniform("eta", 1e-8, 1.0)
-        param["gamma"] = trial.suggest_loguniform("gamma", 1e-8, 1.0)
+        param["eta"] = trial.suggest_float("eta", 1e-8, 1.0, log=True)
+        param["gamma"] = trial.suggest_float("gamma", 1e-8, 1.0, log=True)
         param["grow_policy"] = trial.suggest_categorical("grow_policy", ["depthwise", "lossguide"])
 
     if param["booster"] == "dart":
         param["sample_type"] = trial.suggest_categorical("sample_type", ["uniform", "weighted"])
         param["normalize_type"] = trial.suggest_categorical("normalize_type", ["tree", "forest"])
-        param["rate_drop"] = trial.suggest_loguniform("rate_drop", 1e-8, 1.0)
-        param["skip_drop"] = trial.suggest_loguniform("skip_drop", 1e-8, 1.0)
+        param["rate_drop"] = trial.suggest_float("rate_drop", 1e-8, 1.0, log=True)
+        param["skip_drop"] = trial.suggest_float("skip_drop", 1e-8, 1.0, log=True)
 
     xgb_cv_results = xgb.cv(
         params=param,

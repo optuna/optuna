@@ -34,7 +34,7 @@ def plot_intermediate_values(study: Study) -> "Axes":
 
 
             def objective(trial):
-                lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+                lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
 
                 x = 3
                 for step in range(128):

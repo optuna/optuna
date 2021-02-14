@@ -68,7 +68,7 @@ class GridSampler(BaseSampler):
 
             def objective(trial):
                 # The following suggest method specifies integer points between -5 and 5.
-                x = trial.suggest_discrete_uniform("x", -5, 5, 1)
+                x = trial.suggest_float("x", -5, 5, step=1)
                 return x ** 2
 
 

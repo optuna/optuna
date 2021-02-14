@@ -149,7 +149,7 @@ For example, you can save SVM models trained in the objective function as follow
 .. code-block:: python
 
     def objective(trial):
-        svc_c = trial.suggest_loguniform("svc_c", 1e-10, 1e10)
+        svc_c = trial.suggest_float("svc_c", 1e-10, 1e10, log=True)
         clf = sklearn.svm.SVC(C=svc_c)
         clf.fit(X_train, y_train)
 
