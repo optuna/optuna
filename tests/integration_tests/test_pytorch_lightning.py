@@ -18,18 +18,22 @@ class Model(pl.LightningModule):
         super(Model, self).__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
 
-    def forward(self, data: torch.Tensor) -> torch.Tensor:
+    def forward(self, data: torch.Tensor) -> torch.Tensor:  # type: ignore
 
         return self._model(data)
 
-    def training_step(self, batch: List[torch.Tensor], batch_nb: int) -> Dict[str, torch.Tensor]:
+    def training_step(  # type: ignore
+        self, batch: List[torch.Tensor], batch_nb: int
+    ) -> Dict[str, torch.Tensor]:
 
         data, target = batch
         output = self.forward(data)
         loss = F.nll_loss(output, target)
         return {"loss": loss}
 
-    def validation_step(self, batch: List[torch.Tensor], batch_nb: int) -> Dict[str, torch.Tensor]:
+    def validation_step(  # type: ignore
+        self, batch: List[torch.Tensor], batch_nb: int
+    ) -> Dict[str, torch.Tensor]:
 
         data, target = batch
         output = self.forward(data)
@@ -37,7 +41,7 @@ class Model(pl.LightningModule):
         accuracy = pred.eq(target.view_as(pred)).double().mean()
         return {"validation_accuracy": accuracy}
 
-    def validation_epoch_end(
+    def validation_epoch_end(  # type: ignore
         self, outputs: List[Dict[str, torch.Tensor]]
     ) -> Dict[str, Union[torch.Tensor, float]]:
 
