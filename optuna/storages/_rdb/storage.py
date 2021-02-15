@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Generator
 from typing import List
@@ -114,6 +115,10 @@ class RDBStorage(BaseStorage):
         grace_period:
             Grace period before a running trial is failed from the last heartbeat.
             If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
+        failed_trial_callback:
+            A callback function that are invoked after failing each stale trial. The function
+                must accept two parameters with the following types in this order:
+                :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -143,6 +148,7 @@ class RDBStorage(BaseStorage):
         *,
         heartbeat_interval: Optional[int] = None,
         grace_period: Optional[int] = None,
+        failed_trial_callback: Optional[Callable[["optuna.Study", FrozenTrial], None]] = None,
     ) -> None:
 
         self.engine_kwargs = engine_kwargs or {}
@@ -154,6 +160,7 @@ class RDBStorage(BaseStorage):
             raise ValueError("The value of `grace_period` should be a positive integer.")
         self.heartbeat_interval = heartbeat_interval
         self.grace_period = grace_period
+        self.failed_trial_callback = failed_trial_callback
 
         self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
@@ -1211,6 +1218,10 @@ class RDBStorage(BaseStorage):
     def get_heartbeat_interval(self) -> Optional[int]:
 
         return self.heartbeat_interval
+
+    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
+
+        return self.failed_trial_callback
 
 
 class _VersionManager(object):
