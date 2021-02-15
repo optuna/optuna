@@ -13,9 +13,10 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
     x = trial.suggest_uniform("x", -1.0, 1.0)
     y = trial.suggest_loguniform("y", 20.0, 30.0)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
+    w = trial.suggest_float("w", -1.0, 1.0, step=0.1)
     assert isinstance(z, float)
     trial.set_user_attr("my_user_attr", "my_user_attr_value")
-    return (x - 2) ** 2 + (y - 25) ** 2 + z
+    return (x - 2) ** 2 + (y - 25) ** 2 + z + w
 
 
 def test_study_name() -> None:
