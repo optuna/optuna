@@ -1,5 +1,6 @@
 import abc
 from typing import Any
+from typing import Callable
 from typing import cast
 from typing import Dict
 from typing import List
@@ -8,6 +9,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
+import optuna
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
 from optuna.distributions import BaseDistribution
@@ -763,5 +765,13 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Returns:
             The heartbeat interval if it is set, otherwise :obj:`None`.
+        """
+        return None
+
+    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
+        """Get the failed trial callback function.
+
+        Returns:
+            The failed trial callback function if it is set, otherwise :obj:`None`.
         """
         return None

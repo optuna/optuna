@@ -12,6 +12,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from optuna import create_study
+from optuna import Study
 from optuna import version
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
@@ -364,3 +365,31 @@ def test_invalid_heartbeat_interval_and_grace_period() -> None:
 
     with pytest.raises(ValueError):
         _ = RDBStorage("sqlite:///:memory:", grace_period=-1)
+
+
+def test_failed_trial_callback() -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    def failed_trial_callback(study: Study, trial: FrozenTrial) -> None:
+        assert study.system_attrs["test"] == "A"
+        assert trial.system_attrs["test"] == "B"
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage.heartbeat_interval = heartbeat_interval
+        storage.grace_period = grace_period
+        storage.failed_trial_callback = failed_trial_callback
+        study = create_study(storage=storage)
+        study.set_system_attr("test", "A")
+
+        trial = study.ask()
+        trial.set_system_attr("test", "B")
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        # Exceptions raised in spawned threads are caught by `_TestableThread`.
+        with patch("optuna._optimize.Thread", _TestableThread):
+            with patch.object(storage, "failed_trial_callback", wraps=failed_trial_callback) as m:
+                study.optimize(lambda _: 1.0, n_trials=1)
+                m.assert_called_once()
