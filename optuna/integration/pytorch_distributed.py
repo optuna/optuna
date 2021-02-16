@@ -125,11 +125,19 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return self._call_and_communicate_obj(func)
 
     def report(self, value: float, step: int) -> None:
-
+        err = None
         if dist.get_rank() == 0:
-            assert self._delegate is not None
-            self._delegate.report(value, step)
-        dist.barrier()
+            try:
+                assert self._delegate is not None
+                self._delegate.report(value, step)
+            except Exception as e:
+                err = e
+            err = self._broadcast(err)
+        else:
+            err = self._broadcast(err)
+
+        if err is not None:
+            raise err
 
     def should_prune(self) -> bool:
         def func() -> bool:
@@ -143,18 +151,35 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return self._call_and_communicate(func, torch.uint8)
 
     def set_user_attr(self, key: str, value: Any) -> None:
-
+        err = None
         if dist.get_rank() == 0:
-            assert self._delegate is not None
-            self._delegate.set_user_attr(key, value)
-        dist.barrier()
+            try:
+                assert self._delegate is not None
+                self._delegate.set_user_attr(key, value)
+            except Exception as e:
+                err = e
+            err = self._broadcast(err)
+        else:
+            err = self._broadcast(err)
+
+        if err is not None:
+            raise err
 
     def set_system_attr(self, key: str, value: Any) -> None:
+        err = None
 
         if dist.get_rank() == 0:
-            assert self._delegate is not None
-            self._delegate.set_system_attr(key, value)
-        dist.barrier()
+            try:
+                assert self._delegate is not None
+                self._delegate.set_system_attr(key, value)
+            except Exception as e:
+                err = e
+            err = self._broadcast(err)
+        else:
+            err = self._broadcast(err)
+
+        if err is not None:
+            raise err
 
     @property
     def number(self) -> int:
@@ -222,12 +247,16 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         return buffer.item()
 
     def _call_and_communicate_obj(self, func: Callable) -> Any:
+        rank = dist.get_rank()
+        result = func() if rank == 0 else None
+        return self._broadcast(result)
+
+    def _broadcast(self, value: Optional[Any]) -> Any:
         buffer = None
         size_buffer = torch.empty(1, dtype=torch.int)
         rank = dist.get_rank()
         if rank == 0:
-            result = func()
-            buffer = _to_tensor(result)
+            buffer = _to_tensor(value)
             size_buffer[0] = buffer.shape[0]
         if self._device is not None:
             size_buffer = size_buffer.to(self._device)

@@ -4,6 +4,7 @@ import os
 from typing import Optional
 
 import pytest
+import torch
 import torch.distributed as dist
 
 import optuna
@@ -169,6 +170,25 @@ def test_report(storage_mode: str) -> None:
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_report_nan(storage_mode: str) -> None:
+    with StorageSupplier(storage_mode) as storage:
+        study: Optional[optuna.study.Study] = None
+        if dist.get_rank() == 0:
+            study = optuna.create_study(storage=storage)
+            trial = TorchDistributedTrial(study.ask())
+        else:
+            trial = TorchDistributedTrial(None)
+
+        with pytest.raises(TypeError):
+            trial.report("abc", 0)  # type: ignore
+
+        if dist.get_rank() == 0:
+            assert study is not None
+            assert len(study.trials[0].intermediate_values) == 0
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize(
     "storage_mode, is_pruning", itertools.product(STORAGE_MODES, [False, True])
 )
@@ -202,6 +222,19 @@ def test_user_attrs(storage_mode: str) -> None:
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+def test_user_attrs_with_exception() -> None:
+    with StorageSupplier("sqlite") as storage:
+        if dist.get_rank() == 0:
+            study = optuna.create_study(storage=storage)
+            trial = TorchDistributedTrial(study.ask())
+        else:
+            trial = TorchDistributedTrial(None)
+
+        with pytest.raises(TypeError):
+            trial.set_user_attr("not serializable", torch.Tensor([1, 2]))
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_system_attrs(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
@@ -216,6 +249,19 @@ def test_system_attrs(storage_mode: str) -> None:
 
         assert trial.system_attrs["dataset"] == "mnist"
         assert trial.system_attrs["batch_size"] == 128
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+def test_system_attrs_with_exception() -> None:
+    with StorageSupplier("sqlite") as storage:
+        if dist.get_rank() == 0:
+            study = optuna.create_study(storage=storage)
+            trial = TorchDistributedTrial(study.ask())
+        else:
+            trial = TorchDistributedTrial(None)
+
+        with pytest.raises(TypeError):
+            trial.set_system_attr("not serializable", torch.Tensor([1, 2]))
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
