@@ -118,8 +118,8 @@ class UniformDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
-        self.low = float(low)
-        self.high = float(high)
+        self.low = low
+        self.high = high
 
     def single(self) -> bool:
 
@@ -162,8 +162,8 @@ class LogUniformDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
-        self.low = float(low)
-        self.high = float(high)
+        self.low = low
+        self.high = high
 
     def single(self) -> bool:
 
