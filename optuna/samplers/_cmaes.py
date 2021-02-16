@@ -159,9 +159,9 @@ class CmaEsSampler(BaseSampler):
             is increased. Consequently, this algorithm outperforms CMA-ES on separable functions.
 
             .. note::
-                Added in v2.3.0 as an experimental feature. The interface may change in newer
+                Added in v2.6.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
-                https://github.com/optuna/optuna/releases/tag/v2.3.0.
+                https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
     Raises:
         ValueError:
