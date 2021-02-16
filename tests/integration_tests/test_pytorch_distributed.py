@@ -58,7 +58,7 @@ def test_suggest_float(storage_mode: str) -> None:
             trial = TorchDistributedTrial(None)
 
         x1 = trial.suggest_float("x", 0, 1)
-        assert 0 <= x1 < 1
+        assert 0 <= x1 <= 1
 
         x2 = trial.suggest_float("x", 0, 1)
         assert x1 == x2
