@@ -137,7 +137,6 @@ def _get_pareto_front_2d(
             text=[_make_hovertext(t) for t in trials[len(study.best_trials) :]],
             mode="markers",
             hovertemplate="%{text}<extra>Trial</extra>",
-            marker={"color": "blue"},
             name="Trial",
         ),
         go.Scatter(
@@ -146,7 +145,6 @@ def _get_pareto_front_2d(
             text=[_make_hovertext(t) for t in trials[: len(study.best_trials)]],
             mode="markers",
             hovertemplate="%{text}<extra>Best Trial</extra>",
-            marker={"color": "red"},
             name="Best Trial",
         ),
     ]
@@ -205,7 +203,6 @@ def _get_pareto_front_3d(
             text=[_make_hovertext(t) for t in trials[len(study.best_trials) :]],
             mode="markers",
             hovertemplate="%{text}<extra>Trial</extra>",
-            marker={"color": "blue"},
             name="Trial",
         ),
         go.Scatter3d(
@@ -215,7 +212,6 @@ def _get_pareto_front_3d(
             text=[_make_hovertext(t) for t in trials[: len(study.best_trials)]],
             mode="markers",
             hovertemplate="%{text}<extra>Best Trial</extra>",
-            marker={"color": "red"},
             name="Best Trial",
         ),
     ]
