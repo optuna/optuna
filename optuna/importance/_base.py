@@ -1,6 +1,5 @@
 import abc
 from collections import OrderedDict
-from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -9,11 +8,6 @@ from typing import TYPE_CHECKING
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -73,36 +67,10 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-def _get_info_distribution(distribution: BaseDistribution) -> Dict[str, Any]:
-    info_distribution = {}
-    if isinstance(distribution, CategoricalDistribution):
-        info_distribution = {
-            "is_categorical": True,
-            "distribution": distribution,
-        }
-    elif isinstance(
-        distribution,
-        (
-            DiscreteUniformDistribution,
-            IntLogUniformDistribution,
-            IntUniformDistribution,
-            LogUniformDistribution,
-            UniformDistribution,
-        ),
-    ):
-        info_distribution = {
-            "is_categorical": False,
-            "low": distribution.low,
-            "high": distribution.high,
-        }
-
-    return info_distribution
-
-
 def _get_distributions(study: "Study", params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
     _check_evaluate_args(study, params)
-    info_distributions = None
-    for trial in reversed(study._storage.get_all_trials(study._study_id, deepcopy=False)):
+    distributions = None
+    for trial in study.trials:
         if trial.state != TrialState.COMPLETE:
             continue
 
@@ -111,35 +79,32 @@ def _get_distributions(study: "Study", params: Optional[List[str]]) -> Dict[str,
             if not all(name in trial_distributions for name in params):
                 continue
 
-        if info_distributions is None:
-            info_distributions = {}
+        if distributions is None:
+            distributions = {}
             for param_name, param_distribution in trial.distributions.items():
                 if (params is None) or (params is not None and param_name in params):
-                    info_distributions[param_name] = _get_info_distribution(param_distribution)
+                    distributions[param_name] = param_distribution
             continue
 
         delete_list = []
-        for param_name, info_distribution in info_distributions.items():
+        for param_name, param_distribution in distributions.items():
             if param_name not in trial.distributions:
                 delete_list.append(param_name)
             else:
-                trial_info_distribution = _get_info_distribution(trial.distributions[param_name])
-                if (
-                    trial_info_distribution["is_categorical"]
-                    != info_distribution["is_categorical"]
-                ):
-                    delete_list.append(param_name)
-                elif trial_info_distribution["is_categorical"] is True:
-                    # CategoricalDistribution does not support dynamic value space.
-                    if trial_info_distribution["distribution"] != trial.distributions[param_name]:
-                        delete_list.append(param_name)
+                trial_param_distribution = trial.distributions[param_name]
+                if isinstance(param_distribution, CategoricalDistribution):
+                    continue
+                if not isinstance(
+                    trial_param_distribution, CategoricalDistribution
+                ) and not isinstance(param_distribution, CategoricalDistribution):
+                    param_distribution.low = min(
+                        trial_param_distribution.low, param_distribution.low
+                    )
+                    param_distribution.high = max(
+                        trial_param_distribution.high, param_distribution.high
+                    )
                 else:
-                    info_distribution["low"] = min(
-                        trial_info_distribution["low"], info_distribution["low"]
-                    )
-                    info_distribution["high"] = max(
-                        trial_info_distribution["high"], info_distribution["high"]
-                    )
+                    delete_list.append(param_name)
 
         if params is not None and len(delete_list) > 0:
             raise ValueError(
@@ -148,16 +113,7 @@ def _get_distributions(study: "Study", params: Optional[List[str]]) -> Dict[str,
             )
         else:
             for param_name in delete_list:
-                del info_distributions[param_name]
-
-    distributions = {}
-    for param, info_distribution in info_distributions.items():
-        if info_distribution["is_categorical"] is True:
-            distributions[param] = info_distribution["distribution"]
-        else:
-            distributions[param] = UniformDistribution(
-                info_distribution["low"], info_distribution["high"]
-            )
+                del distributions[param_name]
 
     assert distributions is not None  # Required to pass mypy.
     distributions = OrderedDict(
