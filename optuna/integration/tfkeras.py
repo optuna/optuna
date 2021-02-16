@@ -20,7 +20,7 @@ class TFKerasPruningCallback(Callback):
     but only tested with TensorFlow v1.
 
     See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/pruning/tfkeras_integration.py>`__
+    examples/tfkeras/tfkeras_integration.py>`__
     if you want to add a pruning callback which observes the validation accuracy.
 
     Args:

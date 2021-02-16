@@ -161,7 +161,7 @@ study.optimize(objective, n_trials=20)
 # For the complete list of Optuna's integration modules, see :mod:`optuna.integration`.
 #
 # For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
-# (See also `example <https://github.com/optuna/optuna/blob/master/examples/pruning/xgboost_integration.py>`_ for the entire script.)
+# (See also `example <https://github.com/optuna/optuna/blob/master/examples/xgboost/xgboost_integration.py>`_ for the entire script.)
 #
 # .. code-block:: python
 #
