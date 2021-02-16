@@ -116,14 +116,14 @@ class RDBStorage(BaseStorage):
             Grace period before a running trial is failed from the last heartbeat.
             If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
         failed_trial_callback:
-            A callback function that are invoked after failing each stale trial.
+            A callback function that is invoked after failing each stale trial.
             The function must accept two parameters with the following types in this order:
             :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
 
             .. note::
                 The procedure to fail existing stale trials is called immediately after asking the
                 study for a new trial. In other words, this procedure is called just before
-                executing the objective function defined by the user.
+                executing the objective function.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine

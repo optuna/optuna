@@ -390,4 +390,6 @@ def test_failed_trial_callback() -> None:
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
         with patch("optuna._optimize.Thread", _TestableThread):
-            study.optimize(lambda _: 1.0, n_trials=1)
+            with patch.object(storage, "failed_trial_callback", wraps=failed_trial_callback) as m:
+                study.optimize(lambda _: 1.0, n_trials=1)
+                m.assert_called_once()
