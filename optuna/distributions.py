@@ -413,7 +413,7 @@ class CategoricalDistribution(BaseDistribution):
     def __init__(self, choices: Sequence[CategoricalChoiceType]) -> None:
 
         if len(choices) == 0:
-            raise ValueError("The `choices` must contains one or more elements.")
+            raise ValueError("The `choices` must contain one or more elements.")
         for choice in choices:
             if choice is not None and not isinstance(choice, (bool, int, float, str)):
                 message = (
