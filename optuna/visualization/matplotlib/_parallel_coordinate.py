@@ -159,8 +159,9 @@ def _get_parallel_coordinate_plot(
         p_w = p_max - p_min
 
         if p_w == 0.0:
+            center = obj_w / 2 + obj_min
             for i in range(len(values)):
-                dims_obj_base[i].append(obj_w / 2 + obj_min)
+                dims_obj_base[i].append(center)
         else:
             for i, v in enumerate(values):
                 dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
