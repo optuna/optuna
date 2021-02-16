@@ -43,7 +43,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
     .. note::
         The methods of :class:`~optuna.integration.TorchDistributedTrial` are expected to be
         called by all workers at once. They invoke synchronous data transmission to share
-        processing results and synchronize timinig.
+        processing results and synchronize timing.
 
     """
 
