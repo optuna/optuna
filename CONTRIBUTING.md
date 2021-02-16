@@ -43,7 +43,7 @@ You can learn about fork in the official [documentation](https://docs.github.com
 After forking, download and install Optuna on your computer.
 
 ```bash
-git clone git@github.com:your_name/optuna.git
+git clone git@github.com:YOUR_NAME/optuna.git
 cd optuna
 pip install -e .
 ```
