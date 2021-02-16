@@ -121,9 +121,8 @@ class RDBStorage(BaseStorage):
             :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
 
             .. note::
-                The procedure to fail existing stale trials is called immediately after asking the
-                study for a new trial. In other words, this procedure is called just before
-                executing the objective function.
+                The procedure to fail existing stale trials is called just before asking the
+                study for a new trial.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
