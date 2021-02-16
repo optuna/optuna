@@ -59,16 +59,12 @@ class TensorBoardCallback(object):
         real_distributions = (
             optuna.distributions.UniformDistribution,
             optuna.distributions.LogUniformDistribution,
-        )
-        discrete_distributions = (
-            optuna.distributions.IntUniformDistribution,
-        )
-        categorical_distributions = (
-            optuna.distributions.CategoricalDistribution,
             optuna.distributions.DiscreteUniformDistribution,
         )
+        int_distributions = (optuna.distributions.IntUniformDistribution,)
+        categorical_distributions = (optuna.distributions.CategoricalDistribution,)
         supported_distributions = (
-            real_distributions + discrete_distributions + categorical_distributions
+            real_distributions + int_distributions + categorical_distributions
         )
 
         for param_name, param_distribution in distributions.items():
@@ -77,7 +73,7 @@ class TensorBoardCallback(object):
                     param_name,
                     hp.RealInterval(param_distribution.low, param_distribution.high),
                 )
-            elif isinstance(param_distribution, discrete_distributions):
+            elif isinstance(param_distribution, int_distributions):
                 self._hp_params[param_name] = hp.HParam(
                     param_name,
                     hp.IntInterval(param_distribution.low, param_distribution.high),
