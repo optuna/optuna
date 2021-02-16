@@ -211,7 +211,11 @@ class GridSampler(BaseSampler):
 
         # List up unvisited grids based on already finished ones.
         visited_grids = []
-        for t in study.trials:
+
+        # When `HyperbandPruner` is used, `study.get_trials` returns filtered trials.
+        trials = study._storage.get_all_trials(study._study_id, deepcopy=False)
+
+        for t in trials:
             if (
                 t.state.is_finished()
                 and "grid_id" in t.system_attrs
