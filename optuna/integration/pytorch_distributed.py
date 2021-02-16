@@ -39,6 +39,12 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         device:
             A `torch.device` to communicate with the other nodes. Please set a CUDA device
             assigned to the current node if you use "nccl" as `torch.distributed` backend.
+
+    .. note::
+        The methods of :class:`~optuna.integration.TorchDistributedTrial` are expected to be
+        called by all workers at once. They invoke synchronous data transmission to share
+        processing results and synchronize timinig.
+
     """
 
     def __init__(
