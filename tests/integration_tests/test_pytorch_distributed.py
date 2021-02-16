@@ -76,7 +76,7 @@ def test_suggest_uniform(storage_mode: str) -> None:
             trial = TorchDistributedTrial(None)
 
         x1 = trial.suggest_uniform("x", 0, 1)
-        assert 0 <= x1 < 1
+        assert 0 <= x1 <= 1
 
         x2 = trial.suggest_uniform("x", 0, 1)
         assert x1 == x2
@@ -93,7 +93,7 @@ def test_suggest_loguniform(storage_mode: str) -> None:
             trial = TorchDistributedTrial(None)
 
         x1 = trial.suggest_loguniform("x", 1e-7, 1)
-        assert 1e-7 <= x1 < 1
+        assert 1e-7 <= x1 <= 1
 
         x2 = trial.suggest_loguniform("x", 1e-7, 1)
         assert x1 == x2
@@ -305,7 +305,7 @@ def test_params(storage_mode: str) -> None:
         trial.suggest_categorical("c", ("a", "b", "c"))
 
         params = trial.params
-        assert 0 <= params["f"] < 1
+        assert 0 <= params["f"] <= 1
         assert 0 <= params["i"] <= 1
         assert params["c"] in {"a", "b", "c"}
 
