@@ -71,7 +71,7 @@ class TensorBoardCallback(object):
             if isinstance(param_distribution, real_distributions):
                 self._hp_params[param_name] = hp.HParam(
                     param_name,
-                    hp.RealInterval(param_distribution.low, param_distribution.high),
+                    hp.RealInterval(float(param_distribution.low), float(param_distribution.high)),
                 )
             elif isinstance(param_distribution, int_distributions):
                 self._hp_params[param_name] = hp.HParam(
