@@ -56,7 +56,7 @@ jobs:
           IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|allennlp|rapids_.*'
           IGNORES='chainermn_.*|dask_ml_.*|keras_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|rapids_.*'
         elif [ ${{ matrix.python-version }} = 3.9 ]; then
-          IGNORES='allennlp_*|botorch_*|catalyst_*|catboost_*|chainer_*|chainermn_.*|dask_ml_.*|fastai*|gluon_*|haiku_*|keras_*|lightgbm_*|mxnet_*|optuna_search_cv_*|pytorch_ignite_*|pytorch_lightning_*|rapids_*|sb3_*|skimage_lbp_*|sklearn_*|skorch_*|tensorboard_*|tensorflow_*|tfkeras_*|xgboost_*|pruning/simple*|enqueue_trial*|visualization/plot_pareto_front*|visualization/plot_study*|multi_objective/pytorch_simple*'
+          IGNORES='allennlp_*|botorch_*|catalyst_*|catboost_*|chainer_*|chainermn_.*|dask_ml_.*|fastai*|gluon_*|haiku_*|hydra_*|keras_*|lightgbm_*|mxnet_*|optuna_search_cv_*|pytorch_ignite_*|pytorch_lightning_*|rapids_*|sb3_*|skimage_lbp_*|sklearn_*|skorch_*|tensorboard_*|tensorflow_*|tfkeras_*|xgboost_*|pruning/simple*|enqueue_trial*|visualization/plot_pareto_front*|visualization/plot_study*|multi_objective/pytorch_simple*'
         else
           IGNORES='chainermn_.*|fastai*|rapids_.*'
         fi
