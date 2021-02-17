@@ -4,7 +4,7 @@
 Multi-objective Optimization with Optuna
 ========================================
 
-This tutorial showcase the Optuna's multi-objective optimization feature by
+This tutorial showcases Optuna's multi-objective optimization feature by
 optimizing the validation accuracy of MNIST dataset and the FLOPS of the model implemented in PyTorch.
 
 We use `thop <https://github.com/Lyken17/pytorch-OpCounter>`_ to measure FLOPS.
@@ -94,7 +94,7 @@ def objective(trial):
     )
     model = define_model(trial).to(DEVICE)
 
-    optimizer = torch.optim.Adam(model.parameters(), trial.suggest_float("lr", 1e-5, 1e-1))
+    optimizer = torch.optim.Adam(model.parameters(), trial.suggest_float("lr", 1e-5, 1e-1, log=True))
 
     for epoch in range(10):
         train_model(model, optimizer, train_loader)
