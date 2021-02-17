@@ -212,7 +212,9 @@ class GridSampler(BaseSampler):
         # List up unvisited grids based on already finished ones.
         visited_grids = []
 
-        # When `HyperbandPruner` is used, `study.get_trials` returns filtered trials.
+        # We directly query the storage to get trials here instead of `study.get_trials`,
+        # since some pruners such as `HyperbandPruner` use the study transformed
+        # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
         trials = study._storage.get_all_trials(study._study_id, deepcopy=False)
 
         for t in trials:
