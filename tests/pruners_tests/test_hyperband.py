@@ -232,11 +232,11 @@ def test_hyperband_pruner_and_grid_sampler() -> None:
         for i in range(N_REPORTS):
             trial.report(i, step=i)
 
-        x = trial.suggest_uniform("x", -100, 100)
+        x = trial.suggest_float("x", -100, 100)
         y = trial.suggest_int("y", -100, 100)
         return x ** 2 + y ** 2
 
-    study.optimize(objective)
+    study.optimize(objective, n_trials=10)
 
     trials = study.trials
     assert len(trials) == 9
