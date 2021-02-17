@@ -106,14 +106,8 @@ def _get_distributions(study: "Study", params: Optional[List[str]]) -> Dict[str,
                 else:
                     delete_list.append(param_name)
 
-        if params is not None and len(delete_list) > 0:
-            raise ValueError(
-                "Parameters importances cannot be assessed with dynamic search spaces if "
-                "parameters are specified. Specified parameters: {}.".format(params)
-            )
-        else:
-            for param_name in delete_list:
-                del distributions[param_name]
+        for param_name in delete_list:
+            del distributions[param_name]
 
     assert distributions is not None  # Required to pass mypy.
     distributions = OrderedDict(
