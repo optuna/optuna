@@ -24,17 +24,22 @@ def test_consider_pruned_trials_experimental_warning() -> None:
         optuna.samplers.CmaEsSampler(consider_pruned_trials=True)
 
 
-def test_init_cmaes_opts() -> None:
+@pytest.mark.parametrize(
+    "use_separable_cma, cma_class_str",
+    [(False, "optuna.samplers._cmaes.CMA"), (True, "optuna.samplers._cmaes.SepCMA")],
+)
+def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
     sampler = optuna.samplers.CmaEsSampler(
         x0={"x": 0, "y": 0},
         sigma0=0.1,
         seed=1,
         n_startup_trials=1,
         independent_sampler=DeterministicRelativeSampler({}, {}),
+        use_separable_cma=use_separable_cma,
     )
     study = optuna.create_study(sampler=sampler)
 
-    with patch("optuna.samplers._cmaes.CMA") as cma_class:
+    with patch(cma_class_str) as cma_class:
         cma_obj = MagicMock()
         cma_obj.ask.return_value = np.array((-1, -1))
         cma_obj.generation = 0

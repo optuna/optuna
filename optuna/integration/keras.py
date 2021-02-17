@@ -26,7 +26,7 @@ class KerasPruningCallback(Callback):
     """Keras callback to prune unpromising trials.
 
     See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/pruning/keras_integration.py>`__
+    examples/keras/keras_integration.py>`__
     if you want to add a pruning callback which observes validation accuracy.
 
     Args:
