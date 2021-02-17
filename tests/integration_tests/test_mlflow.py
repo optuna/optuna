@@ -70,7 +70,7 @@ def test_study_name(tmpdir: py.path.local) -> None:
     )
     assert (
         first_run_dict["data"]["tags"]["y_distribution"]
-        == "LogUniformDistribution(high=30, low=20)"
+        == "LogUniformDistribution(high=30.0, low=20.0)"
     )
     assert (
         first_run_dict["data"]["tags"]["z_distribution"]
