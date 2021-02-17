@@ -117,7 +117,7 @@ JOB_NAME=checks
 act -j $JOB_NAME
 ```
 
-Currently, you can run the following jobs:
+Currently, you can run the following jobs: `documentation` and `doctest` may not be executable depending on your choice of docker image of act.
 
 - `checks`    
   - Checking the format, coding style, and type hints
