@@ -124,3 +124,38 @@ def test_plot_parallel_coordinate_log_params() -> None:
     )
     figure = plot_parallel_coordinate(study_log_params)
     assert figure.has_data()
+
+
+def test_plot_parallel_coordinate_unique_hyper_param() -> None:
+    # Test case when one unique value is suggested during the optimization.
+
+    study_categorical_params = create_study()
+    study_categorical_params.add_trial(
+        create_trial(
+            value=0.0,
+            params={"category_a": "preferred", "param_b": 30},
+            distributions={
+                "category_a": CategoricalDistribution(("preferred", "opt")),
+                "param_b": LogUniformDistribution(1, 1000),
+            },
+        )
+    )
+
+    # both hyper-parameter contains unique value
+    figure = plot_parallel_coordinate(study_categorical_params)
+    assert figure.has_data()
+
+    study_categorical_params.add_trial(
+        create_trial(
+            value=2.0,
+            params={"category_a": "preferred", "param_b": 20},
+            distributions={
+                "category_a": CategoricalDistribution(("preferred", "opt")),
+                "param_b": LogUniformDistribution(1, 1000),
+            },
+        )
+    )
+
+    # still "category_a" contains unique suggested value during the optimization.
+    figure = plot_parallel_coordinate(study_categorical_params)
+    assert figure.has_data()
