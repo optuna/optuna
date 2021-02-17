@@ -128,7 +128,7 @@ def objective(trial):
         checkpoint_callback=checkpoint_callback,
         max_epochs=EPOCHS,
         gpus=1 if torch.cuda.is_available() else None,
-        callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_acc", mode="max")],
+        callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_acc")],
     )
 
     model = LightningNet(trial)
