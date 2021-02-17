@@ -94,7 +94,9 @@ def objective(trial):
     )
     model = define_model(trial).to(DEVICE)
 
-    optimizer = torch.optim.Adam(model.parameters(), trial.suggest_float("lr", 1e-5, 1e-1, log=True))
+    optimizer = torch.optim.Adam(
+        model.parameters(), trial.suggest_float("lr", 1e-5, 1e-1, log=True)
+    )
 
     for epoch in range(10):
         train_model(model, optimizer, train_loader)
