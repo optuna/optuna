@@ -103,7 +103,7 @@ class UniformDistribution(BaseDistribution):
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
-            Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
+            Upper endpoint of the range of the distribution. ``high`` is included from the range.
 
     Raises:
         ValueError:
@@ -141,7 +141,7 @@ class LogUniformDistribution(BaseDistribution):
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
-            Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
+            Upper endpoint of the range of the distribution. ``high`` is included from the range.
 
     Raises:
         ValueError:
