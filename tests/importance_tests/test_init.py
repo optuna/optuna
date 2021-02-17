@@ -73,7 +73,7 @@ def test_get_distributions(
 
 @parametrize_storage
 @pytest.mark.parametrize("params", [[], ["x1"], ["x1", "x3"], ["x1", "x4"]])
-def test_get_disributions_with_params(
+def test_get_distributions_with_params(
     storage_init_func: Callable[[], storages.BaseStorage],
     params: List[str],
 ) -> None:
@@ -401,7 +401,7 @@ def test_get_param_importances_dynamic_search_space_params(
     evaluator_init_func: Callable[[], BaseImportanceEvaluator]
 ) -> None:
     def objective(trial: Trial) -> float:
-        x1 = trial.suggest_uniform("x1", 0.1, trial.number + 3.0)
+        x1 = trial.suggest_uniform("x1", 0.1 + trial.number, 3.0)
         x2 = trial.suggest_loguniform("x2", 0.1, trial.number + 3)
         x3 = trial.suggest_discrete_uniform("x3", 0, 3, 1)
         x4 = trial.suggest_int("x4", -3, 3)
@@ -442,7 +442,7 @@ def test_get_param_importances_dynamic_search_space_params_with_params(
 ) -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_uniform("x1", 0.1, trial.number + 3.0)
-        x2 = trial.suggest_loguniform("x2", 0.1, trial.number + 3)
+        x2 = trial.suggest_loguniform("x2", trial.number + 0.1, trial.number + 3)
         x3 = trial.suggest_discrete_uniform("x3", 0, 3, 1)
         if trial.number % 2 == 0:
             x4 = trial.suggest_uniform("x4", 0.1, 3)
