@@ -107,6 +107,11 @@ def objective(trial):
 ###################################################################################################
 # Run multi-objective optimization
 # --------------------------------
+#
+# If your optimization problem is multi-objective,
+# Optuna assumes that you will specify the optimization direction for each objective.
+# Specifically, in this example, we want to minimize the FLOPS (we want a faster model)
+# and maximize the accuracy. So we set ``directions`` to ``["minimize", "maximize"]``.
 study = optuna.create_study(directions=["minimize", "maximize"])
 study.optimize(objective, n_trials=30, timeout=300)
 
