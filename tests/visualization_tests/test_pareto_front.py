@@ -36,7 +36,6 @@ def test_plot_pareto_front_2d(
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
-    print(figure.data)
     assert len(figure.data) == 2
     if include_dominated_trials:
         # The last elements come from dominated trial that is enqueued firstly.
