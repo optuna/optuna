@@ -10,6 +10,7 @@ from optuna.integration.tensorboard import TensorBoardCallback
 
 
 def _objective_func(trial: optuna.trial.Trial) -> float:
+    u = trial.suggest_int("u", 0, 10, step=2)
     v = trial.suggest_int("v", 1, 10, log=True)
     w = trial.suggest_float("w", -1.0, 1.0, step=0.1)
     x = trial.suggest_uniform("x", -1.0, 1.0)
