@@ -89,7 +89,7 @@ jobs:
           STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
           mpirun -n 2 -- python $file $STUDY_NAME $STORAGE_URL > /dev/null
         done
-        mpirun -n 2 -- python examples/pytorch_distributed_simple.py
+        mpirun -n 2 -- python examples/pytorch/pytorch_distributed_simple.py
       env:
         OMP_NUM_THREADS: 1
     - name: Run Hydra examples
