@@ -28,7 +28,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         details.
 
     See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/pytorch_distributed_simple.py>`__
+    examples/pytorch/pytorch_distributed_simple.py>`__
     if you want to optimize an objective function that trains neural network
     written with PyTorch distributed data parallel.
 
