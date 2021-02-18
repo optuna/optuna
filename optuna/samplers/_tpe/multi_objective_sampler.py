@@ -464,8 +464,8 @@ class MOTPESampler(TPESampler):
         above: np.ndarray,
     ) -> int:
         choices = distribution.choices
-        below = list(map(int, below))
-        above = list(map(int, above))
+        below = np.array(list(map(int, below)))
+        above = np.array(list(map(int, above)))
         upper = len(choices)
         size = (self._n_ehvi_candidates,)
 
@@ -517,7 +517,7 @@ class MOTPESampler(TPESampler):
         hv_selected = 0.0
         while len(selected_indices) < subset_size:
             max_index = np.argmax(contributions)
-            contributions[max_index] = -1  # mark as selected
+            contributions[int(max_index)] = -1  # mark as selected
             selected_index = rank_i_indices[max_index]
             selected_vec = rank_i_loss_vals[max_index]
             for j, v in enumerate(rank_i_loss_vals):

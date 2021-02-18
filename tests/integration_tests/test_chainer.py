@@ -26,7 +26,7 @@ class FixedValueDataset(chainer.dataset.DatasetMixin):
 
     def get_example(self, i: int) -> typing.Tuple[np.ndarray, int]:
 
-        return np.array([1.0], np.float32), np.int32(0)
+        return np.array([1.0], np.float32), np.intc(0)
 
 
 def test_chainer_pruning_extension_trigger() -> None:

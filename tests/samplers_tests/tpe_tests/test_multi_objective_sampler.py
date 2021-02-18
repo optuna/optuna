@@ -618,7 +618,9 @@ def test_solve_hssp() -> None:
         truth = 0.0
         for subset in itertools.permutations(test_case, subset_size):
             truth = max(truth, sampler._compute_hypervolume(np.asarray(subset), r))
-        indices = sampler._solve_hssp(test_case, list(range(len(test_case))), subset_size, r)
+        indices = sampler._solve_hssp(
+            test_case, np.array(list(range(len(test_case)))), subset_size, r
+        )
         approx = sampler._compute_hypervolume(test_case[indices], r)
         assert approx / truth > 0.6321  # 1 - 1/e
 
@@ -632,7 +634,9 @@ def test_solve_hssp() -> None:
         truth = 0
         for subset in itertools.permutations(test_case, subset_size):
             truth = max(truth, sampler._compute_hypervolume(np.asarray(subset), r))
-        indices = sampler._solve_hssp(test_case, list(range(len(test_case))), subset_size, r)
+        indices = sampler._solve_hssp(
+            test_case, np.array(list(range(len(test_case)))), subset_size, r
+        )
         approx = sampler._compute_hypervolume(test_case[indices], r)
         assert approx / truth > 0.6321  # 1 - 1/e
 

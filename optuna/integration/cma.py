@@ -239,14 +239,14 @@ class PyCmaSampler(BaseSampler):
             elif isinstance(distribution, DiscreteUniformDistribution):
                 x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, IntUniformDistribution):
-                x0[name] = int(numpy.mean([distribution.high, distribution.low]))
+                x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, (LogUniformDistribution, IntLogUniformDistribution)):
                 log_high = math.log(distribution.high)
                 log_low = math.log(distribution.low)
-                x0[name] = math.exp(numpy.mean([log_high, log_low]))
+                x0[name] = numpy.float_(math.exp(numpy.mean([log_high, log_low])))
             elif isinstance(distribution, CategoricalDistribution):
                 index = (len(distribution.choices) - 1) // 2
-                x0[name] = distribution.choices[index]
+                x0[name] = numpy.float_(distribution.choices[index])
             else:
                 raise NotImplementedError(
                     "The distribution {} is not implemented.".format(distribution)

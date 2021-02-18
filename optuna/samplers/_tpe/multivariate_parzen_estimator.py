@@ -72,7 +72,7 @@ class _MultivariateParzenEstimator:
                 categorical_weights = self._calculate_categorical_params(observations, param_name)
             else:
                 mus, sigmas = self._calculate_numerical_params(observations, param_name)
-                categorical_weights = None
+                categorical_weights = np.array([None])
             self._mus[param_name] = mus
             self._sigmas[param_name] = sigmas
             self._categorical_weights[param_name] = categorical_weights
@@ -259,26 +259,29 @@ class _MultivariateParzenEstimator:
 
             assert isinstance(distribution, _DISTRIBUTION_CLASSES)
             if isinstance(distribution, distributions.UniformDistribution):
-                transformed[param_name] = samples
+                transformed[param_name] = np.array(samples)
             elif isinstance(distribution, distributions.LogUniformDistribution):
-                transformed[param_name] = np.exp(samples)
+                transformed[param_name] = np.array(np.exp(samples))
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 q = self._q[param_name]
                 samples = np.round((samples - distribution.low) / q) * q + distribution.low
-                transformed[param_name] = np.clip(samples, distribution.low, distribution.high)
+                transformed[param_name] = np.array(
+                    np.clip(samples, distribution.low, distribution.high)
+                )
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 q = self._q[param_name]
+                assert q is not None
                 samples = np.round(samples / q) * q
-                transformed[param_name] = np.clip(
-                    samples, distribution.low, distribution.high
-                ).astype(int)
+                transformed[param_name] = np.array(
+                    np.clip(samples, distribution.low, distribution.high)
+                )
             elif isinstance(distribution, distributions.IntLogUniformDistribution):
                 samples = np.round(np.exp(samples))
-                transformed[param_name] = np.clip(
-                    samples, distribution.low, distribution.high
-                ).astype(int)
+                transformed[param_name] = np.array(
+                    np.clip(samples, distribution.low, distribution.high)
+                )
             elif isinstance(distribution, distributions.CategoricalDistribution):
-                transformed[param_name] = samples
+                transformed[param_name] = np.array(samples)
 
         return transformed
 
@@ -312,9 +315,11 @@ class _MultivariateParzenEstimator:
 
         if consider_prior:
             shape = (n_observations + 1, len(choices))
+            assert prior_weight is not None
             value = prior_weight / (n_observations + 1)
         else:
             shape = (n_observations, len(choices))
+            assert prior_weight is not None
             value = prior_weight / n_observations
         weights = np.full(shape, fill_value=value)
         weights[np.arange(n_observations), observations] += 1
@@ -360,7 +365,7 @@ class _MultivariateParzenEstimator:
             minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(mus)))
         else:
             minsigma = EPS
-        sigmas = np.clip(sigmas, minsigma, maxsigma)
+        sigmas = np.array(np.clip(sigmas, minsigma, maxsigma))
 
         return mus, sigmas
 

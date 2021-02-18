@@ -15,14 +15,14 @@ class WFG(BaseHypervolume):
     """
 
     def __init__(self) -> None:
-        self._reference_point = None
+        self._reference_point = np.array([None])
 
     def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
         self._reference_point = reference_point.copy()
         return self._compute_rec(solution_set)
 
     def _compute_rec(self, solution_set: np.ndarray) -> float:
-        assert self._reference_point is not None
+        assert self._reference_point[0] is not None
         n_points = solution_set.shape[0]
 
         if self._reference_point.shape[0] == 2:

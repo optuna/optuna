@@ -444,6 +444,7 @@ class BoTorchSampler(BaseSampler):
         values = numpy.empty((n_trials, n_objectives), dtype=numpy.float64)
         params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
         con = None
+        cons = None
         bounds = trans.bounds
 
         for trial_idx, trial in enumerate(trials):
@@ -484,20 +485,20 @@ class BoTorchSampler(BaseSampler):
                     "constraints. Constraints passed to `candidates_func` will contain NaN."
                 )
 
-        values = torch.from_numpy(values)
-        params = torch.from_numpy(params)
+        val = torch.from_numpy(values)
+        par = torch.from_numpy(params)
         if con is not None:
-            con = torch.from_numpy(con)
-        bounds = torch.from_numpy(bounds)
+            cons = torch.from_numpy(con)
+        bnds = torch.from_numpy(bounds)
 
-        if con is not None:
-            if con.dim() == 1:
-                con.unsqueeze_(-1)
-        bounds.transpose_(0, 1)
+        if cons is not None:
+            if cons.dim() == 1:
+                cons.unsqueeze_(-1)
+        bnds.transpose_(0, 1)
 
         if self._candidates_func is None:
             self._candidates_func = _get_default_candidates_func(n_objectives=n_objectives)
-        candidates = self._candidates_func(params, values, con, bounds)
+        candidates = self._candidates_func(par, val, cons, bnds)
 
         if not isinstance(candidates, torch.Tensor):
             raise TypeError("Candidates must be a torch.Tensor.")
@@ -512,17 +513,15 @@ class BoTorchSampler(BaseSampler):
             candidates = candidates.squeeze(0)
         if candidates.dim() != 1:
             raise ValueError("Candidates must be one or two-dimensional.")
-        if candidates.size(0) != bounds.size(1):
+        if candidates.size(0) != bnds.size(1):
             raise ValueError(
                 "Candidates size must match with the given bounds. Actual candidates: "
-                f"{candidates.size(0)}, bounds: {bounds.size(1)}."
+                f"{candidates.size(0)}, bounds: {bnds.size(1)}."
             )
 
-        candidates = candidates.numpy()
+        parameters = trans.untransform(numpy.array(candidates))
 
-        params = trans.untransform(candidates)
-
-        return params
+        return parameters
 
     def sample_independent(
         self,

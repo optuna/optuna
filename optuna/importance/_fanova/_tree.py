@@ -56,8 +56,8 @@ class _FanovaTree(object):
 
         # For each midpoint along the given dimensions, traverse this tree to compute the
         # marginal predictions.
-        midpoints = [self._split_midpoints[int(f)] for f in features]
-        sizes = [self._split_sizes[int(f)] for f in features]
+        midpoints = [self._split_midpoints[f] for f in features]
+        sizes = [self._split_sizes[f] for f in features]
 
         product_midpoints = itertools.product(*midpoints)
         product_sizes = itertools.product(*sizes)
@@ -71,7 +71,7 @@ class _FanovaTree(object):
             sample[features] = numpy.array(midpoints)
 
             value, weight = self._get_marginalized_statistics(sample)
-            weight *= numpy.prod(sizes)
+            weight *= float(numpy.prod(sizes))
 
             values = numpy.append(values, value)
             weights = numpy.append(weights, weight)
@@ -160,7 +160,8 @@ class _FanovaTree(object):
 
         # Compute marginals for leaf nodes.
         for node_index in range(n_nodes):
-            subspace = numpy.array(subspaces[node_index])
+            subspace = subspaces[node_index]
+
             if self._is_node_leaf(node_index):
                 value = self._get_node_value(node_index)
                 weight = _get_cardinality(subspace)
@@ -228,7 +229,7 @@ class _FanovaTree(object):
 
         return sorted_all_split_values
 
-    def _precompute_subtree_active_features(self) -> numpy.ndarray:
+    def _precompute_subtree_active_features(self) -> List[Set[int]]:
         subtree_active_features = numpy.full((self._n_nodes, self._n_features), fill_value=False)
 
         for node_index in reversed(range(self._n_nodes)):
@@ -240,7 +241,7 @@ class _FanovaTree(object):
                         child_node_index
                     ]
 
-        return subtree_active_features
+        return subtree_active_features.tolist()
 
     @property
     def _n_features(self) -> int:
