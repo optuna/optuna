@@ -482,8 +482,8 @@ class TPESampler(BaseSampler):
     ) -> int:
 
         choices = distribution.choices
-        below = np.array(list(map(int, below)))
-        above = np.array(list(map(int, above)))
+        blw = list(map(int, below))
+        ave = list(map(int, above))
         upper = len(choices)
 
         # We can use `np.arange(len(distribution.choices))` instead of sampling from `l(x)`
@@ -493,15 +493,15 @@ class TPESampler(BaseSampler):
         # See https://github.com/optuna/optuna/pull/1603 for more details.
         size = (self._n_ei_candidates,)
 
-        weights_below = self._weights(len(below))
-        counts_below = np.bincount(below, minlength=upper, weights=weights_below)
+        weights_below = self._weights(len(blw))
+        counts_below = np.bincount(blw, minlength=upper, weights=weights_below)
         weighted_below = counts_below + self._prior_weight
         weighted_below /= weighted_below.sum()
         samples_below = self._sample_from_categorical_dist(weighted_below, size)
         log_likelihoods_below = TPESampler._categorical_log_pdf(samples_below, weighted_below)
 
-        weights_above = self._weights(len(above))
-        counts_above = np.bincount(above, minlength=upper, weights=weights_above)
+        weights_above = self._weights(len(ave))
+        counts_above = np.bincount(ave, minlength=upper, weights=weights_above)
         weighted_above = counts_above + self._prior_weight
         weighted_above /= weighted_above.sum()
         log_likelihoods_above = TPESampler._categorical_log_pdf(samples_below, weighted_above)
