@@ -31,7 +31,7 @@ def test_conversion_from_distribution_to_dimension() -> None:
             space.Real(-3.3, 5.2),
             # Original: trial.suggest_float('p1', 2.0, 2.0)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
-            # Original: trial.suggest_float('p9', 2.2, 2.2, size=0.5)
+            # Original: trial.suggest_float('p9', 2.2, 2.2, step=0.5)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
             # Original: trial.suggest_categorical('p10', ['9', '3', '0', '8'])
             space.Categorical(("9", "3", "0", "8")),
