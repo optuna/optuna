@@ -62,16 +62,8 @@ class Net(nn.Module):
 
 
 class LightningNet(pl.LightningModule):
-    def __init__(self, trial: optuna.trial.Trial):
+    def __init__(self, dropout: float, output_dims: List[int]):
         super(LightningNet, self).__init__()
-
-        # We optimize the number of layers, hidden units in each layer and dropouts.
-        n_layers = trial.suggest_int("n_layers", 1, 3)
-        dropout = trial.suggest_float("dropout", 0.2, 0.5)
-        output_dims = [
-            trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True) for i in range(n_layers)
-        ]
-
         self.model = Net(dropout, output_dims)
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:
@@ -88,6 +80,7 @@ class LightningNet(pl.LightningModule):
         pred = output.argmax(dim=1, keepdim=True)
         accuracy = pred.eq(target.view_as(pred)).float().mean()
         self.log("val_acc", accuracy)
+        self.log("hp_metric", accuracy, on_step=False, on_epoch=True)
 
     def configure_optimizers(self) -> optim.Optimizer:
         return optim.Adam(self.model.parameters())
@@ -126,17 +119,26 @@ class MNISTDataModule(pl.LightningDataModule):
 
 def objective(trial: optuna.trial.Trial) -> float:
 
-    model = LightningNet(trial)
+    # We optimize the number of layers, hidden units in each layer and dropouts.
+    n_layers = trial.suggest_int("n_layers", 1, 3)
+    dropout = trial.suggest_float("dropout", 0.2, 0.5)
+    output_dims = [
+        trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True) for i in range(n_layers)
+    ]
+
+    model = LightningNet(dropout, output_dims)
     datamodule = MNISTDataModule(data_dir=DIR, batch_size=BATCHSIZE)
 
     trainer = pl.Trainer(
-        logger=False,
+        logger=True,
         limit_val_batches=PERCENT_VALID_EXAMPLES,
         checkpoint_callback=False,
         max_epochs=EPOCHS,
         gpus=-1 if torch.cuda.is_available() else None,
         callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_acc")],
     )
+    hyperparameters = dict(n_layers=n_layers, dropout=dropout, output_dims=output_dims)
+    trainer.logger.log_hyperparams(hyperparameters)
     trainer.fit(model, datamodule=datamodule)
 
     return trainer.callback_metrics["val_acc"].item()
