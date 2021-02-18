@@ -216,3 +216,27 @@ def test_hyperband_no_call_of_filter_study_in_should_prune(
 def test_incompatibility_between_bootstrap_count_and_auto_max_resource() -> None:
     with pytest.raises(ValueError):
         optuna.pruners.HyperbandPruner(max_resource="auto", bootstrap_count=1)
+
+
+def test_hyperband_pruner_and_grid_sampler() -> None:
+    pruner = optuna.pruners.HyperbandPruner(
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
+    )
+
+    search_space = {"x": [-50, 0, 50], "y": [-99, 0, 99]}
+    sampler = optuna.samplers.GridSampler(search_space)
+
+    study = optuna.study.create_study(sampler=sampler, pruner=pruner)
+
+    def objective(trial: optuna.trial.Trial) -> float:
+        for i in range(N_REPORTS):
+            trial.report(i, step=i)
+
+        x = trial.suggest_float("x", -100, 100)
+        y = trial.suggest_int("y", -100, 100)
+        return x ** 2 + y ** 2
+
+    study.optimize(objective, n_trials=10)
+
+    trials = study.trials
+    assert len(trials) == 9
