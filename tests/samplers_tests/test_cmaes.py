@@ -5,6 +5,7 @@ from typing import List
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
+import warnings
 
 from cmaes import CMA
 import numpy as np
@@ -266,3 +267,16 @@ def test_split_and_concat_optimizer_string(dummy_optimizer_str: str, attr_len: i
         assert len(attrs) == attr_len
         actual = _concat_optimizer_attrs(attrs)
         assert dummy_optimizer_str == actual
+
+
+def test_call_after_trial_of_base_sampler() -> None:
+    independent_sampler = optuna.samplers.RandomSampler()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = optuna.samplers.CmaEsSampler(independent_sampler=independent_sampler)
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(
+        independent_sampler, "after_trial", wraps=independent_sampler.after_trial
+    ) as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1
