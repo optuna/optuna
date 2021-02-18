@@ -2,6 +2,7 @@ import copy
 import datetime
 import threading
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -10,6 +11,7 @@ from typing import Set
 from typing import Tuple
 from typing import Union
 
+import optuna
 from optuna import distributions
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
@@ -446,8 +448,8 @@ class _CachedStorage(BaseStorage):
     def record_heartbeat(self, trial_id: int) -> None:
         self._backend.record_heartbeat(trial_id)
 
-    def fail_stale_trials(self) -> List[int]:
-        stale_trial_ids = self._backend._get_stale_trial_ids()
+    def fail_stale_trials(self, study_id: int) -> List[int]:
+        stale_trial_ids = self._backend._get_stale_trial_ids(study_id)
         confirmed_stale_trial_ids = []
 
         for trial_id in stale_trial_ids:
@@ -461,3 +463,6 @@ class _CachedStorage(BaseStorage):
 
     def get_heartbeat_interval(self) -> Optional[int]:
         return self._backend.get_heartbeat_interval()
+
+    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
+        return self._backend.failed_trial_callback

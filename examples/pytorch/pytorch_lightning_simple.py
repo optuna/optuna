@@ -134,7 +134,7 @@ def objective(trial: optuna.trial.Trial) -> float:
         limit_val_batches=PERCENT_VALID_EXAMPLES,
         checkpoint_callback=False,
         max_epochs=EPOCHS,
-        gpus=-1 if torch.cuda.is_available() else None,
+        gpus=1 if torch.cuda.is_available() else None,
         callbacks=[PyTorchLightningPruningCallback(trial, monitor="val_acc")],
     )
     trainer.fit(model, datamodule=datamodule)

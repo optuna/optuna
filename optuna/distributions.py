@@ -103,7 +103,7 @@ class UniformDistribution(BaseDistribution):
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
-            Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
+            Upper endpoint of the range of the distribution. ``high`` is included from the range.
 
     Raises:
         ValueError:
@@ -118,8 +118,8 @@ class UniformDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
-        self.low = low
-        self.high = high
+        self.low = float(low)
+        self.high = float(high)
 
     def single(self) -> bool:
 
@@ -141,7 +141,7 @@ class LogUniformDistribution(BaseDistribution):
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
-            Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
+            Upper endpoint of the range of the distribution. ``high`` is included from the range.
 
     Raises:
         ValueError:
@@ -162,8 +162,8 @@ class LogUniformDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
-        self.low = low
-        self.high = high
+        self.low = float(low)
+        self.high = float(high)
 
     def single(self) -> bool:
 
@@ -208,9 +208,9 @@ class DiscreteUniformDistribution(BaseDistribution):
 
         high = _adjust_discrete_uniform_high(low, high, q)
 
-        self.low = low
-        self.high = high
-        self.q = q
+        self.low = float(low)
+        self.high = float(high)
+        self.q = float(q)
 
     def single(self) -> bool:
 
@@ -413,7 +413,7 @@ class CategoricalDistribution(BaseDistribution):
     def __init__(self, choices: Sequence[CategoricalChoiceType]) -> None:
 
         if len(choices) == 0:
-            raise ValueError("The `choices` must contains one or more elements.")
+            raise ValueError("The `choices` must contain one or more elements.")
         for choice in choices:
             if choice is not None and not isinstance(choice, (bool, int, float, str)):
                 message = (

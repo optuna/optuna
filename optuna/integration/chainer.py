@@ -18,7 +18,7 @@ class ChainerPruningExtension(Extension):
     """Chainer extension to prune unpromising trials.
 
     See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/pruning/chainer_integration.py>`__
+    examples/chainer/chainer_integration.py>`__
     if you want to add a pruning extension which observes validation
     accuracy of a `Chainer Trainer <https://docs.chainer.org/en/stable/
     reference/generated/chainer.training.Trainer.html>`_.

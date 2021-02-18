@@ -211,7 +211,7 @@ def test_plot_contour_log_scale_and_str_category() -> None:
         param_c_range = ("one", "two")
     param_a_type = "log"
     param_b_type = "category"
-    param_c_type = None
+    param_c_type = "category"
     axis_to_range_and_type = {
         "xaxis": (param_a_range, param_a_type),
         "xaxis2": (param_b_range, param_b_type),

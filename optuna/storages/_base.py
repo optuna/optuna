@@ -1,5 +1,6 @@
 import abc
 from typing import Any
+from typing import Callable
 from typing import cast
 from typing import Dict
 from typing import List
@@ -8,6 +9,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
+import optuna
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
 from optuna.distributions import BaseDistribution
@@ -730,13 +732,16 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         pass
 
-    def fail_stale_trials(self) -> List[int]:
+    def fail_stale_trials(self, study_id: int) -> List[int]:
         """Fail stale trials.
 
         The running trials whose heartbeat has not been updated for a long time will be failed,
         that is, those states will be changed to :obj:`~optuna.trial.TrialState.FAIL`.
         The grace period is ``2 * heartbeat_interval``.
 
+        Args:
+            study_id:
+                ID of the related study.
         Returns:
             List of trial IDs of the failed trials.
         """
@@ -760,5 +765,13 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
 
         Returns:
             The heartbeat interval if it is set, otherwise :obj:`None`.
+        """
+        return None
+
+    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
+        """Get the failed trial callback function.
+
+        Returns:
+            The failed trial callback function if it is set, otherwise :obj:`None`.
         """
         return None

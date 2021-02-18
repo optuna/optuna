@@ -31,7 +31,7 @@ def get_install_requires() -> List[str]:
     requirements = [
         "alembic",
         "cliff",
-        "cmaes>=0.6.0",
+        "cmaes>=0.7.0",
         "colorlog",
         "numpy<1.20.0",
         "packaging>=20.0",
@@ -79,6 +79,12 @@ def get_extras_require() -> Dict[str, List[str]]:
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
             "lightgbm",
+            "torch==1.7.1 ; sys_platform=='darwin'",
+            "torch==1.7.1+cpu ; sys_platform!='darwin'",
+            "torchvision==0.8.2 ; sys_platform=='darwin'",
+            "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
+            "torchaudio==0.7.2",
+            "thop",
         ],
         "example": [
             "catboost",
@@ -113,6 +119,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "optax",
             "dm-haiku",
             "hydra-optuna-sweeper",
+        ]
+        if sys.version_info[:2] < (3, 9)
+        else [
+            "torch==1.7.1 ; sys_platform=='darwin'",
+            "torch==1.7.1+cpu ; sys_platform!='darwin'",
+            "torchvision==0.8.2 ; sys_platform=='darwin'",
+            "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
+            "torchaudio==0.7.2",
         ],
         "experimental": ["redis"],
         "testing": [
