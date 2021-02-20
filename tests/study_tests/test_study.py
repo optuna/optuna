@@ -41,8 +41,8 @@ CallbackFuncType = Callable[[Study, FrozenTrial], None]
 
 def func(trial: Trial, x_max: float = 1.0) -> float:
 
-    x = trial.suggest_uniform("x", -x_max, x_max)
-    y = trial.suggest_loguniform("y", 20, 30)
+    x = trial.suggest_float("x", -x_max, x_max)
+    y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
     assert isinstance(z, float)
     return (x - 2) ** 2 + (y - 25) ** 2 + z

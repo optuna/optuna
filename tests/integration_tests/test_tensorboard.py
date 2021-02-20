@@ -10,8 +10,8 @@ from optuna.integration.tensorboard import TensorBoardCallback
 
 
 def _objective_func(trial: optuna.trial.Trial) -> float:
-    x = trial.suggest_uniform("x", -1.0, 1.0)
-    y = trial.suggest_loguniform("y", 20.0, 30.0)
+    x = trial.suggest_float("x", -1.0, 1.0)
+    y = trial.suggest_float("y", 20.0, 30.0, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
     w = trial.suggest_float("w", -1.0, 1.0, step=0.1)
     assert isinstance(z, float)

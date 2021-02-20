@@ -84,7 +84,7 @@ def test_is_compatible() -> None:
     sampler = optuna.integration.SkoptSampler()
     study = optuna.create_study(sampler=sampler)
 
-    study.optimize(lambda t: t.suggest_uniform("p0", 0, 10), n_trials=1)
+    study.optimize(lambda t: t.suggest_float("p0", 0, 10), n_trials=1)
     search_space = optuna.samplers.intersection_search_space(study)
     assert search_space == {"p0": distributions.UniformDistribution(low=0, high=10)}
 

@@ -180,7 +180,7 @@ class BaseStudy(object):
 
 
                 def objective(trial):
-                    x = trial.suggest_uniform("x", -1, 1)
+                    x = trial.suggest_float("x", -1, 1)
                     return x ** 2
 
 
@@ -324,7 +324,7 @@ class Study(BaseStudy):
 
 
                 def objective(trial):
-                    x = trial.suggest_uniform("x", -1, 1)
+                    x = trial.suggest_float("x", -1, 1)
                     return x ** 2
 
 
@@ -717,7 +717,7 @@ class Study(BaseStudy):
 
 
                 def objective(trial):
-                    x = trial.suggest_uniform("x", -1, 1)
+                    x = trial.suggest_float("x", -1, 1)
                     return x ** 2
 
 
@@ -769,7 +769,7 @@ class Study(BaseStudy):
                 def objective(trial):
                     if trial.number == 4:
                         trial.study.stop()
-                    x = trial.suggest_uniform("x", 0, 10)
+                    x = trial.suggest_float("x", 0, 10)
                     return x ** 2
 
 
@@ -806,7 +806,7 @@ class Study(BaseStudy):
 
 
                 def objective(trial):
-                    x = trial.suggest_uniform("x", 0, 10)
+                    x = trial.suggest_float("x", 0, 10)
                     return x ** 2
 
 
@@ -842,7 +842,7 @@ class Study(BaseStudy):
 
 
                 def objective(trial):
-                    x = trial.suggest_uniform("x", 0, 10)
+                    x = trial.suggest_float("x", 0, 10)
                     return x ** 2
 
 
@@ -908,7 +908,7 @@ class Study(BaseStudy):
 
 
                 def objective(trial):
-                    x = trial.suggest_uniform("x", 0, 10)
+                    x = trial.suggest_float("x", 0, 10)
                     return x ** 2
 
 
@@ -1009,7 +1009,7 @@ def create_study(
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", 0, 10)
+                x = trial.suggest_float("x", 0, 10)
                 return x ** 2
 
 
