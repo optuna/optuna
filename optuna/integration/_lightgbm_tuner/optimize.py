@@ -442,6 +442,9 @@ class _LightGBMBaseTuner(_BaseTuner):
                 FutureWarning,
             )
 
+        if self._model_dir is not None and not os.path.exists(self._model_dir):
+            os.mkdir(self._model_dir)
+
     @property
     def best_score(self) -> float:
         """Return the score of the best booster."""
@@ -831,9 +834,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
         self._best_booster_with_trial_number: Optional[Tuple[lgb.Booster, int]] = None
         self._model_dir = model_dir
 
-        if self._model_dir is not None and not os.path.exists(self._model_dir):
-            os.mkdir(self._model_dir)
-
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
 
@@ -903,6 +903,14 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
             Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
 
+        model_dir:
+            A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
+            saved. Please set shared directory (e.g., directories on NFS) if you want to access
+            :meth:`~optuna.integration.LightGBMTunerCV.get_best_booster` in distributed environments.
+            Otherwise, it may raise :obj:`ValueError`. If the directory does not exist, it will be
+            created. The filenames of the boosters will be ``{model_dir}/{trial_number}.pkl``
+            (e.g., ``./boosters/0.pkl``).
+
         verbosity:
             A verbosity level to change Optuna's logging level. The level is aligned to
             `LightGBM's verbosity`_ .
@@ -920,6 +928,9 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             .. note::
                 Progress bars will be fragmented by logging messages of LightGBM and Optuna.
                 Please suppress such messages to show the progress bars properly.
+
+        return_cvbooster:
+            Flag to enable :meth:`~optuna.integration.LightGBMTunerCV.get_best_booster`.
 
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     .. _lightgbm.cv(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html
@@ -955,9 +966,9 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
+        model_dir: Optional[str] = None,
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
-        model_dir: Optional[str] = None,
         return_cvbooster: Optional[bool] = None,
     ) -> None:
 
