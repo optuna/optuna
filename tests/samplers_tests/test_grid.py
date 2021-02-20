@@ -22,7 +22,7 @@ def test_study_optimize_with_single_search_space() -> None:
         a = trial.suggest_int("a", 0, 100)
         b = trial.suggest_float("b", -0.1, 0.1)
         c = trial.suggest_categorical("c", ("x", "y"))
-        d = trial.suggest_float("d", -5, 5, size=1)
+        d = trial.suggest_float("d", -5, 5, step=1)
         e = trial.suggest_float("e", 0.0001, 1, log=True)
 
         if c == "x":

@@ -74,7 +74,7 @@ def test_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
 
         # p0, p2 and p4 are deleted.
         p1 = trial.suggest_float("p1", 1, 10, log=True)
-        p3 = trial.suggest_float("p3", 0, 9, size=3)
+        p3 = trial.suggest_float("p3", 0, 9, step=3)
 
         # p5 is added.
         p5 = trial.suggest_float("p5", 0, 1)
@@ -92,7 +92,7 @@ def test_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
     def objective2(trial: optuna.trial.Trial) -> float:
 
         p1 = trial.suggest_float("p1", 50, 100, log=True)  # The range has been changed
-        p3 = trial.suggest_float("p3", 0, 9, size=3)
+        p3 = trial.suggest_float("p3", 0, 9, step=3)
         p5 = trial.suggest_float("p5", 0, 1)
 
         return p1 + p3 + p5
@@ -158,9 +158,9 @@ def _objective(trial: optuna.trial.Trial) -> float:
     p3 = trial.suggest_float("p3", 1.1, 1.1, log=True)
     p4 = trial.suggest_int("p4", -100, 8)
     p5 = trial.suggest_int("p5", -20, -20)
-    p6 = trial.suggest_float("p6", 10, 20, size=2)
-    p7 = trial.suggest_float("p7", 0.1, 1.0, size=0.1)
-    p8 = trial.suggest_float("p8", 2.2, 2.2, size=0.5)
+    p6 = trial.suggest_float("p6", 10, 20, step=2)
+    p7 = trial.suggest_float("p7", 0.1, 1.0, step=0.1)
+    p8 = trial.suggest_float("p8", 2.2, 2.2, step=0.5)
     p9 = trial.suggest_categorical("p9", ["9", "3", "0", "8"])
     assert isinstance(p9, str)
 

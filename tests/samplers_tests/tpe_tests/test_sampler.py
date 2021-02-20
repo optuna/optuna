@@ -48,7 +48,7 @@ def test_infer_relative_search_space() -> None:
     def obj(t: Trial) -> float:
         t.suggest_float("a", 1.0, 100.0)
         t.suggest_float("b", 1.0, 100.0, log=True)
-        t.suggest_float("c", 1.0, 100.0, size=3.0)
+        t.suggest_float("c", 1.0, 100.0, step=3.0)
         t.suggest_int("d", 1, 100)
         t.suggest_int("e", 0, 100, step=2)
         t.suggest_int("f", 1, 100, log=True)
