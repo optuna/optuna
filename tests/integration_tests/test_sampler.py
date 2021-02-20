@@ -56,7 +56,7 @@ def test_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
         p0 = trial.suggest_float("p0", 0, 10)
         p1 = trial.suggest_float("p1", 1, 10, log=True)
         p2 = trial.suggest_int("p2", 0, 10)
-        p3 = trial.sample_float("p3", 0, 9, step=3)
+        p3 = trial.suggest_float("p3", 0, 9, step=3)
         p4 = trial.suggest_categorical("p4", ["10", "20", "30"])
         assert isinstance(p4, str)
         return p0 + p1 + p2 + p3 + int(p4)
