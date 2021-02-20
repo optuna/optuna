@@ -10,13 +10,15 @@ from optuna.integration.tensorboard import TensorBoardCallback
 
 
 def _objective_func(trial: optuna.trial.Trial) -> float:
+    u = trial.suggest_int("u", 0, 10, step=2)
+    v = trial.suggest_int("v", 1, 10, log=True)
+    w = trial.suggest_float("w", -1.0, 1.0, step=0.1)
     x = trial.suggest_float("x", -1.0, 1.0)
     y = trial.suggest_float("y", 20.0, 30.0, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
-    w = trial.suggest_float("w", -1.0, 1.0, step=0.1)
     assert isinstance(z, float)
     trial.set_user_attr("my_user_attr", "my_user_attr_value")
-    return (x - 2) ** 2 + (y - 25) ** 2 + z + w
+    return u + v + w + (x - 2) ** 2 + (y - 25) ** 2 + z
 
 
 def test_study_name() -> None:

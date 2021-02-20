@@ -61,7 +61,10 @@ class TensorBoardCallback(object):
             optuna.distributions.LogUniformDistribution,
             optuna.distributions.DiscreteUniformDistribution,
         )
-        int_distributions = (optuna.distributions.IntUniformDistribution,)
+        int_distributions = (
+            optuna.distributions.IntUniformDistribution,
+            optuna.distributions.IntLogUniformDistribution,
+        )
         categorical_distributions = (optuna.distributions.CategoricalDistribution,)
         supported_distributions = (
             real_distributions + int_distributions + categorical_distributions
