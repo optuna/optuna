@@ -144,12 +144,8 @@ def _get_parallel_coordinate_plot(
         values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
 
         if _is_log_scale(trials, p_name):
-            p_min = math.log10(min(values))
-            p_max = math.log10(max(values))
-            p_w = p_max - p_min
+            values = [math.log10(v) for v in values]
             log_param_names.append(p_name)
-            for i, v in enumerate(values):
-                dims_obj_base[i].append((math.log10(v) - p_min) / p_w * obj_w + obj_min)
         elif _is_categorical(trials, p_name):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
             values = [vocab[v] for v in values]
@@ -157,16 +153,16 @@ def _get_parallel_coordinate_plot(
             vocab_item_sorted = sorted(vocab.items(), key=lambda x: x[1])
             cat_param_values.append([v[0] for v in vocab_item_sorted])
             cat_param_ticks.append([v[1] for v in vocab_item_sorted])
-            p_min = min(values)
-            p_max = max(values)
-            p_w = p_max - p_min
-            for i, v in enumerate(values):
-                dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
-        else:
-            p_min = min(values)
-            p_max = max(values)
-            p_w = p_max - p_min
 
+        p_min = min(values)
+        p_max = max(values)
+        p_w = p_max - p_min
+
+        if p_w == 0.0:
+            center = obj_w / 2 + obj_min
+            for i in range(len(values)):
+                dims_obj_base[i].append(center)
+        else:
             for i, v in enumerate(values):
                 dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
 
@@ -177,13 +173,13 @@ def _get_parallel_coordinate_plot(
     # Ref: https://stackoverflow.com/a/50029441
     ax.set_xlim(0, len(sorted_params))
     ax.set_ylim(obj_min, obj_max)
-    xs = [range(0, len(sorted_params) + 1) for i in range(len(dims_obj_base))]
+    xs = [range(len(sorted_params) + 1) for _ in range(len(dims_obj_base))]
     segments = [np.column_stack([x, y]) for x, y in zip(xs, dims_obj_base)]
     lc = LineCollection(segments, cmap=cmap)
     lc.set_array(np.asarray([target(t) for t in trials] + [0]))
     axcb = fig.colorbar(lc, pad=0.1)
     axcb.set_label(target_name)
-    plt.xticks(range(0, len(sorted_params) + 1), var_names, rotation=330)
+    plt.xticks(range(len(sorted_params) + 1), var_names, rotation=330)
 
     for i, p_name in enumerate(sorted_params):
         ax2 = ax.twinx()
