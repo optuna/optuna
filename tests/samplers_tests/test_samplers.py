@@ -490,9 +490,7 @@ def test_after_trial() -> None:
     sampler = SamplerAfterTrial({}, {})
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
 
-    study.optimize(
-        lambda t: [t.suggest_float("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3
-    )
+    study.optimize(lambda t: [t.suggest_float("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3)
 
     assert n_calls == n_trials
 
