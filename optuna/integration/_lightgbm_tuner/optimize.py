@@ -967,9 +967,9 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
-        model_dir: Optional[str] = None,
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
+        model_dir: Optional[str] = None,
         return_cvbooster: Optional[bool] = None,
     ) -> None:
 
