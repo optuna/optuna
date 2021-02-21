@@ -27,7 +27,7 @@ import optuna
 
 
 def objective(trial):
-    x = trial.suggest_uniform("x", -10, 10)
+    x = trial.suggest_float("x", -10, 10)
     return (x - 2) ** 2
 
 
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
 
 def objective(trial):
-    x = trial.suggest_uniform("x", -10, 10)
+    x = trial.suggest_float("x", -10, 10)
     return (x - 2) ** 2
 
 
@@ -54,7 +54,7 @@ def objective(trial):
 #
 #     $ cat foo.py
 #     def objective(trial):
-#         x = trial.suggest_uniform('x', -10, 10)
+#         x = trial.suggest_float('x', -10, 10)
 #         return (x - 2) ** 2
 #
 #     $ STUDY_NAME=`optuna create-study --storage sqlite:///example.db`

@@ -103,7 +103,7 @@ class UniformDistribution(BaseDistribution):
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
-            Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
+            Upper endpoint of the range of the distribution. ``high`` is included from the range.
 
     Raises:
         ValueError:
@@ -118,8 +118,8 @@ class UniformDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
-        self.low = low
-        self.high = high
+        self.low = float(low)
+        self.high = float(high)
 
     def single(self) -> bool:
 
@@ -134,14 +134,15 @@ class UniformDistribution(BaseDistribution):
 class LogUniformDistribution(BaseDistribution):
     """A uniform distribution in the log domain.
 
-    This object is instantiated by :func:`~optuna.trial.Trial.suggest_loguniform`, and passed to
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_float` with ``log=True``
+    and :func:`~optuna.trial.Trial.suggest_loguniform`, and passed to
     :mod:`~optuna.samplers` in general.
 
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
-            Upper endpoint of the range of the distribution. ``high`` is excluded from the range.
+            Upper endpoint of the range of the distribution. ``high`` is included from the range.
 
     Raises:
         ValueError:
@@ -162,8 +163,8 @@ class LogUniformDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
-        self.low = low
-        self.high = high
+        self.low = float(low)
+        self.high = float(high)
 
     def single(self) -> bool:
 
@@ -178,7 +179,8 @@ class LogUniformDistribution(BaseDistribution):
 class DiscreteUniformDistribution(BaseDistribution):
     """A discretized uniform distribution in the linear domain.
 
-    This object is instantiated by :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and passed
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_uniform` with ``step``
+    argument and :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and passed
     to :mod:`~optuna.samplers` in general.
 
     .. note::
@@ -208,9 +210,9 @@ class DiscreteUniformDistribution(BaseDistribution):
 
         high = _adjust_discrete_uniform_high(low, high, q)
 
-        self.low = low
-        self.high = high
-        self.q = q
+        self.low = float(low)
+        self.high = float(high)
+        self.q = float(q)
 
     def single(self) -> bool:
 
@@ -413,7 +415,7 @@ class CategoricalDistribution(BaseDistribution):
     def __init__(self, choices: Sequence[CategoricalChoiceType]) -> None:
 
         if len(choices) == 0:
-            raise ValueError("The `choices` must contains one or more elements.")
+            raise ValueError("The `choices` must contain one or more elements.")
         for choice in choices:
             if choice is not None and not isinstance(choice, (bool, int, float, str)):
                 message = (

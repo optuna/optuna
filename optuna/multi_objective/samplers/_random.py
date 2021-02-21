@@ -26,8 +26,8 @@ class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -5, 5)
-                y = trial.suggest_uniform("y", -5, 5)
+                x = trial.suggest_float("x", -5, 5)
+                y = trial.suggest_float("y", -5, 5)
                 return x ** 2, y + 10
 
 

@@ -20,6 +20,7 @@ import pytest
 from optuna import create_study
 from optuna import create_trial
 from optuna import delete_study
+from optuna import distributions
 from optuna import get_all_study_summaries
 from optuna import load_study
 from optuna import logging
@@ -40,8 +41,8 @@ CallbackFuncType = Callable[[Study, FrozenTrial], None]
 
 def func(trial: Trial, x_max: float = 1.0) -> float:
 
-    x = trial.suggest_uniform("x", -x_max, x_max)
-    y = trial.suggest_loguniform("y", 20, 30)
+    x = trial.suggest_float("x", -x_max, x_max)
+    y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
     assert isinstance(z, float)
     return (x - 2) ** 2 + (y - 25) ** 2 + z
@@ -867,6 +868,21 @@ def test_ask_enqueue_trial() -> None:
 
     trial = study.ask()
     assert trial.suggest_float("x", 0, 1) == 0.5
+
+
+def test_ask_fixed_search_space() -> None:
+    fixed_distributions = {
+        "x": distributions.UniformDistribution(0, 1),
+        "y": distributions.CategoricalDistribution(["bacon", "spam"]),
+    }
+
+    study = create_study()
+    trial = study.ask(fixed_distributions=fixed_distributions)
+
+    params = trial.params
+    assert len(trial.params) == 2
+    assert 0 <= params["x"] < 1
+    assert params["y"] in ["bacon", "spam"]
 
 
 def test_tell() -> None:
