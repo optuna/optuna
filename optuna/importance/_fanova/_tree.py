@@ -136,9 +136,6 @@ class _FanovaTree(object):
             node_indices.append(node_index)
             active_features_cardinalities.append(_get_cardinality(search_spaces))
 
-        node_indices = numpy.array(node_indices, dtype=numpy.int32).tolist()
-        active_features_cardinalities = numpy.array(active_features_cardinalities).tolist()
-
         statistics = self._statistics[node_indices]
         values = statistics[:, 0]
         weights = statistics[:, 1]
