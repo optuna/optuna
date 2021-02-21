@@ -1013,7 +1013,7 @@ def test_tell_pruned_values() -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_trial_duration_calculation(storage_mode: str) -> None:
+def test_enqueued_trial_datetime_start(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
@@ -1024,36 +1024,10 @@ def test_trial_duration_calculation(storage_mode: str) -> None:
             return x
 
         study.enqueue_trial(params={"x": 1})
-        # Make sure an enqueued trial is created with null datetime_start
-        t_tmp = study.trials[0]
-        assert t_tmp.datetime_start is None
+        assert study.trials[0].datetime_start is None
 
-        # Delayed evaluation for enqueued trial
-        time.sleep(2)
-
-        study.optimize(objective, n_trials=2)
-
-        trial = study.ask()
-        values = objective(trial)
-        study.tell(trial, values=values)
-
-        t0 = study.trials[0]
-        assert t0.datetime_start is not None
-        assert t0.datetime_complete is not None
-        duration_error0 = abs((t0.datetime_complete - t0.datetime_start).total_seconds() - 1)
-        assert duration_error0 < 0.1
-
-        t1 = study.trials[1]
-        assert t1.datetime_start is not None
-        assert t1.datetime_complete is not None
-        duration_error1 = abs((t1.datetime_complete - t1.datetime_start).total_seconds() - 1)
-        assert duration_error1 < 0.1
-
-        t2 = study.trials[2]
-        assert t2.datetime_start is not None
-        assert t2.datetime_complete is not None
-        duration_error2 = abs((t2.datetime_complete - t2.datetime_start).total_seconds() - 1)
-        assert duration_error2 < 0.1
+        study.optimize(objective, n_trials=1)
+        assert study.trials[0].datetime_start is not None
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

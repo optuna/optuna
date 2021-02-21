@@ -317,11 +317,10 @@ class FrozenTrial(BaseTrial):
 
     def _validate(self) -> None:
 
-        if self.state != TrialState.WAITING:
-            if self.datetime_start is None:
-                raise ValueError(
-                    "`datetime_start` is supposed to be set when the trial state is not waiting."
-                )
+        if self.state != TrialState.WAITING and self.datetime_start is None:
+            raise ValueError(
+                "`datetime_start` is supposed to be set when the trial state is not waiting."
+            )
 
         if self.state.is_finished():
             if self.datetime_complete is None:
