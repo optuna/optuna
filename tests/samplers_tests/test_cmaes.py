@@ -62,7 +62,7 @@ def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
 
 
 @patch("optuna.samplers._cmaes.get_warm_start_mgd")
-def test_warm_starting_cmaes(mock_func_ws) -> None:
+def test_warm_starting_cmaes(mock_func_ws: MagicMock) -> None:
     def objective(trial: optuna.Trial) -> float:
         x = trial.suggest_uniform("x", -10, 10)
         y = trial.suggest_uniform("y", -10, 10)

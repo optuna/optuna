@@ -168,11 +168,11 @@ class CmaEsSampler(BaseSampler):
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
         source_trials:
-            This option is for Warm Starting CMA-ES, a method to transfer prior knowledge on similar
-            HPO tasks through the initialization of CMA-ES. This method estimates a promising distribution
-            from ``source_trials`` and generates the parameter of multivariate gaussian distribution.
-            Please note that it is prohibited to use ``x0``, ``sigma0``, or ``use_separable_cma`` argument
-            together.
+            This option is for Warm Starting CMA-ES, a method to transfer prior knowledge on
+            similar HPO tasks through the initialization of CMA-ES. This method estimates a
+            promising distribution from ``source_trials`` and generates the parameter of
+            multivariate gaussian distribution. Please note that it is prohibited to use
+            ``x0``, ``sigma0``, or ``use_separable_cma`` argument together.
 
             .. note::
                 Added in v2.6.0 as an experimental feature. The interface may change in newer
