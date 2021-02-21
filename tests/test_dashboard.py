@@ -7,8 +7,8 @@ import optuna.trial
 def _create_some_study() -> optuna.Study:
     def f(trial: optuna.trial.Trial) -> float:
 
-        x = trial.suggest_uniform("x", -10, 10)
-        y = trial.suggest_loguniform("y", 10, 20)
+        x = trial.suggest_float("x", -10, 10)
+        y = trial.suggest_float("y", 10, 20, log=True)
         z = trial.suggest_categorical("z", (10.0, 20.5, 30.0))
         assert isinstance(z, float)
 

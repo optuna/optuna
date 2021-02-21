@@ -46,7 +46,7 @@ class SuccessiveHalvingPruner(BasePruner):
 
 
             def objective(trial):
-                alpha = trial.suggest_uniform("alpha", 0.0, 1.0)
+                alpha = trial.suggest_float("alpha", 0.0, 1.0)
                 clf = SGDClassifier(alpha=alpha)
                 n_train_iter = 100
 

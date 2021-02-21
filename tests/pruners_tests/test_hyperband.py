@@ -110,7 +110,7 @@ def test_hyperband_filter_study(
     sampler_init_func: Callable[[], optuna.samplers.BaseSampler]
 ) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-        return trial.suggest_uniform("value", 0.0, 1.0)
+        return trial.suggest_float("value", 0.0, 1.0)
 
     n_trials = 8
     n_brackets = 4
@@ -155,7 +155,7 @@ def test_hyperband_no_filter_study(
     pruner_init_func: Callable[[], optuna.pruners.BasePruner]
 ) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-        return trial.suggest_uniform("value", 0.0, 1.0)
+        return trial.suggest_float("value", 0.0, 1.0)
 
     n_trials = 10
     for method_name in [

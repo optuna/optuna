@@ -89,7 +89,7 @@ class TPESampler(BaseSampler):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -10, 10)
+                x = trial.suggest_float("x", -10, 10)
                 return x ** 2
 
 
@@ -716,7 +716,7 @@ class TPESampler(BaseSampler):
 
 
                 def objective(trial):
-                    x = trial.suggest_uniform("x", -10, 10)
+                    x = trial.suggest_float("x", -10, 10)
                     return x ** 2
 
 

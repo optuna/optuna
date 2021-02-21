@@ -60,7 +60,7 @@ def objective(trial):
     iris = sklearn.datasets.load_iris()
     x, y = iris.data, iris.target
 
-    svc_c = trial.suggest_loguniform("svc_c", 1e-10, 1e10)
+    svc_c = trial.suggest_float("svc_c", 1e-10, 1e10, log=True)
     clf = sklearn.svm.SVC(C=svc_c)
     accuracy = sklearn.model_selection.cross_val_score(clf, x, y).mean()
 

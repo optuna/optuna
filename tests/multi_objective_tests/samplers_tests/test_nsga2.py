@@ -14,7 +14,7 @@ def test_population_size() -> None:
     sampler = multi_objective.samplers.NSGAIIMultiObjectiveSampler(population_size=10)
 
     study = multi_objective.create_study(["minimize"], sampler=sampler)
-    study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=40)
+    study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
         [t.system_attrs[multi_objective.samplers._nsga2._GENERATION_KEY] for t in study.trials]
@@ -25,7 +25,7 @@ def test_population_size() -> None:
     sampler = multi_objective.samplers.NSGAIIMultiObjectiveSampler(population_size=2)
 
     study = multi_objective.create_study(["minimize"], sampler=sampler)
-    study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=40)
+    study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
         [t.system_attrs[multi_objective.samplers._nsga2._GENERATION_KEY] for t in study.trials]
@@ -169,17 +169,17 @@ def test_study_system_attr_for_population_cache() -> None:
             if k.startswith(multi_objective.samplers._nsga2._POPULATION_CACHE_KEY_PREFIX)
         ]
 
-    study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=10)
+    study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)
     cached_entries = get_cached_entries(study)
     assert len(cached_entries) == 0
 
-    study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=1)
+    study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=1)
     cached_entries = get_cached_entries(study)
     assert len(cached_entries) == 1
     assert cached_entries[0][0] == 0  # Cached generation.
     assert len(cached_entries[0][1]) == 10  # Population size.
 
-    study.optimize(lambda t: [t.suggest_uniform("x", 0, 9)], n_trials=10)
+    study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)
     cached_entries = get_cached_entries(study)
     assert len(cached_entries) == 1
     assert cached_entries[0][0] == 1  # Cached generation.
