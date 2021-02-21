@@ -947,7 +947,7 @@ class TestLightGBMTunerCV(object):
         assert callback_mock.call_count == 10
 
     @pytest.mark.parametrize("dir_exists, expected", [(False, True), (True, False)])
-    def test_model_dir(self, dir_exists: bool, expected: bool):
+    def test_model_dir(self, dir_exists: bool, expected: bool) -> None:
         unexpected_value = 20  # out of scope.
 
         params: Dict = {"verbose": -1, "lambda_l1": unexpected_value}
