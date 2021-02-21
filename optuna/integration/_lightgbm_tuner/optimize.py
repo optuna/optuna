@@ -823,6 +823,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
             optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
+            model_dir=model_dir,
         )
 
         self.lgbm_kwargs["valid_sets"] = valid_sets
@@ -832,7 +833,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
         self.lgbm_kwargs["keep_training_booster"] = keep_training_booster
 
         self._best_booster_with_trial_number: Optional[Tuple[lgb.Booster, int]] = None
-        self._model_dir = model_dir
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
