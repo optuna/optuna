@@ -37,7 +37,7 @@ CmaClass = Union[CMA, SepCMA]
 
 
 class CmaEsSampler(BaseSampler):
-    """A Sampler using CMA-ES algorithm.
+    """A Sampler using `cmaes <https://github.com/CyberAgent/cmaes>`_ as the backend.
 
     Example:
 
@@ -65,8 +65,7 @@ class CmaEsSampler(BaseSampler):
     optimization settings. This sampler cannot use some trials for updating
     the parameters of multivariate normal distribution.
 
-    For further information about CMA-ES algorithm and its restarting strategy
-    algorithm, please refer to the following papers:
+    For further information about CMA-ES algorithm, please refer to the following papers:
 
     - `N. Hansen, The CMA Evolution Strategy: A Tutorial. arXiv:1604.00772, 2016.
       <https://arxiv.org/abs/1604.00772>`_
@@ -78,6 +77,9 @@ class CmaEsSampler(BaseSampler):
       Space Complexity. 10th International Conference on Parallel Problem Solving From Nature,
       Sep 2008, Dortmund, Germany. inria-00287367.
       <https://hal.inria.fr/inria-00287367/document>`_
+    - `Masahiro Nomura, Shuhei Watanabe, Youhei Akimoto, Yoshihiko Ozaki, Masaki Onishi.
+      Warm Starting CMA-ES for Hyperparameter Optimization, AAAI. 2021.
+      <https://arxiv.org/abs/2012.06932>`_
 
     .. seealso::
         You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
@@ -166,7 +168,16 @@ class CmaEsSampler(BaseSampler):
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
         source_trials:
-            ...
+            This option is for Warm Starting CMA-ES, a method to transfer prior knowledge on similar
+            HPO tasks through the initialization of CMA-ES. This method estimates a promising distribution
+            from ``source_trials`` and generates the parameter of multivariate gaussian distribution.
+            Please note that it is prohibited to use ``x0``, ``sigma0``, or ``use_separable_cma`` argument
+            together.
+
+            .. note::
+                Added in v2.6.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
     Raises:
         ValueError:
@@ -229,10 +240,16 @@ class CmaEsSampler(BaseSampler):
                 ExperimentalWarning,
             )
 
-        if (self._x0 is not None or self._sigma0 is not None) and self._source_trials is not None:
+        if source_trials is not None and (x0 is not None or sigma0 is not None):
             raise ValueError(
                 "It is prohibited to pass `source_trials` argument when "
                 "x0 or sigma0 is specified."
+            )
+
+        # TODO(c-bata): Support WS-sep-CMA-ES
+        if source_trials is not None and use_separable_cma:
+            raise ValueError(
+                "It is prohibited to pass `source_trials` argument when " "using separable CMA-ES."
             )
 
         # TODO(c-bata): Support BIPOP-CMA-ES.
@@ -413,7 +430,9 @@ class CmaEsSampler(BaseSampler):
 
         if self._source_trials is None:
             if randomize_start_point:
-                mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rand(n_dimension)
+                mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rand(
+                    n_dimension
+                )
             elif self._x0 is None:
                 mean = lower_bounds + (upper_bounds - lower_bounds) / 2
             else:
