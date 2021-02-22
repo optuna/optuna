@@ -76,8 +76,8 @@ class _FanovaTree(object):
             values = numpy.append(values, value)
             weights = numpy.append(weights, weight)
 
-        weights = numpy.array(weights)
-        values = numpy.array(values)
+        weights = numpy.asarray(weights)
+        values = numpy.asarray(values)
         average_values = numpy.average(values, weights=weights)
         variance = numpy.average((values - average_values) ** 2, weights=weights)
 
@@ -226,7 +226,7 @@ class _FanovaTree(object):
 
         return sorted_all_split_values
 
-    def _precompute_subtree_active_features(self) -> List[Set[int]]:
+    def _precompute_subtree_active_features(self) -> numpy.ndarray:
         subtree_active_features = numpy.full((self._n_nodes, self._n_features), fill_value=False)
 
         for node_index in reversed(range(self._n_nodes)):
@@ -238,7 +238,7 @@ class _FanovaTree(object):
                         child_node_index
                     ]
 
-        return subtree_active_features.tolist()
+        return subtree_active_features
 
     @property
     def _n_features(self) -> int:

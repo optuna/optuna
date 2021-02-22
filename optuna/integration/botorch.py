@@ -519,7 +519,7 @@ class BoTorchSampler(BaseSampler):
                 f"{candidates.size(0)}, bounds: {bnds.size(1)}."
             )
 
-        parameters = trans.untransform(numpy.array(candidates))
+        parameters = trans.untransform(candidates.numpy())
 
         return parameters
 

@@ -95,7 +95,7 @@ class _Fanova(object):
                 fraction = self._variances[features][tree_index] / tree_variance
                 fractions = numpy.append(fractions, fraction)
 
-        fractions = numpy.array(fractions)
+        fractions = numpy.asarray(fractions)
 
         return float(fractions.mean()), float(fractions.std())
 
