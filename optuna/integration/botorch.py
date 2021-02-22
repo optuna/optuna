@@ -565,3 +565,4 @@ class BoTorchSampler(BaseSampler):
                     "botorch:constraints",
                     constraints,
                 )
+        self._independent_sampler.after_trial(study, trial, state, values)
