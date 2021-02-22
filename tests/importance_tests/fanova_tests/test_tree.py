@@ -206,9 +206,7 @@ def test_tree_split_sizes(tree: _FanovaTree, node_index: NodeIndex, expected: Li
 def test_tree_subtree_active_features(
     tree: _FanovaTree, node_index: NodeIndex, expected: List[bool]
 ) -> None:
-    active_features: numpy.ndarray = numpy.array(
-        [tree._subtree_active_features[node_index] == expected], dtype=bool
-    )
+    active_features: numpy.ndarray = tree._subtree_active_features[node_index] == expected
     assert active_features.all()
 
 
