@@ -556,7 +556,12 @@ class RDBStorage(BaseStorage):
         self, study_id: int, template_trial: Optional[FrozenTrial], session: orm.Session
     ) -> models.TrialModel:
         if template_trial is None:
-            trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING)
+            trial = models.TrialModel(
+                study_id=study_id,
+                number=None,
+                state=TrialState.RUNNING,
+                datetime_start=datetime.now(),
+            )
         else:
             # Because only `RUNNING` trials can be updated,
             # we temporarily set the state of the new trial to `RUNNING`.
@@ -625,6 +630,7 @@ class RDBStorage(BaseStorage):
         distributions_: Optional[Dict[str, distributions.BaseDistribution]] = None,
         user_attrs: Optional[Dict[str, Any]] = None,
         system_attrs: Optional[Dict[str, Any]] = None,
+        datetime_start: Optional[datetime] = None,
         datetime_complete: Optional[datetime] = None,
     ) -> bool:
         """Sync latest trial updates to a database.
@@ -646,6 +652,9 @@ class RDBStorage(BaseStorage):
                 New user_attr. None when there are no updates.
             system_attrs:
                 New system_attr. None when there are no updates.
+            datetime_start:
+                Start time of the trial. Set when this method change the state
+                of trial into running state.
             datetime_complete:
                 Completion time of the trial. Set if and only if this method
                 change the state of trial into one of the finished states.
@@ -669,6 +678,9 @@ class RDBStorage(BaseStorage):
 
             if state:
                 trial_model.state = state
+
+            if datetime_start:
+                trial_model.datetime_start = datetime_start
 
             if datetime_complete:
                 trial_model.datetime_complete = datetime_complete
@@ -767,6 +779,10 @@ class RDBStorage(BaseStorage):
                     return False
 
                 trial.state = state
+
+                if state == TrialState.RUNNING:
+                    trial.datetime_start = datetime.now()
+
                 if state.is_finished():
                     trial.datetime_complete = datetime.now()
         except IntegrityError:
