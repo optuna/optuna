@@ -440,6 +440,7 @@ def test_reseed_rng() -> None:
         != cast(RandomSampler, sampler._independent_sampler)._rng.seed
     )
 
+
 def test_call_after_trial_of_independent_sampler() -> None:
     independent_sampler = optuna.samplers.RandomSampler()
     with warnings.catch_warnings():
