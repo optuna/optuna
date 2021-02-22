@@ -1,9 +1,11 @@
+from typing import Optional
+
 import numpy as np
 
 from optuna.multi_objective._hypervolume import _compute_2d
 from optuna.multi_objective._hypervolume import _compute_2points_volume
 from optuna.multi_objective._hypervolume import BaseHypervolume
-from typing import Optional
+
 
 class WFG(BaseHypervolume):
     """Hypervolume calculator for any dimension.
@@ -15,7 +17,7 @@ class WFG(BaseHypervolume):
     """
 
     def __init__(self) -> None:
-        self._reference_point:Optional[np.ndarray]= None
+        self._reference_point: Optional[np.ndarray] = None
 
     def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
         self._reference_point = reference_point.copy()
