@@ -64,7 +64,7 @@ class _MultivariateParzenEstimator:
 
         self._mus: Dict[str, Optional[np.ndarray]] = {}
         self._sigmas: Dict[str, Optional[np.ndarray]] = {}
-        self._categorical_weights: Optional[Dict[str, Optional[np.ndarray]]] = None
+        self._categorical_weights: Dict[str, Optional[np.ndarray]] = {}
         for param_name, dist in search_space.items():
             observations = multivariate_observations[param_name]
             if isinstance(dist, distributions.CategoricalDistribution):
@@ -72,7 +72,7 @@ class _MultivariateParzenEstimator:
                 categorical_weights = self._calculate_categorical_params(observations, param_name)
             else:
                 mus, sigmas = self._calculate_numerical_params(observations, param_name)
-                categorical_weights = None
+                categorical_weights = np.array([None])
             self._mus[param_name] = mus
             self._sigmas[param_name] = sigmas
             self._categorical_weights[param_name] = categorical_weights
