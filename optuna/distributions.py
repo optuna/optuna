@@ -134,7 +134,8 @@ class UniformDistribution(BaseDistribution):
 class LogUniformDistribution(BaseDistribution):
     """A uniform distribution in the log domain.
 
-    This object is instantiated by :func:`~optuna.trial.Trial.suggest_loguniform`, and passed to
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_float` with ``log=True``
+    and :func:`~optuna.trial.Trial.suggest_loguniform`, and passed to
     :mod:`~optuna.samplers` in general.
 
     Attributes:
@@ -178,7 +179,8 @@ class LogUniformDistribution(BaseDistribution):
 class DiscreteUniformDistribution(BaseDistribution):
     """A discretized uniform distribution in the linear domain.
 
-    This object is instantiated by :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and passed
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_uniform` with ``step``
+    argument and :func:`~optuna.trial.Trial.suggest_discrete_uniform`, and passed
     to :mod:`~optuna.samplers` in general.
 
     .. note::

@@ -33,7 +33,7 @@ First, callable classes can be used for that purpose as follows:
 
         def __call__(self, trial):
             # Calculate an objective value by using the extra arguments.
-            x = trial.suggest_uniform("x", self.min_x, self.max_x)
+            x = trial.suggest_float("x", self.min_x, self.max_x)
             return (x - 2) ** 2
 
 
@@ -51,7 +51,7 @@ Below is an example that uses ``lambda``:
 
     # Objective function that takes three arguments.
     def objective(trial, min_x, max_x):
-        x = trial.suggest_uniform("x", min_x, max_x)
+        x = trial.suggest_float("x", min_x, max_x)
         return (x - 2) ** 2
 
 
@@ -149,7 +149,7 @@ For example, you can save SVM models trained in the objective function as follow
 .. code-block:: python
 
     def objective(trial):
-        svc_c = trial.suggest_loguniform("svc_c", 1e-10, 1e10)
+        svc_c = trial.suggest_float("svc_c", 1e-10, 1e10, log=True)
         clf = sklearn.svm.SVC(C=svc_c)
         clf.fit(X_train, y_train)
 
@@ -241,7 +241,7 @@ What happens when I dynamically alter a search space?
 -----------------------------------------------------
 
 Since parameters search spaces are specified in each call to the suggestion API, e.g.
-:func:`~optuna.trial.Trial.suggest_uniform` and :func:`~optuna.trial.Trial.suggest_int`,
+:func:`~optuna.trial.Trial.suggest_float` and :func:`~optuna.trial.Trial.suggest_int`,
 it is possible to, in a single study, alter the range by sampling parameters from different search
 spaces in different trials.
 The behavior when altered is defined by each sampler individually.
@@ -283,7 +283,7 @@ For instance, you can input arbitrary values of :math:`x` and :math:`y` to the o
 .. code-block:: python
 
     def objective(trial):
-        x = trial.suggest_uniform("x", -1.0, 1.0)
+        x = trial.suggest_float("x", -1.0, 1.0)
         y = trial.suggest_int("y", -5, 5)
         return x + y
 
@@ -314,7 +314,7 @@ Specify ``gc_after_trial`` to :obj:`True` when calling :func:`~optuna.study.Stud
 .. code-block:: python
 
     def objective(trial):
-        x = trial.suggest_uniform("x", -1.0, 1.0)
+        x = trial.suggest_float("x", -1.0, 1.0)
         y = trial.suggest_int("y", -5, 5)
         return x + y
 

@@ -47,7 +47,7 @@ def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
         cma_obj.population_size = 5
         cma_class.return_value = cma_obj
         study.optimize(
-            lambda t: t.suggest_uniform("x", -1, 1) + t.suggest_uniform("y", -1, 1), n_trials=2
+            lambda t: t.suggest_float("x", -1, 1) + t.suggest_float("y", -1, 1), n_trials=2
         )
 
         assert cma_class.call_count == 1
@@ -183,8 +183,8 @@ def test_population_size_is_multiplied_when_enable_ipop() -> None:
     study = optuna.create_study(sampler=sampler)
 
     def objective(trial: optuna.Trial) -> float:
-        _ = trial.suggest_uniform("x", -1, 1)
-        _ = trial.suggest_uniform("y", -1, 1)
+        _ = trial.suggest_float("x", -1, 1)
+        _ = trial.suggest_float("y", -1, 1)
         return 1.0
 
     with patch("optuna.samplers._cmaes.CMA") as cma_class_mock, patch(

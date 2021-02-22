@@ -460,9 +460,9 @@ def test_suggest_int_log(storage_init_func: Callable[[], storages.BaseStorage]) 
 def test_distributions(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
     def objective(trial: Trial) -> float:
 
-        trial.suggest_uniform("a", 0, 10)
-        trial.suggest_loguniform("b", 0.1, 10)
-        trial.suggest_discrete_uniform("c", 0, 10, 1)
+        trial.suggest_float("a", 0, 10)
+        trial.suggest_float("b", 0.1, 10, log=True)
+        trial.suggest_float("c", 0, 10, step=1)
         trial.suggest_int("d", 0, 10)
         trial.suggest_categorical("e", ["foo", "bar", "baz"])
         trial.suggest_int("f", 1, 10, log=True)
@@ -645,9 +645,9 @@ def test_suggest_with_multi_objectives() -> None:
 
     def objective(trial: Trial) -> Tuple[float, float]:
         p0 = trial.suggest_float("p0", -10, 10)
-        p1 = trial.suggest_uniform("p1", 3, 5)
-        p2 = trial.suggest_loguniform("p2", 0.00001, 0.1)
-        p3 = trial.suggest_discrete_uniform("p3", 100, 200, q=5)
+        p1 = trial.suggest_float("p1", 3, 5)
+        p2 = trial.suggest_float("p2", 0.00001, 0.1, log=True)
+        p3 = trial.suggest_float("p3", 100, 200, step=5)
         p4 = trial.suggest_int("p4", -20, -15)
         p5 = cast(int, trial.suggest_categorical("p5", [7, 1, 100]))
         p6 = trial.suggest_float("p6", -10, 10, step=1.0)

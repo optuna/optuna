@@ -25,7 +25,7 @@ def test_hyperopt_parameters(use_hyperband: bool) -> None:
     study = optuna.create_study(
         sampler=sampler, pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None
     )
-    study.optimize(lambda t: t.suggest_uniform("x", 10, 20), n_trials=50)
+    study.optimize(lambda t: t.suggest_float("x", 10, 20), n_trials=50)
 
 
 def test_multivariate_experimental_warning() -> None:
@@ -46,9 +46,9 @@ def test_infer_relative_search_space() -> None:
     }
 
     def obj(t: Trial) -> float:
-        t.suggest_uniform("a", 1.0, 100.0)
-        t.suggest_loguniform("b", 1.0, 100.0)
-        t.suggest_discrete_uniform("c", 1.0, 100.0, 3.0)
+        t.suggest_float("a", 1.0, 100.0)
+        t.suggest_float("b", 1.0, 100.0, log=True)
+        t.suggest_float("c", 1.0, 100.0, step=3.0)
         t.suggest_int("d", 1, 100)
         t.suggest_int("e", 0, 100, step=2)
         t.suggest_int("f", 1, 100, log=True)

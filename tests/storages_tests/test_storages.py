@@ -452,10 +452,20 @@ def test_set_trial_state(storage_mode: str) -> None:
             if state == TrialState.WAITING:
                 continue
             assert storage.get_trial(trial_id).state == TrialState.RUNNING
+            datetime_start_prev = storage.get_trial(trial_id).datetime_start
             if state.is_finished():
                 storage.set_trial_values(trial_id, (0.0,))
+
+            if storage_mode == "cache" and state == TrialState.RUNNING:
+                with pytest.raises(AssertionError):
+                    storage.set_trial_state(trial_id, state)
+                continue
+
             storage.set_trial_state(trial_id, state)
             assert storage.get_trial(trial_id).state == state
+            # Repeated state changes to RUNNING should not trigger further datetime_start changes.
+            if state == TrialState.RUNNING:
+                assert storage.get_trial(trial_id).datetime_start == datetime_start_prev
             if state.is_finished():
                 assert storage.get_trial(trial_id).datetime_complete is not None
             else:
