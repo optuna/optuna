@@ -151,6 +151,17 @@ class TPESampler(BaseSampler):
             If this is :obj:`True` and ``multivariate=True``, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler.
             If ``multivariate=False``, this flag has no effect.
+        independent_sampler:
+            A :class:`~optuna.samplers.BaseSampler` instance that is used for independent
+            sampling. The after_trial method of this sampler is used when a fallback occurs.
+
+            If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
+            as the default.
+
+            .. seealso::
+                :class:`optuna.samplers` module provides built-in independent samplers
+                such as :class:`~optuna.samplers.RandomSampler` and
+                :class:`~optuna.samplers.TPESampler`.
     """
 
     def __init__(
@@ -741,7 +752,7 @@ class TPESampler(BaseSampler):
             "gamma": hyperopt_default_gamma,
             "weights": default_weights,
         }
-    
+
     def after_trial(
         self,
         study: Study,
@@ -751,6 +762,7 @@ class TPESampler(BaseSampler):
     ) -> None:
 
         self._independent_sampler.after_trial(study, trial, state, values)
+
 
 def _get_observation_pairs(
     study: Study, param_name: str

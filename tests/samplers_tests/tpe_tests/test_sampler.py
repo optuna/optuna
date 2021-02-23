@@ -14,8 +14,8 @@ import optuna
 from optuna import distributions
 from optuna import TrialPruned
 from optuna.samplers import _tpe
-from optuna.samplers import TPESampler
 from optuna.samplers import RandomSampler
+from optuna.samplers import TPESampler
 from optuna.trial import Trial
 
 
