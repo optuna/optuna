@@ -335,7 +335,7 @@ class BoTorchSampler(BaseSampler):
 
     .. seealso::
         See an `example <https://github.com/optuna/optuna/blob/master/examples/
-        botorch_simple.py>`_ how to use the sampler.
+        multi_objective/botorch_simple.py>`_ how to use the sampler.
 
     .. seealso::
         See the `BoTorch <https://botorch.org/>`_ homepage for details and for how to implement
