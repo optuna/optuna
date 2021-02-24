@@ -218,7 +218,7 @@ def test_categorical(
         param_value = study.sampler.sample_independent(study, trial, "x", distribution)
         return float(distribution.to_internal_repr(param_value))
 
-    points = np.array([sample() for i in range(100)])
+    points = np.asarray([sample() for i in range(100)])
 
     # 'x' value is corresponding to an index of distribution.choices.
     assert np.all(points >= 0)

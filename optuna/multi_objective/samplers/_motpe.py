@@ -471,8 +471,8 @@ class MOTPEMultiObjectiveSampler(TPESampler, BaseMultiObjectiveSampler):
         above: np.ndarray,
     ) -> int:
         choices = distribution.choices
-        below = np.array(list(map(int, below)))
-        above = np.array(list(map(int, above)))
+        below = np.asarray(list(map(int, below)))
+        above = np.asarray(list(map(int, above)))
         upper = len(choices)
         size = (self._n_ehvi_candidates,)
 

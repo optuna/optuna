@@ -56,7 +56,7 @@ def _check_trials(trials: Sequence[optuna.trial.FrozenTrial]) -> None:
     assert all("y" in trial.params for trial in trials)
     assert all(
         np.isclose(
-            np.array([trial.value for trial in trials]),
+            np.asarray([trial.value for trial in trials]),
             [f(trial.params["x"], trial.params["y"]) for trial in trials],
             atol=1e-4,
         ).tolist()

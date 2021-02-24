@@ -15,7 +15,7 @@ def _get_best_intermediate_result_over_steps(
     trial: "optuna.trial.FrozenTrial", direction: StudyDirection
 ) -> float:
 
-    values = np.array(list(trial.intermediate_values.values()), dtype=float)
+    values = np.asarray(list(trial.intermediate_values.values()), dtype=float)
     if direction == StudyDirection.MAXIMIZE:
         return np.nanmax(values)
     return np.nanmin(values)
