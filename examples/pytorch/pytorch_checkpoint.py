@@ -11,6 +11,7 @@ previous saved checkpoint using heartbeat.
 
 """
 
+import copy
 import os
 
 import torch
@@ -151,10 +152,9 @@ def restart_from_checkpoint(study, trial):
     # Enqueue trial with the same parameters as the stale trial to use saved information.
 
     path = f"pytorch_checkpoint/{trial.number}/model.pt"
+    user_attrs = copy.deepcopy(trial.user_attrs)
     if os.path.exists(path):
-        user_attrs = dict(**trial.user_attrs, **{"checkpoint_path": path})
-    else:
-        user_attrs = trial.user_attrs
+        user_attrs["checkpoint_path"] = path
 
     study.add_trial(
         optuna.create_trial(
