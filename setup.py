@@ -114,9 +114,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "allennlp<2.0.0",
             "dask[dataframe]",
             "dask-ml",
-            # TODO(crcrpar): Support botorch v0.4.0.
-            # See: https://github.com/optuna/optuna/issues/2381
-            "botorch<0.4.0 ; python_version>'3.6'",
+            "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
             "optax",
             "dm-haiku",
