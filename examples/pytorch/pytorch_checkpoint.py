@@ -132,7 +132,8 @@ def objective(trial):
 
         trial.report(accuracy, epoch)
 
-        # Save optimization status.
+        # Save optimization status. We should save the objective value because the process may be
+        # killed between saving the last model and recording the objective value to the storage.
         torch.save(
             {
                 "epoch": epoch,
