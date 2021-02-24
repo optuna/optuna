@@ -415,8 +415,8 @@ class BoTorchSampler(BaseSampler):
         if self._study_id is None:
             self._study_id = study._study_id
         if self._study_id != study._study_id:
-            # Note that the check below is meaningless when `InMemortyStorage` is used
-            # because `InMemortyStorage.create_new_study` always returns the same study ID.
+            # Note that the check below is meaningless when `InMemoryStorage` is used
+            # because `InMemoryStorage.create_new_study` always returns the same study ID.
             raise RuntimeError("BoTorchSampler cannot handle multiple studies.")
 
         return self._search_space.calculate(study, ordered_dict=True)  # type: ignore
