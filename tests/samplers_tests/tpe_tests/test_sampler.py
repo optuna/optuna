@@ -14,7 +14,6 @@ import optuna
 from optuna import distributions
 from optuna import TrialPruned
 from optuna.samplers import _tpe
-from optuna.samplers import RandomSampler
 from optuna.samplers import TPESampler
 from optuna.trial import Trial
 
@@ -865,7 +864,7 @@ def test_reseed_rng() -> None:
     original_seed = sampler._rng.seed
 
     with patch.object(
-        sampler._independent_sampler, "reseed_rng", wraps=sampler._independent_sampler.reseed_rng
+        sampler._random_sampler, "reseed_rng", wraps=sampler._random_sampler.reseed_rng
     ) as mock_object:
         sampler.reseed_rng()
         assert mock_object.call_count == 1
@@ -873,13 +872,12 @@ def test_reseed_rng() -> None:
 
 
 def test_call_after_trial_of_independent_sampler() -> None:
-    independent_sampler = RandomSampler()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(independent_sampler=independent_sampler)
+        sampler = TPESampler()
     study = optuna.create_study(sampler=sampler)
     with patch.object(
-        independent_sampler, "after_trial", wraps=independent_sampler.after_trial
+        sampler._random_sampler, "after_trial", wraps=sampler._random_sampler.after_trial
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1

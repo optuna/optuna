@@ -151,17 +151,6 @@ class TPESampler(BaseSampler):
             If this is :obj:`True` and ``multivariate=True``, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler.
             If ``multivariate=False``, this flag has no effect.
-        independent_sampler:
-            A :class:`~optuna.samplers.BaseSampler` instance that is used for independent
-            sampling. The after_trial method of this sampler is used when a fallback occurs.
-
-            If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
-            as the default.
-
-            .. seealso::
-                :class:`optuna.samplers` module provides built-in independent samplers
-                such as :class:`~optuna.samplers.RandomSampler` and
-                :class:`~optuna.samplers.TPESampler`.
     """
 
     def __init__(
@@ -178,7 +167,6 @@ class TPESampler(BaseSampler):
         *,
         multivariate: bool = False,
         warn_independent_sampling: bool = True,
-        independent_sampler: Optional[BaseSampler] = None,
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
@@ -192,7 +180,7 @@ class TPESampler(BaseSampler):
 
         self._warn_independent_sampling = warn_independent_sampling
         self._rng = np.random.RandomState(seed)
-        self._independent_sampler = independent_sampler or RandomSampler(seed=seed)
+        self._random_sampler = RandomSampler(seed=seed)
 
         self._multivariate = multivariate
         self._search_space = IntersectionSearchSpace()
@@ -207,7 +195,7 @@ class TPESampler(BaseSampler):
     def reseed_rng(self) -> None:
 
         self._rng = np.random.RandomState()
-        self._independent_sampler.reseed_rng()
+        self._random_sampler.reseed_rng()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -291,7 +279,7 @@ class TPESampler(BaseSampler):
         n = len(values)
 
         if n < self._n_startup_trials:
-            return self._independent_sampler.sample_independent(
+            return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )
         below_param_values, above_param_values = self._split_observation_pairs(values, scores)
@@ -761,7 +749,7 @@ class TPESampler(BaseSampler):
         values: Optional[Sequence[float]],
     ) -> None:
 
-        self._independent_sampler.after_trial(study, trial, state, values)
+        self._random_sampler.after_trial(study, trial, state, values)
 
 
 def _get_observation_pairs(
