@@ -22,6 +22,7 @@ import chainermn
 import numpy as np
 
 import optuna
+from optuna.trial import TrialState
 
 
 N_TRAIN_EXAMPLES = 3000
@@ -123,8 +124,8 @@ if __name__ == "__main__":
     chainermn_study.optimize(objective, n_trials=25)
 
     if comm.rank == 0:
-        pruned_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]
-        complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+        complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
         print("Study statistics: ")
         print("  Number of finished trials: ", len(study.trials))
         print("  Number of pruned trials: ", len(pruned_trials))
