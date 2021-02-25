@@ -155,7 +155,7 @@ def _get_parallel_coordinate_plot(
                 "values": tuple(values),
                 "range": (min(values), max(values)),
                 "tickvals": list(range(len(vocab))),
-                "ticktext": list(sorted(vocab.items(), key=lambda x: x[1])),
+                "ticktext": list(sorted(vocab.keys(), key=lambda x: vocab[x])),
             }
         else:
             dim = {
