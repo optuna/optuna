@@ -1,6 +1,8 @@
 from typing import Callable
 from typing import Optional
 
+import numpy as np
+
 from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -91,15 +93,9 @@ def _get_optimization_history_plot(
 
     if target is None:
         if study.direction == StudyDirection.MINIMIZE:
-            best_values = [float("inf")]
+            best_values = list(np.minimum.accumulate([t.value for t in trials]))
         else:
-            best_values = [-float("inf")]
-        comp = min if study.direction == StudyDirection.MINIMIZE else max
-        for trial in trials:
-            trial_value = trial.value
-            assert trial_value is not None  # For mypy
-            best_values.append(comp(best_values[-1], trial_value))
-        best_values.pop(0)
+            best_values = list(np.maximum.accumulate([t.value for t in trials]))
         traces = [
             go.Scatter(
                 x=[t.number for t in trials],

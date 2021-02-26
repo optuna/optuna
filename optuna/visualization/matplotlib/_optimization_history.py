@@ -1,6 +1,8 @@
 from typing import Callable
 from typing import Optional
 
+import numpy as np
+
 from optuna._experimental import experimental
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -97,13 +99,10 @@ def _get_optimization_history_plot(
         _logger.warning("Study instance does not contain trials.")
         return ax
 
-    best_values = [float("inf")] if study.direction == StudyDirection.MINIMIZE else [-float("inf")]
-    comp = min if study.direction == StudyDirection.MINIMIZE else max
-    for trial in trials:
-        trial_value = trial.value
-        assert trial_value is not None  # For mypy
-        best_values.append(comp(best_values[-1], trial_value))
-    best_values.pop(0)
+    if study.direction == StudyDirection.MINIMIZE:
+        best_values = list(np.minimum.accumulate([t.value for t in trials]))
+    else:
+        best_values = list(np.maximum.accumulate([t.value for t in trials]))
 
     # Draw a scatter plot and a line plot.
     if target is None:
