@@ -80,6 +80,34 @@ def test_warm_starting_cmaes(mock_func_ws: MagicMock) -> None:
     assert mock_func_ws.call_count == 1
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+def test_should_raise_exception() -> None:
+    dummy_source_trials = [create_trial(value=i, state=TrialState.COMPLETE) for i in range(10)]
+
+    with pytest.raises(ValueError):
+        sampler = optuna.samplers.CmaEsSampler(
+            x0={"x": 0.1, "y": 0.1},
+            source_trials=dummy_source_trials,
+        )
+
+    with pytest.raises(ValueError):
+        sampler = optuna.samplers.CmaEsSampler(
+            sigma0=0.1,
+            source_trials=dummy_source_trials,
+        )
+
+    with pytest.raises(ValueError):
+        sampler = optuna.samplers.CmaEsSampler(
+            use_separable_cma=True,
+            source_trials=dummy_source_trials,
+        )
+
+    with pytest.raises(ValueError):
+        sampler = optuna.samplers.CmaEsSampler(
+            restart_strategy="invalid-restart-strategy",
+        )
+
+
 def test_infer_relative_search_space_1d() -> None:
     sampler = optuna.samplers.CmaEsSampler()
     study = optuna.create_study(sampler=sampler)
