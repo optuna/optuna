@@ -446,8 +446,19 @@ class CmaEsSampler(BaseSampler):
 
             cov = None
         else:
+            expected_states = [TrialState.COMPLETE]
+            if self._consider_pruned_trials:
+                expected_states.append(TrialState.PRUNED)
+
+            source_solutions = [
+                (trans.transform(t.params), t.value)
+                for t in self._source_trials
+                if t.state in expected_states and trans.is_same_search_space(t.distributions)
+            ]
+            if len(source_solutions) == 0:
+                raise ValueError("No compatible")
+
             # TODO(c-bata): Add options to change prior parameters (alpha and gamma).
-            source_solutions = [(trans.transform(t.params), t.value) for t in self._source_trials]
             mean, sigma0, cov = get_warm_start_mgd(source_solutions)
 
         # Avoid ZeroDivisionError in cmaes.
