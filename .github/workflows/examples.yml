@@ -7,12 +7,12 @@ on:
 jobs:
   examples:
 
-    # TODO (crcrpar): Activate more on 3.9.
+    # TODO (crcrpar): Run on 3.9.
     # ref: https://github.com/optuna/optuna/issues/2034
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.6, 3.7, 3.8]
 
     if: github.repository == 'optuna/optuna'
     steps:
@@ -54,8 +54,6 @@ jobs:
           IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*|botorch_.*'
         elif [ ${{ matrix.python-version }} = 3.8 ]; then
           IGNORES='chainermn_.*|dask_ml_.*|keras_.*|pytorch_distributed_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|rapids_.*'
-        elif [ ${{ matrix.python-version }} = 3.9 ]; then
-          IGNORES='allennlp_*|botorch_*|catalyst_*|catboost_*|chainer_*|chainermn_.*|dask_ml_.*|fastai*|gluon_*|haiku_*|hydra_*|keras_*|lightgbm_*|mxnet_*|optuna_search_cv_*|pytorch_distributed_.*|pytorch_ignite_*|pytorch_lightning_*|rapids_*|sb3_*|skimage_lbp_*|sklearn_*|skorch_*|tensorboard_*|tensorflow_*|tfkeras_*|xgboost_*|pruning/simple*|enqueue_trial*|visualization/plot_pareto_front*|visualization/plot_study*|multi_objective/pytorch_simple*'
         else
           IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*'
         fi
