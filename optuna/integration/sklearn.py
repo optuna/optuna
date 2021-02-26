@@ -52,7 +52,7 @@ if not _imports.is_successful():
     BaseEstimator = object  # NOQA
 
 ArrayLikeType = Union[List, np.ndarray, "pd.Series", spmatrix]
-OneDimArrayLikeType = Union[np.ndarray, List[float], "pd.Series"]
+OneDimArrayLikeType = Union[List[float], np.ndarray, "pd.Series"]
 TwoDimArrayLikeType = Union[List[List[float]], np.ndarray, "pd.DataFrame", spmatrix]
 IterableType = Union[List, "pd.DataFrame", np.ndarray, "pd.Series", spmatrix, None]
 IndexableType = Union[Iterable, None]
@@ -244,7 +244,7 @@ class _Objective(object):
 
     def _cross_validate_with_pruning(
         self, trial: Trial, estimator: "BaseEstimator"
-    ) -> Union[Dict[str, OneDimArrayLikeType], Dict[str, np.ndarray]]:
+    ) -> Mapping[str, OneDimArrayLikeType]:
 
         if is_classifier(estimator):
             partial_fit_params = self.fit_params.copy()
@@ -345,9 +345,7 @@ class _Objective(object):
 
         return ret
 
-    def _store_scores(
-        self, trial: Trial, scores: Union[Dict[str, OneDimArrayLikeType], Dict[str, np.ndarray]]
-    ) -> None:
+    def _store_scores(self, trial: Trial, scores: Mapping[str, OneDimArrayLikeType]) -> None:
 
         for name, array in scores.items():
             if name in ["test_score", "train_score"]:

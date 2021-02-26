@@ -464,8 +464,8 @@ class MOTPESampler(TPESampler):
         above: np.ndarray,
     ) -> int:
         choices = distribution.choices
-        below = np.asarray(list(map(int, below)))
-        above = np.asarray(list(map(int, above)))
+        below = below.astype(int)
+        above = above.astype(int)
         upper = len(choices)
         size = (self._n_ehvi_candidates,)
 

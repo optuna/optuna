@@ -4,6 +4,7 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import Union
 import warnings
 
 import numpy
@@ -439,15 +440,16 @@ class BoTorchSampler(BaseSampler):
             return {}
 
         trans = _SearchSpaceTransform(search_space)
-
         n_objectives = len(study.directions)
-        values = numpy.empty((n_trials, n_objectives), dtype=numpy.float64)
+        values: Union[numpy.ndarray, torch.Tensor] = numpy.empty(
+            (n_trials, n_objectives), dtype=numpy.float64
+        )
+        params: Union[numpy.ndarray, torch.Tensor]
+        con: Optional[Union[numpy.ndarray, torch.Tensor]] = None
+        bounds: Union[numpy.ndarray, torch.Tensor] = trans.bounds
         params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
-        con = None
-        cons = None
-        bounds = trans.bounds
-
         for trial_idx, trial in enumerate(trials):
+
             params[trial_idx] = trans.transform(trial.params)
             assert len(study.directions) == len(trial.values)
 
@@ -485,20 +487,20 @@ class BoTorchSampler(BaseSampler):
                     "constraints. Constraints passed to `candidates_func` will contain NaN."
                 )
 
-        val = torch.from_numpy(values)
-        par = torch.from_numpy(params)
+        values = torch.from_numpy(values)
+        params = torch.from_numpy(params)
         if con is not None:
-            cons = torch.from_numpy(con)
-        bnds = torch.from_numpy(bounds)
+            con = torch.from_numpy(con)
+        bounds = torch.from_numpy(bounds)
 
-        if cons is not None:
-            if cons.dim() == 1:
-                cons.unsqueeze_(-1)
-        bnds.transpose_(0, 1)
+        if con is not None:
+            if con.dim() == 1:
+                con.unsqueeze_(-1)
+        bounds.transpose_(0, 1)
 
         if self._candidates_func is None:
             self._candidates_func = _get_default_candidates_func(n_objectives=n_objectives)
-        candidates = self._candidates_func(par, val, cons, bnds)
+        candidates = self._candidates_func(params, values, con, bounds)
 
         if not isinstance(candidates, torch.Tensor):
             raise TypeError("Candidates must be a torch.Tensor.")
@@ -513,10 +515,10 @@ class BoTorchSampler(BaseSampler):
             candidates = candidates.squeeze(0)
         if candidates.dim() != 1:
             raise ValueError("Candidates must be one or two-dimensional.")
-        if candidates.size(0) != bnds.size(1):
+        if candidates.size(0) != bounds.size(1):
             raise ValueError(
                 "Candidates size must match with the given bounds. Actual candidates: "
-                f"{candidates.size(0)}, bounds: {bnds.size(1)}."
+                f"{candidates.size(0)}, bounds: {bounds.size(1)}."
             )
 
         parameters = trans.untransform(candidates.numpy())
