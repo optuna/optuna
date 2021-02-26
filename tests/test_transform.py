@@ -188,36 +188,48 @@ def test_search_space_transform_untransform_params() -> None:
 
 
 def test_is_same_search_space() -> None:
-    transform = _SearchSpaceTransform({
-        "x0": UniformDistribution(2, 3),
-        "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
-    })
+    transform = _SearchSpaceTransform(
+        {
+            "x0": UniformDistribution(2, 3),
+            "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
+        }
+    )
 
-    assert transform.is_same_search_space({
-        "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
-        "x0": UniformDistribution(2, 3),
-    })
+    assert transform.is_same_search_space(
+        {
+            "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
+            "x0": UniformDistribution(2, 3),
+        }
+    )
 
     # incompatible upper bound of x0
-    assert not transform.is_same_search_space({
-        "x0": UniformDistribution(2, 4),
-        "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
-    })
+    assert not transform.is_same_search_space(
+        {
+            "x0": UniformDistribution(2, 4),
+            "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
+        }
+    )
 
     # incompatible choices of x1
-    assert not transform.is_same_search_space({
-        "x0": UniformDistribution(2, 3),
-        "x1": CategoricalDistribution(["foo", "bar"]),
-    })
+    assert not transform.is_same_search_space(
+        {
+            "x0": UniformDistribution(2, 3),
+            "x1": CategoricalDistribution(["foo", "bar"]),
+        }
+    )
 
     # x2 is added
-    assert not transform.is_same_search_space({
-        "x0": UniformDistribution(2, 3),
-        "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
-        "x2": DiscreteUniformDistribution(2, 3, q=0.1),  #
-    })
+    assert not transform.is_same_search_space(
+        {
+            "x0": UniformDistribution(2, 3),
+            "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
+            "x2": DiscreteUniformDistribution(2, 3, q=0.1),  #
+        }
+    )
 
     # x0 is not found
-    assert not transform.is_same_search_space({
-        "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
-    })
+    assert not transform.is_same_search_space(
+        {
+            "x1": CategoricalDistribution(["foo", "bar", "baz", "qux"]),
+        }
+    )
