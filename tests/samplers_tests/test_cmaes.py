@@ -61,27 +61,19 @@ def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
         assert actual_kwargs["population_size"] is None
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @patch("optuna.samplers._cmaes.get_warm_start_mgd")
 def test_warm_starting_cmaes(mock_func_ws: MagicMock) -> None:
     def objective(trial: optuna.Trial) -> float:
-        x = trial.suggest_uniform("x", -10, 10)
-        y = trial.suggest_uniform("y", -10, 10)
+        x = trial.suggest_float("x", -10, 10)
+        y = trial.suggest_float("y", -10, 10)
         return x ** 2 + y
 
     source_study = optuna.create_study()
     source_study.optimize(objective, 20)
     source_trials = source_study.get_trials(deepcopy=False)
 
-    mock_func_ws.return_value = (
-        np.zeros(2),
-        0.0,
-        np.zeros(
-            (
-                2,
-                2,
-            )
-        ),
-    )
+    mock_func_ws.return_value = (np.zeros(2), 0.0, np.zeros((2, 2)))
     sampler = optuna.samplers.CmaEsSampler(seed=1, n_startup_trials=1, source_trials=source_trials)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, 2)
