@@ -84,8 +84,9 @@ The documentation source is stored under the [docs](./docs) directory and writte
 To build the documentation, you need to run:
 
 ```bash
-pip install -e ".[document]"
+pip install -e ".[document]" -f https://download.pytorch.org/whl/torch_stable.html
 ```
+Note that the above command might try to install PyTorch without CUDA to your environment even if your environment has CUDA version already.
 
 Then you can build the documentation in HTML format locally:
 
@@ -96,6 +97,16 @@ make html
 
 HTML files are generated under `build/html` directory. Open `index.html` with the browser and see
 if it is rendered as expected.
+
+Optuna's tutorial is built with [Sphinx-Gallery](https://sphinx-gallery.github.io/stable/index.html) and
+some other requirements like [LightGBM](https://github.com/microsoft/LightGBM) and [PyTorch](https://pytorch.org) meaning that
+all .py files in `tutorial` directory are run during the documentation build if there's no build cache.
+Whether you edit any tutorial or not doesn't matter.
+
+To avoid having to run the tutorials, you may download executed tutorial artifacts nanmed "tutorial" from our CI (see the capture below) and put them in `docs/build` before
+extract the files in the zip to `docs/source/tutorial` directory.
+
+![image](https://user-images.githubusercontent.com/16191443/107472296-0b211400-6bb2-11eb-9203-e2c42ce499ad.png)
 
 ## Unit Tests
 

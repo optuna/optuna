@@ -32,13 +32,13 @@ def plot_parallel_coordinate(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
-    """Plot the high-dimentional parameter relationships in a study.
+    """Plot the high-dimensional parameter relationships in a study.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
 
     Example:
 
-        The following code snippet shows how to plot the high-dimentional parameter relationships.
+        The following code snippet shows how to plot the high-dimensional parameter relationships.
 
         .. plotly::
 
