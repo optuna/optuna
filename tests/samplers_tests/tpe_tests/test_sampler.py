@@ -871,10 +871,8 @@ def test_reseed_rng() -> None:
         assert original_seed != sampler._rng.seed
 
 
-def test_call_after_trial_of_independent_sampler() -> None:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler()
+def test_call_after_trial_of_random_sampler() -> None:
+    sampler = TPESampler()
     study = optuna.create_study(sampler=sampler)
     with patch.object(
         sampler._random_sampler, "after_trial", wraps=sampler._random_sampler.after_trial
