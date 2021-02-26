@@ -85,25 +85,25 @@ def test_should_raise_exception() -> None:
     dummy_source_trials = [create_trial(value=i, state=TrialState.COMPLETE) for i in range(10)]
 
     with pytest.raises(ValueError):
-        sampler = optuna.samplers.CmaEsSampler(
+        optuna.samplers.CmaEsSampler(
             x0={"x": 0.1, "y": 0.1},
             source_trials=dummy_source_trials,
         )
 
     with pytest.raises(ValueError):
-        sampler = optuna.samplers.CmaEsSampler(
+        optuna.samplers.CmaEsSampler(
             sigma0=0.1,
             source_trials=dummy_source_trials,
         )
 
     with pytest.raises(ValueError):
-        sampler = optuna.samplers.CmaEsSampler(
+        optuna.samplers.CmaEsSampler(
             use_separable_cma=True,
             source_trials=dummy_source_trials,
         )
 
     with pytest.raises(ValueError):
-        sampler = optuna.samplers.CmaEsSampler(
+        optuna.samplers.CmaEsSampler(
             restart_strategy="invalid-restart-strategy",
         )
 
