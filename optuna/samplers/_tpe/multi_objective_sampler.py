@@ -516,8 +516,8 @@ class MOTPESampler(TPESampler):
         ]
         hv_selected = 0.0
         while len(selected_indices) < subset_size:
-            max_index = np.argmax(contributions)
-            contributions[int(max_index)] = -1  # mark as selected
+            max_index = int(np.argmax(contributions))
+            contributions[max_index] = -1  # mark as selected
             selected_index = rank_i_indices[max_index]
             selected_vec = rank_i_loss_vals[max_index]
             for j, v in enumerate(rank_i_loss_vals):
