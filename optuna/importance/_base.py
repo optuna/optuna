@@ -6,7 +6,6 @@ from typing import List
 from typing import Optional
 
 import optuna
-
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.trial import FrozenTrial
@@ -64,7 +63,9 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-def _get_distributions(study: "Study", params: Optional[List[str]]) -> Dict[str, BaseDistribution]:
+def _get_distributions(
+    study: "optuna.Study", params: Optional[List[str]]
+) -> Dict[str, BaseDistribution]:
     _check_evaluate_args(study, params)
     distributions = None
     for trial in study.trials:
@@ -113,7 +114,7 @@ def _get_distributions(study: "Study", params: Optional[List[str]]) -> Dict[str,
     return distributions
 
 
-def _check_evaluate_args(study: "Study", params: Optional[List[str]]) -> None:
+def _check_evaluate_args(study: "optuna.Study", params: Optional[List[str]]) -> None:
     completed_trials = list(filter(lambda t: t.state == TrialState.COMPLETE, study.trials))
     if len(completed_trials) == 0:
         raise ValueError("Cannot evaluate parameter importances without completed trials.")

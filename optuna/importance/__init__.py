@@ -4,7 +4,6 @@ from typing import List
 from typing import Optional
 
 import optuna
-
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.importance._fanova import FanovaImportanceEvaluator
 from optuna.importance._mean_decrease_impurity import MeanDecreaseImpurityImportanceEvaluator

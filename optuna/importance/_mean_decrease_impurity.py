@@ -5,8 +5,8 @@ from typing import List
 from typing import Optional
 
 import numpy
-import optuna
 
+import optuna
 from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
 from optuna.importance._base import _get_distributions
