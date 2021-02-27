@@ -1,6 +1,4 @@
 import copy
-import itertools
-import multiprocessing
 import pickle
 import threading
 import time
@@ -109,144 +107,6 @@ def check_study(study: Study) -> None:
         check_params(study.best_params)
         check_value(study.best_value)
         check_frozen_trial(study.best_trial)
-
-
-def test_optimize_trivial_in_memory_new() -> None:
-
-    study = create_study()
-    study.optimize(func, n_trials=10)
-    check_study(study)
-
-
-def test_optimize_trivial_in_memory_resume() -> None:
-
-    study = create_study()
-    study.optimize(func, n_trials=10)
-    study.optimize(func, n_trials=10)
-    check_study(study)
-
-
-def test_optimize_trivial_rdb_resume_study() -> None:
-
-    study = create_study("sqlite:///:memory:")
-    study.optimize(func, n_trials=10)
-    check_study(study)
-
-
-def test_optimize_with_direction() -> None:
-
-    study = create_study(direction="minimize")
-    study.optimize(func, n_trials=10)
-    assert study.direction == StudyDirection.MINIMIZE
-    check_study(study)
-
-    study = create_study(direction="maximize")
-    study.optimize(func, n_trials=10)
-    assert study.direction == StudyDirection.MAXIMIZE
-    check_study(study)
-
-    with pytest.raises(ValueError):
-        create_study(direction="test")
-
-
-@pytest.mark.parametrize(
-    "n_trials, n_jobs, storage_mode",
-    itertools.product((0, 1, 20), (1, 2, -1), STORAGE_MODES),  # n_trials  # n_jobs  # storage_mode
-)
-def test_optimize_parallel(n_trials: int, n_jobs: int, storage_mode: str) -> None:
-
-    f = Func()
-
-    with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage)
-        study.optimize(f, n_trials=n_trials, n_jobs=n_jobs)
-        assert f.n_calls == len(study.trials) == n_trials
-        check_study(study)
-
-
-@pytest.mark.parametrize(
-    "n_trials, n_jobs, storage_mode",
-    itertools.product(
-        (0, 1, 20, None), (1, 2, -1), STORAGE_MODES  # n_trials  # n_jobs  # storage_mode
-    ),
-)
-def test_optimize_parallel_timeout(n_trials: int, n_jobs: int, storage_mode: str) -> None:
-
-    sleep_sec = 0.1
-    timeout_sec = 1.0
-    f = Func(sleep_sec=sleep_sec)
-
-    with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage)
-        study.optimize(f, n_trials=n_trials, n_jobs=n_jobs, timeout=timeout_sec)
-
-        assert f.n_calls == len(study.trials)
-
-        if n_trials is not None:
-            assert f.n_calls <= n_trials
-
-        # A thread can process at most (timeout_sec / sleep_sec + 1) trials.
-        n_jobs_actual = n_jobs if n_jobs != -1 else multiprocessing.cpu_count()
-        max_calls = (timeout_sec / sleep_sec + 1) * n_jobs_actual
-        assert f.n_calls <= max_calls
-
-        check_study(study)
-
-
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_optimize_with_catch(storage_mode: str) -> None:
-
-    with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage)
-
-        def func_value_error(_: Trial) -> float:
-
-            raise ValueError
-
-        # Test default exceptions.
-        with pytest.raises(ValueError):
-            study.optimize(func_value_error, n_trials=20)
-        assert len(study.trials) == 1
-        assert all(trial.state == TrialState.FAIL for trial in study.trials)
-
-        # Test acceptable exception.
-        study.optimize(func_value_error, n_trials=20, catch=(ValueError,))
-        assert len(study.trials) == 21
-        assert all(trial.state == TrialState.FAIL for trial in study.trials)
-
-        # Test trial with unacceptable exception.
-        with pytest.raises(ValueError):
-            study.optimize(func_value_error, n_trials=20, catch=(ArithmeticError,))
-        assert len(study.trials) == 22
-        assert all(trial.state == TrialState.FAIL for trial in study.trials)
-
-
-@pytest.mark.parametrize("catch", [[], [Exception], None, 1])
-def test_optimize_with_catch_invalid_type(catch: Any) -> None:
-
-    study = create_study()
-
-    def func_value_error(_: Trial) -> float:
-
-        raise ValueError
-
-    with pytest.raises(TypeError):
-        study.optimize(func_value_error, n_trials=20, catch=catch)
-
-
-@pytest.mark.parametrize(
-    "n_jobs, storage_mode", itertools.product((2, -1), STORAGE_MODES)  # n_jobs  # storage_mode
-)
-def test_optimize_with_reseeding(n_jobs: int, storage_mode: str) -> None:
-
-    f = Func()
-
-    with StorageSupplier(storage_mode) as storage:
-        study = create_study(storage=storage)
-        sampler = study.sampler
-        with patch.object(sampler, "reseed_rng", wraps=sampler.reseed_rng) as mock_object:
-            study.optimize(f, n_trials=1, n_jobs=2)
-            assert mock_object.call_count == 1
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -451,16 +311,6 @@ def test_stop_n_jobs() -> None:
     assert 5 <= len(study.trials) <= 6
 
 
-def test_stop_outside_optimize() -> None:
-    # Test stopping outside the optimization: it should raise `RuntimeError`.
-    study = create_study()
-    with pytest.raises(RuntimeError):
-        study.stop()
-
-    # Test calling `optimize` after the `RuntimeError` is caught.
-    study.optimize(lambda _: 1.0, n_trials=1)
-
-
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_add_trial(storage_mode: str) -> None:
 
@@ -581,24 +431,6 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
             study.optimize(objective, n_trials=1)
         t = study.trials[0]
         assert t.params["x"] == 1
-
-
-@patch("optuna._optimize.gc.collect")
-def test_optimize_with_gc(collect_mock: Mock) -> None:
-
-    study = create_study()
-    study.optimize(func, n_trials=10, gc_after_trial=True)
-    check_study(study)
-    assert collect_mock.call_count == 10
-
-
-@patch("optuna._optimize.gc.collect")
-def test_optimize_without_gc(collect_mock: Mock) -> None:
-
-    study = create_study()
-    study.optimize(func, n_trials=10, gc_after_trial=False)
-    check_study(study)
-    assert collect_mock.call_count == 0
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
@@ -795,23 +627,6 @@ def test_create_study_with_multi_objectives() -> None:
 
     with pytest.raises(ValueError):
         _ = create_study(direction="minimize", directions=[])
-
-
-@pytest.mark.parametrize("n_objectives", [2, 3])
-def test_optimize_with_multi_objectives(n_objectives: int) -> None:
-    directions = ["minimize" for _ in range(n_objectives)]
-    study = create_study(directions=directions)
-
-    def objective(trial: Trial) -> List[float]:
-        return [trial.suggest_uniform("v{}".format(i), 0, 5) for i in range(n_objectives)]
-
-    study.optimize(objective, n_trials=10)
-
-    assert len(study.trials) == 10
-
-    for trial in study.trials:
-        assert trial.values
-        assert len(trial.values) == n_objectives
 
 
 def test_pareto_front() -> None:

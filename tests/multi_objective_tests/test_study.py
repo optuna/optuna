@@ -45,22 +45,6 @@ def test_load_study() -> None:
         assert created_study._study._study_id == loaded_study._study._study_id
 
 
-@pytest.mark.parametrize("n_objectives", [1, 2, 3])
-def test_optimize(n_objectives: int) -> None:
-    directions = ["minimize" for _ in range(n_objectives)]
-    study = optuna.multi_objective.create_study(directions)
-
-    def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> List[float]:
-        return [trial.suggest_uniform("v{}".format(i), 0, 5) for i in range(n_objectives)]
-
-    study.optimize(objective, n_trials=10)
-
-    assert len(study.trials) == 10
-
-    for trial in study.trials:
-        assert len(trial.values) == n_objectives
-
-
 def test_pareto_front() -> None:
     study = optuna.multi_objective.create_study(["minimize", "maximize"])
     assert {tuple(t.values) for t in study.get_pareto_front_trials()} == set()
