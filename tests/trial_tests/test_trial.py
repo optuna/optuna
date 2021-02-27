@@ -257,66 +257,60 @@ def test_suggest_discrete_uniform(storage_mode: str) -> None:
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_low_equals_high(storage_mode: str) -> None:
 
-    with StorageSupplier(storage_mode) as storage:
+    with patch.object(
+        distributions, "_get_single_value", wraps=distributions._get_single_value
+    ) as mock_object, StorageSupplier(storage_mode) as storage:
+
         study = create_study(storage=storage, sampler=samplers.TPESampler(n_startup_trials=0))
 
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
 
-        with patch.object(
-            distributions, "_get_single_value", wraps=distributions._get_single_value
-        ) as mock_object:
-            assert trial.suggest_uniform("a", 1.0, 1.0) == 1.0  # Suggesting a param.
-            assert mock_object.call_count == 1
-            assert trial.suggest_uniform("a", 1.0, 1.0) == 1.0  # Suggesting the same param.
-            assert mock_object.call_count == 1
+        assert trial.suggest_uniform("a", 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 1
+        assert trial.suggest_uniform("a", 1.0, 1.0) == 1.0  # Suggesting the same param.
+        assert mock_object.call_count == 1
 
-            assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting a param.
-            assert mock_object.call_count == 2
-            assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting the same param.
-            assert mock_object.call_count == 2
+        assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 2
+        assert trial.suggest_loguniform("b", 1.0, 1.0) == 1.0  # Suggesting the same param.
+        assert mock_object.call_count == 2
 
-            assert trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0  # Suggesting a param.
-            assert mock_object.call_count == 3
-            assert (
-                trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0
-            )  # Suggesting the same param.
-            assert mock_object.call_count == 3
+        assert trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 3
+        assert (
+            trial.suggest_discrete_uniform("c", 1.0, 1.0, 1.0) == 1.0
+        )  # Suggesting the same param.
+        assert mock_object.call_count == 3
 
-            assert trial.suggest_int("d", 1, 1) == 1  # Suggesting a param.
-            assert mock_object.call_count == 4
-            assert trial.suggest_int("d", 1, 1) == 1  # Suggesting the same param.
-            assert mock_object.call_count == 4
+        assert trial.suggest_int("d", 1, 1) == 1  # Suggesting a param.
+        assert mock_object.call_count == 4
+        assert trial.suggest_int("d", 1, 1) == 1  # Suggesting the same param.
+        assert mock_object.call_count == 4
 
-            assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting a param.
-            assert mock_object.call_count == 5
-            assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting the same param.
-            assert mock_object.call_count == 5
+        assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting a param.
+        assert mock_object.call_count == 5
+        assert trial.suggest_float("e", 1.0, 1.0) == 1.0  # Suggesting the same param.
+        assert mock_object.call_count == 5
 
-            assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting a param.
-            assert mock_object.call_count == 6
-            assert (
-                trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5
-            )  # Suggesting the same param.
-            assert mock_object.call_count == 6
+        assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting a param.
+        assert mock_object.call_count == 6
+        assert trial.suggest_float("f", 0.5, 0.5, log=True) == 0.5  # Suggesting the same param.
+        assert mock_object.call_count == 6
 
-            assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting a param.
-            assert mock_object.call_count == 7
-            assert (
-                trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5
-            )  # Suggesting the same param.
-            assert mock_object.call_count == 7
+        assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting a param.
+        assert mock_object.call_count == 7
+        assert trial.suggest_float("g", 0.5, 0.5, log=False) == 0.5  # Suggesting the same param.
+        assert mock_object.call_count == 7
 
-            assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting a param.
-            assert mock_object.call_count == 8
-            assert (
-                trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5
-            )  # Suggesting the same param.
-            assert mock_object.call_count == 8
+        assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting a param.
+        assert mock_object.call_count == 8
+        assert trial.suggest_float("h", 0.5, 0.5, step=1.0) == 0.5  # Suggesting the same param.
+        assert mock_object.call_count == 8
 
-            assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting a param.
-            assert mock_object.call_count == 9
-            assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting the same param.
-            assert mock_object.call_count == 9
+        assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting a param.
+        assert mock_object.call_count == 9
+        assert trial.suggest_int("i", 1, 1, log=True) == 1  # Suggesting the same param.
+        assert mock_object.call_count == 9
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -442,16 +436,18 @@ def test_suggest_int_log(storage_mode: str) -> None:
     mock.side_effect = [1, 2]
     sampler = samplers.RandomSampler()
 
-    with StorageSupplier(storage_mode) as storage:
+    with patch.object(sampler, "sample_independent", mock) as mock_object, StorageSupplier(
+        storage_mode
+    ) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
         distribution = IntLogUniformDistribution(low=1, high=3)
-        with patch.object(sampler, "sample_independent", mock) as mock_object:
-            assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
-            assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
-            assert trial._suggest("y", distribution) == 2  # Test suggesting a different param.
-            assert trial.params == {"x": 1, "y": 2}
-            assert mock_object.call_count == 2
+
+        assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
+        assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
+        assert trial._suggest("y", distribution) == 2  # Test suggesting a different param.
+        assert trial.params == {"x": 1, "y": 2}
+        assert mock_object.call_count == 2
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage, sampler=sampler)
