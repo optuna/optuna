@@ -70,4 +70,4 @@ class RandomSampler(BaseSampler):
         trans = _SearchSpaceTransform(search_space)
         trans_params = self._rng.uniform(trans.bounds[:, 0], trans.bounds[:, 1])
 
-        return trans.untransform(trans_params)
+        return trans.untransform(trans_params)[param_name]
