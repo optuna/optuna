@@ -84,7 +84,7 @@ The documentation source is stored under the [docs](./docs) directory and writte
 To build the documentation, you need to run:
 
 ```bash
-pip install -e ".[document]" -f https://download.pytorch.org/whl/torch_stable.html
+pip install -e ".[document]"
 ```
 Note that the above command might try to install PyTorch without CUDA to your environment even if your environment has CUDA version already.
 
