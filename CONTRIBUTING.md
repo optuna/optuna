@@ -56,24 +56,32 @@ Coding style is checked with [flake8](http://flake8.pycqa.org) and [isort](https
 and additional conventions are described in the [Wiki](https://github.com/optuna/optuna/wiki/Coding-Style-Conventions).
 Type hints, [PEP484](https://www.python.org/dev/peps/pep-0484/), are checked with [mypy](http://mypy-lang.org/).
 
-You can check the format, coding style, and type hint at the same time just by executing a script `formats.sh`.
+You can check the format, coding style, and type hint at the same time just by executing a command `make lint`.
+
+```bash
+# Install linters if you have not installed them
+$ pip install .[checking]
+
+$ make lint
+```
+
 If your environment misses some dependencies such as black, blackdoc, flake8, isort or mypy,
 you will be asked to install them.
 
-You can also check them using [tox](https://tox.readthedocs.io/en/latest/) like below.
+Alternatively, instead of installing the dependencies by yourself, you can automatically create virtual environments 
+using [tox](https://tox.readthedocs.io/en/latest/) like below. If you have installed tox, the make command automatically uses tox for running linters and formatters.
 
 ```
+# Install tox if you have not installed it
 $ pip install tox
-$ tox -e flake8 -e black -e blackdoc -e isort -e mypy
+
+$ make lint
 ```
 
 If you catch format errors, you can automatically fix them by auto-formatters.
 
 ```bash
-# Install auto-formatters.
-$ pip install .[checking]
-
-$ ./formats.sh 
+$ make fmt
 ```
 
 ### Documentation
