@@ -19,21 +19,21 @@ with try_import() as _imports:
     import allennlp.commands
     import allennlp.common.util
 
-# EpochCallback is conditionally imported because allennlp may be unavailable in
+# TrainerCallback is conditionally imported because allennlp may be unavailable in
 # the environment that builds the documentation.
 if _imports.is_successful():
     import _jsonnet
-    from allennlp.training import EpochCallback
+    from allennlp.training import TrainerCallback
 else:
-    # I disable mypy here since `allennlp.training.EpochCallback` is a subclass of `Registrable`
-    # (https://docs.allennlp.org/master/api/training/trainer/#epochcallback) but `EpochCallback`
+    # I disable mypy here since `allennlp.training.TrainerCallback` is a subclass of `Registrable`
+    # (https://docs.allennlp.org/main/api/training/trainer/#trainercallback) but `TrainerCallback`
     # defined here is not `Registrable`, which causes a mypy checking failure.
-    class EpochCallback:  # type: ignore
-        """Stub for EpochCallback."""
+    class TrainerCallback:  # type: ignore
+        """Stub for TrainerCallback."""
 
         @classmethod
         def register(cls: Any, *args: Any, **kwargs: Any) -> Callable:
-            """Stub method for `EpochCallback.register`.
+            """Stub method for `TrainerCallback.register`.
 
             This method has the same signature as
             `Registrable.register <https://docs.allennlp.org/master/
@@ -205,18 +205,18 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
     # It removes when dumping configuration since
     # the result of `dump_best_config` can be passed to
     # `allennlp train`.
-    if "epoch_callbacks" in best_config["trainer"]:
-        new_epoch_callbacks = []
-        epoch_callbacks = best_config["trainer"]["epoch_callbacks"]
-        for callback in epoch_callbacks:
+    if "callbacks" in best_config["trainer"]:
+        new_callbacks = []
+        callbacks = best_config["trainer"]["callbacks"]
+        for callback in callbacks:
             if callback["type"] == "optuna_pruner":
                 continue
-            new_epoch_callbacks.append(callback)
+            new_callbacks.append(callback)
 
-        if len(new_epoch_callbacks) == 0:
-            best_config["trainer"].pop("epoch_callbacks")
+        if len(new_callbacks) == 0:
+            best_config["trainer"].pop("callbacks")
         else:
-            best_config["trainer"]["epoch_callbacks"] = new_epoch_callbacks
+            best_config["trainer"]["callbacks"] = new_callbacks
 
     with open(output_config_file, "w") as f:
         json.dump(best_config, f, indent=4)
@@ -374,8 +374,8 @@ class AllenNLPExecutor(object):
 
 
 @experimental("2.0.0")
-@EpochCallback.register("optuna_pruner")
-class AllenNLPPruningCallback(EpochCallback):
+@TrainerCallback.register("optuna_pruner")
+class AllenNLPPruningCallback(TrainerCallback):
     """AllenNLP callback to prune unpromising trials.
 
     See `the example <https://github.com/optuna/optuna/blob/master/
