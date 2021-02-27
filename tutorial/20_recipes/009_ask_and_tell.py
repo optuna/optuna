@@ -57,7 +57,7 @@ def objective(trial):
     return val_accuracy
 
 
-study = optuna.create_study()
+study = optuna.create_study(direction="maximize")
 study.optimize(objective, n_trials=10)
 
 ###################################################################################################
@@ -69,7 +69,7 @@ study.optimize(objective, n_trials=10)
 # The ask-and-tell interface provides a more flexible syntax to optimize hyperparameters.
 # The following example of ask-and-tell interface is equivalent to the previous code block.
 
-study = optuna.create_study()
+study = optuna.create_study(direction="maximize")
 
 n_trials = 10
 for _ in range(n_trials):
@@ -110,7 +110,7 @@ for _ in range(n_trials):
 #    classes = np.unique(y)
 #    n_train_iter = 100
 #
-#    define study with hyperband pruner.
+#    # define study with hyperband pruner.
 #    study = optuna.create_study(
 #        direction="maximize",
 #        pruner=optuna.pruners.HyperbandPruner(
@@ -172,7 +172,7 @@ distributions = {
 # You need to pass ``distributions`` to :func:`optuna.study.Study.ask` method at every call,
 # and then, the retuned ``trial`` contains suggested hyperparameters.
 
-study = optuna.create_study()
+study = optuna.create_study(direction="maximize")
 n_trials = 10
 for _ in range(n_trials):
     trial = study.ask(distributions)  # pass the pre-defined distributions.
