@@ -455,13 +455,30 @@ class AllenNLPPruningCallback(TrainerCallback):
                 self._trial = Trial(study, int(trial_id))
                 self._monitor = monitor
 
-    def __call__(
+    def on_epoch(
         self,
         trainer: "allennlp.training.GradientDescentTrainer",
         metrics: Dict[str, Any],
         epoch: int,
-        is_master: bool,
+        is_primary: bool = True,
+        **kwargs,
     ) -> None:
+        """Check if a training reaches saturation.
+
+        Args:
+            trainer:
+                AllenNLP's trainer
+            metrics:
+                Dictionary of metrics.
+            epoch:
+                Number of current epoch.
+            is_primary:
+                A flag for AllenNLP internal.
+
+        """
+        if not is_primary:
+            return None
+
         value = metrics.get(self._monitor)
         if value is None:
             return
