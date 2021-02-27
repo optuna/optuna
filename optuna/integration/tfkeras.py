@@ -17,7 +17,7 @@ class TFKerasPruningCallback(Callback):
     """tf.keras callback to prune unpromising trials.
 
     This callback is intend to be compatible for TensorFlow v1 and v2,
-    but only tested with TensorFlow v1.
+    but only tested with TensorFlow v2.
 
     See `the example <https://github.com/optuna/optuna/blob/master/
     examples/tfkeras/tfkeras_integration.py>`__
@@ -33,7 +33,7 @@ class TFKerasPruningCallback(Callback):
 
     def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
 
-        super(TFKerasPruningCallback, self).__init__()
+        super().__init__()
 
         _imports.check()
 

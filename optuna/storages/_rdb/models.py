@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any
 from typing import List
 from typing import Optional
@@ -182,7 +181,7 @@ class TrialModel(BaseModel):
     number = Column(Integer)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     state = Column(Enum(TrialState), nullable=False)
-    datetime_start = Column(DateTime, default=datetime.now)
+    datetime_start = Column(DateTime)
     datetime_complete = Column(DateTime)
 
     study = orm.relationship(

@@ -171,7 +171,9 @@ class InMemoryStorage(BaseStorage):
                 [
                     cast(datetime, trial.datetime_start)
                     for trial in self.get_all_trials(study_id, deepcopy=False)
-                ]
+                    if trial.datetime_start is not None
+                ],
+                default=None,
             )
             if study.trials
             else None,
@@ -227,6 +229,10 @@ class InMemoryStorage(BaseStorage):
                 return False
 
             trial.state = state
+
+            if state == TrialState.RUNNING:
+                trial.datetime_start = datetime.now()
+
             if state.is_finished():
                 trial.datetime_complete = datetime.now()
                 self._set_trial(trial_id, trial)

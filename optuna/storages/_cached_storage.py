@@ -31,6 +31,7 @@ class _TrialUpdate:
         self.params: Dict[str, Any] = {}
         self.distributions: Dict[str, distributions.BaseDistribution] = {}
         self.datetime_complete: Optional[datetime.datetime] = None
+        self.datetime_start: Optional[datetime.datetime] = None
 
 
 class _StudyInfo:
@@ -201,6 +202,10 @@ class _CachedStorage(BaseStorage):
                 updates = self._get_updates(trial_id)
                 cached_trial.state = state
                 updates.state = state
+
+                # A normal trial will not be set to running twice
+                assert state != TrialState.RUNNING
+
                 if cached_trial.state.is_finished():
                     updates.datetime_complete = datetime.datetime.now()
                     cached_trial.datetime_complete = datetime.datetime.now()
@@ -426,6 +431,7 @@ class _CachedStorage(BaseStorage):
             distributions_=updates.distributions,
             user_attrs=updates.user_attrs,
             system_attrs=updates.system_attrs,
+            datetime_start=updates.datetime_start,
             datetime_complete=updates.datetime_complete,
         )
 

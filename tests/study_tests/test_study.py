@@ -1010,3 +1010,45 @@ def test_tell_pruned_values() -> None:
 
     study.tell(trial, state=TrialState.PRUNED)
     assert study.trials[-1].value is None
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueued_trial_datetime_start(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+
+        def objective(trial: Trial) -> float:
+            time.sleep(1)
+            x = trial.suggest_int("x", -10, 10)
+            return x
+
+        study.enqueue_trial(params={"x": 1})
+        assert study.trials[0].datetime_start is None
+
+        study.optimize(objective, n_trials=1)
+        assert study.trials[0].datetime_start is not None
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+
+        def objective(trial: Trial) -> float:
+            x = trial.suggest_int("x", -10, 10)
+            return x
+
+        # StudySummary datetime_start tests
+        study = create_study(storage=storage)
+        study.enqueue_trial(params={"x": 1})
+
+        # Study summary with only enqueued trials should have null datetime_start
+        summaries = study._storage.get_all_study_summaries()
+        assert summaries[0].datetime_start is None
+
+        # Study summary with completed trials should have nonnull datetime_start
+        study.optimize(objective, n_trials=1)
+        study.enqueue_trial(params={"x": 1})
+        summaries = study._storage.get_all_study_summaries()
+        assert summaries[0].datetime_start is not None
