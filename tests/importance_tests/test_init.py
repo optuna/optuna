@@ -8,6 +8,7 @@ import pytest
 
 import optuna
 from optuna import samplers
+from optuna import storages
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
@@ -128,7 +129,6 @@ def test_get_distributions_dynamic_search_space_params() -> None:
     assert all(param in param_distributions for param in params)
     for param_name, distribution in param_distributions.items():
         assert isinstance(param_name, str)
-        #        assert isinstance(distribution, BaseDistribution)
         if param_name == "x1":
             assert distribution.low == 0.1
             assert distribution.high == 10.0

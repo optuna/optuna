@@ -91,7 +91,13 @@ def _get_distributions(
             else:
                 trial_param_distribution = trial.distributions[param_name]
                 if isinstance(param_distribution, CategoricalDistribution):
-                    continue
+                    if trial_param_distribution != param_distribution:
+                        raise ValueError(
+                            CategoricalDistribution.__name__
+                            + " does not support dynamic value space."
+                        )
+                    else:
+                        continue
                 if not isinstance(
                     trial_param_distribution, CategoricalDistribution
                 ) and not isinstance(param_distribution, CategoricalDistribution):
