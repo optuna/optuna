@@ -4,6 +4,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
 
 import numpy
@@ -289,6 +290,16 @@ class PyCmaSampler(BaseSampler):
                 param_name, trial.number, self._independent_sampler.__class__.__name__
             )
         )
+
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+
+        self._independent_sampler.after_trial(study, trial, state, values)
 
 
 class _Optimizer(object):
