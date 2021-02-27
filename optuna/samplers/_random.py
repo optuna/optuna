@@ -4,8 +4,8 @@ from typing import Optional
 
 import numpy
 
-from optuna._transform import _SearchSpaceTransform
 from optuna import distributions
+from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
