@@ -561,7 +561,7 @@ def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:
 def _is_compatible_search_space(
     trans: _SearchSpaceTransform, search_space: Dict[str, BaseDistribution]
 ) -> bool:
-    union_size = len(set(trans._search_space.keys()).intersection(search_space.keys()))
+    intersection_size = len(set(trans._search_space.keys()).intersection(search_space.keys()))
     return union_size == len(trans._search_space) == len(search_space)
 
 

@@ -381,7 +381,7 @@ def test_is_compatible_search_space() -> None:
         transform,
         {
             "x0": optuna.distributions.UniformDistribution(2, 3),
-            "foo": optuna.distributions.DiscreteUniformDistribution(2, 3, q=0.1),  #
+            "foo": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
         },
     )
 
@@ -391,7 +391,7 @@ def test_is_compatible_search_space() -> None:
         {
             "x0": optuna.distributions.UniformDistribution(2, 3),
             "x1": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
-            "x2": optuna.distributions.DiscreteUniformDistribution(2, 3, q=0.1),  #
+            "x2": optuna.distributions.DiscreteUniformDistribution(2, 3, q=0.1),
         },
     )
 
