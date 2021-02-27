@@ -485,7 +485,7 @@ class CmaEsSampler(PyCmaSampler):
         warn_independent_sampling: bool = True,
     ) -> None:
 
-        super(CmaEsSampler, self).__init__(
+        super().__init__(
             x0=x0,
             sigma0=sigma0,
             cma_stds=cma_stds,
