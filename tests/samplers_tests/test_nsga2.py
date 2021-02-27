@@ -112,7 +112,6 @@ def test_constraints_func() -> None:
         return (trial.number,)
 
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = NSGAIISampler(population_size=2, constraints_func=constraints_func)
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
@@ -181,7 +180,6 @@ def test_fast_non_dominated_sort() -> None:
 
 def test_fast_non_dominated_sort_constrained_feasible() -> None:
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = NSGAIISampler(constraints_func=lambda _: [0])
 
     # Single objective.
@@ -236,7 +234,6 @@ def test_fast_non_dominated_sort_constrained_feasible() -> None:
 
 def test_fast_non_dominated_sort_constrained_infeasible() -> None:
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = NSGAIISampler(constraints_func=lambda _: [0])
 
     # Single objective.
@@ -291,7 +288,6 @@ def test_fast_non_dominated_sort_constrained_infeasible() -> None:
 
 def test_fast_non_dominated_sort_constrained_feasible_infeasible() -> None:
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = NSGAIISampler(constraints_func=lambda _: [0])
 
     # Single objective.
@@ -347,7 +343,6 @@ def test_fast_non_dominated_sort_constrained_feasible_infeasible() -> None:
 
 def test_fast_non_dominated_sort_missing_constraint_values() -> None:
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = NSGAIISampler(constraints_func=lambda _: [0])
 
     # Single objective.

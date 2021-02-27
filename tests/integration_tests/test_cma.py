@@ -146,7 +146,6 @@ class TestPyCmaSampler(object):
     def test_call_after_trial_of_independent_sampler() -> None:
         independent_sampler = optuna.samplers.RandomSampler()
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
             sampler = optuna.integration.PyCmaSampler(independent_sampler=independent_sampler)
         study = optuna.create_study(sampler=sampler)
         with patch.object(

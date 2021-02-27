@@ -24,7 +24,6 @@ def test_fixed_sampling() -> None:
     # Fix parameter ``y`` as 0.
     study1 = optuna.create_study()
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         study1.sampler = PartialFixedSampler(
             fixed_params={"y": 0}, base_sampler=RandomSampler(seed=42)
         )
@@ -48,7 +47,6 @@ def test_float_to_int() -> None:
     # even if they are defined as float-type.
     study = optuna.create_study()
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         study.sampler = PartialFixedSampler(
             fixed_params={"y": fixed_y}, base_sampler=study.sampler
         )
@@ -67,7 +65,6 @@ def test_out_of_the_range_numerical(fixed_y: int) -> None:
     # `UserWarning` will occur.
     study = optuna.create_study()
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         study.sampler = PartialFixedSampler(
             fixed_params={"y": fixed_y}, base_sampler=study.sampler
         )
@@ -89,7 +86,6 @@ def test_out_of_the_range_categorical() -> None:
     # `ValueError` will occur.
     study = optuna.create_study()
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         study.sampler = PartialFixedSampler(
             fixed_params={"y": fixed_y}, base_sampler=study.sampler
         )
@@ -107,7 +103,6 @@ def test_reseed_rng() -> None:
     base_sampler = RandomSampler()
     study = optuna.create_study(sampler=base_sampler)
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = PartialFixedSampler(fixed_params={"x": 0}, base_sampler=study.sampler)
     original_seed = base_sampler._rng.seed
 
@@ -120,7 +115,6 @@ def test_reseed_rng() -> None:
 def test_call_after_trial_of_base_sampler() -> None:
     base_sampler = RandomSampler()
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = PartialFixedSampler(fixed_params={}, base_sampler=base_sampler)
     study = optuna.create_study(sampler=sampler)
     with patch.object(base_sampler, "after_trial", wraps=base_sampler.after_trial) as mock_object:

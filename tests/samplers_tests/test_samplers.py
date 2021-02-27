@@ -413,7 +413,6 @@ def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> Non
     # Second trial. Here, the parameter ``y`` is fixed as 0.
     fixed_params = {"y": 0}
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         study.sampler = PartialFixedSampler(fixed_params, study.sampler)
     study.optimize(objective, n_trials=1)
     trial_params = study.trials[-1].params
