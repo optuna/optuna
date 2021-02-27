@@ -25,7 +25,7 @@ parametrize_evaluator = pytest.mark.parametrize(
 
 @parametrize_evaluator
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_param_importancetarget_target_is_none_and_study_is_multi_obj(
+def test_get_param_importance_target_is_none_and_study_is_multi_obj(
     storage_mode: str,
     evaluator_init_func: Callable[[], BaseImportanceEvaluator],
 ) -> None:
