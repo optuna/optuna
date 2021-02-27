@@ -163,14 +163,14 @@ def test_run_trial_with_trial_pruned(
     assert frozen_trial.state == TrialState.PRUNED
 
 
-def test_optimize_trivial_in_memory_new() -> None:
+def test_trivial_in_memory_new() -> None:
 
     study = create_study()
     study.optimize(func, n_trials=10)
     check_study(study)
 
 
-def test_optimize_trivial_in_memory_resume() -> None:
+def test_trivial_in_memory_resume() -> None:
 
     study = create_study()
     study.optimize(func, n_trials=10)
@@ -178,14 +178,14 @@ def test_optimize_trivial_in_memory_resume() -> None:
     check_study(study)
 
 
-def test_optimize_trivial_rdb_resume_study() -> None:
+def test_trivial_rdb_resume_study() -> None:
 
     study = create_study("sqlite:///:memory:")
     study.optimize(func, n_trials=10)
     check_study(study)
 
 
-def test_optimize_with_direction() -> None:
+def test_direction() -> None:
 
     study = create_study(direction="minimize")
     study.optimize(func, n_trials=10)
@@ -246,7 +246,7 @@ def test_optimize_parallel_timeout(n_trials: int, n_jobs: int, storage_mode: str
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_optimize_with_catch(storage_mode: str) -> None:
+def test_catch(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
@@ -274,7 +274,7 @@ def test_optimize_with_catch(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("catch", [[], [Exception], None, 1])
-def test_optimize_with_catch_invalid_type(catch: Any) -> None:
+def test_catch_invalid_type(catch: Any) -> None:
 
     study = create_study()
 
@@ -289,7 +289,7 @@ def test_optimize_with_catch_invalid_type(catch: Any) -> None:
 @pytest.mark.parametrize(
     "n_jobs, storage_mode", itertools.product((2, -1), STORAGE_MODES)  # n_jobs  # storage_mode
 )
-def test_optimize_with_reseeding(n_jobs: int, storage_mode: str) -> None:
+def test_reseeding(n_jobs: int, storage_mode: str) -> None:
 
     f = Func()
 
@@ -312,7 +312,7 @@ def test_stop_outside_optimize() -> None:
 
 
 @patch("optuna._optimize.gc.collect")
-def test_optimize_with_gc(collect_mock: Mock) -> None:
+def test_gc(collect_mock: Mock) -> None:
 
     study = create_study()
     study.optimize(func, n_trials=10, gc_after_trial=True)
@@ -321,7 +321,7 @@ def test_optimize_with_gc(collect_mock: Mock) -> None:
 
 
 @patch("optuna._optimize.gc.collect")
-def test_optimize_without_gc(collect_mock: Mock) -> None:
+def test_no_gc(collect_mock: Mock) -> None:
 
     study = create_study()
     study.optimize(func, n_trials=10, gc_after_trial=False)
@@ -330,7 +330,7 @@ def test_optimize_without_gc(collect_mock: Mock) -> None:
 
 
 @pytest.mark.parametrize("n_objectives", [2, 3])
-def test_optimize_with_multi_objectives(n_objectives: int) -> None:
+def test_multi_objectives(n_objectives: int) -> None:
     directions = ["minimize" for _ in range(n_objectives)]
     study = create_study(directions=directions)
 
