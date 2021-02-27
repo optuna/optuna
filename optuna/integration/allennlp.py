@@ -357,13 +357,8 @@ class AllenNLPExecutor(object):
 
     def run(self) -> float:
         """Train a model using AllenNLP."""
-        try:
-            import_func = allennlp.common.util.import_submodules  # type: ignore
-        except AttributeError:
-            import_func = allennlp.common.util.import_module_and_submodules
-
         for package_name in self._include_package:
-            import_func(package_name)
+            allennlp.common.util.import_module_and_submodules(package_name)
 
         self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
@@ -417,9 +412,6 @@ class AllenNLPPruningCallback(EpochCallback):
         monitor: Optional[str] = None,
     ):
         _imports.check()
-
-        if allennlp.__version__ < "1.0.0":
-            raise Exception("AllenNLPPruningCallback requires `allennlp`>=1.0.0.")
 
         # When `AllenNLPPruningCallback` is instantiated in Python script,
         # trial and monitor should not be `None`.
