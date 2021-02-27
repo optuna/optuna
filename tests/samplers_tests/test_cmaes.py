@@ -120,7 +120,7 @@ def test_incompatible_search_space() -> None:
     source_study = optuna.create_study()
     source_study.optimize(objective1, 20)
 
-    # should not raise an exception
+    # Should not raise an exception.
     sampler = optuna.samplers.CmaEsSampler(source_trials=source_study.trials)
     target_study1 = optuna.create_study(sampler=sampler)
     target_study1.optimize(objective1, 20)
@@ -131,7 +131,7 @@ def test_incompatible_search_space() -> None:
         x2 = trial.suggest_float("x2", 1e-2, 1e2, log=True)
         return x0 + x1 + x2
 
-    # should raise an exception
+    # Should raise an exception.
     sampler = optuna.samplers.CmaEsSampler(source_trials=source_study.trials)
     target_study2 = optuna.create_study(sampler=sampler)
     with pytest.raises(ValueError):
