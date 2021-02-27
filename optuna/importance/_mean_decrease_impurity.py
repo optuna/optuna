@@ -3,9 +3,9 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import TYPE_CHECKING
 
 import numpy
+import optuna
 
 from optuna._imports import try_import
 from optuna._transform import _SearchSpaceTransform
@@ -13,10 +13,6 @@ from optuna.importance._base import _get_distributions
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-
-
-if TYPE_CHECKING:
-    from optuna.study import Study
 
 
 with try_import() as _imports:
@@ -59,7 +55,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
 
     def evaluate(
         self,
-        study: "Study",
+        study: "optuna.Study",
         params: Optional[List[str]] = None,
         *,
         target: Optional[Callable[[FrozenTrial], float]] = None,

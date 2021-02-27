@@ -4,16 +4,13 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import TYPE_CHECKING
+
+import optuna
 
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-
-
-if TYPE_CHECKING:
-    from optuna.study import Study
 
 
 class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
@@ -22,7 +19,7 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def evaluate(
         self,
-        study: "Study",
+        study: "optuna.Study",
         params: Optional[List[str]] = None,
         *,
         target: Optional[Callable[[FrozenTrial], float]] = None,
