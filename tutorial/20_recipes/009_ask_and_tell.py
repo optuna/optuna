@@ -4,7 +4,7 @@
 Ask-and-Tell Interface
 =======================
 
-Optuna provides `Ask-and-Tell` interface, a more flexible interface for hyper-parameter optimization.
+Optuna provides `Ask-and-Tell` interface, a more flexible interface for hyperparameter optimization.
 This tutorial explains three use-cases when the ask-and-tell interface is beneficial:
 
 - :ref:`without-objective`
@@ -38,9 +38,9 @@ clf.fit(X_train, y_train)
 val_accuracy = clf.score(X_test, y_test)  # the objective
 
 ###################################################################################################
-# Then you try to optimize hyper-parameters ``C`` and ``solver`` of the classifier by using optuna.
+# Then you try to optimize hyperparameters ``C`` and ``solver`` of the classifier by using optuna.
 # When you introduce optuna naively, you define an ``objective`` function
-# such that it takes ``trial`` and contains ``suggest_*`` functions to sample the hyper-parameters:
+# such that it takes ``trial`` and contains ``suggest_*`` functions to sample the hyperparameters:
 
 
 def objective(trial):
@@ -66,7 +66,7 @@ study.optimize(objective, n_trials=10)
 # you need to define your customized class for the objective as in
 # `this FAQ section <../../faq.html#how-to-define-objective-functions-that-have-own-arguments>`_.
 # That will make the codebase more complicated.
-# The ask-and-tell interface provides a more flexible syntax to optimize hyper-parameters.
+# The ask-and-tell interface provides a more flexible syntax to optimize hyperparameters.
 # The following example of ask-and-tell interface is equivalent to the previous code block.
 
 study = optuna.create_study()
@@ -87,9 +87,9 @@ for _ in range(n_trials):
 ###################################################################################################
 # The main difference is to use two methods: :func:`optuna.study.Study.ask`
 # and :func:`optuna.study.Study.tell`.
-# :func:`optuna.study.Study.ask` creates a trial that can sample hyper-parameters, and
+# :func:`optuna.study.Study.ask` creates a trial that can sample hyperparameters, and
 # :func:`optuna.study.Study.tell` finishes the trial by passing ``trial`` and an objective value.
-# You can apply optuna's hyper-parameter optimization to your original code easily
+# You can apply optuna's hyperparameter optimization to your original code easily
 # without definition ``objective`` thanks to the ask-and-tell interface.
 #
 # If you make your optimization faster with a pruner, you need explicitly pass the state of trial
@@ -159,7 +159,7 @@ for _ in range(n_trials):
 # This section shows the example of the `define-and-run` API
 # since we already show the define-by-run example above.
 #
-# You need to define distributions for hyper-parameters before calling
+# You need to define distributions for hyperparameters before calling
 # :func:`optuna.study.Study.ask` method for define-and-run API.
 # For example,
 
@@ -170,14 +170,14 @@ distributions = {
 
 ###################################################################################################
 # You need to pass ``distributions`` to :func:`optuna.study.Study.ask` method at every call,
-# and then, the retuned ``trial`` contains suggested hyper-parameters.
+# and then, the retuned ``trial`` contains suggested hyperparameters.
 
 study = optuna.create_study()
 n_trials = 10
 for _ in range(n_trials):
     trial = study.ask(distributions)  # pass the pre-defined distributions.
 
-    # two hyper-parameters are already sampled from the pre-defined distributions
+    # two hyperparameters are already sampled from the pre-defined distributions
     C = trial.params["C"]
     solver = trial.params["solver"]
 
@@ -200,8 +200,8 @@ for _ in range(n_trials):
 # For example, parallelizable evaluation, operation over vectors, etc.
 
 ###################################################################################################
-# The following objective takes batched hyper-parameters ``xs`` instead of a single
-# hyper-parameter and calculates the objective over the vector.
+# The following objective takes batched hyperparameters ``xs`` instead of a single
+# hyperparameter and calculates the objective over the vector.
 
 
 def batched_objective(xs: np.ndarray):
@@ -209,7 +209,7 @@ def batched_objective(xs: np.ndarray):
 
 
 ###################################################################################################
-# In the following example, the number of hyper-parameters in a batch is :math:`10`,
+# In the following example, the number of hyperparameters in a batch is :math:`10`,
 # and ``batched_objective`` is evaluated three times.
 # Thus, the number of trials is :math:`30`.
 # Note that you need to store either ``trial_ids`` or ``trial`` to call
