@@ -17,7 +17,4 @@ python:
   # in the documentation. See: https://github.com/sphinx-doc/sphinx/pull/6984
   version: 3.8
   install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - document
+    - requirements: docs/requirements.txt
