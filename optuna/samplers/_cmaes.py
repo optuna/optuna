@@ -562,7 +562,7 @@ def _is_compatible_search_space(
     trans: _SearchSpaceTransform, search_space: Dict[str, BaseDistribution]
 ) -> bool:
     intersection_size = len(set(trans._search_space.keys()).intersection(search_space.keys()))
-    return union_size == len(trans._search_space) == len(search_space)
+    return intersection_size == len(trans._search_space) == len(search_space)
 
 
 def _concat_optimizer_attrs(optimizer_attrs: Dict[str, str]) -> str:
