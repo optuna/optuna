@@ -246,7 +246,7 @@ class CmaEsSampler(BaseSampler):
                 "x0 or sigma0 is specified."
             )
 
-        # TODO(c-bata): Support WS-sep-CMA-ES
+        # TODO(c-bata): Support WS-sep-CMA-ES.
         if source_trials is not None and use_separable_cma:
             raise ValueError(
                 "It is prohibited to pass `source_trials` argument when " "using separable CMA-ES."

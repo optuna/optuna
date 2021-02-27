@@ -376,7 +376,7 @@ def test_is_compatible_search_space() -> None:
         },
     )
 
-    # same search space size, but different param names
+    # Same search space size, but different param names.
     assert not optuna.samplers._cmaes._is_compatible_search_space(
         transform,
         {
@@ -385,7 +385,7 @@ def test_is_compatible_search_space() -> None:
         },
     )
 
-    # x2 is added
+    # x2 is added.
     assert not optuna.samplers._cmaes._is_compatible_search_space(
         transform,
         {
@@ -395,7 +395,7 @@ def test_is_compatible_search_space() -> None:
         },
     )
 
-    # x0 is not found
+    # x0 is not found.
     assert not optuna.samplers._cmaes._is_compatible_search_space(
         transform,
         {
