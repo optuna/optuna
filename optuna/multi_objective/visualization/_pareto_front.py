@@ -47,7 +47,8 @@ def plot_pareto_front(
             study = optuna.multi_objective.create_study(["minimize", "minimize"])
             study.optimize(objective, n_trials=50)
 
-            optuna.multi_objective.visualization.plot_pareto_front(study)
+            fig = optuna.multi_objective.visualization.plot_pareto_front(study)
+            fig.show()
 
     Args:
         study:
