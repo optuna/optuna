@@ -450,13 +450,15 @@ class CmaEsSampler(BaseSampler):
             if self._consider_pruned_trials:
                 expected_states.append(TrialState.PRUNED)
 
+            # TODO(c-bata): Filter parameters by their values instead of checking search space.
             source_solutions = [
                 (trans.transform(t.params), t.value)
                 for t in self._source_trials
-                if t.state in expected_states and trans.is_same_search_space(t.distributions)
+                if t.state in expected_states
+                and _is_compatible_search_space(trans, t.distributions)
             ]
             if len(source_solutions) == 0:
-                raise ValueError("No compatible")
+                raise ValueError("No compatible source_trials")
 
             # TODO(c-bata): Add options to change prior parameters (alpha and gamma).
             mean, sigma0, cov = get_warm_start_mgd(source_solutions)
@@ -554,6 +556,13 @@ def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:
         end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
         attrs["cma:optimizer:{}".format(i)] = optimizer_str[start:end]
     return attrs
+
+
+def _is_compatible_search_space(
+    trans: _SearchSpaceTransform, search_space: Dict[str, BaseDistribution]
+) -> bool:
+    union_size = len(set(trans._search_space.keys()).intersection(search_space.keys()))
+    return union_size == len(trans._search_space) == len(search_space)
 
 
 def _concat_optimizer_attrs(optimizer_attrs: Dict[str, str]) -> str:

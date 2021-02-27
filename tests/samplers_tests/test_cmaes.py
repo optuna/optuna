@@ -13,6 +13,7 @@ import pytest
 
 import optuna
 from optuna import create_trial
+from optuna._transform import _SearchSpaceTransform
 from optuna.samplers._cmaes import _concat_optimizer_attrs
 from optuna.samplers._cmaes import _split_optimizer_str
 from optuna.testing.sampler import DeterministicRelativeSampler
@@ -25,6 +26,7 @@ def test_consider_pruned_trials_experimental_warning() -> None:
         optuna.samplers.CmaEsSampler(consider_pruned_trials=True)
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize(
     "use_separable_cma, cma_class_str",
     [(False, "optuna.samplers._cmaes.CMA"), (True, "optuna.samplers._cmaes.SepCMA")],
@@ -305,6 +307,7 @@ def test_restore_optimizer_keeps_backward_compatibility() -> None:
     assert n_restarts == 1
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 def test_restore_optimizer_from_substrings() -> None:
     sampler = optuna.samplers.CmaEsSampler()
     optimizer = CMA(np.zeros(10), sigma=1.3)
@@ -355,3 +358,47 @@ def test_call_after_trial_of_base_sampler() -> None:
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+def test_is_compatible_search_space() -> None:
+    transform = _SearchSpaceTransform(
+        {
+            "x0": optuna.distributions.UniformDistribution(2, 3),
+            "x1": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
+        }
+    )
+
+    assert optuna.samplers._cmaes._is_compatible_search_space(
+        transform,
+        {
+            "x1": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
+            "x0": optuna.distributions.UniformDistribution(2, 3),
+        },
+    )
+
+    # same search space size, but different param names
+    assert not optuna.samplers._cmaes._is_compatible_search_space(
+        transform,
+        {
+            "x0": optuna.distributions.UniformDistribution(2, 3),
+            "foo": optuna.distributions.DiscreteUniformDistribution(2, 3, q=0.1),  #
+        },
+    )
+
+    # x2 is added
+    assert not optuna.samplers._cmaes._is_compatible_search_space(
+        transform,
+        {
+            "x0": optuna.distributions.UniformDistribution(2, 3),
+            "x1": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
+            "x2": optuna.distributions.DiscreteUniformDistribution(2, 3, q=0.1),  #
+        },
+    )
+
+    # x0 is not found
+    assert not optuna.samplers._cmaes._is_compatible_search_space(
+        transform,
+        {
+            "x1": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
+        },
+    )

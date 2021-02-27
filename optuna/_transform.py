@@ -158,9 +158,6 @@ class _SearchSpaceTransform:
 
         return params
 
-    def is_same_search_space(self, search_space: Dict[str, BaseDistribution]) -> bool:
-        return dict(self._search_space) == search_space
-
 
 def _transform_search_space(
     search_space: Dict[str, BaseDistribution], transform_log: bool, transform_step: bool
