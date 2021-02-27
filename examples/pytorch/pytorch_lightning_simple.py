@@ -42,7 +42,7 @@ DIR = os.getcwd()
 
 class Net(nn.Module):
     def __init__(self, dropout: float, output_dims: List[int]):
-        super(Net, self).__init__()
+        super().__init__()
         layers: List[nn.Module] = []
 
         input_dim: int = 28 * 28
@@ -63,7 +63,7 @@ class Net(nn.Module):
 
 class LightningNet(pl.LightningModule):
     def __init__(self, dropout: float, output_dims: List[int]):
-        super(LightningNet, self).__init__()
+        super().__init__()
         self.model = Net(dropout, output_dims)
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:
