@@ -15,7 +15,7 @@ from optuna.testing.integration import DeterministicPruner
 class Model(pl.LightningModule):
     def __init__(self) -> None:
 
-        super(Model, self).__init__()
+        super().__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:

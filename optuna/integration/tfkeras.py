@@ -33,7 +33,7 @@ class TFKerasPruningCallback(Callback):
 
     def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
 
-        super(TFKerasPruningCallback, self).__init__()
+        super().__init__()
 
         _imports.check()
 
