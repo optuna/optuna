@@ -8,7 +8,6 @@ import pytest
 
 import optuna
 from optuna import samplers
-from optuna import storages
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
@@ -31,9 +30,9 @@ parametrize_evaluator = pytest.mark.parametrize(
 )
 
 
-@parametrize_storage
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_get_distributions(
-    storage_init_func: Callable[[], storages.BaseStorage],
+    storage_mode: str,
 ) -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_uniform("x1", 0.1, 3)
@@ -52,30 +51,31 @@ def test_get_distributions(
             value += x7
         return value
 
-    study = create_study(storage_init_func(), sampler=samplers.RandomSampler())
-    study.optimize(objective, n_trials=3)
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage, sampler=samplers.RandomSampler())
+        study.optimize(objective, n_trials=3)
 
-    param_distributions = _get_distributions(study, None)
-    _param_distributions = OrderedDict(
-        [
-            ("x1", UniformDistribution(high=3, low=0.1)),
-            ("x2", LogUniformDistribution(high=3, low=0.1)),
-            ("x3", DiscreteUniformDistribution(high=3, low=0, q=1)),
-            ("x4", IntUniformDistribution(high=3, low=-3, step=1)),
-            ("x5", IntLogUniformDistribution(high=5, low=1, step=1)),
-            ("x6", CategoricalDistribution(choices=(1.0, 1.1, 1.2))),
-        ]
-    )
+        param_distributions = _get_distributions(study, None)
+        _param_distributions = OrderedDict(
+            [
+                ("x1", UniformDistribution(high=3, low=0.1)),
+                ("x2", LogUniformDistribution(high=3, low=0.1)),
+                ("x3", DiscreteUniformDistribution(high=3, low=0, q=1)),
+                ("x4", IntUniformDistribution(high=3, low=-3, step=1)),
+                ("x5", IntLogUniformDistribution(high=5, low=1, step=1)),
+                ("x6", CategoricalDistribution(choices=(1.0, 1.1, 1.2))),
+            ]
+        )
 
-    assert isinstance(param_distributions, OrderedDict)
-    assert len(param_distributions) == 6
-    assert param_distributions == _param_distributions
+        assert isinstance(param_distributions, OrderedDict)
+        assert len(param_distributions) == 6
+        assert param_distributions == _param_distributions
 
 
-@parametrize_storage
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 @pytest.mark.parametrize("params", [[], ["x1"], ["x1", "x3"], ["x1", "x4"]])
 def test_get_distributions_with_params(
-    storage_init_func: Callable[[], storages.BaseStorage],
+    storage_mode: str,
     params: List[str],
 ) -> None:
     def objective(trial: Trial) -> float:
@@ -90,15 +90,16 @@ def test_get_distributions_with_params(
             value += x4
         return value
 
-    study = create_study(storage_init_func())
-    study.optimize(objective, n_trials=10)
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.optimize(objective, n_trials=10)
 
-    param_distributions = _get_distributions(study, params)
-    assert isinstance(param_distributions, OrderedDict)
-    assert len(param_distributions) == len(params)
-    assert all(param in param_distributions for param in params)
-    for param_name, distribution in param_distributions.items():
-        assert isinstance(param_name, str)
+        param_distributions = _get_distributions(study, params)
+        assert isinstance(param_distributions, OrderedDict)
+        assert len(param_distributions) == len(params)
+        assert all(param in param_distributions for param in params)
+        for param_name, distribution in param_distributions.items():
+            assert isinstance(param_name, str)
 
 
 def test_get_distributions_dynamic_search_space_params() -> None:
