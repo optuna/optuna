@@ -28,7 +28,6 @@ local ENCODER = CNN_FIELDS(
   pytorch_seed: 42,
   random_seed: 42,
   dataset_reader: {
-    lazy: false,
     type: 'text_classification_json',
     tokenizer: {
       type: 'spacy',
@@ -68,7 +67,7 @@ local ENCODER = CNN_FIELDS(
     },
     patience: 2,
     validation_metric: '+accuracy',
-    epoch_callbacks: [
+    callbacks: [
       {
         type: 'optuna_pruner',
       },

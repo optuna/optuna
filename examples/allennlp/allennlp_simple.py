@@ -17,7 +17,6 @@ import allennlp.data
 import allennlp.models
 import allennlp.modules
 import numpy
-from packaging import version
 import torch
 
 import optuna
@@ -45,16 +44,22 @@ def prepare_data():
         train_data_size=N_TRAIN_DATA_SIZE,
         validation_data_size=N_VALIDATION_DATA_SIZE,
     )
-    train_dataset = reader.read(
-        "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/train.jsonl"
+
+    train_data_loader = allennlp.data.data_loaders.MultiProcessDataLoader(
+        data_path="https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/train.jsonl",
+        reader=reader,
+        batch_size=16,
     )
-    valid_dataset = reader.read(
-        "https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl"
+    validation_data_loader = allennlp.data.data_loaders.MultiProcessDataLoader(
+        data_path="https://s3-us-west-2.amazonaws.com/allennlp/datasets/imdb/dev.jsonl",
+        reader=reader,
+        batch_size=64,
     )
-    vocab = allennlp.data.Vocabulary.from_instances(train_dataset)
-    train_dataset.index_with(vocab)
-    valid_dataset.index_with(vocab)
-    return train_dataset, valid_dataset, vocab
+
+    vocab = allennlp.data.Vocabulary.from_instances(train_data_loader.iter_instances())
+    train_data_loader.index_with(vocab)
+    validation_data_loader.index_with(vocab)
+    return train_data_loader, validation_data_loader, vocab
 
 
 def create_model(vocab, trial):
@@ -69,7 +74,7 @@ def create_model(vocab, trial):
     )
 
     encoder = allennlp.modules.seq2vec_encoders.CnnEncoder(
-        ngram_filter_sizes=range(2, max_filter_size),
+        ngram_filter_sizes=tuple(range(2, max_filter_size)),
         num_filters=num_filters,
         embedding_dim=embedding_dim,
         output_dim=output_dim,
@@ -84,7 +89,7 @@ def create_model(vocab, trial):
 
 
 def objective(trial):
-    train_dataset, valid_dataset, vocab = prepare_data()
+    train_data_loader, validation_data_loader, vocab = prepare_data()
     model = create_model(vocab, trial)
 
     if DEVICE > -1:
@@ -93,34 +98,23 @@ def objective(trial):
     lr = trial.suggest_float("lr", 1e-3, 1e-1, log=True)
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
-    data_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=16, collate_fn=allennlp.data.allennlp_collate
-    )
-    validation_data_loader = torch.utils.data.DataLoader(
-        valid_dataset, batch_size=64, collate_fn=allennlp.data.allennlp_collate
-    )
-
     serialization_dir = os.path.join(MODEL_DIR, "trial_{}".format(trial.number))
     trainer = allennlp.training.GradientDescentTrainer(
         model=model,
         optimizer=optimizer,
-        data_loader=data_loader,
+        data_loader=train_data_loader,
         validation_data_loader=validation_data_loader,
         validation_metric="+" + TARGET_METRIC,
         patience=None,  # `patience=None` since it could conflict with AllenNLPPruningCallback
         num_epochs=30,
         cuda_device=DEVICE,
         serialization_dir=serialization_dir,
-        epoch_callbacks=[AllenNLPPruningCallback(trial, "validation_" + TARGET_METRIC)],
+        callbacks=[AllenNLPPruningCallback(trial, "validation_" + TARGET_METRIC)],
     )
     metrics = trainer.train()
     return metrics["best_validation_" + TARGET_METRIC]
 
-
 if __name__ == "__main__":
-    if version.parse(allennlp.__version__) < version.parse("1.0.0"):
-        raise RuntimeError("AllenNLP>=1.0.0 is required for this example.")
-
     random.seed(41)
     torch.manual_seed(41)
     numpy.random.seed(41)
