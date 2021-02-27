@@ -79,10 +79,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
             "lightgbm",
-            "torch==1.7.1 ; sys_platform=='darwin'",
-            "torch==1.7.1+cpu ; sys_platform!='darwin'",
-            "torchvision==0.8.2 ; sys_platform=='darwin'",
-            "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
+            "torch==1.7.1",
+            "torchvision==0.8.2",
             "torchaudio==0.7.2",
             "thop",
         ],
