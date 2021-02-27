@@ -42,6 +42,7 @@ val_accuracy = clf.score(X_test, y_test)  # the objective
 # When you introduce optuna naively, you define an ``objective`` function
 # such that it takes ``trial`` and contains ``suggest_*`` functions to sample the hyper-parameters:
 
+
 def objective(trial):
     X, y = make_classification(n_features=10)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
@@ -54,6 +55,7 @@ def objective(trial):
     val_accuracy = clf.score(X_test, y_test)
 
     return val_accuracy
+
 
 study = optuna.create_study()
 study.optimize(objective, n_trials=10)
@@ -80,7 +82,7 @@ for _ in range(n_trials):
     clf.fit(X_train, y_train)
     val_accuracy = clf.score(X_test, y_test)
 
-    study.tell(trial, val_accuracy)   # tell the pair of trial and objective value
+    study.tell(trial, val_accuracy)  # tell the pair of trial and objective value
 
 ###################################################################################################
 # The main difference is to use two methods: :func:`optuna.study.Study.ask`
@@ -200,6 +202,7 @@ for _ in range(n_trials):
 ###################################################################################################
 # The following objective takes batched hyper-parameters ``xs`` instead of a single
 # hyper-parameter and calculates the objective over the vector.
+
 
 def batched_objective(xs: np.ndarray):
     return xs ** 2 + 1
