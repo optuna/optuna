@@ -5,7 +5,7 @@ from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing Sequence
+from typing import Sequence
 from typing import Tuple
 
 import numpy as np
@@ -574,7 +574,8 @@ class MOTPESampler(TPESampler):
     ) -> None:
 
         self._mo_random_sampler.after_trial(study, trial, state, values)
-    
+
+
 def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
     vecs = loss_vals.copy()
 
