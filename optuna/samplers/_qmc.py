@@ -42,7 +42,7 @@ class QMCSampler(BaseSampler):
         self,
         seed: Optional[int] = None,
         qmc_type="sobol",
-        independent_sampler = None,
+        independent_sampler=None,
         *,
         search_space: Optional[Dict[str, BaseDistribution]] = None,
         warn_independent_sampling: bool = True,
