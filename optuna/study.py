@@ -229,7 +229,7 @@ class Study(BaseStudy):
         self.study_name = study_name
         storage = storages.get_storage(storage)
         study_id = storage.get_study_id_from_name(study_name)
-        super(Study, self).__init__(study_id, storage)
+        super().__init__(study_id, storage)
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()

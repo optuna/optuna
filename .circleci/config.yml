@@ -31,7 +31,7 @@ jobs:
             python -m venv venv || virtualenv venv --python=python3.8
             . venv/bin/activate
             pip install -U pip
-            pip install --progress-bar off .[document] -f https://download.pytorch.org/whl/torch_stable.html
+            pip install --progress-bar off .[document]
 
       - run:
           name: build

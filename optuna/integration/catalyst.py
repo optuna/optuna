@@ -35,7 +35,7 @@ class CatalystPruningCallback(Callback):
         # set order=1000 to run pruning callback after other callbacks
         # refer to `catalyst.core.CallbackOrder`
         _imports.check()
-        super(CatalystPruningCallback, self).__init__(order=1000)
+        super().__init__(order=1000)
 
         self._trial = trial
         self.metric = metric
