@@ -33,8 +33,8 @@ class QMCSampler(BaseSampler):
     def __init__(
         self,
         seed: Optional[int] = None,
-        qmc_type="sobol",
-        independent_sampler=None,
+        qmc_type: str = "sobol",
+        independent_sampler: Optional[BaseSampler] = None,
         *,
         search_space: Optional[Dict[str, BaseDistribution]] = None,
         warn_independent_sampling: bool = True,
@@ -93,7 +93,7 @@ class QMCSampler(BaseSampler):
             )
         )
 
-    def _reset_qmc_engine(self, d: int):
+    def _reset_qmc_engine(self, d: int) -> None:
 
         # Lazy import because the `scipy.stats.qmc` is slow to import.
         import scipy.stats.qmc
@@ -140,6 +140,8 @@ class QMCSampler(BaseSampler):
             n_initial_params = len(self._initial_search_space)
             self._reset_qmc_engine(n_initial_params)
 
+        assert isinstance(self._qmc_engine, scipy.stats.qmc.QMCEngine)
+
         qmc_id = self._find_qmc_id(study, trial)
         forward_size = qmc_id - self._qmc_engine.num_generated  # `qmc_id` starts from 0.
         self._qmc_engine.fast_forward(forward_size)
@@ -151,7 +153,7 @@ class QMCSampler(BaseSampler):
 
         return sample
 
-    def _find_qmc_id(self, study: Study, trial: FrozenTrial):
+    def _find_qmc_id(self, study: Study, trial: FrozenTrial) -> int:
         # TODO(kstoneriv3): Following try-except block assumes that the block is
         # an atomic transaction. # This ensures that each qmc_id is sampled at least once.
         key_qmc_id = "{}_last_qmc_id".format(self._qmc_type)
