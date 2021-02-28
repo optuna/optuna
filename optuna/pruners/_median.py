@@ -66,4 +66,4 @@ class MedianPruner(PercentilePruner):
         self, n_startup_trials: int = 5, n_warmup_steps: int = 0, interval_steps: int = 1
     ) -> None:
 
-        super(MedianPruner, self).__init__(50.0, n_startup_trials, n_warmup_steps, interval_steps)
+        super().__init__(50.0, n_startup_trials, n_warmup_steps, interval_steps)

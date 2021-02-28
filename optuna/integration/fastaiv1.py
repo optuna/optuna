@@ -63,7 +63,7 @@ class FastAIV1PruningCallback(TrackerCallback):
 
     def __init__(self, learn: "Learner", trial: optuna.trial.Trial, monitor: str) -> None:
 
-        super(FastAIV1PruningCallback, self).__init__(learn, monitor)
+        super().__init__(learn, monitor)
 
         _imports.check()
 

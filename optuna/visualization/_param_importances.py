@@ -69,7 +69,8 @@ def plot_param_importances(
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=100)
 
-            optuna.visualization.plot_param_importances(study)
+            fig = optuna.visualization.plot_param_importances(study)
+            fig.show()
 
     .. seealso::
 
