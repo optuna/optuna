@@ -7,6 +7,8 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+from packaging import version
+
 import optuna
 from optuna import load_study
 from optuna import Trial
@@ -413,6 +415,13 @@ class AllenNLPPruningCallback(TrainerCallback):
         monitor: Optional[str] = None,
     ):
         _imports.check()
+
+        if version.parse(allennlp.__version__) < version.parse("2.0.0"):
+            raise ImportError(
+                "`AllenNLPPruningCallback` requires AllenNLP>=v2.0.0."
+                "If you want to use a callback with an old version of AllenNLP, "
+                "please install Optuna v2.5.0 by executing `pip install 'optuna==2.5.0'`."
+            )
 
         # When `AllenNLPPruningCallback` is instantiated in Python script,
         # trial and monitor should not be `None`.
