@@ -1,5 +1,3 @@
-# Especially, we should re-consider how i4_sobol handles its seed using global variable.
-
 from collections import OrderedDict
 from typing import Any
 from typing import Dict
@@ -31,12 +29,6 @@ _NUMERICAL_DISTRIBUTIONS = (
 )
 
 
-# It is recommended that we take the number of samples as power of two
-# to properly explit sobol sequence.
-# However, sobol sampler works iteratively anyways, so can use n_trials
-# which is not power of two.
-
-
 class QMCSampler(BaseSampler):
     def __init__(
         self,
@@ -48,9 +40,6 @@ class QMCSampler(BaseSampler):
         warn_independent_sampling: bool = True,
     ) -> None:
 
-        # handle dimentions
-        # handle sample size that is not power of 2
-        # probably we do not have to
         self._seed = seed
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._qmc_type = qmc_type
@@ -70,7 +59,7 @@ class QMCSampler(BaseSampler):
         past_trials = [t for t in past_trials if t.state in _SUGGESTED_STATES]
         past_trials = sorted(past_trials, key=lambda t: t._trial_id)
 
-        # The first trial is sampled by the independent sampler.
+        # The initial trial is sampled by the independent sampler.
         if len(past_trials) == 0:
             return {}
         # If an initial trial was already made,
