@@ -177,7 +177,7 @@ if __name__ == "__main__":
     study = optuna.create_study(
         storage=storage, study_name="pytorch_checkpoint", direction="maximize", load_if_exists=True
     )
-    study.optimize(objective, n_trials=100, timeout=600)
+    study.optimize(objective, n_trials=10, timeout=600)
 
     pruned_trials = study.get_trials(states=(optuna.trial.TrialState.PRUNED,))
     complete_trials = study.get_trials(states=(optuna.trial.TrialState.COMPLETE,))
@@ -195,3 +195,6 @@ if __name__ == "__main__":
     print("  Params: ")
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
+
+    # The line of the resumed trial's intermediate values begins with the restarted epoch.
+    optuna.visualization.plot_intermediate_values(study).show()
