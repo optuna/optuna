@@ -100,9 +100,9 @@ def _get_optimization_history_plot(
         return ax
 
     if study.direction == StudyDirection.MINIMIZE:
-        best_values = list(np.minimum.accumulate([t.value for t in trials]))
+        best_values = np.minimum.accumulate([t.value for t in trials])
     else:
-        best_values = list(np.maximum.accumulate([t.value for t in trials]))
+        best_values = np.maximum.accumulate([t.value for t in trials])
 
     # Draw a scatter plot and a line plot.
     if target is None:
