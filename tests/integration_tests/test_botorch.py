@@ -3,6 +3,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from unittest.mock import patch
+import warnings
 
 import pytest
 import torch
@@ -438,3 +439,16 @@ def test_reseed_rng() -> None:
         original_independent_sampler_seed
         != cast(RandomSampler, sampler._independent_sampler)._rng.seed
     )
+
+
+def test_call_after_trial_of_independent_sampler() -> None:
+    independent_sampler = optuna.samplers.RandomSampler()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = BoTorchSampler(independent_sampler=independent_sampler)
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(
+        independent_sampler, "after_trial", wraps=independent_sampler.after_trial
+    ) as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1

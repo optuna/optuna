@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 import warnings
 
@@ -221,6 +222,16 @@ class SkoptSampler(BaseSampler):
                 copied_t.value = value
                 complete_trials.append(copied_t)
         return complete_trials
+
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+
+        self._independent_sampler.after_trial(study, trial, state, values)
 
 
 class _Optimizer(object):

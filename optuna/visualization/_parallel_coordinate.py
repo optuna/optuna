@@ -55,7 +55,8 @@ def plot_parallel_coordinate(
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=10)
 
-            optuna.visualization.plot_parallel_coordinate(study, params=["x", "y"])
+            fig = optuna.visualization.plot_parallel_coordinate(study, params=["x", "y"])
+            fig.show()
 
     Args:
         study:
@@ -155,7 +156,7 @@ def _get_parallel_coordinate_plot(
                 "values": tuple(values),
                 "range": (min(values), max(values)),
                 "tickvals": list(range(len(vocab))),
-                "ticktext": list(sorted(vocab.items(), key=lambda x: x[1])),
+                "ticktext": list(sorted(vocab.keys(), key=lambda x: vocab[x])),
             }
         else:
             dim = {

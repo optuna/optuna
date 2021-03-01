@@ -44,7 +44,7 @@ class KerasPruningCallback(Callback):
     """
 
     def __init__(self, trial: optuna.trial.Trial, monitor: str, interval: int = 1) -> None:
-        super(KerasPruningCallback, self).__init__()
+        super().__init__()
 
         _imports.check()
 

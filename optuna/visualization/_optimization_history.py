@@ -43,7 +43,8 @@ def plot_optimization_history(
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=10)
 
-            optuna.visualization.plot_optimization_history(study)
+            fig = optuna.visualization.plot_optimization_history(study)
+            fig.show()
 
     Args:
         study:

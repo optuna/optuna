@@ -50,7 +50,8 @@ def plot_slice(
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=10)
 
-            optuna.visualization.plot_slice(study, params=["x", "y"])
+            fig = optuna.visualization.plot_slice(study, params=["x", "y"])
+            fig.show()
 
     Args:
         study:
