@@ -399,7 +399,7 @@ class Study(BaseStudy):
 
         .. seealso::
 
-            :ref:`Ask-and-Tell Interface` gives a tutorial about ask-and-tell interface.
+            :ref:`Ask-and-Tell Interface` tutorial explains the features more.
 
         Example:
 
@@ -478,7 +478,7 @@ class Study(BaseStudy):
 
         .. seealso::
 
-            :ref:`Ask-and-Tell Interface` gives a tutorial about ask-and-tell interface.
+            :ref:`Ask-and-Tell Interface` tutorial explains the features more.
 
         Example:
 
