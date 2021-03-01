@@ -114,6 +114,7 @@ def objective(trial):
     metrics = trainer.train()
     return metrics["best_validation_" + TARGET_METRIC]
 
+
 if __name__ == "__main__":
     random.seed(41)
     torch.manual_seed(41)

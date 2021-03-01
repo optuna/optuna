@@ -23,6 +23,7 @@ with try_import() as _imports:
 # the environment that builds the documentation.
 if _imports.is_successful():
     import _jsonnet
+    from allennlp.training import GradientDescentTrainer
     from allennlp.training import TrainerCallback
 else:
     # I disable mypy here since `allennlp.training.TrainerCallback` is a subclass of `Registrable`
@@ -457,11 +458,11 @@ class AllenNLPPruningCallback(TrainerCallback):
 
     def on_epoch(
         self,
-        trainer: "allennlp.training.GradientDescentTrainer",
+        trainer: "GradientDescentTrainer",
         metrics: Dict[str, Any],
         epoch: int,
         is_primary: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         """Check if a training reaches saturation.
 
