@@ -27,6 +27,7 @@ from torchvision import datasets
 from torchvision import transforms
 
 import optuna
+from optuna.trial import TrialState
 
 
 DEVICE = torch.device("cpu")
@@ -179,8 +180,8 @@ if __name__ == "__main__":
 
     if rank == 0:
         assert study is not None
-        pruned_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]
-        complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+        complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
 
         print("Study statistics: ")
         print("  Number of finished trials: ", len(study.trials))
