@@ -7,9 +7,11 @@ Ask-and-Tell Interface
 Optuna provides `Ask-and-Tell` interface, a more flexible interface for hyperparameter optimization.
 This tutorial explains three use-cases when the ask-and-tell interface is beneficial:
 
-- :ref:`Apply optuna to an existing optimization problem with minimum modifications`
+- :ref:`Apply-optuna-to-an-existing-optimization-problem-with-minimum-modifications`
 - :ref:`Define-and-Run`
-- :ref:`Batch Optimization`
+- :ref:`Batch-Optimization`
+
+.. _Apply-optuna-to-an-existing-optimization-problem-with-minimum-modifications:
 
 ----------------------------------------------------------------------------
 Apply optuna to an existing optimization problem with minimum modifications
@@ -147,6 +149,8 @@ for _ in range(n_trials):
 
 
 ###################################################################################################
+# .. _Define-and-Run:
+#
 # ---------------
 # Define-and-Run
 # ---------------
@@ -184,6 +188,8 @@ for _ in range(n_trials):
 
 
 ###################################################################################################
+# .. _Batch-Optimization:
+#
 # -------------------
 # Batch Optimization
 # -------------------
