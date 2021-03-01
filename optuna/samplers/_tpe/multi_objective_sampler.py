@@ -241,6 +241,7 @@ class MOTPESampler(TPESampler):
         with self._weights_below_lock:
             if trial._trial_id in self._weights_below:
                 del self._weights_below[trial._trial_id]
+        self._mo_random_sampler.after_trial(study, trial, state, values)
 
     def _split_mo_observation_pairs(
         self,
@@ -421,7 +422,7 @@ class MOTPESampler(TPESampler):
         with self._weights_below_lock:
             array_weights_below = np.asarray(self._weights_below[trial._trial_id], dtype=float)
         weights_below: Callable[[int], np.ndarray]
-        weights_below = lambda _: np.asarray(array_weights_below)  # NOQA
+        weights_below = lambda _: array_weights_below  # NOQA
 
         parzen_estimator_parameters_below = _ParzenEstimatorParameters(
             self._parzen_estimator_parameters.consider_prior,
