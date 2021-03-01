@@ -11,6 +11,7 @@ from typing import Union
 import warnings
 
 from cmaes import CMA
+from cmaes import get_warm_start_mgd
 from cmaes import SepCMA
 import numpy as np
 
@@ -36,7 +37,7 @@ CmaClass = Union[CMA, SepCMA]
 
 
 class CmaEsSampler(BaseSampler):
-    """A Sampler using CMA-ES algorithm.
+    """A Sampler using `cmaes <https://github.com/CyberAgent/cmaes>`_ as the backend.
 
     Example:
 
@@ -64,8 +65,7 @@ class CmaEsSampler(BaseSampler):
     optimization settings. This sampler cannot use some trials for updating
     the parameters of multivariate normal distribution.
 
-    For further information about CMA-ES algorithm and its restarting strategy
-    algorithm, please refer to the following papers:
+    For further information about CMA-ES algorithm, please refer to the following papers:
 
     - `N. Hansen, The CMA Evolution Strategy: A Tutorial. arXiv:1604.00772, 2016.
       <https://arxiv.org/abs/1604.00772>`_
@@ -77,6 +77,9 @@ class CmaEsSampler(BaseSampler):
       Space Complexity. 10th International Conference on Parallel Problem Solving From Nature,
       Sep 2008, Dortmund, Germany. inria-00287367.
       <https://hal.inria.fr/inria-00287367/document>`_
+    - `Masahiro Nomura, Shuhei Watanabe, Youhei Akimoto, Yoshihiko Ozaki, Masaki Onishi.
+      Warm Starting CMA-ES for Hyperparameter Optimization, AAAI. 2021.
+      <https://arxiv.org/abs/2012.06932>`_
 
     .. seealso::
         You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
@@ -164,6 +167,18 @@ class CmaEsSampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.6.0.
 
+        source_trials:
+            This option is for Warm Starting CMA-ES, a method to transfer prior knowledge on
+            similar HPO tasks through the initialization of CMA-ES. This method estimates a
+            promising distribution from ``source_trials`` and generates the parameter of
+            multivariate gaussian distribution. Please note that it is prohibited to use
+            ``x0``, ``sigma0``, or ``use_separable_cma`` argument together.
+
+            .. note::
+                Added in v2.6.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.6.0.
+
     Raises:
         ValueError:
             If ``restart_strategy`` is not 'ipop' or :obj:`None`.
@@ -182,6 +197,7 @@ class CmaEsSampler(BaseSampler):
         restart_strategy: Optional[str] = None,
         inc_popsize: int = 2,
         use_separable_cma: bool = False,
+        source_trials: Optional[List[FrozenTrial]] = None,
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
@@ -194,6 +210,7 @@ class CmaEsSampler(BaseSampler):
         self._restart_strategy = restart_strategy
         self._inc_popsize = inc_popsize
         self._use_separable_cma = use_separable_cma
+        self._source_trials = source_trials
 
         if self._restart_strategy:
             warnings.warn(
@@ -214,6 +231,25 @@ class CmaEsSampler(BaseSampler):
                 "`use_separable_cma` option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
+            )
+
+        if self._source_trials is not None:
+            warnings.warn(
+                "`source_trials` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
+        if source_trials is not None and (x0 is not None or sigma0 is not None):
+            raise ValueError(
+                "It is prohibited to pass `source_trials` argument when "
+                "x0 or sigma0 is specified."
+            )
+
+        # TODO(c-bata): Support WS-sep-CMA-ES.
+        if source_trials is not None and use_separable_cma:
+            raise ValueError(
+                "It is prohibited to pass `source_trials` argument when " "using separable CMA-ES."
             )
 
         # TODO(c-bata): Support BIPOP-CMA-ES.
@@ -392,18 +428,40 @@ class CmaEsSampler(BaseSampler):
         upper_bounds = trans.bounds[:, 1]
         n_dimension = len(trans.bounds)
 
-        if randomize_start_point:
-            mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rand(n_dimension)
-        elif self._x0 is None:
-            mean = lower_bounds + (upper_bounds - lower_bounds) / 2
-        else:
-            # `self._x0` is external representations.
-            mean = trans.transform(self._x0)
+        if self._source_trials is None:
+            if randomize_start_point:
+                mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rand(
+                    n_dimension
+                )
+            elif self._x0 is None:
+                mean = lower_bounds + (upper_bounds - lower_bounds) / 2
+            else:
+                # `self._x0` is external representations.
+                mean = trans.transform(self._x0)
 
-        if self._sigma0 is None:
-            sigma0 = np.min((upper_bounds - lower_bounds) / 6)
+            if self._sigma0 is None:
+                sigma0 = np.min((upper_bounds - lower_bounds) / 6)
+            else:
+                sigma0 = self._sigma0
+
+            cov = None
         else:
-            sigma0 = self._sigma0
+            expected_states = [TrialState.COMPLETE]
+            if self._consider_pruned_trials:
+                expected_states.append(TrialState.PRUNED)
+
+            # TODO(c-bata): Filter parameters by their values instead of checking search space.
+            source_solutions = [
+                (trans.transform(t.params), t.value)
+                for t in self._source_trials
+                if t.state in expected_states
+                and _is_compatible_search_space(trans, t.distributions)
+            ]
+            if len(source_solutions) == 0:
+                raise ValueError("No compatible source_trials")
+
+            # TODO(c-bata): Add options to change prior parameters (alpha and gamma).
+            mean, sigma0, cov = get_warm_start_mgd(source_solutions)
 
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
@@ -421,6 +479,7 @@ class CmaEsSampler(BaseSampler):
         return CMA(
             mean=mean,
             sigma=sigma0,
+            cov=cov,
             bounds=trans.bounds,
             seed=self._cma_rng.randint(1, 2 ** 31 - 2),
             n_max_resampling=10 * n_dimension,
@@ -497,6 +556,13 @@ def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:
         end = min((i + 1) * _SYSTEM_ATTR_MAX_LENGTH, optimizer_len)
         attrs["cma:optimizer:{}".format(i)] = optimizer_str[start:end]
     return attrs
+
+
+def _is_compatible_search_space(
+    trans: _SearchSpaceTransform, search_space: Dict[str, BaseDistribution]
+) -> bool:
+    intersection_size = len(set(trans._search_space.keys()).intersection(search_space.keys()))
+    return intersection_size == len(trans._search_space) == len(search_space)
 
 
 def _concat_optimizer_attrs(optimizer_attrs: Dict[str, str]) -> str:
