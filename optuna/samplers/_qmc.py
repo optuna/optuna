@@ -32,10 +32,10 @@ _NUMERICAL_DISTRIBUTIONS = (
 class QMCSampler(BaseSampler):
     def __init__(
         self,
+        *,
         seed: Optional[int] = None,
         qmc_type: str = "sobol",
         independent_sampler: Optional[BaseSampler] = None,
-        *,
         search_space: Optional[Dict[str, BaseDistribution]] = None,
         warn_independent_sampling: bool = True,
     ) -> None:
@@ -110,7 +110,7 @@ class QMCSampler(BaseSampler):
             self._qmc_engine = scipy.stats.qmc.OrthogonalLatinHypercube(d, seed=self._seed)
         else:
             message = (
-                "The `qmc_type`, {}, is not a valid. "
+                f"The `qmc_type`, {self._qmc_type}, is not a valid. "
                 "It must be one of sobol, halton, LHS, and OA-LHS."
             )
             raise ValueError(message)
@@ -156,7 +156,7 @@ class QMCSampler(BaseSampler):
     def _find_qmc_id(self, study: Study, trial: FrozenTrial) -> int:
         # TODO(kstoneriv3): Following try-except block assumes that the block is
         # an atomic transaction. # This ensures that each qmc_id is sampled at least once.
-        key_qmc_id = "{}_last_qmc_id".format(self._qmc_type)
+        key_qmc_id = f"{self._qmc_type}_last_qmc_id"
         try:
             qmc_id = study._storage.get_study_system_attrs(study._study_id)[key_qmc_id]
             qmc_id += 1
