@@ -126,6 +126,8 @@ def intersection_search_space(
             If :obj:`False`, the returned object will be a :obj:`dict`.
             If :obj:`True`, the returned object will be an :obj:`collections.OrderedDict` sorted by
             keys, i.e. parameter names.
+        include_pruned:
+            Whether pruned trials should be included in the search space.
 
     Returns:
         A dictionary containing the parameter names and parameter's distributions.
