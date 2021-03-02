@@ -265,7 +265,7 @@ class MOTPESampler(TPESampler):
             last_idx = 0
             while len(indices_below) + sum(nondomination_ranks == i) <= n_below:
                 length = indices[nondomination_ranks == i].shape
-                indices_below[last_idx: last_idx + length] = indices[nondomination_ranks == i]
+                indices_below[last_idx : last_idx + length] = indices[nondomination_ranks == i]
                 last_idx += length
                 i += 1
 
