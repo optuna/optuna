@@ -155,7 +155,7 @@ class QMCSampler(BaseSampler):
 
     def _find_qmc_id(self, study: Study, trial: FrozenTrial) -> int:
         # TODO(kstoneriv3): Following try-except block assumes that the block is
-        # an atomic transaction. # This ensures that each qmc_id is sampled at least once.
+        # an atomic transaction. This ensures that each qmc_id is sampled at least once.
         key_qmc_id = f"{self._qmc_type}_last_qmc_id"
         try:
             qmc_id = study._storage.get_study_system_attrs(study._study_id)[key_qmc_id]
