@@ -28,7 +28,6 @@ from optuna.trial import TrialState
 SCHEMA_VERSION = 12
 
 MAX_INDEXED_STRING_LENGTH = 512
-MAX_STRING_LENGTH = 2048
 MAX_VERSION_LENGTH = 256
 
 NOT_FOUND_MSG = "Record does not exist."
