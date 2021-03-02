@@ -8,6 +8,7 @@ import scipy
 import optuna
 from optuna import distributions
 from optuna import logging
+from optuna._experimental import experimental
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
@@ -29,22 +30,130 @@ _NUMERICAL_DISTRIBUTIONS = (
 )
 
 
+@experimental("2.x.0")  # TODO(kstoneriv3)
 class QMCSampler(BaseSampler):
+    """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
+
+    Quasi Monte Carlo (QMC) sequences are designed to have low-discrepancies than
+    standard random seqeunces. They are known to perform better than the standard
+    randam sequences in hyperparameter optimization.
+
+    For further information about the use of QMC sequences for hyperparameter optimization,
+    please refer to the following paper:
+    - Bergstra, James, and Yoshua Bengio. Random search for hyper-parameter optimization.
+      Journal of machine learning research 13.2, 2012.
+      <https://jmlr.org/papers/v13/bergstra12a.html>`_
+
+    We use the QMC implementations in Scipy. For the details of the QMC algorithm,
+    see the Scipy API references on `scipy.stats.qmc
+    <https://scipy.github.io/devdocs/stats.qmc.html>`_.
+
+    .. note:
+        Please note that this sampler does not support CategoricalDistribution.
+        If your search space contains categorical parameters, it samples the catagorical
+        parameters at random without using QMC sequences.
+
+    Args:
+        qmc_type:
+            The type of QMC sequence to be sampled. This must be one of
+            `"sobol"`, `"halton"`, `"LHS"` and `"OA-LHS"`. Default is `"sobol"`.
+
+        scramble:
+            In cases ``qmc_type`` is `"sobol"` or `"halton"`, if this option is :obj:`True`,
+            scrambling (randomization) is applied to the QMC sequences.
+
+        seed:
+            A seed for the scrambling (randomization) of QMC sequence.
+            This argument is used only when `scramble` is :object:`True`.
+
+            ... note::
+                When using multiple :class:`~optuna.samplers.QMCSampler`'s in parallel and/or
+                distributed optimization, all the samplers must share the same seed when the
+                `scrambling` is enabled. Otherwise, the low-discrepancy property of the samples
+                will be degraded.
+
+        search_space:
+            The search space of the sampler.
+
+            If this argument is not provided and there are prior
+            trials in the study, :class:`~optuna.samplers.QMCSamper` infers its search space using
+            the first trial of the study.
+
+            If this argument if not provided and the study has no
+            prior trials, :class:`~optuna.samplers.QMCSampler` samples the first trial using its
+            `_independent_sampler` and then infers the search space in the second trial.
+
+            ... note::
+                As mentioned above, the search space of the :class:`~optuna.sampler.QMCSampler` is
+                determined by argument ``search_space`` or the first trial of the study. Once
+                this search space is
+
+        independent_sampler:
+            A :class:`~optuna.samplers.BaseSampler` instance that is used for independent
+            sampling. The first trial of the study and the parameters not contained in the
+            relative search space are sampled by this sampler.
+
+            If :obj:`None` is specified, :class:`~optuna.samplers.RandomSampler` is used
+            as the default.
+
+            .. seealso::
+                :class:`~optuna.samplers` module provides built-in independent samplers
+                such as :class:`~optuna.samplers.RandomSampler` and
+                :class:`~optuna.samplers.TPESampler`.
+
+        warn_independent_sampling:
+            If this is :obj:`True`, a warning message is emitted when
+            the value of a parameter is sampled by using an independent sampler.
+
+            Note that the parameters of the first trial in a study are sampled via an
+            independent sampler in most cases, so no warning messages are emitted in such cases.
+
+    Raises:
+        ValueError:
+            If ``qmc_type`` is not one of 'sobol', 'halton', 'LHS' or 'OA-LHS'.
+
+    .. note::
+        Added in v2.x.0 TODO(kstoneriv3)as an experimental feature. The interface may change in
+        newer versions without prior notice.
+
+    Example:
+
+        Optimize a simple quadratic function by using :class:`~optuna.samplers.QMCSampler`.
+
+        .. testcode::
+
+            import optuna
+
+
+            def objective(trial):
+                x = trial.suggest_float("x", -1, 1)
+                y = trial.suggest_int("y", -1, 1)
+                return x ** 2 + y
+
+
+            sampler = optuna.samplers.QMCSampler()
+            study = optuna.create_study(sampler=sampler)
+            study.optimize(objective, n_trials=20)
+
+    """
+
     def __init__(
         self,
         *,
-        seed: Optional[int] = None,
         qmc_type: str = "sobol",
-        independent_sampler: Optional[BaseSampler] = None,
+        scramble: bool = False,
+        seed: Optional[int] = None,
         search_space: Optional[Dict[str, BaseDistribution]] = None,
+        independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
     ) -> None:
-
+        self._scramble = scramble
         self._seed = seed
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._qmc_type = qmc_type
         self._qmc_engine = None
         # TODO(kstoneriv3): make sure that search_space is either None or valid search space.
+        # also make sure that it is OrderedDict
         self._initial_search_space = search_space
         self._warn_independent_sampling = warn_independent_sampling
 
@@ -73,8 +182,6 @@ class QMCSampler(BaseSampler):
         search_space = OrderedDict()  # type: OrderedDict[str, BaseDistribution]
         for param_name, distribution in trial.distributions.items():
             if not isinstance(distribution, _NUMERICAL_DISTRIBUTIONS):
-                if self._warn_independent_sampling:
-                    self._log_independent_sampling(trial, param_name)
                 continue
             search_space[param_name] = distribution
 
@@ -98,12 +205,10 @@ class QMCSampler(BaseSampler):
         # Lazy import because the `scipy.stats.qmc` is slow to import.
         import scipy.stats.qmc
 
-        self._samples_count = 0  # The number of samples, taken from the engine.
-        scramble = False if self._seed is None else True
         if self._qmc_type == "sobol":
-            self._qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=scramble)
+            self._qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
         elif self._qmc_type == "halton":
-            self._qmc_engine = scipy.stats.qmc.Halton(d, seed=self._seed, scramble=scramble)
+            self._qmc_engine = scipy.stats.qmc.Halton(d, seed=self._seed, scramble=self._scramble)
         elif self._qmc_type == "LHS":  # Latin Hypercube Sampling
             self._qmc_engine = scipy.stats.qmc.Latin(d, seed=self._seed)
         elif self._qmc_type == "OA-LHS":  # Orthogonal array-based Latin hypercube sampling
@@ -122,6 +227,10 @@ class QMCSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+
+        if self._initial_search_space is not None:
+            if self._warn_independent_sampling:
+                self._log_independent_sampling(trial, param_name)
 
         return self._independent_sampler.sample_independent(
             study, trial, param_name, param_distribution
