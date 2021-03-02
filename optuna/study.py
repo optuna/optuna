@@ -349,11 +349,10 @@ class Study(BaseStudy):
                 set to CPU count.
 
                 .. note::
-                    This parallelization is implemented by using :obj:`threading`.
-                    Multi-threading might not be efficient due to
+                    We officially recommend :ref:`process-based parallelization<distributed>`.
+                    ``n_jobs``'s parallelization is implemented by using :obj:`threading`
+                    that might not be efficient due to
                     `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`_.
-                    If you optimize your objective with process-based parallelization,
-                    please check :ref:`distributed`.
 
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
