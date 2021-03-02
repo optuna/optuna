@@ -62,7 +62,7 @@ class Func(object):
 class MultiNodeStorageSupplier(StorageSupplier):
     def __init__(self, storage_specifier: str, comm: CommunicatorBase) -> None:
 
-        super(MultiNodeStorageSupplier, self).__init__(storage_specifier)
+        super().__init__(storage_specifier)
         self.comm = comm
         self.storage: Optional[RDBStorage] = None
 

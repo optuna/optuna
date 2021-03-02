@@ -59,7 +59,8 @@ def plot_contour(
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=30)
 
-            optuna.visualization.plot_contour(study, params=["x", "y"])
+            fig = optuna.visualization.plot_contour(study, params=["x", "y"])
+            fig.show()
 
     Args:
         study:
