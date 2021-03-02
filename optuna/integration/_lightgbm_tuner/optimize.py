@@ -366,6 +366,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
+        optuna_seed: Optional[int] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
@@ -401,6 +402,7 @@ class _LightGBMBaseTuner(_BaseTuner):
             Tuple[Union[lgb.Booster, lgb.CVBooster], int]
         ] = None
         self._model_dir = model_dir
+        self._optuna_seed = optuna_seed
 
         # Should not alter data since `min_data_in_leaf` is tuned.
         # https://lightgbm.readthedocs.io/en/latest/Parameters.html#feature_pre_filter
@@ -565,12 +567,35 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction")
 
     def tune_num_leaves(self, n_trials: int = 20) -> None:
-        self._tune_params(["num_leaves"], n_trials, optuna.samplers.TPESampler(), "num_leaves")
+        if self._optuna_seed is None:
+            self._tune_params(
+                ["num_leaves"], 
+                n_trials, 
+                optuna.samplers.TPESampler(), 
+                "num_leaves")
+        else:
+            self._tune_params(
+                ["num_leaves"], 
+                n_trials, 
+                optuna.samplers.TPESampler(seed=self._optuna_seed), 
+                "num_leaves"
+            )
 
     def tune_bagging(self, n_trials: int = 10) -> None:
-        self._tune_params(
-            ["bagging_fraction", "bagging_freq"], n_trials, optuna.samplers.TPESampler(), "bagging"
-        )
+        if self._optuna_seed is None:
+            self._tune_params(
+                ["bagging_fraction", "bagging_freq"],
+                n_trials, 
+                optuna.samplers.TPESampler(),
+                "bagging"
+            )
+        else:
+            self._tune_params(
+                ["bagging_fraction", "bagging_freq"],
+                n_trials, 
+                optuna.samplers.TPESampler(seed=self._optuna_seed),
+                "bagging"
+            )
 
     def tune_feature_fraction_stage2(self, n_trials: int = 6) -> None:
         param_name = "feature_fraction"
@@ -584,12 +609,20 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction_stage2")
 
     def tune_regularization_factors(self, n_trials: int = 20) -> None:
-        self._tune_params(
-            ["lambda_l1", "lambda_l2"],
-            n_trials,
-            optuna.samplers.TPESampler(),
-            "regularization_factors",
-        )
+        if self._optuna_seed is None:
+            self._tune_params(
+                ["lambda_l1", "lambda_l2"],
+                n_trials,
+                optuna.samplers.TPESampler(),
+                "regularization_factors",
+            )
+        else:
+            self._tune_params(
+                ["lambda_l1", "lambda_l2"],
+                n_trials,
+                optuna.samplers.TPESampler(seed=self._optuna_seed),
+                "regularization_factors",
+            )
 
     def tune_min_data_in_leaf(self) -> None:
         param_name = "min_child_samples"
@@ -797,6 +830,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
+        optuna_seed: Optional[int] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         model_dir: Optional[str] = None,
         verbosity: Optional[int] = None,
@@ -817,6 +851,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
             time_budget=time_budget,
             sample_size=sample_size,
             study=study,
+            optuna_seed=optuna_seed,
             optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
@@ -954,6 +989,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
+        optuna_seed: Optional[int] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
@@ -975,6 +1011,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             time_budget=time_budget,
             sample_size=sample_size,
             study=study,
+            optuna_seed=optuna_seed,
             optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
