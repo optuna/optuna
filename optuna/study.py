@@ -347,6 +347,14 @@ class Study(BaseStudy):
             n_jobs:
                 The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
                 set to CPU count.
+
+                .. note::
+                    This parallelization is implemented by using :obj:`threading`.
+                    Multi-threading might not be efficient due to
+                    `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`_.
+                    If you optimize your objective with process-based parallelization,
+                    please check :ref:`distributed`.
+
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
