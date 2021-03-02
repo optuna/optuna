@@ -17,6 +17,7 @@ import tensorflow_datasets as tfds
 
 import optuna
 from optuna.integration import TFKerasPruningCallback
+from optuna.trial import TrialState
 
 
 BATCHSIZE = 128
@@ -108,8 +109,8 @@ def objective(trial):
 
 def show_result(study):
 
-    pruned_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]
-    complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+    pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+    complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
 
     print("Study statistics: ")
     print("  Number of finished trials: ", len(study.trials))

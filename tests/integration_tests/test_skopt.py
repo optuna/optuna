@@ -4,6 +4,7 @@ from typing import List
 from unittest.mock import call
 from unittest.mock import Mock
 from unittest.mock import patch
+import warnings
 
 import pytest
 from skopt.space import space
@@ -236,3 +237,16 @@ def _create_frozen_trial(
         datetime_complete=None,
         trial_id=0,
     )
+
+
+def test_call_after_trial_of_independent_sampler() -> None:
+    independent_sampler = optuna.samplers.RandomSampler()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = optuna.integration.SkoptSampler(independent_sampler=independent_sampler)
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(
+        independent_sampler, "after_trial", wraps=independent_sampler.after_trial
+    ) as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1
