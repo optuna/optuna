@@ -349,10 +349,10 @@ class Study(BaseStudy):
                 set to CPU count.
 
                 .. note::
-                    We officially recommend :ref:`process-based parallelization<distributed>`.
-                    ``n_jobs``'s parallelization is implemented by using :obj:`threading`
-                    that might not be efficient due to
+                    ``n_jobs`` allows parallelization using :obj:`threading` and may suffer from
                     `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`_.
+                    It is recommended to use :ref:`process-based parallelization<distributed>`
+                    if ``func`` is CPU bound.
 
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
