@@ -75,8 +75,8 @@ class _MultivariateParzenEstimator:
                 mus, sigmas = self._calculate_numerical_params(observations, param_name)
                 categorical_weights = None
             self._mus[param_name] = mus
-            self._categorical_weights[param_name] = categorical_weights
             self._sigmas[param_name] = sigmas
+            self._categorical_weights[param_name] = categorical_weights
 
     def sample(self, rng: np.random.RandomState, size: int) -> Dict[str, np.ndarray]:
 

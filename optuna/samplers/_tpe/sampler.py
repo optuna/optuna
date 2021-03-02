@@ -324,11 +324,8 @@ class TPESampler(BaseSampler):
         self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]]
     ) -> Tuple[np.ndarray, np.ndarray]:
 
-        config_values: Union[List[Optional[float]], np.ndarray]
         config_values = np.asarray(config_vals)
-        loss_values: Union[List[Optional[float]], np.ndarray]
         loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
-
         n_below = self._gamma(len(config_values))
         loss_ascending = np.argsort(loss_values)
         below = config_values[np.sort(loss_ascending[:n_below])]

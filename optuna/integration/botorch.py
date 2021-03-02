@@ -449,7 +449,6 @@ class BoTorchSampler(BaseSampler):
         bounds: Union[numpy.ndarray, torch.Tensor] = trans.bounds
         params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
         for trial_idx, trial in enumerate(trials):
-
             params[trial_idx] = trans.transform(trial.params)
             assert len(study.directions) == len(trial.values)
 
@@ -521,9 +520,7 @@ class BoTorchSampler(BaseSampler):
                 f"{candidates.size(0)}, bounds: {bounds.size(1)}."
             )
 
-        parameters = trans.untransform(candidates.numpy())
-
-        return parameters
+        return trans.untransform(candidates.numpy())
 
     def sample_independent(
         self,
