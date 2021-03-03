@@ -383,7 +383,7 @@ class AllenNLPPruningCallback(TrainerCallback):
 
     See `the example <https://github.com/optuna/optuna/blob/master/
     examples/allennlp/allennlp_simple.py>`__
-    if you want to add a proning callback which observes a metric.
+    if you want to add a pruning callback which observes a metric.
 
     You can also see the tutorial of our AllenNLP integration on
     `AllenNLP Guide <https://guide.allennlp.org/hyperparameter-optimization>`_.
