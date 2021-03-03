@@ -200,11 +200,11 @@ def qehvi_candidates_func(
         alpha = 10 ** (-8 + n_objectives)
     else:
         alpha = 0.0
-    partitioning = NondominatedPartitioning(
-        num_outcomes=n_objectives, Y=train_obj_feas, alpha=alpha
-    )
 
     ref_point = train_obj.min(dim=0).values - 1e-8
+
+    partitioning = NondominatedPartitioning(ref_point=ref_point, Y=train_obj_feas, alpha=alpha)
+
     ref_point_list = ref_point.tolist()
 
     acqf = qExpectedHypervolumeImprovement(
@@ -565,3 +565,4 @@ class BoTorchSampler(BaseSampler):
                     "botorch:constraints",
                     constraints,
                 )
+        self._independent_sampler.after_trial(study, trial, state, values)

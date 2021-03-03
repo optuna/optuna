@@ -97,7 +97,7 @@ class SimulatedAnnealingSampler(BaseSampler):
 
     @staticmethod
     def _get_last_complete_trial(study):
-        complete_trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+        complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
         return complete_trials[-1]
 
     def sample_independent(self, study, trial, param_name, param_distribution):
