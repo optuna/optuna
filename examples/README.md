@@ -95,7 +95,7 @@ In addition, integration modules are available for the following libraries, prov
 
 ### Examples of Reinforcement Learning
 
-* [Optimizating Hyperparameters for Stable-Baslines Agent](./rl/sb3_simple.py)
+* [Optimization of Hyperparameters for Stable-Baslines Agent](./rl/sb3_simple.py)
 
 ### External projects using Optuna
 
