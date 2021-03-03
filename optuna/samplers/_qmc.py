@@ -41,6 +41,7 @@ class QMCSampler(BaseSampler):
 
     For further information about the use of QMC sequences for hyperparameter optimization,
     please refer to the following paper:
+
     - Bergstra, James, and Yoshua Bengio. Random search for hyper-parameter optimization.
       Journal of machine learning research 13.2, 2012.
       <https://jmlr.org/papers/v13/bergstra12a.html>`_
@@ -181,7 +182,6 @@ class QMCSampler(BaseSampler):
         past_trials = study._storage.get_all_trials(
             study._study_id, states=_SUGGESTED_STATES, deepcopy=False
         )
-        past_trials = sorted(past_trials, key=lambda t: t._trial_id)
 
         # The initial trial is sampled by the independent sampler.
         if len(past_trials) == 0:
@@ -189,7 +189,8 @@ class QMCSampler(BaseSampler):
         # If an initial trial was already made,
         # construct search_space of this sampler from the initial trial.
         else:
-            self._initial_search_space = self._infer_initial_search_space(past_trials[0])
+            first_trial = min(past_trials, key=lambda t: t._trial_id)
+            self._initial_search_space = self._infer_initial_search_space(first_trial)
             return self._initial_search_space
 
     def _infer_initial_search_space(self, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
