@@ -111,7 +111,7 @@ def scipy_minimize(
                 return callback(xk)
 
             assert search_space is not None
-            value = fun(xk)
+            value = fun(xk, *args)
             params = {}
             for i, name in enumerate(search_space):
                 params[name] = xk[i]
