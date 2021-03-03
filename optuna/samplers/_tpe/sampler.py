@@ -183,7 +183,7 @@ class TPESampler(BaseSampler):
         self._random_sampler = RandomSampler(seed=seed)
 
         self._multivariate = multivariate
-        self._search_space = IntersectionSearchSpace()
+        self._search_space = IntersectionSearchSpace(include_pruned=True)
 
         if multivariate:
             warnings.warn(

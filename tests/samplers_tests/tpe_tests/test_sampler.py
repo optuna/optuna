@@ -879,3 +879,21 @@ def test_call_after_trial_of_random_sampler() -> None:
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+def test_mixed_relative_search_space_pruned_and_completed_trials() -> None:
+    def objective(trial: Trial) -> float:
+        if trial.number == 0:
+            trial.suggest_uniform("param1", 0, 1)
+            raise optuna.exceptions.TrialPruned()
+
+        if trial.number == 1:
+            trial.suggest_uniform("param2", 0, 1)
+            return 0
+
+        return 0
+
+    sampler = TPESampler(n_startup_trials=1, multivariate=True)
+    study = optuna.create_study(sampler=sampler)
+
+    study.optimize(objective, 3)
