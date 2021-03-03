@@ -157,6 +157,10 @@ class QMCSampler(BaseSampler):
         self._initial_search_space = search_space
         self._warn_independent_sampling = warn_independent_sampling
 
+    def reseed_rng(self) -> None:
+
+        self._independent_sampler.reseed_rng()
+
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
