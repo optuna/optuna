@@ -31,7 +31,7 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
 
 
             def objective(trial):
-                lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+                lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
 
                 x = 3
                 for step in range(128):
@@ -51,7 +51,8 @@ def plot_intermediate_values(study: Study) -> "go.Figure":
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=16)
 
-            optuna.visualization.plot_intermediate_values(study)
+            fig = optuna.visualization.plot_intermediate_values(study)
+            fig.show()
 
     Args:
         study:

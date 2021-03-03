@@ -146,14 +146,7 @@ class _BaseTuner(object):
     def higher_is_better(self) -> bool:
 
         metric_name = self.lgbm_params.get("metric", "binary_logloss")
-        supported_higher_is_better = [
-            "auc",
-            "auc_mu",
-            "ndcg",
-            "map",
-            "average_precision",
-        ]
-        return metric_name in supported_higher_is_better
+        return metric_name in ("auc", "auc_mu", "ndcg", "map", "average_precision")
 
     def compare_validation_metrics(self, val_score: float, best_score: float) -> bool:
 
@@ -301,7 +294,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
         pbar: Optional[tqdm.tqdm] = None,
     ):
 
-        super(_OptunaObjectiveCV, self).__init__(
+        super().__init__(
             target_param_names,
             lgbm_params,
             train_set,
@@ -810,7 +803,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         show_progress_bar: bool = True,
     ) -> None:
 
-        super(LightGBMTuner, self).__init__(
+        super().__init__(
             params,
             train_set,
             num_boost_round=num_boost_round,
@@ -884,8 +877,8 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
     :class:`~optuna.integration.lightgbm.LightGBMTunerCV` invokes `lightgbm.cv()`_ to train
     and validate boosters while :class:`~optuna.integration.lightgbm.LightGBMTuner` invokes
     `lightgbm.train()`_. See
-    `a simple example <https://github.com/optuna/optuna/blob/master/examples/lightgbm_tuner_cv.
-    py>`_ which optimizes the validation log loss of cancer detection.
+    `a simple example <https://github.com/optuna/optuna/blob/master/examples/lightgbm/
+    lightgbm_tuner_cv.py>`_ which optimizes the validation log loss of cancer detection.
 
     Arguments and keyword arguments for `lightgbm.cv()`_ can be passed except
     ``metrics``, ``init_model`` and ``eval_train_metric``.
@@ -968,7 +961,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         return_cvbooster: Optional[bool] = None,
     ) -> None:
 
-        super(LightGBMTunerCV, self).__init__(
+        super().__init__(
             params,
             train_set,
             num_boost_round,

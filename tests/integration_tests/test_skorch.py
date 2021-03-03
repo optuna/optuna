@@ -11,7 +11,7 @@ from optuna.testing.integration import DeterministicPruner
 
 class ClassifierModule(nn.Module):
     def __init__(self) -> None:
-        super(ClassifierModule, self).__init__()
+        super().__init__()
         self.dense0 = nn.Linear(4, 8)
 
     def forward(self, X: torch.Tensor, **kwargs: Any) -> torch.Tensor:

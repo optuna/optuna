@@ -35,6 +35,19 @@ If you choose to write some code, we have some conventions as follows.
 
 ## Guidelines
 
+### Setup Optuna
+
+First of all, fork Optuna on GitHub.
+You can learn about fork in the official [documentation](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo).
+
+After forking, download and install Optuna on your computer.
+
+```bash
+git clone git@github.com:YOUR_NAME/optuna.git
+cd optuna
+pip install -e .
+```
+
 ### Checking the Format, Coding Style, and Type Hints
 
 Code is formatted with [black](https://github.com/psf/black),
@@ -71,8 +84,9 @@ The documentation source is stored under the [docs](./docs) directory and writte
 To build the documentation, you need to run:
 
 ```bash
-pip install -e ".[document]"
+pip install -e ".[document]" -f https://download.pytorch.org/whl/torch_stable.html
 ```
+Note that the above command might try to install PyTorch without CUDA to your environment even if your environment has CUDA version already.
 
 Then you can build the documentation in HTML format locally:
 
@@ -83,6 +97,16 @@ make html
 
 HTML files are generated under `build/html` directory. Open `index.html` with the browser and see
 if it is rendered as expected.
+
+Optuna's tutorial is built with [Sphinx-Gallery](https://sphinx-gallery.github.io/stable/index.html) and
+some other requirements like [LightGBM](https://github.com/microsoft/LightGBM) and [PyTorch](https://pytorch.org) meaning that
+all .py files in `tutorial` directory are run during the documentation build if there's no build cache.
+Whether you edit any tutorial or not doesn't matter.
+
+To avoid having to run the tutorials, you may download executed tutorial artifacts nanmed "tutorial" from our CI (see the capture below) and put them in `docs/build` before
+extract the files in the zip to `docs/source/tutorial` directory.
+
+![image](https://user-images.githubusercontent.com/16191443/107472296-0b211400-6bb2-11eb-9203-e2c42ce499ad.png)
 
 ## Unit Tests
 
@@ -100,12 +124,31 @@ pytest
 pytest tests/${TARGET_TEST_FILE_NAME}
 ```
 
-## Continuous Integration
+## Continuous Integration and Local Verification
 
 Optuna repository uses GitHub Actions and CircleCI.
 
 Currently, we are migrating to GitHub Actions but still we use CirclCI for a test of `document`
 because it makes it much easier to check built documentation.
+
+### Local Verification
+
+By installing [`act`](https://github.com/nektos/act#installation) and Docker, you can run
+tests written for GitHub Actions locally.
+
+```bash
+JOB_NAME=checks
+act -j $JOB_NAME
+```
+
+Currently, you can run the following jobs: `documentation` and `doctest` may not be executable depending on your choice of docker image of act.
+
+- `checks`    
+  - Checking the format, coding style, and type hints
+- `docuemtnation`
+  - Builds documentation including tutorial
+- `doctest`
+  - Runs doctest
 
 ## Creating a Pull Request
 

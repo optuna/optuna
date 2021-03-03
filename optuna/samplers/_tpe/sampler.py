@@ -4,6 +4,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 import warnings
@@ -89,7 +90,7 @@ class TPESampler(BaseSampler):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -10, 10)
+                x = trial.suggest_float("x", -10, 10)
                 return x ** 2
 
 
@@ -182,7 +183,7 @@ class TPESampler(BaseSampler):
         self._random_sampler = RandomSampler(seed=seed)
 
         self._multivariate = multivariate
-        self._search_space = IntersectionSearchSpace()
+        self._search_space = IntersectionSearchSpace(include_pruned=True)
 
         if multivariate:
             warnings.warn(
@@ -715,7 +716,7 @@ class TPESampler(BaseSampler):
 
 
                 def objective(trial):
-                    x = trial.suggest_uniform("x", -10, 10)
+                    x = trial.suggest_float("x", -10, 10)
                     return x ** 2
 
 
@@ -738,6 +739,16 @@ class TPESampler(BaseSampler):
             "gamma": hyperopt_default_gamma,
             "weights": default_weights,
         }
+
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+
+        self._random_sampler.after_trial(study, trial, state, values)
 
 
 def _get_observation_pairs(

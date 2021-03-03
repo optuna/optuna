@@ -103,9 +103,9 @@ def qei_candidates_func(
             best_f = train_obj_feas.max()
 
         constraints = []
-        n_contraints = train_con.size(1)
-        for i in range(n_contraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
+        n_constraints = train_con.size(1)
+        for i in range(n_constraints):
+            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
         objective = ConstrainedMCObjective(
             objective=lambda Z: Z[..., 0],
             constraints=constraints,
@@ -174,10 +174,10 @@ def qehvi_candidates_func(
         train_obj_feas = train_obj[is_feas]
 
         constraints = []
-        n_contraints = train_con.size(1)
+        n_constraints = train_con.size(1)
 
-        for i in range(n_contraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
+        for i in range(n_constraints):
+            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
         additional_qehvi_kwargs = {
             "objective": IdentityMCMultiOutputObjective(outcomes=list(range(n_objectives))),
             "constraints": constraints,
@@ -260,10 +260,10 @@ def qparego_candidates_func(
         train_y = torch.cat([train_obj, train_con], dim=-1)
 
         constraints = []
-        n_contraints = train_con.size(1)
+        n_constraints = train_con.size(1)
 
-        for i in range(n_contraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
+        for i in range(n_constraints):
+            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
 
         objective = ConstrainedMCObjective(
             objective=lambda Z: scalarization(Z[..., :n_objectives]),
@@ -336,7 +336,7 @@ class BoTorchSampler(BaseSampler):
 
     .. seealso::
         See an `example <https://github.com/optuna/optuna/blob/master/examples/
-        botorch_simple.py>`_ how to use the sampler.
+        multi_objective/botorch_simple.py>`_ how to use the sampler.
 
     .. seealso::
         See the `BoTorch <https://botorch.org/>`_ homepage for details and for how to implement
@@ -416,8 +416,8 @@ class BoTorchSampler(BaseSampler):
         if self._study_id is None:
             self._study_id = study._study_id
         if self._study_id != study._study_id:
-            # Note that the check below is meaningless when `InMemortyStorage` is used
-            # because `InMemortyStorage.create_new_study` always returns the same study ID.
+            # Note that the check below is meaningless when `InMemoryStorage` is used
+            # because `InMemoryStorage.create_new_study` always returns the same study ID.
             raise RuntimeError("BoTorchSampler cannot handle multiple studies.")
 
         return self._search_space.calculate(study, ordered_dict=True)  # type: ignore
@@ -563,3 +563,4 @@ class BoTorchSampler(BaseSampler):
                     "botorch:constraints",
                     constraints,
                 )
+        self._independent_sampler.after_trial(study, trial, state, values)
