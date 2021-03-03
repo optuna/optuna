@@ -21,6 +21,7 @@ _import_structure = {
     "sklearn": ["OptunaSearchCV"],
     "skorch": ["SkorchPruningCallback"],
     "mxnet": ["MXNetPruningCallback"],
+    "scipy": ["scipy_minimize"],
     "skopt": ["SkoptSampler"],
     "tensorboard": ["TensorBoardCallback"],
     "tensorflow": ["TensorFlowPruningHook"],
@@ -55,6 +56,7 @@ if TYPE_CHECKING:
     from optuna.integration.pytorch_distributed import TorchDistributedTrial  # NOQA
     from optuna.integration.pytorch_ignite import PyTorchIgnitePruningHandler  # NOQA
     from optuna.integration.pytorch_lightning import PyTorchLightningPruningCallback  # NOQA
+    from optuna.integration.scipy import scipy_minimize  # NOQA
     from optuna.integration.sklearn import OptunaSearchCV  # NOQA
     from optuna.integration.skopt import SkoptSampler  # NOQA
     from optuna.integration.skorch import SkorchPruningCallback  # NOQA
