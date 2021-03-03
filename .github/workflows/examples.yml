@@ -3,6 +3,7 @@ name: examples
 on:
   schedule:
     - cron: '0 15 * * *'
+  pull_request: {}
 
 jobs:
   examples:
@@ -47,55 +48,19 @@ jobs:
         # Install all dependencies needed for examples.
         pip install --progress-bar off $(ls dist/*.tar.gz)[example] -f https://download.pytorch.org/whl/torch_stable.html
 
-        # TODO (crcrpar): Allow fastaiv2 example once https://forums.fast.ai/t/ganlearner-error-no-implementation-found-on-types-that-implement-invisibletensor/83451/7 gets resolved.
-    - name: Run examples
+    - id: files
+      if: ${{ github.event_name == 'pull_request'  }}
+      uses: jitterbit/get-changed-files@v1
+    - name: Run examples (Pull Request)
+      if: ${{ github.event_name == 'pull_request' }}
       run: |
-        if [ ${{ matrix.python-version }} = 3.6 ]; then
-          IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*|botorch_.*'
-        elif [ ${{ matrix.python-version }} = 3.8 ]; then
-          IGNORES='chainermn_.*|dask_ml_.*|keras_.*|pytorch_distributed_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|rapids_.*'
-        else
-          IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*'
-        fi
+        python tools/run_examples.py --selected-files ${{ steps.outputs.all }}
+      env:
+        OMP_NUM_THREADS: 1
 
-        for file in `find examples -name '*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`
-        do
-          echo $file
-          python $file > /dev/null
-          if grep -e '\-\-pruning' $file > /dev/null; then
-            echo $file --pruning
-            python $file --pruning > /dev/null
-          fi
-        done
-      env:
-        OMP_NUM_THREADS: 1
-    - name: Run Jupyter notebook examples
+    - name: Run examples (Pull Request)
+      if: ${{ github.event_name == 'schedule' }}
       run: |
-        for file in `find examples -name '*.ipynb'`
-        do
-          echo $file
-          pytest --nbval-lax $file > /dev/null
-        done
-      env:
-        OMP_NUM_THREADS: 1
-    - name: Run multi-node examples
-      run: |
-        STORAGE_URL=sqlite:///example.db
-        for file in `find examples -name 'chainermn_*.py'`
-        do
-          echo $file
-          STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
-          mpirun -n 2 -- python $file $STUDY_NAME $STORAGE_URL > /dev/null
-        done
-        mpirun -n 2 -- python examples/pytorch/pytorch_distributed_simple.py
-      env:
-        OMP_NUM_THREADS: 1
-    - name: Run Hydra examples
-      run: |
-        for file in `find examples/hydra -name '*.py'`
-        do
-          echo $file
-          python $file --multirun > /dev/null
-        done
+        python tools/run_examples.py
       env:
         OMP_NUM_THREADS: 1
