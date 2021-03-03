@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 
+import numpy
 import scipy
 
 import optuna
@@ -51,7 +52,7 @@ class QMCSampler(BaseSampler):
     .. note:
         Please note that this sampler does not support CategoricalDistribution.
         If your search space contains categorical parameters, it samples the catagorical
-        parameters at random without using QMC sequences.
+        parameters by its `independent_sampler` without using QMC algorithm.
 
     Args:
         qmc_type:
@@ -63,8 +64,9 @@ class QMCSampler(BaseSampler):
             scrambling (randomization) is applied to the QMC sequences.
 
         seed:
-            A seed for the scrambling (randomization) of QMC sequence.
-            This argument is used only when `scramble` is :object:`True`.
+            A seed for `QMCSampler`. When the ``qmc_type`` is `"sobol"` or `"halton"`,
+            this argument is used only when `scramble` is :obj:`True`. If this is :obj:`None`,
+            the seed is initialized randomly. Default is :obj:`None`.
 
             .. note::
                 When using multiple :class:`~optuna.samplers.QMCSampler`'s in parallel and/or
@@ -146,20 +148,28 @@ class QMCSampler(BaseSampler):
         search_space: Optional[Dict[str, BaseDistribution]] = None,
         independent_sampler: Optional[BaseSampler] = None,
         warn_independent_sampling: bool = True,
+        warn_asyncronous_seeding: bool = True,
     ) -> None:
+
         self._scramble = scramble
-        self._seed = seed
+        self._seed = seed or numpy.random.MT19937().random_raw()
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._qmc_type = qmc_type
-        self._qmc_engine = None
+        self._cached_qmc_engine = None
         # TODO(kstoneriv3): make sure that search_space is either None or valid search space.
         # also make sure that it is OrderedDict
         self._initial_search_space = search_space
         self._warn_independent_sampling = warn_independent_sampling
 
+        if (seed is None) and warn_asyncronous_seeding:
+            # Sobol/Halton sequences without scrambling do not use seed.
+            if not (qmc_type in ("sobol", "halton") and (scramble is False)):
+                self._log_asyncronous_seeding()
+
     def reseed_rng(self) -> None:
 
         self._independent_sampler.reseed_rng()
+        self._seed = numpy.random.MT19937().random_raw()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -168,8 +178,9 @@ class QMCSampler(BaseSampler):
         if self._initial_search_space is not None:
             return self._initial_search_space
 
-        past_trials = study._storage.get_all_trials(study._study_id, deepcopy=False)
-        past_trials = [t for t in past_trials if t.state in _SUGGESTED_STATES]
+        past_trials = study._storage.get_all_trials(
+            study._study_id, states=_SUGGESTED_STATES, deepcopy=False
+        )
         past_trials = sorted(past_trials, key=lambda t: t._trial_id)
 
         # The initial trial is sampled by the independent sampler.
@@ -204,25 +215,17 @@ class QMCSampler(BaseSampler):
             )
         )
 
-    def _reset_qmc_engine(self, d: int) -> None:
-
-        # Lazy import because the `scipy.stats.qmc` is slow to import.
-        import scipy.stats.qmc
-
-        if self._qmc_type == "sobol":
-            self._qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
-        elif self._qmc_type == "halton":
-            self._qmc_engine = scipy.stats.qmc.Halton(d, seed=self._seed, scramble=self._scramble)
-        elif self._qmc_type == "LHS":  # Latin Hypercube Sampling
-            self._qmc_engine = scipy.stats.qmc.Latin(d, seed=self._seed)
-        elif self._qmc_type == "OA-LHS":  # Orthogonal array-based Latin hypercube sampling
-            self._qmc_engine = scipy.stats.qmc.OrthogonalLatinHypercube(d, seed=self._seed)
-        else:
-            message = (
-                f"The `qmc_type`, {self._qmc_type}, is not a valid. "
-                "It must be one of sobol, halton, LHS, and OA-LHS."
-            )
-            raise ValueError(message)
+    @staticmethod
+    def _log_asyncronous_seeding() -> None:
+        _logger.warning(
+            "No seed is provided for `QMCSampler` and the seed is set randomly. "
+            "If you are running multiple `QMCSampler`s in parallel and/or distributed "
+            " environment, the same seed must be used in all samplers to ensure that resulting "
+            "samples are taken from the same QMC sequence. "
+            "You can suppress this warning by setting `warn_asyncronous_seeding` "
+            "to `False` in the constructor of `QMCSampler`, "
+            "if this random seeding is intended behavior."
+        )
 
     def sample_independent(
         self,
@@ -247,35 +250,103 @@ class QMCSampler(BaseSampler):
         if search_space == {}:
             return {}
 
-        assert self._initial_search_space is not None
-
-        if self._qmc_engine is None:
-            n_initial_params = len(self._initial_search_space)
-            self._reset_qmc_engine(n_initial_params)
-
-        assert isinstance(self._qmc_engine, scipy.stats.qmc.QMCEngine)
-
-        qmc_id = self._find_qmc_id(study, trial)
-        forward_size = qmc_id - self._qmc_engine.num_generated  # `qmc_id` starts from 0.
-        self._qmc_engine.fast_forward(forward_size)
-        sample = self._qmc_engine.random(1)
-
+        sample = self._sample_qmc(study, trial, search_space)
         trans = _SearchSpaceTransform(search_space)
         sample = scipy.stats.qmc.scale(sample, trans.bounds[:, 0], trans.bounds[:, 1])
         sample = trans.untransform(sample[0, :])
 
         return sample
 
-    def _find_qmc_id(self, study: Study, trial: FrozenTrial) -> int:
+    def _sample_qmc(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> numpy.ndarray:
+
+        # Lazy import because the `scipy.stats.qmc` is slow to import.
+        import scipy.stats.qmc
+
+        sample_id = self._find_sample_id(study, trial, search_space)
+        d = len(search_space)
+
+        # Use cached `qmc_engine` or construct a new one.
+        if self._is_engine_cached(d, sample_id):
+            qmc_engine = self._cached_qmc_engine
+        else:
+            if self._qmc_type == "sobol":
+                qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
+            elif self._qmc_type == "halton":
+                qmc_engine = scipy.stats.qmc.Halton(d, seed=self._seed, scramble=self._scramble)
+            elif self._qmc_type == "LHS":  # Latin Hypercube Sampling
+                qmc_engine = scipy.stats.qmc.LatinHypercube(d, seed=self._seed)
+            elif self._qmc_type == "OA-LHS":  # Orthogonal array-based Latin hypercube sampling
+                qmc_engine = scipy.stats.qmc.OrthogonalLatinHypercube(d, seed=self._seed)
+            else:
+                message = (
+                    f"The `qmc_type`, {self._qmc_type}, is not a valid. "
+                    'It must be one of "sobol", "halton", "LHS", and "OA-LHS".'
+                )
+                raise ValueError(message)
+
+        assert isinstance(qmc_engine, scipy.stats.qmc.QMCEngine)
+
+        forward_size = sample_id - qmc_engine.num_generated  # `sample_id` starts from 0.
+        qmc_engine.fast_forward(forward_size)
+        sample = qmc_engine.random(1)
+        self._cached_qmc_engine = qmc_engine
+
+        return sample
+
+    def _find_sample_id(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> int:
+
+        qmc_id = ""
+        qmc_id += self._qmc_type
+        qmc_id += str(search_space)
+        # Sobol/Halton sequences without scrambling do not use seed.
+        if not (self._qmc_type in ("sobol", "halton") and (self._scramble is False)):
+            qmc_id += str(self._seed)
+        hashed_qmc_id = hash(qmc_id)
+        key_qmc_id = f"qmc ({hashed_qmc_id})'s last sample id"
+
         # TODO(kstoneriv3): Following try-except block assumes that the block is
-        # an atomic transaction. This ensures that each qmc_id is sampled at least once.
-        key_qmc_id = f"{self._qmc_type}_last_qmc_id"
+        # an atomic transaction. This ensures that each sample_id is sampled at least once.
         try:
-            qmc_id = study._storage.get_study_system_attrs(study._study_id)[key_qmc_id]
-            qmc_id += 1
-            study._storage.set_study_system_attr(study._study_id, key_qmc_id, qmc_id)
+            sample_id = study._storage.get_study_system_attrs(study._study_id)[key_qmc_id]
+            sample_id += 1
+            study._storage.set_study_system_attr(study._study_id, key_qmc_id, sample_id)
         except KeyError:
             study._storage.set_study_system_attr(study._study_id, key_qmc_id, 0)
-            qmc_id = 0
+            sample_id = 0
 
-        return qmc_id
+        return sample_id
+
+    def _is_engine_cached(self, d: int, sample_id: int) -> bool:
+
+        if not isinstance(self._cached_qmc_engine, scipy.stats.qmc.QMCEngine):
+            return False
+        else:
+            is_cached = True
+            is_cached &= self._cached_qmc_engine.rng_seed == self._seed
+            is_cached &= self._cached_qmc_engine.d == d
+            is_cached &= self._cached_qmc_engine.num_generated <= sample_id
+
+            # TODO(kstoneriv3): Maybe we should assume that
+            # `_qmc_type` does not change for simplicity.
+            if self._qmc_type == "sobol":
+                is_cached &= self._cached_qmc_engine.__class__.__name__ == "Sobol"
+            elif self._qmc_type == "halton":
+                is_cached &= self._cached_qmc_engine.__class__.__name__ == "Halton"
+            elif self._qmc_type == "LHS":  # Latin Hypercube Sampling
+                is_cached &= self._cached_qmc_engine.__class__.__name__ == "LatinHypercube"
+            elif self._qmc_type == "OA-LHS":  # Orthogonal array-based Latin hypercube sampling
+                is_cached &= (
+                    self._cached_qmc_engine.__class__.__name__ == "OrthogonalLatinHypercube"
+                )
+            else:
+                message = (
+                    f"The `qmc_type`, {self._qmc_type}, is not a valid. "
+                    'It must be one of "sobol", "halton", "LHS", and "OA-LHS".'
+                )
+                raise ValueError(message)
+
+            return is_cached
