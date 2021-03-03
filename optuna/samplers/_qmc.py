@@ -66,7 +66,7 @@ class QMCSampler(BaseSampler):
             A seed for the scrambling (randomization) of QMC sequence.
             This argument is used only when `scramble` is :object:`True`.
 
-            ... note::
+            .. note::
                 When using multiple :class:`~optuna.samplers.QMCSampler`'s in parallel and/or
                 distributed optimization, all the samplers must share the same seed when the
                 `scrambling` is enabled. Otherwise, the low-discrepancy property of the samples
@@ -83,10 +83,10 @@ class QMCSampler(BaseSampler):
             prior trials, :class:`~optuna.samplers.QMCSampler` samples the first trial using its
             `_independent_sampler` and then infers the search space in the second trial.
 
-            ... note::
+            .. note::
                 As mentioned above, the search space of the :class:`~optuna.sampler.QMCSampler` is
                 determined by argument ``search_space`` or the first trial of the study. Once
-                this search space is
+                the search space is determined, it cannot be changed afterwards.
 
         independent_sampler:
             A :class:`~optuna.samplers.BaseSampler` instance that is used for independent
