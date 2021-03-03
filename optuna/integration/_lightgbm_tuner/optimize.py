@@ -366,11 +366,12 @@ class _LightGBMBaseTuner(_BaseTuner):
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
-        optuna_seed: Optional[int] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
         model_dir: Optional[str] = None,
+        *,
+        optuna_seed: Optional[int] = None,
     ) -> None:
 
         _imports.check()
@@ -568,33 +569,29 @@ class _LightGBMBaseTuner(_BaseTuner):
 
     def tune_num_leaves(self, n_trials: int = 20) -> None:
         if self._optuna_seed is None:
-            self._tune_params(
-                ["num_leaves"], 
-                n_trials, 
-                optuna.samplers.TPESampler(), 
-                "num_leaves")
+            self._tune_params(["num_leaves"], n_trials, optuna.samplers.TPESampler(), "num_leaves")
         else:
             self._tune_params(
-                ["num_leaves"], 
-                n_trials, 
-                optuna.samplers.TPESampler(seed=self._optuna_seed), 
-                "num_leaves"
+                ["num_leaves"],
+                n_trials,
+                optuna.samplers.TPESampler(seed=self._optuna_seed),
+                "num_leaves",
             )
 
     def tune_bagging(self, n_trials: int = 10) -> None:
         if self._optuna_seed is None:
             self._tune_params(
                 ["bagging_fraction", "bagging_freq"],
-                n_trials, 
+                n_trials,
                 optuna.samplers.TPESampler(),
-                "bagging"
+                "bagging",
             )
         else:
             self._tune_params(
                 ["bagging_fraction", "bagging_freq"],
-                n_trials, 
+                n_trials,
                 optuna.samplers.TPESampler(seed=self._optuna_seed),
-                "bagging"
+                "bagging",
             )
 
     def tune_feature_fraction_stage2(self, n_trials: int = 6) -> None:
@@ -830,11 +827,12 @@ class LightGBMTuner(_LightGBMBaseTuner):
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
-        optuna_seed: Optional[int] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         model_dir: Optional[str] = None,
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
+        *,
+        optuna_seed: Optional[int] = None,
     ) -> None:
 
         super().__init__(
@@ -851,10 +849,10 @@ class LightGBMTuner(_LightGBMBaseTuner):
             time_budget=time_budget,
             sample_size=sample_size,
             study=study,
-            optuna_seed=optuna_seed,
             optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
+            optuna_seed=optuna_seed,
         )
 
         self.lgbm_kwargs["valid_sets"] = valid_sets
@@ -989,12 +987,13 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
         study: Optional[optuna.study.Study] = None,
-        optuna_seed: Optional[int] = None,
         optuna_callbacks: Optional[List[Callable[[Study, FrozenTrial], None]]] = None,
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
         model_dir: Optional[str] = None,
         return_cvbooster: Optional[bool] = None,
+        *,
+        optuna_seed: Optional[int] = None,
     ) -> None:
 
         super().__init__(
@@ -1011,11 +1010,11 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             time_budget=time_budget,
             sample_size=sample_size,
             study=study,
-            optuna_seed=optuna_seed,
             optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
             model_dir=model_dir,
+            optuna_seed=optuna_seed,
         )
 
         self.lgbm_kwargs["folds"] = folds
