@@ -17,6 +17,7 @@ import allennlp.data
 import allennlp.models
 import allennlp.modules
 import numpy
+from packaging import version
 import torch
 
 import optuna
@@ -116,6 +117,9 @@ def objective(trial):
 
 
 if __name__ == "__main__":
+    if version.parse(allennlp.__version__) < version.parse("2.0.0"):
+        raise RuntimeError("AllenNLP>=2.0.0 is required for this example.")
+
     random.seed(41)
     torch.manual_seed(41)
     numpy.random.seed(41)
