@@ -109,7 +109,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2 ; sys_platform=='darwin'",
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
-            "allennlp",
+            "allennlp>=1.0.0",
             "dask[dataframe]",
             "dask-ml",
             # TODO(crcrpar): Support botorch v0.4.0.
