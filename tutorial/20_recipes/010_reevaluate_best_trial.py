@@ -9,7 +9,7 @@ after the hyperparameter optimization.
 For example,
 
 - You investigate deeply the behavior of ML model with the best hyperparameter.
-- You train the model on the whole dataset that combine the training dataset and the validation dataset.
+- You have optimized with Optuna using a partial dataset because the training time is long. After the hyperparameter tuning, you train the model using the whole dataset.
 
 Optuna provides interface to re-evaluate the objective function easily.
 
@@ -81,8 +81,8 @@ def detailed_objective(trial):
 detailed_objective(study.best_trial)  # calculate acc, f1, recall, and precision
 
 ###################################################################################################
-# Difference between :class:`~optuna.trial.FrozenTrial` and :class:`~optuna.trial.Trial`
-# ---------------------------------------------------------------------------------------
+# Difference between :class:`~optuna.study.Study.best_trial` and ordinal trials
+# ------------------------------------------------------------------------------
 #
 # You obtain :class:`~optuna.study.Study.best_trial` that returns
 # :class:`~optuna.trial.FrozenTrial`.
