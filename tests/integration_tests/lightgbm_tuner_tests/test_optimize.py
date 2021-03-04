@@ -725,6 +725,7 @@ class TestLightGBMTuner(object):
     def test_tune_best_params_reproducibility(self) -> None:
         import sklearn.datasets
         from sklearn.model_selection import train_test_split
+
         from optuna.samplers import TPESampler
         import optuna.study as study
 
@@ -1035,8 +1036,9 @@ class TestLightGBMTunerCV(object):
 
     def test_tune_best_params_reproducibility(self) -> None:
         import sklearn.datasets
-        from sklearn.model_selection import train_test_split
         from sklearn.model_selection import KFold
+        from sklearn.model_selection import train_test_split
+
         from optuna.samplers import TPESampler
         import optuna.study as study
 
