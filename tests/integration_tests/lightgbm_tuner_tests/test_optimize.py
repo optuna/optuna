@@ -722,6 +722,48 @@ class TestLightGBMTuner(object):
 
         assert callback_mock.call_count == 10
 
+    def test_tune_best_params_reproducibility(self) -> None:
+        import sklearn.datasets
+        from sklearn.model_selection import train_test_split
+        from optuna.samplers import TPESampler
+        import optuna.study as study
+
+        boston = sklearn.datasets.load_boston()
+        X_trainval, X_test, y_trainval, y_test = train_test_split(
+            boston.data, boston.target, random_state=0
+        )
+
+        train = lgb.Dataset(X_trainval, y_trainval)
+        valid = lgb.Dataset(X_test, y_test)
+        params = {"objective": "regression", "metric": "rmse", "random_seed": 0}
+
+        test_study = study.create_study(direction="minimize", sampler=TPESampler(seed=10))
+
+        tuner = lgb.LightGBMTuner(
+            params,
+            train,
+            valid_sets=valid,
+            early_stopping_rounds=3,
+            study=test_study,
+            optuna_seed=10,
+        )
+        tuner.run()
+        expected = {
+            "objective": "regression",
+            "metric": "rmse",
+            "random_seed": 0,
+            "feature_pre_filter": False,
+            "lambda_l1": 0.6724660966094561,
+            "lambda_l2": 1.0673069746351881e-08,
+            "num_leaves": 11,
+            "feature_fraction": 1.0,
+            "bagging_fraction": 1.0,
+            "bagging_freq": 0,
+            "min_child_samples": 5,
+        }
+
+        assert tuner.best_params == expected
+
 
 class TestLightGBMTunerCV(object):
     def _get_tunercv_object(
@@ -990,3 +1032,44 @@ class TestLightGBMTunerCV(object):
             # The booster was not saved hence not found in the `model_dir`.
             with pytest.raises(ValueError):
                 tuner3.get_best_booster()
+
+    def test_tune_best_params_reproducibility(self) -> None:
+        import sklearn.datasets
+        from sklearn.model_selection import train_test_split
+        from sklearn.model_selection import KFold
+        from optuna.samplers import TPESampler
+        import optuna.study as study
+
+        boston = sklearn.datasets.load_boston()
+        X_trainval, X_test, y_trainval, y_test = train_test_split(
+            boston.data, boston.target, random_state=0
+        )
+
+        train = lgb.Dataset(X_trainval, y_trainval)
+        params = {"objective": "regression", "metric": "rmse", "random_seed": 0}
+
+        test_study = study.create_study(direction="minimize", sampler=TPESampler(seed=10))
+
+        tuner = lgb.LightGBMTunerCV(
+            params,
+            train,
+            early_stopping_rounds=3,
+            folds=KFold(n_splits=3),
+            study=test_study,
+            optuna_seed=10,
+        )
+        tuner.run()
+        expected = {
+            "objective": "regression",
+            "metric": "rmse",
+            "random_seed": 0,
+            "feature_pre_filter": False,
+            "lambda_l1": 1.8195630232649103,
+            "lambda_l2": 0.02698870526662559,
+            "num_leaves": 31,
+            "feature_fraction": 0.4,
+            "bagging_fraction": 0.849282329523916,
+            "bagging_freq": 2,
+            "min_child_samples": 5,
+        }
+        assert tuner.best_params == expected
