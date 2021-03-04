@@ -44,7 +44,8 @@ def objective(trial):
 if __name__ == "__main__":
     if version.parse(allennlp.__version__) < version.parse("2.0.0"):
         raise RuntimeError(
-            "If you want to use `allennlp<2.0.0`, please install `optuna==2.5.0`"
+            "`allennlp>=2.0.0` is required for this example."
+            " If you want to use `allennlp<2.0.0`, please install `optuna==2.5.0`"
             " and refer to the following example:"
             " https://github.com/optuna/optuna/blob/v2.5.0/examples/allennlp/allennlp_jsonnet.py"
         )
