@@ -1,6 +1,5 @@
 from typing import Dict
 from typing import List
-from typing import Union
 
 import pytorch_lightning as pl
 import torch
@@ -41,12 +40,10 @@ class Model(pl.LightningModule):
         accuracy = pred.eq(target.view_as(pred)).double().mean()
         return {"validation_accuracy": accuracy}
 
-    def validation_epoch_end(  # type: ignore
-        self, outputs: List[Dict[str, torch.Tensor]]
-    ) -> Dict[str, Union[torch.Tensor, float]]:
+    def validation_epoch_end(self, outputs: List[Dict[str, torch.Tensor]]) -> None:
 
         accuracy = sum(x["validation_accuracy"] for x in outputs) / len(outputs)
-        return {"accuracy": accuracy}
+        self.log("accuracy", accuracy)
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
 
