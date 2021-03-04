@@ -30,7 +30,7 @@ CLASSES = 10
 
 class Net(nn.Module):
     def __init__(self, trial):
-        super(Net, self).__init__()
+        super().__init__()
         self.layers = []
         self.dropouts = []
 

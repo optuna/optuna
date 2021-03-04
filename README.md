@@ -66,7 +66,7 @@ def objective(trial):
     # Invoke suggest methods of a Trial object to generate hyperparameters.
     regressor_name = trial.suggest_categorical('classifier', ['SVR', 'RandomForest'])
     if regressor_name == 'SVR':
-        svr_c = trial.suggest_loguniform('svr_c', 1e-10, 1e10)
+        svr_c = trial.suggest_float('svr_c', 1e-10, 1e10, log=True)
         regressor_obj = sklearn.svm.SVR(C=svr_c)
     else:
         rf_max_depth = trial.suggest_int('rf_max_depth', 2, 32)

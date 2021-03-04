@@ -294,7 +294,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
         pbar: Optional[tqdm.tqdm] = None,
     ):
 
-        super(_OptunaObjectiveCV, self).__init__(
+        super().__init__(
             target_param_names,
             lgbm_params,
             train_set,
@@ -806,7 +806,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         show_progress_bar: bool = True,
     ) -> None:
 
-        super(LightGBMTuner, self).__init__(
+        super().__init__(
             params,
             train_set,
             num_boost_round=num_boost_round,
@@ -973,7 +973,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         return_cvbooster: Optional[bool] = None,
     ) -> None:
 
-        super(LightGBMTunerCV, self).__init__(
+        super().__init__(
             params,
             train_set,
             num_boost_round,

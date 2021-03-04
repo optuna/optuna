@@ -16,9 +16,9 @@ def test_suggest() -> None:
 
     def objective(trial: optuna.multi_objective.trial.MultiObjectiveTrial) -> Tuple[float, float]:
         p0 = trial.suggest_float("p0", -10, 10)
-        p1 = trial.suggest_uniform("p1", 3, 5)
-        p2 = trial.suggest_loguniform("p2", 0.00001, 0.1)
-        p3 = trial.suggest_discrete_uniform("p3", 100, 200, q=5)
+        p1 = trial.suggest_float("p1", 3, 5)
+        p2 = trial.suggest_float("p2", 0.00001, 0.1, log=True)
+        p3 = trial.suggest_float("p3", 100, 200, step=5)
         p4 = trial.suggest_int("p4", -20, -15)
         p5 = cast(int, trial.suggest_categorical("p5", [7, 1, 100]))
         p6 = trial.suggest_float("p6", -10, 10, step=1.0)

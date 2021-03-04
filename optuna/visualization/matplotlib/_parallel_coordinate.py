@@ -36,21 +36,21 @@ def plot_parallel_coordinate(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
-    """Plot the high-dimentional parameter relationships in a study with Matplotlib.
+    """Plot the high-dimensional parameter relationships in a study with Matplotlib.
 
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_parallel_coordinate` for an example.
 
     Example:
 
-        The following code snippet shows how to plot the high-dimentional parameter relationships.
+        The following code snippet shows how to plot the high-dimensional parameter relationships.
 
         .. plot::
 
             import optuna
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -100, 100)
+                x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
 

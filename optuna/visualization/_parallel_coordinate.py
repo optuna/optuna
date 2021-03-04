@@ -32,13 +32,13 @@ def plot_parallel_coordinate(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> "go.Figure":
-    """Plot the high-dimentional parameter relationships in a study.
+    """Plot the high-dimensional parameter relationships in a study.
 
     Note that, If a parameter contains missing values, a trial with missing values is not plotted.
 
     Example:
 
-        The following code snippet shows how to plot the high-dimentional parameter relationships.
+        The following code snippet shows how to plot the high-dimensional parameter relationships.
 
         .. plotly::
 
@@ -46,7 +46,7 @@ def plot_parallel_coordinate(
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -100, 100)
+                x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
 
@@ -55,7 +55,8 @@ def plot_parallel_coordinate(
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=10)
 
-            optuna.visualization.plot_parallel_coordinate(study, params=["x", "y"])
+            fig = optuna.visualization.plot_parallel_coordinate(study, params=["x", "y"])
+            fig.show()
 
     Args:
         study:
@@ -155,7 +156,7 @@ def _get_parallel_coordinate_plot(
                 "values": tuple(values),
                 "range": (min(values), max(values)),
                 "tickvals": list(range(len(vocab))),
-                "ticktext": list(sorted(vocab.items(), key=lambda x: x[1])),
+                "ticktext": list(sorted(vocab.keys(), key=lambda x: vocab[x])),
             }
         else:
             dim = {

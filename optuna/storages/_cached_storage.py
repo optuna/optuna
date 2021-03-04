@@ -31,6 +31,7 @@ class _TrialUpdate:
         self.params: Dict[str, Any] = {}
         self.distributions: Dict[str, distributions.BaseDistribution] = {}
         self.datetime_complete: Optional[datetime.datetime] = None
+        self.datetime_start: Optional[datetime.datetime] = None
 
 
 class _StudyInfo:
@@ -197,10 +198,16 @@ class _CachedStorage(BaseStorage):
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
+                # When a waiting trial is updated to running, its `datetime_start` must be
+                # updated. However, a waiting trials is never cached so we do not have to account
+                # for this case.
+                assert cached_trial.state != TrialState.WAITING
+
                 self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
                 cached_trial.state = state
                 updates.state = state
+
                 if cached_trial.state.is_finished():
                     updates.datetime_complete = datetime.datetime.now()
                     cached_trial.datetime_complete = datetime.datetime.now()
@@ -426,6 +433,7 @@ class _CachedStorage(BaseStorage):
             distributions_=updates.distributions,
             user_attrs=updates.user_attrs,
             system_attrs=updates.system_attrs,
+            datetime_start=updates.datetime_start,
             datetime_complete=updates.datetime_complete,
         )
 

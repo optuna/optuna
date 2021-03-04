@@ -4,6 +4,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
 
 import numpy
@@ -48,7 +49,7 @@ class PyCmaSampler(BaseSampler):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -1, 1)
+                x = trial.suggest_float("x", -1, 1)
                 y = trial.suggest_int("y", -1, 1)
                 return x ** 2 + y
 
@@ -290,6 +291,16 @@ class PyCmaSampler(BaseSampler):
             )
         )
 
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+
+        self._independent_sampler.after_trial(study, trial, state, values)
+
 
 class _Optimizer(object):
     def __init__(
@@ -485,7 +496,7 @@ class CmaEsSampler(PyCmaSampler):
         warn_independent_sampling: bool = True,
     ) -> None:
 
-        super(CmaEsSampler, self).__init__(
+        super().__init__(
             x0=x0,
             sigma0=sigma0,
             cma_stds=cma_stds,

@@ -26,7 +26,7 @@ class RandomSampler(BaseSampler):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -5, 5)
+                x = trial.suggest_float("x", -5, 5)
                 return x ** 2
 
 
