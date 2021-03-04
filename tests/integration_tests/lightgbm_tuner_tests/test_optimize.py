@@ -647,18 +647,14 @@ class TestLightGBMTuner(object):
         with pytest.raises(ValueError):
             tuner2.get_best_booster()
 
-    @pytest.mark.parametrize("mock_exists, expected", [(False, True), (True, False)])
-    def test_model_dir(self, mock_exists: bool, expected: bool) -> None:
+    @pytest.mark.parametrize("dir_exists, expected", [(False, True), (True, False)])
+    def test_model_dir(self, dir_exists: bool, expected: bool) -> None:
         params: Dict = {"verbose": -1}
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
-        study = optuna.create_study()
-
         with mock.patch("optuna.integration._lightgbm_tuner.optimize.os.mkdir") as m:
-            with mock.patch("os.path.exists", return_value=mock_exists):
-                LightGBMTuner(
-                    params, dataset, valid_sets=dataset, study=study, model_dir="./booster"
-                )
+            with mock.patch("os.path.exists", return_value=dir_exists):
+                LightGBMTuner(params, dataset, valid_sets=dataset, model_dir="./booster")
                 assert m.called == expected
 
     def test_best_booster_with_model_dir(self) -> None:
@@ -952,11 +948,10 @@ class TestLightGBMTunerCV(object):
 
         params: Dict = {"verbose": -1, "lambda_l1": unexpected_value}
         dataset = lgb.Dataset(np.zeros((10, 10)))
-        study = optuna.create_study()
 
         with mock.patch("os.mkdir") as m:
             with mock.patch("os.path.exists", return_value=dir_exists):
-                LightGBMTunerCV(params, dataset, study=study, model_dir="./booster")
+                LightGBMTunerCV(params, dataset, model_dir="./booster")
                 assert m.called == expected
 
     def test_get_best_booster(self) -> None:
