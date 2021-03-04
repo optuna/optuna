@@ -68,7 +68,7 @@ class _LazyImport(types.ModuleType):
     """
 
     def __init__(self, name: str) -> None:
-        super(_LazyImport, self).__init__(name)
+        super().__init__(name)
         self._name = name
 
     def _load(self) -> types.ModuleType:

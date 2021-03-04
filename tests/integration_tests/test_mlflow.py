@@ -10,8 +10,8 @@ from optuna.integration.mlflow import MLflowCallback
 
 def _objective_func(trial: optuna.trial.Trial) -> float:
 
-    x = trial.suggest_uniform("x", -1.0, 1.0)
-    y = trial.suggest_loguniform("y", 20, 30)
+    x = trial.suggest_float("x", -1.0, 1.0)
+    y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
     assert isinstance(z, float)
     trial.set_user_attr("my_user_attr", "my_user_attr_value")
@@ -25,8 +25,8 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
 # see https://github.com/mlflow/mlflow/issues/2931
 def _objective_func_long_user_attr(trial: optuna.trial.Trial) -> float:
 
-    x = trial.suggest_uniform("x", -1.0, 1.0)
-    y = trial.suggest_loguniform("y", 20, 30)
+    x = trial.suggest_float("x", -1.0, 1.0)
+    y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
     assert isinstance(z, float)
     long_str = str(list(range(5000)))
@@ -70,7 +70,7 @@ def test_study_name(tmpdir: py.path.local) -> None:
     )
     assert (
         first_run_dict["data"]["tags"]["y_distribution"]
-        == "LogUniformDistribution(high=30, low=20)"
+        == "LogUniformDistribution(high=30.0, low=20.0)"
     )
     assert (
         first_run_dict["data"]["tags"]["z_distribution"]

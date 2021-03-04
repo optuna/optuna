@@ -25,7 +25,7 @@ def test_hyperopt_parameters(use_hyperband: bool) -> None:
     study = optuna.create_study(
         sampler=sampler, pruner=optuna.pruners.HyperbandPruner() if use_hyperband else None
     )
-    study.optimize(lambda t: t.suggest_uniform("x", 10, 20), n_trials=50)
+    study.optimize(lambda t: t.suggest_float("x", 10, 20), n_trials=50)
 
 
 def test_multivariate_experimental_warning() -> None:
@@ -46,9 +46,9 @@ def test_infer_relative_search_space() -> None:
     }
 
     def obj(t: Trial) -> float:
-        t.suggest_uniform("a", 1.0, 100.0)
-        t.suggest_loguniform("b", 1.0, 100.0)
-        t.suggest_discrete_uniform("c", 1.0, 100.0, 3.0)
+        t.suggest_float("a", 1.0, 100.0)
+        t.suggest_float("b", 1.0, 100.0, log=True)
+        t.suggest_float("c", 1.0, 100.0, step=3.0)
         t.suggest_int("d", 1, 100)
         t.suggest_int("e", 0, 100, step=2)
         t.suggest_int("f", 1, 100, log=True)
@@ -869,3 +869,31 @@ def test_reseed_rng() -> None:
         sampler.reseed_rng()
         assert mock_object.call_count == 1
         assert original_seed != sampler._rng.seed
+
+
+def test_call_after_trial_of_random_sampler() -> None:
+    sampler = TPESampler()
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(
+        sampler._random_sampler, "after_trial", wraps=sampler._random_sampler.after_trial
+    ) as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1
+
+
+def test_mixed_relative_search_space_pruned_and_completed_trials() -> None:
+    def objective(trial: Trial) -> float:
+        if trial.number == 0:
+            trial.suggest_uniform("param1", 0, 1)
+            raise optuna.exceptions.TrialPruned()
+
+        if trial.number == 1:
+            trial.suggest_uniform("param2", 0, 1)
+            return 0
+
+        return 0
+
+    sampler = TPESampler(n_startup_trials=1, multivariate=True)
+    study = optuna.create_study(sampler=sampler)
+
+    study.optimize(objective, 3)

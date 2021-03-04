@@ -680,7 +680,7 @@ class TestLightGBMTuner(object):
                 optuna.integration._lightgbm_tuner.optimize._STEP_NAME_KEY,
                 "step{:.0f}".format(value),
             )
-            return trial.suggest_uniform("x", value, value)
+            return trial.suggest_float("x", value, value)
 
         study = optuna.create_study(direction=direction)
         study_step1 = tuner._create_stepwise_study(study, "step1")

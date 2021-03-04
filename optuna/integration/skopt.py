@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 import warnings
 
@@ -38,7 +39,7 @@ class SkoptSampler(BaseSampler):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -10, 10)
+                x = trial.suggest_float("x", -10, 10)
                 y = trial.suggest_int("y", 0, 10)
                 return x ** 2 + y
 
@@ -221,6 +222,16 @@ class SkoptSampler(BaseSampler):
                 copied_t.value = value
                 complete_trials.append(copied_t)
         return complete_trials
+
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+
+        self._independent_sampler.after_trial(study, trial, state, values)
 
 
 class _Optimizer(object):
