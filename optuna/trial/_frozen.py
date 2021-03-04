@@ -589,7 +589,6 @@ def create_trial(
     user_attrs = user_attrs or {}
     system_attrs = system_attrs or {}
     intermediate_values = intermediate_values or {}
-    state = state
 
     if state == TrialState.WAITING:
         datetime_start = None
