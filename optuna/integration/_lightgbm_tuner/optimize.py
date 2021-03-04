@@ -568,31 +568,20 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction")
 
     def tune_num_leaves(self, n_trials: int = 20) -> None:
-        if self._optuna_seed is None:
-            self._tune_params(["num_leaves"], n_trials, optuna.samplers.TPESampler(), "num_leaves")
-        else:
-            self._tune_params(
-                ["num_leaves"],
-                n_trials,
-                optuna.samplers.TPESampler(seed=self._optuna_seed),
-                "num_leaves",
-            )
+        self._tune_params(
+            ["num_leaves"],
+            n_trials,
+            optuna.samplers.TPESampler(seed=self._optuna_seed),
+            "num_leaves",
+        )
 
     def tune_bagging(self, n_trials: int = 10) -> None:
-        if self._optuna_seed is None:
-            self._tune_params(
-                ["bagging_fraction", "bagging_freq"],
-                n_trials,
-                optuna.samplers.TPESampler(),
-                "bagging",
-            )
-        else:
-            self._tune_params(
-                ["bagging_fraction", "bagging_freq"],
-                n_trials,
-                optuna.samplers.TPESampler(seed=self._optuna_seed),
-                "bagging",
-            )
+        self._tune_params(
+            ["bagging_fraction", "bagging_freq"],
+            n_trials,
+            optuna.samplers.TPESampler(seed=self._optuna_seed),
+            "bagging",
+        )
 
     def tune_feature_fraction_stage2(self, n_trials: int = 6) -> None:
         param_name = "feature_fraction"
@@ -606,20 +595,12 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction_stage2")
 
     def tune_regularization_factors(self, n_trials: int = 20) -> None:
-        if self._optuna_seed is None:
-            self._tune_params(
-                ["lambda_l1", "lambda_l2"],
-                n_trials,
-                optuna.samplers.TPESampler(),
-                "regularization_factors",
-            )
-        else:
-            self._tune_params(
-                ["lambda_l1", "lambda_l2"],
-                n_trials,
-                optuna.samplers.TPESampler(seed=self._optuna_seed),
-                "regularization_factors",
-            )
+        self._tune_params(
+            ["lambda_l1", "lambda_l2"],
+            n_trials,
+            optuna.samplers.TPESampler(seed=self._optuna_seed),
+            "regularization_factors",
+        )
 
     def tune_min_data_in_leaf(self) -> None:
         param_name = "min_child_samples"
