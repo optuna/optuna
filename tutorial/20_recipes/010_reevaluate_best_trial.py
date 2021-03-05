@@ -4,7 +4,7 @@
 Re-evaluate the best trial
 ==========================
 
-You might re-evaluate the objective with the best hyperparameters again
+You can re-evaluate the objective with the best hyperparameters again
 after the hyperparameter optimization.
 For example,
 
