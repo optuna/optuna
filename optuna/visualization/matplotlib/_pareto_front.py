@@ -26,11 +26,14 @@ def plot_pareto_front(
 ) -> "Axes":
     """Plot the Pareto front of a study.
 
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_pareto_front` for an example.
+
     Example:
 
         The following code snippet shows how to plot the Pareto front of a study.
 
-        .. plotly::
+        .. plot::
 
             import optuna
 
@@ -47,7 +50,7 @@ def plot_pareto_front(
             study = optuna.create_study(directions=["minimize", "minimize"])
             study.optimize(objective, n_trials=50)
 
-            optuna.matplotlib.visualization.plot_pareto_front(study)
+            optuna.visualization.matplotlib.plot_pareto_front(study)
 
     Args:
         study:
@@ -63,7 +66,7 @@ def plot_pareto_front(
             default order is used.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`matplotlib.axes.Axes` object.
 
     Raises:
         :exc:`ValueError`:
