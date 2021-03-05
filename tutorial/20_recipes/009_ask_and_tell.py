@@ -89,7 +89,7 @@ for _ in range(n_trials):
 # :func:`optuna.study.Study.ask` creates a trial that can sample hyperparameters, and
 # :func:`optuna.study.Study.tell` finishes the trial by passing ``trial`` and an objective value.
 # You can apply Optuna's hyperparameter optimization to your original code easily
-# without definition ``objective`` thanks to the ask-and-tell interface.
+# without defining ``objective``.
 #
 # If you make your optimization faster with a pruner, you need explicitly pass the state of trial
 # to the argument of :func:`optuna.study.Study.tell` method as follows:
