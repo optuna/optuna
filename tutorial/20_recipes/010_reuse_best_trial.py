@@ -6,17 +6,17 @@ Re-use the best values
 
 You can re-evaluate the objective with the best hyperparameters again
 after the hyperparameter optimization.
-For example,
+Example,
 
-- You investigate deeply the behavior of ML model with the best hyperparameter.
-- You have optimized with Optuna using a partial dataset because the training time is long. After the hyperparameter tuning, you train the model using the whole dataset.
+- You've found some good hyperparameters with Optuna, and now you want to run a new `objective` function with the best hyperparameters found so far to do some additional analysis, or
+- You've used Optuna to search for the best hyperparameters with a partial dataset to reduce the training time. Now, you want to use those hyperparameters to train your model with the whole dataset.
 
-Optuna provides interface to re-evaluate the objective function easily.
+Optuna provides an interface to re-evaluate the objective function using the current best values.
 
-This tutorial shows an example.
+This tutorial illustrates the example above, showing how to call a different function with the current best hyperparameter values for additional analysis.
 
-Investigate the best model more
---------------------------------
+Analyze the model using the best hyperparameters
+-------------------------------------------------
 
 Let's consider a classical supervised classification problem with Optuna as follows:
 """
@@ -48,9 +48,9 @@ study.optimize(objective, n_trials=10)
 print(study.best_trial.value)  # Show the best value.
 
 ###################################################################################################
-# After the hyperparameter optimization, you are interested in other evaluation metrics
+# After the hyperparameter optimization, let's calculate other evaluation metrics
 # such as recall, precision, and f1-score on the same dataset.
-# You can define another objective function that share most of parts of the ``objective``
+# You can define another objective function that shares most of parts of the ``objective``
 # function to reproduce the model with the best hyper-parameters.
 
 
