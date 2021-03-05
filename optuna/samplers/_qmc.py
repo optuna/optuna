@@ -142,6 +142,7 @@ class QMCSampler(BaseSampler):
 
     def __init__(
         self,
+        use_categorical = True, # TODO
         *,
         qmc_type: str = "sobol",
         scramble: bool = False,
@@ -151,6 +152,8 @@ class QMCSampler(BaseSampler):
         warn_independent_sampling: bool = True,
         warn_asyncronous_seeding: bool = True,
     ) -> None:
+
+        self._use_categorical = use_categorical
 
         self._scramble = scramble
         self._seed = seed or numpy.random.MT19937().random_raw()
@@ -198,7 +201,8 @@ class QMCSampler(BaseSampler):
         search_space = OrderedDict()  # type: OrderedDict[str, BaseDistribution]
         for param_name, distribution in trial.distributions.items():
             if not isinstance(distribution, _NUMERICAL_DISTRIBUTIONS):
-                continue
+                if not self._use_categorical:  # TODO
+                    continue
             search_space[param_name] = distribution
 
         return search_space
@@ -250,13 +254,32 @@ class QMCSampler(BaseSampler):
 
         if search_space == {}:
             return {}
+        
+        if 0:  # TODO
+            sample = self._sample_qmc(study, trial, search_space)
+            trans = _SearchSpaceTransform(search_space)
+            sample = scipy.stats.qmc.scale(sample, trans.bounds[:, 0], trans.bounds[:, 1])
+            sample = trans.untransform(sample[0, :])
+            return sample
+        else:
+            # TODO
+            search_space0 = {k:v for (k, v) in search_space.items() if not isinstance(v, distributions.CategoricalDistribution)}
+            search_space1 = {k:v for (k, v) in search_space.items() if isinstance(v, distributions.CategoricalDistribution)}
+            n0 = len(search_space0)
 
-        sample = self._sample_qmc(study, trial, search_space)
-        trans = _SearchSpaceTransform(search_space)
-        sample = scipy.stats.qmc.scale(sample, trans.bounds[:, 0], trans.bounds[:, 1])
-        sample = trans.untransform(sample[0, :])
+            sample = self._sample_qmc(study, trial, search_space)
+            ret = {}
+            if n0 > 0:
+                trans0 = _SearchSpaceTransform(search_space0)
+                sample[:, :n0] = scipy.stats.qmc.scale(sample[:, :n0], trans0.bounds[:, 0], trans0.bounds[:, 1])
+                ret.update(trans0.untransform(sample[0, :n0]))
+            for i, (param, dist) in enumerate(search_space1.items()):
+                n_categories = len(dist.choices)
+                ret[param] = dist.to_external_repr(int(numpy.floor(n_categories * sample[:, n0 + i])))
 
-        return sample
+            sample = sample.reshape([-1])
+            return ret
+
 
     def _sample_qmc(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
@@ -272,6 +295,7 @@ class QMCSampler(BaseSampler):
         if self._is_engine_cached(d, sample_id):
             qmc_engine = self._cached_qmc_engine
         else:
+            print("Cache miss!") # TODO
             if self._qmc_type == "sobol":
                 qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
             elif self._qmc_type == "halton":
