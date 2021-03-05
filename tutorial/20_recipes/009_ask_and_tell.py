@@ -39,7 +39,7 @@ val_accuracy = clf.score(X_test, y_test)  # the objective
 ###################################################################################################
 # Then you try to optimize hyperparameters ``C`` and ``solver`` of the classifier by using optuna.
 # When you introduce optuna naively, you define an ``objective`` function
-# such that it takes ``trial`` and contains ``suggest_*`` functions to sample the hyperparameters:
+# such that it takes ``trial`` and calls ``suggest_*`` methods of ``trial`` to sample the hyperparameters:
 
 
 def objective(trial):
