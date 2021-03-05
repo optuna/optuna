@@ -76,7 +76,7 @@ def detailed_objective(trial):
 
 
 ###################################################################################################
-# You just pass ``study.best_trial`` as the argument of ``detailed_objective``.
+# Pass ``study.best_trial`` as the argument of ``detailed_objective``.
 
 detailed_objective(study.best_trial)  # calculate acc, f1, recall, and precision
 
