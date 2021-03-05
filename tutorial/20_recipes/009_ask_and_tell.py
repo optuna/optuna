@@ -14,7 +14,7 @@ This tutorial explains three use-cases when the ask-and-tell interface is benefi
 .. _Apply-optuna-to-an-existing-optimization-problem-with-minimum-modifications:
 
 ----------------------------------------------------------------------------
-Apply optuna to an existing optimization problem with minimum modifications
+Apply Optuna to an existing optimization problem with minimum modifications
 ----------------------------------------------------------------------------
 
 Let's consider the traditional supervised classification problem; you aim to maximize the validation accuracy.
@@ -88,7 +88,7 @@ for _ in range(n_trials):
 # and :func:`optuna.study.Study.tell`.
 # :func:`optuna.study.Study.ask` creates a trial that can sample hyperparameters, and
 # :func:`optuna.study.Study.tell` finishes the trial by passing ``trial`` and an objective value.
-# You can apply optuna's hyperparameter optimization to your original code easily
+# You can apply Optuna's hyperparameter optimization to your original code easily
 # without definition ``objective`` thanks to the ask-and-tell interface.
 #
 # If you make your optimization faster with a pruner, you need explicitly pass the state of trial
