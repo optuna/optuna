@@ -2,7 +2,7 @@
 .. _user_defined_pruner:
 
 User-Defined Pruner
-====================
+===================
 
 In :mod:`optuna.pruners`, we described how an objective function can optionally include
 calls to a pruning feature which allows Optuna to terminate an optimization
@@ -16,13 +16,14 @@ Overview of Pruning Interface
 The :func:`~optuna.study.create_study` constructor takes, as an optional
 argument, a pruner inheriting from :class:`~optuna.pruners.BasePruner`. The
 pruner should implement the abstract method
-:meth:`~optuna.pruners.BaseSampler.prune`, which takes arguments for the
+:func:`~optuna.pruners.BaseSampler.prune`, which takes arguments for the
 associated :class:`~optuna.study.Study` and :class:`~optuna.trial.Trial` and
-returns a boolean value: `True` if the trial should be pruned and `False`
+returns a boolean value: :obj:`True` if the trial should be pruned and :obj:`False`
 otherwise. Using the Study and Trial objects, you can access all other trials
-through the :meth:`study.get_trial` method and, and from a trial, its reported
-intermediate values through the `trial.intermediate_values` attribute (a
-dictionary which maps an integer `step` to a float value).
+through the :func:`~optuna.study.Study.get_trial` method and, and from a trial,
+its reported intermediate values through the
+:func:`~optuna.trial.FrozenTrial.intermediate_values` (a
+dictionary which maps an integer ``step`` to a float value).
 
 You can refer to the source code of the built-in Optuna pruners as templates for
 building your own. In this document, for illustration, we describe the
@@ -30,10 +31,10 @@ construction and usage of a simple (but aggressive) pruner which prunes trials
 that are in last place compared to completed trials at the same step.
 
 .. note::
-  Please refer to the documentation of :class:`~optuna.pruners.BasePruner` or,
-  for example, :class:`~optuna.pruners.ThresholdPruner` or
-  :class:`optuna.pruners.PercentilePruner` for more robust examples of pruner
-  implementation, including error checking and complex pruner-internal logic.
+    Please refer to the documentation of :class:`~optuna.pruners.BasePruner` or,
+    for example, :class:`~optuna.pruners.ThresholdPruner` or
+    :class:`~optuna.pruners.PercentilePruner` for more robust examples of pruner
+    implementation, including error checking and complex pruner-internal logic.
 
 An Example: Implementing ``LastPlacePruner``
 --------------------------------------------
@@ -43,10 +44,10 @@ gradient descent classifier (``SGDClassifier``) run on the sklearn iris dataset.
 implement a pruner which terminates a trial at a certain step if it is in last
 place compared to completed trials at the same step. We begin considering
 pruning after a "warmup" of 1 training step and 5 completed trials. For
-demonstration purposes, we print() a diagnostic message from prune() when it is
-about to return True (indicating pruning).
+demonstration purposes, we :func:`print` a diagnostic message from ``prune`` when
+it is about to return :obj:`True` (indicating pruning).
 
-It may be important to note that the SGDClassifier score, as it is evaluated on
+It may be important to note that the ``SGDClassifier`` score, as it is evaluated on
 a holdout set, decreases with enough training steps due to overfitting. This
 means that a trial could be pruned even if it had a favorable (high) value on a
 previous training set. After pruning, Optuna will take the intermediate value
