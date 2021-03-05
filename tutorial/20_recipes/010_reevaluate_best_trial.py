@@ -18,7 +18,7 @@ This tutorial shows an example.
 Investigate the best model more
 --------------------------------
 
-Let's consider the classical supervised classification problem with optuna as follows:
+Let's consider a classical supervised classification problem with Optuna as follows:
 """
 
 from sklearn import metrics
