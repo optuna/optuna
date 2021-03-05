@@ -10,8 +10,6 @@ optimizing the validation accuracy of MNIST dataset and the FLOPS of the model i
 We use `thop <https://github.com/Lyken17/pytorch-OpCounter>`_ to measure FLOPS.
 """
 
-import urllib
-
 import thop
 import torch
 import torch.nn as nn
@@ -19,12 +17,6 @@ import torch.nn.functional as F
 import torchvision
 
 import optuna
-
-# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
-# This is a temporary fix until torchvision v0.9 is released.
-opener = urllib.request.build_opener()
-opener.addheaders = [("User-agent", "Mozilla/5.0")]
-urllib.request.install_opener(opener)
 
 DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 DIR = ".."
