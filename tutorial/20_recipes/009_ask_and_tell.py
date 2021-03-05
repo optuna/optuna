@@ -194,7 +194,7 @@ for _ in range(n_trials):
 # Batch Optimization
 # -------------------
 # The ask-and-tell interface enables us to optimize a batched objective.
-# That can make a soft of optimization faster, especially, when the objective is evaluated by
+# That can make optimization faster, especially, when the objective is evaluated by
 # batch.
 # For example, parallelizable evaluation, operation over vectors, etc.
 
