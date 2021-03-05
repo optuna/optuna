@@ -1,7 +1,7 @@
 """
 .. _reevaluate_best_trial:
 
-Re-evaluate the best trial
+Re-use the best values
 ==========================
 
 You can re-evaluate the objective with the best hyperparameters again
