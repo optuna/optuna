@@ -44,6 +44,7 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     "multi_objective_sampler_class",
     [
         optuna.samplers.NSGAIISampler,
+        optuna.samplers.MOTPESampler,
     ],
 )
 
