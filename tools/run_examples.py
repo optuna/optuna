@@ -11,7 +11,7 @@ from typing import Tuple
 
 EXAMPLES_DIR = Path(__file__).parents[1] / Path("examples")
 ALL_EXAMPLES: List[str] = [str(p) for p in EXAMPLES_DIR.glob("**/*.py")]
-# TODO (crcrpar): Allow fastaiv2 example once https://forums.fast.ai/t/ganlearner-error-no-implementation-found-on-types-that-implement-invisibletensor/83451/7 gets resolved.
+# TODO (crcrpar): Allow fastaiv2 example once https://forums.fast.ai/t/ganlearner-error-no-implementation-found-on-types-that-implement-invisibletensor/83451/7 gets resolved.  # NOQA
 _DEFAULT_DENY_LIST: List[str] = [
     "fastai",
     "hydra/simple",
