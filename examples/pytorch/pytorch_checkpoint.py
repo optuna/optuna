@@ -1,13 +1,19 @@
 """
-Optuna example that optimizes multi-layer perceptrons using PyTorch.
+Optuna example that optimizes multi-layer perceptrons using PyTorch with checkpoint.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
 PyTorch and MNIST. We optimize the neural network architecture as well as the optimizer
 configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
 subset of it.
 
+Even if the process where the trial is running is killed for some reason, you can restart from
+previous saved checkpoint using heartbeat.
+
+    $ timeout 20 python examples/pytorch/pytorch_checkpoint.py
+    $ python examples/pytorch/pytorch_checkpoint.py
 """
 
+import copy
 import os
 
 import torch
@@ -19,7 +25,6 @@ from torchvision import datasets
 from torchvision import transforms
 
 import optuna
-from optuna.trial import TrialState
 
 
 DEVICE = torch.device("cpu")
@@ -78,11 +83,23 @@ def objective(trial):
     lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
     optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
 
+    if "checkpoint_path" in trial.user_attrs:
+        checkpoint = torch.load(trial.user_attrs["checkpoint_path"])
+        epoch_begin = checkpoint["epoch"] + 1
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        accuracy = checkpoint["accuracy"]
+    else:
+        epoch_begin = 0
+
     # Get the MNIST dataset.
     train_loader, valid_loader = get_mnist()
 
+    path = f"pytorch_checkpoint/{trial.number}"
+    os.makedirs(path, exist_ok=True)
+
     # Training of the model.
-    for epoch in range(EPOCHS):
+    for epoch in range(epoch_begin, EPOCHS):
         model.train()
         for batch_idx, (data, target) in enumerate(train_loader):
             # Limiting training data for faster epochs.
@@ -115,6 +132,18 @@ def objective(trial):
 
         trial.report(accuracy, epoch)
 
+        # Save optimization status. We should save the objective value because the process may be
+        # killed between saving the last model and recording the objective value to the storage.
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "accuracy": accuracy,
+            },
+            os.path.join(path, "model.pt"),
+        )
+
         # Handle pruning based on the intermediate value.
         if trial.should_prune():
             raise optuna.exceptions.TrialPruned()
@@ -122,12 +151,36 @@ def objective(trial):
     return accuracy
 
 
-if __name__ == "__main__":
-    study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=100, timeout=600)
+def restart_from_checkpoint(study, trial):
+    # Enqueue trial with the same parameters as the stale trial to use saved information.
 
-    pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
-    complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
+    path = f"pytorch_checkpoint/{trial.number}/model.pt"
+    user_attrs = copy.deepcopy(trial.user_attrs)
+    if os.path.exists(path):
+        user_attrs["checkpoint_path"] = path
+
+    study.add_trial(
+        optuna.create_trial(
+            state=optuna.trial.TrialState.WAITING,
+            params=trial.params,
+            distributions=trial.distributions,
+            user_attrs=user_attrs,
+            system_attrs=trial.system_attrs,
+        )
+    )
+
+
+if __name__ == "__main__":
+    storage = optuna.storages.RDBStorage(
+        "sqlite:///example.db", heartbeat_interval=1, failed_trial_callback=restart_from_checkpoint
+    )
+    study = optuna.create_study(
+        storage=storage, study_name="pytorch_checkpoint", direction="maximize", load_if_exists=True
+    )
+    study.optimize(objective, n_trials=10, timeout=600)
+
+    pruned_trials = study.get_trials(states=(optuna.trial.TrialState.PRUNED,))
+    complete_trials = study.get_trials(states=(optuna.trial.TrialState.COMPLETE,))
 
     print("Study statistics: ")
     print("  Number of finished trials: ", len(study.trials))
@@ -142,3 +195,6 @@ if __name__ == "__main__":
     print("  Params: ")
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
+
+    # The line of the resumed trial's intermediate values begins with the restarted epoch.
+    optuna.visualization.plot_intermediate_values(study).show()

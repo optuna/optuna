@@ -294,7 +294,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
         pbar: Optional[tqdm.tqdm] = None,
     ):
 
-        super(_OptunaObjectiveCV, self).__init__(
+        super().__init__(
             target_param_names,
             lgbm_params,
             train_set,
@@ -441,6 +441,9 @@ class _LightGBMBaseTuner(_BaseTuner):
                 " instead.",
                 FutureWarning,
             )
+
+        if self._model_dir is not None and not os.path.exists(self._model_dir):
+            os.mkdir(self._model_dir)
 
     @property
     def best_score(self) -> float:
@@ -803,7 +806,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         show_progress_bar: bool = True,
     ) -> None:
 
-        super(LightGBMTuner, self).__init__(
+        super().__init__(
             params,
             train_set,
             num_boost_round=num_boost_round,
@@ -820,6 +823,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
             optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
+            model_dir=model_dir,
         )
 
         self.lgbm_kwargs["valid_sets"] = valid_sets
@@ -829,10 +833,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
         self.lgbm_kwargs["keep_training_booster"] = keep_training_booster
 
         self._best_booster_with_trial_number: Optional[Tuple[lgb.Booster, int]] = None
-        self._model_dir = model_dir
-
-        if self._model_dir is not None and not os.path.exists(self._model_dir):
-            os.mkdir(self._model_dir)
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
@@ -903,6 +903,15 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
             Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
 
+        model_dir:
+            A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
+            saved. Please set shared directory (e.g., directories on NFS) if you want to access
+            :meth:`~optuna.integration.LightGBMTunerCV.get_best_booster`
+            in distributed environments.
+            Otherwise, it may raise :obj:`ValueError`. If the directory does not exist, it will be
+            created. The filenames of the boosters will be ``{model_dir}/{trial_number}.pkl``
+            (e.g., ``./boosters/0.pkl``).
+
         verbosity:
             A verbosity level to change Optuna's logging level. The level is aligned to
             `LightGBM's verbosity`_ .
@@ -920,6 +929,9 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             .. note::
                 Progress bars will be fragmented by logging messages of LightGBM and Optuna.
                 Please suppress such messages to show the progress bars properly.
+
+        return_cvbooster:
+            Flag to enable :meth:`~optuna.integration.LightGBMTunerCV.get_best_booster`.
 
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     .. _lightgbm.cv(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html
@@ -961,7 +973,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         return_cvbooster: Optional[bool] = None,
     ) -> None:
 
-        super(LightGBMTunerCV, self).__init__(
+        super().__init__(
             params,
             train_set,
             num_boost_round,

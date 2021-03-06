@@ -17,6 +17,7 @@ import sklearn.linear_model
 import sklearn.model_selection
 
 import optuna
+from optuna.trial import TrialState
 
 
 # FYI: Objective functions can take additional arguments
@@ -49,8 +50,8 @@ if __name__ == "__main__":
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100)
 
-    pruned_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]
-    complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+    pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
+    complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
 
     print("Study statistics: ")
     print("  Number of finished trials: ", len(study.trials))

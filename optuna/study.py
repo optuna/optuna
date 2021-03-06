@@ -229,7 +229,7 @@ class Study(BaseStudy):
         self.study_name = study_name
         storage = storages.get_storage(storage)
         study_id = storage.get_study_id_from_name(study_name)
-        super(Study, self).__init__(study_id, storage)
+        super().__init__(study_id, storage)
 
         self.sampler = sampler or samplers.TPESampler()
         self.pruner = pruner or pruners.MedianPruner()
@@ -347,6 +347,13 @@ class Study(BaseStudy):
             n_jobs:
                 The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
                 set to CPU count.
+
+                .. note::
+                    ``n_jobs`` allows parallelization using :obj:`threading` and may suffer from
+                    `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`_.
+                    It is recommended to use :ref:`process-based parallelization<distributed>`
+                    if ``func`` is CPU bound.
+
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any

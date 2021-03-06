@@ -57,7 +57,7 @@ local DROPOUT = std.parseJson(std.extVar('DROPOUT'));
     num_epochs: 1,
     patience: 10,
     cuda_device: -1,
-    epoch_callbacks: [
+    callbacks: [
       {
         type: 'optuna_pruner',
       }

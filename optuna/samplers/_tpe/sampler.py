@@ -4,6 +4,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 import warnings
@@ -182,7 +183,7 @@ class TPESampler(BaseSampler):
         self._random_sampler = RandomSampler(seed=seed)
 
         self._multivariate = multivariate
-        self._search_space = IntersectionSearchSpace()
+        self._search_space = IntersectionSearchSpace(include_pruned=True)
 
         if multivariate:
             warnings.warn(
@@ -739,6 +740,16 @@ class TPESampler(BaseSampler):
             "gamma": hyperopt_default_gamma,
             "weights": default_weights,
         }
+
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+
+        self._random_sampler.after_trial(study, trial, state, values)
 
 
 def _get_observation_pairs(
