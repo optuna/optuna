@@ -49,6 +49,7 @@ class QMCSampler(BaseSampler):
     We use the QMC implementations in Scipy. For the details of the QMC algorithm,
     see the Scipy API references on `scipy.stats.qmc
     <https://scipy.github.io/devdocs/stats.qmc.html>`_.
+    TODO(kstoneriv3): make some notes on 2^k property of Sobol and prime property of Halton
 
     .. note:
         Please note that this sampler does not support CategoricalDistribution.
@@ -173,7 +174,14 @@ class QMCSampler(BaseSampler):
     def reseed_rng(self) -> None:
 
         self._independent_sampler.reseed_rng()
-        self._seed = numpy.random.MT19937().random_raw()
+        #self._seed = numpy.random.MT19937().random_raw()
+
+        # We must not reseed the self._seed. Otherwise, 
+        # parallel workers will have different seed 
+        # due to reseeding that happens at the begining of the parallelization.
+
+        # TODO(kstoneriv3): Maybe add some warning about reseeding because the 
+        # seed of the sobol sequence will not be reseeded.
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -277,7 +285,6 @@ class QMCSampler(BaseSampler):
                 n_categories = len(dist.choices)
                 ret[param] = dist.to_external_repr(int(numpy.floor(n_categories * sample[:, n0 + i])))
 
-            sample = sample.reshape([-1])
             return ret
 
 
@@ -295,7 +302,6 @@ class QMCSampler(BaseSampler):
         if self._is_engine_cached(d, sample_id):
             qmc_engine = self._cached_qmc_engine
         else:
-            print("Cache miss!") # TODO
             if self._qmc_type == "sobol":
                 qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
             elif self._qmc_type == "halton":
