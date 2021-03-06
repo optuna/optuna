@@ -263,8 +263,8 @@ class MOTPESampler(TPESampler):
             # Nondomination rank-based selection
             i = 0
             last_idx = 0
-            while len(indices_below) + sum(nondomination_ranks == i) <= n_below:
-                length = indices[nondomination_ranks == i].shape
+            while last_idx + sum(nondomination_ranks == i) <= n_below:
+                length = indices[nondomination_ranks == i].shape[0]
                 indices_below[last_idx : last_idx + length] = indices[nondomination_ranks == i]
                 last_idx += length
                 i += 1
