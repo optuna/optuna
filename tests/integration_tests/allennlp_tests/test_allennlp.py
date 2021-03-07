@@ -232,9 +232,14 @@ def test_allennlp_pruning_callback() -> None:
             reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
                 tokenizer=allennlp.data.tokenizers.WhitespaceTokenizer(),
             )
-            dataset = reader.read("tests/integration_tests/allennlp_tests/pruning_test.jsonl")
-            vocab = allennlp.data.Vocabulary.from_instances(dataset)
-            dataset.index_with(vocab)
+            data_loader = allennlp.data.data_loaders.MultiProcessDataLoader(
+                reader=reader,
+                data_path="tests/integration_tests/allennlp_tests/pruning_test.jsonl",
+                batch_size=16,
+            )
+            vocab = allennlp.data.Vocabulary.from_instances(data_loader.iter_instances())
+            data_loader.index_with(vocab)
+
             embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(
                 {"tokens": allennlp.modules.Embedding(50, vocab=vocab)}
             )
@@ -245,9 +250,7 @@ def test_allennlp_pruning_callback() -> None:
                 text_field_embedder=embedder, seq2vec_encoder=encoder, vocab=vocab
             )
             optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-            data_loader = allennlp.data.dataloader.PyTorchDataLoader(
-                dataset, batch_size=10, collate_fn=allennlp.data.allennlp_collate
-            )
+
             serialization_dir = os.path.join(tmp_dir, "trial_{}".format(trial.number))
             trainer = allennlp.training.GradientDescentTrainer(
                 model=model,
@@ -256,7 +259,7 @@ def test_allennlp_pruning_callback() -> None:
                 patience=None,
                 num_epochs=1,
                 serialization_dir=serialization_dir,
-                epoch_callbacks=[AllenNLPPruningCallback(trial, "training_loss")],
+                callbacks=[AllenNLPPruningCallback(trial, "training_loss")],
             )
             trainer.train()
             return 1.0
