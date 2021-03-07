@@ -1,5 +1,4 @@
 import math
-import threading
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -141,9 +140,7 @@ class MOTPESampler(TPESampler):
         self._n_ehvi_candidates = n_ehvi_candidates
         self._mo_random_sampler = RandomSampler(seed=seed)
         self._split_cache: Dict[int, Any] = {}
-        self._split_cache_lock = threading.Lock()
         self._weights_below: Dict[int, Any] = {}
-        self._weights_below_lock = threading.Lock()
 
     def reseed_rng(self) -> None:
         self._rng = np.random.RandomState()
@@ -235,12 +232,10 @@ class MOTPESampler(TPESampler):
         state: optuna.trial.TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
-        with self._split_cache_lock:
-            if trial._trial_id in self._split_cache:
-                del self._split_cache[trial._trial_id]
-        with self._weights_below_lock:
-            if trial._trial_id in self._weights_below:
-                del self._weights_below[trial._trial_id]
+        if trial._trial_id in self._split_cache:
+            del self._split_cache[trial._trial_id]
+        if trial._trial_id in self._weights_below:
+            del self._weights_below[trial._trial_id]
         self._mo_random_sampler.after_trial(study, trial, state, values)
 
     def _split_mo_observation_pairs(
@@ -266,11 +261,9 @@ class MOTPESampler(TPESampler):
 
         # Solving HSSP for variables number of times is a waste of time.
         # We cache the result of splitting.
-        with self._split_cache_lock:
-            is_cached = trial._trial_id in self._split_cache
+        is_cached = trial._trial_id in self._split_cache
         if is_cached:
-            with self._split_cache_lock:
-                split_cache = self._split_cache[trial._trial_id]
+            split_cache = self._split_cache[trial._trial_id]
             indices_below = np.asarray(split_cache["indices_below"])
             weights_below = np.asarray(split_cache["weights_below"])
             indices_above = np.asarray(split_cache["indices_above"])
@@ -310,14 +303,12 @@ class MOTPESampler(TPESampler):
             }
             weights_below = self._calculate_weights_below(lvals, indices_below)
             attrs["weights_below"] = weights_below.tolist()
-            with self._split_cache_lock:
-                self._split_cache[trial._trial_id] = attrs
+            self._split_cache[trial._trial_id] = attrs
 
         below = cvals[indices_below]
-        with self._weights_below_lock:
-            self._weights_below[trial._trial_id] = [
-                w for w, v in zip(weights_below, below) if v is not None
-            ]
+        self._weights_below[trial._trial_id] = [
+            w for w, v in zip(weights_below, below) if v is not None
+        ]
         below = np.asarray([v for v in below if v is not None], dtype=float)
         above = cvals[indices_above]
         above = np.asarray([v for v in above if v is not None], dtype=float)
@@ -419,8 +410,7 @@ class MOTPESampler(TPESampler):
 
         size = (self._n_ehvi_candidates,)
 
-        with self._weights_below_lock:
-            array_weights_below = np.asarray(self._weights_below[trial._trial_id], dtype=float)
+        array_weights_below = np.asarray(self._weights_below[trial._trial_id], dtype=float)
         weights_below: Callable[[int], np.ndarray]
         weights_below = lambda _: array_weights_below  # NOQA
 
@@ -489,8 +479,7 @@ class MOTPESampler(TPESampler):
         upper = len(choices)
         size = (self._n_ehvi_candidates,)
 
-        with self._weights_below_lock:
-            weights_below = self._weights_below[trial._trial_id]
+        weights_below = self._weights_below[trial._trial_id]
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
         weighted_below = counts_below + self._prior_weight
         weighted_below /= weighted_below.sum()
