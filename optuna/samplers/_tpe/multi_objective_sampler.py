@@ -225,19 +225,6 @@ class MOTPESampler(TPESampler):
                 )
             )
 
-    def after_trial(
-        self,
-        study: optuna.study.Study,
-        trial: optuna.trial.FrozenTrial,
-        state: optuna.trial.TrialState,
-        values: Optional[Sequence[float]],
-    ) -> None:
-        if trial._trial_id in self._split_cache:
-            del self._split_cache[trial._trial_id]
-        if trial._trial_id in self._weights_below:
-            del self._weights_below[trial._trial_id]
-        self._mo_random_sampler.after_trial(study, trial, state, values)
-
     def _split_mo_observation_pairs(
         self,
         study: optuna.study.Study,
@@ -581,6 +568,10 @@ class MOTPESampler(TPESampler):
         state: optuna.trial.TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
+        if trial._trial_id in self._split_cache:
+            del self._split_cache[trial._trial_id]
+        if trial._trial_id in self._weights_below:
+            del self._weights_below[trial._trial_id]
 
         self._mo_random_sampler.after_trial(study, trial, state, values)
 
