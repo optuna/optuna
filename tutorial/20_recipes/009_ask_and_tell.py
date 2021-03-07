@@ -91,7 +91,7 @@ for _ in range(n_trials):
 # You can apply Optuna's hyperparameter optimization to your original code easily
 # without defining ``objective``.
 #
-# If you make your optimization faster with a pruner, you need explicitly pass the state of trial
+# If you want to make your optimization faster with a pruner, you need explicitly pass the state of trial
 # to the argument of :func:`optuna.study.Study.tell` method as follows:
 #
 # .. code-block:: python
