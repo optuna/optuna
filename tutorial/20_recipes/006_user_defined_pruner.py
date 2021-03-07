@@ -16,7 +16,7 @@ Overview of Pruning Interface
 The :func:`~optuna.study.create_study` constructor takes, as an optional
 argument, a pruner inheriting from :class:`~optuna.pruners.BasePruner`. The
 pruner should implement the abstract method
-:func:`~optuna.pruners.BaseSampler.prune`, which takes arguments for the
+:func:`~optuna.pruners.BasePruner.prune`, which takes arguments for the
 associated :class:`~optuna.study.Study` and :class:`~optuna.trial.Trial` and
 returns a boolean value: :obj:`True` if the trial should be pruned and :obj:`False`
 otherwise. Using the Study and Trial objects, you can access all other trials
