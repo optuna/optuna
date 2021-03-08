@@ -27,6 +27,7 @@ from torchvision import transforms
 
 import optuna
 
+
 # Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
 # This is a temporary fix until torchvision v0.9 is released.
 opener = urllib.request.build_opener()
