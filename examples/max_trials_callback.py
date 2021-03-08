@@ -10,6 +10,7 @@ regardless of the number of workers/scripts running the Trials.
 """
 
 from time import sleep
+
 import optuna
 from optuna.trial import TrialState
 
@@ -36,13 +37,13 @@ if __name__ == "__main__":
     study = optuna.create_study(
         study_name="test",
         storage="sqlite:///database.sqlite",
-         load_if_exists=True,
+        load_if_exists=True,
     )
 
     study.optimize(objective, n_trials=50, callbacks=[max_trial_callback])
     trials = study.trials_dataframe()
     print("Number of completed trials: {}".format(len(trials[trials.state == "COMPLETE"])))
-    
+
     print("Best trial:")
     trial = study.best_trial
 
@@ -51,5 +52,3 @@ if __name__ == "__main__":
     print("  Params: ")
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
-    
-    
