@@ -2,7 +2,7 @@
 Optuna example that demonstrates setting maximum number of trials in
 a shared database when multiple workers are used.
 
-In this example, we optimize a simple quadratic function.We use multiple
+In this example, we optimize a simple quadratic function. We use multiple
 script runs(workers) to demonstrate the use of max_trial_callbacks,
 which essentially allows user to set maximum number of trials
 regardless of the number of workers/scripts running the Trials.
