@@ -14,6 +14,7 @@ import argparse
 import os
 from typing import List
 from typing import Optional
+import urllib
 
 from packaging import version
 import pytorch_lightning as pl
@@ -28,6 +29,12 @@ from torchvision import transforms
 
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
+
+# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
+# This is a temporary fix until torchvision v0.9 is released.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-agent", "Mozilla/5.0")]
+urllib.request.install_opener(opener)
 
 
 if version.parse(pl.__version__) < version.parse("1.0.2"):

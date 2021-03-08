@@ -9,6 +9,7 @@ subset of it.
 """
 
 import os
+import urllib
 
 import torch
 import torch.nn as nn
@@ -20,6 +21,12 @@ from torchvision import transforms
 
 import optuna
 from optuna.trial import TrialState
+
+# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
+# This is a temporary fix until torchvision v0.9 is released.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-agent", "Mozilla/5.0")]
+urllib.request.install_opener(opener)
 
 
 DEVICE = torch.device("cpu")
