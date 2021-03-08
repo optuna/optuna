@@ -9,11 +9,12 @@ regardless of the number of workers/scripts running the Trials.
 
 """
 
+from time import sleep
 import optuna
 from optuna.trial import TrialState
 
 
-max_trials = 10
+num_completed_trials = 10
 
 
 def max_trial_callback(study, trial):
@@ -21,22 +22,34 @@ def max_trial_callback(study, trial):
     n_complete = len(
         study.get_trials(deepcopy=False, states=[TrialState.COMPLETE, TrialState.RUNNING])
     )
-    if n_complete >= max_trials:
+    if n_complete >= num_completed_trials:
         study.stop()
 
 
 def objective(trial):
+    sleep(1)
     x = trial.suggest_uniform("x", 0, 10)
     return x ** 2
 
 
 if __name__ == "__main__":
-    _ = optuna.create_study(
+    study = optuna.create_study(
         study_name="test",
         storage="sqlite:///database.sqlite",
+         load_if_exists=True,
     )
 
-    study = optuna.load_study(study_name="test", storage="sqlite:///database.sqlite")
     study.optimize(objective, n_trials=50, callbacks=[max_trial_callback])
     trials = study.trials_dataframe()
-    assert len(trials[trials.state == "COMPLETE"]) == max_trials
+    print("Number of completed trials: {}".format(len(trials[trials.state == "COMPLETE"])))
+    
+    print("Best trial:")
+    trial = study.best_trial
+
+    print("  Value: ", trial.value)
+
+    print("  Params: ")
+    for key, value in trial.params.items():
+        print("    {}: {}".format(key, value))
+    
+    
