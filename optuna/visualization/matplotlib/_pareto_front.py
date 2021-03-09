@@ -16,7 +16,7 @@ if _imports.is_successful():
 _logger = optuna.logging.get_logger(__name__)
 
 
-@experimental("2.4.0")
+@experimental("2.7.0")
 def plot_pareto_front(
     study: Study,
     *,
@@ -158,7 +158,8 @@ def _get_pareto_front_2d(
         label="Best Trial",
     )
 
-    ax.legend()
+    if include_dominated_trials is True:
+        ax.legend()
 
     return ax
 
@@ -174,7 +175,6 @@ def _get_pareto_front_3d(
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
-    #    _, ax = plt.subplots(projection='3d')
     ax.set_title("Pareto-front Plot")
     cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
@@ -231,6 +231,7 @@ def _get_pareto_front_3d(
         label="Best Trial",
     )
 
-    ax.legend()
+    if include_dominated_trials is True:
+        ax.legend()
 
     return ax

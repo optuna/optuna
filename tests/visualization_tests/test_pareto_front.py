@@ -209,7 +209,7 @@ def test_plot_pareto_front_3d(
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
-def test_plot_pareto_front_unsupported_dimensions(include_dominated_trials: bool) -> None:
+def test_plot_pareto_front_dimensions(include_dominated_trials: bool) -> None:
     # Unsupported: n_objectives == 1.
     with pytest.raises(ValueError):
         study = optuna.create_study(directions=["minimize"])
