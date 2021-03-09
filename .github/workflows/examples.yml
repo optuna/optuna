@@ -58,7 +58,7 @@ jobs:
       env:
         OMP_NUM_THREADS: 1
 
-    - name: Run examples (Pull Request)
+    - name: Run examples (Schedule)
       if: ${{ github.event_name == 'schedule' }}
       run: |
         python tools/run_examples.py
