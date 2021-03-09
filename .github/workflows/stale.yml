@@ -22,6 +22,6 @@ jobs:
         days-before-close: 100
         stale-issue-label: 'stale'
         stale-pr-label: 'stale'
-        exempt-issue-labels: 'no-stale'
-        exempt-pr-labels: 'no-stale'
+        exempt-issue-labels: 'no-stale,feature,contribution-welcome'
+        exempt-pr-labels: 'no-stale,feature,contribution-welcome'
         operations-per-run: 1000
