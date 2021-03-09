@@ -5,6 +5,7 @@ from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 import numpy as np
@@ -258,16 +259,19 @@ class MOTPESampler(TPESampler):
             assert 0 <= n_below <= len(lvals)
 
             indices = np.array(range(len(lvals)))
-            indices_below = np.array([], dtype=int)
+            indices_below = np.empty(n_below, dtype=int)
 
             # Nondomination rank-based selection
             i = 0
-            while len(indices_below) + sum(nondomination_ranks == i) <= n_below:
-                indices_below = np.append(indices_below, indices[nondomination_ranks == i])
+            last_idx = 0
+            while last_idx + sum(nondomination_ranks == i) <= n_below:
+                length = indices[nondomination_ranks == i].shape[0]
+                indices_below[last_idx : last_idx + length] = indices[nondomination_ranks == i]
+                last_idx += length
                 i += 1
 
             # Hypervolume subset selection problem (HSSP)-based selection
-            subset_size = n_below - len(indices_below)
+            subset_size = n_below - last_idx
             if subset_size > 0:
                 rank_i_lvals = lvals[nondomination_ranks == i]
                 rank_i_indices = indices[nondomination_ranks == i]
@@ -277,8 +281,7 @@ class MOTPESampler(TPESampler):
                 selected_indices = self._solve_hssp(
                     rank_i_lvals, rank_i_indices, subset_size, reference_point
                 )
-                indices_below = np.append(indices_below, selected_indices)
-            assert len(indices_below) == n_below
+                indices_below[last_idx:] = selected_indices
 
             indices_above = np.setdiff1d(indices, indices_below)
 
@@ -563,6 +566,16 @@ class MOTPESampler(TPESampler):
             contributions += EPS
             weights_below = np.clip(contributions / np.max(contributions), 0, 1)
             return weights_below
+
+    def after_trial(
+        self,
+        study: optuna.study.Study,
+        trial: optuna.trial.FrozenTrial,
+        state: optuna.trial.TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+
+        self._mo_random_sampler.after_trial(study, trial, state, values)
 
 
 def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:

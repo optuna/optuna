@@ -139,6 +139,33 @@ def test_sample_multivariate_parzen_estimator() -> None:
     assert output_multivariate_samples == mpe.sample(np.random.RandomState(0), 1)
 
 
+def test_suggest_with_step_multivariate_parzen_estimator() -> None:
+
+    parameters = _ParzenEstimatorParameters(
+        consider_prior=False,
+        prior_weight=0.0,
+        consider_magic_clip=False,
+        consider_endpoints=False,
+        weights=lambda x: np.arange(x) + 1.0,
+    )
+
+    # Define search space for distribution with step argument and true ranges
+    search_space = {
+        "c": distributions.DiscreteUniformDistribution(low=1.0, high=7.0, q=3.0),
+        "d": distributions.IntUniformDistribution(low=1, high=5, step=2),
+    }
+    multivariate_samples = {"c": np.array([4]), "d": np.array([1])}
+    valid_ranges = {"c": set(np.arange(1.0, 10.0, 3.0)), "d": set(np.arange(1, 7, 2))}
+
+    with patch(_PRECOMPUTE_SIGMAS0, return_value=np.ones(2)):
+        mpe = _MultivariateParzenEstimator(multivariate_samples, search_space, parameters)
+
+    # Draw 10 samples, and check if all valid values are sampled.
+    output_multivariate_samples = mpe.sample(np.random.RandomState(0), 10)
+    for param_name in output_multivariate_samples:
+        assert set(output_multivariate_samples[param_name]) == valid_ranges[param_name]
+
+
 def test_log_pdf_multivariate_parzen_estimator() -> None:
 
     parameters = _ParzenEstimatorParameters(

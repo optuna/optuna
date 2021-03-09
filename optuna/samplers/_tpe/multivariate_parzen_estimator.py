@@ -272,7 +272,7 @@ class _MultivariateParzenEstimator:
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 q = self._q[param_name]
                 assert q is not None
-                samples = np.round(samples / q) * q
+                samples = np.round((samples - distribution.low) / q) * q + distribution.low
                 transformed[param_name] = np.asarray(
                     np.clip(samples, distribution.low, distribution.high)
                 )

@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from optuna.study import create_study
@@ -38,9 +39,9 @@ def test_plot_optimization_history(direction: str) -> None:
     assert figure.data[0].y == (1.0, 2.0, 0.0)
     assert figure.data[1].x == (0, 1, 2)
     if direction == "minimize":
-        assert figure.data[1].y == (1.0, 1.0, 0.0)
+        assert np.array_equal(figure.data[1].y, np.array([1.0, 1.0, 0.0], dtype=np.float64))
     else:
-        assert figure.data[1].y == (1.0, 2.0, 2.0)
+        assert np.array_equal(figure.data[1].y, np.array([1.0, 2.0, 2.0], dtype=np.float64))
     assert figure.data[0].name == "Objective Value"
     assert figure.layout.yaxis.title.text == "Objective Value"
 
@@ -48,8 +49,8 @@ def test_plot_optimization_history(direction: str) -> None:
     with pytest.warns(UserWarning):
         figure = plot_optimization_history(study, target=lambda t: t.number)
     assert len(figure.data) == 1
-    assert figure.data[0].x == (0, 1, 2)
-    assert figure.data[0].y == (0, 1, 2)
+    assert np.array_equal(figure.data[0].x, np.array([0, 1, 2], dtype=float))
+    assert np.array_equal(figure.data[0].y, np.array([0, 1, 2], dtype=float))
 
     # Test customized target name.
     figure = plot_optimization_history(study, target_name="Target Name")

@@ -687,3 +687,13 @@ def test_reseed_rng() -> None:
         sampler.reseed_rng()
         assert mock_object.call_count == 1
         assert original_seed != sampler._rng.seed
+
+
+def test_call_after_trial_of_mo_random_sampler() -> None:
+    sampler = MOTPESampler()
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(
+        sampler._mo_random_sampler, "after_trial", wraps=sampler._mo_random_sampler.after_trial
+    ) as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1
