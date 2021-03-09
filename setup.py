@@ -35,7 +35,7 @@ def get_install_requires() -> List[str]:
         "colorlog",
         "numpy<1.20.0",
         "packaging>=20.0",
-        "scipy!=1.4.0",  # TODO(kstoneriv3) Change to 1.7.0
+        "scipy>=1.7.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
     ]
