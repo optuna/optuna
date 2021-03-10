@@ -108,6 +108,25 @@ extract the files in the zip to `docs/source/tutorial` directory.
 
 ![image](https://user-images.githubusercontent.com/16191443/107472296-0b211400-6bb2-11eb-9203-e2c42ce499ad.png)
 
+**Writing Tutorial**  
+Tutorial is a part of Optuna’s documentation.  
+Optuna generally depends on Sphinx to build HTML files of documentation from corresponding reStructuredText (`.rst`) files in docs/source directory.
+But as you may notice, [Tutorial directory](https://github.com/optuna/optuna/tree/master/tutorial) does not have any `.rst` files, but has a bunch of Python (`.py`) files.
+We have [Sphinx Gallery](https://sphinx-gallery.github.io/stable/index.html) execute those `.py` files and generate `.rst` files with standard outputs from them and corresponding Jupyter Notebook (`.ipynb`) files. 
+These generated `.rst` and `.ipynb` files are written out to docs/source/tutorial directory. 
+The output directory (docs/source/tutorial) and source (tutorial) directory are configured in [`sphinx_gallery_conf ` of docs/source/conf.py](https://github.com/optuna/optuna/blob/2e14273cab87f13edeb9d804a43bd63c44703cb5/docs/source/conf.py#L189-L199). These generated `.rst` files are handled by Sphinx likewise the other `.rst` files. The generated `.ipynb` files are hosted on Optuna’s documentation page and downloadable (check [Optuna tutorial](https://optuna.readthedocs.io/en/stable/tutorial/index.html)).
+
+The order of contents on [tutorial top page](https://optuna.readthedocs.io/en/stable/tutorial/index.html) is determined by two keys: one is the subdirectory name of tutorial and the other is the filename (note that there are some alternatives as documented in [Sphinx Gallery - sorting](https://sphinx-gallery.github.io/stable/gen_modules/sphinx_gallery.sorting.html?highlight=filenamesortkey) but we chose this key in https://github.com/optuna/optuna/blob/2e14273cab87f13edeb9d804a43bd63c44703cb5/docs/source/conf.py#L196).  
+Optuna’s tutorial directory currently has two directories: (1) [10_key_features](https://github.com/optuna/optuna/tree/master/tutorial/10_key_features) which is meant to be aligned with the key features listed on [README.md](https://github.com/optuna/optuna#key-features) and explain them, and (2) [20_recipes](https://github.com/optuna/optuna/tree/master/tutorial/20_recipes) whose contents showcase how to use Optuna features conveniently.  
+So if you are to add a new content to Optuna tutorial, that content should be placed in `20_recipes` and its file name should conform to the others, for example, `777_cool_feature.py`.
+The prefix numbers of files are consecutive and we expect you to follow this convention. However, this is not mandatory and if you think your content deserves the smaller number (we don’t mean anything by the order of recipes, but in general, order could convey the priority order to readers), feel free to contact Optuna committers.
+
+You may want to refer to Sphinx Gallery for the syntax of `.py` files processed by Sphinx Gallery and we follow it.
+In Optuna tutorial, there are Optuna specific conventions and limitations.
+1. 99 #s for block separation as in https://github.com/optuna/optuna/blob/2e14273cab87f13edeb9d804a43bd63c44703cb5/tutorial/10_key_features/001_first.py#L19
+2. Execution time of the new content needs to be less than three minutes. This limitation derives from Read The Docs. If your content runs some hyperparameter optimization, set the `timeout` to 180 or less.
+
+
 ## Unit Tests
 
 When adding a new feature or fixing a bug, you also need to write sufficient test code.
