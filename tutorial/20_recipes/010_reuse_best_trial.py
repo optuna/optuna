@@ -4,16 +4,18 @@
 Re-use the best values
 ==========================
 
-You can re-evaluate the objective with the best hyperparameters again
-after the hyperparameter optimization.
-Example,
+In some cases, you may want to re-evaluate the objective function with the best
+hyperparameters again after the hyperparameter optimization.
 
-- You have found good hyperparameters with Optuna, and want to run a similar `objective` function using the best hyperparameters found so far to further analyze the results, or
+For example,
+
+- You have found good hyperparameters with Optuna and want to run a similar `objective` function using the best hyperparameters found so far to further analyze the results, or
 - You have optimized with Optuna using a partial dataset to reduce training time. After the hyperparameter tuning, you want to train the model using the whole dataset with the best hyperparameter values found.
 
-Optuna provides an interface to re-evaluate the objective function with the current best hyperparameter values.
+:class:`~optuna.study.Study.best_trial` provides an interface to re-evaluate the objective function with the current best hyperparameter values.
 
-This tutorial shows an example of how to re-run a similar `objective` function, like the first example above.
+This tutorial shows an example of how to re-run a different `objective` function with the current best values, like the first example above.
+
 
 Investigating the best model further
 -------------------------------------
@@ -48,9 +50,9 @@ study.optimize(objective, n_trials=10)
 print(study.best_trial.value)  # Show the best value.
 
 ###################################################################################################
-# Suppose after the hyperparameter optimization, let's calculate other evaluation metrics
+# Suppose after the hyperparameter optimization, you want to calculate other evaluation metrics
 # such as recall, precision, and f1-score on the same dataset.
-# You can define another objective function that shares most of parts of the ``objective``
+# You can define another objective function that shares most of the ``objective``
 # function to reproduce the model with the best hyperparameters.
 
 
@@ -81,7 +83,7 @@ def detailed_objective(trial):
 detailed_objective(study.best_trial)  # calculate acc, f1, recall, and precision
 
 ###################################################################################################
-# Difference between :class:`~optuna.study.Study.best_trial` and ordinal trials
+# The difference between :class:`~optuna.study.Study.best_trial` and ordinal trials
 # ------------------------------------------------------------------------------
 #
 # This uses :class:`~optuna.study.Study.best_trial`, which returns the `best_trial` as a
