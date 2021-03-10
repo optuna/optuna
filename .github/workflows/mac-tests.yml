@@ -13,6 +13,8 @@ on:
       - 'examples/**'
       - 'tutorial/**'
       - 'pyproject.toml'
+  # TODO(crcrpar): Remove once confirmed.
+  pull_request: {}
 
 jobs:
   tests:
