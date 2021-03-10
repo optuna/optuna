@@ -84,7 +84,7 @@ detailed_objective(study.best_trial)  # calculate acc, f1, recall, and precision
 
 ###################################################################################################
 # The difference between :class:`~optuna.study.Study.best_trial` and ordinal trials
-# ------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------
 #
 # This uses :class:`~optuna.study.Study.best_trial`, which returns the `best_trial` as a
 # :class:`~optuna.trial.FrozenTrial`.
