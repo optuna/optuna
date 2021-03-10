@@ -88,7 +88,7 @@ detailed_objective(study.best_trial)  # calculate acc, f1, recall, and precision
 #
 # This uses :class:`~optuna.study.Study.best_trial`, which returns the `best_trial` as a
 # :class:`~optuna.trial.FrozenTrial`.
-# The :class:`~optuna.trial.FrozenTrial` is different from an active trail
+# The :class:`~optuna.trial.FrozenTrial` is different from an active trial
 # and behaves differently from :class:`~optuna.trial.Trial` in some situations.
 # For example, pruning does not work because :class:`~optuna.trial.FrozenTrial.should_prune`
 # always returns ``False``.
