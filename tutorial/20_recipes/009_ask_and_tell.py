@@ -4,7 +4,7 @@
 Ask-and-Tell Interface
 =======================
 
-Optuna provides `Ask-and-Tell` interface, a more flexible interface for hyperparameter optimization.
+Optuna has an `Ask-and-Tell` interface, which provides a more flexible interface for hyperparameter optimization.
 This tutorial explains three use-cases when the ask-and-tell interface is beneficial:
 
 - :ref:`Apply-optuna-to-an-existing-optimization-problem-with-minimum-modifications`
@@ -60,13 +60,12 @@ study = optuna.create_study(direction="maximize")
 study.optimize(objective, n_trials=10)
 
 ###################################################################################################
-# A drawback of this traditional interface is less flexibility.
-# If ``objective`` requires an additional argument for ``objective``,
-# you need to define your customized class for the objective as in
-# `this FAQ section <../../faq.html#how-to-define-objective-functions-that-have-own-arguments>`_.
-# That will make the codebase more complicated.
+# This interface is not flexible enough.
+# For example, if ``objective`` requires additional arguments other than ``trial``,
+# you need to define a class as in
+# `How to define objective functions that have own arguments? <../../faq.html#how-to-define-objective-functions-that-have-own-arguments>`_.
 # The ask-and-tell interface provides a more flexible syntax to optimize hyperparameters.
-# The following example of ask-and-tell interface is equivalent to the previous code block.
+# The following example is equivalent to the previous code block.
 
 study = optuna.create_study(direction="maximize")
 
@@ -88,10 +87,10 @@ for _ in range(n_trials):
 # and :func:`optuna.study.Study.tell`.
 # :func:`optuna.study.Study.ask` creates a trial that can sample hyperparameters, and
 # :func:`optuna.study.Study.tell` finishes the trial by passing ``trial`` and an objective value.
-# You can apply Optuna's hyperparameter optimization to your original code easily
-# without defining ``objective``.
+# You can apply Optuna's hyperparameter optimization to your original code
+# without an ``objective`` function.
 #
-# If you want to make your optimization faster with a pruner, you need explicitly pass the state of trial
+# If you want to make your optimization faster with a pruner, you need to explicitly pass the state of trial
 # to the argument of :func:`optuna.study.Study.tell` method as follows:
 #
 # .. code-block:: python
@@ -144,8 +143,8 @@ for _ in range(n_trials):
 ###################################################################################################
 # .. note::
 #
-#     :func:`optuna.study.Study.tell` method can take a trial number
-#     rather than trial: ``study.tell(trial.number, y)`` is equivalent to ``study.tell(trial, y)``.
+#     :func:`optuna.study.Study.tell` method can take a trial number rather than the trial object.
+#     ``study.tell(trial.number, y)`` is equivalent to ``study.tell(trial, y)``.
 
 
 ###################################################################################################
@@ -156,9 +155,9 @@ for _ in range(n_trials):
 # ---------------
 # The ask-and-tell interface supports both `define-by-run` and `define-and-run` APIs.
 # This section shows the example of the `define-and-run` API
-# since we already show the define-by-run example above.
+# in addition to the define-by-run example above.
 #
-# You need to define distributions for hyperparameters before calling
+# Define distributions for the hyperparameters before calling the
 # :func:`optuna.study.Study.ask` method for define-and-run API.
 # For example,
 
@@ -168,8 +167,8 @@ distributions = {
 }
 
 ###################################################################################################
-# You need to pass ``distributions`` to :func:`optuna.study.Study.ask` method at every call,
-# and then, the retuned ``trial`` contains suggested hyperparameters.
+# Pass ``distributions`` to :func:`optuna.study.Study.ask` method at each call.
+# The retuned ``trial`` contains the suggested hyperparameters.
 
 study = optuna.create_study(direction="maximize")
 n_trials = 10
@@ -193,14 +192,12 @@ for _ in range(n_trials):
 # -------------------
 # Batch Optimization
 # -------------------
-# The ask-and-tell interface enables us to optimize a batched objective.
-# That can make optimization faster, especially, when the objective is evaluated by
-# batch.
+# The ask-and-tell interface enables us to optimize a batched objective for faster optimization.
 # For example, parallelizable evaluation, operation over vectors, etc.
 
 ###################################################################################################
 # The following objective takes batched hyperparameters ``xs`` instead of a single
-# hyperparameter and calculates the objective over the vector.
+# hyperparameter and calculates the objective over the full vector.
 
 
 def batched_objective(xs: np.ndarray):
@@ -212,7 +209,7 @@ def batched_objective(xs: np.ndarray):
 # and ``batched_objective`` is evaluated three times.
 # Thus, the number of trials is :math:`30`.
 # Note that you need to store either ``trial_ids`` or ``trial`` to call
-# :func:`optuna.study.Study.tell` method after evaluations of the batched objective.
+# :func:`optuna.study.Study.tell` method after the batched evaluations.
 
 batch_size = 10
 study = optuna.create_study()
