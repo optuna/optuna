@@ -76,7 +76,7 @@ class TPESampler(BaseSampler):
 
     For further information about TPE algorithm, please refer to the following papers:
 
-    - `Algorithms for Hyper-Parameter Optimization
+    - `Algorithms for Hyperparameter Optimization
       <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
     - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
       Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_

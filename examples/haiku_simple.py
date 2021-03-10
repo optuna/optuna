@@ -63,7 +63,7 @@ def objective(trial):
         "test", is_training=False, batch_size=BATCH_SIZE, sample_size=N_VALID_SAMPLES
     )
 
-    # Draw hyper-parameters
+    # Draw the hyperparameters
     n_units_l1 = trial.suggest_int("n_units_l1", 4, 128)
     n_units_l2 = trial.suggest_int("n_units_l2", 4, 128)
     lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
