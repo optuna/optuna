@@ -15,6 +15,7 @@ argument.
 """
 
 import argparse
+import urllib
 
 from fastai.vision.all import accuracy
 from fastai.vision.all import aug_transforms
@@ -26,6 +27,14 @@ from fastai.vision.all import URLs
 
 import optuna
 from optuna.integration import FastAIPruningCallback
+
+
+# TODO(crcrpar): Remove the below three lines once fastai gets compatible with torchvision v0.9.
+# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
+# This is a temporary fix until torchvision v0.9 is released.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-agent", "Mozilla/5.0")]
+urllib.request.install_opener(opener)
 
 
 BATCHSIZE = 128
