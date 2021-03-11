@@ -293,9 +293,9 @@ class MOTPESampler(TPESampler):
             self._split_cache[trial._trial_id] = attrs
 
         below = cvals[indices_below]
-        self._weights_below[trial._trial_id] = np.asarray([
-            w for w, v in zip(weights_below, below) if v is not None
-        ], dtype=float)
+        self._weights_below[trial._trial_id] = np.asarray(
+            [w for w, v in zip(weights_below, below) if v is not None], dtype=float
+        )
         below = np.asarray([v for v in below if v is not None], dtype=float)
         above = cvals[indices_above]
         above = np.asarray([v for v in above if v is not None], dtype=float)
@@ -397,9 +397,8 @@ class MOTPESampler(TPESampler):
 
         size = (self._n_ehvi_candidates,)
 
-        array_weights_below = np.asarray(self._weights_below[trial._trial_id], dtype=float)
         weights_below: Callable[[int], np.ndarray]
-        weights_below = lambda _: array_weights_below  # NOQA
+        weights_below = lambda _: self._weights_below[trial._trial_id]  # NOQA
 
         parzen_estimator_parameters_below = _ParzenEstimatorParameters(
             self._parzen_estimator_parameters.consider_prior,
