@@ -293,9 +293,9 @@ class MOTPESampler(TPESampler):
             self._split_cache[trial._trial_id] = attrs
 
         below = cvals[indices_below]
-        self._weights_below[trial._trial_id] = [
+        self._weights_below[trial._trial_id] = np.asarray([
             w for w, v in zip(weights_below, below) if v is not None
-        ]
+        ], dtype=float)
         below = np.asarray([v for v in below if v is not None], dtype=float)
         above = cvals[indices_above]
         above = np.asarray([v for v in above if v is not None], dtype=float)
