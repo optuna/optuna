@@ -150,7 +150,13 @@ def get_extras_require() -> Dict[str, List[str]]:
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
-        "tests": ["fakeredis", "pytest"],
+        "tests": [
+            # TODO(c-bata): Remove Cython after removing version constraints of sklearn
+            # from 'optional' in extra_requires.
+            "Cython; python_version > '3.8'",
+            "fakeredis",
+            "pytest",
+        ],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
@@ -164,8 +170,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
-            # TODO(c-bata): Remove Cython after removing version constraints of sklearn.
-            "Cython; python_version > '3.8'",
             "lightgbm",
             "mlflow",
             "mpi4py",
