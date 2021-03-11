@@ -26,6 +26,7 @@ def _get_percentile_intermediate_result_over_trials(
     direction: StudyDirection,
     step: int,
     percentile: float,
+    n_min_trials: int,
 ) -> float:
 
     completed_trials = [t for t in all_trials if t.state == TrialState.COMPLETE]
@@ -37,7 +38,7 @@ def _get_percentile_intermediate_result_over_trials(
         t.intermediate_values[step] for t in completed_trials if step in t.intermediate_values
     ]
 
-    if not intermediate_values:
+    if len(intermediate_values) < n_min_trials:
         return math.nan
 
     if direction == StudyDirection.MAXIMIZE:
@@ -137,6 +138,7 @@ class PercentilePruner(BasePruner):
         n_startup_trials: int = 5,
         n_warmup_steps: int = 0,
         interval_steps: int = 1,
+        n_min_trials: int = 1,
     ) -> None:
 
         if not 0.0 <= percentile <= 100:
@@ -155,11 +157,16 @@ class PercentilePruner(BasePruner):
             raise ValueError(
                 "Pruning interval steps must be at least 1 but got {}.".format(interval_steps)
             )
+        if n_min_trials < 1:
+            raise ValueError(
+                "Number of trials for pruning must be at least 1 but got {}.".format(n_min_trials)
+            )
 
         self._percentile = percentile
         self._n_startup_trials = n_startup_trials
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
+        self._n_min_trials = n_min_trials
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
@@ -191,7 +198,7 @@ class PercentilePruner(BasePruner):
             return True
 
         p = _get_percentile_intermediate_result_over_trials(
-            all_trials, direction, step, self._percentile
+            all_trials, direction, step, self._percentile, self._n_min_trials
         )
         if math.isnan(p):
             return False
