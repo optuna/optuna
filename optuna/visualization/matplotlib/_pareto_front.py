@@ -158,7 +158,7 @@ def _get_pareto_front_2d(
         label="Best Trial",
     )
 
-    if include_dominated_trials is True:
+    if include_dominated_trials:
         ax.legend()
 
     return ax
@@ -231,7 +231,7 @@ def _get_pareto_front_3d(
         label="Best Trial",
     )
 
-    if include_dominated_trials is True:
+    if include_dominated_trials:
         ax.legend()
 
     return ax
