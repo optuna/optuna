@@ -7,11 +7,20 @@ configuration.
 
 """
 
+import urllib
+
 from packaging import version
 import tensorflow as tf
 from tensorflow.keras.datasets import mnist
 
 import optuna
+
+
+# TODO(crcrpar): Remove the below three lines once everything is ok.
+# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-agent", "Mozilla/5.0")]
+urllib.request.install_opener(opener)
 
 
 if version.parse(tf.__version__) < version.parse("2.0.0"):

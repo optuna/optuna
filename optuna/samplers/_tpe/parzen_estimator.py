@@ -1,5 +1,4 @@
 from typing import Callable
-from typing import List
 from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
@@ -77,12 +76,12 @@ class _ParzenEstimator(object):
                 sorted_mus[0] = prior_mu
                 sigma = numpy.asarray([prior_sigma])
                 prior_pos = 0
-                order: List[int] = []
+                order = numpy.array([]).astype(int)
             else:  # When mus.size is greater than 0.
                 # We decide the place of the  prior.
-                order = numpy.argsort(mus).astype(int)
+                order = numpy.argsort(mus)
                 ordered_mus = mus[order]
-                prior_pos = numpy.searchsorted(ordered_mus, prior_mu)
+                prior_pos = int(numpy.searchsorted(ordered_mus, prior_mu))
                 # We decide the mus.
                 low_sorted_mus_high = numpy.zeros(len(mus) + 3)
                 sorted_mus = low_sorted_mus_high[1:-1]
@@ -125,7 +124,7 @@ class _ParzenEstimator(object):
             minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(sorted_mus)))
         else:
             minsigma = EPS
-        sigma = numpy.clip(sigma, minsigma, maxsigma)
+        sigma = numpy.asarray(numpy.clip(sigma, minsigma, maxsigma))
         if consider_prior:
             sigma[prior_pos] = prior_sigma
 

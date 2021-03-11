@@ -8,6 +8,8 @@ subset of it.
 
 """
 
+import urllib
+
 import chainer
 import chainer.functions as F
 import chainer.links as L
@@ -16,6 +18,13 @@ from packaging import version
 
 import optuna
 from optuna.integration import ChainerPruningExtension
+
+
+# TODO(crcrpar): Remove the below three lines once everything is ok.
+# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-agent", "Mozilla/5.0")]
+urllib.request.install_opener(opener)
 
 
 if version.parse(chainer.__version__) < version.parse("4.0.0"):
