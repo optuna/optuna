@@ -18,6 +18,7 @@ import torchvision
 
 import optuna
 
+
 DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 DIR = ".."
 BATCHSIZE = 128
