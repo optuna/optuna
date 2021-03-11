@@ -748,32 +748,37 @@ class TestLightGBMTuner(object):
         valid = lgb.Dataset(X_test, y_test)
         params = {"objective": "regression", "metric": "rmse", "random_seed": 0}
 
-        test_study = study.create_study(direction="minimize", sampler=TPESampler(seed=10))
+        test_study_first_try = study.create_study(
+            direction="minimize", sampler=TPESampler(seed=10)
+        )
 
-        tuner = lgb.LightGBMTuner(
+        tuner_first_try = lgb.LightGBMTuner(
             params,
             train,
             valid_sets=valid,
             early_stopping_rounds=3,
-            study=test_study,
+            study=test_study_first_try,
             optuna_seed=10,
         )
-        tuner.run()
-        expected = {
-            "objective": "regression",
-            "metric": "rmse",
-            "random_seed": 0,
-            "feature_pre_filter": False,
-            "lambda_l1": 0.6724660966094561,
-            "lambda_l2": 1.0673069746351881e-08,
-            "num_leaves": 11,
-            "feature_fraction": 1.0,
-            "bagging_fraction": 1.0,
-            "bagging_freq": 0,
-            "min_child_samples": 5,
-        }
+        tuner_first_try.run()
+        best_params_first_try = tuner_first_try.best_params
 
-        assert tuner.best_params == expected
+        test_study_second_try = study.create_study(
+            direction="minimize", sampler=TPESampler(seed=10)
+        )
+
+        tuner_second_try = lgb.LightGBMTuner(
+            params,
+            train,
+            valid_sets=valid,
+            early_stopping_rounds=3,
+            study=test_study_second_try,
+            optuna_seed=10,
+        )
+        tuner_second_try.run()
+        best_params_second_try = tuner_second_try.best_params
+
+        assert best_params_second_try == best_params_first_try
 
 
 class TestLightGBMTunerCV(object):
@@ -1072,28 +1077,34 @@ class TestLightGBMTunerCV(object):
         train = lgb.Dataset(X_trainval, y_trainval)
         params = {"objective": "regression", "metric": "rmse", "random_seed": 0}
 
-        test_study = study.create_study(direction="minimize", sampler=TPESampler(seed=10))
+        test_study_first_try = study.create_study(
+            direction="minimize", sampler=TPESampler(seed=10)
+        )
 
-        tuner = lgb.LightGBMTunerCV(
+        tuner_first_try = lgb.LightGBMTunerCV(
             params,
             train,
             early_stopping_rounds=3,
             folds=KFold(n_splits=3),
-            study=test_study,
+            study=test_study_first_try,
             optuna_seed=10,
         )
-        tuner.run()
-        expected = {
-            "objective": "regression",
-            "metric": "rmse",
-            "random_seed": 0,
-            "feature_pre_filter": False,
-            "lambda_l1": 1.8195630232649103,
-            "lambda_l2": 0.02698870526662559,
-            "num_leaves": 31,
-            "feature_fraction": 0.4,
-            "bagging_fraction": 0.849282329523916,
-            "bagging_freq": 2,
-            "min_child_samples": 5,
-        }
-        assert tuner.best_params == expected
+        tuner_first_try.run()
+        best_params_first_try = tuner_first_try.best_params
+
+        test_study_second_try = study.create_study(
+            direction="minimize", sampler=TPESampler(seed=10)
+        )
+
+        tuner_second_try = lgb.LightGBMTunerCV(
+            params,
+            train,
+            early_stopping_rounds=3,
+            folds=KFold(n_splits=3),
+            study=test_study_second_try,
+            optuna_seed=10,
+        )
+        tuner_second_try.run()
+        best_params_second_try = tuner_second_try.best_params
+
+        assert best_params_second_try == best_params_first_try
