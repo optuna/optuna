@@ -1,7 +1,6 @@
 name: examples
 
 on:
-  pull_request: {}
   schedule:
     - cron: '0 15 * * *'
 
