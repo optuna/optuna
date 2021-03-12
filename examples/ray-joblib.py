@@ -2,9 +2,9 @@
 Optuna example that optimizes a classifier configuration for the Iris dataset using Ray with
 joblib backend.
 
-In this example, we optimize a classifier configuration for Iris dataset. Classifiers are from
-scikit-learn. We optimize both the choice of classifier (among SVC and RandomForest) and their
-hyper parameters.
+In this example, we optimize a classifier configuration for Iris dataset. The classifiers are from
+scikit-learn. We optimize both the choice of classifier (between SVC and RandomForest) and their
+hyperparameters.
 
 """
 import logging
@@ -20,20 +20,18 @@ import sklearn.svm
 import optuna
 
 
-# Get a URL of the Ray dashboard.
+# Get a URL for the Ray dashboard.
 try:
     ray.init(address="auto")
 except ConnectionError:
     ray.init()
 # Disable the warning to suppress the log.
-# TODO(HideakiImamura): enable warning after https://github.com/ray-project/ray/pull/13865 and
-# the new release of Ray.
+# TODO(HideakiImamura): enable warning after https://github.com/ray-project/ray/pull/13865 is
+# released.
 ray.init(logging_level=logging.ERROR, ignore_reinit_error=True)
 register_ray()
 
 
-# FYI: Objective functions can take additional arguments
-# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     iris = sklearn.datasets.load_iris()
     x, y = iris.data, iris.target
