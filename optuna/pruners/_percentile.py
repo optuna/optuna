@@ -15,7 +15,7 @@ def _get_best_intermediate_result_over_steps(
     trial: "optuna.trial.FrozenTrial", direction: StudyDirection
 ) -> float:
 
-    values = np.array(list(trial.intermediate_values.values()), np.float)
+    values = np.asarray(list(trial.intermediate_values.values()), dtype=float)
     if direction == StudyDirection.MAXIMIZE:
         return np.nanmax(values)
     return np.nanmin(values)
@@ -45,7 +45,7 @@ def _get_percentile_intermediate_result_over_trials(
 
     return float(
         np.nanpercentile(
-            np.array(intermediate_values, np.float),
+            np.array(intermediate_values, dtype=float),
             percentile,
         )
     )
@@ -92,7 +92,7 @@ class PercentilePruner(BasePruner):
 
 
             def objective(trial):
-                alpha = trial.suggest_uniform("alpha", 0.0, 1.0)
+                alpha = trial.suggest_float("alpha", 0.0, 1.0)
                 clf = SGDClassifier(alpha=alpha)
                 n_train_iter = 100
 

@@ -35,6 +35,19 @@ If you choose to write some code, we have some conventions as follows.
 
 ## Guidelines
 
+### Setup Optuna
+
+First of all, fork Optuna on GitHub.
+You can learn about fork in the official [documentation](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo).
+
+After forking, download and install Optuna on your computer.
+
+```bash
+git clone git@github.com:YOUR_NAME/optuna.git
+cd optuna
+pip install -e .
+```
+
 ### Checking the Format, Coding Style, and Type Hints
 
 Code is formatted with [black](https://github.com/psf/black),
@@ -73,6 +86,7 @@ To build the documentation, you need to run:
 ```bash
 pip install -e ".[document]"
 ```
+Note that the above command might try to install PyTorch without CUDA to your environment even if your environment has CUDA version already.
 
 Then you can build the documentation in HTML format locally:
 
@@ -83,6 +97,16 @@ make html
 
 HTML files are generated under `build/html` directory. Open `index.html` with the browser and see
 if it is rendered as expected.
+
+Optuna's tutorial is built with [Sphinx-Gallery](https://sphinx-gallery.github.io/stable/index.html) and
+some other requirements like [LightGBM](https://github.com/microsoft/LightGBM) and [PyTorch](https://pytorch.org) meaning that
+all .py files in `tutorial` directory are run during the documentation build if there's no build cache.
+Whether you edit any tutorial or not doesn't matter.
+
+To avoid having to run the tutorials, you may download executed tutorial artifacts nanmed "tutorial" from our CI (see the capture below) and put them in `docs/build` before
+extract the files in the zip to `docs/source/tutorial` directory.
+
+![image](https://user-images.githubusercontent.com/16191443/107472296-0b211400-6bb2-11eb-9203-e2c42ce499ad.png)
 
 ## Unit Tests
 
@@ -104,35 +128,27 @@ pytest tests/${TARGET_TEST_FILE_NAME}
 
 Optuna repository uses GitHub Actions and CircleCI.
 
-CircleCI is used for continuous integration.
-
-Currently, we are migrating to GitHub Actions but still we use CirclCI for a few tests listed below.
-`document` still exists because it makes it much easier to check built documentation and `tests-rdbstorage`
-is there because CircleCI supports more various RDB storages than GitHub Actions as of November 2020.
+Currently, we are migrating to GitHub Actions but still we use CirclCI for a test of `document`
+because it makes it much easier to check built documentation.
 
 ### Local Verification
 
-By installing the [`circleci`](https://circleci.com/docs/2.0/local-cli/) local CLI and Docker, you can run tests locally.
+By installing [`act`](https://github.com/nektos/act#installation) and Docker, you can run
+tests written for GitHub Actions locally.
 
 ```bash
-circleci build --job <job_name>
+JOB_NAME=checks
+act -j $JOB_NAME
 ```
 
-You can run the following jobs.
+Currently, you can run the following jobs: `documentation` and `doctest` may not be executable depending on your choice of docker image of act.
 
-- `tests-rdbstorage`
-  - Runs unit tests with RDB storages with Python 3.7
-- `document`
-  - Checks documentation build
-
-#### Example
-
-The following `circleci` job runs all unit tests with RDB storages:
-Note that this job will download several hundred megabytes of data to install all the packages required for testing, and take several tens of minutes to complete all tests.
-
-```bash
-circleci build --job tests-rdbstorage
-```
+- `checks`    
+  - Checking the format, coding style, and type hints
+- `docuemtnation`
+  - Builds documentation including tutorial
+- `doctest`
+  - Runs doctest
 
 ## Creating a Pull Request
 

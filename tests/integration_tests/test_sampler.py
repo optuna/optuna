@@ -53,10 +53,10 @@ def test_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
     # First trial.
     def objective0(trial: optuna.trial.Trial) -> float:
 
-        p0 = trial.suggest_uniform("p0", 0, 10)
-        p1 = trial.suggest_loguniform("p1", 1, 10)
+        p0 = trial.suggest_float("p0", 0, 10)
+        p1 = trial.suggest_float("p1", 1, 10, log=True)
         p2 = trial.suggest_int("p2", 0, 10)
-        p3 = trial.suggest_discrete_uniform("p3", 0, 9, 3)
+        p3 = trial.suggest_float("p3", 0, 9, step=3)
         p4 = trial.suggest_categorical("p4", ["10", "20", "30"])
         assert isinstance(p4, str)
         return p0 + p1 + p2 + p3 + int(p4)
@@ -73,11 +73,11 @@ def test_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
     def objective1(trial: optuna.trial.Trial) -> float:
 
         # p0, p2 and p4 are deleted.
-        p1 = trial.suggest_loguniform("p1", 1, 10)
-        p3 = trial.suggest_discrete_uniform("p3", 0, 9, 3)
+        p1 = trial.suggest_float("p1", 1, 10, log=True)
+        p3 = trial.suggest_float("p3", 0, 9, step=3)
 
         # p5 is added.
-        p5 = trial.suggest_uniform("p5", 0, 1)
+        p5 = trial.suggest_float("p5", 0, 1)
 
         return p1 + p3 + p5
 
@@ -91,9 +91,9 @@ def test_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
     # Third trial.
     def objective2(trial: optuna.trial.Trial) -> float:
 
-        p1 = trial.suggest_loguniform("p1", 50, 100)  # The range has been changed
-        p3 = trial.suggest_discrete_uniform("p3", 0, 9, 3)
-        p5 = trial.suggest_uniform("p5", 0, 1)
+        p1 = trial.suggest_float("p1", 50, 100, log=True)  # The range has been changed
+        p3 = trial.suggest_float("p3", 0, 9, step=3)
+        p5 = trial.suggest_float("p5", 0, 1)
 
         return p1 + p3 + p5
 
@@ -123,13 +123,13 @@ def test_warn_independent_sampling(sampler_class: Callable[[bool], BaseSampler])
 
     with patch(method_name) as mock_object:
         study.optimize(
-            lambda t: t.suggest_uniform("p0", 0, 10) + t.suggest_uniform("q0", 0, 10), n_trials=1
+            lambda t: t.suggest_float("p0", 0, 10) + t.suggest_float("q0", 0, 10), n_trials=1
         )
         assert mock_object.call_count == 0
 
     with patch(method_name) as mock_object:
         study.optimize(
-            lambda t: t.suggest_uniform("p1", 0, 10) + t.suggest_uniform("q1", 0, 10), n_trials=1
+            lambda t: t.suggest_float("p1", 0, 10) + t.suggest_float("q1", 0, 10), n_trials=1
         )
         assert mock_object.call_count == 2
 
@@ -139,28 +139,28 @@ def test_warn_independent_sampling(sampler_class: Callable[[bool], BaseSampler])
 
     with patch(method_name) as mock_object:
         study.optimize(
-            lambda t: t.suggest_uniform("p0", 0, 10) + t.suggest_uniform("q0", 0, 10), n_trials=1
+            lambda t: t.suggest_float("p0", 0, 10) + t.suggest_float("q0", 0, 10), n_trials=1
         )
         assert mock_object.call_count == 0
 
     with patch(method_name) as mock_object:
         study.optimize(
-            lambda t: t.suggest_uniform("p1", 0, 10) + t.suggest_uniform("q1", 0, 10), n_trials=1
+            lambda t: t.suggest_float("p1", 0, 10) + t.suggest_float("q1", 0, 10), n_trials=1
         )
         assert mock_object.call_count == 0
 
 
 def _objective(trial: optuna.trial.Trial) -> float:
 
-    p0 = trial.suggest_uniform("p0", -3.3, 5.2)
-    p1 = trial.suggest_uniform("p1", 2.0, 2.0)
-    p2 = trial.suggest_loguniform("p2", 0.0001, 0.3)
-    p3 = trial.suggest_loguniform("p3", 1.1, 1.1)
+    p0 = trial.suggest_float("p0", -3.3, 5.2)
+    p1 = trial.suggest_float("p1", 2.0, 2.0)
+    p2 = trial.suggest_float("p2", 0.0001, 0.3, log=True)
+    p3 = trial.suggest_float("p3", 1.1, 1.1, log=True)
     p4 = trial.suggest_int("p4", -100, 8)
     p5 = trial.suggest_int("p5", -20, -20)
-    p6 = trial.suggest_discrete_uniform("p6", 10, 20, 2)
-    p7 = trial.suggest_discrete_uniform("p7", 0.1, 1.0, 0.1)
-    p8 = trial.suggest_discrete_uniform("p8", 2.2, 2.2, 0.5)
+    p6 = trial.suggest_float("p6", 10, 20, step=2)
+    p7 = trial.suggest_float("p7", 0.1, 1.0, step=0.1)
+    p8 = trial.suggest_float("p8", 2.2, 2.2, step=0.5)
     p9 = trial.suggest_categorical("p9", ["9", "3", "0", "8"])
     assert isinstance(p9, str)
 

@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Generator
 from typing import List
@@ -71,6 +72,8 @@ def _create_scoped_session(
     except Exception:
         session.rollback()
         raise
+    finally:
+        session.close()
 
 
 class RDBStorage(BaseStorage):
@@ -90,7 +93,7 @@ class RDBStorage(BaseStorage):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -100, 100)
+                x = trial.suggest_float("x", -100, 100)
                 return x ** 2
 
 
@@ -114,6 +117,14 @@ class RDBStorage(BaseStorage):
         grace_period:
             Grace period before a running trial is failed from the last heartbeat.
             If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
+        failed_trial_callback:
+            A callback function that is invoked after failing each stale trial.
+            The function must accept two parameters with the following types in this order:
+            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+
+            .. note::
+                The procedure to fail existing stale trials is called just before asking the
+                study for a new trial.
 
     .. _sqlalchemy.engine.create_engine:
         https://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
@@ -143,6 +154,7 @@ class RDBStorage(BaseStorage):
         *,
         heartbeat_interval: Optional[int] = None,
         grace_period: Optional[int] = None,
+        failed_trial_callback: Optional[Callable[["optuna.Study", FrozenTrial], None]] = None,
     ) -> None:
 
         self.engine_kwargs = engine_kwargs or {}
@@ -154,6 +166,7 @@ class RDBStorage(BaseStorage):
             raise ValueError("The value of `grace_period` should be a positive integer.")
         self.heartbeat_interval = heartbeat_interval
         self.grace_period = grace_period
+        self.failed_trial_callback = failed_trial_callback
 
         self._set_default_engine_kwargs_for_mysql(url, self.engine_kwargs)
 
@@ -217,9 +230,9 @@ class RDBStorage(BaseStorage):
                 "`--skip-if-exists` flag (for CLI).".format(study_name)
             )
 
-        _logger.info("A new study created in RDB with name: {}".format(study.study_name))
+        _logger.info("A new study created in RDB with name: {}".format(study_name))
 
-        return study.study_id
+        return self.get_study_id_from_name(study_name)
 
     def delete_study(self, study_id: int) -> None:
 
@@ -301,22 +314,25 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_name(study_name, session)
+            study_id = study.study_id
 
-        return study.study_id
+        return study_id
 
     def get_study_id_from_trial_id(self, trial_id: int) -> int:
 
         with _create_scoped_session(self.scoped_session) as session:
             trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+            study_id = trial.study_id
 
-        return trial.study_id
+        return study_id
 
     def get_study_name_from_id(self, study_id: int) -> str:
 
         with _create_scoped_session(self.scoped_session) as session:
             study = models.StudyModel.find_or_raise_by_id(study_id, session)
+            study_name = study.study_name
 
-        return study.study_name
+        return study_name
 
     def get_study_directions(self, study_id: int) -> List[StudyDirection]:
 
@@ -495,9 +511,9 @@ class RDBStorage(BaseStorage):
 
         # Retry a couple of times. Deadlocks may occur in distributed environments.
         n_retries = 0
-        while True:
-            try:
-                with _create_scoped_session(self.scoped_session) as session:
+        with _create_scoped_session(self.scoped_session) as session:
+            while True:
+                try:
                     # Ensure that that study exists.
                     #
                     # Locking within a study is necessary since the creation of a trial is not an
@@ -506,41 +522,46 @@ class RDBStorage(BaseStorage):
                     models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
 
                     trial = self._get_prepared_new_trial(study_id, template_trial, session)
-                break  # Successfully created trial.
-            except OperationalError:
-                if n_retries > 2:
-                    raise
+                    break  # Successfully created trial.
+                except OperationalError:
+                    if n_retries > 2:
+                        raise
 
             n_retries += 1
 
-        if template_trial:
-            frozen = copy.deepcopy(template_trial)
-            frozen.number = trial.number
-            frozen.datetime_start = trial.datetime_start
-            frozen._trial_id = trial.trial_id
-        else:
-            frozen = FrozenTrial(
-                number=trial.number,
-                state=trial.state,
-                value=None,
-                values=None,
-                datetime_start=trial.datetime_start,
-                datetime_complete=None,
-                params={},
-                distributions={},
-                user_attrs={},
-                system_attrs={},
-                intermediate_values={},
-                trial_id=trial.trial_id,
-            )
+            if template_trial:
+                frozen = copy.deepcopy(template_trial)
+                frozen.number = trial.number
+                frozen.datetime_start = trial.datetime_start
+                frozen._trial_id = trial.trial_id
+            else:
+                frozen = FrozenTrial(
+                    number=trial.number,
+                    state=trial.state,
+                    value=None,
+                    values=None,
+                    datetime_start=trial.datetime_start,
+                    datetime_complete=None,
+                    params={},
+                    distributions={},
+                    user_attrs={},
+                    system_attrs={},
+                    intermediate_values={},
+                    trial_id=trial.trial_id,
+                )
 
-        return frozen
+            return frozen
 
     def _get_prepared_new_trial(
         self, study_id: int, template_trial: Optional[FrozenTrial], session: orm.Session
     ) -> models.TrialModel:
         if template_trial is None:
-            trial = models.TrialModel(study_id=study_id, number=None, state=TrialState.RUNNING)
+            trial = models.TrialModel(
+                study_id=study_id,
+                number=None,
+                state=TrialState.RUNNING,
+                datetime_start=datetime.now(),
+            )
         else:
             # Because only `RUNNING` trials can be updated,
             # we temporarily set the state of the new trial to `RUNNING`.
@@ -609,6 +630,7 @@ class RDBStorage(BaseStorage):
         distributions_: Optional[Dict[str, distributions.BaseDistribution]] = None,
         user_attrs: Optional[Dict[str, Any]] = None,
         system_attrs: Optional[Dict[str, Any]] = None,
+        datetime_start: Optional[datetime] = None,
         datetime_complete: Optional[datetime] = None,
     ) -> bool:
         """Sync latest trial updates to a database.
@@ -630,6 +652,9 @@ class RDBStorage(BaseStorage):
                 New user_attr. None when there are no updates.
             system_attrs:
                 New system_attr. None when there are no updates.
+            datetime_start:
+                Start time of the trial. Set when this method change the state
+                of trial into running state.
             datetime_complete:
                 Completion time of the trial. Set if and only if this method
                 change the state of trial into one of the finished states.
@@ -653,6 +678,9 @@ class RDBStorage(BaseStorage):
 
             if state:
                 trial_model.state = state
+
+            if datetime_start:
+                trial_model.datetime_start = datetime_start
 
             if datetime_complete:
                 trial_model.datetime_complete = datetime_complete
@@ -751,6 +779,10 @@ class RDBStorage(BaseStorage):
                     return False
 
                 trial.state = state
+
+                if state == TrialState.RUNNING:
+                    trial.datetime_start = datetime.now()
+
                 if state.is_finished():
                     trial.datetime_complete = datetime.now()
         except IntegrityError:
@@ -833,8 +865,9 @@ class RDBStorage(BaseStorage):
             trial_param = models.TrialParamModel.find_or_raise_by_trial_and_param_name(
                 trial, param_name, session
             )
+            param_value = trial_param.param_value
 
-        return trial_param.param_value
+        return param_value
 
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
@@ -1087,8 +1120,9 @@ class RDBStorage(BaseStorage):
                 trial = models.TrialModel.find_max_value_trial(study_id, 0, session)
             else:
                 trial = models.TrialModel.find_min_value_trial(study_id, 0, session)
+            trial_id = trial.trial_id
 
-        return self.get_trial(trial.trial_id)
+        return self.get_trial(trial_id)
 
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         # Make sure that the given study exists.
@@ -1162,15 +1196,17 @@ class RDBStorage(BaseStorage):
             else:
                 heartbeat.heartbeat = session.execute(func.now()).scalar()
 
-    def fail_stale_trials(self) -> List[int]:
-        stale_trial_ids = self._get_stale_trial_ids()
+    def fail_stale_trials(self, study_id: int) -> List[int]:
+        stale_trial_ids = self._get_stale_trial_ids(study_id)
+        confirmed_stale_trial_ids = []
 
         for trial_id in stale_trial_ids:
-            self.set_trial_state(trial_id, TrialState.FAIL)
+            if self.set_trial_state(trial_id, TrialState.FAIL):
+                confirmed_stale_trial_ids.append(trial_id)
 
-        return stale_trial_ids
+        return confirmed_stale_trial_ids
 
-    def _get_stale_trial_ids(self) -> List[int]:
+    def _get_stale_trial_ids(self, study_id: int) -> List[int]:
         assert self.heartbeat_interval is not None
         if self.grace_period is None:
             grace_period = 2 * self.heartbeat_interval
@@ -1189,6 +1225,7 @@ class RDBStorage(BaseStorage):
                 session.query(models.TrialModel)
                 .options(orm.selectinload(models.TrialModel.heartbeats))
                 .filter(models.TrialModel.state == TrialState.RUNNING)
+                .filter(models.TrialModel.study_id == study_id)
                 .all()
             )
             for trial in running_trials:
@@ -1208,6 +1245,10 @@ class RDBStorage(BaseStorage):
     def get_heartbeat_interval(self) -> Optional[int]:
 
         return self.heartbeat_interval
+
+    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
+
+        return self.failed_trial_callback
 
 
 class _VersionManager(object):
@@ -1263,18 +1304,19 @@ class _VersionManager(object):
             #       it is ensured that a `VersionInfoModel` entry exists.
             version_info = models.VersionInfoModel.find(session)
 
-        assert version_info is not None
+            assert version_info is not None
 
-        current_version = self.get_current_version()
-        head_version = self.get_head_version()
-        if current_version == head_version:
-            return
+            current_version = self.get_current_version()
+            head_version = self.get_head_version()
+            if current_version == head_version:
+                return
 
-        message = (
-            "The runtime optuna version {} is no longer compatible with the table schema "
-            "(set up by optuna {}). ".format(version.__version__, version_info.library_version)
-        )
-        known_versions = self.get_all_versions()
+            message = (
+                "The runtime optuna version {} is no longer compatible with the table schema "
+                "(set up by optuna {}). ".format(version.__version__, version_info.library_version)
+            )
+            known_versions = self.get_all_versions()
+
         if current_version in known_versions:
             message += (
                 "Please execute `$ optuna storage upgrade --storage $STORAGE_URL` "
@@ -1320,11 +1362,11 @@ class _VersionManager(object):
         with _create_scoped_session(self.scoped_session) as session:
             version_info = models.VersionInfoModel.find(session)
 
-        if version_info is None:
-            # `None` means this storage was created just now.
-            return True
+            if version_info is None:
+                # `None` means this storage was created just now.
+                return True
 
-        return version_info.schema_version == models.SCHEMA_VERSION
+            return version_info.schema_version == models.SCHEMA_VERSION
 
     def _create_alembic_script(self) -> alembic.script.ScriptDirectory:
 

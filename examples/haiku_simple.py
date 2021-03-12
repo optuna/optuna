@@ -13,6 +13,7 @@ from typing import Any
 from typing import Generator
 from typing import Mapping
 from typing import Tuple
+import urllib
 
 import haiku as hk
 import jax
@@ -22,6 +23,13 @@ import optax
 import tensorflow_datasets as tfds
 
 import optuna
+
+
+# TODO(crcrpar): Remove the below three lines once everything is ok.
+# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-agent", "Mozilla/5.0")]
+urllib.request.install_opener(opener)
 
 
 OptState = Any

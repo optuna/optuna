@@ -81,7 +81,7 @@ class HyperbandPruner(BasePruner):
 
 
             def objective(trial):
-                alpha = trial.suggest_uniform("alpha", 0.0, 1.0)
+                alpha = trial.suggest_float("alpha", 0.0, 1.0)
                 clf = SGDClassifier(alpha=alpha)
 
                 for step in range(n_train_iter):
@@ -280,6 +280,8 @@ class HyperbandPruner(BasePruner):
                 "sampler",
                 "trials",
                 "_is_multi_objective",
+                "stop",
+                "_study",
             )
 
             def __init__(self, study: "optuna.study.Study", bracket_id: int) -> None:
@@ -289,6 +291,7 @@ class HyperbandPruner(BasePruner):
                     sampler=study.sampler,
                     pruner=study.pruner,
                 )
+                self._study = study
                 self._bracket_id = bracket_id
 
             def get_trials(
@@ -300,6 +303,11 @@ class HyperbandPruner(BasePruner):
                 pruner = self.pruner
                 assert isinstance(pruner, HyperbandPruner)
                 return [t for t in trials if pruner._get_bracket_id(self, t) == self._bracket_id]
+
+            def stop(self) -> None:
+                # `stop` should stop the original study's optimization loop instead of
+                # `_BracketStudy`.
+                self._study.stop()
 
             def __getattribute__(self, attr_name):  # type: ignore
                 if attr_name not in _BracketStudy._VALID_ATTRS:

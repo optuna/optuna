@@ -137,6 +137,7 @@ class TestBaseTuner(object):
 
         for metric in [
             "auc",
+            "auc_mu",
             "ndcg",
             "lambdarank",
             "rank_xendcg",
@@ -146,11 +147,20 @@ class TestBaseTuner(object):
             "xendcg_mart",
             "map",
             "mean_average_precision",
+            "average_precision",
         ]:
             tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert tuner.higher_is_better()
 
-        for metric in ["rmsle", "rmse", "binary_logloss", "mape"]:
+        for metric in [
+            "mae",
+            "rmse",
+            "quantile",
+            "mape",
+            "binary_logloss",
+            "multi_logloss",
+            "cross_entropy",
+        ]:
             tuner = _BaseTuner(lgbm_params={"metric": metric})
             assert not tuner.higher_is_better()
 
@@ -637,6 +647,16 @@ class TestLightGBMTuner(object):
         with pytest.raises(ValueError):
             tuner2.get_best_booster()
 
+    @pytest.mark.parametrize("dir_exists, expected", [(False, True), (True, False)])
+    def test_model_dir(self, dir_exists: bool, expected: bool) -> None:
+        params: Dict = {"verbose": -1}
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        with mock.patch("optuna.integration._lightgbm_tuner.optimize.os.mkdir") as m:
+            with mock.patch("os.path.exists", return_value=dir_exists):
+                LightGBMTuner(params, dataset, valid_sets=dataset, model_dir="./booster")
+                assert m.called == expected
+
     def test_best_booster_with_model_dir(self) -> None:
         params: Dict = {"verbose": -1}
         dataset = lgb.Dataset(np.zeros((10, 10)))
@@ -670,7 +690,7 @@ class TestLightGBMTuner(object):
                 optuna.integration._lightgbm_tuner.optimize._STEP_NAME_KEY,
                 "step{:.0f}".format(value),
             )
-            return trial.suggest_uniform("x", value, value)
+            return trial.suggest_float("x", value, value)
 
         study = optuna.create_study(direction=direction)
         study_step1 = tuner._create_stepwise_study(study, "step1")
@@ -921,6 +941,18 @@ class TestLightGBMTunerCV(object):
             tuner._tune_params(["num_leaves"], 10, optuna.samplers.TPESampler(), "num_leaves")
 
         assert callback_mock.call_count == 10
+
+    @pytest.mark.parametrize("dir_exists, expected", [(False, True), (True, False)])
+    def test_model_dir(self, dir_exists: bool, expected: bool) -> None:
+        unexpected_value = 20  # out of scope.
+
+        params: Dict = {"verbose": -1, "lambda_l1": unexpected_value}
+        dataset = lgb.Dataset(np.zeros((10, 10)))
+
+        with mock.patch("os.mkdir") as m:
+            with mock.patch("os.path.exists", return_value=dir_exists):
+                LightGBMTunerCV(params, dataset, model_dir="./booster")
+                assert m.called == expected
 
     def test_get_best_booster(self) -> None:
         unexpected_value = 20  # out of scope.

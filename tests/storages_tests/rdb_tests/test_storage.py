@@ -12,6 +12,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from optuna import create_study
+from optuna import Study
 from optuna import version
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
@@ -37,7 +38,13 @@ def test_init() -> None:
     assert version_info.library_version == version.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
-    assert storage.get_all_versions() == ["v2.4.0.a", "v1.3.0.a", "v1.2.0.a", "v0.9.0.a"]
+    assert storage.get_all_versions() == [
+        "v2.6.0.a",
+        "v2.4.0.a",
+        "v1.3.0.a",
+        "v1.2.0.a",
+        "v0.9.0.a",
+    ]
 
 
 def test_init_url_template() -> None:
@@ -335,21 +342,26 @@ def test_fail_stale_trials() -> None:
         assert isinstance(storage, RDBStorage)
         storage.heartbeat_interval = heartbeat_interval
         storage.grace_period = grace_period
-        study = create_study(storage=storage)
+        study1 = create_study(storage=storage)
+        study2 = create_study(storage=storage)
 
-        trial = study.ask()
-        storage.record_heartbeat(trial._trial_id)
+        trial1 = study1.ask()
+        trial2 = study2.ask()
+        storage.record_heartbeat(trial1._trial_id)
+        storage.record_heartbeat(trial2._trial_id)
         time.sleep(grace_period + 1)
 
-        t = study.trials[0]
-        assert t.state is TrialState.RUNNING
+        assert study1.trials[0].state is TrialState.RUNNING
+        assert study2.trials[0].state is TrialState.RUNNING
+
+        assert storage._get_stale_trial_ids(study1._study_id) == [study1.trials[0]._trial_id]
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
         with patch("optuna._optimize.Thread", _TestableThread):
-            study.optimize(lambda _: 1.0, n_trials=1)
+            study1.optimize(lambda _: 1.0, n_trials=1)
 
-        t = study.trials[0]
-        assert t.state is TrialState.FAIL
+        assert study1.trials[0].state is TrialState.FAIL
+        assert study2.trials[0].state is TrialState.RUNNING
 
 
 def test_invalid_heartbeat_interval_and_grace_period() -> None:
@@ -359,3 +371,31 @@ def test_invalid_heartbeat_interval_and_grace_period() -> None:
 
     with pytest.raises(ValueError):
         _ = RDBStorage("sqlite:///:memory:", grace_period=-1)
+
+
+def test_failed_trial_callback() -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    def failed_trial_callback(study: Study, trial: FrozenTrial) -> None:
+        assert study.system_attrs["test"] == "A"
+        assert trial.system_attrs["test"] == "B"
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage.heartbeat_interval = heartbeat_interval
+        storage.grace_period = grace_period
+        storage.failed_trial_callback = failed_trial_callback
+        study = create_study(storage=storage)
+        study.set_system_attr("test", "A")
+
+        trial = study.ask()
+        trial.set_system_attr("test", "B")
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        # Exceptions raised in spawned threads are caught by `_TestableThread`.
+        with patch("optuna._optimize.Thread", _TestableThread):
+            with patch.object(storage, "failed_trial_callback", wraps=failed_trial_callback) as m:
+                study.optimize(lambda _: 1.0, n_trials=1)
+                m.assert_called_once()
