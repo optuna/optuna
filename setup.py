@@ -55,6 +55,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
+            # TODO(c-bata): Remove Cython after removing version constraints of sklearn.
+            "Cython; python_version > '3.8'",
             "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
@@ -82,6 +84,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         "example": [
             "catboost",
             "chainer",
+            # TODO(c-bata): Remove Cython after removing version constraints of sklearn.
+            "Cython; python_version > '3.8'",
             "lightgbm",
             "mlflow",
             "mpi4py",
