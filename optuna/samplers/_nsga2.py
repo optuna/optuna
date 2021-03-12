@@ -366,6 +366,7 @@ class NSGAIISampler(BaseSampler):
                     _CONSTRAINTS_KEY,
                     constraints,
                 )
+        self._random_sampler.after_trial(study, trial, state, values)
 
 
 def _crowding_distance_sort(population: List[FrozenTrial]) -> None:

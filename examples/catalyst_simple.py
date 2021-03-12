@@ -11,6 +11,7 @@ argument.
 
 import argparse
 import os
+import urllib
 
 from catalyst.dl import AccuracyCallback
 from catalyst.dl import SupervisedRunner
@@ -23,6 +24,13 @@ from torchvision import transforms
 
 import optuna
 from optuna.integration import CatalystPruningCallback
+
+
+# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
+# This is a temporary fix until torchvision v0.9 is released.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-agent", "Mozilla/5.0")]
+urllib.request.install_opener(opener)
 
 
 CLASSES = 10

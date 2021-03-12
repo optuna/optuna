@@ -12,6 +12,7 @@ We can execute this example as follows.
 **Note:** If a parameter contains missing values, a trial with missing values is not plotted.
 """
 
+import urllib
 
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
@@ -24,6 +25,13 @@ from optuna.visualization import plot_optimization_history
 from optuna.visualization import plot_parallel_coordinate
 from optuna.visualization import plot_param_importances
 from optuna.visualization import plot_slice
+
+
+# TODO(crcrpar): Remove the below three lines once everything is ok.
+# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-agent", "Mozilla/5.0")]
+urllib.request.install_opener(opener)
 
 
 def objective(trial):
