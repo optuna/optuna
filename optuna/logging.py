@@ -191,7 +191,6 @@ def disable_propagation() -> None:
 
             import optuna
 
-
             optuna.logging.disable_propagation()  # Stop propogating logs to the root logger.
             optuna.logging.enable_default_handler()  # Start showing logs in sys.stderr.
 
