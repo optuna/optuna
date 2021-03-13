@@ -55,3 +55,9 @@ def test_find_sample_id():
 
 def test_is_engine_cached():
     pass
+
+
+def test_parallel_workers():
+    # test if the samples taken by parallel workers are the same
+    # as the ones taken by sequencial workers
+    pass

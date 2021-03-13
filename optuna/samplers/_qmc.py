@@ -2,6 +2,7 @@ from collections import OrderedDict
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import Sequence
 
 import numpy
 import scipy
@@ -52,7 +53,6 @@ class QMCSampler(BaseSampler):
     TODO(kstoneriv3): make some notes on 2^k property of Sobol and prime property of Halton
 
     .. note:
-        Please note that this sampler does not support CategoricalDistribution.
         If your search space contains categorical parameters, it samples the catagorical
         parameters by its `independent_sampler` without using QMC algorithm.
 
@@ -149,8 +149,9 @@ class QMCSampler(BaseSampler):
         seed: Optional[int] = None,
         search_space: Optional[Dict[str, BaseDistribution]] = None,
         independent_sampler: Optional[BaseSampler] = None,
-        warn_independent_sampling: bool = True,
         warn_asyncronous_seeding: bool = True,
+        warn_incomplete_reseeding: bool = True,
+        warn_independent_sampling: bool = True,
     ) -> None:
 
         self._scramble = scramble
@@ -161,6 +162,7 @@ class QMCSampler(BaseSampler):
         # TODO(kstoneriv3): make sure that search_space is either None or valid search space.
         # also make sure that it is OrderedDict
         self._initial_search_space = search_space
+        self._warn_incomplete_reseeding = warn_incomplete_reseeding
         self._warn_independent_sampling = warn_independent_sampling
 
         if (seed is None) and scramble and warn_asyncronous_seeding:
@@ -170,15 +172,12 @@ class QMCSampler(BaseSampler):
     def reseed_rng(self) -> None:
 
         self._independent_sampler.reseed_rng()
+
+        # We must not reseed the `self._seed` like below. Otherwise, workers will have different
+        # seed under multiprocess execution because reseed_rng is called when forking process.
         # self._seed = numpy.random.MT19937().random_raw()
-
-        # We must not reseed the self._seed. Otherwise,
-        # parallel workers will have different seed
-        # due to reseeding that happens at the begining of the parallelization.
-
-        # TODO(kstoneriv3): Maybe add some warning about reseeding because the
-        # seed of the sobol sequence will not be reseeded. However, it might be noisy
-        # in parallel execution, because reseed_rng is called when forking process.
+        if self._warn_incomplete_reseeding:
+            self._warn_reseeding()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -197,7 +196,7 @@ class QMCSampler(BaseSampler):
         # If an initial trial was already made,
         # construct search_space of this sampler from the initial trial.
         else:
-            first_trial = min(past_trials, key=lambda t: t._trial_id)
+            first_trial = min(past_trials, key=lambda t: t.number)
             self._initial_search_space = self._infer_initial_search_space(first_trial)
             return self._initial_search_space
 
@@ -236,6 +235,17 @@ class QMCSampler(BaseSampler):
             "if this random seeding is intended behavior."
         )
 
+    @staticmethod
+    def _log_incomplete_reseeding() -> None:
+        _logger.warning(
+            "The seed of QMC seqeunce is not reseeded and only the seed of `independent_sampler` "
+            "is reseeded. This is to ensure that each workers samples from the same QMC sequence "
+            "in the parallel and/or distributed environment."
+            "You can suppress this warning by setting `warn_reseeding` "
+            "to `False` in the constructor of `QMCSampler`, "
+            "if this random seeding is intended behavior."
+        )
+
     def sample_independent(
         self,
         study: Study,
@@ -264,6 +274,15 @@ class QMCSampler(BaseSampler):
         sample = scipy.stats.qmc.scale(sample, trans.bounds[:, 0], trans.bounds[:, 1])
         sample = trans.untransform(sample[0, :])
         return sample
+
+    def after_trial(
+        self,
+        study: "optuna.Study",
+        trial: "optuna.trial.FrozenTrial",
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+        self._independent_sampler.after_trial(study, trial, state, values)
 
     def _sample_qmc(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
@@ -313,7 +332,8 @@ class QMCSampler(BaseSampler):
         key_qmc_id = f"qmc ({hashed_qmc_id})'s last sample id"
 
         # TODO(kstoneriv3): Following try-except block assumes that the block is
-        # an atomic transaction. This ensures that each sample_id is sampled at least once.
+        # an atomic transaction. Without this assumption, current implementation
+        # only ensures that each `sample_id` is sampled at least once.
         try:
             sample_id = study._storage.get_study_system_attrs(study._study_id)[key_qmc_id]
             sample_id += 1
@@ -329,22 +349,9 @@ class QMCSampler(BaseSampler):
         if not isinstance(self._cached_qmc_engine, scipy.stats.qmc.QMCEngine):
             return False
         else:
+            # Here, we assume that `_qmc_type` does not change for simplicity.
             is_cached = True
             is_cached &= self._cached_qmc_engine.rng_seed == self._seed
             is_cached &= self._cached_qmc_engine.d == d
             is_cached &= self._cached_qmc_engine.num_generated <= sample_id
-
-            # TODO(kstoneriv3): Maybe we should assume that
-            # `_qmc_type` does not change for simplicity.
-            if self._qmc_type == "sobol":
-                is_cached &= self._cached_qmc_engine.__class__.__name__ == "Sobol"
-            elif self._qmc_type == "halton":
-                is_cached &= self._cached_qmc_engine.__class__.__name__ == "Halton"
-            else:
-                message = (
-                    f"The `qmc_type`, {self._qmc_type}, is not a valid. "
-                    'It must be one of "sobol" and "halton".'
-                )
-                raise ValueError(message)
-
             return is_cached
