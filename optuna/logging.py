@@ -175,6 +175,34 @@ def disable_propagation() -> None:
     """Disable propagation of the library log outputs.
 
     Note that log propagation is disabled by default.
+
+    Example:
+
+        Stop propogating logs to the root logger and start logging to :obj:`sys.stderr`.
+
+        .. testsetup::
+
+            def objective(trial):
+                x = trial.suggest_float("x", -100, 100)
+                y = trial.suggest_categorical("y", [-1, 0, 1])
+                return x ** 2 + y
+
+        .. testcode::
+
+            import optuna
+
+
+            optuna.logging.disable_propagation()  # Stop propogating logs to the root logger.
+            optuna.logging.enable_default_handler()  # Start showing logs in sys.stderr.
+
+            study = optuna.create_study()
+
+            # There are logs in sys.stderr now.
+            study.optimize(objective, n_trials=10)
+            # [I 2020-02-23 17:00:54,314] Trial 0 finished with value: ...
+            # [I 2020-02-23 17:00:54,356] Trial 1 finished with value: ...
+            # ...
+
     """
 
     _configure_library_root_logger()
