@@ -216,9 +216,9 @@ def test_categorical(
 
         trial = _create_new_trial(study)
         param_value = study.sampler.sample_independent(study, trial, "x", distribution)
-        return distribution.to_internal_repr(param_value)
+        return float(distribution.to_internal_repr(param_value))
 
-    points = np.array([sample() for _ in range(100)])
+    points = np.asarray([sample() for i in range(100)])
 
     # 'x' value is corresponding to an index of distribution.choices.
     assert np.all(points >= 0)
@@ -289,13 +289,13 @@ def test_sample_relative() -> None:
     def objective(trial: Trial) -> float:
 
         # Predefined parameters are sampled by `sample_relative()` method.
-        assert trial.suggest_uniform("a", 0, 5) == 3.2
+        assert trial.suggest_float("a", 0, 5) == 3.2
         assert trial.suggest_categorical("b", ["foo", "bar", "baz"]) == "baz"
 
         # Other parameters are sampled by `sample_independent()` method.
         assert trial.suggest_int("c", 20, 50) == unknown_param_value
-        assert trial.suggest_loguniform("d", 1, 100) == unknown_param_value
-        assert trial.suggest_uniform("e", 20, 40) == unknown_param_value
+        assert trial.suggest_float("d", 1, 100, log=True) == unknown_param_value
+        assert trial.suggest_float("e", 20, 40) == unknown_param_value
 
         return 0.0
 
@@ -313,7 +313,7 @@ def test_intersection_search_space() -> None:
     assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
 
     # First trial.
-    study.optimize(lambda t: t.suggest_uniform("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
+    study.optimize(lambda t: t.suggest_float("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
     assert search_space.calculate(study) == {
         "x": IntUniformDistribution(low=0, high=10),
         "y": UniformDistribution(low=-3, high=3),
@@ -332,7 +332,7 @@ def test_intersection_search_space() -> None:
     ) == optuna.samplers.intersection_search_space(study, ordered_dict=True)
 
     # Second trial (only 'y' parameter is suggested in this trial).
-    study.optimize(lambda t: t.suggest_uniform("y", -3, 3), n_trials=1)
+    study.optimize(lambda t: t.suggest_float("y", -3, 3), n_trials=1)
     assert search_space.calculate(study) == {"y": UniformDistribution(low=-3, high=3)}
     assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
 
@@ -340,7 +340,7 @@ def test_intersection_search_space() -> None:
     # an intersection search space.
     def objective(trial: Trial, exception: Exception) -> float:
 
-        trial.suggest_uniform("z", 0, 1)
+        trial.suggest_float("z", 0, 1)
         raise exception
 
     study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
@@ -350,12 +350,12 @@ def test_intersection_search_space() -> None:
 
     # If two parameters have the same name but different distributions,
     # those are regarded as different parameters.
-    study.optimize(lambda t: t.suggest_uniform("y", -1, 1), n_trials=1)
+    study.optimize(lambda t: t.suggest_float("y", -1, 1), n_trials=1)
     assert search_space.calculate(study) == {}
     assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
 
     # The search space remains empty once it is empty.
-    study.optimize(lambda t: t.suggest_uniform("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
+    study.optimize(lambda t: t.suggest_float("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
     assert search_space.calculate(study) == {}
     assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
 
@@ -380,7 +380,7 @@ def test_nan_objective_value(sampler_class: Callable[[], BaseSampler]) -> None:
 
     def objective(trial: Trial, base_value: float) -> float:
 
-        return trial.suggest_uniform("x", 0.1, 0.2) + base_value
+        return trial.suggest_float("x", 0.1, 0.2) + base_value
 
     # Non NaN objective values.
     for i in range(10, 1, -1):
@@ -490,9 +490,7 @@ def test_after_trial() -> None:
     sampler = SamplerAfterTrial({}, {})
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
 
-    study.optimize(
-        lambda t: [t.suggest_uniform("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3
-    )
+    study.optimize(lambda t: [t.suggest_float("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3)
 
     assert n_calls == n_trials
 

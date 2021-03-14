@@ -1,5 +1,4 @@
 import os
-import sys
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -31,19 +30,14 @@ def get_install_requires() -> List[str]:
     requirements = [
         "alembic",
         "cliff",
-        "cmaes>=0.6.0",
+        "cmaes>=0.8.2",
         "colorlog",
-        "joblib",
         "numpy",
         "packaging>=20.0",
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
     ]
-    # NOTE (crcrpar): Some of the above libraries require Cython to be installed.
-    # I hope they will obviate it in the future releases.
-    if sys.version_info[:2] > (3, 8):
-        requirements.append("Cython")
     return requirements
 
 
@@ -80,6 +74,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
             "lightgbm",
+            "torch==1.7.1",
+            "torchvision==0.8.2",
+            "torchaudio==0.7.2",
+            "thop",
         ],
         "example": [
             "catboost",
@@ -106,14 +104,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2 ; sys_platform=='darwin'",
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
-            "allennlp<2.0.0",
+            "allennlp>=2.0.0",
             "dask[dataframe]",
             "dask-ml",
-            "botorch ; python_version>'3.6'",
+            "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
-            "jax",
             "optax",
             "dm-haiku",
+            "hydra-optuna-sweeper",
         ],
         "experimental": ["redis"],
         "testing": [
@@ -146,11 +144,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2 ; sys_platform=='darwin'",
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
-            "allennlp<2.0.0",
-            "botorch ; python_version>'3.6'",
+            "allennlp>=2.0.0",
+            "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
-        "tests": ["fakeredis", "pytest"],
+        "tests": [
+            "fakeredis",
+            "pytest",
+        ],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
@@ -184,8 +185,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.8.2 ; sys_platform=='darwin'",
             "torchvision==0.8.2+cpu ; sys_platform!='darwin'",
             "torchaudio==0.7.2",
-            "allennlp<2.0.0",
-            "botorch ; python_version>'3.6'",
+            "allennlp>=2.0.0",
+            "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
     }

@@ -15,13 +15,12 @@ from unittest.mock import patch
 import uuid
 
 import _pytest.capture
-from _pytest.recwarn import WarningsRecorder
-import joblib
 import pytest
 
 from optuna import create_study
 from optuna import create_trial
 from optuna import delete_study
+from optuna import distributions
 from optuna import get_all_study_summaries
 from optuna import load_study
 from optuna import logging
@@ -42,8 +41,8 @@ CallbackFuncType = Callable[[Study, FrozenTrial], None]
 
 def func(trial: Trial, x_max: float = 1.0) -> float:
 
-    x = trial.suggest_uniform("x", -x_max, x_max)
-    y = trial.suggest_loguniform("y", 20, 30)
+    x = trial.suggest_float("x", -x_max, x_max)
+    y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
     assert isinstance(z, float)
     return (x - 2) ** 2 + (y - 25) ** 2 + z
@@ -233,19 +232,6 @@ def test_optimize_with_catch_invalid_type(catch: Any) -> None:
 
     with pytest.raises(TypeError):
         study.optimize(func_value_error, n_trials=20, catch=catch)
-
-
-def test_optimize_parallel_storage_warning(recwarn: WarningsRecorder) -> None:
-
-    study = create_study()
-
-    # Default joblib backend is threading and no warnings will be captured.
-    study.optimize(lambda t: t.suggest_uniform("x", 0, 1), n_trials=20, n_jobs=2)
-    assert len(recwarn) == 0
-
-    with pytest.warns(UserWarning):
-        with joblib.parallel_backend("loky"):
-            study.optimize(lambda t: t.suggest_uniform("x", 0, 1), n_trials=20, n_jobs=2)
 
 
 @pytest.mark.parametrize(
@@ -487,6 +473,31 @@ def test_add_trial(storage_mode: str) -> None:
         assert len(study.trials) == 1
         assert study.trials[0].number == 0
         assert study.best_value == 0.8
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_add_trials(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.add_trials([])
+        assert len(study.trials) == 0
+
+        trials = [create_trial(value=i) for i in range(3)]
+        study.add_trials(trials)
+        assert len(study.trials) == 3
+        for i, trial in enumerate(study.trials):
+            assert trial.number == i
+            assert trial.value == i
+
+        other_study = create_study(storage=storage)
+        other_study.add_trials(study.trials)
+        assert len(other_study.trials) == 3
+        for i, trial in enumerate(other_study.trials):
+            assert trial.number == i
+            assert trial.value == i
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -859,6 +870,21 @@ def test_ask_enqueue_trial() -> None:
     assert trial.suggest_float("x", 0, 1) == 0.5
 
 
+def test_ask_fixed_search_space() -> None:
+    fixed_distributions = {
+        "x": distributions.UniformDistribution(0, 1),
+        "y": distributions.CategoricalDistribution(["bacon", "spam"]),
+    }
+
+    study = create_study()
+    trial = study.ask(fixed_distributions=fixed_distributions)
+
+    params = trial.params
+    assert len(trial.params) == 2
+    assert 0 <= params["x"] < 1
+    assert params["y"] in ["bacon", "spam"]
+
+
 def test_tell() -> None:
     study = create_study()
     assert len(study.trials) == 0
@@ -984,3 +1010,45 @@ def test_tell_pruned_values() -> None:
 
     study.tell(trial, state=TrialState.PRUNED)
     assert study.trials[-1].value is None
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueued_trial_datetime_start(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+
+        def objective(trial: Trial) -> float:
+            time.sleep(1)
+            x = trial.suggest_int("x", -10, 10)
+            return x
+
+        study.enqueue_trial(params={"x": 1})
+        assert study.trials[0].datetime_start is None
+
+        study.optimize(objective, n_trials=1)
+        assert study.trials[0].datetime_start is not None
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+
+        def objective(trial: Trial) -> float:
+            x = trial.suggest_int("x", -10, 10)
+            return x
+
+        # StudySummary datetime_start tests
+        study = create_study(storage=storage)
+        study.enqueue_trial(params={"x": 1})
+
+        # Study summary with only enqueued trials should have null datetime_start
+        summaries = study._storage.get_all_study_summaries()
+        assert summaries[0].datetime_start is None
+
+        # Study summary with completed trials should have nonnull datetime_start
+        study.optimize(objective, n_trials=1)
+        study.enqueue_trial(params={"x": 1})
+        summaries = study._storage.get_all_study_summaries()
+        assert summaries[0].datetime_start is not None

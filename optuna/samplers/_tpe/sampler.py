@@ -4,6 +4,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 import warnings
@@ -89,7 +90,7 @@ class TPESampler(BaseSampler):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -10, 10)
+                x = trial.suggest_float("x", -10, 10)
                 return x ** 2
 
 
@@ -182,7 +183,7 @@ class TPESampler(BaseSampler):
         self._random_sampler = RandomSampler(seed=seed)
 
         self._multivariate = multivariate
-        self._search_space = IntersectionSearchSpace()
+        self._search_space = IntersectionSearchSpace(include_pruned=True)
 
         if multivariate:
             warnings.warn(
@@ -324,14 +325,13 @@ class TPESampler(BaseSampler):
         self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]]
     ) -> Tuple[np.ndarray, np.ndarray]:
 
-        config_vals = np.asarray(config_vals)
-        loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
-
-        n_below = self._gamma(len(config_vals))
-        loss_ascending = np.argsort(loss_vals)
-        below = config_vals[np.sort(loss_ascending[:n_below])]
+        config_values = np.asarray(config_vals)
+        loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
+        n_below = self._gamma(len(config_values))
+        loss_ascending = np.argsort(loss_values)
+        below = config_values[np.sort(loss_ascending[:n_below])]
         below = np.asarray([v for v in below if v is not None], dtype=float)
-        above = config_vals[np.sort(loss_ascending[n_below:])]
+        above = config_values[np.sort(loss_ascending[n_below:])]
         above = np.asarray([v for v in above if v is not None], dtype=float)
         return below, above
 
@@ -341,17 +341,17 @@ class TPESampler(BaseSampler):
         loss_vals: List[Tuple[float, float]],
     ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
 
-        config_vals = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
-        loss_vals = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
+        config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
+        loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
 
-        n_below = self._gamma(len(loss_vals))
-        index_loss_ascending = np.argsort(loss_vals)
+        n_below = self._gamma(len(loss_values))
+        index_loss_ascending = np.argsort(loss_values)
         # `np.sort` is used to keep chronological order.
         index_below = np.sort(index_loss_ascending[:n_below])
         index_above = np.sort(index_loss_ascending[n_below:])
         below = {}
         above = {}
-        for param_name, param_val in config_vals.items():
+        for param_name, param_val in config_values.items():
             below[param_name] = param_val[index_below]
             above[param_name] = param_val[index_above]
 
@@ -482,8 +482,8 @@ class TPESampler(BaseSampler):
     ) -> int:
 
         choices = distribution.choices
-        below = list(map(int, below))
-        above = list(map(int, above))
+        below = below.astype(int)
+        above = above.astype(int)
         upper = len(choices)
 
         # We can use `np.arange(len(distribution.choices))` instead of sampling from `l(x)`
@@ -716,7 +716,7 @@ class TPESampler(BaseSampler):
 
 
                 def objective(trial):
-                    x = trial.suggest_uniform("x", -10, 10)
+                    x = trial.suggest_float("x", -10, 10)
                     return x ** 2
 
 
@@ -739,6 +739,16 @@ class TPESampler(BaseSampler):
             "gamma": hyperopt_default_gamma,
             "weights": default_weights,
         }
+
+    def after_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+
+        self._random_sampler.after_trial(study, trial, state, values)
 
 
 def _get_observation_pairs(

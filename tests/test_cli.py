@@ -266,7 +266,7 @@ def test_dashboard_command_with_allow_websocket_origin(origins: List[str]) -> No
 # An example of objective functions for testing study optimize command
 def objective_func(trial: Trial) -> float:
 
-    x = trial.suggest_uniform("x", -10, 10)
+    x = trial.suggest_float("x", -10, 10)
     return (x + 5) ** 2
 
 

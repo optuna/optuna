@@ -26,8 +26,8 @@ from optuna.testing.integration import DeterministicPruner
 def test_build_params() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
-    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    trial.suggest_float("LEARNING_RATE", 1e-2, 1e-1)
+    trial.suggest_float("DROPOUT", 0.0, 0.5)
     executor = optuna.integration.AllenNLPExecutor(
         trial, "tests/integration_tests/allennlp_tests/test.jsonnet", "test"
     )
@@ -41,8 +41,8 @@ def test_build_params() -> None:
 def test_build_params_overwriting_environment_variable() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
-    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    trial.suggest_float("LEARNING_RATE", 1e-2, 1e-1)
+    trial.suggest_float("DROPOUT", 0.0, 0.5)
     os.environ["TRAIN_PATH"] = "tests/integration_tests/allennlp_tests/sentences.train"
     os.environ["VALID_PATH"] = "tests/integration_tests/allennlp_tests/sentences.valid"
     executor = optuna.integration.AllenNLPExecutor(
@@ -62,7 +62,7 @@ def test_build_params_overwriting_environment_variable() -> None:
 def test_build_params_when_optuna_and_environment_variable_both_exist() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-2)
+    trial.suggest_float("LEARNING_RATE", 1e-2, 1e-2)
     os.environ["TRAIN_PATH"] = "tests/integration_tests/allennlp_tests/sentences.train"
     os.environ["VALID_PATH"] = "tests/integration_tests/allennlp_tests/sentences.valid"
     os.environ["LEARNING_RATE"] = "1e-3"
@@ -87,8 +87,8 @@ def test_build_params_when_optuna_and_environment_variable_both_exist() -> None:
 def test_missing_config_file() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
-    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    trial.suggest_float("LEARNING_RATE", 1e-2, 1e-1)
+    trial.suggest_float("DROPOUT", 0.0, 0.5)
     trial.suggest_int("MAX_FILTER_SIZE", 3, 6)
     trial.suggest_int("NUM_FILTERS", 16, 128)
     trial.suggest_int("NUM_OUTPUT_LAYERS", 1, 3)
@@ -102,8 +102,8 @@ def test_missing_config_file() -> None:
 def test_invalid_config_file() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.suggest_uniform("LEARNING_RATE", 1e-2, 1e-1)
-    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    trial.suggest_float("LEARNING_RATE", 1e-2, 1e-1)
+    trial.suggest_float("DROPOUT", 0.0, 0.5)
     trial.suggest_int("MAX_FILTER_SIZE", 3, 6)
     trial.suggest_int("NUM_FILTERS", 16, 128)
     trial.suggest_int("NUM_OUTPUT_LAYERS", 1, 3)
@@ -119,7 +119,7 @@ def test_invalid_config_file() -> None:
 def test_invalid_param_name() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.suggest_uniform("_____DROPOUT", 0.0, 0.5)
+    trial.suggest_float("_____DROPOUT", 0.0, 0.5)
 
     executor = optuna.integration.AllenNLPExecutor(
         trial, "tests/integration_tests/allennlp_tests/example.jsonnet", "test"
@@ -131,7 +131,7 @@ def test_invalid_param_name() -> None:
 def test_allennlp_executor() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    trial.suggest_float("DROPOUT", 0.0, 0.5)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         executor = optuna.integration.AllenNLPExecutor(
@@ -144,7 +144,7 @@ def test_allennlp_executor() -> None:
 def test_allennlp_executor_with_include_package() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    trial.suggest_float("DROPOUT", 0.0, 0.5)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         executor = optuna.integration.AllenNLPExecutor(
@@ -160,7 +160,7 @@ def test_allennlp_executor_with_include_package() -> None:
 def test_allennlp_executor_with_include_package_arr() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    trial.suggest_float("DROPOUT", 0.0, 0.5)
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         executor = optuna.integration.AllenNLPExecutor(
@@ -176,7 +176,7 @@ def test_allennlp_executor_with_include_package_arr() -> None:
 def test_allennlp_executor_with_options() -> None:
     study = optuna.create_study(direction="maximize")
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.suggest_uniform("DROPOUT", 0.0, 0.5)
+    trial.suggest_float("DROPOUT", 0.0, 0.5)
     package_name = "tests.integration_tests.allennlp_tests.tiny_single_id"
 
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -205,7 +205,7 @@ def test_dump_best_config() -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
 
         def objective(trial: optuna.Trial) -> float:
-            trial.suggest_uniform("DROPOUT", dropout, dropout)
+            trial.suggest_float("DROPOUT", dropout, dropout)
             executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, tmp_dir)
             return executor.run()
 
@@ -232,9 +232,14 @@ def test_allennlp_pruning_callback() -> None:
             reader = allennlp.data.dataset_readers.TextClassificationJsonReader(
                 tokenizer=allennlp.data.tokenizers.WhitespaceTokenizer(),
             )
-            dataset = reader.read("tests/integration_tests/allennlp_tests/pruning_test.jsonl")
-            vocab = allennlp.data.Vocabulary.from_instances(dataset)
-            dataset.index_with(vocab)
+            data_loader = allennlp.data.data_loaders.MultiProcessDataLoader(
+                reader=reader,
+                data_path="tests/integration_tests/allennlp_tests/pruning_test.jsonl",
+                batch_size=16,
+            )
+            vocab = allennlp.data.Vocabulary.from_instances(data_loader.iter_instances())
+            data_loader.index_with(vocab)
+
             embedder = allennlp.modules.text_field_embedders.BasicTextFieldEmbedder(
                 {"tokens": allennlp.modules.Embedding(50, vocab=vocab)}
             )
@@ -245,9 +250,7 @@ def test_allennlp_pruning_callback() -> None:
                 text_field_embedder=embedder, seq2vec_encoder=encoder, vocab=vocab
             )
             optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-            data_loader = allennlp.data.dataloader.PyTorchDataLoader(
-                dataset, batch_size=10, collate_fn=allennlp.data.allennlp_collate
-            )
+
             serialization_dir = os.path.join(tmp_dir, "trial_{}".format(trial.number))
             trainer = allennlp.training.GradientDescentTrainer(
                 model=model,
@@ -256,7 +259,7 @@ def test_allennlp_pruning_callback() -> None:
                 patience=None,
                 num_epochs=1,
                 serialization_dir=serialization_dir,
-                epoch_callbacks=[AllenNLPPruningCallback(trial, "training_loss")],
+                callbacks=[AllenNLPPruningCallback(trial, "training_loss")],
             )
             trainer.train()
             return 1.0

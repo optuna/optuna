@@ -93,11 +93,11 @@ class _Fanova(object):
             tree_variance = tree.variance
             if tree_variance > 0.0:
                 fraction = self._variances[features][tree_index] / tree_variance
-                fractions.append(fraction)
+                fractions = numpy.append(fractions, fraction)
 
-        fractions = numpy.array(fractions)
+        fractions = numpy.asarray(fractions)
 
-        return fractions.mean(), fractions.std()
+        return float(fractions.mean()), float(fractions.std())
 
     def _compute_variances(self, features: Tuple[int, ...]) -> None:
         assert self._trees is not None

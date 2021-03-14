@@ -16,9 +16,12 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-issue-message: 'This issue has not seen any recent activity.'
         stale-pr-message: 'This pull request has not seen any recent activity.'
+        close-issue-message: 'This issue was closed automatically because it had not seen any recent activity. If you want to discuss it, you can reopen it freely.'
+        close-pr-message: 'This pull request was closed automatically because it had not seen any recent activity. If you want to discuss it, you can reopen it freely.'
         days-before-stale: 14
-        days-before-close: -1
+        days-before-close: 100
         stale-issue-label: 'stale'
         stale-pr-label: 'stale'
         exempt-issue-labels: 'no-stale'
         exempt-pr-labels: 'no-stale'
+        operations-per-run: 1000

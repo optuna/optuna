@@ -1,7 +1,16 @@
+import urllib
+
 import tensorflow as tf
 
 import optuna
 from optuna.integration.tensorboard import TensorBoardCallback
+
+
+# TODO(crcrpar): Remove the below three lines once everything is ok.
+# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-agent", "Mozilla/5.0")]
+urllib.request.install_opener(opener)
 
 
 fashion_mnist = tf.keras.datasets.fashion_mnist
@@ -30,7 +39,7 @@ def train_test_model(num_units: int, dropout_rate: float, optimizer: str) -> flo
 
 def objective(trial: optuna.trial.Trial) -> float:
     num_units = trial.suggest_int("NUM_UNITS", 16, 32)
-    dropout_rate = trial.suggest_uniform("DROPOUT_RATE", 0.1, 0.2)
+    dropout_rate = trial.suggest_float("DROPOUT_RATE", 0.1, 0.2)
     optimizer = trial.suggest_categorical("OPTIMIZER", ["sgd", "adam"])
 
     accuracy = train_test_model(num_units, dropout_rate, optimizer)  # type: ignore
