@@ -118,7 +118,7 @@ def test_sampling(storage_mode: str) -> None:
 
         best_trial = study.best_trial
 
-        # re-evaluate objective with the best hyper-parameters
+        # re-evaluate objective with the best hyperparameters
         v = objective(best_trial)
 
         assert v == best_trial.value
