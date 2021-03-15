@@ -141,7 +141,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
         )
     )
 
-    # both hyper-parameter contains unique value
+    # both hyperparameters contain unique values
     figure = plot_parallel_coordinate(study_categorical_params)
     assert figure.has_data()
 
