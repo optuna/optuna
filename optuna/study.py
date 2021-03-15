@@ -399,7 +399,7 @@ class Study(BaseStudy):
 
         .. seealso::
 
-            :ref:`ask_and_tell` tutorial explains the features more.
+            The :ref:`ask_and_tell` tutorial provides use-cases with examples.
 
         Example:
 
