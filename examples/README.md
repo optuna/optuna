@@ -68,6 +68,11 @@ In addition, integration modules are available for the following libraries, prov
 
 * [SimulatedAnnealingSampler](./samplers/simulated_annealing_sampler.py)
 
+### Examples of Multi-Objective Optimization
+
+* [Optimization with BoTorch](./multi_objective/botorch_simple.py)
+* [Optimization of MLP with PyTorch](./multi_objective/pytorch_simple.py)
+
 ### Examples of Visualization
 
 * [Visualizing study](https://colab.research.google.com/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
@@ -87,6 +92,10 @@ In addition, integration modules are available for the following libraries, prov
 ### Examples of Distributed Optimization
 
 * [Optimizing on Kubernetes](./kubernetes/README.md)
+
+### Examples of Reinforcement Learning
+
+* [Optimization of Hyperparameters for Stable-Baslines Agent](./rl/sb3_simple.py)
 
 ### External projects using Optuna
 
