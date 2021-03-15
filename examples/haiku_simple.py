@@ -13,6 +13,7 @@ from typing import Any
 from typing import Generator
 from typing import Mapping
 from typing import Tuple
+import urllib
 
 import haiku as hk
 import jax
@@ -22,6 +23,13 @@ import optax
 import tensorflow_datasets as tfds
 
 import optuna
+
+
+# TODO(crcrpar): Remove the below three lines once everything is ok.
+# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-agent", "Mozilla/5.0")]
+urllib.request.install_opener(opener)
 
 
 OptState = Any
@@ -63,7 +71,7 @@ def objective(trial):
         "test", is_training=False, batch_size=BATCH_SIZE, sample_size=N_VALID_SAMPLES
     )
 
-    # Draw hyper-parameters
+    # Draw the hyperparameters
     n_units_l1 = trial.suggest_int("n_units_l1", 4, 128)
     n_units_l2 = trial.suggest_int("n_units_l2", 4, 128)
     lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)

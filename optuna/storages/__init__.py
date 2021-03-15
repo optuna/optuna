@@ -17,6 +17,7 @@ __all__ = [
 
 
 def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
+    """Only for internal usage. It might be deprecated in the future."""
 
     if storage is None:
         return InMemoryStorage()

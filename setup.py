@@ -1,5 +1,4 @@
 import os
-import sys
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -33,16 +32,12 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
-        "numpy<1.20.0",
+        "numpy",
         "packaging>=20.0",
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
     ]
-    # NOTE (crcrpar): Some of the above libraries require Cython to be installed.
-    # I hope they will obviate it in the future releases.
-    if sys.version_info[:2] > (3, 8):
-        requirements.append("Cython")
     return requirements
 
 
@@ -103,7 +98,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "thop",
             "skorch",
             "stable-baselines3>=0.7.0",
-            "catalyst",
+            "catalyst<21.3",
             "torch==1.7.1 ; sys_platform=='darwin'",
             "torch==1.7.1+cpu ; sys_platform!='darwin'",
             "torchvision==0.8.2 ; sys_platform=='darwin'",
@@ -143,7 +138,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
             "skorch",
-            "catalyst",
+            "catalyst<21.3",
             "torch==1.7.1 ; sys_platform=='darwin'",
             "torch==1.7.1+cpu ; sys_platform!='darwin'",
             "torchvision==0.8.2 ; sys_platform=='darwin'",
@@ -153,7 +148,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
-        "tests": ["fakeredis", "pytest"],
+        "tests": [
+            "fakeredis",
+            "pytest",
+        ],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
@@ -181,7 +179,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
             "skorch",
-            "catalyst",
+            "catalyst<21.3",
             "torch==1.7.1 ; sys_platform=='darwin'",
             "torch==1.7.1+cpu ; sys_platform!='darwin'",
             "torchvision==0.8.2 ; sys_platform=='darwin'",
