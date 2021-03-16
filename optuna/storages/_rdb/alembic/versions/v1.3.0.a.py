@@ -58,7 +58,12 @@ def upgrade():
         ]
         session.bulk_update_mappings(TrialModel, mapping)
 
-        session.query(TrialSystemAttributeModel.key == "_number").delete(synchronize_session=False)
+        stmt = (
+            sa.delete(TrialSystemAttributeModel)
+            .where(TrialSystemAttributeModel.key == "_number")
+            .execution_options(synchronize_session=False)
+        )
+        session.execute(stmt)
         session.commit()
     except SQLAlchemyError as e:
         session.rollback()
