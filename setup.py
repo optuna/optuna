@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -38,6 +39,10 @@ def get_install_requires() -> List[str]:
         "sqlalchemy>=1.1.0",
         "tqdm",
     ]
+    # NOTE (crcrpar): Some of the above libraries require Cython to be installed.
+    # I hope they will obviate it in the future releases.
+    if sys.version_info[:2] > (3, 8):
+        requirements.append("Cython")
     return requirements
 
 
@@ -55,8 +60,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
-            # TODO(c-bata): Remove Cython after removing version constraints of sklearn.
-            "Cython; python_version > '3.8'",
             "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
@@ -84,8 +87,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         "example": [
             "catboost",
             "chainer",
-            # TODO(c-bata): Remove Cython after removing version constraints of sklearn.
-            "Cython; python_version > '3.8'",
             "lightgbm",
             "mlflow",
             "mpi4py",
@@ -124,8 +125,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "bokeh<2.0.0",
             "chainer>=5.0.0",
             "cma",
-            # TODO(c-bata): Remove Cython after removing version constraints of sklearn.
-            "Cython; python_version > '3.8'",
             "fakeredis",
             "lightgbm",
             "matplotlib>=3.0.0",
@@ -154,14 +153,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
-        "tests": [
-            "fakeredis",
-            "pytest",
-        ],
+        "tests": ["fakeredis", "pytest"],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
-            # TODO(c-bata): Remove Cython after removing version constraints of sklearn.
-            "Cython; python_version > '3.8'",
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
@@ -173,8 +167,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
-            # TODO(c-bata): Remove Cython after removing version constraints of sklearn.
-            "Cython; python_version > '3.8'",
             "lightgbm",
             "mlflow",
             "mpi4py",
