@@ -82,6 +82,7 @@ class LightGBMPruningCallback(object):
         self._trial = trial
         self._valid_name = valid_name
         self._metric = metric
+        self._interval = interval
 
     def __call__(self, env: "CallbackEnv") -> None:
 
