@@ -48,10 +48,10 @@ jobs:
         python -c 'import optuna'
         optuna --version
 
-        pip install --use-deprecated=legacy-resolver --progress-bar off .[tests]
-        pip install --use-deprecated=legacy-resolver --progress-bar off .[optional]
-        pip install --use-deprecated=legacy-resolver --progress-bar off .[integration] -f https://download.pytorch.org/whl/torch_stable.html
-        pip install --use-deprecated=legacy-resolver --progress-bar off .[codecov]
+        pip install --progress-bar off .[tests]
+        pip install --progress-bar off .[optional]
+        pip install --progress-bar off .[integration]
+        pip install --progress-bar off .[codecov]
 
     - name: Tests
       env:
