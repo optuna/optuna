@@ -36,7 +36,7 @@ Optuna has modern functionalities as follows:
 - [Pythonic search spaces](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/002_configurations.html)
   - Define search spaces using familiar Python syntax including conditionals and loops.
 - [Efficient optimization algorithms](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/003_efficient_optimization_algorithms.html)
-  - Adopt state-of-the-art algorithms for sampling hyper parameters and efficiently pruning unpromising trials.
+  - Adopt state-of-the-art algorithms for sampling hyperparameters and efficiently pruning unpromising trials.
 - [Easy parallelization](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html)
   - Scale studies to tens or hundreds or workers with little or no changes to the code.
 - [Quick visualization](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/005_visualization.html)
