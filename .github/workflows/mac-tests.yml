@@ -20,6 +20,8 @@ jobs:
   tests:
     runs-on: macos-latest
 
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -61,6 +63,8 @@ jobs:
   tests-integration:
     runs-on: macos-latest
 
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -106,5 +110,6 @@ jobs:
     - name: Tests MPI
       run: |
         mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+        mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
       env:
         OMP_NUM_THREADS: 1
