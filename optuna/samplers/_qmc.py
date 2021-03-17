@@ -36,7 +36,7 @@ _NUMERICAL_DISTRIBUTIONS = (
 class QMCSampler(BaseSampler):
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 
-    Quasi Monte Carlo (QMC) sequences are designed to have low-discrepancies than
+    Quasi Monte Carlo (QMC) sequences are designed to have lower discrepancies than
     standard random seqeunces. They are known to perform better than the standard
     randam sequences in hyperparameter optimization.
 
@@ -50,7 +50,6 @@ class QMCSampler(BaseSampler):
     We use the QMC implementations in Scipy. For the details of the QMC algorithm,
     see the Scipy API references on `scipy.stats.qmc
     <https://scipy.github.io/devdocs/stats.qmc.html>`_.
-    TODO(kstoneriv3): make some notes on 2^k property of Sobol and prime property of Halton
 
     .. note:
         If your search space contains categorical parameters, it samples the catagorical
@@ -59,14 +58,20 @@ class QMCSampler(BaseSampler):
     Args:
         qmc_type:
             The type of QMC sequence to be sampled. This must be one of
-            `"sobol"`, `"halton"`, `"LHS"` and `"OA-LHS"`. Default is `"sobol"`.
+            `"halton"` and `"sobol"`. Default is `"halton"`.
+
+            .. note:
+                Sobol sequence is designed to have low-discrepancy property when the number of
+                samples is :math:`n=2^m` for each positive integer :math:`m`. When it is possible
+                to pre-specify the number of trials suggested by `QMCSampler`, it is recommended
+                that the number of trials should be set as power of two.
 
         scramble:
-            In cases ``qmc_type`` is `"sobol"` or `"halton"`, if this option is :obj:`True`,
+            In cases ``qmc_type`` is `"halton"` or `"sobol"`, if this option is :obj:`True`,
             scrambling (randomization) is applied to the QMC sequences.
 
         seed:
-            A seed for `QMCSampler`. When the ``qmc_type`` is `"sobol"` or `"halton"`,
+            A seed for `QMCSampler`. When the ``qmc_type`` is `"halton"` or `"sobol"`,
             this argument is used only when `scramble` is :obj:`True`. If this is :obj:`None`,
             the seed is initialized randomly. Default is :obj:`None`.
 
@@ -114,7 +119,7 @@ class QMCSampler(BaseSampler):
 
     Raises:
         ValueError:
-            If ``qmc_type`` is not one of 'sobol', 'halton', 'LHS' or 'OA-LHS'.
+            If ``qmc_type`` is not one of 'halton' an 'sobol`.
 
     .. note::
         Added in v2.x.0 TODO(kstoneriv3)as an experimental feature. The interface may change in
@@ -144,7 +149,7 @@ class QMCSampler(BaseSampler):
     def __init__(
         self,
         *,
-        qmc_type: str = "sobol",
+        qmc_type: str = "halton",
         scramble: bool = False,
         seed: Optional[int] = None,
         search_space: Optional[Dict[str, BaseDistribution]] = None,
@@ -177,7 +182,7 @@ class QMCSampler(BaseSampler):
         # seed under multiprocess execution because reseed_rng is called when forking process.
         # self._seed = numpy.random.MT19937().random_raw()
         if self._warn_incomplete_reseeding:
-            self._warn_reseeding()
+            self._log_incomplete_reseeding()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -296,20 +301,18 @@ class QMCSampler(BaseSampler):
 
         # Use cached `qmc_engine` or construct a new one.
         if self._is_engine_cached(d, sample_id):
-            qmc_engine = self._cached_qmc_engine
+            qmc_engine: scipy.stats.qmc.QMCEngine = self._cached_qmc_engine
         else:
-            if self._qmc_type == "sobol":
+            if self._qmc_type == "halton":
                 qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
-            elif self._qmc_type == "halton":
+            elif self._qmc_type == "sobol":
                 qmc_engine = scipy.stats.qmc.Halton(d, seed=self._seed, scramble=self._scramble)
             else:
                 message = (
                     f"The `qmc_type`, {self._qmc_type}, is not a valid. "
-                    'It must be one of "sobol" and "halton".'
+                    'It must be one of "halton" and "sobol".'
                 )
                 raise ValueError(message)
-
-        assert isinstance(qmc_engine, scipy.stats.qmc.QMCEngine)
 
         forward_size = sample_id - qmc_engine.num_generated  # `sample_id` starts from 0.
         qmc_engine.fast_forward(forward_size)
