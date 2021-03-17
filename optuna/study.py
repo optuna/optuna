@@ -404,6 +404,10 @@ class Study(BaseStudy):
         method should be followed by a call to :func:`~optuna.study.Study.tell` to finish the
         created trial.
 
+        .. seealso::
+
+            The :ref:`ask_and_tell` tutorial provides use-cases with examples.
+
         Example:
 
             Getting the trial object with the :func:`~optuna.study.Study.ask` method.
@@ -478,6 +482,10 @@ class Study(BaseStudy):
         state: TrialState = TrialState.COMPLETE,
     ) -> None:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
+
+        .. seealso::
+
+            The :ref:`ask_and_tell` tutorial provides use-cases with examples.
 
         Example:
 
