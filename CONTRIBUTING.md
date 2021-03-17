@@ -124,7 +124,7 @@ In general, please number the prefix for your file consecutively with the last n
 You may want to refer to the Sphinx Gallery for the syntax of `.py` files processed by Sphinx Gallery.
 Two specific conventions and limitations for Optuna tutorials:
 1. 99 #s for block separation as in https://github.com/optuna/optuna/blob/2e14273cab87f13edeb9d804a43bd63c44703cb5/tutorial/10_key_features/001_first.py#L19
-2. Execution time of the new content needs to be less than three minutes. This limitation derives from Read The Docs. If your content runs some hyperparameter optimization, set the `timeout` to 180 or less.
+2. Execution time of the new content needs to be less than three minutes. This limitation derives from Read The Docs. If your content runs some hyperparameter optimization, set the `timeout` to 180 or less. You can check this limitation on [Read the Docs - Build Process](https://docs.readthedocs.io/en/stable/builds.html).
 
 
 ## Unit Tests
