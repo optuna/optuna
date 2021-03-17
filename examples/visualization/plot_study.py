@@ -36,7 +36,7 @@ urllib.request.install_opener(opener)
 
 def objective(trial):
 
-    fmnist = fetch_openml(name="Fashion-MNIST", version=1)
+    fmnist = fetch_openml(name="mnist_784", version=1)
     classes = list(set(fmnist.target))
 
     # For demonstrational purpose, only use a subset of the dataset.
