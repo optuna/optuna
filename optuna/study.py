@@ -1067,14 +1067,14 @@ def create_study(
             .. note::
                 If none of `direction` and `directions` are specified, the direction of the study
                 is set to "minimize".
-        directions:
-            A sequence of directions during multi-objective optimization.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
             a :class:`~optuna.exceptions.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
+        directions:
+            A sequence of directions during multi-objective optimization.
 
     Returns:
         A :class:`~optuna.study.Study` object.
