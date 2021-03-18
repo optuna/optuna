@@ -6,15 +6,7 @@ name: mac-tests
 on:
   push:
     branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'examples/**'
-      - 'tutorial/**'
-      - 'pyproject.toml'
-  # TODO(crcrpar): Remove once confirmed.
-  pull_request: {}
+      - master
 
 jobs:
   tests:
