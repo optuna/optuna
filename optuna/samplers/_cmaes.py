@@ -37,7 +37,7 @@ CmaClass = Union[CMA, SepCMA]
 
 
 class CmaEsSampler(BaseSampler):
-    """A Sampler using `cmaes <https://github.com/CyberAgent/cmaes>`_ as the backend.
+    """A sampler using `cmaes <https://github.com/CyberAgent/cmaes>`_ as the backend.
 
     Example:
 
@@ -325,7 +325,7 @@ class CmaEsSampler(BaseSampler):
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
             n_restarts = 0
-            optimizer = self._init_optimizer(trans)
+            optimizer = self._init_optimizer(trans, study.direction)
 
         if self._restart_strategy is None:
             generation_attr_key = "cma:generation"  # for backward compatibility
@@ -364,7 +364,7 @@ class CmaEsSampler(BaseSampler):
                 generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
-                    trans, population_size=popsize, randomize_start_point=True
+                    trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
 
             # Store optimizer
@@ -421,6 +421,7 @@ class CmaEsSampler(BaseSampler):
     def _init_optimizer(
         self,
         trans: _SearchSpaceTransform,
+        direction: StudyDirection,
         population_size: Optional[int] = None,
         randomize_start_point: bool = False,
     ) -> CmaClass:
@@ -451,8 +452,9 @@ class CmaEsSampler(BaseSampler):
                 expected_states.append(TrialState.PRUNED)
 
             # TODO(c-bata): Filter parameters by their values instead of checking search space.
+            sign = 1 if direction == StudyDirection.MINIMIZE else -1
             source_solutions = [
-                (trans.transform(t.params), t.value)
+                (trans.transform(t.params), sign * t.value)
                 for t in self._source_trials
                 if t.state in expected_states
                 and _is_compatible_search_space(trans, t.distributions)
