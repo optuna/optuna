@@ -89,7 +89,7 @@ def test_warm_starting_cmaes_maximize(mock_func_ws: MagicMock) -> None:
         x = trial.suggest_float("x", -10, 10)
         y = trial.suggest_float("y", -10, 10)
         # Objective values are negative.
-        return - (x ** 2) - (y-5) ** 2
+        return -(x ** 2) - (y - 5) ** 2
 
     source_study = optuna.create_study(direction="maximize")
     source_study.optimize(objective, 20)
