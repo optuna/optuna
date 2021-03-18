@@ -2,6 +2,7 @@ import copy
 import math
 import pickle
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -454,7 +455,7 @@ class CmaEsSampler(BaseSampler):
             # TODO(c-bata): Filter parameters by their values instead of checking search space.
             sign = 1 if direction == StudyDirection.MINIMIZE else -1
             source_solutions = [
-                (trans.transform(t.params), sign * t.value)
+                (trans.transform(t.params), sign * cast(float, t.value))
                 for t in self._source_trials
                 if t.state in expected_states
                 and _is_compatible_search_space(trans, t.distributions)
