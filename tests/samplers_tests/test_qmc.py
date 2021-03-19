@@ -16,14 +16,16 @@ from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
-_SEARCH_SPACE = {
-    "x1": optuna.distributions.IntUniformDistribution(0, 10),
-    "x2": optuna.distributions.IntLogUniformDistribution(1, 10),
-    "x3": optuna.distributions.UniformDistribution(0, 10),
-    "x4": optuna.distributions.LogUniformDistribution(1, 10),
-    "x5": optuna.distributions.DiscreteUniformDistribution(1, 10, q=3),
-    "x6": optuna.distributions.CategoricalDistribution([1, 4, 7, 10]),
-}
+_SEARCH_SPACE = OrderedDict(
+    {
+        "x1": optuna.distributions.IntUniformDistribution(0, 10),
+        "x2": optuna.distributions.IntLogUniformDistribution(1, 10),
+        "x3": optuna.distributions.UniformDistribution(0, 10),
+        "x4": optuna.distributions.LogUniformDistribution(1, 10),
+        "x5": optuna.distributions.DiscreteUniformDistribution(1, 10, q=3),
+        "x6": optuna.distributions.CategoricalDistribution([1, 4, 7, 10]),
+    }
+)
 
 
 # TODO(kstoneriv3): `QMCSampler` can be initialized without this wrapper
@@ -95,7 +97,7 @@ def test_infer_initial_search_space() -> None:
     trial.distributions = search_space
     initial_search_space = sampler._infer_initial_search_space(trial)
     search_space.pop("x6")
-    assert initial_search_space == OrderedDict(search_space)
+    assert initial_search_space == search_space
 
 
 def test_sample_independent() -> None:
@@ -143,7 +145,6 @@ def test_sample_relative() -> None:
     sampler = _init_QMCSampler_without_warnings()
     study = optuna.create_study(sampler=sampler)
     trial = Mock()
-    trial.trial_number = 0
     # Make sure that sample type, shape is OK.
     for _ in range(3):
         sample = sampler.sample_relative(study, trial, search_space)
@@ -161,34 +162,101 @@ def test_sample_relative() -> None:
     assert sampler.sample_relative(study, trial, {}) == {}
 
 
+def test_sample_relative_halton() -> None:
+    n, d = 8, 5
+    search_space = OrderedDict(
+        {f"x{i}": optuna.distributions.UniformDistribution(0, 1) for i in range(d)}
+    )
+    sampler = _init_QMCSampler_without_warnings(scramble=False, qmc_type="halton")
+    study = optuna.create_study(sampler=sampler)
+    trial = Mock()
+    # Make sure that sample type, shape is OK.
+    samples = numpy.zeros((n, d))
+    for i in range(n):
+        sample = sampler.sample_relative(study, trial, search_space)
+        for j in range(d):
+            samples[i, j] = sample[f"x{j}"]
+    ref_samples = numpy.array(
+        [
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.5, 0.33333333, 0.2, 0.14285714, 0.09090909],
+            [0.25, 0.66666667, 0.4, 0.28571429, 0.18181818],
+            [0.75, 0.11111111, 0.6, 0.42857143, 0.27272727],
+            [0.125, 0.44444444, 0.8, 0.57142857, 0.36363636],
+            [0.625, 0.77777778, 0.04, 0.71428571, 0.45454545],
+            [0.375, 0.22222222, 0.24, 0.85714286, 0.54545455],
+            [0.875, 0.55555556, 0.44, 0.02040816, 0.63636364],
+        ]
+    )
+    # If empty search_space, return {}
+    numpy.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
+
+
+def test_sample_relative_sobol() -> None:
+    n, d = 8, 5
+    search_space = OrderedDict(
+        {f"x{i}": optuna.distributions.UniformDistribution(0, 1) for i in range(d)}
+    )
+    sampler = _init_QMCSampler_without_warnings(scramble=False, qmc_type="sobol")
+    study = optuna.create_study(sampler=sampler)
+    trial = Mock()
+    # Make sure that sample type, shape is OK.
+    samples = numpy.zeros((n, d))
+    for i in range(n):
+        sample = sampler.sample_relative(study, trial, search_space)
+        for j in range(d):
+            samples[i, j] = sample[f"x{j}"]
+    ref_samples = numpy.array(
+        [
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.5, 0.5, 0.5, 0.5, 0.5],
+            [0.75, 0.25, 0.25, 0.25, 0.75],
+            [0.25, 0.75, 0.75, 0.75, 0.25],
+            [0.375, 0.375, 0.625, 0.875, 0.375],
+            [0.875, 0.875, 0.125, 0.375, 0.875],
+            [0.625, 0.125, 0.875, 0.625, 0.625],
+            [0.125, 0.625, 0.375, 0.125, 0.125],
+        ]
+    )
+
+    # If empty search_space, return {}
+    numpy.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
+
+
 @pytest.mark.parametrize("scramble", [True, False])
 @pytest.mark.parametrize("qmc_type", ["sobol", "halton"])
 def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
     objective: Callable[Trial, float] = lambda t: t.suggest_float("x", 0, 1)
 
+    # Base case
+    sampler = _init_QMCSampler_without_warnings(scramble=scramble, qmc_type=qmc_type, seed=12345)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10, n_jobs=1)
+    past_trials = study._storage.get_all_trials(study._study_id, states=(TrialState.COMPLETE,))
+    past_trials = [t for t in past_trials if t.number > 0]
+    values = sorted([t.params["x"] for t in past_trials])
+
     # Sequential case
     sampler = _init_QMCSampler_without_warnings(scramble=scramble, qmc_type=qmc_type, seed=12345)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=20, n_jobs=1)
+    study.optimize(objective, n_trials=10, n_jobs=1)
     past_trials_sequential = study._storage.get_all_trials(
         study._study_id, states=(TrialState.COMPLETE,)
     )
     past_trials_sequential = [t for t in past_trials_sequential if t.number > 0]
     values_sequential = sorted([t.params["x"] for t in past_trials_sequential])
+    numpy.testing.assert_allclose(values[1:], values_sequential[1:], rtol=1e-6)
 
     # Parallel case (n_jobs=3)
     sampler = _init_QMCSampler_without_warnings(scramble=scramble, qmc_type=qmc_type, seed=12345)
     study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=20, n_jobs=3)
+    study.optimize(objective, n_trials=10, n_jobs=3)
     past_trials_parallel = study._storage.get_all_trials(
         study._study_id, states=(TrialState.COMPLETE,)
     )
     past_trials_parallel = [t for t in past_trials_parallel if t.number > 0]
     values_parallel = sorted([t.params["x"] for t in past_trials_parallel])
-
-    # Make sure that the samples taken by parallel workers are the same
-    # as the ones taken by sequencial workers
-    numpy.testing.assert_almost_equal(values_sequential[1:], values_parallel[1:])
+    numpy.testing.assert_allclose(values[1:], values_parallel[1:], rtol=1e-6)
 
 
 def test_call_after_trial() -> None:

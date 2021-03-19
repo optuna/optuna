@@ -304,9 +304,9 @@ class QMCSampler(BaseSampler):
             qmc_engine: scipy.stats.qmc.QMCEngine = self._cached_qmc_engine
         else:
             if self._qmc_type == "halton":
-                qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
-            elif self._qmc_type == "sobol":
                 qmc_engine = scipy.stats.qmc.Halton(d, seed=self._seed, scramble=self._scramble)
+            elif self._qmc_type == "sobol":
+                qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
             else:
                 message = (
                     f"The `qmc_type`, {self._qmc_type}, is not a valid. "
