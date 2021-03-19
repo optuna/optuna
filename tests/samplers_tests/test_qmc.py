@@ -1,12 +1,7 @@
 from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import List
-from typing import Optional
 from typing import OrderedDict
-from typing import Sequence
-from typing import Union
-from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
@@ -16,15 +11,12 @@ import pytest
 import scipy
 
 import optuna
-from optuna import create_trial
-from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
-from optuna.samplers._cmaes import _concat_optimizer_attrs
-from optuna.samplers._cmaes import _split_optimizer_str
-from optuna.trial import FrozenTrial
+from optuna.trial import Trial
+from optuna.trial import TrialState
 
 
-_search_space = {
+_SEARCH_SPACE = {
     "x1": optuna.distributions.IntUniformDistribution(0, 10),
     "x2": optuna.distributions.IntLogUniformDistribution(1, 10),
     "x3": optuna.distributions.UniformDistribution(0, 10),
@@ -66,7 +58,7 @@ def test_reseed_rng() -> None:
 
 
 def test_infer_relative_search_space() -> None:
-    def objective(trial: optuna.trial.Trial) -> float:
+    def objective(trial: Trial) -> float:
         ret: float = trial.suggest_int("x1", 0, 10)
         ret += trial.suggest_int("x2", 1, 10, log=True)
         ret += trial.suggest_float("x3", 0, 10)
@@ -99,7 +91,7 @@ def test_infer_initial_search_space() -> None:
     initial_search_space = sampler._infer_initial_search_space(trial)
     assert initial_search_space == {}
     # Does it exclude only categorical distribution?
-    search_space = _search_space.copy()
+    search_space = _SEARCH_SPACE.copy()
     trial.distributions = search_space
     initial_search_space = sampler._infer_initial_search_space(trial)
     search_space.pop("x6")
@@ -114,9 +106,7 @@ def test_sample_independent() -> None:
         independent_sampler, "sample_independent", wraps=independent_sampler.sample_independent
     ) as mock_sample_indep:
 
-        objective: Callable[optuna.trial.Trial, float] = lambda t: t.suggest_categorical(
-            "x", [1.0, 2.0]
-        )
+        objective: Callable[Trial, float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
         sampler = _init_QMCSampler_without_warnings(independent_sampler=independent_sampler)
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=1)
@@ -128,7 +118,7 @@ def test_sample_independent() -> None:
         assert mock_sample_indep.call_count == 2
 
         # Unseen parameter is sampled by independent sampler.
-        new_objective: Callable[optuna.trial.Trial, float] = lambda t: t.suggest_int("y", 0, 10)
+        new_objective: Callable[Trial, float] = lambda t: t.suggest_int("y", 0, 10)
         study.optimize(new_objective, n_trials=1)
         assert mock_sample_indep.call_count == 3
 
@@ -139,9 +129,7 @@ def test_log_independent_sampling() -> None:
     # '_log_independent_sampling is not called in the first trial so called once in total.
     with patch.object(optuna.samplers.QMCSampler, "_log_independent_sampling") as mock_log_indep:
 
-        objective: Callable[optuna.trial.Trial, float] = lambda t: t.suggest_categorical(
-            "x", [1.0, 2.0]
-        )
+        objective: Callable[Trial, float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
         sampler = _init_QMCSampler_without_warnings()
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=2)
@@ -150,7 +138,7 @@ def test_log_independent_sampling() -> None:
 
 
 def test_sample_relative() -> None:
-    search_space = _search_space.copy()
+    search_space = _SEARCH_SPACE.copy()
     search_space.pop("x6")
     sampler = _init_QMCSampler_without_warnings()
     study = optuna.create_study(sampler=sampler)
@@ -176,14 +164,14 @@ def test_sample_relative() -> None:
 @pytest.mark.parametrize("scramble", [True, False])
 @pytest.mark.parametrize("qmc_type", ["sobol", "halton"])
 def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
-    objective: Callable[optuna.trial.Trial, float] = lambda t: t.suggest_float("x", 0, 1)
+    objective: Callable[Trial, float] = lambda t: t.suggest_float("x", 0, 1)
 
     # Sequential case
     sampler = _init_QMCSampler_without_warnings(scramble=scramble, qmc_type=qmc_type, seed=12345)
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=20, n_jobs=1)
     past_trials_sequential = study._storage.get_all_trials(
-        study._study_id, states=(optuna.trial.TrialState.COMPLETE,)
+        study._study_id, states=(TrialState.COMPLETE,)
     )
     past_trials_sequential = [t for t in past_trials_sequential if t.number > 0]
     values_sequential = sorted([t.params["x"] for t in past_trials_sequential])
@@ -193,7 +181,7 @@ def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=20, n_jobs=3)
     past_trials_parallel = study._storage.get_all_trials(
-        study._study_id, states=(optuna.trial.TrialState.COMPLETE,)
+        study._study_id, states=(TrialState.COMPLETE,)
     )
     past_trials_parallel = [t for t in past_trials_parallel if t.number > 0]
     values_parallel = sorted([t.params["x"] for t in past_trials_parallel])
@@ -218,7 +206,7 @@ def test_sample_qmc(qmc_type) -> None:
 
     sampler = _init_QMCSampler_without_warnings(qmc_type=qmc_type)
     study = Mock()
-    search_space = _search_space.copy()
+    search_space = _SEARCH_SPACE.copy()
     search_space.pop("x6")
 
     # Make sure that ValueError is raised when `qmc_type` is inappropriate
@@ -250,38 +238,27 @@ def test_sample_qmc(qmc_type) -> None:
 
 def test_find_sample_id() -> None:
 
-    search_space = _search_space
+    search_space = _SEARCH_SPACE.copy()
     sampler = _init_QMCSampler_without_warnings(qmc_type="halton", seed=0)
     study = optuna.create_study()
     for i in range(5):
         assert sampler._find_sample_id(study, search_space) == i
 
-    ### Can it handle for different configs?
-
     # Change seed but without scramble. The hash should remain the same.
-    sampler._seed = 1
-    for i in range(5, 10):
-        assert sampler._find_sample_id(study, search_space) == i
+    with patch.object(sampler, "_seed", 1) as _:
+        assert sampler._find_sample_id(study, search_space) == 5
 
-    # Turn on the scramble
-    sampler._scramble = True
-    for i in range(5):
-        assert sampler._find_sample_id(study, search_space) == i
+        # Seed is considered only when scrambling is enabled
+        with patch.object(sampler, "_scramble", True) as _:
+            assert sampler._find_sample_id(study, search_space) == 0
 
-    # Change the seed when scrambling is enabled
-    sampler._seed = 2
-    for i in range(5):
-        assert sampler._find_sample_id(study, search_space) == i
+    # Change qmc_type
+    with patch.object(sampler, "_qmc_type", "sobol") as _:
+        assert sampler._find_sample_id(study, search_space) == 0
 
     # Change search_space
     search_space.pop("x6")
-    for i in range(5):
-        assert sampler._find_sample_id(study, search_space) == i
-
-    # Change qmc_type
-    sampler._qmc_type = "sobol"
-    for i in range(5):
-        assert sampler._find_sample_id(study, search_space) == i
+    assert sampler._find_sample_id(study, search_space) == 0
 
 
 def test_is_engine_cached() -> None:
@@ -298,7 +275,6 @@ def test_is_engine_cached() -> None:
     sampler._cached_qmc_engine = mock_engine
     assert sampler._is_engine_cached(d, sample_id)
 
-    ### Change one of the condition of engine and see what happens.
     # Change rng_seed
     for _sample_id in range(10):
         assert (_sample_id < 5) ^ sampler._is_engine_cached(d, _sample_id)
