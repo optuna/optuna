@@ -347,6 +347,13 @@ class Study(BaseStudy):
             n_jobs:
                 The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
                 set to CPU count.
+
+                .. note::
+                    ``n_jobs`` allows parallelization using :obj:`threading` and may suffer from
+                    `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`_.
+                    It is recommended to use :ref:`process-based parallelization<distributed>`
+                    if ``func`` is CPU bound.
+
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
@@ -396,6 +403,10 @@ class Study(BaseStudy):
         controlling the lifetime of a trial outside the scope of ``func``. Each call to this
         method should be followed by a call to :func:`~optuna.study.Study.tell` to finish the
         created trial.
+
+        .. seealso::
+
+            The :ref:`ask_and_tell` tutorial provides use-cases with examples.
 
         Example:
 
@@ -471,6 +482,10 @@ class Study(BaseStudy):
         state: TrialState = TrialState.COMPLETE,
     ) -> None:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
+
+        .. seealso::
+
+            The :ref:`ask_and_tell` tutorial provides use-cases with examples.
 
         Example:
 
@@ -1052,14 +1067,14 @@ def create_study(
             .. note::
                 If none of `direction` and `directions` are specified, the direction of the study
                 is set to "minimize".
-        directions:
-            A sequence of directions during multi-objective optimization.
         load_if_exists:
             Flag to control the behavior to handle a conflict of study names.
             In the case where a study named ``study_name`` already exists in the ``storage``,
             a :class:`~optuna.exceptions.DuplicatedStudyError` is raised if ``load_if_exists`` is
             set to :obj:`False`.
             Otherwise, the creation of the study is skipped, and the existing one is returned.
+        directions:
+            A sequence of directions during multi-objective optimization.
 
     Returns:
         A :class:`~optuna.study.Study` object.

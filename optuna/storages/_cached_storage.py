@@ -198,13 +198,15 @@ class _CachedStorage(BaseStorage):
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
+                # When a waiting trial is updated to running, its `datetime_start` must be
+                # updated. However, a waiting trials is never cached so we do not have to account
+                # for this case.
+                assert cached_trial.state != TrialState.WAITING
+
                 self._check_trial_is_updatable(cached_trial)
                 updates = self._get_updates(trial_id)
                 cached_trial.state = state
                 updates.state = state
-
-                # A normal trial will not be set to running twice
-                assert state != TrialState.RUNNING
 
                 if cached_trial.state.is_finished():
                     updates.datetime_complete = datetime.datetime.now()

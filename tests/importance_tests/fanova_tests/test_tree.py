@@ -90,8 +90,7 @@ def test_tree_get_marginal_variance(
     expected: List[Tuple[List[Size], List[Tuple[NodeIndex, Cardinality]]]],
     expected_tree_statistics: List[Dict[str, List]],
 ) -> None:
-    features = numpy.array(features)
-    variance = tree.get_marginal_variance(features)
+    variance = tree.get_marginal_variance(numpy.array(features))
 
     expected_values = []
     expected_weights = []

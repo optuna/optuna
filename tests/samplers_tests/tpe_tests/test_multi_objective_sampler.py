@@ -618,7 +618,7 @@ def test_solve_hssp() -> None:
         truth = 0.0
         for subset in itertools.permutations(test_case, subset_size):
             truth = max(truth, sampler._compute_hypervolume(np.asarray(subset), r))
-        indices = sampler._solve_hssp(test_case, list(range(len(test_case))), subset_size, r)
+        indices = sampler._solve_hssp(test_case, np.arange(len(test_case)), subset_size, r)
         approx = sampler._compute_hypervolume(test_case[indices], r)
         assert approx / truth > 0.6321  # 1 - 1/e
 
@@ -632,7 +632,7 @@ def test_solve_hssp() -> None:
         truth = 0
         for subset in itertools.permutations(test_case, subset_size):
             truth = max(truth, sampler._compute_hypervolume(np.asarray(subset), r))
-        indices = sampler._solve_hssp(test_case, list(range(len(test_case))), subset_size, r)
+        indices = sampler._solve_hssp(test_case, np.arange(len(test_case)), subset_size, r)
         approx = sampler._compute_hypervolume(test_case[indices], r)
         assert approx / truth > 0.6321  # 1 - 1/e
 
@@ -687,3 +687,13 @@ def test_reseed_rng() -> None:
         sampler.reseed_rng()
         assert mock_object.call_count == 1
         assert original_seed != sampler._rng.seed
+
+
+def test_call_after_trial_of_mo_random_sampler() -> None:
+    sampler = MOTPESampler()
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(
+        sampler._mo_random_sampler, "after_trial", wraps=sampler._mo_random_sampler.after_trial
+    ) as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1

@@ -506,7 +506,7 @@ class FrozenTrial(BaseTrial):
 @experimental("2.0.0")
 def create_trial(
     *,
-    state: Optional[TrialState] = None,
+    state: TrialState = TrialState.COMPLETE,
     value: Optional[float] = None,
     values: Optional[Sequence[float]] = None,
     params: Optional[Dict[str, Any]] = None,
@@ -549,7 +549,7 @@ def create_trial(
         functions are created inside :func:`~optuna.study.Study.optimize`.
 
     .. note::
-        When ``state`` is :obj:`None` or ``TrialState.COMPLETE``, the following parameters are
+        When ``state`` is ``TrialState.COMPLETE``, the following parameters are
         required:
         * ``params``
         * ``distributions``
@@ -589,7 +589,6 @@ def create_trial(
     user_attrs = user_attrs or {}
     system_attrs = system_attrs or {}
     intermediate_values = intermediate_values or {}
-    state = state or TrialState.COMPLETE
 
     if state == TrialState.WAITING:
         datetime_start = None

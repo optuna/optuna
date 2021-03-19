@@ -233,7 +233,7 @@ class PyCmaSampler(BaseSampler):
     @staticmethod
     def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, Any]:
 
-        x0 = {}
+        x0: Dict[str, Any] = {}
         for name, distribution in search_space.items():
             if isinstance(distribution, UniformDistribution):
                 x0[name] = numpy.mean([distribution.high, distribution.low])
