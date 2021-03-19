@@ -4,6 +4,7 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import Union
 import warnings
 
 import numpy
@@ -200,11 +201,11 @@ def qehvi_candidates_func(
         alpha = 10 ** (-8 + n_objectives)
     else:
         alpha = 0.0
-    partitioning = NondominatedPartitioning(
-        num_outcomes=n_objectives, Y=train_obj_feas, alpha=alpha
-    )
 
     ref_point = train_obj.min(dim=0).values - 1e-8
+
+    partitioning = NondominatedPartitioning(ref_point=ref_point, Y=train_obj_feas, alpha=alpha)
+
     ref_point_list = ref_point.tolist()
 
     acqf = qExpectedHypervolumeImprovement(
@@ -439,13 +440,14 @@ class BoTorchSampler(BaseSampler):
             return {}
 
         trans = _SearchSpaceTransform(search_space)
-
         n_objectives = len(study.directions)
-        values = numpy.empty((n_trials, n_objectives), dtype=numpy.float64)
+        values: Union[numpy.ndarray, torch.Tensor] = numpy.empty(
+            (n_trials, n_objectives), dtype=numpy.float64
+        )
+        params: Union[numpy.ndarray, torch.Tensor]
+        con: Optional[Union[numpy.ndarray, torch.Tensor]] = None
+        bounds: Union[numpy.ndarray, torch.Tensor] = trans.bounds
         params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
-        con = None
-        bounds = trans.bounds
-
         for trial_idx, trial in enumerate(trials):
             params[trial_idx] = trans.transform(trial.params)
             assert len(study.directions) == len(trial.values)
@@ -518,11 +520,7 @@ class BoTorchSampler(BaseSampler):
                 f"{candidates.size(0)}, bounds: {bounds.size(1)}."
             )
 
-        candidates = candidates.numpy()
-
-        params = trans.untransform(candidates)
-
-        return params
+        return trans.untransform(candidates.numpy())
 
     def sample_independent(
         self,

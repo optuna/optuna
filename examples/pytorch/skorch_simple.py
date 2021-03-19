@@ -12,6 +12,7 @@ argument.
 """
 
 import argparse
+import urllib
 
 import numpy as np
 from sklearn.datasets import fetch_openml
@@ -24,6 +25,13 @@ import torch.nn.functional as F
 
 import optuna
 from optuna.integration import SkorchPruningCallback
+
+
+# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
+# This is a temporary fix until torchvision v0.9 is released.
+opener = urllib.request.build_opener()
+opener.addheaders = [("User-agent", "Mozilla/5.0")]
+urllib.request.install_opener(opener)
 
 
 SUBSET_RATIO = 0.4

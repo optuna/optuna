@@ -19,7 +19,7 @@ This page contains a list of example codes written with Optuna.
 * [LightGBM Tuner](./lightgbm/lightgbm_tuner_simple.py)
 * [CatBoost](./catboost_simple.py)
 * [MXNet](./mxnet/mxnet_simple.py)
-* [Gluon](./gluon_simple.py)
+* [Gluon](./mxnet/gluon_simple.py)
 * [PyTorch](./pytorch/pytorch_simple.py)
 * [PyTorch Ignite](./pytorch/pytorch_ignite_simple.py)
 * [PyTorch Lightning](./pytorch/pytorch_lightning_simple.py)
@@ -31,7 +31,7 @@ This page contains a list of example codes written with Optuna.
 * [FastAI V2](./fastai/fastaiv2_simple.py)
 * [AllenNLP](./allennlp/allennlp_simple.py)
 * [AllenNLP (Jsonnet)](./allennlp/allennlp_jsonnet.py)
-* [SKORCH](./skorch_simple.py)
+* [SKORCH](./pytorch/skorch_simple.py)
 * [RAPIDS](./rapids_simple.py)
 * [Haiku](./haiku_simple.py)
 
@@ -68,6 +68,11 @@ In addition, integration modules are available for the following libraries, prov
 
 * [SimulatedAnnealingSampler](./samplers/simulated_annealing_sampler.py)
 
+### Examples of Multi-Objective Optimization
+
+* [Optimization with BoTorch](./multi_objective/botorch_simple.py)
+* [Optimization of MLP with PyTorch](./multi_objective/pytorch_simple.py)
+
 ### Examples of Visualization
 
 * [Visualizing study](https://colab.research.google.com/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
@@ -87,6 +92,10 @@ In addition, integration modules are available for the following libraries, prov
 ### Examples of Distributed Optimization
 
 * [Optimizing on Kubernetes](./kubernetes/README.md)
+
+### Examples of Reinforcement Learning
+
+* [Optimization of Hyperparameters for Stable-Baslines Agent](./rl/sb3_simple.py)
 
 ### External projects using Optuna
 

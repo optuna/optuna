@@ -24,7 +24,7 @@ Optuna has modern functionalities as follows:
 
 - :doc:`Efficient optimization algorithms <tutorial/10_key_features/003_efficient_optimization_algorithms>`
 
-  - Adopt state-of-the-art algorithms for sampling hyper parameters and efficiently pruning unpromising trials.
+  - Adopt state-of-the-art algorithms for sampling hyperparameters and efficiently pruning unpromising trials.
 
 - :doc:`Easy parallelization <tutorial/10_key_features/004_distributed>`
 
