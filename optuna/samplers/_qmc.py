@@ -207,7 +207,7 @@ class QMCSampler(BaseSampler):
 
     def _infer_initial_search_space(self, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
 
-        search_space = OrderedDict()  # type: OrderedDict[str, BaseDistribution]
+        search_space: OrderedDict[str, BaseDistribution] = OrderedDict()
         for param_name, distribution in trial.distributions.items():
             if not isinstance(distribution, _NUMERICAL_DISTRIBUTIONS):
                 continue
@@ -274,7 +274,7 @@ class QMCSampler(BaseSampler):
         if search_space == {}:
             return {}
 
-        sample = self._sample_qmc(study, trial, search_space)
+        sample = self._sample_qmc(study, search_space)
         trans = _SearchSpaceTransform(search_space)
         sample = scipy.stats.qmc.scale(sample, trans.bounds[:, 0], trans.bounds[:, 1])
         sample = trans.untransform(sample[0, :])
@@ -290,13 +290,13 @@ class QMCSampler(BaseSampler):
         self._independent_sampler.after_trial(study, trial, state, values)
 
     def _sample_qmc(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+        self, study: Study, search_space: Dict[str, BaseDistribution]
     ) -> numpy.ndarray:
 
         # Lazy import because the `scipy.stats.qmc` is slow to import.
         import scipy.stats.qmc
 
-        sample_id = self._find_sample_id(study, trial, search_space)
+        sample_id = self._find_sample_id(study, search_space)
         d = len(search_space)
 
         # Use cached `qmc_engine` or construct a new one.
@@ -321,15 +321,13 @@ class QMCSampler(BaseSampler):
 
         return sample
 
-    def _find_sample_id(
-        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
-    ) -> int:
+    def _find_sample_id(self, study: Study, search_space: Dict[str, BaseDistribution]) -> int:
 
         qmc_id = ""
         qmc_id += self._qmc_type
         qmc_id += str(search_space)
         # Sobol/Halton sequences without scrambling do not use seed.
-        if not self._scramble:
+        if self._scramble:
             qmc_id += str(self._seed)
         hashed_qmc_id = hash(qmc_id)
         key_qmc_id = f"qmc ({hashed_qmc_id})'s last sample id"
@@ -352,7 +350,7 @@ class QMCSampler(BaseSampler):
         if not isinstance(self._cached_qmc_engine, scipy.stats.qmc.QMCEngine):
             return False
         else:
-            # Here, we assume that `_qmc_type` does not change for simplicity.
+            # We assume that `_qmc_type` does not change after initialization for simplicity.
             is_cached = True
             is_cached &= self._cached_qmc_engine.rng_seed == self._seed
             is_cached &= self._cached_qmc_engine.d == d
