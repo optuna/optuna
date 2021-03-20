@@ -47,7 +47,10 @@ jobs:
         # Install all dependencies needed for examples.
         pip install --progress-bar off $(ls dist/*.tar.gz)[example] -f https://download.pytorch.org/whl/torch_stable.html
 
-        # TODO (crcrpar): Allow fastaiv2 example once https://forums.fast.ai/t/ganlearner-error-no-implementation-found-on-types-that-implement-invisibletensor/83451/7 gets resolved.
+    - name: Prepare MNIST
+      run: |
+        python .github/download_mnist_from_openml.py
+    # TODO (crcrpar): Allow fastaiv2 example once https://forums.fast.ai/t/ganlearner-error-no-implementation-found-on-types-that-implement-invisibletensor/83451/7 gets resolved.
     - name: Run examples
       run: |
         if [ ${{ matrix.python-version }} = 3.6 ]; then
@@ -69,6 +72,7 @@ jobs:
         done
       env:
         OMP_NUM_THREADS: 1
+        CHAINER_DATASET_ROOT: $HOME
     - name: Run examples (AllenNLP)
       run: |
         pip uninstall torch torchvision torchaudio -y
@@ -108,6 +112,7 @@ jobs:
         mpirun -n 2 -- python examples/pytorch/pytorch_distributed_simple.py
       env:
         OMP_NUM_THREADS: 1
+        CHAINER_DATASET_ROOT: $HOME
     - name: Run Hydra examples
       run: |
         for file in `find examples/hydra -name '*.py'`
