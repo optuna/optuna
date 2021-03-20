@@ -2,13 +2,11 @@
 Optuna example that optimizes multi-layer perceptrons using Chainer.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-Chainer and MNIST. We optimize the neural network architecture as well as the optimizer
-configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
+Chainer and FashionMNIST. We optimize the neural network architecture as well as the optimizer
+configuration. As it is too time consuming to use the whole FashionMNIST dataset, we here use a small
 subset of it.
 
 """
-
-import urllib
 
 import chainer
 import chainer.functions as F
@@ -18,13 +16,6 @@ from packaging import version
 
 import optuna
 from optuna.integration import ChainerPruningExtension
-
-
-# TODO(crcrpar): Remove the below three lines once everything is ok.
-# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
-opener = urllib.request.build_opener()
-opener.addheaders = [("User-agent", "Mozilla/5.0")]
-urllib.request.install_opener(opener)
 
 
 if version.parse(chainer.__version__) < version.parse("4.0.0"):
@@ -75,7 +66,7 @@ def objective(trial):
 
     # Dataset
     rng = np.random.RandomState(0)
-    train, valid = chainer.datasets.get_mnist()
+    train, valid = chainer.datasets.get_fashion_mnist()
     train = chainer.datasets.SubDataset(
         train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))
     )

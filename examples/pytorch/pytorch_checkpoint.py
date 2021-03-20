@@ -2,8 +2,8 @@
 Optuna example that optimizes multi-layer perceptrons using PyTorch with checkpoint.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-PyTorch and MNIST. We optimize the neural network architecture as well as the optimizer
-configuration. As it is too time consuming to use the whole MNIST dataset, we here use a small
+PyTorch and FashionMNIST. We optimize the neural network architecture as well as the optimizer
+configuration. As it is too time consuming to use the whole FashionMNIST dataset, we here use a small
 subset of it.
 
 Even if the process where the trial is running is killed for some reason, you can restart from
@@ -15,7 +15,6 @@ previous saved checkpoint using heartbeat.
 
 import copy
 import os
-import urllib
 
 import torch
 import torch.nn as nn
@@ -26,13 +25,6 @@ from torchvision import datasets
 from torchvision import transforms
 
 import optuna
-
-
-# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
-# This is a temporary fix until torchvision v0.9 is released.
-opener = urllib.request.build_opener()
-opener.addheaders = [("User-agent", "Mozilla/5.0")]
-urllib.request.install_opener(opener)
 
 
 DEVICE = torch.device("cpu")
@@ -66,14 +58,14 @@ def define_model(trial):
 
 
 def get_mnist():
-    # Load MNIST dataset.
+    # Load FashionMNIST dataset.
     train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(DIR, train=True, download=True, transform=transforms.ToTensor()),
+        datasets.FashionMNIST(DIR, train=True, download=True, transform=transforms.ToTensor()),
         batch_size=BATCHSIZE,
         shuffle=True,
     )
     valid_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(DIR, train=False, transform=transforms.ToTensor()),
+        datasets.FashionMNIST(DIR, train=False, transform=transforms.ToTensor()),
         batch_size=BATCHSIZE,
         shuffle=True,
     )
@@ -100,7 +92,7 @@ def objective(trial):
     else:
         epoch_begin = 0
 
-    # Get the MNIST dataset.
+    # Get the FashionMNIST dataset.
     train_loader, valid_loader = get_mnist()
 
     path = f"pytorch_checkpoint/{trial.number}"

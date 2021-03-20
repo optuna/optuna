@@ -2,8 +2,8 @@
 Optuna example that optimizes convolutional neural networks using PyTorch Ignite.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-PyTorch Ignite and MNIST. We optimize the neural network architecture as well as the
-regularization. As it is too time consuming to use the whole MNIST dataset, we here use a small
+PyTorch Ignite and FashionMNIST. We optimize the neural network architecture as well as the
+regularization. As it is too time consuming to use the whole FashionMNIST dataset, we here use a small
 subset of it.
 
 You can run this example as follows, pruning can be turned on and off with the `--pruning`
@@ -13,7 +13,6 @@ argument.
 """
 
 import argparse
-import urllib
 
 from ignite.engine import create_supervised_evaluator
 from ignite.engine import create_supervised_trainer
@@ -25,19 +24,12 @@ import torch.nn.functional as F
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.utils.data import Subset
-from torchvision.datasets.mnist import MNIST
+from torchvision.datasets.mnist import FashionMNIST
 from torchvision.transforms import Compose
 from torchvision.transforms import Normalize
 from torchvision.transforms import ToTensor
 
 import optuna
-
-
-# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
-# This is a temporary fix until torchvision v0.9 is released.
-opener = urllib.request.build_opener()
-opener.addheaders = [("User-agent", "Mozilla/5.0")]
-urllib.request.install_opener(opener)
 
 
 EPOCHS = 10
@@ -72,8 +64,8 @@ class Net(nn.Module):
 def get_data_loaders(train_batch_size, val_batch_size):
     data_transform = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))])
 
-    train_data = MNIST(download=True, root=".", transform=data_transform, train=True)
-    val_data = MNIST(download=False, root=".", transform=data_transform, train=False)
+    train_data = FashionMNIST(download=True, root=".", transform=data_transform, train=True)
+    val_data = FashionMNIST(download=False, root=".", transform=data_transform, train=False)
 
     train_loader = DataLoader(
         Subset(train_data, range(N_TRAIN_EXAMPLES)), batch_size=train_batch_size, shuffle=True
@@ -102,7 +94,7 @@ def objective(trial):
     pruning_handler = optuna.integration.PyTorchIgnitePruningHandler(trial, "accuracy", trainer)
     evaluator.add_event_handler(Events.COMPLETED, pruning_handler)
 
-    # Load MNIST dataset.
+    # Load FashionMNIST dataset.
     train_loader, val_loader = get_data_loaders(TRAIN_BATCH_SIZE, VAL_BATCH_SIZE)
 
     @trainer.on(Events.EPOCH_COMPLETED)

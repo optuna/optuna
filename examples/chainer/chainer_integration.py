@@ -3,15 +3,13 @@ Optuna example that demonstrates a pruner for Chainer.
 
 In this example, we optimize the hyperparameters of a neural network for hand-written
 digit recognition in terms of validation loss. The network is implemented by Chainer and
-evaluated by MNIST dataset. Throughout the training of neural networks, a pruner observes
+evaluated by FashionMNIST dataset. Throughout the training of neural networks, a pruner observes
 intermediate results and stops unpromising trials.
 
 You can run this example as follows:
     $ python chainer_integration.py
 
 """
-
-import urllib
 
 import chainer
 import chainer.functions as F
@@ -21,13 +19,6 @@ from packaging import version
 
 import optuna
 from optuna.trial import TrialState
-
-
-# TODO(crcrpar): Remove the below three lines once everything is ok.
-# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
-opener = urllib.request.build_opener()
-opener.addheaders = [("User-agent", "Mozilla/5.0")]
-urllib.request.install_opener(opener)
 
 
 if version.parse(chainer.__version__) < version.parse("4.0.0"):
@@ -62,7 +53,7 @@ def objective(trial):
     optimizer.setup(model)
 
     rng = np.random.RandomState(0)
-    train, valid = chainer.datasets.get_mnist()
+    train, valid = chainer.datasets.get_fashion_mnist()
     train = chainer.datasets.SubDataset(
         train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))
     )
