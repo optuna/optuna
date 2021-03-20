@@ -42,7 +42,7 @@ def define_model(trial: optuna.trial.Trial) -> nn.Sequential:
     n_layers = trial.suggest_int("n_layers", 1, 3)
     dropout = trial.suggest_float("dropout", 0.2, 0.5)
     input_dim = 28 * 28
-    layers = []
+    layers = [nn.Flatten()]
     for i in range(n_layers):
         output_dim = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
         layers.append(nn.Linear(input_dim, output_dim))
@@ -50,18 +50,19 @@ def define_model(trial: optuna.trial.Trial) -> nn.Sequential:
         layers.append(nn.Dropout(dropout))
 
         input_dim = output_dim
+    layers.append(nn.Linear(input_dim, CLASSES))
 
     return nn.Sequential(*layers)
 
 
 loaders = {
     "train": DataLoader(
-        datasets.MNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()),
+        datasets.FashionMNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()),
         batch_size=100,
         shuffle=True,
     ),
     "valid": DataLoader(
-        datasets.MNIST(os.getcwd(), train=False, download=True, transform=transforms.ToTensor()),
+        datasets.FashionMNIST(os.getcwd(), train=False, download=True, transform=transforms.ToTensor()),
         batch_size=100,
     ),
 }
@@ -69,7 +70,7 @@ loaders = {
 
 def objective(trial):
     logdir = "./logdir"
-    num_epochs = 10
+    num_epochs = 2
 
     model = define_model(trial)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.02)
@@ -89,18 +90,16 @@ def objective(trial):
             # top-1 accuracy as metric for pruning
             "optuna": OptunaPruningCallback(
                 loader_key="valid",
-                metric_key="loss",
-                minimize=True,
+                metric_key="accuracy01",
+                minimize=False,
                 trial=trial,
             ),
             "accuracy": AccuracyCallback(
-                num_classes=10,
                 input_key="logits",
                 target_key="targets",
+                num_classes=10,
             ),
         },
-        valid_metric="accuracy01",
-        minimize_valid_metric=False,
     )
 
     return runner.callbacks["optuna"].best_score
