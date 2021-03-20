@@ -57,12 +57,12 @@ def define_model(trial: optuna.trial.Trial) -> nn.Sequential:
 
 loaders = {
     "train": DataLoader(
-        datasets.FashionMNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()),
+        datasets.MNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()),
         batch_size=100,
         shuffle=True,
     ),
     "valid": DataLoader(
-        datasets.FashionMNIST(os.getcwd(), train=False, download=True, transform=transforms.ToTensor()),
+        datasets.MNIST(os.getcwd(), train=False, download=True, transform=transforms.ToTensor()),
         batch_size=100,
     ),
 }
