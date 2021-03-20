@@ -17,8 +17,8 @@ import os
 import urllib
 
 from catalyst.dl import AccuracyCallback
-from catalyst.dl import SupervisedRunner
 from catalyst.dl import OptunaPruningCallback
+from catalyst.dl import SupervisedRunner
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
