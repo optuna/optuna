@@ -8,7 +8,46 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-def _get_pareto_front_trials(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
+def _get_pareto_front_trials_2d(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
+    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+    points = sorted(
+        (
+            +_normalize_value(trial.values[0], study.directions[0]),
+            -_normalize_value(trial.values[1], study.directions[1]),
+            index,
+        )
+        for index, trial in enumerate(trials)
+    )
+
+    mask = [False] * len(trials)
+
+    def set_mask(width: int, hi: int) -> None:
+        for k in range(hi - width, hi):
+            _, _, index = points[k]
+            mask[index] = True
+
+    width = 0
+    best_y = float("inf")
+    curr_x = float("nan")
+    for i, (x, y, _) in enumerate(points):
+        y = -y
+        if curr_x != x:
+            set_mask(width, hi=i)
+            width = 0
+        if y > best_y:
+            continue
+        if y < best_y:
+            width = 0
+        width += 1
+        best_y = y
+        curr_x = x
+    set_mask(width, hi=len(points))
+
+    pareto_front = [trial for trial, keep in zip(trials, mask) if keep]
+    return pareto_front
+
+
+def _get_pareto_front_trials_nd(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
     pareto_front = []
     trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
@@ -24,6 +63,12 @@ def _get_pareto_front_trials(study: "optuna.study.BaseStudy") -> List[FrozenTria
             pareto_front.append(trial)
 
     return pareto_front
+
+
+def _get_pareto_front_trials(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
+    if len(study.directions) == 2:
+        return _get_pareto_front_trials_2d(study)  # Log-linear in number of trials.
+    return _get_pareto_front_trials_nd(study)  # Quadratic in number of trials.
 
 
 def _dominates(
