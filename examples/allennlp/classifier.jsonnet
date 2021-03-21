@@ -30,7 +30,7 @@ local ENCODER = CNN_FIELDS(
   dataset_reader: {
     type: 'text_classification_json',
     tokenizer: {
-      type: 'spacy',
+      type: 'whitespace',
     },
     token_indexers: {
       tokens: {
