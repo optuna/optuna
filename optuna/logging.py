@@ -174,7 +174,8 @@ def enable_default_handler() -> None:
 def disable_propagation() -> None:
     """Disable propagation of the library log outputs.
 
-    Note that log propagation is disabled by default.
+    Note that log propagation is disabled by default.You only need to use `disable_propagation`
+    to stop log propagation when you use :func:`~optuna.logging.enable_propogation()`.
 
     Example:
 
