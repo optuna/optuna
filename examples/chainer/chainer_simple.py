@@ -3,8 +3,8 @@ Optuna example that optimizes multi-layer perceptrons using Chainer.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
 Chainer and FashionMNIST. We optimize the neural network architecture as well as the optimizer
-configuration. As it is too time consuming to use the whole FashionMNIST dataset, we here use a small
-subset of it.
+configuration. As it is too time consuming to use the whole FashionMNIST dataset,
+we here use a small subset of it.
 
 """
 

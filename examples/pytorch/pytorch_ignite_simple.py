@@ -3,8 +3,8 @@ Optuna example that optimizes convolutional neural networks using PyTorch Ignite
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
 PyTorch Ignite and FashionMNIST. We optimize the neural network architecture as well as the
-regularization. As it is too time consuming to use the whole FashionMNIST dataset, we here use a small
-subset of it.
+regularization. As it is too time consuming to use the whole FashionMNIST dataset,
+we here use a small subset of it.
 
 You can run this example as follows, pruning can be turned on and off with the `--pruning`
 argument.

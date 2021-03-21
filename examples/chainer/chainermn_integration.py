@@ -2,8 +2,9 @@
 Optuna example that demonstrates a pruner for ChainerMN.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-ChainerMN and FashionMNIST, where architecture of neural network is optimized. Throughout the training of
-neural networks, a pruner observes intermediate results and stops unpromising trials.
+ChainerMN and FashionMNIST, where architecture of neural network is optimized.
+Throughout the training of neural networks,
+a pruner observes intermediate results and stops unpromising trials.
 
 ChainerMN and it's Optuna integration are supposed to be invoked via MPI. You can run this example
 as follows:

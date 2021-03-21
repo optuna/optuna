@@ -54,7 +54,9 @@ def define_model(trial):
 
 def get_mnist():
     # Load FashionMNIST dataset.
-    train_dataset = datasets.FashionMNIST(DIR, train=True, download=True, transform=transforms.ToTensor())
+    train_dataset = datasets.FashionMNIST(
+        DIR, train=True, download=True, transform=transforms.ToTensor()
+    )
     train_loader = torch.utils.data.DataLoader(
         torch.utils.data.Subset(train_dataset, list(range(N_TRAIN_EXAMPLES))),
         batch_size=BATCHSIZE,
