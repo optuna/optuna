@@ -34,7 +34,7 @@ def _get_pareto_front_trials_2d(study: "optuna.study.BaseStudy") -> List[FrozenT
         if curr_x != x:
             set_mask(width, hi=i)
             width = 0
-        if y > best_y:
+        if y > best_y or (y == best_y and width == 0):
             continue
         if y < best_y:
             width = 0

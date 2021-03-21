@@ -831,6 +831,9 @@ def test_pareto_front() -> None:
     study.optimize(lambda t: [3, 1], n_trials=1)
     assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
 
+    study.optimize(lambda t: [3, 2], n_trials=1)
+    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
+
     study.optimize(lambda t: [1, 3], n_trials=1)
     assert {_trial_to_values(t) for t in study.best_trials} == {(1, 3)}
     assert len(study.best_trials) == 1
