@@ -96,7 +96,7 @@ class FashionMNISTDataModule(pl.LightningDataModule):
         self.mnist_test = datasets.FashionMNIST(
             self.data_dir, train=False, download=True, transform=transforms.ToTensor()
         )
-        mnist_full = datasets.MNIST(
+        mnist_full = datasets.FashionMNIST(
             self.data_dir, train=True, download=True, transform=transforms.ToTensor()
         )
         self.mnist_train, self.mnist_val = random_split(mnist_full, [55000, 5000])
