@@ -1118,6 +1118,7 @@ def create_study(
         elif d == "maximize":
             direction_objects.append(StudyDirection.MAXIMIZE)
         else:
+            assert isinstance(d, StudyDirection)
             direction_objects.append(d)
 
     storage = storages.get_storage(storage)
