@@ -15,26 +15,23 @@ def _get_pareto_front_trials_2d(study: "optuna.study.BaseStudy") -> List[FrozenT
     if n_trials == 0:
         return []
 
-    numbered_trials = sorted(
-        enumerate(trials),
-        key=lambda pair: (
-            _normalize_value(pair[1].values[0], study.directions[0]),
-            _normalize_value(pair[1].values[1], study.directions[1]),
+    trials.sort(
+        key=lambda trial: (
+            _normalize_value(trial.values[0], study.directions[0]),
+            _normalize_value(trial.values[1], study.directions[1]),
         ),
     )
 
-    mask = [False] * n_trials
-
-    index, last_nondominated_trial = numbered_trials[0]
-    mask[index] = True
+    last_nondominated_trial = trials[0]
+    pareto_front = [last_nondominated_trial]
     for i in range(1, n_trials):
-        index, trial = numbered_trials[i]
+        trial = trials[i]
         if _dominates(last_nondominated_trial, trial, study.directions):
             continue
-        mask[index] = True
+        pareto_front.append(trial)
         last_nondominated_trial = trial
 
-    pareto_front = [trial for trial, keep in zip(trials, mask) if keep]
+    pareto_front.sort(key=lambda trial: trial.number)
     return pareto_front
 
 
