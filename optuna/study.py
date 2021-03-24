@@ -1111,15 +1111,9 @@ def create_study(
     ):
         raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
 
-    direction_objects = []
-    for d in directions:
-        if d == "minimize":
-            direction_objects.append(StudyDirection.MINIMIZE)
-        elif d == "maximize":
-            direction_objects.append(StudyDirection.MAXIMIZE)
-        else:
-            assert isinstance(d, StudyDirection)
-            direction_objects.append(d)
+    direction_objects = [
+        d if isinstance(d, StudyDirection) else StudyDirection[d.upper()] for d in directions
+    ]
 
     storage = storages.get_storage(storage)
     try:
