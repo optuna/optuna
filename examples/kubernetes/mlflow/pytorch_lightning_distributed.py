@@ -101,7 +101,7 @@ def objective(trial):
     metrics_callback = MetricsCallback()
     trainer = pl.Trainer(
         logger=False,
-        val_percent_check=PERCENT_VALID_EXAMPLES,
+        limit_val_batches=PERCENT_VALID_EXAMPLES,
         checkpoint_callback=False,
         max_epochs=EPOCHS,
         gpus=None,
