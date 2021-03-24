@@ -18,7 +18,7 @@ if not _imports.is_successful():
 
 
 @deprecated("2.7.0")
-class CatalystPruningCallback(OptunaPruningCallback):
+class CatalystPruningCallback(OptunaPruningCallback):  # type: ignore
     """Catalyst callback to prune unpromising trials.
 
 

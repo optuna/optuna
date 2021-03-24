@@ -16,7 +16,6 @@ import argparse
 import os
 
 from catalyst.dl import AccuracyCallback
-from catalyst.dl import OptunaPruningCallback
 from catalyst.dl import SupervisedRunner
 import torch
 from torch import nn
@@ -25,6 +24,7 @@ from torchvision import datasets
 from torchvision import transforms
 
 import optuna
+from optuna.integration import CatalystPruningCallback
 
 
 CLASSES = 10
@@ -84,7 +84,7 @@ def objective(trial):
         verbose=True,
         callbacks={
             # top-1 accuracy as metric for pruning
-            "optuna": OptunaPruningCallback(
+            "optuna": CatalystPruningCallback(
                 loader_key="valid",
                 metric_key="accuracy01",
                 minimize=False,
