@@ -88,7 +88,9 @@ class LightningNet(pl.LightningModule):
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
-            datasets.FashionMNIST(DIR, train=False, download=True, transform=transforms.ToTensor()),
+            datasets.FashionMNIST(
+                DIR, train=False, download=True, transform=transforms.ToTensor()
+            ),
             batch_size=BATCHSIZE,
             shuffle=False,
         )
