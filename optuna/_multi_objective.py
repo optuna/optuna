@@ -10,38 +10,29 @@ from optuna.trial import TrialState
 
 def _get_pareto_front_trials_2d(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
-    points = sorted(
-        (
-            +_normalize_value(trial.values[0], study.directions[0]),
-            -_normalize_value(trial.values[1], study.directions[1]),
-            index,
-        )
-        for index, trial in enumerate(trials)
+
+    n_trials = len(trials)
+    if n_trials == 0:
+        return []
+
+    numbered_trials = sorted(
+        enumerate(trials),
+        key=lambda pair: (
+            _normalize_value(pair[1].values[0], study.directions[0]),
+            _normalize_value(pair[1].values[1], study.directions[1]),
+        ),
     )
 
-    mask = [False] * len(trials)
+    mask = [False] * n_trials
 
-    def set_mask(width: int, hi: int) -> None:
-        for k in range(hi - width, hi):
-            _, _, index = points[k]
-            mask[index] = True
-
-    width = 0
-    best_y = float("inf")
-    curr_x = float("nan")
-    for i, (x, y, _) in enumerate(points):
-        y = -y
-        if curr_x != x:
-            set_mask(width, hi=i)
-            width = 0
-        if y > best_y or (y == best_y and width == 0):
+    index, last_nondominated_trial = numbered_trials[0]
+    mask[index] = True
+    for i in range(1, n_trials):
+        index, trial = numbered_trials[i]
+        if _dominates(last_nondominated_trial, trial, study.directions):
             continue
-        if y < best_y:
-            width = 0
-        width += 1
-        best_y = y
-        curr_x = x
-    set_mask(width, hi=len(points))
+        mask[index] = True
+        last_nondominated_trial = trial
 
     pareto_front = [trial for trial, keep in zip(trials, mask) if keep]
     return pareto_front
