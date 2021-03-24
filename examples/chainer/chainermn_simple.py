@@ -2,7 +2,7 @@
 Optuna example that optimizes multi-layer perceptrons using ChainerMN.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-ChainerMN and MNIST, where architecture of neural network is optimized.
+ChainerMN and FashionMNIST, where architecture of neural network is optimized.
 
 ChainerMN and it's Optuna integration are supposed to be invoked via MPI. You can run this example
 as follows:
@@ -12,7 +12,6 @@ as follows:
 
 """
 import sys
-import urllib
 
 import chainer
 import chainer.functions as F
@@ -21,13 +20,6 @@ import chainermn
 import numpy as np
 
 import optuna
-
-
-# TODO(crcrpar): Remove the below three lines once everything is ok.
-# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
-opener = urllib.request.build_opener()
-opener.addheaders = [("User-agent", "Mozilla/5.0")]
-urllib.request.install_opener(opener)
 
 
 N_TRAIN_EXAMPLES = 3000
@@ -64,7 +56,7 @@ def objective(trial, comm):
     # Setup dataset and iterator. Only worker 0 loads the whole dataset.
     # The dataset of worker 0 is evenly split and distributed to all workers.
     if comm.rank == 0:
-        train, valid = chainer.datasets.get_mnist()
+        train, valid = chainer.datasets.get_fashion_mnist()
         rng = np.random.RandomState(0)
         train = chainer.datasets.SubDataset(
             train, 0, N_TRAIN_EXAMPLES, order=rng.permutation(len(train))

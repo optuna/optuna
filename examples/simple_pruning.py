@@ -8,7 +8,7 @@ the pruning feature, the following 2 methods are invoked after each step of the 
 (2) :func:`optuna.trial.Trial.should_prune`
 
 You can run this example as follows:
-    $ python simple.py
+    $ python simple_prunning.py
 
 """
 

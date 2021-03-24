@@ -2,7 +2,7 @@
 Optuna example that optimizes multi-layer perceptrons using Catalyst.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-Catalyst, and MNIST. We optimize the neural network architecture.
+Catalyst, and FashionMNIST. We optimize the neural network architecture.
 
 You can run this example as follows, pruning can be turned on and off with the `--pruning`
 argument.
@@ -14,7 +14,6 @@ See also: https://catalyst-team.github.io/catalyst/api/callbacks.html?highlight=
 
 import argparse
 import os
-import urllib
 
 from catalyst.dl import AccuracyCallback
 from catalyst.dl import OptunaPruningCallback
@@ -26,13 +25,6 @@ from torchvision import datasets
 from torchvision import transforms
 
 import optuna
-
-
-# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
-# This is a temporary fix until torchvision v0.9 is released.
-opener = urllib.request.build_opener()
-opener.addheaders = [("User-agent", "Mozilla/5.0")]
-urllib.request.install_opener(opener)
 
 
 CLASSES = 10
@@ -57,12 +49,16 @@ def define_model(trial: optuna.trial.Trial) -> nn.Sequential:
 
 loaders = {
     "train": DataLoader(
-        datasets.MNIST(os.getcwd(), train=True, download=True, transform=transforms.ToTensor()),
+        datasets.FashionMNIST(
+            os.getcwd(), train=True, download=True, transform=transforms.ToTensor()
+        ),
         batch_size=100,
         shuffle=True,
     ),
     "valid": DataLoader(
-        datasets.MNIST(os.getcwd(), train=False, download=True, transform=transforms.ToTensor()),
+        datasets.FashionMNIST(
+            os.getcwd(), train=False, download=True, transform=transforms.ToTensor()
+        ),
         batch_size=100,
     ),
 }
@@ -70,7 +66,7 @@ loaders = {
 
 def objective(trial):
     logdir = "./logdir"
-    num_epochs = 2
+    num_epochs = 10
 
     model = define_model(trial)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.02)
