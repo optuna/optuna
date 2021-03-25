@@ -797,6 +797,14 @@ def test_create_study_with_multi_objectives() -> None:
         _ = create_study(direction="minimize", directions=[])
 
 
+def test_create_study_with_direction_object() -> None:
+    study = create_study(direction=StudyDirection.MAXIMIZE)
+    assert study.direction == StudyDirection.MAXIMIZE
+
+    study = create_study(directions=[StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE])
+    assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+
+
 @pytest.mark.parametrize("n_objectives", [2, 3])
 def test_optimize_with_multi_objectives(n_objectives: int) -> None:
     directions = ["minimize" for _ in range(n_objectives)]
