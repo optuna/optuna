@@ -1109,7 +1109,10 @@ def create_study(
         d not in ["minimize", "maximize", StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
         for d in directions
     ):
-        raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
+        raise ValueError(
+            "Please set either 'minimize' or 'maximize' to direction. You can also set the "
+            "corresponding `StudyDirection` member."
+        )
 
     direction_objects = [
         d if isinstance(d, StudyDirection) else StudyDirection[d.upper()] for d in directions
