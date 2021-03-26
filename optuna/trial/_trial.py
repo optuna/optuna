@@ -11,6 +11,7 @@ import optuna
 from optuna import distributions
 from optuna import logging
 from optuna import pruners
+from optuna._search_space_group import SearchSpaceGroup
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -63,9 +64,17 @@ class Trial(BaseTrial):
         study = pruners._filter_study(self.study, trial)
 
         self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
-        self.relative_params = self.study.sampler.sample_relative(
-            study, trial, self.relative_search_space
-        )
+        if isinstance(self.relative_search_space, SearchSpaceGroup):
+            self.relative_params = {}
+            for search_space in self.relative_search_space.group:
+                self.relative_params.update(
+                    self.study.sampler.sample_relative(study, trial, search_space)
+                )
+            print(self.relative_params)
+        else:
+            self.relative_params = self.study.sampler.sample_relative(
+                study, trial, self.relative_search_space
+            )
 
     def suggest_float(
         self,
@@ -747,13 +756,20 @@ class Trial(BaseTrial):
         if name not in self.relative_params:
             return False
 
-        if name not in self.relative_search_space:
+        all_search_space: Dict[str, BaseDistribution] = {}
+        if isinstance(self.relative_search_space, SearchSpaceGroup):
+            for search_space in self.relative_search_space.group:
+                all_search_space.update(search_space)
+        else:
+            all_search_space = self.relative_search_space
+
+        if name not in all_search_space:
             raise ValueError(
                 "The parameter '{}' was sampled by `sample_relative` method "
                 "but it is not contained in the relative search space.".format(name)
             )
 
-        relative_distribution = self.relative_search_space[name]
+        relative_distribution = all_search_space[name]
         distributions.check_distribution_compatibility(relative_distribution, distribution)
 
         param_value = self.relative_params[name]

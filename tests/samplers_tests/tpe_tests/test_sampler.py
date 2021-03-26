@@ -897,3 +897,75 @@ def test_mixed_relative_search_space_pruned_and_completed_trials() -> None:
     study = optuna.create_study(sampler=sampler)
 
     study.optimize(objective, 3)
+
+
+def test_conditional_multivariate_sampling() -> None:
+    sampler = TPESampler(n_startup_trials=1, multivariate=True, conditional=True)
+    study = optuna.create_study(sampler=sampler)
+
+    with patch.object(sampler, "sample_relative", wraps=sampler.sample_relative) as mock:
+        study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=2)
+        assert mock.call_count == 1
+    assert study.trials[-1].distributions == {
+        "x": distributions.IntUniformDistribution(low=0, high=10)
+    }
+
+    with patch.object(sampler, "sample_relative", wraps=sampler.sample_relative) as mock:
+        study.optimize(
+            lambda t: t.suggest_int("y", 0, 10) + t.suggest_float("z", -3, 3), n_trials=1
+        )
+        assert mock.call_count == 1
+    assert study.trials[-1].distributions == {
+        "y": distributions.IntUniformDistribution(low=0, high=10),
+        "z": distributions.UniformDistribution(low=-3, high=3),
+    }
+
+    with patch.object(sampler, "sample_relative", wraps=sampler.sample_relative) as mock:
+        study.optimize(
+            lambda t: t.suggest_int("y", 0, 10)
+            + t.suggest_float("z", -3, 3)
+            + t.suggest_float("u", 1e-2, 1e2, log=True)
+            + bool(t.suggest_categorical("v", ["A", "B", "C"])),
+            n_trials=1,
+        )
+        assert mock.call_count == 2
+    assert study.trials[-1].distributions == {
+        "u": distributions.LogUniformDistribution(low=1e-2, high=1e2),
+        "v": distributions.CategoricalDistribution(choices=["A", "B", "C"]),
+        "y": distributions.IntUniformDistribution(low=0, high=10),
+        "z": distributions.UniformDistribution(low=-3, high=3),
+    }
+
+    with patch.object(sampler, "sample_relative", wraps=sampler.sample_relative) as mock:
+        study.optimize(lambda t: t.suggest_float("u", 1e-2, 1e2, log=True), n_trials=1)
+        assert mock.call_count == 3
+    assert study.trials[-1].distributions == {
+        "u": distributions.LogUniformDistribution(low=1e-2, high=1e2)
+    }
+
+    with patch.object(sampler, "sample_relative", wraps=sampler.sample_relative) as mock:
+        study.optimize(
+            lambda t: t.suggest_int("y", 0, 10) + t.suggest_int("w", 2, 8, log=True), n_trials=1
+        )
+        assert mock.call_count == 4
+    assert study.trials[-1].distributions == {
+        "y": distributions.IntUniformDistribution(low=0, high=10),
+        "w": distributions.IntLogUniformDistribution(low=2, high=8),
+    }
+
+    with patch.object(sampler, "sample_relative", wraps=sampler.sample_relative) as mock:
+        study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=1)
+        assert mock.call_count == 6
+    assert study.trials[-1].distributions == {
+        "x": distributions.IntUniformDistribution(low=0, high=10)
+    }
+
+
+def test_conditional_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.samplers.TPESampler(multivariate=True, conditional=True)
+
+
+def test_raise_value_error_when_multivariate_false_and_conditional_true() -> None:
+    with pytest.raises(ValueError):
+        optuna.samplers.TPESampler(multivariate=False, conditional=True)
