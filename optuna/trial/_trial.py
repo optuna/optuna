@@ -70,7 +70,6 @@ class Trial(BaseTrial):
                 self.relative_params.update(
                     self.study.sampler.sample_relative(study, trial, search_space)
                 )
-            print(self.relative_params)
         else:
             self.relative_params = self.study.sampler.sample_relative(
                 study, trial, self.relative_search_space
