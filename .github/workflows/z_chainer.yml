@@ -1,0 +1,57 @@
+name: z_chainer
+
+on:
+  schedule:
+    - cron: '0 15 * * *'
+  pull_request:
+    paths:
+      - 'examples/chainer/**'
+      - '.github/workflows/z_chainer.yml'
+
+jobs:
+  examples:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+
+    if: github.repository == 'optuna/optuna'
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup-python${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install (apt)
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install openmpi-bin libopenmpi-dev
+    - name: Install (Python)
+      run: |
+        python -m pip install --upgrade pip
+        pip install --progress-bar off -U setuptools
+        python setup.py sdist
+
+        # Install minimal dependencies and confirm that `import optuna` is successful.
+        pip install --progress-bar off $(ls dist/*.tar.gz)
+        python -c 'import optuna'
+
+        pip install -r examples/chainer/requirements.txt
+    - name: Run examples
+      run: |
+        python examples/chainer/chainer_simple.py
+        python examples/chainer/chainer_integration.py
+      env:
+        OMP_NUM_THREADS: 1
+    - name: Run multi-node examples
+      run: |
+        STORAGE_URL=sqlite:///example.db
+        for file in `find examples/chainer -name 'chainermn_*.py'`
+        do
+          echo $file
+          STUDY_NAME=`optuna create-study --storage $STORAGE_URL`
+          mpirun -n 2 -- python $file $STUDY_NAME $STORAGE_URL > /dev/null
+        done
+      env:
+        OMP_NUM_THREADS: 1

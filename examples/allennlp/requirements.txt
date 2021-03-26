@@ -1,0 +1,3 @@
+allennlp>=2.0.0
+numpy
+optuna

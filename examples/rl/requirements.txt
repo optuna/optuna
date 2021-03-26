@@ -1,0 +1,3 @@
+optuna
+stable-baselines3>=0.7.0
+torch==1.8.0

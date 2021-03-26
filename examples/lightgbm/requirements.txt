@@ -1,0 +1,4 @@
+lightgbm
+numpy
+optuna
+scikit-learn

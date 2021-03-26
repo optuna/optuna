@@ -1,0 +1,11 @@
+catalyst<21.3
+requests
+mpi4py
+plotly
+pytorch-ignite
+pytorch-lightning>=1.0.2
+skorch
+torch==1.8.0
+torchvision==0.9.0
+torchaudio==0.8.0
+optuna

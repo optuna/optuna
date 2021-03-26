@@ -1,0 +1,3 @@
+mxnet
+numpy
+optuna

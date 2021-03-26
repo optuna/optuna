@@ -1,0 +1,75 @@
+name: z_pytorch
+
+on:
+  schedule:
+    - cron: '0 15 * * *'
+  pull_request:
+    paths:
+      - 'examples/pytorch/**'
+      - '.github/workflows/z_pytorch.yml'
+
+jobs:
+  examples:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
+    if: github.repository == 'optuna/optuna'
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup-python${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install (apt)
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install openmpi-bin libopenmpi-dev
+    - name: Install (Python)
+      run: |
+        python -m pip install --upgrade pip
+        pip install --progress-bar off -U setuptools
+        python setup.py sdist
+
+        # Install minimal dependencies and confirm that `import optuna` is successful.
+        pip install --progress-bar off $(ls dist/*.tar.gz)
+        python -c 'import optuna'
+
+        pip install -r examples/pytorch/requirements.txt
+    - name: Run PyTorch examples
+      run: |
+        python examples/pytorch/pytorch_simple.py
+      env:
+        OMP_NUM_THREADS: 1
+    - name: Run PyTorch checkpoint example
+      run: |
+        set +e
+        timeout 20 python examples/pytorch/pytorch_checkpoint.py > /dev/null
+        set -e
+        python examples/pytorch/pytorch_checkpoint.py > /dev/null
+      env:
+        OMP_NUM_THREADS: 1
+    - name: Run multi-node examples
+      run: |
+        STORAGE_URL=sqlite:///example.db
+        mpirun -n 2 -- python examples/pytorch/pytorch_distributed_simple.py
+      env:
+        OMP_NUM_THREADS: 1
+    - name: Run Catalyst examples
+      run: |
+        python examples/catalyst/catalyst_simple.py
+        python examples/catalyst/catalyst_simple.py --pruning
+      env:
+        OMP_NUM_THREADS: 1
+    - name: Run PyTorch Ignite examples
+      run: |
+        python examples/pytorch/pytorch_ignite_simple.py
+      env:
+        OMP_NUM_THREADS: 1
+    - name: Run PyTorch Lightning examples
+      run: |
+        python examples/pytorch/pytorch_lightning_simple.py
+      env:
+        OMP_NUM_THREADS: 1
