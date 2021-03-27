@@ -57,8 +57,7 @@ jobs:
       env:
         OMP_NUM_THREADS: 1
       run: |
-        pytest --cov=optuna --cov-report=xml tests \
-            --ignore tests/integration_tests/allennlp_tests
+        pytest --cov=optuna --cov-report=xml tests
 
     - name: Multi-node tests
       env:
