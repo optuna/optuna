@@ -120,6 +120,8 @@ def _get_optimization_history_plot(
             alpha=0.5,
             label="Best Value",
         )
+
+        ax.legend()
     else:
         ax.scatter(
             x=[t.number for t in trials],
@@ -128,6 +130,5 @@ def _get_optimization_history_plot(
             alpha=1,
             label=target_name,
         )
-    ax.legend()
 
     return ax
