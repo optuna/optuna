@@ -99,13 +99,12 @@ def _get_optimization_history_plot(
         _logger.warning("Study instance does not contain trials.")
         return ax
 
-    if study.direction == StudyDirection.MINIMIZE:
-        best_values = np.minimum.accumulate([t.value for t in trials])
-    else:
-        best_values = np.maximum.accumulate([t.value for t in trials])
-
     # Draw a scatter plot and a line plot.
     if target is None:
+        if study.direction == StudyDirection.MINIMIZE:
+            best_values = np.minimum.accumulate([t.value for t in trials])
+        else:
+            best_values = np.maximum.accumulate([t.value for t in trials])
         ax.scatter(
             x=[t.number for t in trials],
             y=[t.value for t in trials],
