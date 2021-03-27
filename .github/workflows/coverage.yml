@@ -53,6 +53,13 @@ jobs:
         pip install --use-deprecated=legacy-resolver --progress-bar off .[integration] -f https://download.pytorch.org/whl/torch_stable.html
         pip install --use-deprecated=legacy-resolver --progress-bar off .[codecov]
 
+    - name: Patch
+      run: |
+        ls tests
+        ls tests/study_tests
+        touch tests/__init__.py
+        touch tests/study_tests/__init__.py
+
     - name: Tests
       env:
         OMP_NUM_THREADS: 1
