@@ -28,5 +28,5 @@ force_sort_within_sections = 'True'
 order_by_type = 'False'
 
 [tool.pytest.ini_options]
-addopts = "--color=yes --cov-append"
+addopts = "--color=yes"
 filterwarnings = 'ignore::optuna.exceptions.ExperimentalWarning'
