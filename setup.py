@@ -152,6 +152,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "tests": [
             "fakeredis",
             "pytest",
+            "pytest-cov",
         ],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
