@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         problem: [hpobench-protein]
-        sampler: [RandomSampler]
+        sampler: [SkoptSampler]
         pruner: [MedianPruner]
         python-version: [3.7]
 
