@@ -1,4 +1,5 @@
 import sys
+from typing import Optional
 
 import optuna
 from optuna._imports import try_import
@@ -84,6 +85,19 @@ class LightGBMPruningCallback(object):
         self._metric = metric
         self._interval = interval
 
+    def _find_evaluation_result(
+        self, target_valid_name: str, env: "CallbackEnv"
+    ) -> Optional[list]:
+
+        for evaluation_result in env.evaluation_result_list:
+            valid_name, metric, current_score, is_higher_better = evaluation_result[:4]
+            if valid_name != target_valid_name or metric != self._metric:
+                continue
+
+            return evaluation_result
+
+        return None
+
     def __call__(self, env: "CallbackEnv") -> None:
 
         if (env.iteration + 1) % self._interval == 0:
@@ -97,34 +111,34 @@ class LightGBMPruningCallback(object):
             else:
                 target_valid_name = self._valid_name
 
-            for evaluation_result in env.evaluation_result_list:
-                valid_name, metric, current_score, is_higher_better = evaluation_result[:4]
-                if valid_name != target_valid_name or metric != self._metric:
-                    continue
+            evaluation_result = self._find_evaluation_result(target_valid_name, env)
 
-                if is_higher_better:
-                    if self._trial.study.direction != optuna.study.StudyDirection.MAXIMIZE:
-                        raise ValueError(
-                            "The intermediate values are inconsistent with the objective values"
-                            "in terms of study directions. Please specify a metric to be minimized"
-                            "for LightGBMPruningCallback."
-                        )
-                else:
-                    if self._trial.study.direction != optuna.study.StudyDirection.MINIMIZE:
-                        raise ValueError(
-                            "The intermediate values are inconsistent with the objective values"
-                            "in terms of study directions. Please specify a metric to be"
-                            "maximized for LightGBMPruningCallback."
-                        )
-
-                self._trial.report(current_score, step=env.iteration)
-
-            raise ValueError(
-                'The entry associated with the validation name "{}" and the metric name "{}" '
-                "is not found in the evaluation result list {}.".format(
-                    target_valid_name, self._metric, str(env.evaluation_result_list)
+            if evaluation_result is None:
+                raise ValueError(
+                    'The entry associated with the validation name "{}" and the metric name "{}" '
+                    "is not found in the evaluation result list {}.".format(
+                        target_valid_name, self._metric, str(env.evaluation_result_list)
+                    )
                 )
-            )
+
+            valid_name, metric, current_score, is_higher_better = evaluation_result[:4]
+
+            if is_higher_better:
+                if self._trial.study.direction != optuna.study.StudyDirection.MAXIMIZE:
+                    raise ValueError(
+                        "The intermediate values are inconsistent with the objective values"
+                        "in terms of study directions. Please specify a metric to be minimized"
+                        "for LightGBMPruningCallback."
+                    )
+            else:
+                if self._trial.study.direction != optuna.study.StudyDirection.MINIMIZE:
+                    raise ValueError(
+                        "The intermediate values are inconsistent with the objective values"
+                        "in terms of study directions. Please specify a metric to be"
+                        "maximized for LightGBMPruningCallback."
+                    )
+
+            self._trial.report(current_score, step=env.iteration)
 
         if self._trial.should_prune():
             message = "Trial was pruned at iteration {}.".format(env.iteration)
