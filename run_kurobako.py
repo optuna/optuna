@@ -167,7 +167,7 @@ def _run_kurobako(args: argparse.Namespace) -> None:
             # subprocess.check_call("echo debug", shell=True)
 
     #debug code 2
-    subprocess.check_call("echo debug", shell=True)
+    subprocess.check_call(f"{kurobako_cmd} --version; echo debugcell starts", shell=True)
 
     results_directory = os.path.join(args.output_dir, "results", args.name)
     os.makedirs(results_directory, exist_ok=True)
@@ -177,7 +177,7 @@ def _run_kurobako(args: argparse.Namespace) -> None:
     )
     subprocess.check_call(cmd, shell=True)
     #debug code 2
-    subprocess.check_call("echo debug", shell=True)
+    subprocess.check_call(f"{kurobako_cmd} --version; echo debugcell ended", shell=True)
 
     reports_directory = os.path.join(args.output_dir, "report", args.name)
     os.makedirs(reports_directory, exist_ok=True)
