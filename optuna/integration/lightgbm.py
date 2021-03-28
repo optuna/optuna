@@ -64,9 +64,9 @@ class LightGBMPruningCallback(object):
             `cv method <https://lightgbm.readthedocs.io/en/latest/Python-API.html#lightgbm.cv>`_
             instead of train method.
         interval:
-            Check if trial should be reported for pruning every n-th epoch.
+            Check if the trial should be checked for pruning every n-th epoch.
             By default ``interval=1`` and reporting is performed after every epoch.
-            Notes that pruning itself is performed according to the interval definition
+            Note that the pruning itself is performed according to the interval definition
             of the pruner.
     """
 
