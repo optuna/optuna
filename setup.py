@@ -113,7 +113,12 @@ def get_extras_require() -> Dict[str, List[str]]:
             "dm-haiku",
             "hydra-optuna-sweeper",
             "ray",
-        ]+(["scikit-learn>=0.19.0,<0.23.0","tensorflow>=2.0.0"] if sys.version_info[:2] < (3, 9) else []),
+        ]
+        + (
+            ["scikit-learn>=0.19.0,<0.23.0", "tensorflow>=2.0.0"]
+           if sys.version_info[:2] < (3, 9)
+           else []
+        ),
         "experimental": ["redis"],
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -146,7 +151,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             # "allennlp>=2.0.0",  # See https://github.com/optuna/optuna/pull/2442.
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
-        ]+(["scikit-learn>=0.19.0,<0.23.0","tensorflow"] if sys.version_info[:2] < (3, 9) else []),
+        ]
+        + (
+            ["scikit-learn>=0.19.0,<0.23.0", "tensorflow"] if sys.version_info[:2] < (3, 9) else []
+        ),
         "tests": [
             "fakeredis",
             "pytest",
@@ -169,11 +177,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "pandas",
-            
             "scikit-optimize",
             "xgboost",
             "keras",
-            
             "tensorflow-datasets",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
@@ -187,7 +193,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             # "allennlp>=2.0.0",  # See https://github.com/optuna/optuna/pull/2442.
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
-        ]+ (["scikit-learn>=0.19.0,<0.23.0","tensorflow"] if sys.version_info[:2] < (3, 9) else []),
+        ]
+        + (
+            ["scikit-learn>=0.19.0,<0.23.0", "tensorflow"] if sys.version_info[:2] < (3, 9) else []
+        ),
     }
 
     return requirements
