@@ -166,6 +166,9 @@ def _run_kurobako(args: argparse.Namespace) -> None:
             #debug code 2
             subprocess.check_call(f"{kurobako_cmd} --version", shell=True)
 
+    #debug code 2
+    subprocess.check_call("echo debug", shell=True)
+
     results_directory = os.path.join(args.output_dir, "results", args.name)
     os.makedirs(results_directory, exist_ok=True)
     result_json_fn = os.path.join(results_directory, f"results_{args.name}.json")
@@ -173,6 +176,8 @@ def _run_kurobako(args: argparse.Namespace) -> None:
         study_json_fn, kurobako_cmd, args.n_jobs, result_json_fn
     )
     subprocess.check_call(cmd, shell=True)
+    #debug code 2
+    subprocess.check_call("echo debug", shell=True)
 
     reports_directory = os.path.join(args.output_dir, "report", args.name)
     os.makedirs(reports_directory, exist_ok=True)
@@ -191,7 +196,7 @@ def _run_kurobako(args: argparse.Namespace) -> None:
         )
 
         subprocess.check_call(cmd, shell=True)
-
+ 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

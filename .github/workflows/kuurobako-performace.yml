@@ -17,8 +17,8 @@ jobs:
     strategy:
       matrix:
         problem: [hpobench-protein]
-        sampler: [RandomSampler,TPESampler]
-        pruner: [MedianPruner,HyperbandPruner]
+        sampler: [RandomSampler]
+        pruner: [MedianPruner]
         python-version: [3.7]
 
     # if: github.repository == 'optuna/optuna'
