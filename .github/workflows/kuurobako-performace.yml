@@ -5,7 +5,6 @@ on:
   push:
       branches:
         - master
-        - kurobako-execution-ci
     pull_request: {}
 
 jobs:
