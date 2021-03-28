@@ -91,7 +91,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "nbval",
             "scikit-image",
             "xgboost",
-            "keras",          
+            "keras",
             "tensorflow-datasets",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
@@ -116,8 +116,8 @@ def get_extras_require() -> Dict[str, List[str]]:
         ]
         + (
             ["scikit-learn>=0.19.0,<0.23.0", "tensorflow>=2.0.0"]
-           if sys.version_info[:2] < (3, 9)
-           else []
+            if sys.version_info[:2] < (3, 9)
+            else []
         ),
         "experimental": ["redis"],
         "testing": [
