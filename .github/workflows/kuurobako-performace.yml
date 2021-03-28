@@ -16,10 +16,10 @@ jobs:
 
     strategy:
       matrix:
-        problem: [hpobench-protein]
-        sampler: [RandomSampler]
-        pruner: [MedianPruner]
-        python-version: [3.7, 3.8]
+        problem: [hpobench-protein,nasbench]
+        sampler: [RandomSampler,TPESampler]
+        pruner: [MedianPruner,HyperbandPruner,NopPruner]
+        python-version: [3.7]
 
     # if: github.repository == 'optuna/optuna'
 
@@ -30,7 +30,7 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-        
+
     - name: Install gnuplot
       run: |
         sudo apt update
@@ -83,6 +83,7 @@ jobs:
       run: |
         curl -L $(./kurobako dataset nasbench url) -o nasbench_full.tfrecord
         ./kurobako dataset nasbench convert nasbench_full.tfrecord nasbench_full.bin
+
     - name: Run Benchmark
       run: |
         python run_kurobako.py --name "CI" --kurobako-path "." --input-dir "." --output-dir "out" --sampler-list ${{ matrix.sampler }} --pruner-list ${{ matrix.pruner }} --problem-list ${{ matrix.problem }} --plot

@@ -10,6 +10,7 @@ jobs:
   checks:
     runs-on: ubuntu-latest
 
+   if: github.repository == 'optuna/optuna'
     steps:
     - uses: actions/checkout@v2
 
