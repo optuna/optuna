@@ -70,6 +70,7 @@ jobs:
             --ignore tests/integration_tests/test_tensorflow.py \
             --ignore tests/integration_tests/test_tfkeras.py \
             --ignore tests/integration_tests/test_sklearn.py \
+            --ignore tests/integration_tests/test_tensorboard.py \
             --ignore tests/integration_tests/allennlp_tests 
         else
           # pytest cannot collect allennlp tests with allennlp==1.0.0.
