@@ -167,7 +167,7 @@ def objective(
         valid_names = [valid_name]
 
     pruning_callback = LightGBMPruningCallback(
-        trial, metric, valid_name=valid_name, interval=interval
+        trial, metric, valid_name=valid_name, report_interval=interval
     )
     if cv:
         lgb.cv(

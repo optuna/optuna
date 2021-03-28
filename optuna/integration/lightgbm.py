@@ -63,9 +63,9 @@ class LightGBMPruningCallback(object):
             Note that this argument will be ignored if you are calling
             `cv method <https://lightgbm.readthedocs.io/en/latest/Python-API.html#lightgbm.cv>`_
             instead of train method.
-        interval:
-            Check if the trial should be checked for pruning every n-th epoch.
-            By default ``interval=1`` and reporting is performed after every epoch.
+        report_interval:
+            Check if the trial should be reported for pruning every n-th epoch.
+            By default ``report_interval=1`` and reporting is performed after every epoch.
             Note that the pruning itself is performed according to the interval definition
             of the pruner.
     """
@@ -75,7 +75,7 @@ class LightGBMPruningCallback(object):
         trial: optuna.trial.Trial,
         metric: str,
         valid_name: str = "valid_0",
-        interval: int = 1,
+        report_interval: int = 1,
     ) -> None:
 
         _imports.check()
@@ -83,7 +83,7 @@ class LightGBMPruningCallback(object):
         self._trial = trial
         self._valid_name = valid_name
         self._metric = metric
-        self._interval = interval
+        self._report_interval = report_interval
 
     def _find_evaluation_result(
         self, target_valid_name: str, env: "CallbackEnv"
@@ -100,7 +100,7 @@ class LightGBMPruningCallback(object):
 
     def __call__(self, env: "CallbackEnv") -> None:
 
-        if (env.iteration + 1) % self._interval == 0:
+        if (env.iteration + 1) % self._report_interval == 0:
             # If this callback has been passed to `lightgbm.cv` function,
             # the value of `is_cv` becomes `True`. See also:
             # https://github.com/Microsoft/LightGBM/blob/v2.2.2/python-package/lightgbm/engine.py#L329
