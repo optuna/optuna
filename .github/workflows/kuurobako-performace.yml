@@ -84,9 +84,6 @@ jobs:
     #     curl -L $(./kurobako dataset nasbench url) -o nasbench_full.tfrecord
     #     ./kurobako dataset nasbench convert nasbench_full.tfrecord nasbench_full.bin
     
-    - name: Run kurobako trial test
-      run: |
-        kurobako --version
     - name: Run Benchmark
       run: |
         python run_kurobako.py --name "CI" --kurobako-path "." --input-dir "." --output-dir "out" --sampler-list ${{ matrix.sampler }} --pruner-list ${{ matrix.pruner }} --problem-list ${{ matrix.problem }} --plot
