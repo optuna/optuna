@@ -19,12 +19,18 @@ jobs:
         problem: [hpobench-protein]
         sampler: [RandomSampler]
         pruner: [MedianPruner]
+        python-version: [3.7, 3.8]
 
     # if: github.repository == 'optuna/optuna'
 
     steps:
     - uses: actions/checkout@v2
 
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        
     - name: Install gnuplot
       run: |
         sudo apt update
