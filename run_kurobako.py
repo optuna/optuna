@@ -150,8 +150,8 @@ def _run_kurobako(args: argparse.Namespace) -> None:
                 cmd = f""" {kurobako_cmd} solver --name "{sampler}-{pruner}" optuna --loglevel debug --sampler "{sampler}" --sampler-kwargs "{sampler_kwargs}" --pruner "{pruner}" --pruner-kwargs "{pruner_kwargs}" | tee -a {solvers_fn} """  # NOQA
                 subprocess.check_call(cmd, shell=True)
 
-            #debug code 
-            subprocess.check_call(f"{kurobako_cmd} --version", shell=True)
+            # #debug code 
+            # subprocess.check_call("echo debug", shell=True)
 
             cmd = """{} studies --budget {} --solvers $(cat {}) --problems $(cat {}) --repeats {} --seed {} >> {}""".format(  # NOQA
                 kurobako_cmd,
@@ -163,8 +163,8 @@ def _run_kurobako(args: argparse.Namespace) -> None:
                 study_json_fn,
             )
             subprocess.check_call(cmd, shell=True)
-            #debug code 2
-            subprocess.check_call(f"{kurobako_cmd} --version", shell=True)
+            # #debug code 2
+            # subprocess.check_call("echo debug", shell=True)
 
     #debug code 2
     subprocess.check_call("echo debug", shell=True)
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--plot", action="store_true")
     parser.add_argument("--n-run", type=int, default=100)
-    parser.add_argument("--n-jobs", type=int, default=10)
+    parser.add_argument("--n-jobs", type=int, default=1)
 
     parser.add_argument(
         "--kurobako-path",
