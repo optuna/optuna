@@ -9,7 +9,7 @@ from typing import Tuple
 import optuna
 
 
-_KUROBAKO_VERSION: str = "0.2.6"
+_KUROBAKO_VERSION: str = "0.2.9"
 HPOBENCH: str = "hpobench"
 NASBENCH: str = "nasbench"
 SIGOPT: str = "sigopt"
@@ -150,6 +150,9 @@ def _run_kurobako(args: argparse.Namespace) -> None:
                 cmd = f""" {kurobako_cmd} solver --name "{sampler}-{pruner}" optuna --loglevel debug --sampler "{sampler}" --sampler-kwargs "{sampler_kwargs}" --pruner "{pruner}" --pruner-kwargs "{pruner_kwargs}" | tee -a {solvers_fn} """  # NOQA
                 subprocess.check_call(cmd, shell=True)
 
+            #debug code 
+            subprocess.check_call(f"{kurobako_cmd} --version", shell=True)
+
             cmd = """{} studies --budget {} --solvers $(cat {}) --problems $(cat {}) --repeats {} --seed {} >> {}""".format(  # NOQA
                 kurobako_cmd,
                 args.budget,
@@ -160,6 +163,8 @@ def _run_kurobako(args: argparse.Namespace) -> None:
                 study_json_fn,
             )
             subprocess.check_call(cmd, shell=True)
+            #debug code 2
+            subprocess.check_call(f"{kurobako_cmd} --version", shell=True)
 
     results_directory = os.path.join(args.output_dir, "results", args.name)
     os.makedirs(results_directory, exist_ok=True)
