@@ -33,7 +33,7 @@ jobs:
         pip install --progress-bar off $(ls dist/*.tar.gz)
         python -c 'import optuna'
 
-        pip install -r exampels/rl/requirements.txt
+        pip install -r examples/rl/requirements.txt
     - name: Run examples
       run: |
         python examples/rl/sb3_simple.py
