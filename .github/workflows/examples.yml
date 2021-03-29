@@ -3,8 +3,6 @@ name: examples
 on:
   schedule:
     - cron: '0 15 * * *'
-  # TODO (crcrpar): Remove the below once CI succeeds.
-  pull_request: {}
 
 jobs:
   examples:
