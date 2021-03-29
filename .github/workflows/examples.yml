@@ -51,32 +51,14 @@ jobs:
     - name: Run examples
       run: |
         if [ ${{ matrix.python-version }} = 3.6 ]; then
-          IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*|botorch_.*|pytorch/pytorch_checkpoint*|allennlp*'
+          IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*|botorch_.*|pytorch/pytorch_checkpoint*'
         elif [ ${{ matrix.python-version }} = 3.8 ]; then
-          IGNORES='chainermn_.*|keras_.*|pytorch_distributed_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|rapids_.*|pytorch/pytorch_checkpoint*|allennlp*'
+          IGNORES='chainermn_.*|keras_.*|pytorch_distributed_.*|tensorboard_.*|tensorflow_.*|tfkeras_.*|fastai*|rapids_.*|pytorch/pytorch_checkpoint*'
         else
-          IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*|pytorch/pytorch_checkpoint*|allennlp*'
+          IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*|pytorch/pytorch_checkpoint*'
         fi
 
         for file in `find examples -name '*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`
-        do
-          echo $file
-          python $file > /dev/null
-          if grep -e '\-\-pruning' $file > /dev/null; then
-            echo $file --pruning
-            python $file --pruning > /dev/null
-          fi
-        done
-      env:
-        OMP_NUM_THREADS: 1
-    - name: Run examples (AllenNLP)
-      run: |
-        pip uninstall torch torchvision torchaudio -y
-        pip install --use-deprecated=legacy-resolver --progress-bar off allennlp
-
-        IGNORES=''
-
-        for file in `find examples -name 'allennlp*.py' -not -name '*_distributed.py' | grep -vE "$IGNORES"`
         do
           echo $file
           python $file > /dev/null
