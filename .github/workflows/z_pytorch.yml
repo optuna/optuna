@@ -59,8 +59,8 @@ jobs:
         OMP_NUM_THREADS: 1
     - name: Run Catalyst examples
       run: |
-        python examples/catalyst/catalyst_simple.py
-        python examples/catalyst/catalyst_simple.py --pruning
+        python examples/pytorch/catalyst_simple.py
+        python examples/pytorch/catalyst_simple.py --pruning
       env:
         OMP_NUM_THREADS: 1
     - name: Run PyTorch Ignite examples
