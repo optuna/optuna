@@ -2,14 +2,13 @@
 Optuna multi-objective optimization example that optimizes multi-layer perceptrons using PyTorch.
 
 In this example, we optimize the neural network architecture as well as the optimizer configuration
-by considering the validation accuracy of hand-written digit recognition (MNIST dataset) and
-the FLOPS of the PyTorch model. As it is too time consuming to use the whole MNIST dataset,
+by considering the validation accuracy of hand-written digit recognition (FashionMNIST dataset) and
+the FLOPS of the PyTorch model. As it is too time consuming to use the whole FashionMNIST dataset,
 we here use a small subset of it.
 
 """
 
 import os
-import urllib
 
 import thop
 import torch
@@ -21,13 +20,6 @@ from torchvision import datasets
 from torchvision import transforms
 
 import optuna
-
-
-# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
-# This is a temporary fix until torchvision v0.9 is released.
-opener = urllib.request.build_opener()
-opener.addheaders = [("User-agent", "Mozilla/5.0")]
-urllib.request.install_opener(opener)
 
 
 DEVICE = torch.device("cpu")
@@ -61,15 +53,17 @@ def define_model(trial):
 
 
 def get_mnist():
-    # Load MNIST dataset.
-    train_dataset = datasets.MNIST(DIR, train=True, download=True, transform=transforms.ToTensor())
+    # Load FashionMNIST dataset.
+    train_dataset = datasets.FashionMNIST(
+        DIR, train=True, download=True, transform=transforms.ToTensor()
+    )
     train_loader = torch.utils.data.DataLoader(
         torch.utils.data.Subset(train_dataset, list(range(N_TRAIN_EXAMPLES))),
         batch_size=BATCHSIZE,
         shuffle=True,
     )
 
-    val_dataset = datasets.MNIST(DIR, train=False, transform=transforms.ToTensor())
+    val_dataset = datasets.FashionMNIST(DIR, train=False, transform=transforms.ToTensor())
     val_loader = torch.utils.data.DataLoader(
         torch.utils.data.Subset(val_dataset, list(range(N_VAL_EXAMPLES))),
         batch_size=BATCHSIZE,
@@ -89,7 +83,7 @@ def objective(trial):
     lr = trial.suggest_float("lr", 1e-5, 1e-1)
     optimizer = getattr(optim, optimizer_name)(model.parameters(), lr=lr)
 
-    # Get the MNIST dataset.
+    # Get the FashionMNIST dataset.
     train_loader, val_loader = get_mnist()
 
     # Training of the model.

@@ -5,7 +5,7 @@ FROM python:${PYTHON_VERSION}
 ENV PIP_OPTIONS "--no-cache-dir --progress-bar off"
 
 RUN apt-get update \
-    && apt-get -y install openmpi-bin libopenmpi-dev \
+    && apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir -U pip \
     && pip install ${PIP_OPTIONS} -U setuptools

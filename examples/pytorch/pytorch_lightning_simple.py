@@ -2,8 +2,8 @@
 Optuna example that optimizes multi-layer perceptrons using PyTorch Lightning.
 
 In this example, we optimize the validation accuracy of hand-written digit recognition using
-PyTorch Lightning, and MNIST. We optimize the neural network architecture. As it is too time
-consuming to use the whole MNIST dataset, we here use a small subset of it.
+PyTorch Lightning, and FashionMNIST. We optimize the neural network architecture. As it is too time
+consuming to use the whole FashionMNIST dataset, we here use a small subset of it.
 
 You can run this example as follows, pruning can be turned on and off with the `--pruning`
 argument.
@@ -14,7 +14,6 @@ import argparse
 import os
 from typing import List
 from typing import Optional
-import urllib
 
 from packaging import version
 import pytorch_lightning as pl
@@ -29,13 +28,6 @@ from torchvision import transforms
 
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
-
-
-# Register a global custom opener to avoid HTTP Error 403: Forbidden when downloading MNIST.
-# This is a temporary fix until torchvision v0.9 is released.
-opener = urllib.request.build_opener()
-opener.addheaders = [("User-agent", "Mozilla/5.0")]
-urllib.request.install_opener(opener)
 
 
 if version.parse(pl.__version__) < version.parse("1.0.2"):
@@ -94,17 +86,17 @@ class LightningNet(pl.LightningModule):
         return optim.Adam(self.model.parameters())
 
 
-class MNISTDataModule(pl.LightningDataModule):
+class FashionMNISTDataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str, batch_size: int):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
 
     def setup(self, stage: Optional[str] = None) -> None:
-        self.mnist_test = datasets.MNIST(
+        self.mnist_test = datasets.FashionMNIST(
             self.data_dir, train=False, download=True, transform=transforms.ToTensor()
         )
-        mnist_full = datasets.MNIST(
+        mnist_full = datasets.FashionMNIST(
             self.data_dir, train=True, download=True, transform=transforms.ToTensor()
         )
         self.mnist_train, self.mnist_val = random_split(mnist_full, [55000, 5000])
@@ -135,7 +127,7 @@ def objective(trial: optuna.trial.Trial) -> float:
     ]
 
     model = LightningNet(dropout, output_dims)
-    datamodule = MNISTDataModule(data_dir=DIR, batch_size=BATCHSIZE)
+    datamodule = FashionMNISTDataModule(data_dir=DIR, batch_size=BATCHSIZE)
 
     trainer = pl.Trainer(
         logger=True,
