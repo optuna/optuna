@@ -1,0 +1,41 @@
+name: z_ray
+
+on:
+  schedule:
+    - cron: '0 15 * * *'
+  pull_request:
+    paths:
+      - 'examples/ray/**'
+      - '.github/workflows/z_ray.yml'
+
+jobs:
+  examples:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
+    if: github.repository == 'optuna/optuna'
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup-python${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install (Python)
+      run: |
+        python -m pip install --upgrade pip
+        pip install --progress-bar off -U setuptools
+        python setup.py sdist
+
+        # Install minimal dependencies and confirm that `import optuna` is successful.
+        pip install --progress-bar off $(ls dist/*.tar.gz)
+        python -c 'import optuna'
+
+        pip install -r examples/ray/requirements.txt
+    - name: Run examples
+      run: |
+        python examples/ray/ray-joblib
+      env:
+        OMP_NUM_THREADS: 1
