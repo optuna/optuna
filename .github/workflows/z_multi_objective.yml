@@ -1,0 +1,46 @@
+name: z_multi_objective
+
+on:
+  schedule:
+    - cron: '0 15 * * *'
+  pull_request:
+    paths:
+      - 'examples/multi_objective/**'
+      - '.github/workflows/z_multi_objective.yml'
+
+jobs:
+  examples:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
+    if: github.repository == 'optuna/optuna'
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup-python${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install (apt)
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install openmpi-bin libopenmpi-dev
+    - name: Install (Python)
+      run: |
+        python -m pip install --upgrade pip
+        pip install --progress-bar off -U setuptools
+        python setup.py sdist
+
+        # Install minimal dependencies and confirm that `import optuna` is successful.
+        pip install --progress-bar off $(ls dist/*.tar.gz)
+        python -c 'import optuna'
+
+        pip install -r examples/multi_objective/requirements.txt
+    - name: Run examples
+      run: |
+        python examples/multi_objective/botorch_simple.py
+        python examples/multi_objective/pytorch_simple.py
+      env:
+        OMP_NUM_THREADS: 1
