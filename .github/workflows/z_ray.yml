@@ -36,6 +36,6 @@ jobs:
         pip install -r examples/ray/requirements.txt
     - name: Run examples
       run: |
-        python examples/ray/ray-joblib
+        python examples/ray/ray-joblib.py
       env:
         OMP_NUM_THREADS: 1
