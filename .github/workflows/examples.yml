@@ -99,12 +99,21 @@ jobs:
         done
       env:
         OMP_NUM_THREADS: 1
-    - name: Run PyTorch checkpoint example
+    - name: Run PyTorch checkpoint example (optimize)
       run: |
         # Unset errexit temporarily since timeout returns exit code 124.
         set +e
         timeout 20 python examples/pytorch/pytorch_checkpoint.py > /dev/null
         set -e
         python examples/pytorch/pytorch_checkpoint.py > /dev/null
+      env:
+        OMP_NUM_THREADS: 1
+    - name: Run PyTorch checkpoint example (ask-and-tell)
+      run: |
+        # Unset errexit temporarily since timeout returns exit code 124.
+        set +e
+        timeout 20 python examples/pytorch/pytorch_ask_and_tell_checkpoint.py > /dev/null
+        set -e
+        python examples/pytorch/pytorch_ask_and_tell_checkpoint.py > /dev/null
       env:
         OMP_NUM_THREADS: 1

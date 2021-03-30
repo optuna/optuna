@@ -25,6 +25,9 @@ from optuna._experimental import experimental
 from optuna._multi_objective import _get_pareto_front_trials
 from optuna._optimize import _check_and_convert_to_values
 from optuna._optimize import _optimize
+from optuna._optimize import create_heartbeat_thread  # NOQA
+from optuna._optimize import join_heartbeat_thread  # NOQA
+from optuna._optimize import run_failed_trial_callback  # NOQA
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
 from optuna.distributions import BaseDistribution

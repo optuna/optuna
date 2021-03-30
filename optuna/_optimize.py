@@ -187,13 +187,7 @@ def _run_trial(
     func: "optuna.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.Trial:
-    if study._storage.is_heartbeat_enabled():
-        failed_trial_ids = study._storage.fail_stale_trials(study._study_id)
-        failed_trial_callback = study._storage.get_failed_trial_callback()
-        if failed_trial_callback is not None:
-            for trial_id in failed_trial_ids:
-                failed_trial = copy.deepcopy(study._storage.get_trial(trial_id))
-                failed_trial_callback(study, failed_trial)
+    run_failed_trial_callback(study)
 
     trial = study.ask()
 
@@ -206,12 +200,10 @@ def _run_trial(
     stop_event: Optional[Event] = None
     thread: Optional[Thread] = None
 
-    if study._storage.is_heartbeat_enabled():
-        stop_event = Event()
-        thread = Thread(
-            target=_record_heartbeat, args=(trial._trial_id, study._storage, stop_event)
-        )
-        thread.start()
+    thread_event = create_heartbeat_thread(study, trial)
+    if thread_event is not None:
+        thread = thread_event[0]
+        stop_event = thread_event[1]
 
     try:
         value_or_values = func(trial)
@@ -233,11 +225,7 @@ def _run_trial(
         else:
             state = TrialState.COMPLETE
 
-    if study._storage.is_heartbeat_enabled():
-        assert stop_event is not None
-        assert thread is not None
-        stop_event.set()
-        thread.join()
+    join_heartbeat_thread(study, thread, stop_event)
 
     # `Study.tell` may raise during trial post-processing.
     try:
@@ -338,3 +326,86 @@ def _record_heartbeat(trial_id: int, storage: storages.BaseStorage, stop_event: 
         if stop_event.is_set():
             return
         time.sleep(heartbeat_interval)
+
+
+def run_failed_trial_callback(study: "optuna.study.Study") -> None:
+    """Execute callback functions for failed trials.
+
+    This is a utility function for the heartbeat feature of :class:`~optuna.storage.RDBStorage`,
+    and it is expected to be used with :meth:`~optuna.study.Study.ask` and
+    :meth:`~optuna.study.Study.tell`. Please call this function before
+    :meth:`~optuna.study.Study.ask` to execute callbacks in :class:`~optuna.storage.RDBStorage`.
+
+    See `the example <https://github.com/optuna/optuna/blob/master/examples/pytorch/
+    pytorch_ask_and_tell_checkpoint.py>`__ for more details.
+
+    Args:
+        study: A :class:`~optuna.study.Study` object.
+    """
+    if study._storage.is_heartbeat_enabled():
+        failed_trial_ids = study._storage.fail_stale_trials(study._study_id)
+        failed_trial_callback = study._storage.get_failed_trial_callback()
+        if failed_trial_callback is not None:
+            for trial_id in failed_trial_ids:
+                failed_trial = copy.deepcopy(study._storage.get_trial(trial_id))
+                failed_trial_callback(study, failed_trial)
+
+
+def create_heartbeat_thread(
+    study: "optuna.study.Study", trial: "optuna.trial.Trial"
+) -> Optional[Tuple[Thread, Event]]:
+    """Create a thread for heartbeat.
+
+    This is a utility function for the heartbeat feature of :class:`~optuna.storage.RDBStorage`,
+    and it is expected to be used with :meth:`~optuna.study.Study.ask` and
+    :meth:`~optuna.study.Study.tell`. To observe heartbeat, please call this function after
+    :meth:`~optuna.study.Study.ask` and call :func:`~optuna.study.join_heartbeat_thread` after
+    the evaluation of your objective function.
+    
+    See `the example <https://github.com/optuna/
+    optuna/blob/master/examples/pytorch/pytorch_ask_and_tell_checkpoint.py>`__ for more details.
+
+    Args:
+        study: A :class:`~optuna.study.Study` object.
+        trial: A :class:`~optuna.trial.Trial` object created by :meth:`~optuna.study.Study.ask`.
+    
+    Returns:
+        A tuple of :class:`~threading.Thread` and :class:`~threading.Event` to be passed to 
+        :func:`~optuna.study.join_heartbeat_thread` if heartbeat is enabled. Otherwise, return
+        :obj:`None`.
+    """
+    if study._storage.is_heartbeat_enabled():
+        stop_event = Event()
+        thread = Thread(
+            target=_record_heartbeat, args=(trial._trial_id, study._storage, stop_event)
+        )
+        thread.start()
+        return (thread, stop_event)
+    return None
+
+
+def join_heartbeat_thread(
+    study: "optuna.study.Study", thread: Optional[Thread], stop_event: Optional[Event]
+) -> None:
+    """Join a thread for heartbeat.
+    
+    This is a utility function for the heartbeat feature of :class:`~optuna.storage.RDBStorage`,
+    and it is expected to be used with :meth:`~optuna.study.Study.ask` and
+    :meth:`~optuna.study.Study.tell`. To observe heartbeat, please call
+    :func:`~optuna.study.create_heartbeat_thread` after :meth:`~optuna.study.Study.ask` 
+    and call this function after the evaluation of your objective function.
+
+    See `the example <https://github.com/optuna/optuna/blob/master/examples/pytorch/
+    pytorch_ask_and_tell_checkpoint.py>`__ for more details.
+
+    Args:
+        study: A :class:`~optuna.study.Study` object.
+        thread: A heartbeat thread created by :func:`~optuna.study.create_heartbeat_thread`.
+        stop_event: A stop event of a heartbeat thread created by
+            :func:`~optuna.study.create_heartbeat_thread`.
+    """
+    if study._storage.is_heartbeat_enabled():
+        assert stop_event is not None
+        assert thread is not None
+        stop_event.set()
+        thread.join()

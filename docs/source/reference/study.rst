@@ -11,8 +11,11 @@ The :mod:`~optuna.study` module implements the :class:`~optuna.study.Study` obje
 
    optuna.study.Study
    optuna.study.create_study
+   optuna.study.create_heartbeat_thread
+   optuna.study.join_heartbeat_thread
    optuna.study.load_study
    optuna.study.delete_study
    optuna.study.get_all_study_summaries
+   optuna.study.run_failed_trial_callback
    optuna.study.StudyDirection
    optuna.study.StudySummary
