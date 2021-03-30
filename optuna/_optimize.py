@@ -361,16 +361,16 @@ def create_heartbeat_thread(
     :meth:`~optuna.study.Study.tell`. To observe heartbeat, please call this function after
     :meth:`~optuna.study.Study.ask` and call :func:`~optuna.study.join_heartbeat_thread` after
     the evaluation of your objective function.
-    
+
     See `the example <https://github.com/optuna/
     optuna/blob/master/examples/pytorch/pytorch_ask_and_tell_checkpoint.py>`__ for more details.
 
     Args:
         study: A :class:`~optuna.study.Study` object.
         trial: A :class:`~optuna.trial.Trial` object created by :meth:`~optuna.study.Study.ask`.
-    
+
     Returns:
-        A tuple of :class:`~threading.Thread` and :class:`~threading.Event` to be passed to 
+        A tuple of :class:`~threading.Thread` and :class:`~threading.Event` to be passed to
         :func:`~optuna.study.join_heartbeat_thread` if heartbeat is enabled. Otherwise, return
         :obj:`None`.
     """
@@ -388,11 +388,11 @@ def join_heartbeat_thread(
     study: "optuna.study.Study", thread: Optional[Thread], stop_event: Optional[Event]
 ) -> None:
     """Join a thread for heartbeat.
-    
+
     This is a utility function for the heartbeat feature of :class:`~optuna.storage.RDBStorage`,
     and it is expected to be used with :meth:`~optuna.study.Study.ask` and
     :meth:`~optuna.study.Study.tell`. To observe heartbeat, please call
-    :func:`~optuna.study.create_heartbeat_thread` after :meth:`~optuna.study.Study.ask` 
+    :func:`~optuna.study.create_heartbeat_thread` after :meth:`~optuna.study.Study.ask`
     and call this function after the evaluation of your objective function.
 
     See `the example <https://github.com/optuna/optuna/blob/master/examples/pytorch/
