@@ -88,7 +88,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mxnet",
             "nbval",
             "scikit-image",
-            "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",  # optuna/visualization/param_importances.py.
+            "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",
+            # optuna/visualization/param_importances.py.
             "xgboost",
             "keras ; python_version<'3.9'",
             "tensorflow>=2.0.0 ; python_version<'3.9'",
@@ -131,7 +132,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "plotly>=4.0.0",
             "pytest",
             "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",
-            "scikit-optimize",
+            "scikit-optimize ; python_version<'3.9'",
             "xgboost",
             "keras ; python_version<'3.9'",
             "tensorflow ; python_version<'3.9'",
@@ -159,7 +160,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
-            "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",  # optuna/visualization/param_importances.py.
+            "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",
+            # optuna/visualization/param_importances.py.
         ],
         "integration": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -172,7 +174,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mxnet",
             "pandas",
             "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",
-            "scikit-optimize",
+            "scikit-optimize ; python_version<'3.9'",
             "xgboost",
             "keras ; python_version<'3.9'",
             "tensorflow ; python_version<'3.9'",
