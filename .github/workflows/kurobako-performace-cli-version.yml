@@ -86,7 +86,7 @@ jobs:
     
     - name: Run Benchmark CLI
       run: |
-        ./kurobako solver --name 'RandomSampler' optuna --sampler ${{ matrix.sampler }} --pruner ${{ matrix.pruner }} > solvers.json
+        ./kurobako solver random | tee solver.json
         ./kurobako problem hpobench ./fcnet_tabular_benchmarks/fcnet_protein_structure_data.hdf5 | tee problem.json
         ./kurobako studies --solvers $(cat solver.json) --problems $(cat problem.json) --budget 80 --seed 42 | ./kurobako run > report.json
         cat report.json | ./kurobako report > report.md
