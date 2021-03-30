@@ -14,14 +14,12 @@ import scipy.special
 from scipy.stats import truncnorm
 
 from optuna import distributions
-from optuna._search_space_group import SearchSpaceGroup
 from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
-from optuna.samplers._search_space import ConditionalSearchSpace
 from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
@@ -168,7 +166,6 @@ class TPESampler(BaseSampler):
         seed: Optional[int] = None,
         *,
         multivariate: bool = False,
-        conditional: bool = False,
         warn_independent_sampling: bool = True,
     ) -> None:
 
@@ -186,11 +183,7 @@ class TPESampler(BaseSampler):
         self._random_sampler = RandomSampler(seed=seed)
 
         self._multivariate = multivariate
-        self._search_space: Union[ConditionalSearchSpace, IntersectionSearchSpace]
-        if conditional:
-            self._search_space = ConditionalSearchSpace(include_pruned=True)
-        else:
-            self._search_space = IntersectionSearchSpace(include_pruned=True)
+        self._search_space = IntersectionSearchSpace(include_pruned=True)
 
         if multivariate:
             warnings.warn(
@@ -199,16 +192,6 @@ class TPESampler(BaseSampler):
                 ExperimentalWarning,
             )
 
-        if conditional:
-            if multivariate:
-                warnings.warn(
-                    "``conditional`` option is an experimental feature."
-                    " The interface can change in the future.",
-                    ExperimentalWarning,
-                )
-            else:
-                raise ValueError("``conditional`` option requires ``multivariate = True``.")
-
     def reseed_rng(self) -> None:
 
         self._rng = np.random.RandomState()
@@ -216,42 +199,22 @@ class TPESampler(BaseSampler):
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
-    ) -> Union[Dict[str, BaseDistribution], SearchSpaceGroup]:
+    ) -> Dict[str, BaseDistribution]:
 
         if not self._multivariate:
             return {}
 
-        def _is_independent_sampling(name: str, distribution: BaseDistribution) -> bool:
+        search_space: Dict[str, BaseDistribution] = {}
+        for name, distribution in self._search_space.calculate(study).items():
             if not isinstance(distribution, _DISTRIBUTION_CLASSES):
                 if self._warn_independent_sampling:
                     complete_trials = study.get_trials(deepcopy=False)
                     if len(complete_trials) >= self._n_startup_trials:
                         self._log_independent_sampling(trial, name)
-                return True
-            return False
+                continue
+            search_space[name] = distribution
 
-        if isinstance(self._search_space, ConditionalSearchSpace):
-            search_space_group = SearchSpaceGroup()
-            for search_space in self._search_space.calculate(study).group:
-                _search_space: Dict[str, BaseDistribution] = {}
-                for name, distribution in search_space.items():
-                    if _is_independent_sampling(name, distribution):
-                        continue
-                    _search_space[name] = distribution
-                search_space_group.add_distributions(_search_space)
-            return search_space_group
-        elif isinstance(self._search_space, IntersectionSearchSpace):
-            search_space = {}
-            for name, distribution in self._search_space.calculate(study).items():
-                if _is_independent_sampling(name, distribution):
-                    continue
-                search_space[name] = distribution
-            return search_space
-        else:
-            assert False, (
-                "Should not reach. The search space should be `IntersectionSearchSpace` or "
-                "`ConditionalSearchSpace`."
-            )
+        return search_space
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
         _logger.warning(

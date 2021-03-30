@@ -3,9 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import Union
 
-from optuna._search_space_group import SearchSpaceGroup
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -47,7 +45,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
-    ) -> Union[Dict[str, BaseDistribution], SearchSpaceGroup]:
+    ) -> Dict[str, BaseDistribution]:
         """Infer the search space that will be used by relative sampling in the target trial.
 
         This method is called right before :func:`~optuna.samplers.BaseSampler.sample_relative`

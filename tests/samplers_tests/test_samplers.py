@@ -32,9 +32,6 @@ parametrize_sampler = pytest.mark.parametrize(
         optuna.samplers.RandomSampler,
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
-        lambda: optuna.samplers.TPESampler(
-            n_startup_trials=0, multivariate=True, conditional=True
-        ),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
         lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
@@ -72,9 +69,9 @@ def test_raise_error_for_samplers_during_multi_objectives(
 
     with pytest.raises(ValueError):
         trial = _create_new_trial(study)
-        search_space = study.sampler.infer_relative_search_space(study, trial)
-        assert isinstance(search_space, dict)
-        study.sampler.sample_relative(study, trial, search_space)
+        study.sampler.sample_relative(
+            study, trial, study.sampler.infer_relative_search_space(study, trial)
+        )
 
 
 @pytest.mark.parametrize("seed", [None, 0, 169208])

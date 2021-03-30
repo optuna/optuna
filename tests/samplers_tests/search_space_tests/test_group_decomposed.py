@@ -7,13 +7,13 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.samplers import ConditionalSearchSpace
+from optuna.samplers._search_space import _GroupDecomposedSearchSpace
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
 
 
-def test_conditional_search_space() -> None:
-    search_space = ConditionalSearchSpace()
+def test_group_decomposed_search_space() -> None:
+    search_space = _GroupDecomposedSearchSpace()
     study = create_study()
 
     # No trial.
@@ -78,7 +78,7 @@ def test_conditional_search_space() -> None:
         {"x": IntUniformDistribution(low=0, high=10)},
     ]
 
-    search_space = ConditionalSearchSpace()
+    search_space = _GroupDecomposedSearchSpace()
     study = create_study()
 
     # Failed or pruned trials are not considered in the calculation of
@@ -99,8 +99,8 @@ def test_conditional_search_space() -> None:
     assert search_space.calculate(study).group == [{"a": UniformDistribution(low=0, high=1)}]
 
 
-def test_conditional_search_space_class_with_different_studies() -> None:
-    search_space = ConditionalSearchSpace()
+def test_group_decomposed_search_space_with_different_studies() -> None:
+    search_space = _GroupDecomposedSearchSpace()
 
     with StorageSupplier("sqlite") as storage:
         study0 = create_study(storage=storage)
@@ -108,5 +108,5 @@ def test_conditional_search_space_class_with_different_studies() -> None:
 
         search_space.calculate(study0)
         with pytest.raises(ValueError):
-            # An `ConditionalSearchSpace` instance isn't supposed to be used for multiple studies.
+            # `_GroupDecomposedSearchSpace` isn't supposed to be used for multiple studies.
             search_space.calculate(study1)

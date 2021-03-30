@@ -2,11 +2,9 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import Union
 import warnings
 
 from optuna._experimental import experimental
-from optuna._search_space_group import SearchSpaceGroup
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
@@ -64,23 +62,16 @@ class PartialFixedSampler(BaseSampler):
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
-    ) -> Union[Dict[str, BaseDistribution], SearchSpaceGroup]:
+    ) -> Dict[str, BaseDistribution]:
 
         search_space = self._base_sampler.infer_relative_search_space(study, trial)
 
-        if isinstance(search_space, SearchSpaceGroup):
-            search_space_group = search_space
-        else:
-            search_space_group = SearchSpaceGroup()
-            search_space_group.add_distributions(search_space)
-
         # Remove fixed params from relative search space to return fixed values.
         for param_name in self._fixed_params.keys():
-            for search_space in search_space_group.group:
-                if param_name in search_space:
-                    del search_space[param_name]
+            if param_name in search_space:
+                del search_space[param_name]
 
-        return search_space_group
+        return search_space
 
     def sample_relative(
         self,

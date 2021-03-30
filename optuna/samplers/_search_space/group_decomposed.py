@@ -6,7 +6,7 @@ from optuna._search_space_group import SearchSpaceGroup
 from optuna.study import BaseStudy
 
 
-class ConditionalSearchSpace(object):
+class _GroupDecomposedSearchSpace(object):
     def __init__(self, include_pruned: bool = False) -> None:
         self._cursor: int = -1
         self._search_space: Optional[SearchSpaceGroup] = None
@@ -20,7 +20,7 @@ class ConditionalSearchSpace(object):
             # Note that the check below is meaningless when `InMemoryStorage` is used
             # because `InMemoryStorage.create_new_study` always returns the same study ID.
             if self._study_id != study._study_id:
-                raise ValueError("`ConditionalSearchSpace` cannot handle multiple studies.")
+                raise ValueError("`_GroupDecomposedSearchSpace` cannot handle multiple studies.")
 
         states_of_interest = [optuna.trial.TrialState.COMPLETE]
 
