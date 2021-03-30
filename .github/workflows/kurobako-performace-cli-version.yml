@@ -115,4 +115,5 @@ jobs:
           echo $file
           cml-publish $file --md >> report.md
         done
+        echo "report is Ready"
         cml-send-github-check report.md
