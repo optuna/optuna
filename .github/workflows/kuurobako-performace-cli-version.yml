@@ -1,0 +1,118 @@
+name: kurobako-cli-only
+
+# TODO: Discuss the trigger configuration
+on:
+  push:
+      branches:
+        - master
+  pull_request: {}
+
+jobs:
+  benchmark:
+
+    runs-on: ubuntu-18.04
+    container: docker://dvcorg/cml-py3:latest
+    timeout-minutes: 30
+
+    strategy:
+      matrix:
+        problem: [hpobench-protein]
+        sampler: [SkoptSampler]
+        pruner: [MedianPruner]
+        python-version: [3.7]
+
+    # if: github.repository == 'optuna/optuna'
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install gnuplot
+      run: |
+        sudo apt update
+        sudo apt -y install gnuplot
+    # - name: Cache Python libraries
+    #   uses: actions/cache@v2
+    #   with:
+    #     path: ~/.cache/pip
+    #     key: ${{ runner.os }}-${{ hashFiles('**/setup.py') }}-v1
+
+    - name: Install optuna & kurobako-py
+      run: |
+        python setup.py install
+        pip install kurobako
+    # - name: Cache kurobako CLI
+    #   id: cache-kurobako
+    #   uses: actions/cache@v2
+    #   with:
+    #     path: ./kurobako
+    #     key: kurobako-0-2-9
+
+    - name: Download kurobako CLI
+      if: steps.cache-kurobako.outputs.cache-hit != 'true'
+      run: |
+        curl -L https://github.com/sile/kurobako/releases/download/0.2.9/kurobako-0.2.9.linux-amd64 -o kurobako
+        chmod +x kurobako
+        ./kurobako -h
+    # - name: Cache hpobench dataset
+    #   id: cache-hpobench-dataset
+    #   uses: actions/cache@v2
+    #   with:
+    #     path: ./fcnet_tabular_benchmarks
+    #     key: hpobench-dataset
+
+    - name: Download hpobench dataset
+      if: steps.cache-hpobench-dataset.outputs.cache-hit != 'true'
+      run: |
+        wget http://ml4aad.org/wp-content/uploads/2019/01/fcnet_tabular_benchmarks.tar.gz
+        tar xf fcnet_tabular_benchmarks.tar.gz
+    # - name: Cache nasbench dataset
+    #   id: cache-nasbench-dataset
+    #   uses: actions/cache@v2
+    #   with:
+    #     path: ./nasbench_full.bin
+    #     key: nasbench-dataset
+
+    # Ref: https://github.com/sile/kurobako/wiki/NASBench
+    # - name: Download nasbench dataset
+    #   if: steps.cache-nasbench-dataset.outputs.cache-hit != 'true'
+    #   run: |
+    #     curl -L $(./kurobako dataset nasbench url) -o nasbench_full.tfrecord
+    #     ./kurobako dataset nasbench convert nasbench_full.tfrecord nasbench_full.bin
+    
+    - name: Run Benchmark
+      run: |
+        ./kurobako solver random | tee solver.json
+        ./kurobako problem hpobench ./fcnet_tabular_benchmarks/fcnet_protein_structure_data.hdf5 | tee problem.json
+        ./kurobako studies --solvers $(cat solver.json) --problems $(cat problem.json) | ./kurobako run > report.json
+        cat report.json | ./kurobako report > report.md
+        cat report.json | ./kurobako plot curve --errorbar
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: benchmark-report
+        path: |
+          report.md
+          images/**/*.png
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: benchmark-report
+        path: |
+          report.md
+          images/**/*.png
+
+    - name: cml_run
+      env:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        for file in `find out -type f -name '*.png'`
+        do
+          echo $file
+          cml-publish $file --md >> report.md
+        done
+        cml-send-github-check report.md
