@@ -1,4 +1,4 @@
-name: kurobako
+name: kurobako-cli-py-script
 
 # TODO: Discuss the trigger configuration
 on:
@@ -21,7 +21,7 @@ jobs:
         pruner: [MedianPruner]
         python-version: [3.7]
 
-    # if: github.repository == 'optuna/optuna'
+    if: github.repository == 'optuna/optuna'
 
     steps:
     - uses: actions/checkout@v2
