@@ -54,7 +54,7 @@ class GroupDecompositionSampler(BaseSampler):
 
 
            def objective(trial):
-               x = trial.suggest_categorial("x", ["A", "B"])
+               x = trial.suggest_categorical("x", ["A", "B"])
                if x == "A":
                    return trial.suggest_float("y", -10, 10)
                else:
