@@ -104,7 +104,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0 ; sys_platform=='darwin'",
             "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
             "torchaudio==0.8.0",
-            # "allennlp>=2.0.0",  # See https://github.com/optuna/optuna/pull/2442.
+            "allennlp>=2.2.0",
             "dask[dataframe]",
             "dask-ml",
             "botorch>=0.4.0 ; python_version>'3.6'",
@@ -145,7 +145,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0 ; sys_platform=='darwin'",
             "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
             "torchaudio==0.8.0",
-            # "allennlp>=2.0.0",  # See https://github.com/optuna/optuna/pull/2442.
+            "allennlp>=2.2.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
@@ -186,7 +186,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0 ; sys_platform=='darwin'",
             "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
             "torchaudio==0.8.0",
-            # "allennlp>=2.0.0",  # See https://github.com/optuna/optuna/pull/2442.
+            "allennlp>=2.2.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
