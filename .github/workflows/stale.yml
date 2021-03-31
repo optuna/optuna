@@ -1,8 +1,8 @@
 name: stale
 
 on:
-  # schedule:
-  #   - cron: '0 23 * * SUN-THU'
+  schedule:
+    - cron: '0 23 * * SUN-THU'
 
 jobs:
   stale:

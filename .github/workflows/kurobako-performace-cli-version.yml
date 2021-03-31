@@ -129,6 +129,7 @@ jobs:
       with:
         report-md-path: 'report.md'
         # public-image-url: ${{ steps.create_plot_image.outputs.image-path }}
-        public-image-url: 'https://example.com/public-image-url.png'
+        # sample url image for debug
+        public-image-url: 'https://ibb.co/fXNzB1Y'
         title: 'Benchmark Report of this PR'
 

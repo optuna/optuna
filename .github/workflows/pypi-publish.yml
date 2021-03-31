@@ -3,11 +3,11 @@ name: Publish distributions to PyPI or TestPyPI
 # TestPyPI upload is scheduled in each weekday.
 # PyPI upload is only activated if the release is published.
 on:
-  # schedule:
-  #   - cron: '0 15 * * *'
-  # release:
-  #   types:
-  #     - published
+  schedule:
+    - cron: '0 15 * * *'
+  release:
+    types:
+      - published
 
 jobs:
   build-n-publish:
