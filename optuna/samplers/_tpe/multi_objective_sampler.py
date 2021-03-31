@@ -22,8 +22,6 @@ from optuna.study import StudyDirection
 
 
 EPS = 1e-12
-_SPLITCACHE_KEY = "motpe:splitcache"
-_WEIGHTS_BELOW_KEY = "motpe:weights_below"
 
 
 def default_gamma(x: int) -> int:
@@ -141,6 +139,8 @@ class MOTPESampler(TPESampler):
         )
         self._n_ehvi_candidates = n_ehvi_candidates
         self._mo_random_sampler = RandomSampler(seed=seed)
+        self._split_cache: Dict[int, Any] = {}
+        self._weights_below: Dict[int, Any] = {}
 
     def reseed_rng(self) -> None:
         self._rng = np.random.RandomState()
@@ -248,8 +248,9 @@ class MOTPESampler(TPESampler):
 
         # Solving HSSP for variables number of times is a waste of time.
         # We cache the result of splitting.
-        if _SPLITCACHE_KEY in trial.system_attrs:
-            split_cache = trial.system_attrs[_SPLITCACHE_KEY]
+        is_cached = trial._trial_id in self._split_cache
+        if is_cached:
+            split_cache = self._split_cache[trial._trial_id]
             indices_below = np.asarray(split_cache["indices_below"])
             weights_below = np.asarray(split_cache["weights_below"])
             indices_above = np.asarray(split_cache["indices_above"])
@@ -291,13 +292,11 @@ class MOTPESampler(TPESampler):
             }
             weights_below = self._calculate_weights_below(lvals, indices_below)
             attrs["weights_below"] = weights_below.tolist()
-            study._storage.set_trial_system_attr(trial._trial_id, _SPLITCACHE_KEY, attrs)
+            self._split_cache[trial._trial_id] = attrs
 
         below = cvals[indices_below]
-        study._storage.set_trial_system_attr(
-            trial._trial_id,
-            _WEIGHTS_BELOW_KEY,
-            [w for w, v in zip(weights_below, below) if v is not None],
+        self._weights_below[trial._trial_id] = np.asarray(
+            [w for w, v in zip(weights_below, below) if v is not None], dtype=float
         )
         below = np.asarray([v for v in below if v is not None], dtype=float)
         above = cvals[indices_above]
@@ -401,11 +400,7 @@ class MOTPESampler(TPESampler):
         size = (self._n_ehvi_candidates,)
 
         weights_below: Callable[[int], np.ndarray]
-
-        weights_below = lambda _: np.asarray(  # NOQA
-            study._storage.get_trial(trial._trial_id).system_attrs[_WEIGHTS_BELOW_KEY],
-            dtype=float,
-        )
+        weights_below = lambda _: self._weights_below[trial._trial_id]  # NOQA
 
         parzen_estimator_parameters_below = _ParzenEstimatorParameters(
             self._parzen_estimator_parameters.consider_prior,
@@ -472,7 +467,7 @@ class MOTPESampler(TPESampler):
         upper = len(choices)
         size = (self._n_ehvi_candidates,)
 
-        weights_below = study._storage.get_trial(trial._trial_id).system_attrs[_WEIGHTS_BELOW_KEY]
+        weights_below = self._weights_below[trial._trial_id]
         counts_below = np.bincount(below, minlength=upper, weights=weights_below)
         weighted_below = counts_below + self._prior_weight
         weighted_below /= weighted_below.sum()
@@ -574,6 +569,10 @@ class MOTPESampler(TPESampler):
         state: optuna.trial.TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
+        if trial._trial_id in self._split_cache:
+            del self._split_cache[trial._trial_id]
+        if trial._trial_id in self._weights_below:
+            del self._weights_below[trial._trial_id]
 
         self._mo_random_sampler.after_trial(study, trial, state, values)
 
