@@ -2,8 +2,8 @@ name: Build Docker Image
 
 on:
   push:
-    branches:
-      - master
+    # branches:
+    #   - master
   release:
     types: [published]
   pull_request:

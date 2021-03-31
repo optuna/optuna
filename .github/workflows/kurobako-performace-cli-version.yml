@@ -118,16 +118,17 @@ jobs:
     #     echo "report is Ready"
     #     cml-send-github-check report.md
 
-    - uses: c-bata/github-actions-kurobako/plot@master
-      with:
-        name: create-plot-benchmark-report
-        id: create_plot_image
-        report-json-path: 'report.json'
-        # error-bar: true
+    # - uses: c-bata/github-actions-kurobako/plot@master
+    #   with:
+    #     name: create-plot-benchmark-report
+    #     id: create_plot_image
+    #     report-json-path: 'report.json'
+    #     # error-bar: true
 
     - uses: c-bata/github-actions-kurobako@master
       with:
-        report-md-path: './kurobako-report.md'
-        public-image-url: ${{ steps.create_plot_image.outputs.image-path }}
+        report-md-path: 'report.md'
+        # public-image-url: ${{ steps.create_plot_image.outputs.image-path }}
+        public-image-url: 'https://example.com/public-image-url.png'
         title: 'Benchmark Report of this PR'
 
