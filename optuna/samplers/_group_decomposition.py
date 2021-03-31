@@ -48,6 +48,9 @@ class GroupDecompositionSampler(BaseSampler):
     Sampling from the joint distribution on the subspace is realized by
     :meth:`~optuna.samplers.BaseSampler.sample_relative` of ``base_sampler`` specified by the user.
 
+    .. note::
+        Currently, this `GroupDecompositionSampler` only supports `TPESampler(multivariate=True)`.
+        The behavior with other samplers is undefined.
 
     Example:
 

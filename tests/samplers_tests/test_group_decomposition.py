@@ -10,7 +10,6 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
-from optuna.samplers import CmaEsSampler
 from optuna.samplers import GroupDecompositionSampler
 from optuna.samplers import TPESampler
 
@@ -20,7 +19,6 @@ from optuna.samplers import TPESampler
     [
         lambda: TPESampler(n_startup_trials=0),
         lambda: TPESampler(n_startup_trials=0, multivariate=True),
-        lambda: CmaEsSampler(n_startup_trials=0),
     ],
 )
 def test_group_decomposition_sampler(base_sampler_class: Callable[[], BaseSampler]) -> None:
