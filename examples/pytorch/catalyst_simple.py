@@ -8,14 +8,18 @@ You can run this example as follows, pruning can be turned on and off with the `
 argument.
     $ python catalyst_simple.py [--pruning]
 
+[Why OptunaPruningCallback]
+In this example, we use Catalyst's `OptunaPruningCallback` instead of `CatalystPruningCallback`
+since `CatalystPruningCallback` is deprecated and a thin wrapper of `OptunaPruningCallback`.
 
-See also: https://catalyst-team.github.io/catalyst/api/callbacks.html?highlight=optuna#catalyst.callbacks.optuna.OptunaPruningCallback  # NOQA
-"""
+See also: https://catalyst-team.github.io/catalyst/api/callbacks.html?highlight=optuna#catalyst.callbacks.optuna.OptunaPruningCallback
+"""  # NOQA
 
 import argparse
 import os
 
 from catalyst.dl import AccuracyCallback
+from catalyst.dl import OptunaPruningCallback
 from catalyst.dl import SupervisedRunner
 import torch
 from torch import nn
@@ -24,7 +28,6 @@ from torchvision import datasets
 from torchvision import transforms
 
 import optuna
-from optuna.integration import CatalystPruningCallback
 
 
 CLASSES = 10
@@ -83,8 +86,10 @@ def objective(trial):
         num_epochs=num_epochs,
         verbose=True,
         callbacks={
+            # NOTE(crcrpar): Consult above [Why OptunaPruningCallback] for the use of
+            # Catalys's callback for Optuna, not Optuna's one for Catalyst.
             # top-1 accuracy as metric for pruning
-            "optuna": CatalystPruningCallback(
+            "optuna": OptunaPruningCallback(
                 loader_key="valid",
                 metric_key="accuracy01",
                 minimize=False,
