@@ -63,7 +63,7 @@ jobs:
       env:
         OMP_NUM_THREADS: 1
       run: |
-        mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+        mpirun -n 2 -- pytest --cov=optuna --cov-report=xml --cov-append tests/integration_tests/test_chainermn.py
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
