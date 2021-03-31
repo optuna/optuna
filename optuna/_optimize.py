@@ -30,6 +30,7 @@ from optuna import logging
 from optuna import progress_bar as pbar_module
 from optuna import storages
 from optuna import trial as trial_module
+from optuna._experimental import experimental
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -328,6 +329,7 @@ def _record_heartbeat(trial_id: int, storage: storages.BaseStorage, stop_event: 
         time.sleep(heartbeat_interval)
 
 
+@experimental("2.7.0")
 def run_failed_trial_callback(study: "optuna.study.Study") -> None:
     """Execute callback functions for failed trials.
 
@@ -351,6 +353,7 @@ def run_failed_trial_callback(study: "optuna.study.Study") -> None:
                 failed_trial_callback(study, failed_trial)
 
 
+@experimental("2.7.0")
 def create_heartbeat_thread(
     study: "optuna.study.Study", trial: "optuna.trial.Trial"
 ) -> Optional[Tuple[Thread, Event]]:
@@ -384,6 +387,7 @@ def create_heartbeat_thread(
     return None
 
 
+@experimental("2.7.0")
 def join_heartbeat_thread(
     study: "optuna.study.Study", thread: Optional[Thread], stop_event: Optional[Event]
 ) -> None:
