@@ -106,14 +106,28 @@ jobs:
           report.md
           images/**/*.png
 
-    - name: cml_run
-      env:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        for file in `find images -name '*.png'`
-        do
-          echo $file
-          cml-publish $file --md >> report.md
-        done
-        echo "report is Ready"
-        cml-send-github-check report.md
+    # - name: cml_run
+    #   env:
+    #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+    #   run: |
+    #     for file in `find images -name '*.png'`
+    #     do
+    #       echo $file
+    #       cml-publish $file --md >> report.md
+    #     done
+    #     echo "report is Ready"
+    #     cml-send-github-check report.md
+
+    - uses: c-bata/github-actions-kurobako/plot@master
+      with:
+        name: create-plot-benchmark-report
+        id: create_plot_image
+        report-json-path: 'report.json'
+        # error-bar: true
+
+    - uses: c-bata/github-actions-kurobako@master
+      with:
+        report-md-path: './kurobako-report.md'
+        public-image-url: ${{ steps.create_plot_image.outputs.image-path }}
+        title: 'Benchmark Report of this PR'
+
