@@ -5,8 +5,8 @@ WORKDIR /usr/src/
 
 RUN pip install --no-cache-dir optuna psycopg2-binary mlflow \
     && pip install --no-cache-dir \
-        torch==1.5.1+cpu \
-        torchvision==0.6.1+cpu \
+        torch==1.8.0+cpu \
+        torchvision==0.9.0+cpu \
         -f https://download.pytorch.org/whl/torch_stable.html \
     && pip install pytorch-lightning
 
