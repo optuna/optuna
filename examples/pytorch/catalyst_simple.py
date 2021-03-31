@@ -7,6 +7,9 @@ Catalyst, and FashionMNIST. We optimize the neural network architecture.
 You can run this example as follows, pruning can be turned on and off with the `--pruning`
 argument.
     $ python catalyst_simple.py [--pruning]
+
+
+See also: https://catalyst-team.github.io/catalyst/api/callbacks.html?highlight=optuna#catalyst.callbacks.optuna.OptunaPruningCallback  # NOQA
 """
 
 import argparse
@@ -16,7 +19,6 @@ from catalyst.dl import AccuracyCallback
 from catalyst.dl import SupervisedRunner
 import torch
 from torch import nn
-from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision import transforms
@@ -28,38 +30,21 @@ from optuna.integration import CatalystPruningCallback
 CLASSES = 10
 
 
-class Net(nn.Module):
-    def __init__(self, trial):
-        super().__init__()
-        self.layers = []
-        self.dropouts = []
+def define_model(trial: optuna.trial.Trial) -> nn.Sequential:
+    n_layers = trial.suggest_int("n_layers", 1, 3)
+    dropout = trial.suggest_float("dropout", 0.2, 0.5)
+    input_dim = 28 * 28
+    layers = [nn.Flatten()]
+    for i in range(n_layers):
+        output_dim = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
+        layers.append(nn.Linear(input_dim, output_dim))
+        layers.append(nn.ReLU())
+        layers.append(nn.Dropout(dropout))
 
-        # We optimize the number of layers, hidden units in each layer and dropouts.
-        n_layers = trial.suggest_int("n_layers", 1, 3)
-        dropout = trial.suggest_float("dropout", 0.2, 0.5)
-        input_dim = 28 * 28
-        for i in range(n_layers):
-            output_dim = trial.suggest_int("n_units_l{}".format(i), 4, 128, log=True)
-            self.layers.append(nn.Linear(input_dim, output_dim))
-            self.dropouts.append(nn.Dropout(dropout))
-            input_dim = output_dim
+        input_dim = output_dim
+    layers.append(nn.Linear(input_dim, CLASSES))
 
-        self.layers.append(nn.Linear(input_dim, CLASSES))
-
-        # Assigning the layers as class variables (PyTorch requirement).
-        for idx, layer in enumerate(self.layers):
-            setattr(self, "fc{}".format(idx), layer)
-
-        # Assigning the dropouts as class variables (PyTorch requirement).
-        for idx, dropout in enumerate(self.dropouts):
-            setattr(self, "drop{}".format(idx), dropout)
-
-    def forward(self, data):
-        data = data.view(-1, 28 * 28)
-        for layer, dropout in zip(self.layers, self.dropouts):
-            data = F.relu(layer(data))
-            data = dropout(data)
-        return F.log_softmax(self.layers[-1](data), dim=1)
+    return nn.Sequential(*layers)
 
 
 loaders = {
@@ -83,7 +68,7 @@ def objective(trial):
     logdir = "./logdir"
     num_epochs = 10
 
-    model = Net(trial)
+    model = define_model(trial)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.02)
     criterion = torch.nn.CrossEntropyLoss()
 
@@ -97,15 +82,23 @@ def objective(trial):
         logdir=logdir,
         num_epochs=num_epochs,
         verbose=True,
-        callbacks=[
-            AccuracyCallback(),
-            CatalystPruningCallback(
-                trial, metric="accuracy01"
-            ),  # top-1 accuracy as metric for pruning
-        ],
+        callbacks={
+            # top-1 accuracy as metric for pruning
+            "optuna": CatalystPruningCallback(
+                loader_key="valid",
+                metric_key="accuracy01",
+                minimize=False,
+                trial=trial,
+            ),
+            "accuracy": AccuracyCallback(
+                input_key="logits",
+                target_key="targets",
+                num_classes=10,
+            ),
+        },
     )
 
-    return runner.state.valid_metrics["accuracy01"]
+    return runner.callbacks["optuna"].best_score
 
 
 if __name__ == "__main__":
