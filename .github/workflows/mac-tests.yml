@@ -1,0 +1,108 @@
+# Run tests and integration tests on Mac, which are triggered by each master push.
+# Currently, Python3.7 is only used as an environment.
+# This is mainly for the sake of speed.
+name: mac-tests
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  tests:
+    runs-on: macos-latest
+
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Python3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+
+    - name: Setup cache
+      uses: actions/cache@v2
+      env:
+        cache-name: test
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-3.7-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-3.7-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+
+    - name: Install
+      run: |
+        python -m pip install --upgrade pip
+        pip install --progress-bar off -U setuptools
+        # Install minimal dependencies and confirm that `import optuna` is successful.
+        pip install --progress-bar off .
+        python -c 'import optuna'
+        optuna --version
+        pip install --progress-bar off .[tests]
+        pip install --progress-bar off .[optional]
+        # Required for samplers_tests/test_samplers.py.
+        # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional depenendencies and remove these installs.
+        pip install scikit-optimize
+        pip install cma
+
+    - name: Tests
+      run: |
+        pytest tests --ignore tests/integration_tests
+
+  tests-integration:
+    runs-on: macos-latest
+
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Python3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+
+    - name: Setup cache
+      uses: actions/cache@v2
+      env:
+        cache-name: test-integration
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-3.7-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-3.7-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+
+    - name: Setup mac environment
+      run: |
+        brew install libomp
+        brew install open-mpi
+        brew install openblas
+
+    - name: Install
+      run: |
+        python -m pip install --upgrade pip
+        pip install --progress-bar off -U setuptools
+
+        # Install minimal dependencies and confirm that `import optuna` is successful.
+        pip install --progress-bar off .
+        python -c 'import optuna'
+        optuna --version
+
+        pip install --progress-bar off .[tests]
+        pip install --progress-bar off .[integration]
+
+    - name: Tests
+      run: |
+        # pytest cannot collect allennlp tests with allennlp==1.0.0.
+        pytest -s tests/integration_tests
+
+    - name: Tests MPI
+      run: |
+        mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+        mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
+      env:
+        OMP_NUM_THREADS: 1

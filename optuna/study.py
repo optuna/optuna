@@ -1009,10 +1009,10 @@ def create_study(
     sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
     study_name: Optional[str] = None,
-    direction: Optional[str] = None,
+    direction: Optional[Union[str, StudyDirection]] = None,
     load_if_exists: bool = False,
     *,
-    directions: Optional[Sequence[str]] = None,
+    directions: Optional[Sequence[Union[str, StudyDirection]]] = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
 
@@ -1062,7 +1062,8 @@ def create_study(
             automatically.
         direction:
             Direction of optimization. Set ``minimize`` for minimization and ``maximize`` for
-            maximization.
+            maximization. You can also pass the corresponding :class:`~optuna.study.StudyDirection`
+            object.
 
             .. note::
                 If none of `direction` and `directions` are specified, the direction of the study
@@ -1104,11 +1105,17 @@ def create_study(
 
     if len(directions) < 1:
         raise ValueError("The number of objectives must be greater than 0.")
-    elif any(d != "minimize" and d != "maximize" for d in directions):
-        raise ValueError("Please set either 'minimize' or 'maximize' to direction.")
+    elif any(
+        d not in ["minimize", "maximize", StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
+        for d in directions
+    ):
+        raise ValueError(
+            "Please set either 'minimize' or 'maximize' to direction. You can also set the "
+            "corresponding `StudyDirection` member."
+        )
 
     direction_objects = [
-        StudyDirection.MINIMIZE if d == "minimize" else StudyDirection.MAXIMIZE for d in directions
+        d if isinstance(d, StudyDirection) else StudyDirection[d.upper()] for d in directions
     ]
 
     storage = storages.get_storage(storage)
