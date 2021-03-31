@@ -108,7 +108,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "dask[dataframe]",
             "dask-ml",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
+            "fastai<2.3",
             "optax",
             "dm-haiku",
             "hydra-optuna-sweeper",
@@ -147,7 +147,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchaudio==0.8.0",
             "allennlp>=2.2.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
+            "fastai<2.3",
         ],
         "tests": [
             "fakeredis",
@@ -188,7 +188,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchaudio==0.8.0",
             "allennlp>=2.2.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
+            "fastai<2.3",
         ],
     }
 
