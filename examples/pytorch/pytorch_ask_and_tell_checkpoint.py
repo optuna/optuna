@@ -9,14 +9,13 @@ we here use a small subset of it.
 Even if the process where the trial is running is killed for some reason, you can restart from
 previous saved checkpoint using heartbeat.
 
-    $ timeout 20 python examples/pytorch/pytorch_checkpoint.py
-    $ python examples/pytorch/pytorch_checkpoint.py
+    $ timeout 20 python examples/pytorch/pytorch_ask_and_tell_checkpoint.py
+    $ python examples/pytorch/pytorch_ask_and_tell_checkpoint.py
 """
 
 import copy
 import datetime
 import os
-from threading import TIMEOUT_MAX
 
 import torch
 import torch.nn as nn
