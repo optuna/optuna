@@ -4,9 +4,9 @@ Optuna example that optimizes multi-layer perceptrons using PyTorch with checkpo
 In this example, we optimize the validation accuracy of hand-written digit recognition using
 PyTorch and FashionMNIST. We optimize the neural network architecture as well as the optimizer
 configuration. As it is too time consuming to use the whole FashionMNIST dataset,
-we here use a small subset of it.
+we use a small subset.
 
-Even if the process where the trial is running is killed for some reason, you can restart from
+Even if the process where the trial is running is killed for some reason, it can be restarted from
 previous saved checkpoint using heartbeat.
 
     $ timeout 20 python examples/pytorch/pytorch_ask_and_tell_checkpoint.py

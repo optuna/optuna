@@ -361,7 +361,7 @@ def create_heartbeat_thread(
 
     This is a utility function for the heartbeat feature of :class:`~optuna.storage.RDBStorage`,
     and it is expected to be used with :meth:`~optuna.study.Study.ask` and
-    :meth:`~optuna.study.Study.tell`. To observe heartbeat, please call this function after
+    :meth:`~optuna.study.Study.tell`. To observe the heartbeat, please call this function after
     :meth:`~optuna.study.Study.ask` and call :func:`~optuna.study.join_heartbeat_thread` after
     the evaluation of your objective function.
 
@@ -395,7 +395,7 @@ def join_heartbeat_thread(
 
     This is a utility function for the heartbeat feature of :class:`~optuna.storage.RDBStorage`,
     and it is expected to be used with :meth:`~optuna.study.Study.ask` and
-    :meth:`~optuna.study.Study.tell`. To observe heartbeat, please call
+    :meth:`~optuna.study.Study.tell`. To observe the heartbeat, please call
     :func:`~optuna.study.create_heartbeat_thread` after :meth:`~optuna.study.Study.ask`
     and call this function after the evaluation of your objective function.
 
