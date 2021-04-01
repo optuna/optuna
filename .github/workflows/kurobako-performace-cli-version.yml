@@ -126,6 +126,8 @@ jobs:
     #     # error-bar: true
 
     - uses: c-bata/github-actions-kurobako@master
+      env:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
       with:
         report-md-path: 'report.md'
         # public-image-url: ${{ steps.create_plot_image.outputs.image-path }}
