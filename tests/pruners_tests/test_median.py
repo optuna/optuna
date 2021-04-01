@@ -137,3 +137,30 @@ def test_median_pruner_interval_steps(
         if pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id)):
             pruned.append(i)
     assert pruned == expected_prune_steps
+
+
+def test_median_pruner_n_min_trials() -> None:
+    pruner = optuna.pruners.MedianPruner(2, 0, 1, 2)
+    study = optuna.study.create_study()
+
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial.report(4, 1)
+    trial.report(2, 2)
+    study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
+
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial.report(3, 1)
+    study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
+
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial.report(4, 1)
+    trial.report(3, 2)
+    # A pruner is not activated before the values at step 2 observed n_min_trials times.
+    assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
+    study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
+
+    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial.report(4, 1)
+    trial.report(3, 2)
+    # A pruner is activated after the values at step 2 observed n_min_trials times.
+    assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
