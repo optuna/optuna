@@ -398,7 +398,14 @@ class OptunaSearchCV(BaseEstimator):
             estimator supports ``partial_fit``.
 
         n_jobs:
-            Number of parallel jobs. :obj:`-1` means using all processors.
+            Number of :obj:`threading` based parallel jobs. :obj:`-1` means
+            using the number is set to CPU count.
+
+                .. note::
+                    ``n_jobs`` allows parallelization using :obj:`threading` and may suffer from
+                    `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`_.
+                    It is recommended to use :ref:`process-based parallelization<distributed>`
+                    if ``func`` is CPU bound.
 
         n_trials:
             Number of trials. If :obj:`None`, there is no limitation on the
