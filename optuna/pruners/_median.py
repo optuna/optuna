@@ -60,6 +60,10 @@ class MedianPruner(PercentilePruner):
             Interval in number of steps between the pruning checks, offset by the warmup steps.
             If no value has been reported at the time of a pruning check, that particular check
             will be postponed until a value is reported.
+        n_min_trials:
+            Minimum number of trials to perform pruning at each step. If the number of reported
+            intermediate values in a trial is less than ``n_min_trials`` at a step,
+            the trial is not pruned at this step.
     """
 
     def __init__(
