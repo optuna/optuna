@@ -354,6 +354,13 @@ class Study(BaseStudy):
                     It is recommended to use :ref:`process-based parallelization<distributed>`
                     if ``func`` is CPU bound.
 
+                .. warning::
+                    Deprecated in v2.7.0. This feature will be removed in the future.
+                    It is recommended to use :ref:`process-based parallelization<distributed>`.
+                    The removal of this feature is currently scheduled for v4.0.0, but this
+                    schedule is subject to change.
+                    See https://github.com/optuna/optuna/releases/tag/v2.7.0.
+
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
@@ -382,6 +389,14 @@ class Study(BaseStudy):
             RuntimeError:
                 If nested invocation of this method occurs.
         """
+        if n_jobs != 1:
+            warnings.warn(
+                "`n_jobs` argument has been deprecated in v2.7.0. "
+                "This feature will be removed in v4.0.0. "
+                "See https://github.com/optuna/optuna/releases/tag/v2.7.0.",
+                FutureWarning,
+            )
+
         _optimize(
             study=self,
             func=func,
