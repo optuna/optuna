@@ -93,7 +93,9 @@ def plot_param_importances(
             used for single-objective optimization, the objective values are plotted.
 
             .. note::
-                Specify this argument if ``study`` is being used for multi-objective optimization.
+                Specify this argument if ``study`` is being used for multi-objective
+                optimization. For example, to get the hyperparameter importance of the first
+                objective, use `target=lambda t: t.values[0]` for the target parameter.
         target_name:
             Target's name to display on the axis label.
 
