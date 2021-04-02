@@ -210,7 +210,7 @@ class _Dashboard(_BaseCommand):
 
     @deprecated(
         "2.7.0",
-        "4.0.0",
+        "3.0.0",
         name="dashboard",
         text="Please use optuna-dashboard (https://github.com/optuna/optuna-dashboard) instead.",
     )
