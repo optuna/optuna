@@ -80,7 +80,8 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         if target is None and study._is_multi_objective():
             raise ValueError(
                 "If the `study` is being used for multi-objective optimization, "
-                "please specify the `target`."
+                "please specify the `target`. For example, use "
+                "`target=lambda t: t.values[0]` for the first objective value."
             )
 
         distributions = _get_distributions(study, params)
