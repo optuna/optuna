@@ -101,17 +101,18 @@ def deprecated(
             # TODO(mamu): Annotate this correctly.
             @functools.wraps(func)
             def new_func(*args: Any, **kwargs: Any) -> Any:
-                warnings.warn(
+                message = (
                     "{0} has been deprecated in v{1}. "
                     "This feature will be removed in v{2}. "
                     "See https://github.com/optuna/optuna/releases/tag/v{1}.".format(
                         name if name is not None else func.__name__,
                         deprecated_version,
                         removed_version,
-                    ),
-                    FutureWarning,
-                    stacklevel=2,
+                    )
                 )
+                if text is not None:
+                    message += " " + text
+                warnings.warn(message, FutureWarning, stacklevel=2)
 
                 return func(*args, **kwargs)  # type: ignore
 
@@ -126,14 +127,19 @@ def deprecated(
 
             @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
-                warnings.warn(
+                message = (
                     "{0} has been deprecated in v{1}. "
                     "This feature will be removed in v{2}. "
                     "See https://github.com/optuna/optuna/releases/tag/v{1}.".format(
                         name if name is not None else cls.__name__,
                         deprecated_version,
                         removed_version,
-                    ),
+                    )
+                )
+                if text is not None:
+                    message += " " + text
+                warnings.warn(
+                    message,
                     FutureWarning,
                     stacklevel=2,
                 )
