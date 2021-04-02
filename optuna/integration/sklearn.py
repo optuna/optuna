@@ -407,6 +407,13 @@ class OptunaSearchCV(BaseEstimator):
                     It is recommended to use :ref:`process-based parallelization<distributed>`
                     if ``func`` is CPU bound.
 
+                .. warning::
+                    Deprecated in v2.7.0. This feature will be removed in the future.
+                    It is recommended to use :ref:`process-based parallelization<distributed>`.
+                    The removal of this feature is currently scheduled for v4.0.0, but this
+                    schedule is subject to change.
+                    See https://github.com/optuna/optuna/releases/tag/v2.7.0.
+
         n_trials:
             Number of trials. If :obj:`None`, there is no limitation on the
             number of trials. If :obj:`timeout` is also set to :obj:`None`,

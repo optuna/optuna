@@ -110,6 +110,13 @@ def check_study(study: Study) -> None:
         check_frozen_trial(study.best_trial)
 
 
+def test_optimize_n_jobs_warning() -> None:
+
+    study = create_study()
+    with pytest.warns(FutureWarning):
+        study.optimize(func, n_trials=1, n_jobs=2)
+
+
 def test_optimize_trivial_in_memory_new() -> None:
 
     study = create_study()
