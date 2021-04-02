@@ -119,14 +119,13 @@ def test_deprecation_decorator_name() -> None:
     assert name in record.list[0].message.args[0]
 
 
-@pytest.mark.parametrize("name", [None, "test_func"])
 @pytest.mark.parametrize("text", [None, "", "test", "test" * 100])
-def test_deprecation_text_specified(name: Optional[str], text: Optional[str]) -> None:
+def test_deprecation_text_specified(text: Optional[str]) -> None:
     def _func() -> int:
 
         return 10
 
-    decorator_deprecation = _deprecated.deprecated("1.1.0", "3.0.0", name=name, text=text)
+    decorator_deprecation = _deprecated.deprecated("1.1.0", "3.0.0", text=text)
     decorated_func = decorator_deprecation(_func)
     expected_func_doc = _deprecated._DEPRECATION_NOTE_TEMPLATE.format(d_ver="1.1.0", r_ver="3.0.0")
     if text is None:
@@ -142,21 +141,20 @@ def test_deprecation_text_specified(name: Optional[str], text: Optional[str]) ->
         decorated_func()
     assert isinstance(record.list[0].message, Warning)
     expected_warning_message = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
-        name=(name if name is not None else "_func"), d_ver="1.1.0", r_ver="3.0.0"
+        name="_func", d_ver="1.1.0", r_ver="3.0.0"
     )
     if text is not None:
         expected_warning_message += " " + text
     assert record.list[0].message.args[0] == expected_warning_message
 
 
-@pytest.mark.parametrize("name", [None, "test_class"])
 @pytest.mark.parametrize("text", [None, "", "test", "test" * 100])
-def test_deprecation_class_text_specified(name: Optional[str], text: Optional[str]) -> None:
+def test_deprecation_class_text_specified(text: Optional[str]) -> None:
     class _Class(object):
         def __init__(self, a: Any, b: Any, c: Any) -> None:
             pass
 
-    decorator_deprecation = _deprecated.deprecated("1.1.0", "3.0.0", name=name, text=text)
+    decorator_deprecation = _deprecated.deprecated("1.1.0", "3.0.0", text=text)
     decorated_class = decorator_deprecation(_Class)
     expected_class_doc = _deprecated._DEPRECATION_NOTE_TEMPLATE.format(
         d_ver="1.1.0", r_ver="3.0.0"
@@ -174,7 +172,7 @@ def test_deprecation_class_text_specified(name: Optional[str], text: Optional[st
         decorated_class(None, None, None)
     assert isinstance(record.list[0].message, Warning)
     expected_warning_message = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
-        name=(name if name is not None else "_Class"), d_ver="1.1.0", r_ver="3.0.0"
+        name="_Class", d_ver="1.1.0", r_ver="3.0.0"
     )
     if text is not None:
         expected_warning_message += " " + text
