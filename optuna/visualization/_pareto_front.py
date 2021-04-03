@@ -138,7 +138,15 @@ def _get_pareto_front_2d(
             text=[_make_hovertext(t) for t in trials[len(study.best_trials) :]],
             mode="markers",
             hovertemplate="%{text}<extra>Trial</extra>",
-            name="Trial",
+            marker={
+                "line": {"width": 0.5, "color": "Grey"},
+                "color": [t.number for t in trials[len(study.best_trials) :]],
+                "colorscale": "Blues",
+                "colorbar": {
+                    "title": "#Trials",
+                },
+            },
+            showlegend=False,
         ),
         go.Scatter(
             x=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
@@ -146,7 +154,17 @@ def _get_pareto_front_2d(
             text=[_make_hovertext(t) for t in trials[: len(study.best_trials)]],
             mode="markers",
             hovertemplate="%{text}<extra>Best Trial</extra>",
-            name="Best Trial",
+            marker={
+                "line": {"width": 0.5, "color": "Grey"},
+                "color": [t.number for t in trials[: len(study.best_trials)]],
+                "colorscale": "Reds",
+                "colorbar": {
+                    "title": "#Best trials",
+                    "x": 1.1,  # Offset the colorbar position with a fixed width `xpad`.
+                    "xpad": 40,
+                },
+            },
+            showlegend=False,
         ),
     ]
     layout = go.Layout(
@@ -202,18 +220,36 @@ def _get_pareto_front_3d(
             y=[t.values[axis_order[1]] for t in trials[len(study.best_trials) :]],
             z=[t.values[axis_order[2]] for t in trials[len(study.best_trials) :]],
             text=[_make_hovertext(t) for t in trials[len(study.best_trials) :]],
-            mode="markers",
             hovertemplate="%{text}<extra>Trial</extra>",
-            name="Trial",
+            mode="markers",
+            marker={
+                "line": {"width": 0.5, "color": "Grey"},
+                "color": [t.number for t in trials[len(study.best_trials) :]],
+                "colorscale": "Blues",
+                "colorbar": {
+                    "title": "#Trials",
+                },
+            },
+            showlegend=False,
         ),
         go.Scatter3d(
             x=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
             y=[t.values[axis_order[1]] for t in trials[: len(study.best_trials)]],
             z=[t.values[axis_order[2]] for t in trials[: len(study.best_trials)]],
             text=[_make_hovertext(t) for t in trials[: len(study.best_trials)]],
-            mode="markers",
             hovertemplate="%{text}<extra>Best Trial</extra>",
-            name="Best Trial",
+            mode="markers",
+            marker={
+                "line": {"width": 0.5, "color": "Grey"},
+                "color": [t.number for t in trials[: len(study.best_trials)]],
+                "colorscale": "Reds",
+                "colorbar": {
+                    "title": "#Best trials",
+                    "x": 1.1,  # Offset the colorbar position with a fixed width `xpad`.
+                    "xpad": 40,
+                },
+            },
+            showlegend=False,
         ),
     ]
     layout = go.Layout(
