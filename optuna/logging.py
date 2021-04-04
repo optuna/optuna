@@ -203,7 +203,7 @@ def disable_propagation() -> None:
 
             study = optuna.create_study()
 
-            ogger.info("Logs from first optimize call")  # The logs are saved in the logs file.
+            logger.info("Logs from first optimize call")  # The logs are saved in the logs file.
             study.optimize(objective, n_trials=10)
 
             optuna.logging.disable_propagation()  # Stop propogating logs to the root logger.
