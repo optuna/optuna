@@ -160,7 +160,7 @@ def _get_pareto_front_2d(
                 "colorscale": "Reds",
                 "colorbar": {
                     "title": "#Best trials",
-                    "x": 1.1,  # Offset the colorbar position with a fixed width `xpad`.
+                    "x": 1.1 if include_dominated_trials else 1,
                     "xpad": 40,
                 },
             },
@@ -245,7 +245,7 @@ def _get_pareto_front_3d(
                 "colorscale": "Reds",
                 "colorbar": {
                     "title": "#Best trials",
-                    "x": 1.1,  # Offset the colorbar position with a fixed width `xpad`.
+                    "x": 1.1 if include_dominated_trials else 1,
                     "xpad": 40,
                 },
             },
