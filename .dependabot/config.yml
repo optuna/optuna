@@ -1,0 +1,10 @@
+# This is an example with only required properties:
+version: 1
+update_configs:
+  - package_manager: "python"
+    directory: "/"
+    update_schedule: "live"
+  # Keep Dockerfile up to date, batching pull requests weekly
+  - package_manager: "docker"
+    directory: "/"
+    update_schedule: "weekly"
