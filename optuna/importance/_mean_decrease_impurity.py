@@ -64,7 +64,7 @@ class MeanDecreaseImpurityImportanceEvaluator(BaseImportanceEvaluator):
             raise ValueError(
                 "If the `study` is being used for multi-objective optimization, "
                 "please specify the `target`. For example, use "
-                "`target=lambda t: t.values[0]` for the first objective value."
+                "``target=lambda t: t.values[0]`` for the first objective value."
             )
 
         distributions = _get_distributions(study, params)
