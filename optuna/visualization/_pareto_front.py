@@ -104,6 +104,7 @@ def _get_pareto_front_2d(
         raise ValueError("The length of `target_names` is supposed to be 2.")
 
     trials = study.best_trials
+    n_best_trials = len(trials)
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
@@ -133,14 +134,14 @@ def _get_pareto_front_2d(
 
     data = [
         go.Scatter(
-            x=[t.values[axis_order[0]] for t in trials[len(study.best_trials) :]],
-            y=[t.values[axis_order[1]] for t in trials[len(study.best_trials) :]],
-            text=[_make_hovertext(t) for t in trials[len(study.best_trials) :]],
+            x=[t.values[axis_order[0]] for t in trials[n_best_trials:]],
+            y=[t.values[axis_order[1]] for t in trials[n_best_trials:]],
+            text=[_make_hovertext(t) for t in trials[n_best_trials:]],
             mode="markers",
             hovertemplate="%{text}<extra>Trial</extra>",
             marker={
                 "line": {"width": 0.5, "color": "Grey"},
-                "color": [t.number for t in trials[len(study.best_trials) :]],
+                "color": [t.number for t in trials[n_best_trials:]],
                 "colorscale": "Blues",
                 "colorbar": {
                     "title": "#Trials",
@@ -149,14 +150,14 @@ def _get_pareto_front_2d(
             showlegend=False,
         ),
         go.Scatter(
-            x=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
-            y=[t.values[axis_order[1]] for t in trials[: len(study.best_trials)]],
-            text=[_make_hovertext(t) for t in trials[: len(study.best_trials)]],
+            x=[t.values[axis_order[0]] for t in trials[:n_best_trials]],
+            y=[t.values[axis_order[1]] for t in trials[:n_best_trials]],
+            text=[_make_hovertext(t) for t in trials[:n_best_trials]],
             mode="markers",
             hovertemplate="%{text}<extra>Best Trial</extra>",
             marker={
                 "line": {"width": 0.5, "color": "Grey"},
-                "color": [t.number for t in trials[: len(study.best_trials)]],
+                "color": [t.number for t in trials[:n_best_trials]],
                 "colorscale": "Reds",
                 "colorbar": {
                     "title": "#Best trials",
@@ -187,6 +188,7 @@ def _get_pareto_front_3d(
         raise ValueError("The length of `target_names` is supposed to be 3.")
 
     trials = study.best_trials
+    n_best_trials = len(trials)
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
@@ -216,15 +218,15 @@ def _get_pareto_front_3d(
 
     data = [
         go.Scatter3d(
-            x=[t.values[axis_order[0]] for t in trials[len(study.best_trials) :]],
-            y=[t.values[axis_order[1]] for t in trials[len(study.best_trials) :]],
-            z=[t.values[axis_order[2]] for t in trials[len(study.best_trials) :]],
-            text=[_make_hovertext(t) for t in trials[len(study.best_trials) :]],
+            x=[t.values[axis_order[0]] for t in trials[n_best_trials:]],
+            y=[t.values[axis_order[1]] for t in trials[n_best_trials:]],
+            z=[t.values[axis_order[2]] for t in trials[n_best_trials:]],
+            text=[_make_hovertext(t) for t in trials[n_best_trials:]],
             hovertemplate="%{text}<extra>Trial</extra>",
             mode="markers",
             marker={
                 "line": {"width": 0.5, "color": "Grey"},
-                "color": [t.number for t in trials[len(study.best_trials) :]],
+                "color": [t.number for t in trials[n_best_trials:]],
                 "colorscale": "Blues",
                 "colorbar": {
                     "title": "#Trials",
@@ -233,15 +235,15 @@ def _get_pareto_front_3d(
             showlegend=False,
         ),
         go.Scatter3d(
-            x=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
-            y=[t.values[axis_order[1]] for t in trials[: len(study.best_trials)]],
-            z=[t.values[axis_order[2]] for t in trials[: len(study.best_trials)]],
-            text=[_make_hovertext(t) for t in trials[: len(study.best_trials)]],
+            x=[t.values[axis_order[0]] for t in trials[:n_best_trials]],
+            y=[t.values[axis_order[1]] for t in trials[:n_best_trials]],
+            z=[t.values[axis_order[2]] for t in trials[:n_best_trials]],
+            text=[_make_hovertext(t) for t in trials[:n_best_trials]],
             hovertemplate="%{text}<extra>Best Trial</extra>",
             mode="markers",
             marker={
                 "line": {"width": 0.5, "color": "Grey"},
-                "color": [t.number for t in trials[: len(study.best_trials)]],
+                "color": [t.number for t in trials[:n_best_trials]],
                 "colorscale": "Reds",
                 "colorbar": {
                     "title": "#Best trials",
