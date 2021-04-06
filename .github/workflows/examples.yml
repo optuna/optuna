@@ -52,8 +52,6 @@ jobs:
       run: |
         if [ ${{ matrix.python-version }} = 3.6 ]; then
           IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*|botorch_.*|pytorch/pytorch_checkpoint*'
-        elif [ ${{ matrix.python-version }} = 3.8 ]; then
-          IGNORES='chainermn_.*|pytorch_distributed_.*|fastai*|rapids_.*|pytorch/pytorch_checkpoint*'
         else
           IGNORES='chainermn_.*|fastai*|pytorch_distributed_.*|rapids_.*|pytorch/pytorch_checkpoint*'
         fi
