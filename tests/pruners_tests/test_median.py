@@ -140,7 +140,7 @@ def test_median_pruner_interval_steps(
 
 
 def test_median_pruner_n_min_trials() -> None:
-    pruner = optuna.pruners.MedianPruner(2, 0, 1, 2)
+    pruner = optuna.pruners.MedianPruner(2, 0, 1, n_min_trials=2)
     study = optuna.study.create_study()
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
