@@ -128,6 +128,7 @@ jobs:
     - uses: c-bata/github-actions-kurobako@master
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_EVENT_PATH: ${{ secrets.GITHUB_EVENT_PATH }}
       with:
         report-md-path: 'report.md'
         # public-image-url: ${{ steps.create_plot_image.outputs.image-path }}
