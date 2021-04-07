@@ -148,7 +148,7 @@ def _get_contour_plot(
             x_param = sorted_params[0]
             y_param = sorted_params[1]
         cs = _generate_contour_subplot(
-            trials, x_param, y_param, axs, cmap, contour_point_num, target, target_name
+            trials, x_param, y_param, axs, cmap, contour_point_num, target
         )
         if isinstance(cs, ContourSet):
             axcb = fig.colorbar(cs)
@@ -166,7 +166,7 @@ def _get_contour_plot(
             for y_i, y_param in enumerate(sorted_params):
                 ax = axs[y_i, x_i]
                 cs = _generate_contour_subplot(
-                    trials, x_param, y_param, ax, cmap, contour_point_num, target, target_name
+                    trials, x_param, y_param, ax, cmap, contour_point_num, target
                 )
                 if isinstance(cs, ContourSet):
                     cs_list.append(cs)
@@ -201,7 +201,6 @@ def _calculate_griddata(
     y_indices: List[Union[str, int, float]],
     contour_point_num: int,
     target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
 ) -> Tuple[
     np.ndarray,
     np.ndarray,
@@ -350,7 +349,6 @@ def _generate_contour_subplot(
     cmap: "Colormap",
     contour_point_num: int,
     target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
 ) -> "ContourSet":
 
     x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
@@ -377,7 +375,7 @@ def _generate_contour_subplot(
         x_values_dummy_count,
         y_values_dummy_count,
     ) = _calculate_griddata(
-        trials, x_param, x_indices, y_param, y_indices, contour_point_num, target, target_name
+        trials, x_param, x_indices, y_param, y_indices, contour_point_num, target
     )
     cs = None
     ax.set(xlabel=x_param, ylabel=y_param)
