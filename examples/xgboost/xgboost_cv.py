@@ -2,7 +2,7 @@
 Optuna example that optimizes a classifier configuration for cancer dataset using XGBoost.
 
 In this example, we optimize the accuracy of cancer detection using the XGBoost. The accuracy is
-estimated by cross-validation. We optimize both the choice of booster model and their
+estimated by cross-validation. We optimize both the choice of booster model and its
 hyperparameters.
 
 """
@@ -22,8 +22,6 @@ N_FOLDS = 3
 CV_RESULT_DIR = "./xgboost_cv_results"
 
 
-# FYI: Objective functions can take additional arguments
-# (https://optuna.readthedocs.io/en/stable/faq.html#objective-func-additional-args).
 def objective(trial):
     (data, target) = sklearn.datasets.load_breast_cancer(return_X_y=True)
     dtrain = xgb.DMatrix(data, label=target)
@@ -35,10 +33,16 @@ def objective(trial):
         "booster": trial.suggest_categorical("booster", ["gbtree", "gblinear", "dart"]),
         "lambda": trial.suggest_float("lambda", 1e-8, 1.0, log=True),
         "alpha": trial.suggest_float("alpha", 1e-8, 1.0, log=True),
+        # sampling ratio for training data.
+        "subsample": trial.suggest_float("subsample", 0.2, 1.0),
+        # sampling according to each tree.
+        "colsample_bytree": trial.suggest_float("colsample_bytree", 0.2, 1.0),
     }
 
     if param["booster"] == "gbtree" or param["booster"] == "dart":
         param["max_depth"] = trial.suggest_int("max_depth", 1, 9)
+        # minimum child weight, larger the term more conservative the tree.
+        param["min_child_weight"] = trial.suggest_int("min_child_weight", 2, 10)
         param["eta"] = trial.suggest_float("eta", 1e-8, 1.0, log=True)
         param["gamma"] = trial.suggest_float("gamma", 1e-8, 1.0, log=True)
         param["grow_policy"] = trial.suggest_categorical("grow_policy", ["depthwise", "lossguide"])

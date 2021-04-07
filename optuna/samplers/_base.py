@@ -42,6 +42,9 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
     """
 
+    def __str__(self) -> str:
+        return self.__class__.__name__
+
     @abc.abstractmethod
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial

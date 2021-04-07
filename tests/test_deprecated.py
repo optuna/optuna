@@ -137,6 +137,16 @@ def test_deprecation_text_specified(text: Optional[str]) -> None:
     assert decorated_func.__name__ == _func.__name__
     assert decorated_func.__doc__ == expected_func_doc
 
+    with pytest.warns(FutureWarning) as record:
+        decorated_func()
+    assert isinstance(record.list[0].message, Warning)
+    expected_warning_message = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+        name="_func", d_ver="1.1.0", r_ver="3.0.0"
+    )
+    if text is not None:
+        expected_warning_message += " " + text
+    assert record.list[0].message.args[0] == expected_warning_message
+
 
 @pytest.mark.parametrize("text", [None, "", "test", "test" * 100])
 def test_deprecation_class_text_specified(text: Optional[str]) -> None:
@@ -157,6 +167,16 @@ def test_deprecation_class_text_specified(text: Optional[str]) -> None:
         expected_class_doc += "\n\n\n"
     assert decorated_class.__name__ == _Class.__name__
     assert decorated_class.__doc__ == expected_class_doc
+
+    with pytest.warns(FutureWarning) as record:
+        decorated_class(None, None, None)
+    assert isinstance(record.list[0].message, Warning)
+    expected_warning_message = _deprecated._DEPRECATION_WARNING_TEMPLATE.format(
+        name="_Class", d_ver="1.1.0", r_ver="3.0.0"
+    )
+    if text is not None:
+        expected_warning_message += " " + text
+    assert record.list[0].message.args[0] == expected_warning_message
 
 
 def test_deprecation_decorator_default_removed_version() -> None:
