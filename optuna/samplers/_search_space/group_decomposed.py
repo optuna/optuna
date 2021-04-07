@@ -2,6 +2,7 @@ import copy
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 from optuna.distributions import BaseDistribution
 from optuna.study import BaseStudy
@@ -27,30 +28,30 @@ def _add_distributions(
         return group
 
     for search_space in group:
-        _keys = set(search_space.keys())
-        _dist_keys = set(distributions.keys())
+        keys = set(search_space.keys())
+        dist_keys = set(distributions.keys())
 
-        if _keys.isdisjoint(_dist_keys):
+        if keys.isdisjoint(dist_keys):
             continue
 
-        if _keys < _dist_keys:
+        if keys < dist_keys:
             return _add_distributions(
-                group, {name: distributions[name] for name in _dist_keys - _keys}
+                group, {name: distributions[name] for name in dist_keys - keys}
             )
 
-        if _keys > _dist_keys:
+        if keys > dist_keys:
             group.append(distributions)
-            group.append({name: search_space[name] for name in _keys - _dist_keys})
+            group.append({name: search_space[name] for name in keys - dist_keys})
             group.remove(search_space)
             return group
 
-        _intersection = _keys & _dist_keys
-        group.append({name: search_space[name] for name in _intersection})
-        if len(_keys - _intersection) > 0:
-            group.append({name: search_space[name] for name in _keys - _intersection})
+        intersection = keys & dist_keys
+        group.append({name: search_space[name] for name in intersection})
+        if len(keys - intersection) > 0:
+            group.append({name: search_space[name] for name in keys - intersection})
         group.remove(search_space)
         return _add_distributions(
-            group, {name: distributions[name] for name in _dist_keys - _intersection}
+            group, {name: distributions[name] for name in dist_keys - intersection}
         )
 
     group.append(distributions)
@@ -60,7 +61,6 @@ def _add_distributions(
 
 class _GroupDecomposedSearchSpace(object):
     def __init__(self, include_pruned: bool = False) -> None:
-        self._cursor: int = -1
         self._search_space: Optional[_SearchSpaceGroup] = None
         self._study_id: Optional[int] = None
         self._include_pruned = include_pruned
@@ -74,19 +74,13 @@ class _GroupDecomposedSearchSpace(object):
             if self._study_id != study._study_id:
                 raise ValueError("`_GroupDecomposedSearchSpace` cannot handle multiple studies.")
 
-        states_of_interest = [TrialState.COMPLETE]
-
+        states_of_interest: Tuple[TrialState, ...]
         if self._include_pruned:
-            states_of_interest.append(TrialState.PRUNED)
+            states_of_interest = (TrialState.COMPLETE, TrialState.PRUNED)
+        else:
+            states_of_interest = (TrialState.COMPLETE,)
 
-        next_cursor = self._cursor
-        for trial in reversed(study.get_trials(deepcopy=False)):
-            if self._cursor > trial.number:
-                break
-
-            if not trial.state.is_finished():
-                next_cursor = trial.number
-
+        for trial in reversed(study.get_trials(deepcopy=False, states=states_of_interest)):
             if trial.state not in states_of_interest:
                 continue
 
@@ -97,7 +91,6 @@ class _GroupDecomposedSearchSpace(object):
 
             self._search_space.add_distributions(trial.distributions)
 
-        self._cursor = next_cursor
         search_space = self._search_space or _SearchSpaceGroup()
 
         return copy.deepcopy(search_space)
