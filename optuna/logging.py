@@ -179,7 +179,7 @@ def disable_propagation() -> None:
 
     Example:
 
-        Stop propogating logs to the root logger and start logging to :obj:`sys.stderr`.
+        Stop propagating logs to the root logger on the second optimize call.
 
         .. testsetup::
 
