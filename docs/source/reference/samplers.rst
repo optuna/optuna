@@ -14,7 +14,6 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
    optuna.samplers.RandomSampler
    optuna.samplers.TPESampler
    optuna.samplers.CmaEsSampler
-   optuna.samplers.GroupDecompositionSampler
    optuna.samplers.PartialFixedSampler
    optuna.samplers.NSGAIISampler
    optuna.samplers.MOTPESampler
