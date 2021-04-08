@@ -74,7 +74,7 @@ jobs:
       run: |
         if [ ${{ matrix.python-version }} = 3.9 ]; then
           pytest tests --ignore tests/integration_tests \
-            --ignore tests/samplers_tests/test_samplers.py
+            --deselect tests/samplers_tests/test_samplers.py::test_nan_objective_value --deselect tests/samplers_tests/test_samplers.py::test_partial_fixed_sampling
         else  
           pytest tests --ignore tests/integration_tests
         fi
