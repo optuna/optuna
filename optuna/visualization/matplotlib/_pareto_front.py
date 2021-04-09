@@ -16,7 +16,7 @@ if _imports.is_successful():
 _logger = optuna.logging.get_logger(__name__)
 
 
-@experimental("2.7.0")
+@experimental("2.8.0")
 def plot_pareto_front(
     study: Study,
     *,
