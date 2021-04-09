@@ -899,10 +899,10 @@ def test_mixed_relative_search_space_pruned_and_completed_trials() -> None:
     study.optimize(objective, 3)
 
 
-def test_group_decomposed() -> None:
+def test_group() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
-        sampler = TPESampler(multivariate=True, group_decomposed=True)
+        sampler = TPESampler(multivariate=True, group=True)
     study = optuna.create_study(sampler=sampler)
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
@@ -963,11 +963,11 @@ def test_group_decomposed() -> None:
     }
 
 
-def test_invalid_multivariate_and_group_decomposed() -> None:
+def test_invalid_multivariate_and_group() -> None:
     with pytest.raises(ValueError):
-        _ = TPESampler(multivariate=False, group_decomposed=True)
+        _ = TPESampler(multivariate=False, group=True)
 
 
-def test_group_decomposed_experimental_warning() -> None:
+def test_group_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
-        _ = TPESampler(multivariate=True, group_decomposed=True)
+        _ = TPESampler(multivariate=True, group=True)

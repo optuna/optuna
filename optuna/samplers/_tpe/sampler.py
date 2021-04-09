@@ -21,8 +21,8 @@ from optuna.logging import get_logger
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
-from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
-from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
+from optuna.samplers._search_space.group import _GroupDecomposedSearchSpace
+from optuna.samplers._search_space.group import _SearchSpaceGroup
 from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
@@ -149,7 +149,7 @@ class TPESampler(BaseSampler):
                 Added in v2.2.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.2.0.
-        group_decomposed:
+        group:
             If this and ``multivariate`` are :obj:`True`, the multivariate TPE with the group
             decomposed search space is used when suggesting parameters.
             The sampling algorithm decomposes the search space based on past trials and samples
@@ -203,7 +203,7 @@ class TPESampler(BaseSampler):
                         return trial.suggest_int("z", -10, 10)
 
 
-                sampler = optuna.samplers.TPESampler(multivariate=True, group_decomposed=True)
+                sampler = optuna.samplers.TPESampler(multivariate=True, group=True)
                 study = optuna.create_study(sampler=sampler)
                 study.optimize(objective, n_trials=10)
         warn_independent_sampling:
@@ -213,7 +213,7 @@ class TPESampler(BaseSampler):
 
     Raises:
         ValueError:
-            If ``multivariate`` is :obj:`False` and ``group_decomposed`` is :obj:`True`.
+            If ``multivariate`` is :obj:`False` and ``group`` is :obj:`True`.
     """
 
     def __init__(
@@ -229,7 +229,7 @@ class TPESampler(BaseSampler):
         seed: Optional[int] = None,
         *,
         multivariate: bool = False,
-        group_decomposed: bool = False,
+        group: bool = False,
         warn_independent_sampling: bool = True,
     ) -> None:
 
@@ -247,7 +247,7 @@ class TPESampler(BaseSampler):
         self._random_sampler = RandomSampler(seed=seed)
 
         self._multivariate = multivariate
-        self._group_decomposed = group_decomposed
+        self._group = group
         self._search_space_group: Optional[_SearchSpaceGroup] = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
 
@@ -258,15 +258,15 @@ class TPESampler(BaseSampler):
                 ExperimentalWarning,
             )
 
-        if group_decomposed:
+        if group:
             if not multivariate:
                 raise ValueError(
-                    "``group_decomposed`` option can only be enabled when ``multivariate`` is "
+                    "``group`` option can only be enabled when ``multivariate`` is "
                     "enabled."
                 )
             else:
                 warnings.warn(
-                    "``group_decomposed`` option is an experimental feature."
+                    "``group`` option is an experimental feature."
                     " The interface can change in the future.",
                     ExperimentalWarning,
                 )
@@ -283,7 +283,7 @@ class TPESampler(BaseSampler):
         if not self._multivariate:
             return {}
 
-        if self._group_decomposed:
+        if self._group:
             self._search_space_group = _GroupDecomposedSearchSpace(True).calculate(study)
             _search_space = {}
             for sub_space in self._search_space_group.group:
@@ -318,7 +318,7 @@ class TPESampler(BaseSampler):
 
         self._raise_error_if_multi_objective(study)
 
-        if self._group_decomposed:
+        if self._group:
             assert self._search_space_group is not None
             params = {}
             for sub_space in self._search_space_group.group:
