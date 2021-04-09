@@ -21,8 +21,8 @@ from optuna.logging import get_logger
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
-from optuna.samplers._search_space.group import _GroupDecomposedSearchSpace
-from optuna.samplers._search_space.group import _SearchSpaceGroup
+from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
+from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
 from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
@@ -261,8 +261,7 @@ class TPESampler(BaseSampler):
         if group:
             if not multivariate:
                 raise ValueError(
-                    "``group`` option can only be enabled when ``multivariate`` is "
-                    "enabled."
+                    "``group`` option can only be enabled when ``multivariate`` is " "enabled."
                 )
             else:
                 warnings.warn(
