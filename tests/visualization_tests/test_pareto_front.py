@@ -221,16 +221,6 @@ def test_plot_pareto_front_unsupported_dimensions(include_dominated_trials: bool
         study.optimize(lambda t: [0], n_trials=1)
         plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
 
-    # Supported: n_objectives == 2.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    study.optimize(lambda t: [0, 0], n_trials=1)
-    plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
-
-    # Supported: n_objectives == 3.
-    study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
-    study.optimize(lambda t: [0, 0, 0], n_trials=1)
-    plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
-
     # Unsupported: n_objectives == 4.
     with pytest.raises(ValueError):
         study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
