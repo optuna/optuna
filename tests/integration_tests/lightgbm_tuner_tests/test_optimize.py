@@ -12,6 +12,9 @@ import warnings
 
 import numpy as np
 import pytest
+import sklearn.datasets
+from sklearn.model_selection import KFold
+from sklearn.model_selection import train_test_split
 
 import optuna
 from optuna.integration._lightgbm_tuner.optimize import _BaseTuner
@@ -20,6 +23,8 @@ from optuna.integration._lightgbm_tuner.optimize import _OptunaObjectiveCV
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV
 import optuna.integration.lightgbm as lgb
+from optuna.samplers import TPESampler
+import optuna.study as study
 from optuna.study import Study
 
 
@@ -733,12 +738,6 @@ class TestLightGBMTuner(object):
         assert callback_mock.call_count == 10
 
     def test_tune_best_score_reproducibility(self) -> None:
-        import sklearn.datasets
-        from sklearn.model_selection import train_test_split
-
-        from optuna.samplers import TPESampler
-        import optuna.study as study
-
         boston = sklearn.datasets.load_boston()
         X_trainval, X_test, y_trainval, y_test = train_test_split(
             boston.data, boston.target, random_state=0
@@ -1062,13 +1061,6 @@ class TestLightGBMTunerCV(object):
                 tuner3.get_best_booster()
 
     def test_tune_best_score_reproducibility(self) -> None:
-        import sklearn.datasets
-        from sklearn.model_selection import KFold
-        from sklearn.model_selection import train_test_split
-
-        from optuna.samplers import TPESampler
-        import optuna.study as study
-
         boston = sklearn.datasets.load_boston()
         X_trainval, X_test, y_trainval, y_test = train_test_split(
             boston.data, boston.target, random_state=0
