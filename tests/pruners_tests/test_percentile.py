@@ -232,3 +232,10 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
             all_trials, direction, 2, 75, 1
         )
     )
+
+    # n_min_trials = 2
+    assert math.isnan(
+        _percentile._get_percentile_intermediate_result_over_trials(
+            all_trials, direction, 2, 75, 2
+        )
+    )
