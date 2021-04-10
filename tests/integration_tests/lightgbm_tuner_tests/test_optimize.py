@@ -24,7 +24,6 @@ from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV
 import optuna.integration.lightgbm as lgb
 from optuna.samplers import TPESampler
-import optuna.study as study
 from optuna.study import Study
 
 
@@ -747,10 +746,9 @@ class TestLightGBMTuner(object):
         valid = lgb.Dataset(X_test, y_test)
         params = {"objective": "regression", "metric": "rmse", "random_seed": 0}
 
-        test_study_first_try = study.create_study(
+        test_study_first_try = optuna.create_study(
             direction="minimize", sampler=TPESampler(seed=10)
         )
-
         tuner_first_try = lgb.LightGBMTuner(
             params,
             train,
@@ -762,7 +760,7 @@ class TestLightGBMTuner(object):
         tuner_first_try.run()
         best_score_first_try = tuner_first_try.best_score
 
-        test_study_second_try = study.create_study(
+        test_study_second_try = optuna.create_study(
             direction="minimize", sampler=TPESampler(seed=10)
         )
 
@@ -1069,7 +1067,7 @@ class TestLightGBMTunerCV(object):
         train = lgb.Dataset(X_trainval, y_trainval)
         params = {"objective": "regression", "metric": "rmse", "random_seed": 0}
 
-        test_study_first_try = study.create_study(
+        test_study_first_try = optuna.create_study(
             direction="minimize", sampler=TPESampler(seed=10)
         )
 
@@ -1084,7 +1082,7 @@ class TestLightGBMTunerCV(object):
         tuner_first_try.run()
         best_score_first_try = tuner_first_try.best_score
 
-        test_study_second_try = study.create_study(
+        test_study_second_try = optuna.create_study(
             direction="minimize", sampler=TPESampler(seed=10)
         )
 
