@@ -83,6 +83,30 @@ def test_warm_starting_cmaes(mock_func_ws: MagicMock) -> None:
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
+@patch("optuna.samplers._cmaes.get_warm_start_mgd")
+def test_warm_starting_cmaes_maximize(mock_func_ws: MagicMock) -> None:
+    def objective(trial: optuna.Trial) -> float:
+        x = trial.suggest_float("x", -10, 10)
+        y = trial.suggest_float("y", -10, 10)
+        # Objective values are negative.
+        return -(x ** 2) - (y - 5) ** 2
+
+    source_study = optuna.create_study(direction="maximize")
+    source_study.optimize(objective, 20)
+    source_trials = source_study.get_trials(deepcopy=False)
+
+    mock_func_ws.return_value = (np.zeros(2), 0.0, np.zeros((2, 2)))
+    sampler = optuna.samplers.CmaEsSampler(seed=1, n_startup_trials=1, source_trials=source_trials)
+    study = optuna.create_study(sampler=sampler, direction="maximize")
+    study.optimize(objective, 2)
+    assert mock_func_ws.call_count == 1
+
+    solutions_arg = mock_func_ws.call_args[0][0]
+    is_positive = [x[1] >= 0 for x in solutions_arg]
+    assert all(is_positive)
+
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 def test_should_raise_exception() -> None:
     dummy_source_trials = [create_trial(value=i, state=TrialState.COMPLETE) for i in range(10)]
 

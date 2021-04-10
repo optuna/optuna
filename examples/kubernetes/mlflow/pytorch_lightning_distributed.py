@@ -81,14 +81,16 @@ class LightningNet(pl.LightningModule):
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
-            datasets.MNIST(DIR, train=True, download=True, transform=transforms.ToTensor()),
+            datasets.FashionMNIST(DIR, train=True, download=True, transform=transforms.ToTensor()),
             batch_size=BATCHSIZE,
             shuffle=True,
         )
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
-            datasets.MNIST(DIR, train=False, download=True, transform=transforms.ToTensor()),
+            datasets.FashionMNIST(
+                DIR, train=False, download=True, transform=transforms.ToTensor()
+            ),
             batch_size=BATCHSIZE,
             shuffle=False,
         )
@@ -99,7 +101,7 @@ def objective(trial):
     metrics_callback = MetricsCallback()
     trainer = pl.Trainer(
         logger=False,
-        val_percent_check=PERCENT_VALID_EXAMPLES,
+        limit_val_batches=PERCENT_VALID_EXAMPLES,
         checkpoint_callback=False,
         max_epochs=EPOCHS,
         gpus=None,

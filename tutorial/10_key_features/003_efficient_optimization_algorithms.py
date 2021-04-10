@@ -138,7 +138,9 @@ study.optimize(objective, n_trials=20)
 #
 # However, note that the benchmark is not deep learning.
 # For deep learning tasks,
-# consult the below table from `Ozaki et al, Hyperparameter Optimization Methods: Overview and Characteristics, in IEICE Trans, Vol.J103-D No.9 pp.615-631, 2020 <https://doi.org/10.14923/transinfj.2019JDR0003>`_,
+# consult the below table.
+# This table is from the `Ozaki et al., Hyperparameter Optimization Methods: Overview and Characteristics, in IEICE Trans, Vol.J103-D No.9 pp.615-631, 2020 <https://doi.org/10.14923/transinfj.2019JDR0003>`_ paper,
+# which is written in Japanese.
 #
 # +---------------------------+-----------------------------------------+---------------------------------------------------------------+
 # | Parallel Compute Resource | Categorical/Conditional Hyperparameters | Recommended Algorithms                                        |

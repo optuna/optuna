@@ -9,7 +9,6 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 from unittest.mock import Mock  # NOQA
 from unittest.mock import patch
 import uuid
@@ -109,6 +108,13 @@ def check_study(study: Study) -> None:
         check_params(study.best_params)
         check_value(study.best_value)
         check_frozen_trial(study.best_trial)
+
+
+def test_optimize_n_jobs_warning() -> None:
+
+    study = create_study()
+    with pytest.warns(FutureWarning):
+        study.optimize(func, n_trials=1, n_jobs=2)
 
 
 def test_optimize_trivial_in_memory_new() -> None:
@@ -797,6 +803,14 @@ def test_create_study_with_multi_objectives() -> None:
         _ = create_study(direction="minimize", directions=[])
 
 
+def test_create_study_with_direction_object() -> None:
+    study = create_study(direction=StudyDirection.MAXIMIZE)
+    assert study.direction == StudyDirection.MAXIMIZE
+
+    study = create_study(directions=[StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE])
+    assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+
+
 @pytest.mark.parametrize("n_objectives", [2, 3])
 def test_optimize_with_multi_objectives(n_objectives: int) -> None:
     directions = ["minimize" for _ in range(n_objectives)]
@@ -814,30 +828,12 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
         assert len(trial.values) == n_objectives
 
 
-def test_pareto_front() -> None:
-    def _trial_to_values(t: FrozenTrial) -> Tuple[float, ...]:
-        assert t.values is not None
-        return tuple(t.values)
-
+def test_best_trials() -> None:
     study = create_study(directions=["minimize", "maximize"])
-    assert {_trial_to_values(t) for t in study.best_trials} == set()
-
     study.optimize(lambda t: [2, 2], n_trials=1)
-    assert {_trial_to_values(t) for t in study.best_trials} == {(2, 2)}
-
     study.optimize(lambda t: [1, 1], n_trials=1)
-    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
-
     study.optimize(lambda t: [3, 1], n_trials=1)
-    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
-
-    study.optimize(lambda t: [1, 3], n_trials=1)
-    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 3)}
-    assert len(study.best_trials) == 1
-
-    study.optimize(lambda t: [1, 3], n_trials=1)  # The trial result is the same as the above one.
-    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 3)}
-    assert len(study.best_trials) == 2
+    assert {tuple(t.values) for t in study.best_trials} == {(1, 1), (2, 2)}
 
 
 def test_wrong_n_objectives() -> None:
