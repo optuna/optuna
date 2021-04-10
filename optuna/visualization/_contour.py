@@ -137,8 +137,12 @@ def _get_contour_plot(
             min_value = math.pow(10, math.log10(min_value) - padding)
             max_value = math.pow(10, math.log10(max_value) + padding)
 
-        elif not _is_numerical(trials, p_name):
+        elif _is_numerical(trials, p_name):
+            padding = (max_value - min_value) * padding_ratio
+            min_value = min_value - padding
+            max_value = max_value + padding
 
+        else:
             # Plotly>=4.12.0 draws contours using the indices of categorical variables instead of
             # raw values and the range should be updated based on the cardinality of categorical
             # variables. See https://github.com/optuna/optuna/issues/1967.
@@ -148,10 +152,6 @@ def _get_contour_plot(
                 min_value = -padding
                 max_value = span + padding
 
-        else:
-            padding = (max_value - min_value) * padding_ratio
-            min_value = min_value - padding
-            max_value = max_value + padding
         param_values_range[p_name] = (min_value, max_value)
 
     if len(sorted_params) == 2:
