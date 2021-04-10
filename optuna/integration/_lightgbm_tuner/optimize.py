@@ -836,8 +836,8 @@ class LightGBMTuner(_LightGBMBaseTuner):
             optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
-            optuna_seed=optuna_seed,
             model_dir=model_dir,
+            optuna_seed=optuna_seed,
         )
 
         self.lgbm_kwargs["valid_sets"] = valid_sets
