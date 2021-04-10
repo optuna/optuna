@@ -732,7 +732,7 @@ class TestLightGBMTuner(object):
 
         assert callback_mock.call_count == 10
 
-    def test_tune_best_params_reproducibility(self) -> None:
+    def test_tune_best_score_reproducibility(self) -> None:
         import sklearn.datasets
         from sklearn.model_selection import train_test_split
 
@@ -761,7 +761,7 @@ class TestLightGBMTuner(object):
             optuna_seed=10,
         )
         tuner_first_try.run()
-        best_params_first_try = tuner_first_try.best_params
+        best_score_first_try = tuner_first_try.best_score
 
         test_study_second_try = study.create_study(
             direction="minimize", sampler=TPESampler(seed=10)
@@ -776,9 +776,9 @@ class TestLightGBMTuner(object):
             optuna_seed=10,
         )
         tuner_second_try.run()
-        best_params_second_try = tuner_second_try.best_params
+        best_score_second_try = tuner_second_try.best_score
 
-        assert best_params_second_try == best_params_first_try
+        assert best_score_second_try == best_score_first_try
 
 
 class TestLightGBMTunerCV(object):
@@ -1061,7 +1061,7 @@ class TestLightGBMTunerCV(object):
             with pytest.raises(ValueError):
                 tuner3.get_best_booster()
 
-    def test_tune_best_params_reproducibility(self) -> None:
+    def test_tune_best_score_reproducibility(self) -> None:
         import sklearn.datasets
         from sklearn.model_selection import KFold
         from sklearn.model_selection import train_test_split
@@ -1090,7 +1090,7 @@ class TestLightGBMTunerCV(object):
             optuna_seed=10,
         )
         tuner_first_try.run()
-        best_params_first_try = tuner_first_try.best_params
+        best_score_first_try = tuner_first_try.best_score
 
         test_study_second_try = study.create_study(
             direction="minimize", sampler=TPESampler(seed=10)
@@ -1105,6 +1105,6 @@ class TestLightGBMTunerCV(object):
             optuna_seed=10,
         )
         tuner_second_try.run()
-        best_params_second_try = tuner_second_try.best_params
+        best_score_second_try = tuner_second_try.best_score
 
-        assert best_params_second_try == best_params_first_try
+        assert best_score_second_try == best_score_first_try
