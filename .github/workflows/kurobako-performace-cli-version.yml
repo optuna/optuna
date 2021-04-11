@@ -106,17 +106,17 @@ jobs:
           report.md
           images/**/*.png
 
-    # - name: cml_run
-    #   env:
-    #     repo_token: ${{ secrets.GITHUB_TOKEN }}
-    #   run: |
-    #     for file in `find images -name '*.png'`
-    #     do
-    #       echo $file
-    #       cml-publish $file --md >> report.md
-    #     done
-    #     echo "report is Ready"
-    #     cml-send-github-check report.md
+    - name: cml_run
+      env:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        for file in `find images -name '*.png'`
+        do
+          echo $file
+          cml-publish $file --md >> report.md
+        done
+        echo "report is Ready"
+        cml-send-comment report.md
 
     # - uses: c-bata/github-actions-kurobako/plot@master
     #   with:
@@ -125,14 +125,14 @@ jobs:
     #     report-json-path: 'report.json'
     #     # error-bar: true
 
-    - uses: c-bata/github-actions-kurobako@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_EVENT_PATH: ${{ secrets.GITHUB_EVENT_PATH }}
-      with:
-        report-md-path: 'report.md'
-        # public-image-url: ${{ steps.create_plot_image.outputs.image-path }}
-        # sample url image for debug
-        public-image-url: 'https://ibb.co/fXNzB1Y'
-        title: 'Benchmark Report of this PR'
+    # - uses: c-bata/github-actions-kurobako@master
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     GITHUB_EVENT_PATH: ${{ secrets.GITHUB_EVENT_PATH }}
+    #   with:
+    #     report-md-path: 'report.md'
+    #     # public-image-url: ${{ steps.create_plot_image.outputs.image-path }}
+    #     # sample url image for debug
+    #     public-image-url: 'https://ibb.co/fXNzB1Y'
+    #     title: 'Benchmark Report of this PR'
 
