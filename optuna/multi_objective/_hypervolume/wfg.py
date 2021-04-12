@@ -20,8 +20,8 @@ class WFG(BaseHypervolume):
         self._reference_point: Optional[np.ndarray] = None
 
     def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
-        self._reference_point = reference_point.copy()
-        return self._compute_rec(solution_set)
+        self._reference_point = reference_point.copy().astype(np.float64)
+        return self._compute_rec(solution_set.astype(np.float64))
 
     def _compute_rec(self, solution_set: np.ndarray) -> float:
         assert self._reference_point is not None
