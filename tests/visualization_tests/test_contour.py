@@ -261,11 +261,13 @@ def test_plot_contour_mixture_category_types() -> None:
         )
     )
     figure = plot_contour(study)
+
+    # yaxis is treated as non-categorical
     if version.parse(plotly.__version__) >= version.parse("4.12.0"):
         assert figure.layout["xaxis"]["range"] == (-0.05, 1.05)
-        assert figure.layout["yaxis"]["range"] == (-0.05, 1.05)
+        assert figure.layout["yaxis"]["range"] == (100.95, 102.05)
     else:
         assert figure.layout["xaxis"]["range"] == ("100", "None")
-        assert figure.layout["yaxis"]["range"] == ("101", "102.0")
+        assert figure.layout["yaxis"]["range"] == (100.95, 102.05)
     assert figure.layout["xaxis"]["type"] == "category"
-    assert figure.layout["yaxis"]["type"] == "category"
+    assert figure.layout["yaxis"]["type"] != "category"
