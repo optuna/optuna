@@ -309,7 +309,7 @@ class TPESampler(BaseSampler):
             complete_trials = study.get_trials(deepcopy=False)
             if len(complete_trials) >= self._n_startup_trials:
                 _logger.warning(
-                    "The parameter '{param_name}' in trial#{trial.number} is sampled "
+                    f"The parameter '{param_name}' in trial#{trial.number} is sampled "
                     "independently instead of being sampled by multivariate TPE sampler. "
                     "(optimization performance may be degraded). "
                     "You can suppress this warning by setting `warn_independent_sampling` "
