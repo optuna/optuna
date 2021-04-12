@@ -17,19 +17,19 @@ def test_search_space_group() -> None:
     search_space_group = _SearchSpaceGroup()
 
     # No search space.
-    assert search_space_group.group == []
+    assert search_space_group.search_spaces == []
 
     # No distributions.
     search_space_group.add_distributions({})
-    assert search_space_group.group == []
+    assert search_space_group.search_spaces == []
 
     # Add a single distribution.
     search_space_group.add_distributions({"x": IntUniformDistribution(low=0, high=10)})
-    assert search_space_group.group == [{"x": IntUniformDistribution(low=0, high=10)}]
+    assert search_space_group.search_spaces == [{"x": IntUniformDistribution(low=0, high=10)}]
 
     # Add a same single distribution.
     search_space_group.add_distributions({"x": IntUniformDistribution(low=0, high=10)})
-    assert search_space_group.group == [{"x": IntUniformDistribution(low=0, high=10)}]
+    assert search_space_group.search_spaces == [{"x": IntUniformDistribution(low=0, high=10)}]
 
     # Add disjoint distributions.
     search_space_group.add_distributions(
@@ -38,7 +38,7 @@ def test_search_space_group() -> None:
             "z": UniformDistribution(low=-3, high=3),
         }
     )
-    assert search_space_group.group == [
+    assert search_space_group.search_spaces == [
         {"x": IntUniformDistribution(low=0, high=10)},
         {
             "y": IntUniformDistribution(low=0, high=10),
@@ -55,7 +55,7 @@ def test_search_space_group() -> None:
             "v": CategoricalDistribution(choices=["A", "B", "C"]),
         }
     )
-    assert search_space_group.group == [
+    assert search_space_group.search_spaces == [
         {"x": IntUniformDistribution(low=0, high=10)},
         {
             "y": IntUniformDistribution(low=0, high=10),
@@ -69,7 +69,7 @@ def test_search_space_group() -> None:
 
     # Add a distribution, which is included by one of search spaces in the group.
     search_space_group.add_distributions({"u": LogUniformDistribution(low=1e-2, high=1e2)})
-    assert search_space_group.group == [
+    assert search_space_group.search_spaces == [
         {"x": IntUniformDistribution(low=0, high=10)},
         {
             "y": IntUniformDistribution(low=0, high=10),
@@ -86,7 +86,7 @@ def test_search_space_group() -> None:
             "w": IntLogUniformDistribution(low=2, high=8),
         }
     )
-    assert search_space_group.group == [
+    assert search_space_group.search_spaces == [
         {"x": IntUniformDistribution(low=0, high=10)},
         {"u": LogUniformDistribution(low=1e-2, high=1e2)},
         {"v": CategoricalDistribution(choices=["A", "B", "C"])},
@@ -103,7 +103,7 @@ def test_search_space_group() -> None:
             "t": UniformDistribution(low=10, high=100),
         }
     )
-    assert search_space_group.group == [
+    assert search_space_group.search_spaces == [
         {"x": IntUniformDistribution(low=0, high=10)},
         {"u": LogUniformDistribution(low=1e-2, high=1e2)},
         {"v": CategoricalDistribution(choices=["A", "B", "C"])},
@@ -119,15 +119,17 @@ def test_group_decomposed_search_space() -> None:
     study = create_study()
 
     # No trial.
-    assert search_space.calculate(study).group == []
+    assert search_space.calculate(study).search_spaces == []
 
     # A single parameter.
     study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=1)
-    assert search_space.calculate(study).group == [{"x": IntUniformDistribution(low=0, high=10)}]
+    assert search_space.calculate(study).search_spaces == [
+        {"x": IntUniformDistribution(low=0, high=10)}
+    ]
 
     # Disjoint parameters.
     study.optimize(lambda t: t.suggest_int("y", 0, 10) + t.suggest_float("z", -3, 3), n_trials=1)
-    assert search_space.calculate(study).group == [
+    assert search_space.calculate(study).search_spaces == [
         {
             "y": IntUniformDistribution(low=0, high=10),
             "z": UniformDistribution(low=-3, high=3),
@@ -143,7 +145,8 @@ def test_group_decomposed_search_space() -> None:
         + bool(t.suggest_categorical("v", ["A", "B", "C"])),
         n_trials=1,
     )
-    assert search_space.calculate(study).group == [
+    assert search_space.calculate(study).search_spaces == [
+        {"x": IntUniformDistribution(low=0, high=10)},
         {
             "u": LogUniformDistribution(low=1e-2, high=1e2),
             "v": CategoricalDistribution(choices=["A", "B", "C"]),
@@ -152,32 +155,31 @@ def test_group_decomposed_search_space() -> None:
             "y": IntUniformDistribution(low=0, high=10),
             "z": UniformDistribution(low=-3, high=3),
         },
-        {"x": IntUniformDistribution(low=0, high=10)},
     ]
 
     # A parameter which is included by one of search spaces in thew group.
     study.optimize(lambda t: t.suggest_float("u", 1e-2, 1e2, log=True), n_trials=1)
-    assert search_space.calculate(study).group == [
-        {"u": LogUniformDistribution(low=1e-2, high=1e2)},
-        {"v": CategoricalDistribution(choices=["A", "B", "C"])},
+    assert search_space.calculate(study).search_spaces == [
+        {"x": IntUniformDistribution(low=0, high=10)},
         {
             "y": IntUniformDistribution(low=0, high=10),
             "z": UniformDistribution(low=-3, high=3),
         },
-        {"x": IntUniformDistribution(low=0, high=10)},
+        {"u": LogUniformDistribution(low=1e-2, high=1e2)},
+        {"v": CategoricalDistribution(choices=["A", "B", "C"])},
     ]
 
     # Parameters whose intersection with one of search spaces in the group is not empty.
     study.optimize(
         lambda t: t.suggest_int("y", 0, 10) + t.suggest_int("w", 2, 8, log=True), n_trials=1
     )
-    assert search_space.calculate(study).group == [
+    assert search_space.calculate(study).search_spaces == [
+        {"x": IntUniformDistribution(low=0, high=10)},
         {"v": CategoricalDistribution(choices=["A", "B", "C"])},
         {"y": IntUniformDistribution(low=0, high=10)},
+        {"z": UniformDistribution(low=-3, high=3)},
         {"w": IntLogUniformDistribution(low=2, high=8)},
         {"u": LogUniformDistribution(low=1e-2, high=1e2)},
-        {"z": UniformDistribution(low=-3, high=3)},
-        {"x": IntUniformDistribution(low=0, high=10)},
     ]
 
     search_space = _GroupDecomposedSearchSpace()
@@ -192,13 +194,15 @@ def test_group_decomposed_search_space() -> None:
 
     study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
     study.optimize(lambda t: objective(t, TrialPruned()), n_trials=1)
-    assert search_space.calculate(study).group == []
+    assert search_space.calculate(study).search_spaces == []
 
     # If two parameters have the same name but different distributions,
     # the second one takes priority.
     study.optimize(lambda t: t.suggest_float("a", -1, 1), n_trials=1)
     study.optimize(lambda t: t.suggest_float("a", 0, 1), n_trials=1)
-    assert search_space.calculate(study).group == [{"a": UniformDistribution(low=0, high=1)}]
+    assert search_space.calculate(study).search_spaces == [
+        {"a": UniformDistribution(low=0, high=1)}
+    ]
 
 
 def test_group_decomposed_search_space_with_different_studies() -> None:

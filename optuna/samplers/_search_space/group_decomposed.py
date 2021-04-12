@@ -11,23 +11,23 @@ from optuna.trial import TrialState
 
 class _SearchSpaceGroup(object):
     def __init__(self) -> None:
-        self._group: List[Dict[str, BaseDistribution]] = []
+        self._search_spaces: List[Dict[str, BaseDistribution]] = []
 
     @property
-    def group(self) -> List[Dict[str, BaseDistribution]]:
-        return self._group
+    def search_spaces(self) -> List[Dict[str, BaseDistribution]]:
+        return self._search_spaces
 
     def add_distributions(self, distributions: Dict[str, BaseDistribution]) -> None:
-        self._group = _add_distributions(self.group, distributions)
+        self._search_spaces = _add_distributions(self.search_spaces, distributions)
 
 
 def _add_distributions(
-    group: List[Dict[str, BaseDistribution]], distributions: Dict[str, BaseDistribution]
+    search_spaces: List[Dict[str, BaseDistribution]], distributions: Dict[str, BaseDistribution]
 ) -> List[Dict[str, BaseDistribution]]:
     if len(distributions) == 0:
-        return group
+        return search_spaces
 
-    for search_space in group:
+    for search_space in search_spaces:
         keys = set(search_space.keys())
         dist_keys = set(distributions.keys())
 
@@ -36,32 +36,33 @@ def _add_distributions(
 
         if keys < dist_keys:
             return _add_distributions(
-                group, {name: distributions[name] for name in dist_keys - keys}
+                search_spaces, {name: distributions[name] for name in dist_keys - keys}
             )
 
         if keys > dist_keys:
-            group.append(distributions)
-            group.append({name: search_space[name] for name in keys - dist_keys})
-            group.remove(search_space)
-            return group
+            search_spaces.append(distributions)
+            search_spaces.append({name: search_space[name] for name in keys - dist_keys})
+            search_spaces.remove(search_space)
+            return search_spaces
 
         intersection = keys & dist_keys
-        group.append({name: search_space[name] for name in intersection})
+        search_spaces.append({name: search_space[name] for name in intersection})
         if len(keys - intersection) > 0:
-            group.append({name: search_space[name] for name in keys - intersection})
-        group.remove(search_space)
+            search_spaces.append({name: search_space[name] for name in keys - intersection})
+        search_spaces.remove(search_space)
         return _add_distributions(
-            group, {name: distributions[name] for name in dist_keys - intersection}
+            search_spaces, {name: distributions[name] for name in dist_keys - intersection}
         )
 
-    group.append(distributions)
+    search_spaces.append(distributions)
 
-    return group
+    return search_spaces
 
 
 class _GroupDecomposedSearchSpace(object):
     def __init__(self, include_pruned: bool = False) -> None:
-        self._search_space: Optional[_SearchSpaceGroup] = None
+        self._cursor: int = -1
+        self._search_space = _SearchSpaceGroup()
         self._study_id: Optional[int] = None
         self._include_pruned = include_pruned
 
@@ -80,17 +81,20 @@ class _GroupDecomposedSearchSpace(object):
         else:
             states_of_interest = (TrialState.COMPLETE,)
 
-        for trial in reversed(study.get_trials(deepcopy=False, states=states_of_interest)):
-            if trial.state not in states_of_interest:
-                continue
+        next_cursor = self._cursor
+        trials = study.get_trials(deepcopy=False, states=states_of_interest)
+        for trial in reversed(trials):
+            if self._cursor > trial.number:
+                break
 
-            if self._search_space is None:
-                self._search_space = _SearchSpaceGroup()
-                self._search_space.add_distributions(trial.distributions)
-                continue
+            if not trial.state.is_finished():
+                next_cursor = trial.number
 
             self._search_space.add_distributions(trial.distributions)
 
-        search_space = self._search_space or _SearchSpaceGroup()
+        if next_cursor == self._cursor and len(trials) > 0:
+            next_cursor = trials[-1].number
+        self._cursor = next_cursor
+        search_space = self._search_space
 
         return copy.deepcopy(search_space)

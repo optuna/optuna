@@ -248,6 +248,7 @@ class TPESampler(BaseSampler):
 
         self._multivariate = multivariate
         self._group = group
+        self._group_decomposed_search_space: Optional[_GroupDecomposedSearchSpace] = None
         self._search_space_group: Optional[_SearchSpaceGroup] = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
 
@@ -261,14 +262,14 @@ class TPESampler(BaseSampler):
         if group:
             if not multivariate:
                 raise ValueError(
-                    "``group`` option can only be enabled when ``multivariate`` is " "enabled."
+                    "``group`` option can only be enabled when ``multivariate`` is enabled."
                 )
-            else:
-                warnings.warn(
-                    "``group`` option is an experimental feature."
-                    " The interface can change in the future.",
-                    ExperimentalWarning,
-                )
+            warnings.warn(
+                "``group`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+            self._group_decomposed_search_space = _GroupDecomposedSearchSpace(True)
 
     def reseed_rng(self) -> None:
 
@@ -283,33 +284,38 @@ class TPESampler(BaseSampler):
             return {}
 
         if self._group:
-            self._search_space_group = _GroupDecomposedSearchSpace(True).calculate(study)
-            _search_space = {}
-            for sub_space in self._search_space_group.group:
-                _search_space.update(sub_space)
+            assert self._group_decomposed_search_space is not None
+            self._search_space_group = self._group_decomposed_search_space.calculate(study)
+            _search_space: Dict[str, BaseDistribution] = {}
+            for sub_space in self._search_space_group.search_spaces:
+                for name, distribution in sub_space.items():
+                    if not isinstance(distribution, _DISTRIBUTION_CLASSES):
+                        self._log_independent_sampling(study, trial, name)
+                        continue
+                    _search_space[name] = distribution
             return _search_space
 
         search_space: Dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
             if not isinstance(distribution, _DISTRIBUTION_CLASSES):
-                if self._warn_independent_sampling:
-                    complete_trials = study.get_trials(deepcopy=False)
-                    if len(complete_trials) >= self._n_startup_trials:
-                        self._log_independent_sampling(trial, name)
+                self._log_independent_sampling(study, trial, name)
                 continue
             search_space[name] = distribution
 
         return search_space
 
-    def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-        _logger.warning(
-            "The parameter '{}' in trial#{} is sampled independently "
-            "instead of being sampled by multivariate TPE sampler. "
-            "(optimization performance may be degraded). "
-            "You can suppress this warning by setting `warn_independent_sampling` "
-            "to `False` in the constructor of `TPESampler`, "
-            "if this independent sampling is intended behavior.".format(param_name, trial.number)
-        )
+    def _log_independent_sampling(self, study: Study, trial: FrozenTrial, param_name: str) -> None:
+        if self._warn_independent_sampling:
+            complete_trials = study.get_trials(deepcopy=False)
+            if len(complete_trials) >= self._n_startup_trials:
+                _logger.warning(
+                    "The parameter '{param_name}' in trial#{trial.number} is sampled "
+                    "independently instead of being sampled by multivariate TPE sampler. "
+                    "(optimization performance may be degraded). "
+                    "You can suppress this warning by setting `warn_independent_sampling` "
+                    "to `False` in the constructor of `TPESampler`, "
+                    "if this independent sampling is intended behavior."
+                )
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
@@ -320,7 +326,10 @@ class TPESampler(BaseSampler):
         if self._group:
             assert self._search_space_group is not None
             params = {}
-            for sub_space in self._search_space_group.group:
+            for sub_space in self._search_space_group.search_spaces:
+                for name, distribution in sub_space.items():
+                    if not isinstance(distribution, _DISTRIBUTION_CLASSES):
+                        del sub_space[name]
                 params.update(self._sample_relative(study, trial, sub_space))
             return params
         else:
@@ -914,6 +923,8 @@ def _get_multivariate_observation_pairs(
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
+        # If ``group`` = True, there may be trials that are not included in each subspace.
+        # Such trials should be ignored here.
         if any([param_name not in trial.params for param_name in param_names]):
             continue
 
