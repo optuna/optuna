@@ -11,13 +11,13 @@ This page contains a list of example codes written with Optuna.
 
 * [Scikit-learn](./sklearn/sklearn_simple.py)
 * [Scikit-learn OptunaSearchCV](./sklearn/sklearn_optuna_search_cv_simple.py)
-* [Scikit-image](./skimage_lbp_simple.py)
+* [Scikit-image](./skimage/skimage_lbp_simple.py)
 * [Chainer](./chainer/chainer_simple.py)
 * [ChainerMN](./chainer/chainermn_simple.py)
-* [Dask-ML](./dask_ml_simple.py)
+* [Dask-ML](./dask_ml/dask_ml_simple.py)
 * [LightGBM](./lightgbm/lightgbm_simple.py)
 * [LightGBM Tuner](./lightgbm/lightgbm_tuner_simple.py)
-* [CatBoost](./catboost_simple.py)
+* [CatBoost](./catboost/catboost_simple.py)
 * [MXNet](./mxnet/mxnet_simple.py)
 * [Gluon](./mxnet/gluon_simple.py)
 * [PyTorch](./pytorch/pytorch_simple.py)
@@ -33,7 +33,7 @@ This page contains a list of example codes written with Optuna.
 * [AllenNLP (Jsonnet)](./allennlp/allennlp_jsonnet.py)
 * [SKORCH](./pytorch/skorch_simple.py)
 * [RAPIDS](./rapids_simple.py)
-* [Haiku](./haiku_simple.py)
+* [Haiku](./haiku/haiku_simple.py)
 
 ### An example where an objective function uses additional arguments
 
@@ -48,8 +48,8 @@ The following example demonstrates how to implement pruning logic with Optuna.
 
 In addition, integration modules are available for the following libraries, providing simpler interfaces to utilize pruning.
 
-* [Pruning with Catalyst integration module](./catalyst_simple.py)
-* [Pruning with Catboost integration module](./catboost_simple.py)
+* [Pruning with Catalyst integration module](./pytorch/catalyst_simple.py)
+* [Pruning with Catboost integration module](./catboost/catboost_simple.py)
 * [Pruning with Chainer integration module](./chainer/chainer_integration.py)
 * [Pruning with ChainerMN integration module](./chainer/chainermn_integration.py)
 * [Pruning with FastAI V1 integration module](./fastai/fastaiv1_simple.py)
