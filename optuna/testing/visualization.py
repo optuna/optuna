@@ -9,6 +9,7 @@ def prepare_study_with_trials(
     less_than_two: bool = False,
     more_than_three: bool = False,
     with_c_d: bool = True,
+    n_objectives: int = 1,
 ) -> Study:
 
     """Prepare a study for tests.
@@ -30,12 +31,12 @@ def prepare_study_with_trials(
 
     """
 
-    study = create_study()
+    study = create_study(directions=["minimize"] * n_objectives)
     if no_trials:
         return study
     study.add_trial(
         create_trial(
-            value=0.0,
+            values=[0.0] * n_objectives,
             params={"param_a": 1.0, "param_b": 2.0, "param_c": 3.0, "param_d": 4.0}
             if with_c_d
             else {"param_a": 1.0, "param_b": 2.0},
@@ -54,7 +55,7 @@ def prepare_study_with_trials(
     )
     study.add_trial(
         create_trial(
-            value=2.0,
+            values=[2.0] * n_objectives,
             params={"param_b": 0.0, "param_d": 4.0} if with_c_d else {"param_b": 0.0},
             distributions={
                 "param_b": UniformDistribution(0.0, 3.0),
@@ -69,7 +70,7 @@ def prepare_study_with_trials(
 
     study.add_trial(
         create_trial(
-            value=1.0,
+            values=[1.0] * n_objectives,
             params={"param_a": 2.5, "param_b": 1.0, "param_c": 4.5, "param_d": 2.0}
             if with_c_d
             else {"param_a": 2.5, "param_b": 1.0},
@@ -90,7 +91,7 @@ def prepare_study_with_trials(
     if more_than_three:
         study.add_trial(
             create_trial(
-                value=1.5,
+                values=[1.5] * n_objectives,
                 params={"param_a": 0.5, "param_b": 1.5, "param_c": 2.0, "param_d": 3.0}
                 if with_c_d
                 else {"param_a": 0.5, "param_b": 1.5},

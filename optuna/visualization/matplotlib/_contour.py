@@ -137,7 +137,7 @@ def _get_contour_plot(
         # Set up the graph style.
         fig, axs = plt.subplots()
         axs.set_title("Contour Plot")
-        cmap = _set_cmap(study)
+        cmap = _set_cmap(study, target)
         contour_point_num = 1000
 
         # Prepare data and draw contour plots.
@@ -157,7 +157,7 @@ def _get_contour_plot(
         # Set up the graph style.
         fig, axs = plt.subplots(n_params, n_params)
         fig.suptitle("Contour Plot")
-        cmap = _set_cmap(study)
+        cmap = _set_cmap(study, target)
         contour_point_num = 100
 
         # Prepare data and draw contour plots.
@@ -177,8 +177,8 @@ def _get_contour_plot(
     return axs
 
 
-def _set_cmap(study: Study) -> "Colormap":
-    cmap = "Blues_r" if study.direction == StudyDirection.MINIMIZE else "Blues"
+def _set_cmap(study: Study, target: Optional[Callable[[FrozenTrial], float]]) -> "Colormap":
+    cmap = "Blues_r" if target is None and study.direction == StudyDirection.MINIMIZE else "Blues"
     return plt.get_cmap(cmap)
 
 
