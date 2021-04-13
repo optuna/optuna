@@ -283,31 +283,33 @@ class TPESampler(BaseSampler):
         if not self._multivariate:
             return {}
 
+        n_complete_trials = len(study.get_trials(deepcopy=False))
+        search_space: Dict[str, BaseDistribution] = {}
+
         if self._group:
             assert self._group_decomposed_search_space is not None
             self._search_space_group = self._group_decomposed_search_space.calculate(study)
-            _search_space: Dict[str, BaseDistribution] = {}
             for sub_space in self._search_space_group.search_spaces:
                 for name, distribution in sub_space.items():
                     if not isinstance(distribution, _DISTRIBUTION_CLASSES):
-                        self._log_independent_sampling(study, trial, name)
+                        self._log_independent_sampling(n_complete_trials, trial, name)
                         continue
-                    _search_space[name] = distribution
-            return _search_space
+                    search_space[name] = distribution
+            return search_space
 
-        search_space: Dict[str, BaseDistribution] = {}
         for name, distribution in self._search_space.calculate(study).items():
             if not isinstance(distribution, _DISTRIBUTION_CLASSES):
-                self._log_independent_sampling(study, trial, name)
+                self._log_independent_sampling(n_complete_trials, trial, name)
                 continue
             search_space[name] = distribution
 
         return search_space
 
-    def _log_independent_sampling(self, study: Study, trial: FrozenTrial, param_name: str) -> None:
+    def _log_independent_sampling(
+        self, n_complete_trials: int, trial: FrozenTrial, param_name: str
+    ) -> None:
         if self._warn_independent_sampling:
-            complete_trials = study.get_trials(deepcopy=False)
-            if len(complete_trials) >= self._n_startup_trials:
+            if n_complete_trials >= self._n_startup_trials:
                 _logger.warning(
                     f"The parameter '{param_name}' in trial#{trial.number} is sampled "
                     "independently instead of being sampled by multivariate TPE sampler. "

@@ -82,13 +82,16 @@ class _GroupDecomposedSearchSpace(object):
             states_of_interest = (TrialState.COMPLETE,)
 
         next_cursor = self._cursor
-        trials = study.get_trials(deepcopy=False, states=states_of_interest)
+        trials = study.get_trials(deepcopy=False)
         for trial in reversed(trials):
             if self._cursor > trial.number:
                 break
 
             if not trial.state.is_finished():
                 next_cursor = trial.number
+
+            if trial.state not in states_of_interest:
+                continue
 
             self._search_space.add_distributions(trial.distributions)
 
