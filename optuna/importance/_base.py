@@ -44,7 +44,7 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
             target:
                 A function to specify the value to evaluate importances.
                 If it is :obj:`None` and ``study`` is being used for single-objective optimization,
-                the objective values are used. Can also be used for other trial parameters, such as
+                the objective values are used. Can also be used for other trial attributes, such as
                 the duration, like ``target=lambda t: t.duration.total_seconds()``.
 
                 .. note::
