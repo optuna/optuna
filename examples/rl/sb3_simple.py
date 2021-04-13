@@ -23,7 +23,6 @@ from optuna.samplers import TPESampler
 
 
 N_TRIALS = 100
-N_JOBS = 1
 N_STARTUP_TRIALS = 5
 N_EVALUATIONS = 2
 N_TIMESTEPS = int(2e4)
@@ -159,7 +158,7 @@ if __name__ == "__main__":
 
     study = optuna.create_study(sampler=sampler, pruner=pruner, direction="maximize")
     try:
-        study.optimize(objective, n_trials=N_TRIALS, n_jobs=N_JOBS, timeout=600)
+        study.optimize(objective, n_trials=N_TRIALS, timeout=600)
     except KeyboardInterrupt:
         pass
 
