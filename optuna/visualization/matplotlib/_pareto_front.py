@@ -112,14 +112,10 @@ def _get_pareto_front_2d(
     elif len(target_names) != 2:
         raise ValueError("The length of `target_names` is supposed to be 2.")
 
-    ax.set_xlabel(target_names[0])
-    ax.set_ylabel(target_names[1])
-
     # Prepare data for plotting.
     trials = study.best_trials
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
-        return ax
 
     if include_dominated_trials:
         non_pareto_trials = _get_non_pareto_front_trials(study, trials)
@@ -145,20 +141,25 @@ def _get_pareto_front_2d(
                 "lower than 0."
             )
 
-    ax.scatter(
-        x=[t.values[axis_order[0]] for t in trials[len(study.best_trials) :]],
-        y=[t.values[axis_order[1]] for t in trials[len(study.best_trials) :]],
-        color=cmap(0),
-        label="Trial",
-    )
-    ax.scatter(
-        x=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
-        y=[t.values[axis_order[1]] for t in trials[: len(study.best_trials)]],
-        color=cmap(3),
-        label="Best Trial",
-    )
+    ax.set_xlabel(target_names[axis_order[0]])
+    ax.set_ylabel(target_names[axis_order[1]])
 
-    if include_dominated_trials:
+    if len(trials) - len(study.best_trials) != 0:
+        ax.scatter(
+            x=[t.values[axis_order[0]] for t in trials[len(study.best_trials) :]],
+            y=[t.values[axis_order[1]] for t in trials[len(study.best_trials) :]],
+            color=cmap(0),
+            label="Trial",
+        )
+    if len(study.best_trials):
+        ax.scatter(
+            x=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
+            y=[t.values[axis_order[1]] for t in trials[: len(study.best_trials)]],
+            color=cmap(3),
+            label="Best Trial",
+        )
+
+    if include_dominated_trials and ax.has_data():
         ax.legend()
 
     return ax
@@ -183,14 +184,9 @@ def _get_pareto_front_3d(
     elif len(target_names) != 3:
         raise ValueError("The length of `target_names` is supposed to be 3.")
 
-    ax.set_xlabel(target_names[0])
-    ax.set_ylabel(target_names[1])
-    ax.set_zlabel(target_names[2])
-
     trials = study.best_trials
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
-        return ax
 
     if include_dominated_trials:
         non_pareto_trials = _get_non_pareto_front_trials(study, trials)
@@ -216,22 +212,29 @@ def _get_pareto_front_3d(
                 "lower than 0."
             )
 
-    ax.scatter(
-        xs=[t.values[axis_order[0]] for t in trials[len(study.best_trials) :]],
-        ys=[t.values[axis_order[1]] for t in trials[len(study.best_trials) :]],
-        zs=[t.values[axis_order[2]] for t in trials[len(study.best_trials) :]],
-        color=cmap(0),
-        label="Trial",
-    )
-    ax.scatter(
-        xs=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
-        ys=[t.values[axis_order[1]] for t in trials[: len(study.best_trials)]],
-        zs=[t.values[axis_order[2]] for t in trials[: len(study.best_trials)]],
-        color=cmap(3),
-        label="Best Trial",
-    )
+    ax.set_xlabel(target_names[axis_order[0]])
+    ax.set_ylabel(target_names[axis_order[1]])
+    ax.set_zlabel(target_names[axis_order[2]])
 
-    if include_dominated_trials:
+    if len(trials) - len(study.best_trials) != 0:
+        ax.scatter(
+            xs=[t.values[axis_order[0]] for t in trials[len(study.best_trials) :]],
+            ys=[t.values[axis_order[1]] for t in trials[len(study.best_trials) :]],
+            zs=[t.values[axis_order[2]] for t in trials[len(study.best_trials) :]],
+            color=cmap(0),
+            label="Trial",
+        )
+
+    if len(study.best_trials):
+        ax.scatter(
+            xs=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
+            ys=[t.values[axis_order[1]] for t in trials[: len(study.best_trials)]],
+            zs=[t.values[axis_order[2]] for t in trials[: len(study.best_trials)]],
+            color=cmap(3),
+            label="Best Trial",
+        )
+
+    if include_dominated_trials and ax.has_data():
         ax.legend()
 
     return ax

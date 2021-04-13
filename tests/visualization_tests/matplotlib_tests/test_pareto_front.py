@@ -9,6 +9,7 @@ import optuna
 from optuna.visualization.matplotlib import plot_pareto_front
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize("axis_order", [None, [0, 1], [1, 0]])
 def test_plot_pareto_front_2d(
@@ -64,8 +65,15 @@ def test_plot_pareto_front_2d(
         axis_order=axis_order,
     )
     assert figure.has_data()
+    if axis_order is None:
+        assert figure.get_xlabel() == target_names[0]
+        assert figure.get_ylabel() == target_names[1]
+    else:
+        assert figure.get_xlabel() == target_names[axis_order[0]]
+        assert figure.get_ylabel() == target_names[axis_order[1]]
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 @pytest.mark.parametrize(
     "axis_order", [None] + list(itertools.permutations(range(3), 3))  # type: ignore
@@ -137,7 +145,17 @@ def test_plot_pareto_front_3d(
 
     assert figure.has_data()
 
+    if axis_order is None:
+        assert figure.get_xlabel() == target_names[0]
+        assert figure.get_ylabel() == target_names[1]
+        assert figure.get_zlabel() == target_names[2]
+    else:
+        assert figure.get_xlabel() == target_names[axis_order[0]]
+        assert figure.get_ylabel() == target_names[axis_order[1]]
+        assert figure.get_zlabel() == target_names[axis_order[2]]
 
+
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 def test_plot_pareto_front_dimensions(include_dominated_trials: bool) -> None:
     # Unsupported: n_objectives == 1.
@@ -170,6 +188,7 @@ def test_plot_pareto_front_dimensions(include_dominated_trials: bool) -> None:
         plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("dimension", [2, 3])
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
 def test_plot_pareto_front_invalid_axis_order(
