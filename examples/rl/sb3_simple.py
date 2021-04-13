@@ -23,7 +23,7 @@ from optuna.samplers import TPESampler
 
 
 N_TRIALS = 100
-N_JOBS = 2
+N_JOBS = 1
 N_STARTUP_TRIALS = 5
 N_EVALUATIONS = 2
 N_TIMESTEPS = int(2e4)
