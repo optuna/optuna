@@ -23,7 +23,6 @@ from optuna.integration._lightgbm_tuner.optimize import _OptunaObjectiveCV
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTunerCV
 import optuna.integration.lightgbm as lgb
-from optuna.samplers import TPESampler
 from optuna.study import Study
 
 
@@ -746,30 +745,21 @@ class TestLightGBMTuner(object):
         valid = lgb.Dataset(X_test, y_test)
         params = {"objective": "regression", "metric": "rmse", "random_seed": 0}
 
-        test_study_first_try = optuna.create_study(
-            direction="minimize", sampler=TPESampler(seed=10)
-        )
         tuner_first_try = lgb.LightGBMTuner(
             params,
             train,
             valid_sets=valid,
             early_stopping_rounds=3,
-            study=test_study_first_try,
             optuna_seed=10,
         )
         tuner_first_try.run()
         best_score_first_try = tuner_first_try.best_score
-
-        test_study_second_try = optuna.create_study(
-            direction="minimize", sampler=TPESampler(seed=10)
-        )
 
         tuner_second_try = lgb.LightGBMTuner(
             params,
             train,
             valid_sets=valid,
             early_stopping_rounds=3,
-            study=test_study_second_try,
             optuna_seed=10,
         )
         tuner_second_try.run()
@@ -1067,31 +1057,21 @@ class TestLightGBMTunerCV(object):
         train = lgb.Dataset(X_trainval, y_trainval)
         params = {"objective": "regression", "metric": "rmse", "random_seed": 0}
 
-        test_study_first_try = optuna.create_study(
-            direction="minimize", sampler=TPESampler(seed=10)
-        )
-
         tuner_first_try = lgb.LightGBMTunerCV(
             params,
             train,
             early_stopping_rounds=3,
             folds=KFold(n_splits=3),
-            study=test_study_first_try,
             optuna_seed=10,
         )
         tuner_first_try.run()
         best_score_first_try = tuner_first_try.best_score
-
-        test_study_second_try = optuna.create_study(
-            direction="minimize", sampler=TPESampler(seed=10)
-        )
 
         tuner_second_try = lgb.LightGBMTunerCV(
             params,
             train,
             early_stopping_rounds=3,
             folds=KFold(n_splits=3),
-            study=test_study_second_try,
             optuna_seed=10,
         )
         tuner_second_try.run()
