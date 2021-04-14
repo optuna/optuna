@@ -8,12 +8,6 @@ import numpy as np
 import optuna
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -27,26 +21,7 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import cm
     from optuna.visualization.matplotlib._matplotlib_imports import plt
-    from optuna.visualization.matplotlib._matplotlib_imports import Rectangle
 
-    # Color definitions.
-    cmap = cm.get_cmap("tab20c")
-    _distribution_colors = {
-        UniformDistribution: cmap(0),
-        LogUniformDistribution: cmap(0),
-        DiscreteUniformDistribution: cmap(0),
-        IntUniformDistribution: cmap(1),
-        IntLogUniformDistribution: cmap(1),
-        CategoricalDistribution: cmap(3),
-    }
-    _legend_elements = [
-        Rectangle([0, 0], 0, 0, facecolor=cmap(0), label="Uniform Distribution"),
-        Rectangle([0, 0], 0, 0, facecolor=cmap(0), label="Log Uniform Distribution"),
-        Rectangle([0, 0], 0, 0, facecolor=cmap(0), label="Discrete Uniform Distribution"),
-        Rectangle([0, 0], 0, 0, facecolor=cmap(1), label="Int Uniform Distribution"),
-        Rectangle([0, 0], 0, 0, facecolor=cmap(1), label="Int Log Uniform Distribution"),
-        Rectangle([0, 0], 0, 0, facecolor=cmap(3), label="Categorical Distribution"),
-    ]
 
 _logger = get_logger(__name__)
 
@@ -159,10 +134,10 @@ def _get_param_importance_plot(
         pos,
         importance_values,
         align="center",
-        color=[_get_color(param_name, study) for param_name in param_names],
+        color=cm.get_cmap("tab20c")(0),
         tick_label=param_names,
     )
-    ax.legend(handles=_legend_elements, title="Distributions", loc="lower right")
+
     return ax
 
 
@@ -171,7 +146,3 @@ def _get_distribution(param_name: str, study: Study) -> "BaseDistribution":
         if param_name in trial.distributions:
             return trial.distributions[param_name]
     assert False
-
-
-def _get_color(param_name: str, study: Study) -> str:
-    return _distribution_colors[type(_get_distribution(param_name, study))]
