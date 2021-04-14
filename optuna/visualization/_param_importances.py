@@ -19,8 +19,6 @@ if _imports.is_successful():
 
     from optuna.visualization._plotly_imports import go
 
-    bar_color = plotly.colors.sequential.Blues[-4]
-
 
 logger = get_logger(__name__)
 
@@ -130,7 +128,7 @@ def plot_param_importances(
                     _make_hovertext(param_name, importance, study)
                     for param_name, importance in importances.items()
                 ],
-                marker_color=bar_color,
+                marker_color=plotly.colors.sequential.Blues[-4],
                 orientation="h",
             )
         ],

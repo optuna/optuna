@@ -22,9 +22,6 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import cm
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
-    # fix single color for bars
-    cmap = cm.get_cmap("tab20c")
-    bar_color = cmap(0)
 
 _logger = get_logger(__name__)
 
@@ -137,7 +134,7 @@ def _get_param_importance_plot(
         pos,
         importance_values,
         align="center",
-        color=bar_color,
+        color=cm.get_cmap("tab20c")(0),
         tick_label=param_names,
     )
 
