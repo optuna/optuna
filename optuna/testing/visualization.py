@@ -25,6 +25,7 @@ def prepare_study_with_trials(
         with_c_d: If ``True``, the study has four hyperparameters named 'param_a',
             'param_b', 'param_c', and 'param_d'. Otherwise, there are only two
             hyperparameters ('param_a' and 'param_b').
+        n_objectives: Number of objective values.
 
     Returns:
         :class:`~optuna.study.Study`
