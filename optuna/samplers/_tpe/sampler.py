@@ -329,10 +329,11 @@ class TPESampler(BaseSampler):
             assert self._search_space_group is not None
             params = {}
             for sub_space in self._search_space_group.search_spaces:
+                search_space = {}
                 for name, distribution in sub_space.items():
-                    if not isinstance(distribution, _DISTRIBUTION_CLASSES):
-                        del sub_space[name]
-                params.update(self._sample_relative(study, trial, sub_space))
+                    if isinstance(distribution, _DISTRIBUTION_CLASSES):
+                        search_space[name] = distribution
+                params.update(self._sample_relative(study, trial, search_space))
             return params
         else:
             return self._sample_relative(study, trial, search_space)
