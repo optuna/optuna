@@ -15,8 +15,8 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
-from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
+from optuna.visualization._utils import _is_numerical
 
 
 if _imports.is_successful():
@@ -92,7 +92,7 @@ def plot_contour(
 
 def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
     values = [t.params[p_name] for t in trials if p_name in t.params]
-    if not _is_categorical(trials, p_name):
+    if _is_numerical(trials, p_name):
         return values
     return list(map(str, values))
 
@@ -137,8 +137,12 @@ def _get_contour_plot(
             min_value = math.pow(10, math.log10(min_value) - padding)
             max_value = math.pow(10, math.log10(max_value) + padding)
 
-        elif _is_categorical(trials, p_name):
+        elif _is_numerical(trials, p_name):
+            padding = (max_value - min_value) * padding_ratio
+            min_value = min_value - padding
+            max_value = max_value + padding
 
+        else:
             # Plotly>=4.12.0 draws contours using the indices of categorical variables instead of
             # raw values and the range should be updated based on the cardinality of categorical
             # variables. See https://github.com/optuna/optuna/issues/1967.
@@ -148,25 +152,21 @@ def _get_contour_plot(
                 min_value = -padding
                 max_value = span + padding
 
-        else:
-            padding = (max_value - min_value) * padding_ratio
-            min_value = min_value - padding
-            max_value = max_value + padding
         param_values_range[p_name] = (min_value, max_value)
 
     if len(sorted_params) == 2:
         x_param = sorted_params[0]
         y_param = sorted_params[1]
         sub_plots = _generate_contour_subplot(
-            trials, x_param, y_param, study.direction, param_values_range, target, target_name
+            trials, x_param, y_param, study.directions[0], param_values_range, target, target_name
         )
         figure = go.Figure(data=sub_plots, layout=layout)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
         figure.update_yaxes(title_text=y_param, range=param_values_range[y_param])
 
-        if _is_categorical(trials, x_param):
+        if not _is_numerical(trials, x_param):
             figure.update_xaxes(type="category")
-        if _is_categorical(trials, y_param):
+        if not _is_numerical(trials, y_param):
             figure.update_yaxes(type="category")
 
         if _is_log_scale(trials, x_param):
@@ -190,7 +190,7 @@ def _get_contour_plot(
                         trials,
                         x_param,
                         y_param,
-                        study.direction,
+                        study.directions[0],
                         param_values_range,
                         target,
                         target_name,
@@ -206,9 +206,9 @@ def _get_contour_plot(
                 figure.update_xaxes(range=param_values_range[x_param], row=y_i + 1, col=x_i + 1)
                 figure.update_yaxes(range=param_values_range[y_param], row=y_i + 1, col=x_i + 1)
 
-                if _is_categorical(trials, x_param):
+                if not _is_numerical(trials, x_param):
                     figure.update_xaxes(type="category", row=y_i + 1, col=x_i + 1)
-                if _is_categorical(trials, y_param):
+                if not _is_numerical(trials, y_param):
                     figure.update_yaxes(type="category", row=y_i + 1, col=x_i + 1)
 
                 if _is_log_scale(trials, x_param):
@@ -250,11 +250,11 @@ def _generate_contour_subplot(
 
     # Padding to the plot for non-categorical params.
     x_range = param_values_range[x_param]
-    if not _is_categorical(trials, x_param):
+    if _is_numerical(trials, x_param):
         x_indices = [x_range[0]] + x_indices + [x_range[1]]
 
     y_range = param_values_range[y_param]
-    if not _is_categorical(trials, y_param):
+    if _is_numerical(trials, y_param):
         y_indices = [y_range[0]] + y_indices + [y_range[1]]
 
     z = [[float("nan") for _ in range(len(x_indices))] for _ in range(len(y_indices))]
@@ -266,9 +266,9 @@ def _generate_contour_subplot(
             continue
         x_value = trial.params[x_param]
         y_value = trial.params[y_param]
-        if _is_categorical(trials, x_param):
+        if not _is_numerical(trials, x_param):
             x_value = str(x_value)
-        if _is_categorical(trials, y_param):
+        if not _is_numerical(trials, y_param):
             y_value = str(y_value)
         x_values.append(x_value)
         y_values.append(y_value)
@@ -298,7 +298,7 @@ def _generate_contour_subplot(
         contours_coloring="heatmap",
         hoverinfo="none",
         line_smoothing=1.3,
-        reversescale=True if direction == StudyDirection.MINIMIZE else False,
+        reversescale=target is None and direction == StudyDirection.MINIMIZE,
     )
 
     scatter = go.Scatter(

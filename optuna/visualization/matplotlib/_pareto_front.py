@@ -1,4 +1,3 @@
-import json
 from typing import List
 from typing import Optional
 
@@ -7,30 +6,34 @@ from optuna._experimental import experimental
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.visualization._plotly_imports import _imports
+from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
 if _imports.is_successful():
-    from optuna.visualization._plotly_imports import go
+    from optuna.visualization.matplotlib._matplotlib_imports import Axes
+    from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 _logger = optuna.logging.get_logger(__name__)
 
 
-@experimental("2.4.0")
+@experimental("2.8.0")
 def plot_pareto_front(
     study: Study,
     *,
     target_names: Optional[List[str]] = None,
     include_dominated_trials: bool = True,
     axis_order: Optional[List[int]] = None,
-) -> "go.Figure":
+) -> "Axes":
     """Plot the Pareto front of a study.
+
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_pareto_front` for an example.
 
     Example:
 
         The following code snippet shows how to plot the Pareto front of a study.
 
-        .. plotly::
+        .. plot::
 
             import optuna
 
@@ -47,8 +50,7 @@ def plot_pareto_front(
             study = optuna.create_study(directions=["minimize", "minimize"])
             study.optimize(objective, n_trials=50)
 
-            fig = optuna.visualization.plot_pareto_front(study)
-            fig.show()
+            optuna.visualization.matplotlib.plot_pareto_front(study)
 
     Args:
         study:
@@ -64,7 +66,7 @@ def plot_pareto_front(
             default order is used.
 
     Returns:
-        A :class:`plotly.graph_objs.Figure` object.
+        A :class:`matplotlib.axes.Axes` object.
 
     Raises:
         :exc:`ValueError`:
@@ -97,14 +99,21 @@ def _get_pareto_front_2d(
     target_names: Optional[List[str]],
     include_dominated_trials: bool = False,
     axis_order: Optional[List[int]] = None,
-) -> "go.Figure":
+) -> "Axes":
+
+    # Set up the graph style.
+    plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
+    _, ax = plt.subplots()
+    ax.set_title("Pareto-front Plot")
+    cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
+
     if target_names is None:
         target_names = ["Objective 0", "Objective 1"]
     elif len(target_names) != 2:
         raise ValueError("The length of `target_names` is supposed to be 2.")
 
+    # Prepare data for plotting.
     trials = study.best_trials
-    n_best_trials = len(trials)
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
@@ -132,48 +141,28 @@ def _get_pareto_front_2d(
                 "lower than 0."
             )
 
-    data = [
-        go.Scatter(
-            x=[t.values[axis_order[0]] for t in trials[n_best_trials:]],
-            y=[t.values[axis_order[1]] for t in trials[n_best_trials:]],
-            text=[_make_hovertext(t) for t in trials[n_best_trials:]],
-            mode="markers",
-            hovertemplate="%{text}<extra>Trial</extra>",
-            marker={
-                "line": {"width": 0.5, "color": "Grey"},
-                "color": [t.number for t in trials[n_best_trials:]],
-                "colorscale": "Blues",
-                "colorbar": {
-                    "title": "#Trials",
-                },
-            },
-            showlegend=False,
-        ),
-        go.Scatter(
-            x=[t.values[axis_order[0]] for t in trials[:n_best_trials]],
-            y=[t.values[axis_order[1]] for t in trials[:n_best_trials]],
-            text=[_make_hovertext(t) for t in trials[:n_best_trials]],
-            mode="markers",
-            hovertemplate="%{text}<extra>Best Trial</extra>",
-            marker={
-                "line": {"width": 0.5, "color": "Grey"},
-                "color": [t.number for t in trials[:n_best_trials]],
-                "colorscale": "Reds",
-                "colorbar": {
-                    "title": "#Best trials",
-                    "x": 1.1 if include_dominated_trials else 1,
-                    "xpad": 40,
-                },
-            },
-            showlegend=False,
-        ),
-    ]
-    layout = go.Layout(
-        title="Pareto-front Plot",
-        xaxis_title=target_names[axis_order[0]],
-        yaxis_title=target_names[axis_order[1]],
-    )
-    return go.Figure(data=data, layout=layout)
+    ax.set_xlabel(target_names[axis_order[0]])
+    ax.set_ylabel(target_names[axis_order[1]])
+
+    if len(trials) - len(study.best_trials) != 0:
+        ax.scatter(
+            x=[t.values[axis_order[0]] for t in trials[len(study.best_trials) :]],
+            y=[t.values[axis_order[1]] for t in trials[len(study.best_trials) :]],
+            color=cmap(0),
+            label="Trial",
+        )
+    if len(study.best_trials):
+        ax.scatter(
+            x=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
+            y=[t.values[axis_order[1]] for t in trials[: len(study.best_trials)]],
+            color=cmap(3),
+            label="Best Trial",
+        )
+
+    if include_dominated_trials and ax.has_data():
+        ax.legend()
+
+    return ax
 
 
 def _get_pareto_front_3d(
@@ -181,14 +170,21 @@ def _get_pareto_front_3d(
     target_names: Optional[List[str]],
     include_dominated_trials: bool = False,
     axis_order: Optional[List[int]] = None,
-) -> "go.Figure":
+) -> "Axes":
+
+    # Set up the graph style.
+    plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d")
+    ax.set_title("Pareto-front Plot")
+    cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
+
     if target_names is None:
         target_names = ["Objective 0", "Objective 1", "Objective 2"]
     elif len(target_names) != 3:
         raise ValueError("The length of `target_names` is supposed to be 3.")
 
     trials = study.best_trials
-    n_best_trials = len(trials)
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
@@ -216,57 +212,29 @@ def _get_pareto_front_3d(
                 "lower than 0."
             )
 
-    data = [
-        go.Scatter3d(
-            x=[t.values[axis_order[0]] for t in trials[n_best_trials:]],
-            y=[t.values[axis_order[1]] for t in trials[n_best_trials:]],
-            z=[t.values[axis_order[2]] for t in trials[n_best_trials:]],
-            text=[_make_hovertext(t) for t in trials[n_best_trials:]],
-            hovertemplate="%{text}<extra>Trial</extra>",
-            mode="markers",
-            marker={
-                "line": {"width": 0.5, "color": "Grey"},
-                "color": [t.number for t in trials[n_best_trials:]],
-                "colorscale": "Blues",
-                "colorbar": {
-                    "title": "#Trials",
-                },
-            },
-            showlegend=False,
-        ),
-        go.Scatter3d(
-            x=[t.values[axis_order[0]] for t in trials[:n_best_trials]],
-            y=[t.values[axis_order[1]] for t in trials[:n_best_trials]],
-            z=[t.values[axis_order[2]] for t in trials[:n_best_trials]],
-            text=[_make_hovertext(t) for t in trials[:n_best_trials]],
-            hovertemplate="%{text}<extra>Best Trial</extra>",
-            mode="markers",
-            marker={
-                "line": {"width": 0.5, "color": "Grey"},
-                "color": [t.number for t in trials[:n_best_trials]],
-                "colorscale": "Reds",
-                "colorbar": {
-                    "title": "#Best trials",
-                    "x": 1.1 if include_dominated_trials else 1,
-                    "xpad": 40,
-                },
-            },
-            showlegend=False,
-        ),
-    ]
-    layout = go.Layout(
-        title="Pareto-front Plot",
-        scene={
-            "xaxis_title": target_names[axis_order[0]],
-            "yaxis_title": target_names[axis_order[1]],
-            "zaxis_title": target_names[axis_order[2]],
-        },
-    )
-    return go.Figure(data=data, layout=layout)
+    ax.set_xlabel(target_names[axis_order[0]])
+    ax.set_ylabel(target_names[axis_order[1]])
+    ax.set_zlabel(target_names[axis_order[2]])
 
+    if len(trials) - len(study.best_trials) != 0:
+        ax.scatter(
+            xs=[t.values[axis_order[0]] for t in trials[len(study.best_trials) :]],
+            ys=[t.values[axis_order[1]] for t in trials[len(study.best_trials) :]],
+            zs=[t.values[axis_order[2]] for t in trials[len(study.best_trials) :]],
+            color=cmap(0),
+            label="Trial",
+        )
 
-def _make_hovertext(trial: FrozenTrial) -> str:
-    text = json.dumps(
-        {"number": trial.number, "values": trial.values, "params": trial.params}, indent=2
-    )
-    return text.replace("\n", "<br>")
+    if len(study.best_trials):
+        ax.scatter(
+            xs=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
+            ys=[t.values[axis_order[1]] for t in trials[: len(study.best_trials)]],
+            zs=[t.values[axis_order[2]] for t in trials[: len(study.best_trials)]],
+            color=cmap(3),
+            label="Best Trial",
+        )
+
+    if include_dominated_trials and ax.has_data():
+        ax.legend()
+
+    return ax
