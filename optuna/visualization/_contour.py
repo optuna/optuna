@@ -158,7 +158,7 @@ def _get_contour_plot(
         x_param = sorted_params[0]
         y_param = sorted_params[1]
         sub_plots = _generate_contour_subplot(
-            trials, x_param, y_param, study.direction, param_values_range, target, target_name
+            trials, x_param, y_param, study.directions[0], param_values_range, target, target_name
         )
         figure = go.Figure(data=sub_plots, layout=layout)
         figure.update_xaxes(title_text=x_param, range=param_values_range[x_param])
@@ -190,7 +190,7 @@ def _get_contour_plot(
                         trials,
                         x_param,
                         y_param,
-                        study.direction,
+                        study.directions[0],
                         param_values_range,
                         target,
                         target_name,
@@ -298,7 +298,7 @@ def _generate_contour_subplot(
         contours_coloring="heatmap",
         hoverinfo="none",
         line_smoothing=1.3,
-        reversescale=True if direction == StudyDirection.MINIMIZE else False,
+        reversescale=target is None and direction == StudyDirection.MINIMIZE,
     )
 
     scatter = go.Scatter(
