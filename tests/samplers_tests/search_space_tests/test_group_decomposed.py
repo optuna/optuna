@@ -197,7 +197,7 @@ def test_group_decomposed_search_space() -> None:
     assert search_space.calculate(study).search_spaces == []
 
     # If two parameters have the same name but different distributions,
-    # the second one takes priority.
+    # the first one takes priority.
     study.optimize(lambda t: t.suggest_float("a", -1, 1), n_trials=1)
     study.optimize(lambda t: t.suggest_float("a", 0, 1), n_trials=1)
     assert search_space.calculate(study).search_spaces == [
