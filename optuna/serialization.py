@@ -1,20 +1,43 @@
 import pickle
 
 import optuna
+from optuna._experimental import experimental
 
 
+@experimental("2.8.0")
 def save_study(study: optuna.study.Study, path: str) -> None:
-    study_in_memory = optuna.create_study()
-    for trial in study.trials:
-        study_in_memory.add_trial(trial)
+    tmp_study = optuna.create_study()
+
+    _copy_study(study, tmp_study)
 
     with open(path, "wb") as f:
-        pickle.dump(study_in_memory, f)
+        pickle.dump(tmp_study, f)
 
 
+@experimental("2.8.0")
 def load_study(study: optuna.study.Study, path: str) -> None:
     with open(path, "rb") as f:
-        study_in_memory = pickle.load(f)
+        tmp_study = pickle.load(f)
 
-    for trial in study_in_memory.trials:
-        study.add_trial(trial)
+    _copy_study(tmp_study, study)
+
+
+def _copy_study(src: optuna.study.Study, dst: optuna.study.Study) -> None:
+    _copy_study_system_attrs(src, dst)
+    _copy_study_user_attrs(src, dst)
+    _copy_study_trials(src, dst)
+
+
+def _copy_study_system_attrs(src: optuna.study.Study, dst: optuna.study.Study) -> None:
+    for key, value in src.system_attrs.items():
+        dst.set_system_attr(key, value)
+
+
+def _copy_study_user_attrs(src: optuna.study.Study, dst: optuna.study.Study) -> None:
+    for key, value in src.user_attrs.items():
+        dst.set_user_attr(key, value)
+
+
+def _copy_study_trials(src: optuna.study.Study, dst: optuna.study.Study) -> None:
+    for trial in src.trials:
+        dst.add_trial(trial)
