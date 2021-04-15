@@ -24,6 +24,8 @@ class _SearchSpaceGroup(object):
 def _add_distributions(
     search_spaces: List[Dict[str, BaseDistribution]], distributions: Dict[str, BaseDistribution]
 ) -> List[Dict[str, BaseDistribution]]:
+    # Assumes that the elements of `search_spaces` are disjoint.
+
     if len(distributions) == 0:
         return search_spaces
 
@@ -61,7 +63,6 @@ def _add_distributions(
 
 class _GroupDecomposedSearchSpace(object):
     def __init__(self, include_pruned: bool = False) -> None:
-        self._cursor: int = -1
         self._search_space = _SearchSpaceGroup()
         self._study_id: Optional[int] = None
         self._include_pruned = include_pruned
@@ -81,23 +82,7 @@ class _GroupDecomposedSearchSpace(object):
         else:
             states_of_interest = (TrialState.COMPLETE,)
 
-        next_cursor = self._cursor
-        trials = study.get_trials(deepcopy=False)
-        for trial in reversed(trials):
-            if self._cursor > trial.number:
-                break
-
-            if not trial.state.is_finished():
-                next_cursor = trial.number
-
-            if trial.state not in states_of_interest:
-                continue
-
+        for trial in study.get_trials(deepcopy=False, states=states_of_interest):
             self._search_space.add_distributions(trial.distributions)
 
-        if next_cursor == self._cursor and len(trials) > 0:
-            next_cursor = trials[-1].number
-        self._cursor = next_cursor
-        search_space = self._search_space
-
-        return copy.deepcopy(search_space)
+        return copy.deepcopy(self._search_space)

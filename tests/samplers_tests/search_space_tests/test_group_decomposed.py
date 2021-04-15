@@ -130,11 +130,11 @@ def test_group_decomposed_search_space() -> None:
     # Disjoint parameters.
     study.optimize(lambda t: t.suggest_int("y", 0, 10) + t.suggest_float("z", -3, 3), n_trials=1)
     assert search_space.calculate(study).search_spaces == [
+        {"x": IntUniformDistribution(low=0, high=10)},
         {
             "y": IntUniformDistribution(low=0, high=10),
             "z": UniformDistribution(low=-3, high=3),
         },
-        {"x": IntUniformDistribution(low=0, high=10)},
     ]
 
     # Parameters which include one of search spaces in the group.
@@ -148,12 +148,12 @@ def test_group_decomposed_search_space() -> None:
     assert search_space.calculate(study).search_spaces == [
         {"x": IntUniformDistribution(low=0, high=10)},
         {
-            "u": LogUniformDistribution(low=1e-2, high=1e2),
-            "v": CategoricalDistribution(choices=["A", "B", "C"]),
-        },
-        {
             "y": IntUniformDistribution(low=0, high=10),
             "z": UniformDistribution(low=-3, high=3),
+        },
+        {
+            "u": LogUniformDistribution(low=1e-2, high=1e2),
+            "v": CategoricalDistribution(choices=["A", "B", "C"]),
         },
     ]
 
@@ -174,12 +174,12 @@ def test_group_decomposed_search_space() -> None:
         lambda t: t.suggest_int("y", 0, 10) + t.suggest_int("w", 2, 8, log=True), n_trials=1
     )
     assert search_space.calculate(study).search_spaces == [
-        {"x": IntUniformDistribution(low=0, high=10)},
         {"v": CategoricalDistribution(choices=["A", "B", "C"])},
+        {"x": IntUniformDistribution(low=0, high=10)},
+        {"u": LogUniformDistribution(low=1e-2, high=1e2)},
         {"y": IntUniformDistribution(low=0, high=10)},
         {"z": UniformDistribution(low=-3, high=3)},
         {"w": IntLogUniformDistribution(low=2, high=8)},
-        {"u": LogUniformDistribution(low=1e-2, high=1e2)},
     ]
 
     search_space = _GroupDecomposedSearchSpace()
@@ -201,7 +201,7 @@ def test_group_decomposed_search_space() -> None:
     study.optimize(lambda t: t.suggest_float("a", -1, 1), n_trials=1)
     study.optimize(lambda t: t.suggest_float("a", 0, 1), n_trials=1)
     assert search_space.calculate(study).search_spaces == [
-        {"a": UniformDistribution(low=0, high=1)}
+        {"a": UniformDistribution(low=-1, high=1)}
     ]
 
 
