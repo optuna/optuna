@@ -154,9 +154,9 @@ class TPESampler(BaseSampler):
             decomposed search space is used when suggesting parameters.
             The sampling algorithm decomposes the search space based on past trials and samples
             from the joint distribution in each decomposed subspace.
-            The decomposed subspaces are a partition of the whole search space. Each subspace is a
-            maximal subset of the entire search space under the condition that they are disjoint
-            from each other and that a trial exists whose parameter set includes the subspace.
+            The decomposed subspaces are a partition of the whole search space. Each subspace
+            satisfies the following condition: for a trial in completed trials, the intersection of
+            the subspace and the search space of the trial becomes subspace itself or an empty set.
 
             The search space is decomposed based on the following recursive rules.
 
