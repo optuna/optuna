@@ -39,5 +39,4 @@ def _copy_study_user_attrs(src: optuna.study.Study, dst: optuna.study.Study) -> 
 
 
 def _copy_study_trials(src: optuna.study.Study, dst: optuna.study.Study) -> None:
-    for trial in src.trials:
-        dst.add_trial(trial)
+    dst.add_trials(src.trials)

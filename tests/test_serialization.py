@@ -8,7 +8,7 @@ def test_save_study() -> None:
     src_study = optuna.create_study()
 
     with TemporaryDirectory() as tmpdir:
-        path = os.path.join(tmpdir, "src_study")
+        path = os.path.join(tmpdir, "study.pkl")
 
         assert not os.path.exists(path)
 
