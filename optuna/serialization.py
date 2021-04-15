@@ -4,7 +4,7 @@ import optuna
 
 
 def save_study(study: optuna.study.Study, path: str) -> None:
-    study_in_memory = optuna.create_study()
+    study_in_memory = optuna.create_study(directions=study.directions)
     for trial in study.trials:
         study_in_memory.add_trial(trial)
 
