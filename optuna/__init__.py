@@ -46,6 +46,7 @@ __all__ = [
     "logging",
     "multi_objective",
     "pruners",
+    "serialization",
     "samplers",
     "storages",
     "study",
