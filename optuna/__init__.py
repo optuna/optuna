@@ -11,6 +11,7 @@ from optuna import logging
 from optuna import multi_objective
 from optuna import pruners
 from optuna import samplers
+from optuna import serialization
 from optuna import storages
 from optuna import study
 from optuna import trial
