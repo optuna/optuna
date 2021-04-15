@@ -60,8 +60,9 @@ class CmaEsSampler(BaseSampler):
             study.optimize(objective, n_trials=20)
 
     Please note that this sampler does not support CategoricalDistribution.
-    However, DiscreteUniformDistribution (`suggest_discrete_uniform`) and
-    Int(Log)Distribution (`suggest_int`) are supported.
+    However, :class:`~optuna.distributions.DiscreteUniformDistribution`
+    (:func:`~optuna.trial.Trial.suggest_discrete_uniform`) and
+    Int(Log)Distribution (:func:`~optuna.trial.Trial.suggest_int`) are supported.
 
     If your search space contains categorical parameters, I recommend you
     to use :class:`~optuna.samplers.TPESampler` instead.
