@@ -121,3 +121,10 @@ print("Number of finished trials: ", len(study.trials))
 ###################################################################################################
 # Check trials on pareto front visually
 optuna.visualization.plot_pareto_front(study, target_names=["FLOPS", "accuracy"])
+
+
+###################################################################################################
+# Learn which hyperparameters are affecting the flops most with hyperparameter importance.
+optuna.visualization.plot_param_importances(
+    study, target=lambda t: t.values[0], target_name="flops"
+)
