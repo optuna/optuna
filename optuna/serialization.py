@@ -6,7 +6,7 @@ from optuna._experimental import experimental
 
 @experimental("2.8.0")
 def save_study(study: optuna.study.Study, path: str) -> None:
-    tmp_study = optuna.create_study()
+    tmp_study = optuna.create_study(directions=study.directions)
 
     _copy_study(study, tmp_study)
 
