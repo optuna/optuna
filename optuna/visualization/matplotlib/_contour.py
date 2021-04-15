@@ -17,7 +17,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
-from optuna.visualization.matplotlib._utils import _is_categorical
+from optuna.visualization.matplotlib._utils import _is_numerical
 from optuna.visualization.matplotlib._utils import _is_log_scale
 
 
@@ -279,14 +279,14 @@ def _calculate_griddata(
     cat_param_pos_x = []  # type: List[int]
     cat_param_labels_y = []  # type: List[str]
     cat_param_pos_y = []  # type: List[int]
-    if _is_categorical(trials, x_param):
+    if not _is_numerical(trials, x_param):
         x_values = [str(x) for x in x_values]
         (
             x_values,
             cat_param_labels_x,
             cat_param_pos_x,
         ) = _convert_categorical2int(x_values)
-    if _is_categorical(trials, y_param):
+    if not _is_numerical(trials, y_param):
         y_values = [str(y) for y in y_values]
         (
             y_values,
