@@ -952,8 +952,9 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             Flag to enable :meth:`~optuna.integration.LightGBMTunerCV.get_best_booster`.
 
         optuna_seed:
-            A parameter specifies random seed of TPESampler used in tuning num_leaves,
-            bagging_fraction, bagging_freq, lambda_l1 and lambda_l2.
+            ``seed`` of :class:`~optuna.samplers.TPESampler` for random number generator
+            that affects samplling for ``num_leaves``, ``bagging_fraction``, ``bagging_freq``,
+            ``lambda_l1``, and ``lambda_l2``.
 
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     .. _lightgbm.cv(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html
