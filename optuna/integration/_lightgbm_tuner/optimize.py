@@ -788,8 +788,9 @@ class LightGBMTuner(_LightGBMBaseTuner):
                 Please suppress such messages to show the progress bars properly.
 
         optuna_seed:
-            A parameter specifies random seed of TPESampler used in tuning num_leaves,
-            bagging_fraction, bagging_freq, lambda_l1 and lambda_l2.
+            ``seed`` of :class:`~optuna.samplers.TPESampler` for random number generator
+            that affects samplling for ``num_leaves``, ``bagging_fraction``, ``bagging_freq``,
+            ``lambda_l1``, and ``lambda_l2``.
 
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     .. _LightGBM's verbosity: https://lightgbm.readthedocs.io/en/latest/Parameters.html#verbosity
