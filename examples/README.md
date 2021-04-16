@@ -92,6 +92,7 @@ In addition, integration modules are available for the following libraries, prov
 ### Examples of Distributed Optimization
 
 * [Optimizing on Kubernetes](./kubernetes/README.md)
+* [Optimizing with Ray's joblib backend](./ray_joblib.py)
 
 ### Examples of Reinforcement Learning
 
