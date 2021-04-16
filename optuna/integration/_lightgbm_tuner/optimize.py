@@ -954,7 +954,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
 
         optuna_seed:
             ``seed`` of :class:`~optuna.samplers.TPESampler` for random number generator
-            that affects samplling for ``num_leaves``, ``bagging_fraction``, ``bagging_freq``,
+            that affects sampling for ``num_leaves``, ``bagging_fraction``, ``bagging_freq``,
             ``lambda_l1``, and ``lambda_l2``.
 
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
