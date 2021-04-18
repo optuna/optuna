@@ -21,6 +21,8 @@ from optuna.logging import get_logger
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
+from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
+from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
 from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
@@ -147,10 +149,75 @@ class TPESampler(BaseSampler):
                 Added in v2.2.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.2.0.
+        group:
+            If this and ``multivariate`` are :obj:`True`, the multivariate TPE with the group
+            decomposed search space is used when suggesting parameters.
+            The sampling algorithm decomposes the search space based on past trials and samples
+            from the joint distribution in each decomposed subspace.
+            The decomposed subspaces are a partition of the whole search space. Each subspace
+            is a maximal subset of the whole search space, which satisfies the following:
+            for a trial in completed trials, the intersection of the subspace and the search space
+            of the trial becomes subspace itself or an empty set.
+
+            The search space is decomposed based on the following recursive rules.
+
+            - Initialize the group of the search space with the empty set. The elements of the
+              group are the subset of the search space, and the type is the dictionary of
+              :class:`~optuna.distributions.BaseDistribution`.
+            - Update the group with the following procedure `ADD(trial)` by looking at past trials.
+
+            The procedure of `Add(trial)` is
+
+            - Let ``T = trial.distributions``.
+            - If the intersection of any element of the group and ``T`` is empty, add ``T`` to the
+              group.
+            - If an element ``S`` of the group is contained in ``T``, then add ``T-S`` to the
+              group. We recursively add ``T-S`` to the group because the intersection of ``T-S``
+              and some other elements of the group may not be empty.
+            - If an element ``S`` of a group contains ``T``, remove ``S`` from the group and add
+              ``T`` and ``S-T`` to the group.
+            - If the intersection of an element ``S`` of the group and ``T`` is not empty, remove
+              ``S`` from the group and add ``S∩T``, ``S-T``, and ``T-S`` to the group.
+              We recursively add ``T-S`` to the group because the intersection of ``T-S`` and
+              some other elements of the group may not be empty.
+
+            The group of the search space recursively constructed based on the above rules are
+            disjoint and the union is the entire search space. We perform sampling from the joint
+            distribution for each element of this decomposed group of the search space.
+
+            Sampling from the joint distribution on the subspace is realized by multivariate TPE.
+
+            .. note::
+                Added in v2.8.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.8.0.
+
+            Example:
+
+            .. testcode::
+
+                import optuna
+
+
+                def objective(trial):
+                    x = trial.suggest_categorical("x", ["A", "B"])
+                    if x == "A":
+                        return trial.suggest_float("y", -10, 10)
+                    else:
+                        return trial.suggest_int("z", -10, 10)
+
+
+                sampler = optuna.samplers.TPESampler(multivariate=True, group=True)
+                study = optuna.create_study(sampler=sampler)
+                study.optimize(objective, n_trials=10)
         warn_independent_sampling:
             If this is :obj:`True` and ``multivariate=True``, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler.
             If ``multivariate=False``, this flag has no effect.
+
+    Raises:
+        ValueError:
+            If ``multivariate`` is :obj:`False` and ``group`` is :obj:`True`.
     """
 
     def __init__(
@@ -166,6 +233,7 @@ class TPESampler(BaseSampler):
         seed: Optional[int] = None,
         *,
         multivariate: bool = False,
+        group: bool = False,
         warn_independent_sampling: bool = True,
     ) -> None:
 
@@ -183,6 +251,9 @@ class TPESampler(BaseSampler):
         self._random_sampler = RandomSampler(seed=seed)
 
         self._multivariate = multivariate
+        self._group = group
+        self._group_decomposed_search_space: Optional[_GroupDecomposedSearchSpace] = None
+        self._search_space_group: Optional[_SearchSpaceGroup] = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
 
         if multivariate:
@@ -191,6 +262,18 @@ class TPESampler(BaseSampler):
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
+
+        if group:
+            if not multivariate:
+                raise ValueError(
+                    "``group`` option can only be enabled when ``multivariate`` is enabled."
+                )
+            warnings.warn(
+                "``group`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+            self._group_decomposed_search_space = _GroupDecomposedSearchSpace(True)
 
     def reseed_rng(self) -> None:
 
@@ -204,33 +287,64 @@ class TPESampler(BaseSampler):
         if not self._multivariate:
             return {}
 
+        n_complete_trials = len(study.get_trials(deepcopy=False))
         search_space: Dict[str, BaseDistribution] = {}
+
+        if self._group:
+            assert self._group_decomposed_search_space is not None
+            self._search_space_group = self._group_decomposed_search_space.calculate(study)
+            for sub_space in self._search_space_group.search_spaces:
+                for name, distribution in sub_space.items():
+                    if not isinstance(distribution, _DISTRIBUTION_CLASSES):
+                        self._log_independent_sampling(n_complete_trials, trial, name)
+                        continue
+                    search_space[name] = distribution
+            return search_space
+
         for name, distribution in self._search_space.calculate(study).items():
             if not isinstance(distribution, _DISTRIBUTION_CLASSES):
-                if self._warn_independent_sampling:
-                    complete_trials = study.get_trials(deepcopy=False)
-                    if len(complete_trials) >= self._n_startup_trials:
-                        self._log_independent_sampling(trial, name)
+                self._log_independent_sampling(n_complete_trials, trial, name)
                 continue
             search_space[name] = distribution
 
         return search_space
 
-    def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
-        _logger.warning(
-            "The parameter '{}' in trial#{} is sampled independently "
-            "instead of being sampled by multivariate TPE sampler. "
-            "(optimization performance may be degraded). "
-            "You can suppress this warning by setting `warn_independent_sampling` "
-            "to `False` in the constructor of `TPESampler`, "
-            "if this independent sampling is intended behavior.".format(param_name, trial.number)
-        )
+    def _log_independent_sampling(
+        self, n_complete_trials: int, trial: FrozenTrial, param_name: str
+    ) -> None:
+        if self._warn_independent_sampling:
+            if n_complete_trials >= self._n_startup_trials:
+                _logger.warning(
+                    f"The parameter '{param_name}' in trial#{trial.number} is sampled "
+                    "independently instead of being sampled by multivariate TPE sampler. "
+                    "(optimization performance may be degraded). "
+                    "You can suppress this warning by setting `warn_independent_sampling` "
+                    "to `False` in the constructor of `TPESampler`, "
+                    "if this independent sampling is intended behavior."
+                )
 
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
 
         self._raise_error_if_multi_objective(study)
+
+        if self._group:
+            assert self._search_space_group is not None
+            params = {}
+            for sub_space in self._search_space_group.search_spaces:
+                search_space = {}
+                for name, distribution in sub_space.items():
+                    if isinstance(distribution, _DISTRIBUTION_CLASSES):
+                        search_space[name] = distribution
+                params.update(self._sample_relative(study, trial, search_space))
+            return params
+        else:
+            return self._sample_relative(study, trial, search_space)
+
+    def _sample_relative(
+        self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
+    ) -> Dict[str, Any]:
 
         if search_space == {}:
             return {}
@@ -816,6 +930,10 @@ def _get_multivariate_observation_pairs(
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
+        # If ``group`` = True, there may be trials that are not included in each subspace.
+        # Such trials should be ignored here.
+        if any([param_name not in trial.params for param_name in param_names]):
+            continue
 
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE:

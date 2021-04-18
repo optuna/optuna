@@ -157,7 +157,7 @@ def test_plot_pareto_front_3d(
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
-def test_plot_pareto_front_dimensions(include_dominated_trials: bool) -> None:
+def test_plot_pareto_front_unsupported_dimensions(include_dominated_trials: bool) -> None:
     # Unsupported: n_objectives == 1.
     with pytest.raises(ValueError):
         study = optuna.create_study(directions=["minimize"])
@@ -168,18 +168,6 @@ def test_plot_pareto_front_dimensions(include_dominated_trials: bool) -> None:
         study = optuna.create_study(direction="minimize")
         study.optimize(lambda t: [0], n_trials=1)
         plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
-
-    # Supported: n_objectives == 2.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    study.optimize(lambda t: [0, 0], n_trials=1)
-    figure = plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
-    assert figure.has_data()
-
-    # Supported: n_objectives == 3.
-    study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
-    study.optimize(lambda t: [0, 0, 0], n_trials=1)
-    figure = plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
-    assert figure.has_data()
 
     # Unsupported: n_objectives == 4.
     with pytest.raises(ValueError):

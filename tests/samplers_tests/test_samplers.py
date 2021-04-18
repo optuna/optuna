@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import pickle
 from typing import Any
 from typing import Callable
@@ -22,7 +21,6 @@ from optuna.samplers import BaseSampler
 from optuna.samplers import PartialFixedSampler
 from optuna.study import Study
 from optuna.testing.sampler import DeterministicRelativeSampler
-from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -303,75 +301,6 @@ def test_sample_relative() -> None:
     study.optimize(objective, n_trials=10, catch=())
     for trial in study.trials:
         assert trial.params == {"a": 3.2, "b": "baz", "c": 30, "d": 30, "e": 30}
-
-
-def test_intersection_search_space() -> None:
-    search_space = optuna.samplers.IntersectionSearchSpace()
-    study = optuna.create_study()
-
-    # No trial.
-    assert search_space.calculate(study) == {}
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-    # First trial.
-    study.optimize(lambda t: t.suggest_float("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
-    assert search_space.calculate(study) == {
-        "x": IntUniformDistribution(low=0, high=10),
-        "y": UniformDistribution(low=-3, high=3),
-    }
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-    # Returning sorted `OrderedDict` instead of `dict`.
-    assert search_space.calculate(study, ordered_dict=True) == OrderedDict(
-        [
-            ("x", IntUniformDistribution(low=0, high=10)),
-            ("y", UniformDistribution(low=-3, high=3)),
-        ]
-    )
-    assert search_space.calculate(
-        study, ordered_dict=True
-    ) == optuna.samplers.intersection_search_space(study, ordered_dict=True)
-
-    # Second trial (only 'y' parameter is suggested in this trial).
-    study.optimize(lambda t: t.suggest_float("y", -3, 3), n_trials=1)
-    assert search_space.calculate(study) == {"y": UniformDistribution(low=-3, high=3)}
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-    # Failed or pruned trials are not considered in the calculation of
-    # an intersection search space.
-    def objective(trial: Trial, exception: Exception) -> float:
-
-        trial.suggest_float("z", 0, 1)
-        raise exception
-
-    study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
-    study.optimize(lambda t: objective(t, optuna.TrialPruned()), n_trials=1)
-    assert search_space.calculate(study) == {"y": UniformDistribution(low=-3, high=3)}
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-    # If two parameters have the same name but different distributions,
-    # those are regarded as different parameters.
-    study.optimize(lambda t: t.suggest_float("y", -1, 1), n_trials=1)
-    assert search_space.calculate(study) == {}
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-    # The search space remains empty once it is empty.
-    study.optimize(lambda t: t.suggest_float("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
-    assert search_space.calculate(study) == {}
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-
-def test_intersection_search_space_class_with_different_studies() -> None:
-    search_space = optuna.samplers.IntersectionSearchSpace()
-
-    with StorageSupplier("sqlite") as storage:
-        study0 = optuna.create_study(storage=storage)
-        study1 = optuna.create_study(storage=storage)
-
-        search_space.calculate(study0)
-        with pytest.raises(ValueError):
-            # An `IntersectionSearchSpace` instance isn't supposed to be used for multiple studies.
-            search_space.calculate(study1)
 
 
 @parametrize_sampler

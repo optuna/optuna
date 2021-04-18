@@ -176,7 +176,7 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
                 _all_trials = _study.get_trials()
                 _direction = _study.direction
                 _percentile._get_percentile_intermediate_result_over_trials(
-                    _all_trials, _direction, step, 25
+                    _all_trials, _direction, step, 25, 1
                 )
 
             for i in range(trial_num):
@@ -196,7 +196,7 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
     all_trials = study.get_trials()
     direction = study.direction
     assert 0.3 == _percentile._get_percentile_intermediate_result_over_trials(
-        all_trials, direction, 0, 25.0
+        all_trials, direction, 0, 25.0, 1
     )
 
     # Input value has a float value and NaNs (step=1).
@@ -207,7 +207,7 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
     all_trials = study.get_trials()
     direction = study.direction
     assert 0.2 == _percentile._get_percentile_intermediate_result_over_trials(
-        all_trials, direction, 1, 25.0
+        all_trials, direction, 1, 25.0, 1
     )
 
     # Input value has NaNs only (step=2).
@@ -228,5 +228,14 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
     all_trials = study.get_trials()
     direction = study.direction
     assert math.isnan(
-        _percentile._get_percentile_intermediate_result_over_trials(all_trials, direction, 2, 75)
+        _percentile._get_percentile_intermediate_result_over_trials(
+            all_trials, direction, 2, 75, 1
+        )
+    )
+
+    # n_min_trials = 2
+    assert math.isnan(
+        _percentile._get_percentile_intermediate_result_over_trials(
+            all_trials, direction, 2, 75, 2
+        )
     )
