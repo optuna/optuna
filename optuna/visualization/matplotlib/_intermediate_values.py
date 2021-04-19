@@ -110,4 +110,7 @@ def _get_intermediate_plot(study: Study) -> "Axes":
         )
         return ax
 
+    if len(trials) >= 2:
+        ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left", borderaxespad=0.0)
+
     return ax
