@@ -17,6 +17,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 from typing import Any
+from typing import List
 from io import BytesIO
 import os
 import pkg_resources
@@ -38,6 +39,12 @@ if github_token is not None:
         output = subprocess.check_output(["git", "rev-parse", "HEAD"])
         return output.strip().decode("ascii")
 
+    def retrieve_artifacts() -> List[Any]:
+        return requests.get(
+            "https://api.github.com/repos/optuna/optuna/actions/artifacts",
+            params=dict(per_page=20),
+        ).json()["artifacts"]
+
     def search_artifact(artifacts: Any, hash: str) -> str:
         target_name = f"artifacts-{hash}"
         artifact_names = [a["name"] for a in artifacts]
@@ -48,11 +55,7 @@ if github_token is not None:
         raise RuntimeError(f"Not found {target_name} on {artifact_names}")
 
     def download_artifact() -> None:
-        artifacts = requests.get(
-            "https://api.github.com/repos/himkt/optuna-test-rtds/actions/artifacts",
-            params=dict(per_page=20),
-        ).json()["artifacts"]
-
+        artifacts = retrieve_artifacts()
         target_artifact_url = search_artifact(artifacts, commit_id)
         artifact = requests.get(
             target_artifact_url,
