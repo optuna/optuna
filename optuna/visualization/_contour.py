@@ -114,7 +114,7 @@ def _get_contour_plot(
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
     if params is None:
-        sorted_params = sorted(list(all_params))
+        sorted_params = sorted(all_params)
     elif len(params) <= 1:
         _logger.warning("The length of params must be greater than 1.")
         return go.Figure(data=[], layout=layout)
@@ -122,7 +122,7 @@ def _get_contour_plot(
         for input_p_name in params:
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
-        sorted_params = sorted(list(set(params)))
+        sorted_params = sorted(set(params))
 
     padding_ratio = 0.05
     param_values_range = {}

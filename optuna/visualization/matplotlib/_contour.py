@@ -120,7 +120,7 @@ def _get_contour_plot(
     all_params = {p_name for t in trials for p_name in t.params.keys()}
 
     if params is None:
-        sorted_params = sorted(list(all_params))
+        sorted_params = sorted(all_params)
     elif len(params) <= 1:
         _logger.warning("The length of params must be greater than 1.")
         _, ax = plt.subplots()
@@ -129,7 +129,7 @@ def _get_contour_plot(
         for input_p_name in params:
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
-        sorted_params = sorted(list(set(params)))
+        sorted_params = sorted(set(params))
     n_params = len(sorted_params)
 
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
@@ -351,8 +351,8 @@ def _generate_contour_subplot(
     target: Optional[Callable[[FrozenTrial], float]],
 ) -> "ContourSet":
 
-    x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
-    y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
+    x_indices = sorted({t.params[x_param] for t in trials if x_param in t.params})
+    y_indices = sorted({t.params[y_param] for t in trials if y_param in t.params})
     if len(x_indices) < 2:
         _logger.warning("Param {} unique value length is less than 2.".format(x_param))
         return ax
