@@ -169,4 +169,7 @@ def _get_edf_plot(
 
         ax.plot(x_values, y_values, color=cmap(i), alpha=0.7, label=study.study_name)
 
+    if len(studies) >= 2:
+        ax.legend()
+
     return ax
