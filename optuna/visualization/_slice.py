@@ -29,7 +29,7 @@ def plot_slice(
 ) -> "go.Figure":
     """Plot the parameter relationship as slice plot in a study.
 
-    Note that, If a parameter contains missing values, a trial with missing values is not plotted.
+    Note that, if a parameter contains missing values, a trial with missing values is not plotted.
 
     Example:
 
