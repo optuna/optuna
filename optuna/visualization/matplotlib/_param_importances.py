@@ -7,7 +7,6 @@ import numpy as np
 
 import optuna
 from optuna._experimental import experimental
-from optuna.distributions import BaseDistribution
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -141,10 +140,3 @@ def _get_param_importance_plot(
     )
 
     return ax
-
-
-def _get_distribution(param_name: str, study: Study) -> "BaseDistribution":
-    for trial in study.trials:
-        if param_name in trial.distributions:
-            return trial.distributions[param_name]
-    assert False
