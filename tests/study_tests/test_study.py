@@ -462,33 +462,6 @@ def test_copy_study_to_study_name(from_storage_mode: str, to_storage_mode: str) 
         _ = load_study(study_name="bar", storage=to_storage)
 
 
-@pytest.mark.parametrize("from_storage_mode", STORAGE_MODES)
-@pytest.mark.parametrize("to_storage_mode", STORAGE_MODES)
-def test_copy_study_rollback(from_storage_mode: str, to_storage_mode: str) -> None:
-    with StorageSupplier(from_storage_mode) as from_storage, StorageSupplier(
-        to_storage_mode
-    ) as to_storage:
-        from_storage = get_storage(from_storage)  # Get cached storage from RDB for mocking.
-        from_study = create_study(storage=from_storage)
-        from_study.set_system_attr("foo", "bar")
-        from_study.set_user_attr("baz", "qux")
-        from_study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=3)
-
-        with patch.object(from_storage, "get_all_trials", side_effect=RuntimeError):
-            try:
-                copy_study(
-                    from_study_name=from_study.study_name,
-                    from_storage=from_storage,
-                    to_storage=to_storage,
-                )
-            except RuntimeError:
-                pass
-
-        # Study should have been rolled back.
-        with pytest.raises(KeyError):
-            load_study(study_name=from_study.study_name, storage=to_storage)
-
-
 def test_nested_optimization() -> None:
     def objective(trial: Trial) -> float:
 

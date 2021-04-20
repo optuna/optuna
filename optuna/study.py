@@ -1285,18 +1285,14 @@ def copy_study(
         load_if_exists=False,
     )
 
-    try:
-        for key, value in from_study.system_attrs.items():
-            to_study.set_system_attr(key, value)
+    for key, value in from_study.system_attrs.items():
+        to_study.set_system_attr(key, value)
 
-        for key, value in from_study.user_attrs.items():
-            to_study.set_user_attr(key, value)
+    for key, value in from_study.user_attrs.items():
+        to_study.set_user_attr(key, value)
 
-        # Trials are deep copied on `add_trials`.
-        to_study.add_trials(from_study.get_trials(deepcopy=False))
-    except Exception:
-        delete_study(study_name=to_study_name or from_study_name, storage=to_storage)
-        raise
+    # Trials are deep copied on `add_trials`.
+    to_study.add_trials(from_study.get_trials(deepcopy=False))
 
 
 def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[StudySummary]:
