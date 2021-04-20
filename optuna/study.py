@@ -1270,6 +1270,35 @@ def delete_study(
     storage.delete_study(study_id)
 
 
+@experimental("2.8.0")
+def copy_study(
+    from_study_name: str,
+    from_storage: Union[str, storages.BaseStorage],
+    to_storage: Union[str, storages.BaseStorage],
+    to_study_name: Optional[str] = None,
+) -> None:
+    from_study = load_study(study_name=from_study_name, storage=from_storage)
+    to_study = create_study(
+        study_name=to_study_name or from_study_name,
+        storage=to_storage,
+        directions=from_study.directions,
+        load_if_exists=False,
+    )
+
+    try:
+        for key, value in from_study.system_attrs.items():
+            to_study.set_system_attr(key, value)
+
+        for key, value in from_study.user_attrs.items():
+            to_study.set_user_attr(key, value)
+
+        # Trials are deep copied on `add_trials`.
+        to_study.add_trials(from_study.get_trials(deepcopy=False))
+    except Exception:
+        delete_study(study_name=to_study_name or from_study_name, storage=to_storage)
+        raise
+
+
 def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[StudySummary]:
     """Get all history of studies stored in a specified storage.
 
