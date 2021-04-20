@@ -16,6 +16,7 @@ import uuid
 import _pytest.capture
 import pytest
 
+from optuna import copy_study
 from optuna import create_study
 from optuna import create_trial
 from optuna import delete_study
@@ -405,6 +406,60 @@ def test_delete_study(storage_mode: str) -> None:
         # Test failed to delete the study which is already deleted.
         with pytest.raises(KeyError):
             delete_study(study.study_name, storage)
+
+
+@pytest.mark.parametrize("from_storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("to_storage_mode", STORAGE_MODES)
+def test_copy_study(from_storage_mode: str, to_storage_mode: str) -> None:
+    with StorageSupplier(from_storage_mode) as from_storage, StorageSupplier(
+        to_storage_mode
+    ) as to_storage:
+        from_study = create_study(storage=from_storage, directions=["maximize", "minimize"])
+        from_study.set_system_attr("foo", "bar")
+        from_study.set_user_attr("baz", "qux")
+        from_study.optimize(
+            lambda t: (t.suggest_float("x0", 0, 1), t.suggest_float("x1", 0, 1)), n_trials=3
+        )
+
+        copy_study(
+            from_study_name=from_study.study_name,
+            from_storage=from_storage,
+            to_storage=to_storage,
+        )
+
+        to_study = load_study(study_name=from_study.study_name, storage=to_storage)
+
+        assert to_study.study_name == from_study.study_name
+        assert to_study.directions == from_study.directions
+        assert to_study.system_attrs == from_study.system_attrs
+        assert to_study.user_attrs == from_study.user_attrs
+        assert len(to_study.trials) == len(from_study.trials)
+
+
+@pytest.mark.parametrize("from_storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("to_storage_mode", STORAGE_MODES)
+def test_copy_study_to_study_name(from_storage_mode: str, to_storage_mode: str) -> None:
+    with StorageSupplier(from_storage_mode) as from_storage, StorageSupplier(
+        to_storage_mode
+    ) as to_storage:
+        from_study = create_study(study_name="foo", storage=from_storage)
+        _ = create_study(study_name="foo", storage=to_storage)
+
+        with pytest.raises(DuplicatedStudyError):
+            copy_study(
+                from_study_name=from_study.study_name,
+                from_storage=from_storage,
+                to_storage=to_storage,
+            )
+
+        copy_study(
+            from_study_name=from_study.study_name,
+            from_storage=from_storage,
+            to_storage=to_storage,
+            to_study_name="bar",
+        )
+
+        _ = load_study(study_name="bar", storage=to_storage)
 
 
 def test_nested_optimization() -> None:
