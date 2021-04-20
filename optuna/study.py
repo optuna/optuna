@@ -1224,8 +1224,8 @@ def load_study(
         study_summaries = get_all_study_summaries(storage)
         if len(study_summaries) != 1:
             raise ValueError(
-                f"Could not determine the study name since the storage {storage} contains "
-                "multiple studies. Specify `study_name`."
+                f"Could not determine the study name since the storage {storage} does not "
+                "contain exactly 1 study. Specify `study_name`."
             )
         study_name = study_summaries[0].study_name
 
