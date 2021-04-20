@@ -1277,6 +1277,71 @@ def copy_study(
     to_storage: Union[str, storages.BaseStorage],
     to_study_name: Optional[str] = None,
 ) -> None:
+    """Copy study from one storage to another.
+
+    The direction(s) of the objective(s) in the study, trials, user attributes and system
+    attributes are copied.
+
+    Example:
+
+        .. testsetup::
+
+            import os
+
+            if os.path.exists("example.db"):
+                raise RuntimeError("'example.db' already exists. Please remove it.")
+            if os.path.exists("example_copy.db"):
+                raise RuntimeError("'example_copy.db' already exists. Please remove it.")
+
+        .. testcode::
+
+            import optuna
+
+
+            def objective(trial):
+                x = trial.suggest_float("x", -10, 10)
+                return (x - 2) ** 2
+
+
+            study = optuna.create_study(
+                study_name="example-study",
+                storage="sqlite:///example.db",
+            )
+            study.optimize(objective, n_trials=3)
+
+            optuna.copy_study(
+                from_study_name="example-study",
+                from_storage="sqlite:///example.db",
+                to_storage="sqlite:///example_copy.db",
+            )
+
+            study = optuna.load_study(
+                study_name="example-study",
+                storage="sqlite:///example_copy.db",
+            )
+
+        .. testcleanup::
+
+            os.remove("example.db")
+            os.remove("example_copy.db")
+
+    Args:
+        from_study_name:
+            Name of study.
+        from_storage:
+            Source database URL such as ``sqlite:///example.db``. Please see also the
+            documentation of :func:`~optuna.study.create_study` for further details.
+        to_storage:
+            Destination database URL.
+        to_study_name:
+            Name of the created study. If omitted, ``from_study_name`` is used.
+
+    Raises:
+        :class:`~optuna.exceptions.DuplicatedStudyError`:
+            If a study with a conflicting name already exists in the destination storage.
+
+    """
+
     from_study = load_study(study_name=from_study_name, storage=from_storage)
     to_study = create_study(
         study_name=to_study_name or from_study_name,
