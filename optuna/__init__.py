@@ -34,6 +34,7 @@ __all__ = [
     "Trial",
     "TrialPruned",
     "__version__",
+    "copy_study",
     "create_study",
     "create_trial",
     "delete_study",
