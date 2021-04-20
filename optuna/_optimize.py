@@ -278,7 +278,7 @@ def _check_and_convert_to_values(
                 None,
                 (
                     f"Trial {trial_number} failed, because the number of the values "
-                    f"{len(original_value)} is did not match the number of the objectives "
+                    f"{len(original_value)} did not match the number of the objectives "
                     f"{n_objectives}."
                 ),
             )
