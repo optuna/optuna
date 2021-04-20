@@ -34,7 +34,7 @@ def plot_parallel_coordinate(
 ) -> "go.Figure":
     """Plot the high-dimensional parameter relationships in a study.
 
-    Note that, If a parameter contains missing values, a trial with missing values is not plotted.
+    Note that, if a parameter contains missing values, a trial with missing values is not plotted.
 
     Example:
 
