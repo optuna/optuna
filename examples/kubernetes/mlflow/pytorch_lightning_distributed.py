@@ -74,7 +74,7 @@ class LightningNet(pl.LightningModule):
     def validation_epoch_end(self, outputs):
         accuracy = sum(x["batch_val_acc"] for x in outputs) / len(outputs)
         # Pass the accuracy to the `DictLogger` via the `'log'` key.
-        return {"log": {"val_acc": accuracy}}
+        self.log("val_acc", accuracy)
 
     def configure_optimizers(self):
         return Adam(self.model.parameters())
