@@ -212,7 +212,7 @@ def batched_objective(xs: np.ndarray):
 # :func:`optuna.study.Study.tell` method after the batched evaluations.
 
 batch_size = 10
-study = optuna.create_study()
+study = optuna.create_study(sampler=optuna.samplers.CmaEsSampler())
 
 for _ in range(3):
 
