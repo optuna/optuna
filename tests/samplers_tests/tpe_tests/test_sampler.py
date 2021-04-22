@@ -451,7 +451,7 @@ def test_sample_independent_prior() -> None:
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
-    sampler = TPESampler(prior_weight=0.5, n_startup_trials=5, seed=0)
+    sampler = TPESampler(prior_weight=0.1, n_startup_trials=5, seed=0)
     with patch.object(study._storage, "get_all_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
@@ -499,7 +499,7 @@ def test_sample_independent_misc_arguments() -> None:
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
     sampler = TPESampler(
-        weights=lambda i: np.asarray([i * 0.11 for i in range(7)]), n_startup_trials=5, seed=0
+        weights=lambda i: np.asarray([10 - j for j in range(i)]), n_startup_trials=5, seed=0
     )
     with patch("optuna.Study.get_trials", return_value=past_trials):
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
@@ -643,7 +643,7 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
         trial = frozen_trial_factory(i, dist=dist)
         study._storage.create_new_trial(study._study_id, template_trial=trial)
     trial = frozen_trial_factory(30)
-    sampler = TPESampler(n_startup_trials=5, seed=0)
+    sampler = TPESampler(n_startup_trials=5, seed=2)
     all_success_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     # Test unsuccessful trials are handled differently.
@@ -653,7 +653,7 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
         trial = frozen_trial_factory(i, dist=dist, state_fn=state_fn)
         study._storage.create_new_trial(study._study_id, template_trial=trial)
     trial = frozen_trial_factory(30)
-    sampler = TPESampler(n_startup_trials=5, seed=0)
+    sampler = TPESampler(n_startup_trials=5, seed=2)
     partial_unsuccessful_suggestion = sampler.sample_independent(study, trial, "param-a", dist)
 
     assert partial_unsuccessful_suggestion != all_success_suggestion
@@ -699,7 +699,7 @@ def test_sample_independent_pruned_state() -> None:
             trial = frozen_trial_factory(i, dist=dist, state_fn=state_fn)
             study._storage.create_new_trial(study._study_id, template_trial=trial)
         trial = frozen_trial_factory(30)
-        sampler = TPESampler(n_startup_trials=5, seed=0)
+        sampler = TPESampler(n_startup_trials=5, seed=2)
         suggestions.append(sampler.sample_independent(study, trial, "param-a", dist))
 
     assert len(set(suggestions)) == 3
@@ -727,8 +727,8 @@ def test_get_observation_pairs() -> None:
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
-    assert _tpe.sampler._get_observation_pairs(study, "x") == (
-        [5.0, 5.0, 5.0, 5.0],
+    assert _tpe.sampler._get_observation_pairs(study, ["x"]) == (
+        {"x": [5.0, 5.0, 5.0, 5.0]},
         [
             (-float("inf"), 5.0),  # COMPLETE
             (-7, 2),  # PRUNED (with intermediate values)
@@ -736,23 +736,15 @@ def test_get_observation_pairs() -> None:
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
-    assert _tpe.sampler._get_observation_pairs(study, "y") == (
-        [None, None, None, None],
-        [
-            (-float("inf"), 5.0),  # COMPLETE
-            (-7, 2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), 0.0),  # PRUNED (without intermediate values)
-        ],
-    )
+    assert _tpe.sampler._get_observation_pairs(study, ["y"]) == ({"y": []}, [])
 
     # Test direction=maximize.
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=4)
     study._storage.create_new_trial(study._study_id)  # Create a running trial.
 
-    assert _tpe.sampler._get_observation_pairs(study, "x") == (
-        [5.0, 5.0, 5.0, 5.0],
+    assert _tpe.sampler._get_observation_pairs(study, ["x"]) == (
+        {"x": [5.0, 5.0, 5.0, 5.0]},
         [
             (-float("inf"), -5.0),  # COMPLETE
             (-7, -2),  # PRUNED (with intermediate values)
@@ -760,19 +752,9 @@ def test_get_observation_pairs() -> None:
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
     )
-    assert _tpe.sampler._get_observation_pairs(study, "y") == (
-        [None, None, None, None],
-        [
-            (-float("inf"), -5.0),  # COMPLETE
-            (-7, -2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), 0.0),  # PRUNED (without intermediate values)
-        ],
-    )
+    assert _tpe.sampler._get_observation_pairs(study, ["y"]) == ({"y": []}, [])
 
-
-def test_get_multivariate_observation_pairs() -> None:
-    def objective(trial: Trial) -> float:
+    def objective2(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
         y = trial.suggest_int("y", 6, 6)
@@ -792,9 +774,9 @@ def test_get_multivariate_observation_pairs() -> None:
 
     # Test direction=minimize.
     study = optuna.create_study(direction="minimize")
-    study.optimize(objective, n_trials=5, catch=(RuntimeError,))
+    study.optimize(objective2, n_trials=5, catch=(RuntimeError,))
 
-    assert _tpe.sampler._get_multivariate_observation_pairs(study, ["x", "y"]) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"]) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
             (-float("inf"), 11.0),  # COMPLETE
@@ -806,10 +788,10 @@ def test_get_multivariate_observation_pairs() -> None:
 
     # Test direction=maximize.
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=4)
+    study.optimize(objective2, n_trials=4)
     study._storage.create_new_trial(study._study_id)  # Create a running trial.
 
-    assert _tpe.sampler._get_multivariate_observation_pairs(study, ["x", "y"]) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"]) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
             (-float("inf"), -11.0),  # COMPLETE
