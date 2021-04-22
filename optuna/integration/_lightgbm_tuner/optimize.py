@@ -41,9 +41,14 @@ _ELAPSED_SECS_KEY = "lightgbm_tuner:elapsed_secs"
 _AVERAGE_ITERATION_TIME_KEY = "lightgbm_tuner:average_iteration_time"
 _STEP_NAME_KEY = "lightgbm_tuner:step_name"
 _LGBM_PARAMS_KEY = "lightgbm_tuner:lgbm_params"
+_LGBM_ORIGINAL_SCORE = "lightgbm_tuner:original_score"
 
 # EPS is used to ensure that a sampled parameter value is in pre-defined value range.
 _EPS = 1e-12
+
+# The scores returned by LightGBM may fluctuate at the last digits.
+# For reproducibility, LightGBM Tuner rounds them at the following digit.
+ROUND_NDIGITS = 14
 
 # Default value of tree_depth, used for upper bound of num_leaves.
 _DEFAULT_TUNER_TREE_DEPTH = 8
@@ -264,7 +269,9 @@ class _OptunaObjective(_BaseTuner):
 
         self._postprocess(trial, elapsed_secs, average_iteration_time)
 
-        return val_score
+        trial.set_system_attr(_LGBM_ORIGINAL_SCORE, val_score)
+
+        return round(val_score, ROUND_NDIGITS)
 
     def _postprocess(
         self, trial: optuna.trial.Trial, elapsed_secs: float, average_iteration_time: float
@@ -340,7 +347,9 @@ class _OptunaObjectiveCV(_OptunaObjective):
 
         self._postprocess(trial, elapsed_secs, average_iteration_time)
 
-        return val_score
+        trial.set_system_attr(_LGBM_ORIGINAL_SCORE, val_score)
+
+        return round(val_score, ROUND_NDIGITS)
 
 
 class _LightGBMBaseTuner(_BaseTuner):

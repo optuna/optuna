@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 
 import optuna
 from optuna.integration._lightgbm_tuner.optimize import _BaseTuner
+from optuna.integration._lightgbm_tuner.optimize import _LGBM_ORIGINAL_SCORE
 from optuna.integration._lightgbm_tuner.optimize import _OptunaObjective
 from optuna.integration._lightgbm_tuner.optimize import _OptunaObjectiveCV
 from optuna.integration._lightgbm_tuner.optimize import LightGBMTuner
@@ -755,6 +756,9 @@ class TestLightGBMTuner(object):
         tuner_first_try.run()
         best_score_first_try = tuner_first_try.best_score
 
+        original_score = tuner_first_try.study.best_trial.system_attrs[_LGBM_ORIGINAL_SCORE]
+        assert abs(original_score - best_score_first_try) < 1e-13
+
         tuner_second_try = lgb.LightGBMTuner(
             params,
             train,
@@ -764,6 +768,9 @@ class TestLightGBMTuner(object):
         )
         tuner_second_try.run()
         best_score_second_try = tuner_second_try.best_score
+
+        original_score = tuner_second_try.study.best_trial.system_attrs[_LGBM_ORIGINAL_SCORE]
+        assert abs(original_score - best_score_second_try) < 1e-13
 
         assert best_score_second_try == best_score_first_try
 
@@ -1067,6 +1074,9 @@ class TestLightGBMTunerCV(object):
         tuner_first_try.run()
         best_score_first_try = tuner_first_try.best_score
 
+        original_score = tuner_first_try.study.best_trial.system_attrs[_LGBM_ORIGINAL_SCORE]
+        assert abs(original_score - best_score_first_try) < 1e-13
+
         tuner_second_try = lgb.LightGBMTunerCV(
             params,
             train,
@@ -1076,5 +1086,8 @@ class TestLightGBMTunerCV(object):
         )
         tuner_second_try.run()
         best_score_second_try = tuner_second_try.best_score
+
+        original_score = tuner_second_try.study.best_trial.system_attrs[_LGBM_ORIGINAL_SCORE]
+        assert abs(original_score - best_score_second_try) < 1e-13
 
         assert best_score_second_try == best_score_first_try
