@@ -511,9 +511,6 @@ def check_distribution_compatibility(
         dist_old: A distribution previously recorded in storage.
         dist_new: A distribution newly added to storage.
 
-    Returns:
-        True denotes given distributions are compatible. Otherwise, they are not.
-
     Raises:
         ValueError:
             If different distribution kinds are set to ``dist_old`` and ``dist_new``,
