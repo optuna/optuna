@@ -4,20 +4,22 @@ from typing import Callable
 from typing import cast
 from typing import Dict
 from typing import List
+from typing import NamedTuple
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
 import numpy as np
+import scipy.special
+from scipy.stats import truncnorm
 
 import optuna
 from optuna import distributions
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
+from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
-from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
-from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
-from optuna.samplers._tpe.sampler import TPESampler
+from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.study import StudyDirection
 
 
@@ -32,8 +34,129 @@ def _default_weights_above(x: int) -> np.ndarray:
     return np.ones(x)
 
 
+class _ParzenEstimatorParameters(
+    NamedTuple(
+        "_ParzenEstimatorParameters",
+        [
+            ("consider_prior", bool),
+            ("prior_weight", Optional[float]),
+            ("consider_magic_clip", bool),
+            ("consider_endpoints", bool),
+            ("weights", Callable[[int], np.ndarray]),
+        ],
+    )
+):
+    pass
+
+
+class _ParzenEstimator(object):
+    def __init__(
+        self, mus: np.ndarray, low: float, high: float, parameters: _ParzenEstimatorParameters
+    ) -> None:
+
+        self.weights, self.mus, self.sigmas = _ParzenEstimator._calculate(
+            mus,
+            low,
+            high,
+            parameters.consider_prior,
+            parameters.prior_weight,
+            parameters.consider_magic_clip,
+            parameters.consider_endpoints,
+            parameters.weights,
+        )
+
+    @classmethod
+    def _calculate(
+        cls,
+        mus: np.ndarray,
+        low: float,
+        high: float,
+        consider_prior: bool,
+        prior_weight: Optional[float],
+        consider_magic_clip: bool,
+        consider_endpoints: bool,
+        weights_func: Callable[[int], np.ndarray],
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Calculates the weights, mus and sigma for the Parzen estimator.
+
+        Note: When the number of observations is zero, the Parzen estimator ignores the
+        `consider_prior` flag and utilizes a prior. Validation of this approach is future work.
+        """
+
+        mus = np.asarray(mus)
+        sigma = np.asarray([], dtype=float)
+        prior_pos = 0
+
+        # Parzen estimator construction requires at least one observation or a prior.
+        if mus.size == 0:
+            consider_prior = True
+
+        if consider_prior:
+            prior_mu = 0.5 * (low + high)
+            prior_sigma = 1.0 * (high - low)
+            if mus.size == 0:
+                low_sorted_mus_high = np.zeros(3)
+                sorted_mus = low_sorted_mus_high[1:-1]
+                sorted_mus[0] = prior_mu
+                sigma = np.asarray([prior_sigma])
+                prior_pos = 0
+                order = np.array([]).astype(int)
+            else:  # When mus.size is greater than 0.
+                # We decide the place of the  prior.
+                order = np.argsort(mus)
+                ordered_mus = mus[order]
+                prior_pos = int(np.searchsorted(ordered_mus, prior_mu))
+                # We decide the mus.
+                low_sorted_mus_high = np.zeros(len(mus) + 3)
+                sorted_mus = low_sorted_mus_high[1:-1]
+                sorted_mus[:prior_pos] = ordered_mus[:prior_pos]
+                sorted_mus[prior_pos] = prior_mu
+                sorted_mus[prior_pos + 1 :] = ordered_mus[prior_pos:]
+        else:
+            order = np.argsort(mus)
+            # We decide the mus.
+            low_sorted_mus_high = np.zeros(len(mus) + 2)
+            sorted_mus = low_sorted_mus_high[1:-1]
+            sorted_mus[:] = mus[order]
+
+        # We decide the sigma.
+        if mus.size > 0:
+            low_sorted_mus_high[-1] = high
+            low_sorted_mus_high[0] = low
+            sigma = np.maximum(
+                low_sorted_mus_high[1:-1] - low_sorted_mus_high[0:-2],
+                low_sorted_mus_high[2:] - low_sorted_mus_high[1:-1],
+            )
+            if not consider_endpoints and low_sorted_mus_high.size > 2:
+                sigma[0] = low_sorted_mus_high[2] - low_sorted_mus_high[1]
+                sigma[-1] = low_sorted_mus_high[-2] - low_sorted_mus_high[-3]
+
+        # We decide the weights.
+        unsorted_weights = weights_func(mus.size)
+        if consider_prior:
+            sorted_weights = np.zeros_like(sorted_mus)
+            sorted_weights[:prior_pos] = unsorted_weights[order[:prior_pos]]
+            sorted_weights[prior_pos] = prior_weight
+            sorted_weights[prior_pos + 1 :] = unsorted_weights[order[prior_pos:]]
+        else:
+            sorted_weights = unsorted_weights[order]
+        sorted_weights /= sorted_weights.sum()
+
+        # We adjust the range of the 'sigma' according to the 'consider_magic_clip' flag.
+        maxsigma = 1.0 * (high - low)
+        if consider_magic_clip:
+            minsigma = 1.0 * (high - low) / min(100.0, (1.0 + len(sorted_mus)))
+        else:
+            minsigma = EPS
+        sigma = np.asarray(np.clip(sigma, minsigma, maxsigma))
+        if consider_prior:
+            sigma[prior_pos] = prior_sigma
+
+        return sorted_weights, sorted_mus, sigma
+
+
 @experimental("2.4.0")
-class MOTPESampler(TPESampler):
+class MOTPESampler(BaseSampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
     This sampler is a multiobjective version of :class:`~optuna.samplers.TPESampler`.
@@ -126,19 +249,20 @@ class MOTPESampler(TPESampler):
         seed: Optional[int] = None,
     ) -> None:
 
-        super().__init__(
-            consider_prior=consider_prior,
-            prior_weight=prior_weight,
-            consider_magic_clip=consider_magic_clip,
-            consider_endpoints=consider_endpoints,
-            n_startup_trials=n_startup_trials,
-            n_ei_candidates=n_ehvi_candidates,
-            gamma=gamma,
-            weights=weights_above,
-            seed=seed,
+        self._parzen_estimator_parameters = _ParzenEstimatorParameters(
+            consider_prior, prior_weight, consider_magic_clip, consider_endpoints, weights_above
         )
+        self._prior_weight = prior_weight
+        self._n_startup_trials = n_startup_trials
         self._n_ehvi_candidates = n_ehvi_candidates
+        self._gamma = gamma
+        self._weights = weights_above
+
+        self._warn_independent_sampling = True
+        self._rng = np.random.RandomState(seed)
         self._mo_random_sampler = RandomSampler(seed=seed)
+
+        self._search_space = IntersectionSearchSpace(include_pruned=True)
         self._split_cache: Dict[int, Any] = {}
         self._weights_below: Dict[int, Any] = {}
 
@@ -171,7 +295,7 @@ class MOTPESampler(TPESampler):
         if len(study.directions) < 2:
             raise ValueError(
                 "Number of objectives must be >= 2. "
-                "Please use optuna.samplers.TPESampler for single-objective optimization."
+                "Please use optuna.samplers.self for single-objective optimization."
             )
 
         values, scores = _get_observation_pairs(study, param_name)
@@ -447,7 +571,7 @@ class MOTPESampler(TPESampler):
         )
 
         ret = float(
-            TPESampler._compare(
+            self._compare(
                 samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above
             )[0]
         )
@@ -472,16 +596,16 @@ class MOTPESampler(TPESampler):
         weighted_below = counts_below + self._prior_weight
         weighted_below /= weighted_below.sum()
         samples_below = self._sample_from_categorical_dist(weighted_below, size)
-        log_likelihoods_below = TPESampler._categorical_log_pdf(samples_below, weighted_below)
+        log_likelihoods_below = self._categorical_log_pdf(samples_below, weighted_below)
 
         weights_above = self._weights(len(above))
         counts_above = np.bincount(above, minlength=upper, weights=weights_above)
         weighted_above = counts_above + self._prior_weight
         weighted_above /= weighted_above.sum()
-        log_likelihoods_above = TPESampler._categorical_log_pdf(samples_below, weighted_above)
+        log_likelihoods_above = self._categorical_log_pdf(samples_below, weighted_above)
 
         return int(
-            TPESampler._compare(
+            self._compare(
                 samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above
             )[0]
         )
@@ -575,6 +699,162 @@ class MOTPESampler(TPESampler):
             del self._weights_below[trial._trial_id]
 
         self._mo_random_sampler.after_trial(study, trial, state, values)
+
+    def _sample_from_gmm(
+        self,
+        parzen_estimator: _ParzenEstimator,
+        low: float,
+        high: float,
+        q: Optional[float] = None,
+        size: Tuple = (),
+    ) -> np.ndarray:
+
+        weights = parzen_estimator.weights
+        mus = parzen_estimator.mus
+        sigmas = parzen_estimator.sigmas
+        weights, mus, sigmas = map(np.asarray, (weights, mus, sigmas))
+
+        if low >= high:
+            raise ValueError(
+                "The 'low' should be lower than the 'high'. "
+                "But (low, high) = ({}, {}).".format(low, high)
+            )
+
+        active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
+        trunc_low = (low - mus[active]) / sigmas[active]
+        trunc_high = (high - mus[active]) / sigmas[active]
+        samples = np.full((), fill_value=high + 1.0, dtype=np.float64)
+        while (samples >= high).any():
+            samples = np.where(
+                samples < high,
+                samples,
+                truncnorm.rvs(
+                    trunc_low,
+                    trunc_high,
+                    size=size,
+                    loc=mus[active],
+                    scale=sigmas[active],
+                    random_state=self._rng,
+                ),
+            )
+
+        if q is None:
+            return samples
+        else:
+            return np.round(samples / q) * q
+
+    def _gmm_log_pdf(
+        self,
+        samples: np.ndarray,
+        parzen_estimator: _ParzenEstimator,
+        low: float,
+        high: float,
+        q: Optional[float] = None,
+    ) -> np.ndarray:
+
+        weights = parzen_estimator.weights
+        mus = parzen_estimator.mus
+        sigmas = parzen_estimator.sigmas
+        samples, weights, mus, sigmas = map(np.asarray, (samples, weights, mus, sigmas))
+        if samples.size == 0:
+            return np.asarray([], dtype=float)
+        if weights.ndim != 1:
+            raise ValueError(
+                "The 'weights' should be 1-dimension. "
+                "But weights.shape = {}".format(weights.shape)
+            )
+        if mus.ndim != 1:
+            raise ValueError(
+                "The 'mus' should be 1-dimension. But mus.shape = {}".format(mus.shape)
+            )
+        if sigmas.ndim != 1:
+            raise ValueError(
+                "The 'sigmas' should be 1-dimension. But sigmas.shape = {}".format(sigmas.shape)
+            )
+
+        p_accept = np.sum(
+            weights * (self._normal_cdf(high, mus, sigmas) - self._normal_cdf(low, mus, sigmas))
+        )
+
+        if q is None:
+            distance = samples[..., None] - mus
+            mahalanobis = (distance / np.maximum(sigmas, EPS)) ** 2
+            Z = np.sqrt(2 * np.pi) * sigmas
+            coefficient = weights / Z / p_accept
+            return self._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
+        else:
+            cdf_func = self._normal_cdf
+            upper_bound = np.minimum(samples + q / 2.0, high)
+            lower_bound = np.maximum(samples - q / 2.0, low)
+            probabilities = np.sum(
+                weights[..., None]
+                * (
+                    cdf_func(upper_bound[None], mus[..., None], sigmas[..., None])
+                    - cdf_func(lower_bound[None], mus[..., None], sigmas[..., None])
+                ),
+                axis=0,
+            )
+            return np.log(probabilities + EPS) - np.log(p_accept + EPS)
+
+    def _sample_from_categorical_dist(
+        self, probabilities: np.ndarray, size: Tuple[int]
+    ) -> np.ndarray:
+
+        if size == (0,):
+            return np.asarray([], dtype=float)
+        assert size
+
+        if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
+            probabilities = probabilities[0]
+        assert probabilities.ndim == 1
+
+        n_draws = np.prod(size).item()
+        sample = self._rng.multinomial(n=1, pvals=probabilities, size=n_draws)
+        assert sample.shape == size + probabilities.shape
+        return_val = np.dot(sample, np.arange(probabilities.size)).reshape(size)
+        return return_val
+
+    @classmethod
+    def _categorical_log_pdf(cls, sample: np.ndarray, p: np.ndarray) -> np.ndarray:
+
+        if sample.size:
+            return np.log(np.asarray(p)[sample])
+        else:
+            return np.asarray([])
+
+    @classmethod
+    def _compare(cls, samples: np.ndarray, log_l: np.ndarray, log_g: np.ndarray) -> np.ndarray:
+
+        samples, log_l, log_g = map(np.asarray, (samples, log_l, log_g))
+        if samples.size:
+            score = log_l - log_g
+            if samples.size != score.size:
+                raise ValueError(
+                    "The size of the 'samples' and that of the 'score' "
+                    "should be same. "
+                    "But (samples.size, score.size) = ({}, {})".format(samples.size, score.size)
+                )
+
+            best = np.argmax(score)
+            return np.asarray([samples[best]] * samples.size)
+        else:
+            return np.asarray([])
+
+    @classmethod
+    def _logsum_rows(cls, x: np.ndarray) -> np.ndarray:
+
+        x = np.asarray(x)
+        m = x.max(axis=1)
+        return np.log(np.exp(x - m[:, None]).sum(axis=1)) + m
+
+    @classmethod
+    def _normal_cdf(cls, x: float, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
+
+        mu, sigma = map(np.asarray, (mu, sigma))
+        denominator = x - mu
+        numerator = np.maximum(np.sqrt(2) * sigma, EPS)
+        z = denominator / numerator
+        return 0.5 * (1 + scipy.special.erf(z))
 
 
 def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
