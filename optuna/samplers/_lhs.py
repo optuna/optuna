@@ -144,12 +144,14 @@ class LatinHypercubeSampler(BaseSampler):
         *,
         seed: Optional[int] = None,
         search_space: Optional[Dict[str, BaseDistribution]] = None,
+        add_noise: bool = True,
         independent_sampler: Optional[BaseSampler] = None,
         warn_incomplete_reseeding: bool = True,
     ) -> None:
 
         self._n = n
         self._seed = seed or numpy.random.MT19937().random_raw()
+        self._add_noise = add_noise
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._cached_lhs = None
         # TODO(kstoneriv3): make sure that search_space is either None or valid search space.
@@ -190,7 +192,7 @@ class LatinHypercubeSampler(BaseSampler):
 
     def _infer_initial_search_space(self, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
 
-        return trial.distributions.items()
+        return trial.distributions
 
     @staticmethod
     def _log_incomplete_reseeding() -> None:
@@ -228,7 +230,7 @@ class LatinHypercubeSampler(BaseSampler):
 
         sample = self._sample_lhs(study, search_space)
         trans = _SearchSpaceTransform(search_space)
-        sample = trans.untransform(sample[0, :])
+        sample = trans.untransform(sample)
         return sample
 
     def after_trial(
@@ -246,13 +248,16 @@ class LatinHypercubeSampler(BaseSampler):
 
         sample_id = self._find_sample_id(study, search_space)
         d = sum([
-            len(dist.choices) if isinstance(distributions.CategoricalDistribution) else 1
+            len(dist.choices) if isinstance(dist, distributions.CategoricalDistribution) else 1
             for dist in search_space.values()
         ])
 
+        if sample_id == self._n - 1:
+            study.stop()
+
         # Use cached `lhs` (Latin hypercube samples) or construct a new one.
-        if self._is_lhs_cached(d, sample_id):
-            self._precompute_lhs(d, seach_space)
+        if not self._is_lhs_cached(d, sample_id):
+            self._precompute_lhs(d, search_space)
 
         sample = self._cached_lhs[sample_id, :]
         return sample
@@ -261,6 +266,7 @@ class LatinHypercubeSampler(BaseSampler):
 
         lhs_id = ""
         lhs_id += str(search_space)
+        lhs_id += str(self._n)
         lhs_id += str(self._seed)
         hashed_lhs_id = hash(lhs_id)
         key_lhs_id = f"lhs ({hashed_lhs_id})'s last sample id"
@@ -278,20 +284,24 @@ class LatinHypercubeSampler(BaseSampler):
 
         return sample_id
 
-    def _is_engine_cached(self, d: int, sample_id: int) -> bool:
+    def _is_lhs_cached(self, d: int, sample_id: int) -> bool:
 
-        if not isinstance(self._cached_lhs, numpy.ndarray):
-            return False
+        if isinstance(self._cached_lhs, numpy.ndarray):
+            is_cached = True
+            is_cached &= self._cached_lhs_seed == self._seed
+            is_cached &= self._cached_lhs.shape[0] == self._n
+            is_cached &= self._cached_lhs.shape[1] == d
+            return is_cached
         else:
-            return self._cached_lhs_seed == self._seed and self._cached_lhs.shape[1] == d
+            return False
 
-    def _precompute_lhs(d: int, search_space: Dict[str, BaseDistribution]) -> None:
+    def _precompute_lhs(self, d: int, search_space: Dict[str, BaseDistribution]) -> None:
 
-        rng = numpy.random.Random(self._seed)
+        rng = numpy.random.RandomState(self._seed)
         samples = numpy.zeros([self._n, d])
         bound_idx = 0
         for param_name, dist in search_space.items():
-            if isinstance(dist, distribution.Categorical):
+            if isinstance(dist, distributions.CategoricalDistribution):
                 c = len(dist.choices)
                 choices = numpy.arange(self._n) % c
                 rng.shuffle(choices)
@@ -303,8 +313,11 @@ class LatinHypercubeSampler(BaseSampler):
                 low, high = trans.bounds[:, 0], trans.bounds[:, 1]
                 # Enforce a unique point per grid
                 perm = rng.permutation(self._n)
-                noise = rng.uniform(low=0, high=1, size=self._n)
-                samples[:, bound_idx] = low + (high - low) * (perm + noise) / self._n
+                if self._add_noise:
+                    perm = perm + rng.uniform(low=0, high=1, size=self._n)
+                else:
+                    perm = perm + 0.5
+                samples[:, bound_idx] = low + (high - low) * perm / self._n
                 bound_idx += 1
         
         self._cached_lhs_seed = self._seed
