@@ -25,7 +25,7 @@ _SUGGESTED_STATES = (TrialState.COMPLETE, TrialState.PRUNED)
 
 
 @experimental("2.x.0")  # TODO(kstoneriv3)
-class QMCSampler(BaseSampler):
+class LatinHypercubeSampler(BaseSampler):
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 
     Quasi Monte Carlo (QMC) sequences are designed to have lower discrepancies than
