@@ -223,8 +223,8 @@ for _ in range(3):
     for _ in range(batch_size):
         trial = study.ask()
         trial_ids.append(trial.number)
-        x_batch.append(trial.suggest_int("x", -10, 10))
-        y_batch.append(trial.suggest_int("y", -10, 10))
+        x_batch.append(trial.suggest_float("x", -10, 10))
+        y_batch.append(trial.suggest_float("y", -10, 10))
 
     # evaluate batched objective
     x_batch = np.array(x_batch)
