@@ -107,7 +107,7 @@ plot_slice(study, params=["bagging_freq", "bagging_fraction"])
 plot_param_importances(study)
 
 ###################################################################################################
-# Learn which hyperparameters are affecting the trial duration with hyperparameter importance
+# Learn which hyperparameters are affecting the trial duration with hyperparameter importance.
 optuna.visualization.plot_param_importances(
     study, target=lambda t: t.duration.total_seconds(), target_name="duration"
 )

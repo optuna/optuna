@@ -29,7 +29,7 @@ def plot_slice(
 ) -> "go.Figure":
     """Plot the parameter relationship as slice plot in a study.
 
-    Note that, If a parameter contains missing values, a trial with missing values is not plotted.
+    Note that, if a parameter contains missing values, a trial with missing values is not plotted.
 
     Example:
 
@@ -98,12 +98,12 @@ def _get_slice_plot(
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
     if params is None:
-        sorted_params = sorted(list(all_params))
+        sorted_params = sorted(all_params)
     else:
         for input_p_name in params:
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
-        sorted_params = sorted(list(set(params)))
+        sorted_params = sorted(set(params))
 
     n_params = len(sorted_params)
 
