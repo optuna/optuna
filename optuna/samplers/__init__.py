@@ -1,6 +1,7 @@
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._cmaes import CmaEsSampler
 from optuna.samplers._grid import GridSampler
+from optuna.samplers._lhs import LatinHypercubeSampler
 from optuna.samplers._nsga2 import NSGAIISampler
 from optuna.samplers._partial_fixed import PartialFixedSampler
 from optuna.samplers._random import RandomSampler
@@ -15,6 +16,7 @@ __all__ = [
     "CmaEsSampler",
     "GridSampler",
     "IntersectionSearchSpace",
+    "LatinHypercubeSampler",
     "MOTPESampler",
     "NSGAIISampler",
     "PartialFixedSampler",
