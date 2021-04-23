@@ -26,6 +26,7 @@ _SUGGESTED_STATES = (TrialState.COMPLETE, TrialState.PRUNED)
 
 @experimental("2.x.0")  # TODO(kstoneriv3)
 class LatinHypercubeSampler(BaseSampler):
+    # TODO(kstoneriv3): update the docstring
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 
     Quasi Monte Carlo (QMC) sequences are designed to have lower discrepancies than
@@ -305,7 +306,7 @@ class LatinHypercubeSampler(BaseSampler):
                 c = len(dist.choices)
                 choices = numpy.arange(self._n) % c
                 rng.shuffle(choices)
-                samples[:, bound_idx + choices] = 1
+                samples[range(self._n), bound_idx + choices] = 1
                 bound_idx += c
             else:
                 trans = search_space = {param_name: dist}
