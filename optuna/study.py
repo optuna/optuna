@@ -1228,6 +1228,10 @@ def load_study(
                 "contain exactly 1 study. Specify `study_name`."
             )
         study_name = study_summaries[0].study_name
+        _logger.info(
+            f"Study name was omitted but trying to load '{study_name}' because that was the only "
+            "study found in the storage."
+        )
 
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
