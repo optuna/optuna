@@ -159,7 +159,6 @@ class LatinHypercubeSampler(BaseSampler):
         # also make sure that it is OrderedDict
         self._initial_search_space = search_space
         self._warn_incomplete_reseeding = warn_incomplete_reseeding
-        self._should_stop = False
 
     def reseed_rng(self) -> None:
 
@@ -244,9 +243,6 @@ class LatinHypercubeSampler(BaseSampler):
     ) -> None:
 
         self._independent_sampler.after_trial(study, trial, state, values)
-        if self._should_stop:  # TODO(kstoneriv3): Consider using information on `state`
-            study.stop()
-
 
     def _sample_lhs(
         self, study: Study, search_space: Dict[str, BaseDistribution]
@@ -261,7 +257,7 @@ class LatinHypercubeSampler(BaseSampler):
         # TODO(kstoneriv3): Consider using information on `state`
         # TODO(kstoneriv3): Not sure if it properly stops in distributed environment.
         if sample_id == self._n - 1:
-            self._should_stop = True
+            study.stop()
 
         # Use cached `lhs` (Latin hypercube samples) or construct a new one.
         if not self._is_lhs_cached(d, sample_id):
