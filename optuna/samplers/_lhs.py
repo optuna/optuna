@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -21,7 +20,6 @@ from optuna.trial import TrialState
 _logger = logging.get_logger(__name__)
 
 _SUGGESTED_STATES = (TrialState.COMPLETE, TrialState.PRUNED)
-
 
 
 @experimental("2.x.0")  # TODO(kstoneriv3)
@@ -155,7 +153,7 @@ class LatinHypercubeSampler(BaseSampler):
         self._seed = seed or numpy.random.MT19937().random_raw()
         self._add_noise = add_noise
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
-        self._cached_lhs = None
+        self._cached_lhs: Optional[numpy.ndarray] = None
         # TODO(kstoneriv3): make sure that search_space is either None or valid search space.
         # also make sure that it is OrderedDict
         self._initial_search_space = search_space
@@ -215,10 +213,6 @@ class LatinHypercubeSampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        if self._initial_search_space is not None:
-            if self._warn_independent_sampling:
-                self._log_independent_sampling(trial, param_name)
-
         return self._independent_sampler.sample_independent(
             study, trial, param_name, param_distribution
         )
@@ -230,9 +224,9 @@ class LatinHypercubeSampler(BaseSampler):
         if search_space == {}:
             return {}
 
-        sample = self._sample_lhs(study, search_space)
+        sample_trans = self._sample_lhs(study, search_space)
         trans = _SearchSpaceTransform(search_space)
-        sample = trans.untransform(sample)
+        sample = trans.untransform(sample_trans)
         return sample
 
     def after_trial(
@@ -250,10 +244,12 @@ class LatinHypercubeSampler(BaseSampler):
     ) -> numpy.ndarray:
 
         sample_id = self._find_sample_id(study, search_space)
-        d = sum([
-            len(dist.choices) if isinstance(dist, distributions.CategoricalDistribution) else 1
-            for dist in search_space.values()
-        ])
+        d = sum(
+            [
+                len(dist.choices) if isinstance(dist, distributions.CategoricalDistribution) else 1
+                for dist in search_space.values()
+            ]
+        )
 
         # TODO(kstoneriv3): Consider using information on `state`
         if self._n <= sample_id:
@@ -263,6 +259,7 @@ class LatinHypercubeSampler(BaseSampler):
         if not self._is_lhs_cached(d, sample_id):
             self._precompute_lhs(d, search_space)
 
+        assert isinstance(self._cached_lhs, numpy.ndarray)
         sample = self._cached_lhs[sample_id, :]
         return sample
 
@@ -312,7 +309,7 @@ class LatinHypercubeSampler(BaseSampler):
                 samples[range(self._n), bound_idx + choices] = 1
                 bound_idx += c
             else:
-                trans = search_space = {param_name: dist}
+                search_space = {param_name: dist}
                 trans = _SearchSpaceTransform(search_space)
                 low, high = trans.bounds[:, 0], trans.bounds[:, 1]
                 # Enforce a unique point per grid
@@ -323,10 +320,6 @@ class LatinHypercubeSampler(BaseSampler):
                     perm = perm + 0.5
                 samples[:, bound_idx] = low + (high - low) * perm / self._n
                 bound_idx += 1
-        
+
         self._cached_lhs_seed = self._seed
         self._cached_lhs = samples
-
-
-
-
