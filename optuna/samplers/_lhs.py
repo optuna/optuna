@@ -150,6 +150,7 @@ class LatinHypercubeSampler(BaseSampler):
         warn_incomplete_reseeding: bool = True,
     ) -> None:
 
+        # TODO(kstoneriv3): consider incremental LHS, that do not need to know n beforehand.
         self._n = n
         self._seed = seed or numpy.random.MT19937().random_raw()
         self._add_noise = add_noise
@@ -255,8 +256,7 @@ class LatinHypercubeSampler(BaseSampler):
         ])
 
         # TODO(kstoneriv3): Consider using information on `state`
-        # TODO(kstoneriv3): Not sure if it properly stops in distributed environment.
-        if sample_id == self._n - 1:
+        if self._n <= sample_id:
             study.stop()
 
         # Use cached `lhs` (Latin hypercube samples) or construct a new one.
