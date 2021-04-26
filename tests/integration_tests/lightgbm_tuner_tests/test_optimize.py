@@ -748,6 +748,7 @@ class TestLightGBMTuner(object):
             "metric": "rmse",
             "random_seed": 0,
             "deterministic": True,
+            "force_col_wise": True,
             "verbosity": -1,
         }
 
@@ -1066,6 +1067,7 @@ class TestLightGBMTunerCV(object):
             "metric": "rmse",
             "random_seed": 0,
             "deterministic": True,
+            "force_col_wise": True,
             "verbosity": -1,
         }
 
