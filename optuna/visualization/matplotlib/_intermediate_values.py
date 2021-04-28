@@ -16,6 +16,11 @@ _logger = get_logger(__name__)
 def plot_intermediate_values(study: Study) -> "Axes":
     """Plot intermediate values of all trials in a study with Matplotlib.
 
+    .. note::
+        Please refer to `matplotlib.pyplot.legend
+        <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html>`_
+        to adjust the style of the generated legend.
+
     Example:
 
         The following code snippet shows how to plot intermediate values.
