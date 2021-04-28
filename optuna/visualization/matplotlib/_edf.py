@@ -39,7 +39,7 @@ def plot_edf(
 
     .. note::
 
-        Please refer `matplotlib.pyplot.legend
+        Please refer to `matplotlib.pyplot.legend
         <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html>`_
         to adjust the style of the generated legend.
 
