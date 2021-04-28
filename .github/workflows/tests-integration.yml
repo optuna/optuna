@@ -68,8 +68,7 @@ jobs:
             --ignore tests/integration_tests/test_keras.py \
             --ignore tests/integration_tests/test_tensorflow.py \
             --ignore tests/integration_tests/test_tfkeras.py \
-            --ignore tests/integration_tests/test_sklearn.py \
-            --ignore tests/integration_tests/test_tensorboard.py 
+            --ignore tests/integration_tests/test_tensorboard.py
         else
           pytest -s tests/integration_tests
         fi
