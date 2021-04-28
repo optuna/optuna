@@ -37,6 +37,12 @@ def plot_edf(
         Please refer to :func:`optuna.visualization.plot_edf` for an example,
         where this function can be replaced with it.
 
+    .. note::
+
+        Please refer `matplotlib.pyplot.legend
+        <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html>`_
+        to adjust the style of the generated legend.
+
     Example:
 
         The following code snippet shows how to plot EDF.
