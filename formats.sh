@@ -9,6 +9,9 @@ missing_dependencies=()
 if [ ! "$(echo $res_pip_list | grep black)" ] ; then
   missing_dependencies+=(black)
 fi
+if [ ! "$(echo $res_pip_list | grep blackdoc)" ] ; then
+  missing_dependencies+=(blackdoc)
+fi
 if [ ! "$(echo $res_pip_list | grep flake8)" ] ; then
   missing_dependencies+=(hacking)
 fi
