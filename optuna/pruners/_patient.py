@@ -44,12 +44,10 @@ class PatientPruner(BasePruner):
 
                 return clf.score(X_valid, y_valid)
 
+
             study = optuna.create_study(
                 direction="maximize",
-                pruner=optuna.pruners.PatientPruner(
-                    optuna.pruners.MedianPruner(),
-                    patience=1
-                ),
+                pruner=optuna.pruners.PatientPruner(optuna.pruners.MedianPruner(), patience=1),
             )
             study.optimize(objective, n_trials=20)
 
