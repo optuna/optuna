@@ -52,7 +52,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
         # examples and tutorials.
         "checking": ["black", "hacking", "isort", "mypy==0.790", "blackdoc"],
-        "codecov": ["codecov", "pytest-cov"],
+        "codecov": ["codecov<5.2.3", "pytest-cov"],
         "doctest": [
             "cma",
             "matplotlib>=3.0.0",
@@ -130,7 +130,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mxnet",
             "pandas",
             "plotly>=4.0.0",
-            "pytest",
+            "pytest<5.2.3",
             "scikit-learn>=0.19.0,<0.23.0",
             "scikit-optimize",
             "xgboost",
@@ -152,7 +152,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "tests": [
             "fakeredis",
-            "pytest",
+            "pytest<5.2.3",
         ],
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
