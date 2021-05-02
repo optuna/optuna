@@ -111,7 +111,10 @@ def test_lightgbm_pruning_callback_with_interval(
     study.optimize(
         partial(objective, cv=cv, interval=interval, num_boost_round=num_boost_round), n_trials=1
     )
-    assert study.trials[0].state == optuna.trial.TrialState.PRUNED
+    if interval > num_boost_round:
+        assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
+    else:
+        assert study.trials[0].state == optuna.trial.TrialState.PRUNED
 
 
 @pytest.mark.parametrize("cv", CV_FLAGS)
