@@ -13,8 +13,79 @@ with try_import() as _imports:
     import mlflow
 
 
+class MLFlowIntegrator(object):
+    def __init__(
+        self,
+        tracking_uri: Optional[str] = None,
+        metric_name: str = "value",
+        nest_trials: bool = False,
+        tag_study_user_attrs: bool = False,
+    ) -> None:
+
+        _imports.check()
+
+        self._tracking_uri = tracking_uri
+        self._metric_name = metric_name
+        self._nest_trials = nest_trials
+        self._tag_study_user_attrs = tag_study_user_attrs
+
+    def set_experiment(self, study: optuna.study.Study):
+        # This sets the tracking_uri for MLflow.
+        if self._tracking_uri is not None:
+            mlflow.set_tracking_uri(self._tracking_uri)
+
+        # This sets the experiment of MLflow.
+        mlflow.set_experiment(study.study_name)
+
+    def calculate_tags(self, trial: optuna.trial.Trial, study: optuna.study.Study):
+
+        tags: Dict[str, str] = {}
+        tags["number"] = str(trial.number)
+        tags["datetime_start"] = str(trial.datetime_start)
+        if isinstance(trial, optuna.trial.FrozenTrial):
+            tags["datetime_complete"] = str(trial.datetime_complete)
+
+            # Set state and convert it to str and remove the common prefix.
+            trial_state = trial.state
+            if isinstance(trial_state, TrialState) and trial_state.is_finished():
+                tags["state"] = str(trial_state).split(".")[-1]
+
+        # Set direction and convert it to str and remove the common prefix.
+        study_direction = study.direction
+        if isinstance(study_direction, StudyDirection):
+            tags["direction"] = str(study_direction).split(".")[-1]
+
+        tags.update(trial.user_attrs)
+        distributions = {(k + "_distribution"): str(v) for (k, v) in trial.distributions.items()}
+        tags.update(distributions)
+
+        if self._tag_study_user_attrs:
+            tags.update(study.user_attrs)
+
+        # This is a temporary fix on Optuna side. It avoids an error with user
+        # attributes that are too long. It should be fixed on MLflow side later.
+        # When it is fixed on MLflow side this codeblock can be removed.
+        # see https://github.com/optuna/optuna/issues/1340
+        # see https://github.com/mlflow/mlflow/issues/2931
+        max_mlflow_tag_length = 5000
+        for key, value in tags.items():
+            value = str(value)  # make sure it is a string
+            if len(value) > max_mlflow_tag_length:
+                tags[key] = textwrap.shorten(value, max_mlflow_tag_length)
+
+        # This sets the tags for MLflow.
+        mlflow.set_tags(tags)
+
+    def log_metric(self, value):
+        trial_value = value if value is not None else float("nan")
+        mlflow.log_metric(self._metric_name, trial_value)
+
+    def log_params(self, trial: optuna.trial.Trial):
+        mlflow.log_params(trial.params)
+
+
 @experimental("1.4.0")
-class MLflowCallback(object):
+class MLflowCallback(MLFlowIntegrator):
     """Callback to track Optuna trials with MLflow.
 
     This callback adds relevant information that is
@@ -85,73 +156,41 @@ class MLflowCallback(object):
             set, key value pairs in study.user_attrs will supersede existing tags.
     """
 
-    def __init__(
-        self,
-        tracking_uri: Optional[str] = None,
-        metric_name: str = "value",
-        nest_trials: bool = False,
-        tag_study_user_attrs: bool = False,
-    ) -> None:
-
-        _imports.check()
-
-        self._tracking_uri = tracking_uri
-        self._metric_name = metric_name
-        self._nest_trials = nest_trials
-        self._tag_study_user_attrs = tag_study_user_attrs
-
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
-        # This sets the tracking_uri for MLflow.
-        if self._tracking_uri is not None:
-            mlflow.set_tracking_uri(self._tracking_uri)
-
-        # This sets the experiment of MLflow.
-        mlflow.set_experiment(study.study_name)
+        self.set_experiment(study)
 
         with mlflow.start_run(run_name=str(trial.number), nested=self._nest_trials):
 
             # This sets the metric for MLflow.
-            trial_value = trial.value if trial.value is not None else float("nan")
-            mlflow.log_metric(self._metric_name, trial_value)
+            self.log_metric(trial.value)
 
             # This sets the params for MLflow.
-            mlflow.log_params(trial.params)
+            self.log_params(trial)
 
             # This sets the tags for MLflow.
-            tags: Dict[str, str] = {}
-            tags["number"] = str(trial.number)
-            tags["datetime_start"] = str(trial.datetime_start)
-            tags["datetime_complete"] = str(trial.datetime_complete)
+            self.calculate_tags(trial, study, self._tag_study_user_attrs)
 
-            # Set state and convert it to str and remove the common prefix.
-            trial_state = trial.state
-            if isinstance(trial_state, TrialState):
-                tags["state"] = str(trial_state).split(".")[-1]
 
-            # Set direction and convert it to str and remove the common prefix.
-            study_direction = study.direction
-            if isinstance(study_direction, StudyDirection):
-                tags["direction"] = str(study_direction).split(".")[-1]
+def track_in_mlflow(optuna_mlflow: MLFlowIntegrator):
+    def decorator(func):
+        def wrapper(trial: optuna.trial.Trial):
+            study = trial.study
+            optuna_mlflow.set_experiment(study)
 
-            tags.update(trial.user_attrs)
-            distributions = {
-                (k + "_distribution"): str(v) for (k, v) in trial.distributions.items()
-            }
-            tags.update(distributions)
+            with mlflow.start_run(run_name=str(trial.number), nested=optuna_mlflow._nest_trials):
+                result = func(trial)
+                # This sets the metric for MLflow.
+                optuna_mlflow.log_metric(result)
 
-            if self._tag_study_user_attrs:
-                tags.update(study.user_attrs)
+                # This sets the params for MLflow.
+                optuna_mlflow.log_params(trial)
 
-            # This is a temporary fix on Optuna side. It avoids an error with user
-            # attributes that are too long. It should be fixed on MLflow side later.
-            # When it is fixed on MLflow side this codeblock can be removed.
-            # see https://github.com/optuna/optuna/issues/1340
-            # see https://github.com/mlflow/mlflow/issues/2931
-            max_mlflow_tag_length = 5000
-            for key, value in tags.items():
-                value = str(value)  # make sure it is a string
-                if len(value) > max_mlflow_tag_length:
-                    tags[key] = textwrap.shorten(value, max_mlflow_tag_length)
+                # This sets the tags for MLflow.
+                optuna_mlflow.calculate_tags(trial, study)
 
-            mlflow.set_tags(tags)
+                return result
+
+        return wrapper
+
+    return decorator
