@@ -29,7 +29,7 @@ class MLFlowIntegrator(object):
         self._nest_trials = nest_trials
         self._tag_study_user_attrs = tag_study_user_attrs
 
-    def set_experiment(self, study: optuna.study.Study):
+    def set_experiment(self, study: optuna.study.Study) -> None:
         # This sets the tracking_uri for MLflow.
         if self._tracking_uri is not None:
             mlflow.set_tracking_uri(self._tracking_uri)
@@ -37,7 +37,7 @@ class MLFlowIntegrator(object):
         # This sets the experiment of MLflow.
         mlflow.set_experiment(study.study_name)
 
-    def calculate_tags(self, trial: optuna.trial.Trial, study: optuna.study.Study):
+    def calculate_tags(self, trial: optuna.trial.Trial, study: optuna.study.Study) -> None:
 
         tags: Dict[str, str] = {}
         tags["number"] = str(trial.number)
@@ -76,11 +76,11 @@ class MLFlowIntegrator(object):
         # This sets the tags for MLflow.
         mlflow.set_tags(tags)
 
-    def log_metric(self, value):
+    def log_metric(self, value: float) -> None:
         trial_value = value if value is not None else float("nan")
         mlflow.log_metric(self._metric_name, trial_value)
 
-    def log_params(self, trial: optuna.trial.Trial):
+    def log_params(self, trial: optuna.trial.Trial) -> None:
         mlflow.log_params(trial.params)
 
 
@@ -169,7 +169,7 @@ class MLflowCallback(MLFlowIntegrator):
             self.log_params(trial)
 
             # This sets the tags for MLflow.
-            self.calculate_tags(trial, study, self._tag_study_user_attrs)
+            self.calculate_tags(trial, study)
 
 
 def track_in_mlflow(optuna_mlflow: MLFlowIntegrator):
