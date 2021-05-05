@@ -9,13 +9,13 @@ from optuna.trial import TrialState
 
 def test_median_pruner_with_one_trial() -> None:
 
-    study = optuna.study.create_study()
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.report(1, 1)
     pruner = optuna.pruners.MedianPruner(0, 0)
+    study = optuna.study.create_study(pruner=pruner)
+    trial = study.ask()
+    trial.report(1, 1)
 
     # A pruner is not activated at a first trial.
-    assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
+    assert not trial.should_prune()
 
 
 @pytest.mark.parametrize("direction_value", [("minimize", 2), ("maximize", 0.5)])
@@ -26,6 +26,7 @@ def test_median_pruner_intermediate_values(direction_value: Tuple[str, float]) -
     study = optuna.study.create_study(direction=direction)
 
     trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial = study.ask()
     trial.report(1, 1)
     study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
 
