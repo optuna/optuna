@@ -27,7 +27,7 @@ from optuna._optimize import _check_and_convert_to_values
 from optuna._optimize import _optimize
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
-from optuna._updated_trials_queue import UpdatedTrialsQueue  # NOQA
+from optuna._updated_trials_queue import UpdatedTrialsQueue
 from optuna.distributions import BaseDistribution
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
@@ -237,6 +237,7 @@ class Study(BaseStudy):
 
         self._optimize_lock = threading.Lock()
         self._stop_flag = False
+        self._waiting_trials = UpdatedTrialsQueue(self, (TrialState.WAITING,))
 
     def __getstate__(self) -> Dict[Any, Any]:
 
@@ -971,18 +972,16 @@ class Study(BaseStudy):
 
     def _pop_waiting_trial_id(self) -> Optional[int]:
 
-        # TODO(c-bata): Reduce database query counts for extracting waiting trials.
-        for trial in self._storage.get_all_trials(self._study_id, deepcopy=False):
-            if trial.state != TrialState.WAITING:
-                continue
+        try:
+            while True:
+                trial = self._waiting_trials.get(deepcopy=False)
+                if not self._storage.set_trial_state(trial._trial_id, TrialState.RUNNING):
+                    continue
 
-            if not self._storage.set_trial_state(trial._trial_id, TrialState.RUNNING):
-                continue
-
-            _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
-            return trial._trial_id
-
-        return None
+                _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
+                return trial._trial_id
+        except IndexError:
+            return None
 
     @deprecated("2.5.0")
     def _ask(self) -> trial_module.Trial:
