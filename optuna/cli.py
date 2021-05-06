@@ -91,9 +91,6 @@ class _CreateStudy(_BaseCommand):
             else:
                 directions = ["minimize"]  # default value
 
-        if any(direction not in ("maximize", "minimize") for direction in directions):
-            raise ValueError("Each direction must be `minimize` or `maximize`")
-
         storage_url = _check_storage_url(self.app_args.storage)
         storage = optuna.storages.get_storage(storage_url)
         study_name = optuna.create_study(
