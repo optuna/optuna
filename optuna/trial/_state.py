@@ -29,3 +29,13 @@ class TrialState(enum.Enum):
     def is_finished(self) -> bool:
 
         return self != TrialState.RUNNING and self != TrialState.WAITING
+
+    def __lt__(self, state: "TrialState") -> bool:
+        """Returns whether the left state can promote to the right state."""
+
+        if self == TrialState.WAITING:
+            return state == TrialState.RUNNING or state.is_finished()
+        elif self == TrialState.RUNNING:
+            return state.is_finished()
+        else:
+            return False

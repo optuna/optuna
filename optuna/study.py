@@ -27,6 +27,7 @@ from optuna._optimize import _check_and_convert_to_values
 from optuna._optimize import _optimize
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary  # NOQA
+from optuna._updated_trials_queue import UpdatedTrialsQueue  # NOQA
 from optuna.distributions import BaseDistribution
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
