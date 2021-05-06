@@ -118,6 +118,23 @@ def test_create_study_command_with_multiple_directions() -> None:
         with pytest.raises(subprocess.CalledProcessError):
             subprocess.check_call(command)
 
+        command = [
+            "optuna",
+            "create-study",
+            "--storage",
+            storage_url,
+            "--direction",
+            "minimize",
+            "--directions",
+            "minimize",
+            "maximize",
+            "test",
+        ]
+
+        # It can't specify both --direction and --directions
+        with pytest.raises(subprocess.CalledProcessError):
+            subprocess.check_call(command)
+
 
 def test_delete_study_command() -> None:
 
