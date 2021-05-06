@@ -57,6 +57,7 @@ class _CreateStudy(_BaseCommand):
         )
         parser.add_argument(
             "--direction",
+            default=None,
             type=str,
             choices=("minimize", "maximize"),
             help="Set direction of optimization to a new study. Set 'minimize' "
@@ -83,23 +84,13 @@ class _CreateStudy(_BaseCommand):
 
     def take_action(self, parsed_args: Namespace) -> None:
 
-        if parsed_args.direction is not None:
-            if parsed_args.directions is not None:
-                raise ValueError("Specify only one of `direction` and `directions`.")
-            else:
-                directions = [parsed_args.direction]
-        else:
-            if parsed_args.directions is not None:
-                directions = parsed_args.directions
-            else:
-                directions = ["minimize"]  # default value
-
         storage_url = _check_storage_url(self.app_args.storage)
         storage = optuna.storages.get_storage(storage_url)
         study_name = optuna.create_study(
             storage=storage,
             study_name=parsed_args.study_name,
-            directions=directions,
+            direction=parsed_args.direction,
+            directions=parsed_args.directions,
             load_if_exists=parsed_args.skip_if_exists,
         ).study_name
         print(study_name)
