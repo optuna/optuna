@@ -4,7 +4,6 @@ from typing import Tuple
 import pytest
 
 import optuna
-from optuna.trial import TrialState
 
 
 def test_median_pruner_with_one_trial() -> None:
