@@ -58,6 +58,7 @@ class _CreateStudy(_BaseCommand):
         parser.add_argument(
             "--direction",
             type=str,
+            choices=("minimize", "maximize"),
             help="Set direction of optimization to a new study. Set 'minimize' "
             "for minimization and 'maximize' for maximization.",
         )
@@ -72,9 +73,11 @@ class _CreateStudy(_BaseCommand):
             "--directions",
             type=str,
             default=None,
+            choices=("minimize", "maximize"),
             help="Set directions of optimization to a new study."
-            " Put comma between directions. Each direction should be"
+            " Put whitespace between directions. Each direction should be"
             " either `minimize` or `maximize`.",
+            nargs="+",
         )
         return parser
 
@@ -87,7 +90,7 @@ class _CreateStudy(_BaseCommand):
                 directions = [parsed_args.direction]
         else:
             if parsed_args.directions is not None:
-                directions = parsed_args.directions.split(",")
+                directions = parsed_args.directions
             else:
                 directions = ["minimize"]  # default value
 

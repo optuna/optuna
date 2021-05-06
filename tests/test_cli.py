@@ -94,7 +94,8 @@ def test_create_study_command_with_multiple_directions() -> None:
             "--storage",
             storage_url,
             "--directions",
-            "minimize,maximize",
+            "minimize",
+            "maximize",
         ]
 
         study_name = str(subprocess.check_output(command).decode().strip())
@@ -108,7 +109,9 @@ def test_create_study_command_with_multiple_directions() -> None:
             "--storage",
             storage_url,
             "--directions",
-            "minimize,maximize,test",
+            "minimize",
+            "maximize",
+            "test",
         ]
 
         # Each direction in --directions should be either `minimize` or `maximize`.
