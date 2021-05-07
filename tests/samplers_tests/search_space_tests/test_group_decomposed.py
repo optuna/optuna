@@ -174,9 +174,9 @@ def test_group_decomposed_search_space() -> None:
         lambda t: t.suggest_int("y", 0, 10) + t.suggest_int("w", 2, 8, log=True), n_trials=1
     )
     assert search_space.calculate(study).search_spaces == [
-        {"v": CategoricalDistribution(choices=["A", "B", "C"])},
         {"x": IntUniformDistribution(low=0, high=10)},
         {"u": LogUniformDistribution(low=1e-2, high=1e2)},
+        {"v": CategoricalDistribution(choices=["A", "B", "C"])},
         {"y": IntUniformDistribution(low=0, high=10)},
         {"z": UniformDistribution(low=-3, high=3)},
         {"w": IntLogUniformDistribution(low=2, high=8)},

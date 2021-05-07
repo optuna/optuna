@@ -1,11 +1,12 @@
 import copy
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 from optuna.distributions import BaseDistribution
-from optuna.study import BaseStudy
+from optuna.study import Study
+from optuna.study import UpdatedTrialsQueue
 from optuna.trial import TrialState
 
 
@@ -66,23 +67,23 @@ class _GroupDecomposedSearchSpace(object):
         self._search_space = _SearchSpaceGroup()
         self._study_id: Optional[int] = None
         self._include_pruned = include_pruned
+        self._queue: Optional[UpdatedTrialsQueue] = None
 
-    def calculate(self, study: BaseStudy) -> _SearchSpaceGroup:
+    def calculate(self, study: Study) -> _SearchSpaceGroup:
         if self._study_id is None:
             self._study_id = study._study_id
+            if self._include_pruned:
+                self._queue = UpdatedTrialsQueue(study, (TrialState.COMPLETE, TrialState.PRUNED))
+            else:
+                self._queue = UpdatedTrialsQueue(study, (TrialState.COMPLETE,))
         else:
             # Note that the check below is meaningless when `InMemoryStorage` is used
             # because `InMemoryStorage.create_new_study` always returns the same study ID.
             if self._study_id != study._study_id:
                 raise ValueError("`_GroupDecomposedSearchSpace` cannot handle multiple studies.")
 
-        states_of_interest: Tuple[TrialState, ...]
-        if self._include_pruned:
-            states_of_interest = (TrialState.COMPLETE, TrialState.PRUNED)
-        else:
-            states_of_interest = (TrialState.COMPLETE,)
-
-        for trial in study.get_trials(deepcopy=False, states=states_of_interest):
+        self._queue = cast(UpdatedTrialsQueue, self._queue)
+        for trial in self._queue.get_trials(deepcopy=False):
             self._search_space.add_distributions(trial.distributions)
 
         return copy.deepcopy(self._search_space)
