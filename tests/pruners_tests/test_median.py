@@ -46,13 +46,13 @@ def test_median_pruner_intermediate_values_nan() -> None:
     trial.report(float("nan"), 1)
     # A pruner is not activated if the study does not have any previous trials.
     assert not trial.should_prune()
-    study.tell(trial, -1)
+    study.tell(trial, -1)  # -1 is used because we can not tell with nan.
 
     trial = study.ask()
     trial.report(float("nan"), 1)
     # A pruner is activated if the best intermediate value of this trial is NaN.
     assert trial.should_prune()
-    study.tell(trial, -1)
+    study.tell(trial, -1)  # -1 is used because we can not tell with nan.
 
     trial = study.ask()
     trial.report(1, 1)
