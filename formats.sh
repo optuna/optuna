@@ -5,7 +5,7 @@
 
 
 missing_dependencies=()
-command -v black &> /dev/null;
+command -v black &> /dev/null
 if [ $? -eq 1 ] ; then
   missing_dependencies+=(black)
 fi
