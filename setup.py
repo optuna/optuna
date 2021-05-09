@@ -52,7 +52,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
         # examples and tutorials.
         "checking": ["black", "hacking", "isort", "mypy==0.790", "blackdoc"],
-        "codecov": ["codecov", "pytest-cov"],
+        "codecov": ["codecov", "pytest-cov==2.7.1"],
         "doctest": [
             "cma",
             "matplotlib>=3.0.0",
