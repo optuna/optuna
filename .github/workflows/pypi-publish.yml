@@ -13,6 +13,10 @@ jobs:
   build-n-publish:
     name: Build and publish Python distributions to PyPI or TestPyPI
     runs-on: ubuntu-18.04
+
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
+
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.7
