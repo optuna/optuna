@@ -9,19 +9,19 @@ command -v black &> /dev/null
 if [ $? -eq 1 ] ; then
   missing_dependencies+=(black)
 fi
-command -v blackdoc &> /dev/null;
+command -v blackdoc &> /dev/null
 if [ $? -eq 1 ] ; then
   missing_dependencies+=(blackdoc)
 fi
-command -v flake8 &> /dev/null;
+command -v flake8 &> /dev/null
 if [ $? -eq 1 ] ; then
   missing_dependencies+=(hacking)
 fi
-command -v isort &> /dev/null;
+command -v isort &> /dev/null
 if [ $? -eq 1 ] ; then
   missing_dependencies+=(isort)
 fi
-command -v mypy &> /dev/null;
+command -v mypy &> /dev/null
 if [ $? -eq 1 ] ; then
   # TODO(toshihikoyanase): Unpin mypy after resolving the following issue:
   # https://github.com/optuna/optuna/issues/2240.
