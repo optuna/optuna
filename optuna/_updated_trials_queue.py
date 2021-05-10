@@ -27,7 +27,7 @@ class UpdatedTrialsQueue(object):
 
     def __init__(self, study: "Study", states: Tuple["TrialState", ...]) -> None:
         for state in states:
-            if state < states[0] or states[0] < state:
+            if state.is_promotable_to(states[0]) or states[0].is_promotable_to(state):
                 raise RuntimeError("The states should be in the same stage.")
 
         self._study = study
@@ -57,14 +57,14 @@ class UpdatedTrialsQueue(object):
         for trial_index in self._watching_trial_indices:
             if trials[trial_index].state in self._states:
                 self._queue.append(trial_index)
-            elif trials[trial_index].state < self._states[0]:
+            elif trials[trial_index].state.is_promotable_to(self._states[0]):
                 next_watching_trial_indices.append(trial_index)
 
         for trial_index in range(self._next_min_trial_index, len(trials)):
             trial = trials[trial_index]
             if trial.state in self._states:
                 self._queue.append(trial_index)
-            elif trial.state < self._states[0]:
+            elif trial.state.is_promotable_to(self._states[0]):
                 next_watching_trial_indices.append(trial_index)
 
         self._watching_trial_indices = next_watching_trial_indices
