@@ -92,6 +92,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
             "torchaudio==0.8.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
+            "pandas",
             "plotly",
             "requests",
         ],
