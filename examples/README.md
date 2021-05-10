@@ -9,31 +9,33 @@ This page contains a list of example codes written with Optuna.
 
 ### Examples with ML Libraries
 
-* [Scikit-learn](./sklearn/sklearn_simple.py)
-* [Scikit-learn OptunaSearchCV](./sklearn/sklearn_optuna_search_cv_simple.py)
-* [Scikit-image](./skimage_lbp_simple.py)
+* [AllenNLP](./allennlp/allennlp_simple.py)
+* [AllenNLP (Jsonnet)](./allennlp/allennlp_jsonnet.py)
+* [Catalyst](./pytorch/catalyst_simple.py)
+* [CatBoost](./catboost_simple.py)
 * [Chainer](./chainer/chainer_simple.py)
 * [ChainerMN](./chainer/chainermn_simple.py)
 * [Dask-ML](./dask_ml_simple.py)
+* [FastAI V1](./fastai/fastaiv1_simple.py)
+* [FastAI V2](./fastai/fastaiv2_simple.py)
+* [Haiku](./haiku_simple.py)
+* [Gluon](./mxnet/gluon_simple.py)
+* [Keras](./keras/keras_simple.py)
 * [LightGBM](./lightgbm/lightgbm_simple.py)
 * [LightGBM Tuner](./lightgbm/lightgbm_tuner_simple.py)
-* [CatBoost](./catboost_simple.py)
 * [MXNet](./mxnet/mxnet_simple.py)
-* [Gluon](./mxnet/gluon_simple.py)
 * [PyTorch](./pytorch/pytorch_simple.py)
 * [PyTorch Ignite](./pytorch/pytorch_ignite_simple.py)
 * [PyTorch Lightning](./pytorch/pytorch_lightning_simple.py)
-* [XGBoost](./xgboost/xgboost_simple.py)
+* [RAPIDS](./rapids_simple.py)
+* [Scikit-learn](./sklearn/sklearn_simple.py)
+* [Scikit-learn OptunaSearchCV](./sklearn/sklearn_optuna_search_cv_simple.py)
+* [Scikit-image](./skimage_lbp_simple.py)
+* [SKORCH](./pytorch/skorch_simple.py)
 * [Tensorflow](./tensorflow/tensorflow_estimator_simple.py)
 * [Tensorflow (eager)](./tensorflow/tensorflow_eager_simple.py)
-* [Keras](./keras/keras_simple.py)
-* [FastAI V1](./fastai/fastaiv1_simple.py)
-* [FastAI V2](./fastai/fastaiv2_simple.py)
-* [AllenNLP](./allennlp/allennlp_simple.py)
-* [AllenNLP (Jsonnet)](./allennlp/allennlp_jsonnet.py)
-* [SKORCH](./pytorch/skorch_simple.py)
-* [RAPIDS](./rapids_simple.py)
-* [Haiku](./haiku_simple.py)
+* [XGBoost](./xgboost/xgboost_simple.py)
+
 
 ### An example where an objective function uses additional arguments
 
@@ -48,7 +50,7 @@ The following example demonstrates how to implement pruning logic with Optuna.
 
 In addition, integration modules are available for the following libraries, providing simpler interfaces to utilize pruning.
 
-* [Pruning with Catalyst integration module](./catalyst_simple.py)
+* [Pruning with Catalyst integration module](./pytorch/catalyst_simple.py)
 * [Pruning with Catboost integration module](./catboost_simple.py)
 * [Pruning with Chainer integration module](./chainer/chainer_integration.py)
 * [Pruning with ChainerMN integration module](./chainer/chainermn_integration.py)

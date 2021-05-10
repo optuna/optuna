@@ -21,7 +21,7 @@ jobs:
         python-version: 3.7
 
     - name: Install twine
-      run: >-
+      run: |
         python -m pip install -U pip
         python -m pip install -U twine wheel
 
