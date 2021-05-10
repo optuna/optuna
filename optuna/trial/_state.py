@@ -30,7 +30,7 @@ class TrialState(enum.Enum):
 
         return self != TrialState.RUNNING and self != TrialState.WAITING
 
-    def __lt__(self, state: "TrialState") -> bool:
+    def is_promotable_to(self, state: "TrialState") -> bool:
         """Returns whether the left state can promote to the right state."""
 
         if self == TrialState.WAITING:
