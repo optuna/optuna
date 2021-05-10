@@ -39,17 +39,6 @@ class UpdatedTrialsQueue(object):
 
         self._lock = threading.Lock()
 
-    def __getstate__(self) -> Dict[Any, Any]:
-
-        state = self.__dict__.copy()
-        del state["_lock"]
-        return state
-
-    def __setstate__(self, state: Dict[Any, Any]) -> None:
-
-        self.__dict__.update(state)
-        self._lock = threading.Lock()
-
     def _fetch_trials(self, deepcopy: bool) -> List["FrozenTrial"]:
         trials = self._study.get_trials(deepcopy=deepcopy)
         next_watching_trial_indices: List[int] = []
