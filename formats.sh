@@ -4,21 +4,25 @@
 # without updating codebase.
 
 
-res_pip_list=$(pip freeze)
 missing_dependencies=()
-if [ ! "$(echo $res_pip_list | grep black)" ] ; then
+command -v black &> /dev/null
+if [ $? -eq 1 ] ; then
   missing_dependencies+=(black)
 fi
-if [ ! "$(echo $res_pip_list | grep blackdoc)" ] ; then
+command -v blackdoc &> /dev/null
+if [ $? -eq 1 ] ; then
   missing_dependencies+=(blackdoc)
 fi
-if [ ! "$(echo $res_pip_list | grep flake8)" ] ; then
+command -v flake8 &> /dev/null
+if [ $? -eq 1 ] ; then
   missing_dependencies+=(hacking)
 fi
-if [ ! "$(echo $res_pip_list | grep isort)" ] ; then
+command -v isort &> /dev/null
+if [ $? -eq 1 ] ; then
   missing_dependencies+=(isort)
 fi
-if [ ! "$(echo $res_pip_list | grep mypy)" ] ; then
+command -v mypy &> /dev/null
+if [ $? -eq 1 ] ; then
   # TODO(toshihikoyanase): Unpin mypy after resolving the following issue:
   # https://github.com/optuna/optuna/issues/2240.
   missing_dependencies+=(mypy==0.790)
