@@ -167,7 +167,7 @@ def _create_study(mo_study: "multi_objective.study.MultiObjectiveStudy") -> "opt
         storage=None,
         sampler=_MultiObjectiveSamplerAdapter(mo_study.sampler),
         pruner=NopPruner(),
-        study_name="motpe-" + mo_study._storage.get_study_name_from_id(mo_study._study_id),
+        study_name="_motpe-" + mo_study._storage.get_study_name_from_id(mo_study._study_id),
         directions=mo_study.directions,
         load_if_exists=True,
     )
