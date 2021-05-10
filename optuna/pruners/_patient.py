@@ -104,7 +104,7 @@ class PatientPruner(BasePruner):
                 scores_after_patience
             )
         else:
-            maybe_prune = np.max(scores_before_patience) + self._min_delta > np.min(
+            maybe_prune = np.max(scores_before_patience) + self._min_delta > np.max(
                 scores_after_patience
             )
 
