@@ -66,7 +66,7 @@ def test_study_optimize_with_single_search_space() -> None:
         "e": [0.1],
     }
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
-    with pytest.raises(ValueError):
+    with pytest.warns(UserWarning):
         study.optimize(objective)
 
 
