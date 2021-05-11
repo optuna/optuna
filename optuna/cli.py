@@ -77,7 +77,7 @@ class _CreateStudy(_BaseCommand):
             choices=("minimize", "maximize"),
             help="Set directions of optimization to a new study."
             " Put whitespace between directions. Each direction should be"
-            " either `minimize` or `maximize`.",
+            " either \"minimize\" or \"maximize\".",
             nargs="+",
         )
         return parser
