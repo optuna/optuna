@@ -214,6 +214,21 @@ class TPESampler(BaseSampler):
             If this is :obj:`True` and ``multivariate=True``, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler.
             If ``multivariate=False``, this flag has no effect.
+        constant_liar:
+            If :obj:`True`, penalize running trials to avoid suggesting parameter configurations
+            nearby.
+
+            .. note::
+                It is recommended to set this value to :obj:`True` during distributed
+                optimization to avoid having multiple workers evaluating similar parameter
+                configurations. In particular, if each objective function evaluation is costly
+                and the durations of the running states are significant, and/or the number of
+                workers is high.
+
+            .. note::
+                Added in v2.8.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.8.0.
 
     Raises:
         ValueError:
@@ -235,6 +250,7 @@ class TPESampler(BaseSampler):
         multivariate: bool = False,
         group: bool = False,
         warn_independent_sampling: bool = True,
+        constant_liar: bool = False,
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
@@ -255,6 +271,7 @@ class TPESampler(BaseSampler):
         self._group_decomposed_search_space: Optional[_GroupDecomposedSearchSpace] = None
         self._search_space_group: Optional[_SearchSpaceGroup] = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
+        self._constant_liar = constant_liar
 
         if multivariate:
             warnings.warn(
@@ -274,6 +291,13 @@ class TPESampler(BaseSampler):
                 ExperimentalWarning,
             )
             self._group_decomposed_search_space = _GroupDecomposedSearchSpace(True)
+
+        if constant_liar:
+            warnings.warn(
+                "``constant_liar`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
     def reseed_rng(self) -> None:
 
@@ -350,7 +374,9 @@ class TPESampler(BaseSampler):
             return {}
 
         param_names = list(search_space.keys())
-        values, scores = _get_multivariate_observation_pairs(study, param_names)
+        values, scores = _get_multivariate_observation_pairs(
+            study, param_names, self._constant_liar
+        )
 
         # If the number of samples is insufficient, we run random trial.
         n = len(scores)
@@ -388,7 +414,7 @@ class TPESampler(BaseSampler):
 
         self._raise_error_if_multi_objective(study)
 
-        values, scores = _get_observation_pairs(study, param_name)
+        values, scores = _get_observation_pairs(study, param_name, self._constant_liar)
 
         n = len(values)
 
@@ -866,7 +892,9 @@ class TPESampler(BaseSampler):
 
 
 def _get_observation_pairs(
-    study: Study, param_name: str
+    study: Study,
+    param_name: str,
+    constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
 ) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]:
     """Get observation pairs from the study.
 
@@ -889,9 +917,15 @@ def _get_observation_pairs(
     if study.direction == StudyDirection.MAXIMIZE:
         sign = -1
 
+    states: Tuple[TrialState, ...]
+    if constant_liar:
+        states = (TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING)
+    else:
+        states = (TrialState.COMPLETE, TrialState.PRUNED)
+
     values = []
     scores = []
-    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
+    for trial in study.get_trials(deepcopy=False, states=states):
         if trial.state is TrialState.COMPLETE:
             if trial.value is None:
                 continue
@@ -905,6 +939,9 @@ def _get_observation_pairs(
                     score = (-step, sign * intermediate_value)
             else:
                 score = (float("inf"), 0.0)
+        elif trial.state is TrialState.RUNNING:
+            assert constant_liar
+            score = (-float("inf"), sign * float("inf"))
         else:
             assert False
 
@@ -920,16 +957,24 @@ def _get_observation_pairs(
 
 
 def _get_multivariate_observation_pairs(
-    study: Study, param_names: List[str]
+    study: Study,
+    param_names: List[str],
+    constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
 ) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, float]]]:
 
     sign = 1
     if study.direction == StudyDirection.MAXIMIZE:
         sign = -1
 
+    states: Tuple[TrialState, ...]
+    if constant_liar:
+        states = (TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING)
+    else:
+        states = (TrialState.COMPLETE, TrialState.PRUNED)
+
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
-    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
+    for trial in study.get_trials(deepcopy=False, states=states):
         # If ``group`` = True, there may be trials that are not included in each subspace.
         # Such trials should be ignored here.
         if any([param_name not in trial.params for param_name in param_names]):
@@ -949,6 +994,9 @@ def _get_multivariate_observation_pairs(
                     score = (-step, sign * intermediate_value)
             else:
                 score = (float("inf"), 0.0)
+        elif trial.state is TrialState.RUNNING:
+            assert constant_liar
+            score = (-float("inf"), sign * float("inf"))
         else:
             assert False
         scores.append(score)
