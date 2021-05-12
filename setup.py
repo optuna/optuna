@@ -192,6 +192,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
+        "benchmark": [
+            "asv",
+            "virtualenv",
+        ],
     }
 
     return requirements
