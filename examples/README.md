@@ -9,7 +9,7 @@ This page contains a list of example codes written with Optuna.
 
 ### Examples with ML Libraries
 
-The examples with ML libraries was moved to [optuna/optuna-examples](https://github.com/optuna/optuna-examples/).
+See [optuna/optuna-examples](https://github.com/optuna/optuna-examples/).
 
 ### An example where an objective function uses additional arguments
 
