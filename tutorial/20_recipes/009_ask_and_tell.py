@@ -196,38 +196,40 @@ for _ in range(n_trials):
 # For example, parallelizable evaluation, operation over vectors, etc.
 
 ###################################################################################################
-# The following objective takes batched hyperparameters ``xs`` instead of a single
-# hyperparameter and calculates the objective over the full vector.
+# The following objective takes batched hyperparameters ``xs`` and ``ys`` instead of a single
+# pair of hyperparameters ``x`` and ``y`` and calculates the objective over the full vectors.
 
 
-def batched_objective(xs: np.ndarray):
-    return xs ** 2 + 1
+def batched_objective(xs: np.ndarray, ys: np.ndarray):
+    return xs ** 2 + ys
 
 
 ###################################################################################################
-# In the following example, the number of hyperparameters in a batch is :math:`10`,
+# In the following example, the number of pairs of hyperparameters in a batch is :math:`10`,
 # and ``batched_objective`` is evaluated three times.
 # Thus, the number of trials is :math:`30`.
 # Note that you need to store either ``trial_ids`` or ``trial`` to call
 # :func:`optuna.study.Study.tell` method after the batched evaluations.
 
 batch_size = 10
-study = optuna.create_study()
+study = optuna.create_study(sampler=optuna.samplers.CmaEsSampler())
 
 for _ in range(3):
 
     # create batch
     trial_ids = []
-    samples = []
+    x_batch = []
+    y_batch = []
     for _ in range(batch_size):
         trial = study.ask()
         trial_ids.append(trial.number)
-        x = trial.suggest_int("x", -10, 10)
-        samples.append(x)
+        x_batch.append(trial.suggest_float("x", -10, 10))
+        y_batch.append(trial.suggest_float("y", -10, 10))
 
     # evaluate batched objective
-    samples = np.array(samples)
-    objectives = batched_objective(samples)
+    x_batch = np.array(x_batch)
+    y_batch = np.array(y_batch)
+    objectives = batched_objective(x_batch, y_batch)
 
     # finish all trials in the batch
     for trial_id, objective in zip(trial_ids, objectives):

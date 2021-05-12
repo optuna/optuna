@@ -343,7 +343,7 @@ class BoTorchSampler(BaseSampler):
         your own ``candidates_func``.
 
     .. note::
-        An instance of this sampler *should be not used with different studies* when used with
+        An instance of this sampler *should not be used with different studies* when used with
         constraints. Instead, a new instance should be created for each new study. The reason for
         this is that the sampler is stateful keeping all the computed constraints.
 
@@ -356,9 +356,9 @@ class BoTorchSampler(BaseSampler):
             :obj:`None`. For any constraints that failed to compute, the tensor will contain
             NaN.
 
-            If omitted, is determined automatically based on the number of objectives. If the
+            If omitted, it is determined automatically based on the number of objectives. If the
             number of objectives is one, Quasi MC-based batch Expected Improvement (qEI) is used.
-            If the number of objectives is larger than one but smaller than four, Quasi MC-based
+            If the number of objectives is either two or three, Quasi MC-based
             batch Expected Hypervolume Improvement (qEHVI) is used. Otherwise, for larger number
             of objectives, the faster Quasi MC-based extended ParEGO (qParEGO) is used.
 
@@ -370,10 +370,10 @@ class BoTorchSampler(BaseSampler):
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
             be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
-            constraints is violated. A value equal to or smaller than 0 is considered feasible.
+            constraint is violated. A value equal to or smaller than 0 is considered feasible.
 
             If omitted, no constraints will be passed to ``candidates_func`` nor taken into
-            account during suggestion if ``candidates_func`` is omitted.
+            account during suggestion.
         n_startup_trials:
             Number of initial trials, that is the number of trials to resort to independent
             sampling.

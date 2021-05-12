@@ -86,7 +86,7 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 [Integrations modules](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/003_efficient_optimization_algorithms.html#integration-modules-for-pruning), which allow pruning, or early stopping, of unpromising trials are available for the following libraries:
 
 * [AllenNLP](./examples/allennlp)
-* [Catalyst](./examples/catalyst_simple.py)
+* [Catalyst](./examples/pytorch/catalyst_simple.py)
 * [Catboost](./examples/catboost_simple.py)
 * [Chainer](./examples/chainer/chainer_integration.py)
 * FastAI ([V1](./examples/fastai/fastaiv1_simple.py), [V2](./examples/fastai/fastaiv2_simple.py))

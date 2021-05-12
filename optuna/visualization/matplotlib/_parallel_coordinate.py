@@ -126,7 +126,7 @@ def _get_parallel_coordinate_plot(
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
         all_params = set(params)
-    sorted_params = sorted(list(all_params))
+    sorted_params = sorted(all_params)
 
     obj_org = [target(t) for t in trials]
     obj_min = min(obj_org)

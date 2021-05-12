@@ -388,6 +388,31 @@ def test_load_study(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_load_study_study_name_none(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        if storage is None:
+            # `InMemoryStorage` can not be used with `load_study` function.
+            return
+
+        study_name = str(uuid.uuid4())
+
+        _ = create_study(study_name=study_name, storage=storage)
+
+        loaded_study = load_study(study_name=None, storage=storage)
+
+        assert loaded_study.study_name == study_name
+
+        study_name = str(uuid.uuid4())
+
+        _ = create_study(study_name=study_name, storage=storage)
+
+        # Ambiguous study.
+        with pytest.raises(ValueError):
+            load_study(study_name=None, storage=storage)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_delete_study(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:

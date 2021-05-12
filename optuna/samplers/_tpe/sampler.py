@@ -158,33 +158,6 @@ class TPESampler(BaseSampler):
             is a maximal subset of the whole search space, which satisfies the following:
             for a trial in completed trials, the intersection of the subspace and the search space
             of the trial becomes subspace itself or an empty set.
-
-            The search space is decomposed based on the following recursive rules.
-
-            - Initialize the group of the search space with the empty set. The elements of the
-              group are the subset of the search space, and the type is the dictionary of
-              :class:`~optuna.distributions.BaseDistribution`.
-            - Update the group with the following procedure `ADD(trial)` by looking at past trials.
-
-            The procedure of `Add(trial)` is
-
-            - Let ``T = trial.distributions``.
-            - If the intersection of any element of the group and ``T`` is empty, add ``T`` to the
-              group.
-            - If an element ``S`` of the group is contained in ``T``, then add ``T-S`` to the
-              group. We recursively add ``T-S`` to the group because the intersection of ``T-S``
-              and some other elements of the group may not be empty.
-            - If an element ``S`` of a group contains ``T``, remove ``S`` from the group and add
-              ``T`` and ``S-T`` to the group.
-            - If the intersection of an element ``S`` of the group and ``T`` is not empty, remove
-              ``S`` from the group and add ``S∩T``, ``S-T``, and ``T-S`` to the group.
-              We recursively add ``T-S`` to the group because the intersection of ``T-S`` and
-              some other elements of the group may not be empty.
-
-            The group of the search space recursively constructed based on the above rules are
-            disjoint and the union is the entire search space. We perform sampling from the joint
-            distribution for each element of this decomposed group of the search space.
-
             Sampling from the joint distribution on the subspace is realized by multivariate TPE.
 
             .. note::

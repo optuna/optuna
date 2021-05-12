@@ -164,26 +164,17 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
 def _create_study(mo_study: "multi_objective.study.MultiObjectiveStudy") -> "optuna.Study":
     study = create_study(
-        storage=None,
+        storage=mo_study._storage,
         sampler=_MultiObjectiveSamplerAdapter(mo_study.sampler),
         pruner=NopPruner(),
-        study_name="motpe-" + mo_study._storage.get_study_name_from_id(mo_study._study_id),
+        study_name="_motpe-" + mo_study._storage.get_study_name_from_id(mo_study._study_id),
         directions=mo_study.directions,
         load_if_exists=True,
     )
     for mo_trial in mo_study.trials:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", ExperimentalWarning)
-            study.add_trial(
-                create_trial(
-                    state=mo_trial.state,
-                    values=mo_trial.values,
-                    params=mo_trial.params,
-                    distributions=mo_trial.distributions,
-                    user_attrs=mo_trial.user_attrs,
-                    system_attrs=mo_trial.system_attrs,
-                )
-            )
+            study.add_trial(_create_trial(mo_trial))
     return study
 
 
