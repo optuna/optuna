@@ -29,7 +29,6 @@ def get_install_requires() -> List[str]:
 
     requirements = [
         "alembic",
-        "click==7.1.2",
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
