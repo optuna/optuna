@@ -73,7 +73,7 @@ If you catch format errors, you can automatically fix them by auto-formatters.
 # Install auto-formatters.
 $ pip install .[checking]
 
-$ ./formats.sh 
+$ ./formats.sh
 ```
 
 ### Documentation
@@ -108,16 +108,16 @@ extract the files in the zip to `docs/source/tutorial` directory.
 
 ![image](https://user-images.githubusercontent.com/16191443/107472296-0b211400-6bb2-11eb-9203-e2c42ce499ad.png)
 
-**Writing a Tutorial**  
-Tutorials are part of Optuna’s documentation.  
+**Writing a Tutorial**
+Tutorials are part of Optuna’s documentation.
 Optuna depends on Sphinx to build the documentation HTML files from the corresponding reStructuredText (`.rst`) files in the docs/source directory,
 but as you may notice, [Tutorial directory](https://github.com/optuna/optuna/tree/master/tutorial) does not have any `.rst` files. Instead, it has a bunch of Python (`.py`) files.
-We have [Sphinx Gallery](https://sphinx-gallery.github.io/stable/index.html) that executes those `.py` files and generates `.rst` files with standard outputs from them and corresponding Jupyter Notebook (`.ipynb`) files. 
-These generated `.rst` and `.ipynb` files are written to the docs/source/tutorial directory. 
+We have [Sphinx Gallery](https://sphinx-gallery.github.io/stable/index.html) that executes those `.py` files and generates `.rst` files with standard outputs from them and corresponding Jupyter Notebook (`.ipynb`) files.
+These generated `.rst` and `.ipynb` files are written to the docs/source/tutorial directory.
 The output directory (docs/source/tutorial) and source (tutorial) directory are configured in [`sphinx_gallery_conf ` of docs/source/conf.py](https://github.com/optuna/optuna/blob/2e14273cab87f13edeb9d804a43bd63c44703cb5/docs/source/conf.py#L189-L199). These generated `.rst` files are handled by Sphinx like the other `.rst` files. The generated `.ipynb` files are hosted on Optuna’s documentation page and downloadable (check [Optuna tutorial](https://optuna.readthedocs.io/en/stable/tutorial/index.html)).
 
-The order of contents on [tutorial top page](https://optuna.readthedocs.io/en/stable/tutorial/index.html) is determined by two keys: one is the subdirectory name of tutorial and the other is the filename (note that there are some alternatives as documented in [Sphinx Gallery - sorting](https://sphinx-gallery.github.io/stable/gen_modules/sphinx_gallery.sorting.html?highlight=filenamesortkey), but we chose this key in https://github.com/optuna/optuna/blob/2e14273cab87f13edeb9d804a43bd63c44703cb5/docs/source/conf.py#L196).  
-Optuna’s tutorial directory has two directories: (1) [10_key_features](https://github.com/optuna/optuna/tree/master/tutorial/10_key_features), which is meant to be aligned with and explain the key features listed on [README.md](https://github.com/optuna/optuna#key-features) and (2) [20_recipes](https://github.com/optuna/optuna/tree/master/tutorial/20_recipes), whose contents showcase how to use Optuna features conveniently.  
+The order of contents on [tutorial top page](https://optuna.readthedocs.io/en/stable/tutorial/index.html) is determined by two keys: one is the subdirectory name of tutorial and the other is the filename (note that there are some alternatives as documented in [Sphinx Gallery - sorting](https://sphinx-gallery.github.io/stable/gen_modules/sphinx_gallery.sorting.html?highlight=filenamesortkey), but we chose this key in https://github.com/optuna/optuna/blob/2e14273cab87f13edeb9d804a43bd63c44703cb5/docs/source/conf.py#L196).
+Optuna’s tutorial directory has two directories: (1) [10_key_features](https://github.com/optuna/optuna/tree/master/tutorial/10_key_features), which is meant to be aligned with and explain the key features listed on [README.md](https://github.com/optuna/optuna#key-features) and (2) [20_recipes](https://github.com/optuna/optuna/tree/master/tutorial/20_recipes), whose contents showcase how to use Optuna features conveniently.
 When adding new content to the Optuna tutorials, place it in `20_recipes` and its file name should conform to the other names, for example, `777_cool_feature.py`.
 In general, please number the prefix for your file consecutively with the last number. However, this is not mandatory and if you think your content deserves the smaller number (the order of recipes does not have a specific meaning, but in general, order could convey the priority order to readers), feel free to propose the renumbering in your PR.
 
@@ -162,7 +162,7 @@ act -j $JOB_NAME
 
 Currently, you can run the following jobs: `documentation` and `doctest` may not be executable depending on your choice of docker image of act.
 
-- `checks`    
+- `checks`
   - Checking the format, coding style, and type hints
 - `docuemtnation`
   - Builds documentation including tutorial
