@@ -49,7 +49,7 @@ def objective(trial):
 #
 # Also, you can use branches or loops depending on the parameter values.
 #
-# For more various use, see `examples <https://github.com/optuna/optuna/tree/master/examples>`_.
+# For more various use, see `examples <https://github.com/optuna/optuna-examples/>`_.
 
 ###################################################################################################
 # - Branches:
