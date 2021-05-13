@@ -77,17 +77,15 @@ class PatientPruner(BasePruner):
         self._min_delta = min_delta
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
-
-        intermediate_values = trial.intermediate_values
-
-        steps = np.asarray(list(intermediate_values.keys()))
-
-        # the first step is never pruned.
-        if steps.size <= 1:
+        step = trial.last_step
+        if step is None:
             return False
 
+        intermediate_values = trial.intermediate_values
+        steps = np.asarray(list(intermediate_values.keys()))
+
         # Do not prune if number of step to determine are insufficient.
-        if steps.size < self._patience + 1:
+        if steps.size <= self._patience + 1:
             return False
 
         steps.sort()
@@ -104,13 +102,14 @@ class PatientPruner(BasePruner):
 
         direction = study.direction
         if direction == StudyDirection.MINIMIZE:
-            maybe_prune = np.nanmin(scores_before_patience) - self._min_delta < np.nanmin(
+            maybe_prune = np.nanmin(scores_before_patience) + self._min_delta < np.nanmin(
                 scores_after_patience
             )
         else:
             maybe_prune = np.nanmax(scores_before_patience) + self._min_delta > np.nanmax(
                 scores_after_patience
             )
+
         if maybe_prune:
             if self._wrapped_pruner is not None:
                 return self._wrapped_pruner.prune(study, trial)
