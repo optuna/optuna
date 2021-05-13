@@ -1,10 +1,6 @@
-from typing import List
-from typing import Tuple
-
 import pytest
 
 import optuna
-from optuna.trial import TrialState
 
 
 def test_patient_pruner_patience() -> None:
