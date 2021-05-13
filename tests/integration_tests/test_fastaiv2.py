@@ -1,6 +1,5 @@
 from typing import Any
 
-from fastai.callback.data import CudaCallback
 from fastai.data.core import DataLoader
 from fastai.data.core import DataLoaders
 from fastai.learner import Learner
@@ -42,7 +41,6 @@ def test_fastai_pruning_callback(tmpdir: Any) -> None:
             model,
             loss_func=F.nll_loss,
             metrics=[accuracy],
-            cbs=[CudaCallback],
         )
         learn.fit(1, cbs=FastAIV2PruningCallback(trial))
 

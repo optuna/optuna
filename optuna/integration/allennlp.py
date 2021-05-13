@@ -232,8 +232,8 @@ class AllenNLPExecutor(object):
     This feature is experimental since AllenNLP major release will come soon.
     The interface may change without prior notice to correspond to the update.
 
-    See the examples of `objective function <https://github.com/optuna/optuna/blob/
-    master/examples/allennlp/allennlp_jsonnet.py>`_.
+    See the examples of `objective function <https://github.com/optuna/optuna-examples/tree/
+    main/allennlp/allennlp_jsonnet.py>`_.
 
     You can also see the tutorial of our AllenNLP integration on
     `AllenNLP Guide <https://guide.allennlp.org/hyperparameter-optimization>`_.
@@ -241,8 +241,8 @@ class AllenNLPExecutor(object):
     .. note::
         From Optuna v2.1.0, users have to cast their parameters by using methods in Jsonnet.
         Call ``std.parseInt`` for integer, or ``std.parseJson`` for floating point.
-        Please see the `example configuration <https://github.com/optuna/optuna/blob/master/
-        examples/allennlp/classifier.jsonnet>`_.
+        Please see the `example configuration <https://github.com/optuna/optuna-examples/tree/main/
+        allennlp/classifier.jsonnet>`_.
 
     .. note::
         In :class:`~optuna.integration.AllenNLPExecutor`,
@@ -381,8 +381,8 @@ class AllenNLPExecutor(object):
 class AllenNLPPruningCallback(TrainerCallback):
     """AllenNLP callback to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/allennlp/allennlp_simple.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/tree/main/
+    allennlp/allennlp_simple.py>`__
     if you want to add a pruning callback which observes a metric.
 
     You can also see the tutorial of our AllenNLP integration on
@@ -445,7 +445,7 @@ class AllenNLPPruningCallback(TrainerCallback):
                     " without `AllenNLPExecutor`. If you want to use a callback"
                     " without an executor, you have to instantiate a callback with"
                     "`trial` and `monitor. Please see the Optuna example: https://github.com/"
-                    "optuna/optuna/blob/master/examples/allennlp/allennlp_simple.py."
+                    "optuna/optuna-examples/tree/main/allennlp/allennlp_simple.py."
                 )
                 raise RuntimeError(message)
 

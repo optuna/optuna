@@ -18,47 +18,21 @@ class _SearchSpaceGroup(object):
         return self._search_spaces
 
     def add_distributions(self, distributions: Dict[str, BaseDistribution]) -> None:
-        self._search_spaces = _add_distributions(self.search_spaces, distributions)
-
-
-def _add_distributions(
-    search_spaces: List[Dict[str, BaseDistribution]], distributions: Dict[str, BaseDistribution]
-) -> List[Dict[str, BaseDistribution]]:
-    # Assumes that the elements of `search_spaces` are disjoint.
-
-    if len(distributions) == 0:
-        return search_spaces
-
-    for search_space in search_spaces:
-        keys = set(search_space.keys())
         dist_keys = set(distributions.keys())
+        next_search_spaces = []
 
-        if keys.isdisjoint(dist_keys):
-            continue
+        for search_space in self._search_spaces:
+            keys = set(search_space.keys())
 
-        if keys < dist_keys:
-            return _add_distributions(
-                search_spaces, {name: distributions[name] for name in dist_keys - keys}
-            )
+            next_search_spaces.append({name: search_space[name] for name in keys & dist_keys})
+            next_search_spaces.append({name: search_space[name] for name in keys - dist_keys})
 
-        if keys > dist_keys:
-            search_spaces.append(distributions)
-            search_spaces.append({name: search_space[name] for name in keys - dist_keys})
-            search_spaces.remove(search_space)
-            return search_spaces
+            dist_keys -= keys
 
-        intersection = keys & dist_keys
-        search_spaces.append({name: search_space[name] for name in intersection})
-        if len(keys - intersection) > 0:
-            search_spaces.append({name: search_space[name] for name in keys - intersection})
-        search_spaces.remove(search_space)
-        return _add_distributions(
-            search_spaces, {name: distributions[name] for name in dist_keys - intersection}
+        next_search_spaces.append({name: distributions[name] for name in dist_keys})
+        self._search_spaces = list(
+            filter(lambda search_space: len(search_space) > 0, next_search_spaces)
         )
-
-    search_spaces.append(distributions)
-
-    return search_spaces
 
 
 class _GroupDecomposedSearchSpace(object):

@@ -228,7 +228,8 @@ class DiscreteUniformDistribution(BaseDistribution):
     def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
-        return self.low <= value <= self.high
+        k = (value - self.low) / self.q
+        return self.low <= value <= self.high and abs(k - round(k)) < 1.0e-8
 
 
 class IntUniformDistribution(BaseDistribution):
@@ -291,7 +292,7 @@ class IntUniformDistribution(BaseDistribution):
     def _contains(self, param_value_in_internal_repr: float) -> bool:
 
         value = param_value_in_internal_repr
-        return self.low <= value <= self.high
+        return self.low <= value <= self.high and (value - self.low) % self.step == 0
 
 
 class IntLogUniformDistribution(BaseDistribution):
@@ -374,7 +375,7 @@ class IntLogUniformDistribution(BaseDistribution):
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
         value = param_value_in_internal_repr
-        return self.low <= value <= self.high
+        return self.low <= value <= self.high and (value - self.low) % self.step == 0
 
     @property
     def step(self) -> int:
