@@ -6,7 +6,7 @@ We are proud of this project and have been trying to make this project great sin
 We believe you will love it, however, we know there’s room for improvement.
 We have to
 - implement features that make what you want to do possible and/or easily.
-- write more examples that help you get familiar with Optuna.
+- write more tutorials and [examples](https://github.com/optuna/optuna-examples) that help you get familiar with Optuna.
 - make issues and pull requests on GitHub fruitful.
 - have more conversations and discussions on Gitter.
 
