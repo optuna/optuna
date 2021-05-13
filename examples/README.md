@@ -1,7 +1,7 @@
 Optuna Examples
 ================
 
-This page contains a list of example codes written with Optuna.
+This page contains a list of example codes written with Optuna. The example files are in [optuna/optuna-examples](https://github.com/optuna/optuna-examples/).
 
 ### Simple Black-box Optimization
 
@@ -9,7 +9,32 @@ This page contains a list of example codes written with Optuna.
 
 ### Examples with ML Libraries
 
-See [optuna/optuna-examples](https://github.com/optuna/optuna-examples/).
+* [AllenNLP](https://github.com/optuna/optuna-examples/blob/main/allennlp/allennlp_simple.py)
+* [AllenNLP (Jsonnet)](https://github.com/optuna/optuna-examples/blob/main/allennlp/allennlp_jsonnet.py)
+* [Catalyst](https://github.com/optuna/optuna-examples/blob/main/pytorch/catalyst_simple.py)
+* [CatBoost](https://github.com/optuna/optuna-examples/blob/main/catboost/catboost_simple.py)
+* [Chainer](https://github.com/optuna/optuna-examples/blob/main/chainer/chainer_simple.py)
+* [ChainerMN](https://github.com/optuna/optuna-examples/blob/main/chainer/chainermn_simple.py)
+* [Dask-ML](https://github.com/optuna/optuna-examples/blob/main/dask_ml/dask_ml_simple.py)
+* [FastAI V1](https://github.com/optuna/optuna-examples/blob/main/fastai/fastaiv1_simple.py)
+* [FastAI V2](https://github.com/optuna/optuna-examples/blob/main/fastai/fastaiv2_simple.py)
+* [Haiku](https://github.com/optuna/optuna-examples/blob/main/haiku/haiku_simple.py)
+* [Gluon](https://github.com/optuna/optuna-examples/blob/main/mxnet/gluon_simple.py)
+* [Keras](https://github.com/optuna/optuna-examples/blob/main/keras/keras_simple.py)
+* [LightGBM](https://github.com/optuna/optuna-examples/blob/main/lightgbm/lightgbm_simple.py)
+* [LightGBM Tuner](https://github.com/optuna/optuna-examples/blob/main/lightgbm/lightgbm_tuner_simple.py)
+* [MXNet](https://github.com/optuna/optuna-examples/blob/main/mxnet/mxnet_simple.py)
+* [PyTorch](https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_simple.py)
+* [PyTorch Ignite](https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_ignite_simple.py)
+* [PyTorch Lightning](https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_lightning_simple.py)
+* [RAPIDS](https://github.com/optuna/optuna-examples/blob/main/rapids_simple.py)
+* [Scikit-learn](https://github.com/optuna/optuna-examples/blob/main/sklearn/sklearn_simple.py)
+* [Scikit-learn OptunaSearchCV](https://github.com/optuna/optuna-examples/blob/main/sklearn/sklearn_optuna_search_cv_simple.py)
+* [Scikit-image](https://github.com/optuna/optuna-examples/blob/main/skimage/skimage_lbp_simple.py)
+* [SKORCH](https://github.com/optuna/optuna-examples/blob/main/pytorch/skorch_simple.py)
+* [Tensorflow](https://github.com/optuna/optuna-examples/blob/main/tensorflow/tensorflow_estimator_simple.py)
+* [Tensorflow (eager)](https://github.com/optuna/optuna-examples/blob/main/tensorflow/tensorflow_eager_simple.py)
+* [XGBoost](https://github.com/optuna/optuna-examples/blob/main/xgboost/xgboost_simple.py)
 
 ### An example where an objective function uses additional arguments
 
@@ -21,6 +46,24 @@ The following example demonstrates how to implement an objective function that u
 The following example demonstrates how to implement pruning logic with Optuna.
 
 * [Simple pruning (scikit-learn)](./simple_pruning.py)
+
+In addition, integration modules are available for the following libraries, providing simpler interfaces to utilize pruning.
+
+* [Pruning with Catalyst integration module](https://github.com/optuna/optuna-examples/blob/main/pytorch/catalyst_simple.py)
+* [Pruning with Catboost integration module](https://github.com/optuna/optuna-examples/blob/main/catboost/catboost_simple.py)
+* [Pruning with Chainer integration module](https://github.com/optuna/optuna-examples/blob/main/chainer/chainer_integration.py)
+* [Pruning with ChainerMN integration module](https://github.com/optuna/optuna-examples/blob/main/chainer/chainermn_integration.py)
+* [Pruning with FastAI V1 integration module](https://github.com/optuna/optuna-examples/blob/main/fastai/fastaiv1_simple.py)
+* [Pruning with FastAI V2 integration module](https://github.com/optuna/optuna-examples/blob/main/fastai/fastaiv2_simple.py)
+* [Pruning with Keras integration module](https://github.com/optuna/optuna-examples/blob/main/keras/keras_integration.py)
+* [Pruning with LightGBM integration module](https://github.com/optuna/optuna-examples/blob/main/lightgbm/lightgbm_integration.py)
+* [Pruning with MXNet integration module](https://github.com/optuna/optuna-examples/blob/main/mxnet/mxnet_integration.py)
+* [Pruning with PyTorch integration module](https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_simple.py)
+* [Pruning with PyTorch Ignite integration module](https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_ignite_simple.py)
+* [Pruning with PyTorch Lightning integration module](https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_lightning_simple.py)
+* [Pruning with Tensorflow integration module](https://github.com/optuna/optuna-examples/blob/main/tensorflow/tensorflow_estimator_integration.py)
+* [Pruning with XGBoost integration module](https://github.com/optuna/optuna-examples/blob/main/xgboost/xgboost_integration.py)
+* [Pruning with XGBoost integration module (cross validation, XGBoost.cv)](https://github.com/optuna/optuna-examples/blob/main/xgboost/xgboost_cv_integration.py)
 
 ### Examples of User-Defined Sampler
 
@@ -38,6 +81,23 @@ The following example demonstrates how to implement pruning logic with Optuna.
 ### An example to enqueue trials with given parameter values
 
 * [Enqueuing trials with given parameters](./enqueue_trial.py)
+
+### Examples of MLflow
+
+* [Tracking optimization process with MLflow](https://github.com/optuna/optuna-examples/blob/main/mlflow/keras_mlflow.py)
+
+### Examples of Hydra
+
+* [Optimization with Hydra](https://github.com/optuna/optuna-examples/blob/main/hydra/simple.py)
+
+### Examples of Distributed Optimization
+
+* [Optimizing on Kubernetes](https://github.com/optuna/optuna-examples/blob/main/kubernetes/README.md)
+* [Optimizing with Ray's joblib backend](https://github.com/optuna/optuna-examples/blob/main/ray/ray_joblib.py)
+
+### Examples of Reinforcement Learning
+
+* [Optimization of Hyperparameters for Stable-Baslines Agent](https://github.com/optuna/optuna-examples/blob/main/rl/sb3_simple.py)
 
 ### External projects using Optuna
 
