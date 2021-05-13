@@ -72,7 +72,7 @@ class PatientPruner(BasePruner):
         if patience < 0:
             raise ValueError("patience cannot be negative but got {}.".format(patience))
 
-        self.wrapped_pruner = wrapped_pruner
+        self._wrapped_pruner = wrapped_pruner
         self._patience = patience
         self._min_delta = min_delta
 
@@ -82,35 +82,38 @@ class PatientPruner(BasePruner):
 
         steps = np.asarray(list(intermediate_values.keys()))
 
+        # the first step is never pruned.
+        if steps.size <= 1:
+            return False
+
         # Do not prune if number of step to determine are insufficient.
         if steps.size < self._patience + 1:
             return False
 
         steps.sort()
         # This is the score patience steps ago
-        steps_before_patience = steps[: -self._patience]
+        steps_before_patience = steps[: -self._patience - 1]
         scores_before_patience = np.asarray(
             list(intermediate_values[step] for step in steps_before_patience)
         )
         # And these are the scores after that
-        steps_after_patience = steps[-self._patience :]
+        steps_after_patience = steps[-self._patience - 1 :]
         scores_after_patience = np.asarray(
             list(intermediate_values[step] for step in steps_after_patience)
         )
 
         direction = study.direction
         if direction == StudyDirection.MINIMIZE:
-            maybe_prune = np.min(scores_before_patience) - self._min_delta < np.min(
+            maybe_prune = np.nanmin(scores_before_patience) - self._min_delta < np.nanmin(
                 scores_after_patience
             )
         else:
-            maybe_prune = np.max(scores_before_patience) + self._min_delta > np.max(
+            maybe_prune = np.nanmax(scores_before_patience) + self._min_delta > np.nanmax(
                 scores_after_patience
             )
-
         if maybe_prune:
-            if self.wrapped_pruner is not None:
-                return self.wrapped_pruner.prune(study, trial)
+            if self._wrapped_pruner is not None:
+                return self._wrapped_pruner.prune(study, trial)
             else:
                 return True
         else:
