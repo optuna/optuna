@@ -46,6 +46,7 @@ jobs:
         sudo apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev
 
     # TODO(Crissman): Remove click after issue with allennlp import resolved
+    # https://github.com/optuna/optuna/pull/2665
     - name: Install click 7.1.2 until allennlp import issue resolved
       run: pip install --use-deprecated=legacy-resolver --progress-bar off click==7.1.2
 
