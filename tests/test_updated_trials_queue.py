@@ -4,7 +4,7 @@ from typing import Tuple
 import pytest
 
 import optuna
-from optuna.study import UpdatedTrialsQueue
+from optuna._updated_trials_queue import UpdatedTrialsQueue
 from optuna.trial import TrialState
 
 
