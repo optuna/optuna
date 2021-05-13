@@ -50,9 +50,7 @@ class MaxTrialsCallback:
         self._n_trials = n_trials
         self._states = states
 
-    def __call__(
-        self, study: "optuna.study.Study", trial: FrozenTrial
-    ) -> None:
+    def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
         trials = study.get_trials(deepcopy=False, states=self._states)
         n_complete = len(trials)
         if n_complete >= self._n_trials:
