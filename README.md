@@ -82,7 +82,7 @@ study.optimize(objective, n_trials=100)  # Invoke optimization of the objective 
 
 ## Examples
 
-Examples can be found in in [optuna/optuna-examples](https://github.com/optuna/optuna-examples).
+Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optuna-examples).
 
 ## Integrations
 
