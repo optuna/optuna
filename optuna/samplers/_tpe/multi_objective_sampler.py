@@ -295,7 +295,7 @@ class MOTPESampler(BaseSampler):
         if len(study.directions) < 2:
             raise ValueError(
                 "Number of objectives must be >= 2. "
-                "Please use optuna.samplers.self for single-objective optimization."
+                "Please use optuna.samplers.TPESampler for single-objective optimization."
             )
 
         values, scores = _get_observation_pairs(study, param_name)
@@ -716,8 +716,8 @@ class MOTPESampler(BaseSampler):
 
         if low >= high:
             raise ValueError(
-                "The 'low' should be lower than the 'high'. "
-                "But (low, high) = ({}, {}).".format(low, high)
+                "The 'low' boundary should be below the 'high' boundary, "
+                f"but (low, high) = ({low}, {high})."
             )
 
         active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
@@ -760,16 +760,16 @@ class MOTPESampler(BaseSampler):
             return np.asarray([], dtype=float)
         if weights.ndim != 1:
             raise ValueError(
-                "The 'weights' should be 1-dimension. "
-                "But weights.shape = {}".format(weights.shape)
+                "The 'weights' should have only one dimension, "
+                f"but weights.shape = {weights.shape}"
             )
         if mus.ndim != 1:
             raise ValueError(
-                "The 'mus' should be 1-dimension. But mus.shape = {}".format(mus.shape)
+                f"The 'mus' should have only one dimension, but mus.shape = {mus.shape}"
             )
         if sigmas.ndim != 1:
             raise ValueError(
-                "The 'sigmas' should be 1-dimension. But sigmas.shape = {}".format(sigmas.shape)
+                f"The 'sigmas' should have only one dimension, but sigmas.shape = {sigmas.shape}"
             )
 
         p_accept = np.sum(
