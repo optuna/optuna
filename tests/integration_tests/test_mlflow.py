@@ -5,7 +5,9 @@ import py
 import pytest
 
 import optuna
-from optuna.integration.mlflow import MLFlowIntegrator, MLflowCallback, track_in_mlflow
+from optuna.integration.mlflow import MLflowCallback
+from optuna.integration.mlflow import MLFlowIntegrator
+from optuna.integration.mlflow import track_in_mlflow
 
 
 def _objective_func(trial: optuna.trial.Trial) -> float:
