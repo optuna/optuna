@@ -1,4 +1,5 @@
 import textwrap
+from typing import Callable
 from typing import Dict
 from typing import Optional
 
@@ -37,7 +38,7 @@ class MLFlowIntegrator(object):
         # This sets the experiment of MLflow.
         mlflow.set_experiment(study.study_name)
 
-    def calculate_tags(self, trial: optuna.trial.Trial, study: optuna.study.Study) -> None:
+    def calculate_tags(self, trial: optuna.trial.BaseTrial, study: optuna.study.Study) -> None:
 
         tags: Dict[str, str] = {}
         tags["number"] = str(trial.number)
@@ -80,7 +81,7 @@ class MLFlowIntegrator(object):
         trial_value = value if value is not None else float("nan")
         mlflow.log_metric(self._metric_name, trial_value)
 
-    def log_params(self, trial: optuna.trial.Trial) -> None:
+    def log_params(self, trial: optuna.trial.BaseTrial) -> None:
         mlflow.log_params(trial.params)
 
 
@@ -163,7 +164,8 @@ class MLflowCallback(MLFlowIntegrator):
         with mlflow.start_run(run_name=str(trial.number), nested=self._nest_trials):
 
             # This sets the metric for MLflow.
-            self.log_metric(trial.value)
+            if trial.value:
+                self.log_metric(trial.value)
 
             # This sets the params for MLflow.
             self.log_params(trial)
@@ -172,9 +174,9 @@ class MLflowCallback(MLFlowIntegrator):
             self.calculate_tags(trial, study)
 
 
-def track_in_mlflow(optuna_mlflow: MLFlowIntegrator):
-    def decorator(func):
-        def wrapper(trial: optuna.trial.Trial):
+def track_in_mlflow(optuna_mlflow: MLFlowIntegrator) -> Callable:
+    def decorator(func: Callable) -> Callable:
+        def wrapper(trial: optuna.trial.Trial) -> float:
             study = trial.study
             optuna_mlflow.set_experiment(study)
 
