@@ -116,7 +116,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-optimize",
             "xgboost",
             "keras",
-            "tensorflow ; python_version<'3.9'",
+            # TODO(HideakiImamura): Remove the version constraint after resolving the issue
+            # https://github.com/keras-team/keras/issues/14632
+            "tensorflow<2.5.0 ; python_version<'3.9'",
             "tensorflow-datasets",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
@@ -158,7 +160,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-optimize",
             "xgboost",
             "keras ; python_version<'3.9'",
-            "tensorflow ; python_version<'3.9'",
+            # TODO(HideakiImamura): Remove the version constraint after resolving the issue
+            # https://github.com/keras-team/keras/issues/14632
+            "tensorflow<2.5.0 ; python_version<'3.9'",
             "tensorflow-datasets ; python_version<'3.9'",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
