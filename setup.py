@@ -50,7 +50,7 @@ def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
         # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
-        # examples and tutorials.
+        # tutorials.
         "checking": ["black", "hacking", "isort", "mypy==0.790", "blackdoc"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
@@ -80,21 +80,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0",
             "torchaudio==0.8.0",
             "thop",
-        ],
-        "example": [
-            "nbval",
-            "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",
-            # optuna/visualization/param_importances.py.
-            "thop",
-            "torch==1.8.0 ; sys_platform=='darwin'",
-            "torch==1.8.0+cpu ; sys_platform!='darwin'",
-            "torchvision==0.9.0 ; sys_platform=='darwin'",
-            "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
-            "torchaudio==0.8.0",
-            "botorch>=0.4.0 ; python_version>'3.6'",
-            "pandas",
-            "plotly",
-            "requests",
         ],
         "experimental": ["redis"],
         "testing": [
