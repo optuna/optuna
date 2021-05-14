@@ -70,11 +70,7 @@ jobs:
             --ignore tests/integration_tests/test_botorch.py
         elif  [ ${{ matrix.python-version }} = 3.9 ]; then
           pytest tests/integration_tests \
-            --ignore tests/integration_tests/test_keras.py \
-            --ignore tests/integration_tests/test_tensorflow.py \
-            --ignore tests/integration_tests/test_tfkeras.py \
-            --ignore tests/integration_tests/test_sklearn.py \
-            --ignore tests/integration_tests/test_tensorboard.py 
+            --ignore tests/integration_tests/test_sklearn.py
         else
           pytest -s tests/integration_tests
         fi
