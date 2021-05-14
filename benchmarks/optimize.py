@@ -38,7 +38,7 @@ def create_sampler(sampler_mode: str) -> BaseSampler:
         assert False
 
 
-class TimeOptimize:
+class OptimizeSuite:
     def objective(self, trial: optuna.Trial) -> float:
         x = trial.suggest_float("x", -100, 100)
         y = trial.suggest_int("y", -100, 100)
