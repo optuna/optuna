@@ -80,6 +80,9 @@ study = optuna.create_study()  # Create a new study.
 study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
 ```
 
+## Examples
+
+Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optuna-examples).
 
 ## Integrations
 
