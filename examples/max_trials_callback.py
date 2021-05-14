@@ -12,19 +12,8 @@ regardless of the number of workers/scripts running the Trials.
 from time import sleep
 
 import optuna
+from optuna.study import MaxTrialsCallback
 from optuna.trial import TrialState
-
-
-num_completed_trials = 10
-
-
-def max_trial_callback(study, trial):
-    # we consider all the running states and already completed states.
-    n_complete = len(
-        study.get_trials(deepcopy=False, states=[TrialState.COMPLETE, TrialState.RUNNING])
-    )
-    if n_complete >= num_completed_trials:
-        study.stop()
 
 
 def objective(trial):
@@ -40,7 +29,9 @@ if __name__ == "__main__":
         load_if_exists=True,
     )
 
-    study.optimize(objective, n_trials=50, callbacks=[max_trial_callback])
+    study.optimize(
+        objective, n_trials=50, callbacks=[MaxTrialsCallback(10, states=(TrialState.COMPLETE,))]
+    )
     trials = study.trials_dataframe()
     print("Number of completed trials: {}".format(len(trials[trials.state == "COMPLETE"])))
 

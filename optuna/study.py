@@ -18,6 +18,7 @@ from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
+from optuna._callbacks import MaxTrialsCallback  # NOQA
 from optuna._dataframe import _trials_dataframe
 from optuna._dataframe import pd
 from optuna._deprecated import deprecated
