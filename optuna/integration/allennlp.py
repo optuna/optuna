@@ -183,6 +183,15 @@ def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
     return kwargs
 
 
+def _is_encodable(value: str) -> bool:
+    # https://github.com/allenai/allennlp/blob/master/allennlp/common/params.py#L77-L85
+    return (value == "") or (value.encode("utf-8", "ignore") != b"")
+
+
+def _environment_variables() -> Dict[str, str]:
+    return {key: value for key, value in os.environ.items() if _is_encodable(value)}
+
+
 def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
     """Save JSON config file after updating with parameters from the best trial in the study.
 
@@ -199,10 +208,19 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
     """
     _imports.check()
 
+    # environment variables
+    ext_vars = _environment_variables()
+
+    # hyperparameters
     best_params = study.best_params
     for key, value in best_params.items():
         best_params[key] = str(value)
-    best_config = json.loads(_jsonnet.evaluate_file(input_config_file, ext_vars=best_params))
+
+    # If keys both appear in environment variables and best_params,
+    # values in environment variables are overwritten, which means best_params is prioritized.
+    ext_vars.update(best_params)
+
+    best_config = json.loads(_jsonnet.evaluate_file(input_config_file, ext_vars=ext_vars))
 
     # `optuna_pruner` only works with Optuna.
     # It removes when dumping configuration since
@@ -341,7 +359,7 @@ class AllenNLPExecutor(object):
         https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
 
         """
-        params = self._environment_variables()
+        params = _environment_variables()
         params.update({key: str(value) for key, value in self._params.items()})
         params.update(self._system_attrs)
         return json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=params))
@@ -349,14 +367,6 @@ class AllenNLPExecutor(object):
     def _set_environment_variables(self) -> None:
         for key, value in self._system_attrs.items():
             os.environ[key] = value
-
-    @staticmethod
-    def _is_encodable(value: str) -> bool:
-        # https://github.com/allenai/allennlp/blob/master/allennlp/common/params.py#L77-L85
-        return (value == "") or (value.encode("utf-8", "ignore") != b"")
-
-    def _environment_variables(self) -> Dict[str, str]:
-        return {key: value for key, value in os.environ.items() if self._is_encodable(value)}
 
     def run(self) -> float:
         """Train a model using AllenNLP."""
