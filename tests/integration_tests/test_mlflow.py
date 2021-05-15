@@ -223,9 +223,7 @@ def test_study_name_with_decorator(tmpdir: py.path.local) -> None:
     metric_name = "additional_metric"
     metric = 3.14
 
-    mlfli = MLFlowIntegrator(tracking_uri=tracking_file_name)
-
-    @track_in_mlflow(mlfli)
+    @track_in_mlflow(tracking_uri=tracking_file_name)
     def _objective_func(trial: optuna.trial.Trial) -> float:
 
         x = trial.suggest_float("x", -1.0, 1.0)
