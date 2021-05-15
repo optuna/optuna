@@ -58,7 +58,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
-            "scikit-learn>=0.19.0,<0.23.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "mlflow",
         ],
@@ -83,7 +83,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "example": [
             "nbval",
-            "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",
+            "scikit-learn>=0.24.2",
             # optuna/visualization/param_importances.py.
             "thop",
             "torch==1.8.0 ; sys_platform=='darwin'",
@@ -112,7 +112,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "plotly>=4.0.0",
             "pytest",
-            "scikit-learn>=0.19.0,<0.23.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
             "keras",
@@ -143,7 +143,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
-            "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",
+            "scikit-learn>=0.24.2",
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
@@ -156,7 +156,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "pandas",
-            "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
             "keras ; python_version<'3.9'",
