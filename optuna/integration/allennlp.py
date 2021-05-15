@@ -72,7 +72,6 @@ _STUDY_NAME = "{}_STUDY_NAME".format(_PREFIX)
 _TRIAL_ID = "{}_TRIAL_ID".format(_PREFIX)
 
 
-
 def _encode_param(value: Any) -> str:
     if value is None:
         return _NONE
@@ -324,7 +323,8 @@ class AllenNLPExecutor(object):
 
         pruner_params = _fetch_pruner_config(trial)
         pruner_params = {
-            "{}_{}".format(_PREFIX, key): _encode_param(value) for key, value in pruner_params.items()
+            "{}_{}".format(_PREFIX, key): _encode_param(value)
+            for key, value in pruner_params.items()
         }
 
         system_attrs = {
