@@ -12,7 +12,7 @@ _import_structure = {
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
     "cma": ["CmaEsSampler", "PyCmaSampler"],
-    "mlflow": ["MLflowCallback", "track_in_mlflow"],
+    "mlflow": ["MLFlowIntegrator", "MLflowCallback", "track_in_mlflow"],
     "keras": ["KerasPruningCallback"],
     "lightgbm": ["LightGBMPruningCallback", "LightGBMTuner", "LightGBMTunerCV"],
     "pytorch_distributed": ["TorchDistributedTrial"],
@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from optuna.integration.lightgbm import LightGBMPruningCallback  # NOQA
     from optuna.integration.lightgbm import LightGBMTuner  # NOQA
     from optuna.integration.lightgbm import LightGBMTunerCV  # NOQA
+    from optuna.integration.mlflow import MLFlowIntegrator  # NOQA
     from optuna.integration.mlflow import MLflowCallback  # NOQA
     from optuna.integration.mlflow import track_in_mlflow  # NOQA
     from optuna.integration.mxnet import MXNetPruningCallback  # NOQA
