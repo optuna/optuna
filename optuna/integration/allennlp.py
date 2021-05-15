@@ -111,7 +111,7 @@ def _infer_and_cast(value: Optional[str]) -> Optional[Union[str, int, float, boo
     to desired types.
 
     """
-    if value in (None, _NONE):
+    if value is None or value == _NONE:
         return None
 
     try:
