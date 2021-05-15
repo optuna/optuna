@@ -315,11 +315,11 @@ def test_allennlp_pruning_callback_with_invalid_storage() -> None:
         ),
         (
             optuna.pruners.SuccessiveHalvingPruner,
-            {"min_resource": 3, "reduction_factor": 5, "min_early_stopping_rate": 1},
+            {"min_resource": "auto", "reduction_factor": 5, "min_early_stopping_rate": 1},
         ),
         (
             optuna.pruners.ThresholdPruner,
-            {"lower": 0.0, "upper": 1.0, "n_warmup_steps": 3, "interval_steps": 2},
+            {"lower": 0.0, "upper": None, "n_warmup_steps": 3, "interval_steps": 2},
         ),
     ],
 )
