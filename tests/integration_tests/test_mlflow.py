@@ -1,6 +1,7 @@
 import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
+import numpy as np
 import py
 import pytest
 
@@ -215,7 +216,6 @@ def test_tag_study_user_attrs(tmpdir: py.path.local, tag_study_user_attrs: bool)
 
 
 def test_study_name_with_decorator(tmpdir: py.path.local) -> None:
-
     tracking_file_name = "file:{}".format(tmpdir)
     study_name = "my_study"
     n_trials = 3
@@ -276,8 +276,7 @@ def test_study_name_with_decorator(tmpdir: py.path.local) -> None:
     assert first_run_dict["data"]["metrics"][metric_name] == metric
 
 
-def test_set_experiment(tmpdir: py.path.local) -> None:
-
+def test_initialize_experiment(tmpdir: py.path.local) -> None:
     tracking_file_name = "file:{}".format(tmpdir)
     metric_name = "my_metric_name"
     study_name = "my_study"
@@ -285,7 +284,7 @@ def test_set_experiment(tmpdir: py.path.local) -> None:
     mlfli = MLFlowIntegrator(tracking_uri=tracking_file_name, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
 
-    mlfli.set_experiment(study)
+    mlfli.initialize_experiment(study)
 
     mlfl_client = MlflowClient(tracking_file_name)
     experiments = mlfl_client.list_experiments()
@@ -296,7 +295,6 @@ def test_set_experiment(tmpdir: py.path.local) -> None:
 
 
 def test_log_metric(tmpdir: py.path.local) -> None:
-
     tracking_file_name = "file:{}".format(tmpdir)
     metric_name = "my_metric_name"
     study_name = "my_study"
@@ -304,7 +302,7 @@ def test_log_metric(tmpdir: py.path.local) -> None:
 
     mlfli = MLFlowIntegrator(tracking_uri=tracking_file_name, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
-    mlfli.set_experiment(study)
+    mlfli.initialize_experiment(study)
 
     with mlflow.start_run():
         mlfli.log_metric(metric_value)
@@ -325,8 +323,68 @@ def test_log_metric(tmpdir: py.path.local) -> None:
     assert first_run_dict["data"]["metrics"][metric_name] == metric_value
 
 
-def test_log_params(tmpdir: py.path.local) -> None:
+def test_log_metric_none(tmpdir: py.path.local) -> None:
+    tracking_file_name = "file:{}".format(tmpdir)
+    metric_name = "my_metric_name"
+    study_name = "my_study"
+    metric_value = None
 
+    mlfli = MLFlowIntegrator(tracking_uri=tracking_file_name, metric_name=metric_name)
+    study = optuna.create_study(study_name=study_name)
+    mlfli.initialize_experiment(study)
+
+    with mlflow.start_run():
+        mlfli.log_metric(metric_value)
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiments = mlfl_client.list_experiments()
+    experiment = experiments[0]
+    experiment_id = experiment.experiment_id
+
+    run_infos = mlfl_client.list_run_infos(experiment_id)
+    assert len(run_infos) == 1
+
+    first_run_id = run_infos[0].run_id
+    first_run = mlfl_client.get_run(first_run_id)
+    first_run_dict = first_run.to_dictionary()
+
+    assert metric_name in first_run_dict["data"]["metrics"]
+    assert np.isnan(first_run_dict["data"]["metrics"][metric_name])
+
+
+def test_log_metric_multi_objective(tmpdir: py.path.local) -> None:
+    tracking_file_name = "file:{}".format(tmpdir)
+    metric_name = ["my_metric_name1", "my_metric_name2"]
+    study_name = "my_study"
+    metric_value = [3.14, 2.72]
+
+    mlfli = MLFlowIntegrator(tracking_uri=tracking_file_name, metric_name=metric_name)
+    study = optuna.create_study(study_name=study_name)
+    mlfli.initialize_experiment(study)
+
+    with mlflow.start_run():
+        mlfli.log_metric(metric_value)
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiments = mlfl_client.list_experiments()
+    experiment = experiments[0]
+    experiment_id = experiment.experiment_id
+
+    run_infos = mlfl_client.list_run_infos(experiment_id)
+    assert len(run_infos) == 1
+
+    first_run_id = run_infos[0].run_id
+    first_run = mlfl_client.get_run(first_run_id)
+    first_run_dict = first_run.to_dictionary()
+
+    assert metric_name[0] in first_run_dict["data"]["metrics"]
+    assert first_run_dict["data"]["metrics"][metric_name[0]] == metric_value[0]
+
+    assert metric_name[1] in first_run_dict["data"]["metrics"]
+    assert first_run_dict["data"]["metrics"][metric_name[1]] == metric_value[1]
+
+
+def test_log_params(tmpdir: py.path.local) -> None:
     tracking_file_name = "file:{}".format(tmpdir)
     metric_name = "my_metric_name"
     study_name = "my_study"
@@ -340,7 +398,7 @@ def test_log_params(tmpdir: py.path.local) -> None:
 
     mlfli = MLFlowIntegrator(tracking_uri=tracking_file_name, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
-    mlfli.set_experiment(study)
+    mlfli.initialize_experiment(study)
 
     with mlflow.start_run():
 
