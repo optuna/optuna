@@ -95,6 +95,8 @@ MLflow
    :nosignatures:
 
    optuna.integration.MLflowCallback
+   optuna.integration.MLFlowIntegrator
+   optuna.integration.track_in_mlflow
 
 MXNet
 -----
