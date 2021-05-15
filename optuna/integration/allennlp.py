@@ -51,6 +51,7 @@ else:
 
 
 _PPID = os.getppid()
+_NONE = "<PYTHON_NONE_OBJECT>"
 
 """
 User might want to launch multiple studies that uses `AllenNLPExecutor`.
@@ -69,6 +70,13 @@ _PRUNER_KEYS = "{}_PRUNER_KEYS".format(_PREFIX)
 _STORAGE_NAME = "{}_STORAGE_NAME".format(_PREFIX)
 _STUDY_NAME = "{}_STUDY_NAME".format(_PREFIX)
 _TRIAL_ID = "{}_TRIAL_ID".format(_PREFIX)
+
+
+
+def _encode_param(value: Any) -> str:
+    if value is None:
+        return _NONE
+    return str(value)
 
 
 def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
@@ -104,7 +112,7 @@ def _infer_and_cast(value: Optional[str]) -> Optional[Union[str, int, float, boo
     to desired types.
 
     """
-    if value is None:
+    if value in (None, _NONE):
         return None
 
     try:
@@ -316,7 +324,7 @@ class AllenNLPExecutor(object):
 
         pruner_params = _fetch_pruner_config(trial)
         pruner_params = {
-            "{}_{}".format(_PREFIX, key): str(value) for key, value in pruner_params.items()
+            "{}_{}".format(_PREFIX, key): _encode_param(value) for key, value in pruner_params.items()
         }
 
         system_attrs = {
