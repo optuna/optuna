@@ -20,6 +20,8 @@ import torch.optim
 
 import optuna
 from optuna.integration.allennlp import AllenNLPPruningCallback
+from optuna.pruners import SuccessiveHalvingPruner
+from optuna.pruners import ThresholdPruner
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -318,8 +320,20 @@ def test_allennlp_pruning_callback_with_invalid_storage() -> None:
             {"min_resource": 3, "reduction_factor": 5, "min_early_stopping_rate": 1},
         ),
         (
+            optuna.pruners.SuccessiveHalvingPruner,
+            {"min_resource": "auto", "reduction_factor": 5, "min_early_stopping_rate": 1},
+        ),
+        (
             optuna.pruners.ThresholdPruner,
             {"lower": 0.0, "upper": 1.0, "n_warmup_steps": 3, "interval_steps": 2},
+        ),
+        (
+            optuna.pruners.ThresholdPruner,
+            {"lower": None, "upper": 1.0, "n_warmup_steps": 3, "interval_steps": 2},
+        ),
+        (
+            optuna.pruners.ThresholdPruner,
+            {"lower": 0.0, "upper": None, "n_warmup_steps": 3, "interval_steps": 2},
         ),
     ],
 )
@@ -349,7 +363,29 @@ def test_allennlp_pruning_callback_with_executor(
 
         assert isinstance(ret_pruner, pruner_class)
         for key, value in pruner_kwargs.items():
-            assert getattr(ret_pruner, "_{}".format(key)) == value
+            if (
+                isinstance(pruner, SuccessiveHalvingPruner)
+                and key == "min_resource"
+                and value == "auto"
+            ):
+                assert getattr(ret_pruner, "_{}".format(key)) is None
+
+            elif (
+                isinstance(pruner, ThresholdPruner)
+                and key == "upper"
+                and value is None
+            ):
+                assert getattr(ret_pruner, "_{}".format(key)) == float("inf")
+
+            elif (
+                isinstance(pruner, ThresholdPruner)
+                and key == "lower"
+                and value is None
+            ):
+                assert getattr(ret_pruner, "_{}".format(key)) == -float("inf")
+
+            else:
+                assert getattr(ret_pruner, "_{}".format(key)) == value
 
 
 def test_allennlp_pruning_callback_with_invalid_executor() -> None:
