@@ -370,18 +370,10 @@ def test_allennlp_pruning_callback_with_executor(
             ):
                 assert getattr(ret_pruner, "_{}".format(key)) is None
 
-            elif (
-                isinstance(pruner, ThresholdPruner)
-                and key == "upper"
-                and value is None
-            ):
+            elif isinstance(pruner, ThresholdPruner) and key == "upper" and value is None:
                 assert getattr(ret_pruner, "_{}".format(key)) == float("inf")
 
-            elif (
-                isinstance(pruner, ThresholdPruner)
-                and key == "lower"
-                and value is None
-            ):
+            elif isinstance(pruner, ThresholdPruner) and key == "lower" and value is None:
                 assert getattr(ret_pruner, "_{}".format(key)) == -float("inf")
 
             else:
