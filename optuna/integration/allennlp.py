@@ -166,7 +166,8 @@ def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
         kwargs["interval_steps"] = pruner._interval_steps
 
     elif isinstance(pruner, optuna.pruners.SuccessiveHalvingPruner):
-        kwargs["min_resource"] = pruner._min_resource
+        min_resource = pruner._min_resource if pruner._min_resource is not None else "auto"
+        kwargs["min_resource"] = min_resource
         kwargs["reduction_factor"] = pruner._reduction_factor
         kwargs["min_early_stopping_rate"] = pruner._min_early_stopping_rate
 
