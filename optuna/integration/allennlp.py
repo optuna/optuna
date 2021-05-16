@@ -50,6 +50,7 @@ else:
             return wrapper
 
 
+_NONE = "<PYTHON_NONE_OBJECT>"
 _PPID = os.getppid()
 
 """
@@ -69,6 +70,12 @@ _PRUNER_KEYS = "{}_PRUNER_KEYS".format(_PREFIX)
 _STORAGE_NAME = "{}_STORAGE_NAME".format(_PREFIX)
 _STUDY_NAME = "{}_STUDY_NAME".format(_PREFIX)
 _TRIAL_ID = "{}_TRIAL_ID".format(_PREFIX)
+
+
+def _encode_param(value: Any) -> str:
+    if value is None:
+        return _NONE
+    return str(value)
 
 
 def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
@@ -104,7 +111,7 @@ def _infer_and_cast(value: Optional[str]) -> Optional[Union[str, int, float, boo
     to desired types.
 
     """
-    if value is None:
+    if value is None or value == _NONE:
         return None
 
     try:
@@ -172,8 +179,8 @@ def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
         kwargs["min_early_stopping_rate"] = pruner._min_early_stopping_rate
 
     elif isinstance(pruner, optuna.pruners.ThresholdPruner):
-        kwargs["lower"] = pruner._lower
-        kwargs["upper"] = pruner._upper
+        kwargs["lower"] = pruner._lower if pruner._lower != -float("inf") else None
+        kwargs["upper"] = pruner._upper if pruner._upper != float("inf") else None
         kwargs["n_warmup_steps"] = pruner._n_warmup_steps
         kwargs["interval_steps"] = pruner._interval_steps
     elif isinstance(pruner, optuna.pruners.NopPruner):
@@ -317,7 +324,8 @@ class AllenNLPExecutor(object):
 
         pruner_params = _fetch_pruner_config(trial)
         pruner_params = {
-            "{}_{}".format(_PREFIX, key): str(value) for key, value in pruner_params.items()
+            "{}_{}".format(_PREFIX, key): _encode_param(value)
+            for key, value in pruner_params.items()
         }
 
         system_attrs = {
