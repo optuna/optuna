@@ -7,6 +7,8 @@ class TrialState(enum.Enum):
     Attributes:
         RUNNING:
             The :class:`~optuna.trial.Trial` is running.
+        WAITING:
+            The :class:`~optuna.trial.Trial` is waiting and unfinished.
         COMPLETE:
             The :class:`~optuna.trial.Trial` has been finished without any error.
         PRUNED:
