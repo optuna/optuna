@@ -64,7 +64,7 @@ class OptimizeSuite:
         "inmemory, cmaes, 1000",
         "sqlite, random, 1000",
         "cache, random, 1000",
-        "redis, random, 1000",
+        "redis, random, 1000",  # This benchmark uses fakeredis instead of Redis.
     )
     param_names = "storage, sampler, n_trials"
     timeout = 600
