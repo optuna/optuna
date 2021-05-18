@@ -128,4 +128,4 @@ Indices and tables
   :width: 800
   :alt: OPTUNA
 .. |Open in Colab| image:: https://colab.research.google.com/assets/colab-badge.svg
-  :target: http://colab.research.google.com/github/optuna/optuna/blob/master/examples/quickstart.ipynb
+  :target: http://colab.research.google.com/github/optuna/optuna-examples/blob/main/quickstart.ipynb
