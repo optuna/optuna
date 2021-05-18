@@ -177,6 +177,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
+        "benchmark": [
+            "asv",
+            "virtualenv",
+        ],
     }
 
     return requirements
@@ -201,7 +205,7 @@ setup(
     author="Takuya Akiba",
     author_email="akiba@preferred.jp",
     url="https://optuna.org/",
-    packages=find_packages(exclude=("tests", "tests.*")),
+    packages=find_packages(exclude=("tests", "tests.*", "benchmarks")),
     package_data={
         "optuna": [
             "storages/_rdb/alembic.ini",
