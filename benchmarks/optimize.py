@@ -66,5 +66,5 @@ class OptimizeSuite:
         "cache, random, 1000",
         "redis, random, 1000",  # This benchmark uses fakeredis instead of Redis.
     )
-    param_names = "storage, sampler, n_trials"
+    param_names = ["storage, sampler, n_trials"]
     timeout = 600
