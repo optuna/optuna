@@ -22,7 +22,7 @@ class SuccessiveHalvingPruner(BasePruner):
     typically limited inside the objective function (e.g., ``step`` number in `simple_pruning.py
     <https://github.com/optuna/optuna/blob/master/examples/simple_pruning.py#L35>`_,
     ``EPOCH`` number in `chainer_integration.py
-    <https://github.com/optuna/optuna/blob/master/examples/chainer/chainer_integration.py#L77>`_).
+    <https://github.com/optuna/optuna-examples/tree/main/chainer/chainer_integration.py#L77>`_).
 
     .. seealso::
         Please refer to :meth:`~optuna.trial.Trial.report`.

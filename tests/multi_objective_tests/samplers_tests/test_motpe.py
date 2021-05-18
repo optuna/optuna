@@ -1,12 +1,7 @@
-import random
-from typing import Callable
 from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Union
+from typing import Tuple
 from unittest.mock import Mock
 from unittest.mock import patch
-from unittest.mock import PropertyMock
 
 import pytest
 
@@ -56,52 +51,16 @@ def test_infer_relative_search_space() -> None:
 
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_sample_independent() -> None:
-    study = optuna.multi_objective.create_study(directions=["minimize", "maximize"])
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
-
-    random.seed(128)
-    past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
-    # Prepare a trial and a sample for later checks.
-    trial = multi_objective.trial.FrozenMultiObjectiveTrial(2, frozen_trial_factory(16, [0, 0]))
-    sampler = MOTPEMultiObjectiveSampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.multi_objective.trial.MultiObjectiveTrial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.multi_objective.trial.FrozenMultiObjectiveTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        _ = sampler.sample_independent(study, trial, "param-a", dist)
-
-
-def frozen_trial_factory(
-    number: int,
-    values: List[float],
-    dist: optuna.distributions.BaseDistribution = optuna.distributions.UniformDistribution(
-        1.0, 100.0
-    ),
-    value_fn: Optional[Callable[[int], Union[int, float]]] = None,
-) -> multi_objective.trial.FrozenTrial:
-    if value_fn is None:
-        value = random.random() * 99.0 + 1.0
-    else:
-        value = value_fn(number)
-
-    trial = optuna.trial.FrozenTrial(
-        number=number,
-        trial_id=number,
-        state=optuna.trial.TrialState.COMPLETE,
-        value=None,
-        datetime_start=None,
-        datetime_complete=None,
-        params={"param-a": value},
-        distributions={"param-a": dist},
-        user_attrs={},
-        system_attrs={},
-        intermediate_values=dict(enumerate(values)),
+    sampler = MOTPEMultiObjectiveSampler()
+    study = optuna.multi_objective.create_study(
+        directions=["minimize", "maximize"], sampler=sampler
     )
-    return trial
+
+    def _objective(trial: multi_objective.trial.MultiObjectiveTrial) -> Tuple[float, float]:
+        x = trial.suggest_float("x", 0, 1)
+        y = trial.suggest_float("y", 0, 1)
+        return x, y
+
+    with patch.object(sampler, "sample_independent", wraps=sampler.sample_independent) as mock:
+        study.optimize(_objective, n_trials=10)
+        assert mock.call_count == 20

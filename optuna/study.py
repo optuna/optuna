@@ -18,6 +18,7 @@ from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
+from optuna._callbacks import MaxTrialsCallback  # NOQA
 from optuna._dataframe import _trials_dataframe
 from optuna._dataframe import pd
 from optuna._deprecated import deprecated
@@ -1160,7 +1161,7 @@ def create_study(
 
 
 def load_study(
-    study_name: str,
+    study_name: Optional[str],
     storage: Union[str, storages.BaseStorage],
     sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
@@ -1198,7 +1199,8 @@ def load_study(
 
     Args:
         study_name:
-            Study's name. Each study has a unique name as an identifier.
+            Study's name. Each study has a unique name as an identifier. If :obj:`None`, checks
+            whether the storage contains a single study, and if so loads that study.
         storage:
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
             :func:`~optuna.study.create_study` for further details.
@@ -1211,10 +1213,26 @@ def load_study(
             If :obj:`None` is specified, :class:`~optuna.pruners.MedianPruner` is used
             as the default. See also :class:`~optuna.pruners`.
 
+    Raises:
+        :exc:`ValueError`:
+            If ``study_name`` is :obj:`None` and the storage contains more than 1 study.
+
     See also:
         :func:`optuna.load_study` is an alias of :func:`optuna.study.load_study`.
 
     """
+    if study_name is None:
+        study_summaries = get_all_study_summaries(storage)
+        if len(study_summaries) != 1:
+            raise ValueError(
+                f"Could not determine the study name since the storage {storage} does not "
+                "contain exactly 1 study. Specify `study_name`."
+            )
+        study_name = study_summaries[0].study_name
+        _logger.info(
+            f"Study name was omitted but trying to load '{study_name}' because that was the only "
+            "study found in the storage."
+        )
 
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
@@ -1316,7 +1334,7 @@ def copy_study(
             )
 
             study = optuna.load_study(
-                study_name="example-study",
+                study_name=None,
                 storage="sqlite:///example_copy.db",
             )
 

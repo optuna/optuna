@@ -14,5 +14,6 @@ The :mod:`~optuna.study` module implements the :class:`~optuna.study.Study` obje
    optuna.study.load_study
    optuna.study.delete_study
    optuna.study.get_all_study_summaries
+   optuna.study.MaxTrialsCallback
    optuna.study.StudyDirection
    optuna.study.StudySummary
