@@ -32,6 +32,8 @@ from sphinx_gallery.sorting import FileNameSortKey
 
 __version__ = pkg_resources.get_distribution("optuna").version
 
+
+# Note: GITHUB_TOKEN is set on readthedocs, which is used to fetch artifacts from GitHub.
 github_token = os.getenv("GITHUB_TOKEN")
 if github_token is not None:
 
