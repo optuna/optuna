@@ -80,6 +80,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0",
             "torchaudio==0.8.0",
             "thop",
+            "requests",
         ],
         "example": [
             "catboost",
