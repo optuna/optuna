@@ -56,7 +56,7 @@ if github_token is not None:
                 return artifact["archive_download_url"]
         raise RuntimeError(f"Not found {target_name} on {artifact_names}")
 
-    def download_artifact() -> None:
+    def download_artifact(commit_id: str) -> None:
         artifacts = retrieve_artifacts()
         target_artifact_url = search_artifact(artifacts, commit_id)
         artifact = requests.get(
@@ -80,7 +80,7 @@ if github_token is not None:
     commit_id = get_commit_id()
     for _ in range(num_retries):
         try:
-            download_artifact()
+            download_artifact(commit_id)
             break
         except Exception as e:
             print("Error: ", e)
