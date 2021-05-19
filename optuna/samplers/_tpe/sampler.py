@@ -16,6 +16,7 @@ from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
+from optuna.multi_objective._hypervolume import WFG
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
@@ -226,6 +227,10 @@ class TPESampler(BaseSampler):
         self._search_space_group: Optional[_SearchSpaceGroup] = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
 
+        # The following two attributes are used in the multi-objective optimization.
+        self._split_cache: Dict[int, Any] = {}
+        self._weights_below: Dict[int, Any] = {}
+
         if multivariate:
             warnings.warn(
                 "``multivariate`` option is an experimental feature."
@@ -297,8 +302,6 @@ class TPESampler(BaseSampler):
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
 
-        self._raise_error_if_multi_objective(study)
-
         if self._group:
             assert self._search_space_group is not None
             params = {}
@@ -328,9 +331,12 @@ class TPESampler(BaseSampler):
             return {}
 
         # We divide data into below and above.
-        below, above = self._split_observation_pairs(values, scores)
+        below, above = self._split_observation_pairs(trial._trial_id, values, scores)
         # We then sample by maximizing log likelihood ratio.
-        mpe_below = _ParzenEstimator(below, search_space, self._parzen_estimator_parameters)
+        below_parzen_estimator_parameter = self._create_below_parzen_estimator_parameter(
+            study, trial._trial_id
+        )
+        mpe_below = _ParzenEstimator(below, search_space, below_parzen_estimator_parameter)
         mpe_above = _ParzenEstimator(above, search_space, self._parzen_estimator_parameters)
         samples_below = mpe_below.sample(self._rng, self._n_ei_candidates)
         log_likelihoods_below = mpe_below.log_pdf(samples_below)
@@ -350,8 +356,6 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        self._raise_error_if_multi_objective(study)
-
         values, scores = _get_observation_pairs(study, [param_name])
 
         n = len(scores)
@@ -361,9 +365,12 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        below, above = self._split_observation_pairs(values, scores)
+        below, above = self._split_observation_pairs(trial._trial_id, values, scores)
+        below_parzen_estimator_parameter = self._create_below_parzen_estimator_parameter(
+            study, trial._trial_id
+        )
         mpe_below = _ParzenEstimator(
-            below, {param_name: param_distribution}, self._parzen_estimator_parameters
+            below, {param_name: param_distribution}, below_parzen_estimator_parameter
         )
         mpe_above = _ParzenEstimator(
             above, {param_name: param_distribution}, self._parzen_estimator_parameters
@@ -375,23 +382,109 @@ class TPESampler(BaseSampler):
 
         return param_distribution.to_external_repr(ret[param_name])
 
+    def _create_below_parzen_estimator_parameter(
+        self, study: Study, trial_id: int
+    ) -> _ParzenEstimatorParameters:
+
+        if not study._is_multi_objective():
+            return self._parzen_estimator_parameters
+
+        weights_below: Callable[[int], np.ndarray]
+        weights_below = lambda _: self._weights_below[trial_id]  # NOQA
+
+        return _ParzenEstimatorParameters(
+            self._parzen_estimator_parameters.consider_prior,
+            self._parzen_estimator_parameters.prior_weight,
+            self._parzen_estimator_parameters.consider_magic_clip,
+            self._parzen_estimator_parameters.consider_endpoints,
+            weights_below,
+        )
+
     def _split_observation_pairs(
-        self, config_vals: Dict[str, List[Optional[float]]], loss_vals: List[Tuple[float, float]]
+        self,
+        trial_id: int,
+        config_vals: Dict[str, List[Optional[float]]],
+        loss_vals: List[Tuple[float, List[float]]],
     ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
 
         config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
-        loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
 
-        n_below = self._gamma(len(loss_values))
-        index_loss_ascending = np.argsort(loss_values)
-        # `np.sort` is used to keep chronological order.
-        index_below = np.sort(index_loss_ascending[:n_below])
-        index_above = np.sort(index_loss_ascending[n_below:])
+        if len(loss_vals[0][1]) <= 1:
+            loss_vals = [(s, v[0]) for s, v in loss_vals]
+            loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
+
+            n_below = self._gamma(len(loss_values))
+            index_loss_ascending = np.argsort(loss_values)
+            # `np.sort` is used to keep chronological order.
+            indices_below = np.sort(index_loss_ascending[:n_below])
+            indices_above = np.sort(index_loss_ascending[n_below:])
+
+        else:
+            loss_vals = [v for _, v in loss_vals]
+
+            cvals = np.asarray(list(config_vals.values()))
+            lvals = np.asarray(loss_vals)
+
+            # Solving HSSP for variables number of times is a waste of time.
+            # We cache the result of splitting.
+            is_cached = trial_id in self._split_cache
+            if is_cached:
+                split_cache = self._split_cache[trial_id]
+                indices_below = np.asarray(split_cache["indices_below"])
+                weights_below = np.asarray(split_cache["weights_below"])
+                indices_above = np.asarray(split_cache["indices_above"])
+            else:
+                nondomination_ranks = _calculate_nondomination_rank(lvals)
+                n_below = self._gamma(len(lvals))
+                assert 0 <= n_below <= len(lvals)
+
+                indices = np.array(range(len(lvals)))
+                indices_below = np.empty(n_below, dtype=int)
+
+                # Nondomination rank-based selection
+                i = 0
+                last_idx = 0
+                while last_idx + sum(nondomination_ranks == i) <= n_below:
+                    length = indices[nondomination_ranks == i].shape[0]
+                    indices_below[last_idx: last_idx + length] = indices[nondomination_ranks == i]
+                    last_idx += length
+                    i += 1
+
+                # Hypervolume subset selection problem (HSSP)-based selection
+                subset_size = n_below - last_idx
+                if subset_size > 0:
+                    rank_i_lvals = lvals[nondomination_ranks == i]
+                    rank_i_indices = indices[nondomination_ranks == i]
+                    worst_point = np.max(rank_i_lvals, axis=0)
+                    reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+                    reference_point[reference_point == 0] = EPS
+                    selected_indices = self._solve_hssp(
+                        rank_i_lvals, rank_i_indices, subset_size, reference_point
+                    )
+                    indices_below[last_idx:] = selected_indices
+
+                indices_above = np.setdiff1d(indices, indices_below)
+
+                attrs = {
+                    "indices_below": indices_below.tolist(),
+                    "indices_above": indices_above.tolist(),
+                }
+                weights_below = self._calculate_weights_below_for_multi_objective(
+                    lvals, indices_below
+                )
+                attrs["weights_below"] = weights_below.tolist()
+                self._split_cache[trial_id] = attrs
+
+            self._weights_below[trial_id] = np.asarray(
+                [w for w, v in zip(weights_below, cvals[indices_below]) if v is not None],
+                dtype=float
+            )
+
         below = {}
         above = {}
         for param_name, param_val in config_values.items():
-            below[param_name] = param_val[index_below]
-            above[param_name] = param_val[index_above]
+            below[param_name] = np.asarray([v for v in param_val[indices_below] if v is not None])
+            above[param_name] = np.asarray([v for v in param_val[indices_above] if v is not None])
 
         return below, above
 
@@ -419,6 +512,82 @@ class TPESampler(BaseSampler):
                 "The size of 'samples' should be more than 0."
                 "But samples.size = {}".format(sample_size)
             )
+
+    @staticmethod
+    def _compute_hypervolume(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+        return WFG().compute(solution_set, reference_point)
+
+    def _solve_hssp(
+        self,
+        rank_i_loss_vals: np.ndarray,
+        rank_i_indices: np.ndarray,
+        subset_size: int,
+        reference_point: np.ndarray,
+    ) -> np.ndarray:
+        """Solve a hypervolume subset selection problem (HSSP) via a greedy algorithm.
+
+        This method is a 1-1/e approximation algorithm to solve HSSP.
+
+        For further information about algorithms to solve HSSP, please refer to the following
+        paper:
+
+        - `Greedy Hypervolume Subset Selection in Low Dimensions
+           <https://ieeexplore.ieee.org/document/7570501>`_
+        """
+        selected_vecs = []  # type: List[np.ndarray]
+        selected_indices = []  # type: List[int]
+        contributions = [
+            self._compute_hypervolume(np.asarray([v]), reference_point) for v in rank_i_loss_vals
+        ]
+        hv_selected = 0.0
+        while len(selected_indices) < subset_size:
+            max_index = int(np.argmax(contributions))
+            contributions[max_index] = -1  # mark as selected
+            selected_index = rank_i_indices[max_index]
+            selected_vec = rank_i_loss_vals[max_index]
+            for j, v in enumerate(rank_i_loss_vals):
+                if contributions[j] == -1:
+                    continue
+                p = np.max([selected_vec, v], axis=0)
+                contributions[j] -= (
+                        self._compute_hypervolume(np.asarray(selected_vecs + [p]), reference_point)
+                        - hv_selected
+                )
+            selected_vecs += [selected_vec]
+            selected_indices += [selected_index]
+            hv_selected = self._compute_hypervolume(np.asarray(selected_vecs), reference_point)
+
+        return np.asarray(selected_indices, dtype=int)
+
+    def _calculate_weights_below_for_multi_objective(
+        self,
+        lvals: np.ndarray,
+        indices_below: np.ndarray,
+    ) -> np.ndarray:
+        # Calculate weights based on hypervolume contributions.
+        n_below = len(indices_below)
+        if n_below == 0:
+            return np.asarray([])
+        elif n_below == 1:
+            return np.asarray([1.0])
+        else:
+            lvals_below = lvals[indices_below].tolist()
+            worst_point = np.max(lvals_below, axis=0)
+            reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+            reference_point[reference_point == 0] = EPS
+            hv = self._compute_hypervolume(np.asarray(lvals_below), reference_point)
+            contributions = np.asarray(
+                [
+                    hv
+                    - self._compute_hypervolume(
+                        np.asarray(lvals_below[:i] + lvals_below[i + 1 :]), reference_point
+                    )
+                    for i in range(n_below)
+                ]
+            )
+            contributions += EPS
+            weights_below = np.clip(contributions / np.max(contributions), 0, 1)
+            return weights_below
 
     @staticmethod
     def hyperopt_parameters() -> Dict[str, Any]:
@@ -471,12 +640,45 @@ class TPESampler(BaseSampler):
         values: Optional[Sequence[float]],
     ) -> None:
 
+        if study._is_multi_objective():
+            if trial._trial_id in self._split_cache:
+                del self._split_cache[trial._trial_id]
+            if trial._trial_id in self._weights_below:
+                del self._weights_below[trial._trial_id]
+
         self._random_sampler.after_trial(study, trial, state, values)
+
+
+def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
+    vecs = loss_vals.copy()
+
+    # Normalize values
+    lb = vecs.min(axis=0, keepdims=True)
+    ub = vecs.max(axis=0, keepdims=True)
+    vecs = (vecs - lb) / (ub - lb)
+
+    ranks = np.zeros(len(vecs))
+    num_unranked = len(vecs)
+    rank = 0
+    while num_unranked > 0:
+        extended = np.tile(vecs, (vecs.shape[0], 1, 1))
+        counts = np.sum(
+            np.logical_and(
+                np.all(extended <= np.swapaxes(extended, 0, 1), axis=2),
+                np.any(extended < np.swapaxes(extended, 0, 1), axis=2),
+            ),
+            axis=1,
+        )
+        vecs[counts == 0] = 1.1  # mark as ranked
+        ranks[counts == 0] = rank
+        rank += 1
+        num_unranked -= np.sum(counts == 0)
+    return ranks
 
 
 def _get_observation_pairs(
     study: Study, param_names: List[str]
-) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, float]]]:
+) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, List[float]]]]:
     """Get observation pairs from the study.
 
     This function collects observation pairs from the complete or pruned trials of the study.
@@ -494,9 +696,12 @@ def _get_observation_pairs(
     ``(-step, value)``).
     """
 
-    sign = 1
-    if study.direction == StudyDirection.MAXIMIZE:
-        sign = -1
+    signs = []
+    for d in study.directions:
+        if d == StudyDirection.MINIMIZE:
+            signs.append(1)
+        else:
+            signs.append(-1)
 
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
@@ -508,16 +713,19 @@ def _get_observation_pairs(
 
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE:
-            if trial.value is None:
+            if trial.values is None:
                 continue
-            score = (-float("inf"), sign * trial.value)
+            score = (-float("inf"), [sign * v for sign, v in zip(signs, trial.values)])
         elif trial.state is TrialState.PRUNED:
+            if study._is_multi_objective():
+                continue
+
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
                 if math.isnan(intermediate_value):
-                    score = (-step, float("inf"))
+                    score = (-step, [float("inf")])
                 else:
-                    score = (-step, sign * intermediate_value)
+                    score = (-step, [signs[0] * intermediate_value])
             else:
                 score = (float("inf"), 0.0)
         else:
