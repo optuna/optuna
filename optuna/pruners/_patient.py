@@ -70,7 +70,7 @@ class PatientPruner(BasePruner):
     ) -> None:
 
         if patience < 0:
-            raise ValueError("patience cannot be negative but got {}.".format(patience))
+            raise ValueError(f"patience cannot be negative but got {patience}.")
 
         self._wrapped_pruner = wrapped_pruner
         self._patience = patience
