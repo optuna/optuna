@@ -5,6 +5,11 @@ import pytest
 import optuna
 
 
+def test_patient_pruner_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        optuna.pruners.PatientPruner(None, 0)
+
+
 def test_patient_pruner_patience() -> None:
 
     optuna.pruners.PatientPruner(None, 0)
