@@ -53,7 +53,7 @@ class PatientPruner(BasePruner):
 
     Args:
         wrapped_pruner:
-            Wrapped pruner to perform pruning when ``PatientPruner`` allows a
+            Wrapped pruner to perform pruning when :class:`~optuna.pruners.PatientPruner` allows a
             trial to be pruned. If it is :obj:`None`, this pruner is equivalent to
             early-stopping taken the intermediate values in the individual trial.
         patience:
