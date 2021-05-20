@@ -68,10 +68,7 @@ In addition, integration modules are available for the following libraries, prov
 ### Examples of Samplers
 
 * [Warm Starting CMA-ES](https://github.com/optuna/optuna-examples/blob/main/samplers/warm_starting_cma.py)
-
-### Examples of User-Defined Sampler
-
-* [SimulatedAnnealingSampler](https://github.com/optuna/optuna-examples/blob/main/samplers/simulated_annealing_sampler.py)
+* [User-defined SimulatedAnnealingSampler](https://github.com/optuna/optuna-examples/blob/main/samplers/simulated_annealing_sampler.py)
 
 ### Examples of Multi-Objective Optimization
 
