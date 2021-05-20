@@ -19,6 +19,15 @@ def test_patient_pruner_patience() -> None:
         optuna.pruners.PatientPruner(None, -1)
 
 
+def test_patient_pruner_min_delta() -> None:
+
+    optuna.pruners.PatientPruner(None, 0, 0.0)
+    optuna.pruners.PatientPruner(None, 0, 1.0)
+
+    with pytest.raises(ValueError):
+        optuna.pruners.PatientPruner(None, 0, -1)
+
+
 def test_patient_pruner_with_one_trial() -> None:
 
     pruner = optuna.pruners.PatientPruner(None, 0)
@@ -60,8 +69,8 @@ def test_patient_pruner_intermediate_values_nan() -> None:
         (1, 0, "maximize", [2, 1, 0], [2]),
         (0, 0, "minimize", [0, 1], [1]),
         (1, 0, "minimize", [0, 1, 2], [2]),
-        (0, -1.0, "maximize", [1, 0], []),
-        (1, -1.0, "maximize", [3, 2, 1, 0], [3]),
+        (0, 1.0, "maximize", [1, 0], []),
+        (1, 1.0, "maximize", [3, 2, 1, 0], [3]),
         (0, 1.0, "minimize", [0, 1], []),
         (1, 1.0, "minimize", [0, 1, 2, 3], [3]),
     ],

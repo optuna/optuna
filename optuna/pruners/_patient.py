@@ -61,8 +61,8 @@ class PatientPruner(BasePruner):
             ``patience`` consecutive steps.
         min_delta:
             Tolerance value to check whether or not the objective improves.
-            This value should be non-negative for minimization,
-            and it should be non-positive for maximization.
+            This value should be non-negative.
+
     """
 
     def __init__(
@@ -71,6 +71,9 @@ class PatientPruner(BasePruner):
 
         if patience < 0:
             raise ValueError(f"patience cannot be negative but got {patience}.")
+
+        if min_delta < 0:
+            raise ValueError(f"min_delta cannot be negative but got {min_delta}.")
 
         self._wrapped_pruner = wrapped_pruner
         self._patience = patience
@@ -106,7 +109,7 @@ class PatientPruner(BasePruner):
                 scores_after_patience
             )
         else:
-            maybe_prune = np.nanmax(scores_before_patience) + self._min_delta > np.nanmax(
+            maybe_prune = np.nanmax(scores_before_patience) - self._min_delta > np.nanmax(
                 scores_after_patience
             )
 
