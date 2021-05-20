@@ -16,7 +16,7 @@ def train(*args: Any, **kwargs: Any) -> Any:
 
     It tunes important hyperparameters (e.g., ``min_child_samples`` and ``feature_fraction``) in a
     stepwise manner. It is a drop-in replacement for `lightgbm.train()`_. See
-    `a simple example of LightGBM Tuner <https://github.com/optuna/optuna/blob/master/examples/
+    `a simple example of LightGBM Tuner <https://github.com/optuna/optuna-examples/tree/main/
     lightgbm/lightgbm_tuner_simple.py>`_ which optimizes the validation log loss of cancer
     detection.
 

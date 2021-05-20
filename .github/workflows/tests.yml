@@ -70,13 +70,6 @@ jobs:
         pip install --use-deprecated=legacy-resolver scikit-optimize
         pip install --use-deprecated=legacy-resolver cma
 
-    # TODO: Add the deselected tests back after fixing version constraint of sklearn.
     - name: Tests
       run: |
-        if [ ${{ matrix.python-version }} = 3.9 ]; then
-          pytest tests --ignore tests/integration_tests \
-            --deselect tests/samplers_tests/test_samplers.py::test_nan_objective_value \
-            --deselect tests/samplers_tests/test_samplers.py::test_partial_fixed_sampling
-        else
-          pytest tests --ignore tests/integration_tests
-        fi
+        pytest tests --ignore tests/integration_tests
