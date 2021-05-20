@@ -134,11 +134,11 @@ for _ in range(n_trials):
 #                pruned_trial = True
 #                break
 #
-#    if pruned_trial:
-#        study.tell(trial, state=optuna.trial.TrialState.PRUNED)  # tell the pruned state
-#    else:
-#        score = clf.score(X_valid, y_valid)
-#        study.tell(trial, score)  # tell objective value
+#        if pruned_trial:
+#            study.tell(trial, state=optuna.trial.TrialState.PRUNED)  # tell the pruned state
+#        else:
+#            score = clf.score(X_valid, y_valid)
+#            study.tell(trial, score)  # tell objective value
 
 ###################################################################################################
 # .. note::
