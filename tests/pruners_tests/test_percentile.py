@@ -62,7 +62,7 @@ def test_percentile_pruner_with_one_trial() -> None:
     trial.report(1, 1)
 
     # A pruner is not activated at a first trial.
-    assert not trial.should_prune() 
+    assert not trial.should_prune()
 
 
 @pytest.mark.parametrize(
@@ -79,7 +79,7 @@ def test_25_percentile_pruner_intermediate_values(
     for v in intermediate_values:
         trial = study.ask()
         trial.report(v, 1)
-        study.tell(trial, v) 
+        study.tell(trial, v)
 
     trial = study.ask()
     # A pruner is not activated if a trial has no intermediate values.
@@ -87,7 +87,7 @@ def test_25_percentile_pruner_intermediate_values(
 
     trial.report(latest_value, 1)
     # A pruner is activated if a trial has an intermediate value.
-    assert trial.should_prune() 
+    assert trial.should_prune()
 
 
 def test_25_percentile_pruner_intermediate_values_nan() -> None:
@@ -98,19 +98,19 @@ def test_25_percentile_pruner_intermediate_values_nan() -> None:
     trial = study.ask()
     trial.report(float("nan"), 1)
     # A pruner is not activated if the study does not have any previous trials.
-    assert not trial.should_prune() 
-    study.tell(trial, -1) 
+    assert not trial.should_prune()
+    study.tell(trial, -1)
 
     trial = study.ask()
     trial.report(float("nan"), 1)
     # A pruner is activated if the best intermediate value of this trial is NaN.
-    assert trial.should_prune() 
-    study.tell(trial, -1) 
+    assert trial.should_prune()
+    study.tell(trial, -1)
 
-    trial = study.ask() 
+    trial = study.ask()
     trial.report(1, 1)
     # A pruner is not activated if the 25 percentile intermediate value is NaN.
-    assert not trial.should_prune() 
+    assert not trial.should_prune()
 
 
 @pytest.mark.parametrize(
