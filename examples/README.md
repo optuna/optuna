@@ -65,6 +65,10 @@ In addition, integration modules are available for the following libraries, prov
 * [Pruning with XGBoost integration module](https://github.com/optuna/optuna-examples/blob/main/xgboost/xgboost_integration.py)
 * [Pruning with XGBoost integration module (cross validation, XGBoost.cv)](https://github.com/optuna/optuna-examples/blob/main/xgboost/xgboost_cv_integration.py)
 
+### Examples of Samplers
+
+* [Warm Starting CMA-ES](https://github.com/optuna/optuna-examples/blob/main/samplers/warm_starting_cma.py)
+
 ### Examples of User-Defined Sampler
 
 * [SimulatedAnnealingSampler](https://github.com/optuna/optuna-examples/blob/main/samplers/simulated_annealing_sampler.py)
