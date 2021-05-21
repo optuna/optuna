@@ -1357,6 +1357,12 @@ class _VersionManager(object):
         config = self._create_alembic_config()
         alembic.command.upgrade(config, "head")
 
+        with _create_scoped_session(self.scoped_session, True) as session:
+            version_info = models.VersionInfoModel.find(session)
+            assert version_info is not None
+            version_info.schema_version = models.SCHEMA_VERSION
+            version_info.library_version = version.__version__
+
     def _is_alembic_supported(self) -> bool:
 
         with _create_scoped_session(self.scoped_session) as session:

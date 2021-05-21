@@ -953,3 +953,45 @@ def test_invalid_multivariate_and_group() -> None:
 def test_group_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(multivariate=True, group=True)
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_constant_liar_observation_pairs(direction: str) -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = TPESampler(constant_liar=True)
+
+    study = optuna.create_study(sampler=sampler, direction=direction)
+
+    trial = study.ask()
+    trial.suggest_int("x", 2, 2)
+
+    assert (
+        len(study.trials) == 1 and study.trials[0].state == optuna.trial.TrialState.RUNNING
+    ), "Precondition"
+
+    # The value of the constant liar should be penalizing, i.e. `float("inf")` during minimization
+    # and `-float("inf")` during maximization.
+    expected_values = [(-float("inf"), float("inf") * (-1 if direction == "maximize" else 1))]
+
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=False) == (
+        {"x": []},
+        [],
+    )
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=True) == (
+        {"x": [2]},
+        expected_values,
+    )
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=False) == (
+        {"x": []},
+        [],
+    )
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=True) == (
+        {"x": [2]},
+        expected_values,
+    )
+
+
+def test_constant_liar_experimental_warning() -> None:
+    with pytest.warns(optuna.exceptions.ExperimentalWarning):
+        _ = TPESampler(constant_liar=True)
