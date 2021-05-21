@@ -55,3 +55,35 @@ class MaxTrialsCallback:
         n_complete = len(trials)
         if n_complete >= self._n_trials:
             study.stop()
+
+
+@experimental("2.8.0")
+def RetryFailedTrialCallback(study, trial):
+    """When a trail fails, this callback can be used with the :class:`optuna.storage` class to
+    recreate the trial in :obj:`TrialState.WAITING` to queue up the trial to be run again.
+
+    This is helpful in environments where trials may fail due to external conditions, such as
+    being pre-empted by other processes.
+
+    Usage:
+
+        .. testcode::
+
+            study = optuna.create_study()
+            study.optimize(
+                objective,
+                callbacks=[MaxTrialsCallback(10, states=(TrialState.COMPLETE,))],
+            )
+
+    """
+
+    trial.user_attrs.update({"last_failed_trial": trial.number})
+    study.add_trial(
+        optuna.create_trial(
+            state=optuna.trial.TrialState.WAITING,
+            params=trial.params,
+            distributions=trial.distributions,
+            user_attrs=trial.user_attrs,
+            system_attrs=trial.system_attrs,
+        )
+    )
