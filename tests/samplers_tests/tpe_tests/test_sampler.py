@@ -982,14 +982,6 @@ def test_constant_liar_observation_pairs(direction: str) -> None:
         {"x": [2]},
         expected_values,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=False) == (
-        {"x": []},
-        [],
-    )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=True) == (
-        {"x": [2]},
-        expected_values,
-    )
 
 
 def test_constant_liar_experimental_warning() -> None:

@@ -190,8 +190,8 @@ class _ParzenEstimator:
         weights_func = self._parameters.weights
         n_observations = self._n_observations
         if consider_prior:
-            weights = np.empty(n_observations + 1)
-            weights[:-1] = weights_func(n_observations)
+            weights = np.zeros(n_observations + 1)
+            weights[:-1] = weights_func(n_observations)[:n_observations]
             weights[-1] = prior_weight
         else:
             weights = weights_func(n_observations)
