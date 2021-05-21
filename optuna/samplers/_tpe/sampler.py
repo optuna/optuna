@@ -506,7 +506,8 @@ def _get_observation_pairs(
     """Get observation pairs from the study.
 
     This function collects observation pairs from the complete or pruned trials of the study.
-    The values for trials that don't contain the parameter named ``param_name`` are set to None.
+    In addition, if ``constant_liar`` is :obj:`True`, the running trials are considered.
+    The values for trials that don't contain the parameter in the ``param_names`` are skipped.
 
     An observation pair fundamentally consists of a parameter value and an objective value.
     However, due to the pruning mechanism of Optuna, final objective values are not always
