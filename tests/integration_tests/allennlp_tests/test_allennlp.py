@@ -380,31 +380,6 @@ def test_allennlp_pruning_callback_with_executor(
                 assert getattr(ret_pruner, "_{}".format(key)) == value
 
 
-def test_allennlp_pruning_callback_with_invalid_executor() -> None:
-    class SomeNewPruner(optuna.pruners.BasePruner):
-        def __init__(self) -> None:
-            pass
-
-        def prune(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> bool:
-            return False
-
-    input_config_file = (
-        "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
-    )
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        storage = "sqlite:///" + os.path.join(tmp_dir, "result.db")
-        serialization_dir = os.path.join(tmp_dir, "allennlp")
-        pruner = SomeNewPruner()
-
-        study = optuna.create_study(direction="maximize", pruner=pruner, storage=storage)
-        trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-        trial.suggest_float("DROPOUT", 0.0, 0.5)
-
-        with pytest.raises(ValueError):
-            optuna.integration.AllenNLPExecutor(trial, input_config_file, serialization_dir)
-
-
 def test_infer_and_cast() -> None:
     assert optuna.integration.allennlp._infer_and_cast(None) is None
     assert optuna.integration.allennlp._infer_and_cast("True") is True
