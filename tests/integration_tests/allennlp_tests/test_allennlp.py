@@ -378,12 +378,3 @@ def test_allennlp_pruning_callback_with_executor(
 
             else:
                 assert getattr(ret_pruner, "_{}".format(key)) == value
-
-
-def test_infer_and_cast() -> None:
-    assert optuna.integration.allennlp._infer_and_cast(None) is None
-    assert optuna.integration.allennlp._infer_and_cast("True") is True
-    assert optuna.integration.allennlp._infer_and_cast("False") is False
-    assert optuna.integration.allennlp._infer_and_cast("3.14") == 3.14
-    assert optuna.integration.allennlp._infer_and_cast("42") == 42
-    assert optuna.integration.allennlp._infer_and_cast("auto") == "auto"
