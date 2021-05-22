@@ -79,7 +79,7 @@ def test_build_params_when_optuna_and_environment_variable_both_exist() -> None:
     os.environ.pop("DROPOUT")
 
     # Optuna trial overwrites a parameter specified by environment variable
-    assert params["trainer"]["lr"] == 1e-2
+    assert params["trainer"]["optimizer"]["lr"] == 1e-2
     path = params["model"]["text_field_embedder"]["token_embedders"]["token_characters"]["dropout"]
     assert path == 0.0
 
@@ -223,6 +223,39 @@ def test_dump_best_config() -> None:
         model_config = best_config["model"]
         target_config = model_config["text_field_embedder"]["token_embedders"]["token_characters"]
         assert target_config["dropout"] == dropout
+
+
+def test_dump_best_config_with_environment_variables() -> None:
+    with tempfile.TemporaryDirectory() as tmp_dir:
+
+        def objective(trial: optuna.Trial) -> float:
+            trial.suggest_float("DROPOUT", dropout, dropout)
+            trial.suggest_float("LEARNING_RATE", 1e-2, 1e-1)
+            executor = optuna.integration.AllenNLPExecutor(
+                trial,
+                input_config_file,
+                tmp_dir,
+                include_package="tests.integration_tests.allennlp_tests.tiny_single_id",
+            )
+            return executor.run()
+
+        dropout = 0.5
+        input_config_file = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "example_with_environment_variables.jsonnet",
+        )
+        output_config_file = os.path.join(tmp_dir, "result.json")
+
+        os.environ["TRAIN_PATH"] = "tests/integration_tests/allennlp_tests/sentences.train"
+        os.environ["VALID_PATH"] = "tests/integration_tests/allennlp_tests/sentences.valid"
+
+        study = optuna.create_study(direction="maximize")
+        study.optimize(objective, n_trials=1)
+
+        optuna.integration.allennlp.dump_best_config(input_config_file, output_config_file, study)
+        best_config = json.loads(_jsonnet.evaluate_file(output_config_file))
+        assert os.getenv("TRAIN_PATH") == best_config["train_data_path"]
+        assert os.getenv("VALID_PATH") == best_config["validation_data_path"]
 
 
 def test_allennlp_pruning_callback() -> None:
