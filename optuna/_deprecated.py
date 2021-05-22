@@ -21,6 +21,13 @@ _DEPRECATION_NOTE_TEMPLATE = """
 """
 
 
+_DEPRECATION_WARNING_TEMPLATE = (
+    "{name} has been deprecated in v{d_ver}. "
+    "This feature will be removed in v{r_ver}. "
+    "See https://github.com/optuna/optuna/releases/tag/v{d_ver}."
+)
+
+
 def _validate_two_version(old_version: str, new_version: str) -> None:
     if version.parse(old_version) > version.parse(new_version):
         raise ValueError(
@@ -101,16 +108,14 @@ def deprecated(
             # TODO(mamu): Annotate this correctly.
             @functools.wraps(func)
             def new_func(*args: Any, **kwargs: Any) -> Any:
-                warnings.warn(
-                    "{} has been deprecated in v{}. "
-                    "This feature will be removed in v{}.".format(
-                        name if name is not None else func.__name__,
-                        deprecated_version,
-                        removed_version,
-                    ),
-                    FutureWarning,
-                    stacklevel=2,
+                message = _DEPRECATION_WARNING_TEMPLATE.format(
+                    name=(name if name is not None else func.__name__),
+                    d_ver=deprecated_version,
+                    r_ver=removed_version,
                 )
+                if text is not None:
+                    message += " " + text
+                warnings.warn(message, FutureWarning, stacklevel=2)
 
                 return func(*args, **kwargs)  # type: ignore
 
@@ -125,13 +130,15 @@ def deprecated(
 
             @functools.wraps(_original_init)
             def wrapped_init(self, *args, **kwargs) -> None:  # type: ignore
+                message = _DEPRECATION_WARNING_TEMPLATE.format(
+                    name=(name if name is not None else cls.__name__),
+                    d_ver=deprecated_version,
+                    r_ver=removed_version,
+                )
+                if text is not None:
+                    message += " " + text
                 warnings.warn(
-                    "{} has been deprecated in v{}. "
-                    "This feature will be removed in v{}.".format(
-                        name if name is not None else cls.__name__,
-                        deprecated_version,
-                        removed_version,
-                    ),
+                    message,
                     FutureWarning,
                     stacklevel=2,
                 )

@@ -5,6 +5,7 @@ from typing import Optional
 import numpy
 
 from optuna import distributions
+from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
@@ -26,7 +27,7 @@ class RandomSampler(BaseSampler):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -5, 5)
+                x = trial.suggest_float("x", -5, 5)
                 return x ** 2
 
 
@@ -65,38 +66,8 @@ class RandomSampler(BaseSampler):
         param_distribution: distributions.BaseDistribution,
     ) -> Any:
 
-        if isinstance(param_distribution, distributions.UniformDistribution):
-            return self._rng.uniform(param_distribution.low, param_distribution.high)
-        elif isinstance(param_distribution, distributions.LogUniformDistribution):
-            log_low = numpy.log(param_distribution.low)
-            log_high = numpy.log(param_distribution.high)
-            return float(numpy.exp(self._rng.uniform(log_low, log_high)))
-        elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
-            q = param_distribution.q
-            r = param_distribution.high - param_distribution.low
-            # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
-            low = 0 - 0.5 * q
-            high = r + 0.5 * q
-            s = self._rng.uniform(low, high)
-            v = numpy.round(s / q) * q + param_distribution.low
-            # v may slightly exceed range due to round-off errors.
-            return float(min(max(v, param_distribution.low), param_distribution.high))
-        elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
-            r = (param_distribution.high - param_distribution.low) / param_distribution.step
-            # numpy.random.randint includes low but excludes high.
-            s = self._rng.randint(0, r + 1)
-            v = s * param_distribution.step + param_distribution.low
-            return int(v)
-        elif isinstance(param_distribution, distributions.IntLogUniformDistribution):
-            log_low = numpy.log(param_distribution.low - 0.5)
-            log_high = numpy.log(param_distribution.high + 0.5)
-            s = numpy.exp(self._rng.uniform(log_low, log_high))
-            v = numpy.round(s)
-            return int(min(max(v, param_distribution.low), param_distribution.high))
-        elif isinstance(param_distribution, distributions.CategoricalDistribution):
-            choices = param_distribution.choices
-            index = self._rng.randint(0, len(choices))
-            return choices[index]
-        else:
-            raise NotImplementedError
+        search_space = {param_name: param_distribution}
+        trans = _SearchSpaceTransform(search_space)
+        trans_params = self._rng.uniform(trans.bounds[:, 0], trans.bounds[:, 1])
+
+        return trans.untransform(trans_params)[param_name]

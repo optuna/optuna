@@ -23,6 +23,7 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -35,13 +36,6 @@ EXAMPLE_ATTRS = {
     "none": None,
     "json_serializable": {"baseline_score": 0.001, "tags": ["image", "classification"]},
 }
-
-STORAGE_MODES = [
-    "inmemory",
-    "sqlite",
-    "redis",
-    "cache",
-]
 
 
 def test_get_storage() -> None:
@@ -85,7 +79,7 @@ def test_create_new_study_unique_id(storage_mode: str) -> None:
         study_id3 = storage.create_new_study()
 
         # Study id must not be reused after deletion.
-        if not (isinstance(storage, RDBStorage) or isinstance(storage, _CachedStorage)):
+        if not isinstance(storage, (RDBStorage, _CachedStorage)):
             # TODO(ytsmiling) Fix RDBStorage so that it does not reuse study_id.
             assert len({study_id, study_id2, study_id3}) == 3
         summaries = storage.get_all_study_summaries()
@@ -458,10 +452,14 @@ def test_set_trial_state(storage_mode: str) -> None:
             if state == TrialState.WAITING:
                 continue
             assert storage.get_trial(trial_id).state == TrialState.RUNNING
+            datetime_start_prev = storage.get_trial(trial_id).datetime_start
             if state.is_finished():
                 storage.set_trial_values(trial_id, (0.0,))
             storage.set_trial_state(trial_id, state)
             assert storage.get_trial(trial_id).state == state
+            # Repeated state changes to RUNNING should not trigger further datetime_start changes.
+            if state == TrialState.RUNNING:
+                assert storage.get_trial(trial_id).datetime_start == datetime_start_prev
             if state.is_finished():
                 assert storage.get_trial(trial_id).datetime_complete is not None
             else:
@@ -887,7 +885,7 @@ def test_get_n_trials(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study_id_to_summaries, _ = _setup_studies(storage, n_study=2, n_trial=7, seed=50)
-        for study_id in study_id_to_summaries.keys():
+        for study_id in study_id_to_summaries:
             assert storage.get_n_trials(study_id) == 7
 
         non_existent_study_id = max(study_id_to_summaries.keys()) + 1
@@ -1060,3 +1058,32 @@ def test_get_best_trial_for_multi_objective_optimization(storage_mode: str) -> N
             storage.create_new_trial(study_id, template_trial=template_trial)
         with pytest.raises(ValueError):
             storage.get_best_trial(study_id)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        with pytest.raises(KeyError):  # Matching study does not exist.
+            storage.get_trial_id_from_study_id_trial_number(study_id=0, trial_number=0)
+
+        study_id = storage.create_new_study()
+
+        with pytest.raises(KeyError):  # Matching trial does not exist.
+            storage.get_trial_id_from_study_id_trial_number(study_id, trial_number=0)
+
+        trial_id = storage.create_new_trial(study_id)
+
+        assert trial_id == storage.get_trial_id_from_study_id_trial_number(
+            study_id, trial_number=0
+        )
+
+        # Trial IDs are globally unique within a storage but numbers are only unique within a
+        # study. Create a second study within the same storage.
+        study_id = storage.create_new_study()
+
+        trial_id = storage.create_new_trial(study_id)
+
+        assert trial_id == storage.get_trial_id_from_study_id_trial_number(
+            study_id, trial_number=0
+        )

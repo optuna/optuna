@@ -1,4 +1,5 @@
 from collections import defaultdict
+import math
 from typing import Callable
 from typing import cast
 from typing import DefaultDict
@@ -13,7 +14,10 @@ from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
+from optuna.visualization.matplotlib._utils import _is_categorical
+from optuna.visualization.matplotlib._utils import _is_log_scale
 
 
 if _imports.is_successful():
@@ -32,21 +36,21 @@ def plot_parallel_coordinate(
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
 ) -> "Axes":
-    """Plot the high-dimentional parameter relationships in a study with Matplotlib.
+    """Plot the high-dimensional parameter relationships in a study with Matplotlib.
 
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_parallel_coordinate` for an example.
 
     Example:
 
-        The following code snippet shows how to plot the high-dimentional parameter relationships.
+        The following code snippet shows how to plot the high-dimensional parameter relationships.
 
         .. plot::
 
             import optuna
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -100, 100)
+                x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
 
@@ -81,11 +85,7 @@ def plot_parallel_coordinate(
     """
 
     _imports.check()
-    if target is None and study._is_multi_objective():
-        raise ValueError(
-            "If the `study` is being used for multi-objective optimization, "
-            "please specify the `target`."
-        )
+    _check_plot_args(study, target, target_name)
     return _get_parallel_coordinate_plot(study, params, target, target_name)
 
 
@@ -126,7 +126,7 @@ def _get_parallel_coordinate_plot(
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
         all_params = set(params)
-    sorted_params = sorted(list(all_params))
+    sorted_params = sorted(all_params)
 
     obj_org = [target(t) for t in trials]
     obj_min = min(obj_org)
@@ -137,13 +137,16 @@ def _get_parallel_coordinate_plot(
     cat_param_names = []
     cat_param_values = []
     cat_param_ticks = []
+    log_param_names = []
     param_values = []
     var_names = [target_name]
     for p_name in sorted_params:
         values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
-        try:
-            tuple(map(float, values))
-        except (TypeError, ValueError):
+
+        if _is_log_scale(trials, p_name):
+            values = [math.log10(v) for v in values]
+            log_param_names.append(p_name)
+        elif _is_categorical(trials, p_name):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
             values = [vocab[v] for v in values]
             cat_param_names.append(p_name)
@@ -154,8 +157,14 @@ def _get_parallel_coordinate_plot(
         p_min = min(values)
         p_max = max(values)
         p_w = p_max - p_min
-        for i, v in enumerate(values):
-            dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
+
+        if p_w == 0.0:
+            center = obj_w / 2 + obj_min
+            for i in range(len(values)):
+                dims_obj_base[i].append(center)
+        else:
+            for i, v in enumerate(values):
+                dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
 
         var_names.append(p_name if len(p_name) < 20 else "{}...".format(p_name[:17]))
         param_values.append(values)
@@ -164,17 +173,19 @@ def _get_parallel_coordinate_plot(
     # Ref: https://stackoverflow.com/a/50029441
     ax.set_xlim(0, len(sorted_params))
     ax.set_ylim(obj_min, obj_max)
-    xs = [range(0, len(sorted_params) + 1) for i in range(len(dims_obj_base))]
+    xs = [range(len(sorted_params) + 1) for _ in range(len(dims_obj_base))]
     segments = [np.column_stack([x, y]) for x, y in zip(xs, dims_obj_base)]
     lc = LineCollection(segments, cmap=cmap)
     lc.set_array(np.asarray([target(t) for t in trials] + [0]))
     axcb = fig.colorbar(lc, pad=0.1)
     axcb.set_label(target_name)
-    plt.xticks(range(0, len(sorted_params) + 1), var_names, rotation=330)
+    plt.xticks(range(len(sorted_params) + 1), var_names, rotation=330)
 
     for i, p_name in enumerate(sorted_params):
         ax2 = ax.twinx()
         ax2.set_ylim(min(param_values[i]), max(param_values[i]))
+        if _is_log_scale(trials, p_name):
+            ax2.set_yscale("log")
         ax2.spines["top"].set_visible(False)
         ax2.spines["bottom"].set_visible(False)
         ax2.get_xaxis().set_visible(False)

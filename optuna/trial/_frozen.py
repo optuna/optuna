@@ -317,8 +317,10 @@ class FrozenTrial(BaseTrial):
 
     def _validate(self) -> None:
 
-        if self.datetime_start is None:
-            raise ValueError("`datetime_start` is supposed to be set.")
+        if self.state != TrialState.WAITING and self.datetime_start is None:
+            raise ValueError(
+                "`datetime_start` is supposed to be set when the trial state is not waiting."
+            )
 
         if self.state.is_finished():
             if self.datetime_complete is None:
@@ -504,7 +506,7 @@ class FrozenTrial(BaseTrial):
 @experimental("2.0.0")
 def create_trial(
     *,
-    state: Optional[TrialState] = None,
+    state: TrialState = TrialState.COMPLETE,
     value: Optional[float] = None,
     values: Optional[Sequence[float]] = None,
     params: Optional[Dict[str, Any]] = None,
@@ -546,15 +548,23 @@ def create_trial(
         Please note that this is a low-level API. In general, trials that are passed to objective
         functions are created inside :func:`~optuna.study.Study.optimize`.
 
+    .. note::
+        When ``state`` is ``TrialState.COMPLETE``, the following parameters are
+        required:
+        * ``params``
+        * ``distributions``
+        * ``value`` or ``values``
+
     Args:
         state:
             Trial state.
         value:
-            Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
+            Trial objective value. Must be specified if ``state`` is ``None``
+            or :class:`TrialState.COMPLETE`.
         values:
             Sequence of the trial objective values. The length is greater than 1 if the problem is
             multi-objective optimization.
-            Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
+            Must be specified if ``state`` is ``None`` or :class:`TrialState.COMPLETE`.
         params:
             Dictionary with suggested parameters of the trial.
         distributions:
@@ -579,9 +589,12 @@ def create_trial(
     user_attrs = user_attrs or {}
     system_attrs = system_attrs or {}
     intermediate_values = intermediate_values or {}
-    state = state or TrialState.COMPLETE
 
-    datetime_start = datetime.datetime.now()
+    if state == TrialState.WAITING:
+        datetime_start = None
+    else:
+        datetime_start = datetime.datetime.now()
+
     if state.is_finished():
         datetime_complete: Optional[datetime.datetime] = datetime_start
     else:

@@ -2,18 +2,24 @@ import copy
 import math
 import pickle
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
+from typing import Union
 import warnings
 
 from cmaes import CMA
+from cmaes import get_warm_start_mgd
+from cmaes import SepCMA
 import numpy as np
 
 import optuna
 from optuna import logging
 from optuna._study_direction import StudyDirection
+from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
@@ -28,8 +34,11 @@ _EPS = 1e-10
 _SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
+CmaClass = Union[CMA, SepCMA]
+
+
 class CmaEsSampler(BaseSampler):
-    """A Sampler using CMA-ES algorithm.
+    """A sampler using `cmaes <https://github.com/CyberAgent/cmaes>`_ as the backend.
 
     Example:
 
@@ -41,7 +50,7 @@ class CmaEsSampler(BaseSampler):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -1, 1)
+                x = trial.suggest_float("x", -1, 1)
                 y = trial.suggest_int("y", -1, 1)
                 return x ** 2 + y
 
@@ -51,14 +60,17 @@ class CmaEsSampler(BaseSampler):
             study.optimize(objective, n_trials=20)
 
     Please note that this sampler does not support CategoricalDistribution.
+    However, :class:`~optuna.distributions.DiscreteUniformDistribution`
+    (:func:`~optuna.trial.Trial.suggest_discrete_uniform`) and
+    Int(Log)Distribution (:func:`~optuna.trial.Trial.suggest_int`) are supported.
+
     If your search space contains categorical parameters, I recommend you
     to use :class:`~optuna.samplers.TPESampler` instead.
     Furthermore, there is room for performance improvements in parallel
     optimization settings. This sampler cannot use some trials for updating
     the parameters of multivariate normal distribution.
 
-    For further information about CMA-ES algorithm and its restarting strategy
-    algorithm, please refer to the following papers:
+    For further information about CMA-ES algorithm, please refer to the following papers:
 
     - `N. Hansen, The CMA Evolution Strategy: A Tutorial. arXiv:1604.00772, 2016.
       <https://arxiv.org/abs/1604.00772>`_
@@ -66,6 +78,13 @@ class CmaEsSampler(BaseSampler):
       size. In Proceedings of the IEEE Congress on Evolutionary Computation (CEC 2005),
       pages 1769–1776. IEEE Press, 2005.
       <http://www.cmap.polytechnique.fr/~nikolaus.hansen/cec2005ipopcmaes.pdf>`_
+    - `Raymond Ros, Nikolaus Hansen. A Simple Modification in CMA-ES Achieving Linear Time and
+      Space Complexity. 10th International Conference on Parallel Problem Solving From Nature,
+      Sep 2008, Dortmund, Germany. inria-00287367.
+      <https://hal.inria.fr/inria-00287367/document>`_
+    - `Masahiro Nomura, Shuhei Watanabe, Youhei Akimoto, Yoshihiko Ozaki, Masaki Onishi.
+      Warm Starting CMA-ES for Hyperparameter Optimization, AAAI. 2021.
+      <https://arxiv.org/abs/2012.06932>`_
 
     .. seealso::
         You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
@@ -143,6 +162,28 @@ class CmaEsSampler(BaseSampler):
                 used. Please see `the benchmark result
                 <https://github.com/optuna/optuna/pull/1229>`_ for the details.
 
+        use_separable_cma:
+            If this is :obj:`True`, the covariance matrix is constrained to be diagonal.
+            Due to reduce the model complexity, the learning rate for the covariance matrix
+            is increased. Consequently, this algorithm outperforms CMA-ES on separable functions.
+
+            .. note::
+                Added in v2.6.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.6.0.
+
+        source_trials:
+            This option is for Warm Starting CMA-ES, a method to transfer prior knowledge on
+            similar HPO tasks through the initialization of CMA-ES. This method estimates a
+            promising distribution from ``source_trials`` and generates the parameter of
+            multivariate gaussian distribution. Please note that it is prohibited to use
+            ``x0``, ``sigma0``, or ``use_separable_cma`` argument together.
+
+            .. note::
+                Added in v2.6.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.6.0.
+
     Raises:
         ValueError:
             If ``restart_strategy`` is not 'ipop' or :obj:`None`.
@@ -160,6 +201,8 @@ class CmaEsSampler(BaseSampler):
         consider_pruned_trials: bool = False,
         restart_strategy: Optional[str] = None,
         inc_popsize: int = 2,
+        use_separable_cma: bool = False,
+        source_trials: Optional[List[FrozenTrial]] = None,
     ) -> None:
         self._x0 = x0
         self._sigma0 = sigma0
@@ -171,6 +214,8 @@ class CmaEsSampler(BaseSampler):
         self._consider_pruned_trials = consider_pruned_trials
         self._restart_strategy = restart_strategy
         self._inc_popsize = inc_popsize
+        self._use_separable_cma = use_separable_cma
+        self._source_trials = source_trials
 
         if self._restart_strategy:
             warnings.warn(
@@ -184,6 +229,32 @@ class CmaEsSampler(BaseSampler):
                 "`consider_pruned_trials` option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
+            )
+
+        if self._use_separable_cma:
+            warnings.warn(
+                "`use_separable_cma` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
+        if self._source_trials is not None:
+            warnings.warn(
+                "`source_trials` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
+        if source_trials is not None and (x0 is not None or sigma0 is not None):
+            raise ValueError(
+                "It is prohibited to pass `source_trials` argument when "
+                "x0 or sigma0 is specified."
+            )
+
+        # TODO(c-bata): Support WS-sep-CMA-ES.
+        if source_trials is not None and use_separable_cma:
+            raise ValueError(
+                "It is prohibited to pass `source_trials` argument when " "using separable CMA-ES."
             )
 
         # TODO(c-bata): Support BIPOP-CMA-ES.
@@ -254,22 +325,19 @@ class CmaEsSampler(BaseSampler):
             self._warn_independent_sampling = False
             return {}
 
-        # TODO(c-bata): Remove `ordered_keys` by passing `ordered_dict=True`
-        # to `intersection_search_space`.
-        ordered_keys = [key for key in search_space]
-        ordered_keys.sort()
+        trans = _SearchSpaceTransform(search_space)
 
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
             n_restarts = 0
-            optimizer = self._init_optimizer(search_space, ordered_keys)
+            optimizer = self._init_optimizer(trans, study.direction)
 
         if self._restart_strategy is None:
             generation_attr_key = "cma:generation"  # for backward compatibility
         else:
             generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
 
-        if optimizer.dim != len(ordered_keys):
+        if optimizer.dim != len(trans.bounds):
             _logger.info(
                 "`CmaEsSampler` does not support dynamic search space. "
                 "`{}` is used instead of `CmaEsSampler`.".format(
@@ -290,10 +358,7 @@ class CmaEsSampler(BaseSampler):
             solutions: List[Tuple[np.ndarray, float]] = []
             for t in solution_trials[: optimizer.population_size]:
                 assert t.value is not None, "completed trials must have a value"
-                x = np.array(
-                    [_to_cma_param(search_space[k], t.params[k]) for k in ordered_keys],
-                    dtype=float,
-                )
+                x = trans.transform(t.params)
                 y = t.value if study.direction == StudyDirection.MINIMIZE else -t.value
                 solutions.append((x, y))
 
@@ -304,7 +369,7 @@ class CmaEsSampler(BaseSampler):
                 generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
-                    search_space, ordered_keys, population_size=popsize, randomize_start_point=True
+                    trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
 
             # Store optimizer
@@ -322,68 +387,107 @@ class CmaEsSampler(BaseSampler):
             trial._trial_id, generation_attr_key, optimizer.generation
         )
         study._storage.set_trial_system_attr(trial._trial_id, "cma:n_restarts", n_restarts)
-        external_values = {
-            k: _to_optuna_param(search_space[k], p) for k, p in zip(ordered_keys, params)
-        }
+
+        external_values = trans.untransform(params)
+
         return external_values
 
     def _restore_optimizer(
         self,
         completed_trials: "List[optuna.trial.FrozenTrial]",
-    ) -> Tuple[Optional[CMA], int]:
+    ) -> Tuple[Optional[CmaClass], int]:
+        if not self._use_separable_cma:
+            attr_key_optimizer = "cma:optimizer"
+            attr_key_n_restarts = "cma:n_restarts"
+        else:
+            attr_key_optimizer = "sepcma:optimizer"
+            attr_key_n_restarts = "sepcma:n_restarts"
+
         # Restore a previous CMA object.
         for trial in reversed(completed_trials):
             optimizer_attrs = {
                 key: value
                 for key, value in trial.system_attrs.items()
-                if key.startswith("cma:optimizer")
+                if key.startswith(attr_key_optimizer)
             }
             if len(optimizer_attrs) == 0:
                 continue
 
-            # Check "cma:optimizer" key for backward compatibility.
-            optimizer_str = optimizer_attrs.get("cma:optimizer", None)
-            if optimizer_str is None:
+            if not self._use_separable_cma and "cma:optimizer" in optimizer_attrs:
+                # Check "cma:optimizer" key for backward compatibility.
+                optimizer_str = optimizer_attrs["cma:optimizer"]
+            else:
                 optimizer_str = _concat_optimizer_attrs(optimizer_attrs)
 
-            n_restarts: int = trial.system_attrs.get("cma:n_restarts", 0)
+            n_restarts: int = trial.system_attrs.get(attr_key_n_restarts, 0)
             return pickle.loads(bytes.fromhex(optimizer_str)), n_restarts
         return None, 0
 
     def _init_optimizer(
         self,
-        search_space: Dict[str, BaseDistribution],
-        ordered_keys: List[str],
+        trans: _SearchSpaceTransform,
+        direction: StudyDirection,
         population_size: Optional[int] = None,
         randomize_start_point: bool = False,
-    ) -> CMA:
-        if randomize_start_point:
-            # `_initialize_x0_randomly ` returns internal representations.
-            x0 = _initialize_x0_randomly(self._cma_rng, search_space)
-            mean = np.array([x0[k] for k in ordered_keys], dtype=float)
-        elif self._x0 is None:
-            # `_initialize_x0` returns internal representations.
-            x0 = _initialize_x0(search_space)
-            mean = np.array([x0[k] for k in ordered_keys], dtype=float)
-        else:
-            # `self._x0` is external representations.
-            mean = np.array(
-                [_to_cma_param(search_space[k], self._x0[k]) for k in ordered_keys], dtype=float
-            )
+    ) -> CmaClass:
+        lower_bounds = trans.bounds[:, 0]
+        upper_bounds = trans.bounds[:, 1]
+        n_dimension = len(trans.bounds)
 
-        if self._sigma0 is None:
-            sigma0 = _initialize_sigma0(search_space)
+        if self._source_trials is None:
+            if randomize_start_point:
+                mean = lower_bounds + (upper_bounds - lower_bounds) * self._cma_rng.rand(
+                    n_dimension
+                )
+            elif self._x0 is None:
+                mean = lower_bounds + (upper_bounds - lower_bounds) / 2
+            else:
+                # `self._x0` is external representations.
+                mean = trans.transform(self._x0)
+
+            if self._sigma0 is None:
+                sigma0 = np.min((upper_bounds - lower_bounds) / 6)
+            else:
+                sigma0 = self._sigma0
+
+            cov = None
         else:
-            sigma0 = self._sigma0
+            expected_states = [TrialState.COMPLETE]
+            if self._consider_pruned_trials:
+                expected_states.append(TrialState.PRUNED)
+
+            # TODO(c-bata): Filter parameters by their values instead of checking search space.
+            sign = 1 if direction == StudyDirection.MINIMIZE else -1
+            source_solutions = [
+                (trans.transform(t.params), sign * cast(float, t.value))
+                for t in self._source_trials
+                if t.state in expected_states
+                and _is_compatible_search_space(trans, t.distributions)
+            ]
+            if len(source_solutions) == 0:
+                raise ValueError("No compatible source_trials")
+
+            # TODO(c-bata): Add options to change prior parameters (alpha and gamma).
+            mean, sigma0, cov = get_warm_start_mgd(source_solutions)
 
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
-        bounds = _get_search_space_bound(ordered_keys, search_space)
-        n_dimension = len(ordered_keys)
+
+        if self._use_separable_cma:
+            return SepCMA(
+                mean=mean,
+                sigma=sigma0,
+                bounds=trans.bounds,
+                seed=self._cma_rng.randint(1, 2 ** 31 - 2),
+                n_max_resampling=10 * n_dimension,
+                population_size=population_size,
+            )
+
         return CMA(
             mean=mean,
             sigma=sigma0,
-            bounds=bounds,
+            cov=cov,
+            bounds=trans.bounds,
             seed=self._cma_rng.randint(1, 2 ** 31 - 2),
             n_max_resampling=10 * n_dimension,
             population_size=population_size,
@@ -440,6 +544,16 @@ class CmaEsSampler(BaseSampler):
                 complete_trials.append(copied_t)
         return complete_trials
 
+    def after_trial(
+        self,
+        study: "optuna.Study",
+        trial: "optuna.trial.FrozenTrial",
+        state: TrialState,
+        values: Optional[Sequence[float]],
+    ) -> None:
+
+        self._independent_sampler.after_trial(study, trial, state, values)
+
 
 def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:
     optimizer_len = len(optimizer_str)
@@ -451,148 +565,14 @@ def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:
     return attrs
 
 
+def _is_compatible_search_space(
+    trans: _SearchSpaceTransform, search_space: Dict[str, BaseDistribution]
+) -> bool:
+    intersection_size = len(set(trans._search_space.keys()).intersection(search_space.keys()))
+    return intersection_size == len(trans._search_space) == len(search_space)
+
+
 def _concat_optimizer_attrs(optimizer_attrs: Dict[str, str]) -> str:
     return "".join(
         optimizer_attrs["cma:optimizer:{}".format(i)] for i in range(len(optimizer_attrs))
     )
-
-
-def _to_cma_param(distribution: BaseDistribution, optuna_param: Any) -> float:
-    if isinstance(distribution, optuna.distributions.LogUniformDistribution):
-        return math.log(optuna_param)
-    if isinstance(distribution, optuna.distributions.IntUniformDistribution):
-        return float(optuna_param)
-    if isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
-        return math.log(optuna_param)
-    return optuna_param
-
-
-def _to_optuna_param(distribution: BaseDistribution, cma_param: float) -> Any:
-    if isinstance(distribution, optuna.distributions.LogUniformDistribution):
-        return math.exp(cma_param)
-    if isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
-        v = np.round(cma_param / distribution.q) * distribution.q + distribution.low
-        # v may slightly exceed range due to round-off errors.
-        return float(min(max(v, distribution.low), distribution.high))
-    if isinstance(distribution, optuna.distributions.IntUniformDistribution):
-        r = np.round((cma_param - distribution.low) / distribution.step)
-        v = r * distribution.step + distribution.low
-        return int(v)
-    if isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
-        r = np.round(cma_param - math.log(distribution.low))
-        v = r + math.log(distribution.low)
-        return int(math.exp(v))
-    return cma_param
-
-
-def _initialize_x0(search_space: Dict[str, BaseDistribution]) -> Dict[str, float]:
-    x0 = {}
-    for name, distribution in search_space.items():
-        if isinstance(
-            distribution,
-            (
-                optuna.distributions.UniformDistribution,
-                optuna.distributions.DiscreteUniformDistribution,
-                optuna.distributions.IntUniformDistribution,
-            ),
-        ):
-            x0[name] = distribution.low + (distribution.high - distribution.low) / 2
-        elif isinstance(
-            distribution,
-            (
-                optuna.distributions.LogUniformDistribution,
-                optuna.distributions.IntLogUniformDistribution,
-            ),
-        ):
-            log_high = math.log(distribution.high)
-            log_low = math.log(distribution.low)
-            x0[name] = log_low + (log_high - log_low) / 2
-        else:
-            raise NotImplementedError(
-                "The distribution {} is not implemented.".format(distribution)
-            )
-    return x0
-
-
-def _initialize_x0_randomly(
-    rng: np.random.RandomState, search_space: Dict[str, BaseDistribution]
-) -> Dict[str, float]:
-    x0 = {}
-    for name, distribution in search_space.items():
-        if isinstance(
-            distribution,
-            (
-                optuna.distributions.UniformDistribution,
-                optuna.distributions.DiscreteUniformDistribution,
-                optuna.distributions.IntUniformDistribution,
-            ),
-        ):
-            x0[name] = distribution.low + rng.rand() * (distribution.high - distribution.low)
-        elif isinstance(
-            distribution,
-            (
-                optuna.distributions.IntLogUniformDistribution,
-                optuna.distributions.LogUniformDistribution,
-            ),
-        ):
-            log_high = math.log(distribution.high)
-            log_low = math.log(distribution.low)
-            x0[name] = log_low + rng.rand() * (log_high - log_low)
-        else:
-            raise NotImplementedError(
-                "The distribution {} is not implemented.".format(distribution)
-            )
-    return x0
-
-
-def _initialize_sigma0(search_space: Dict[str, BaseDistribution]) -> float:
-    sigma0 = []
-    for name, distribution in search_space.items():
-        if isinstance(distribution, optuna.distributions.UniformDistribution):
-            sigma0.append((distribution.high - distribution.low) / 6)
-        elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
-            sigma0.append((distribution.high - distribution.low) / 6)
-        elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
-            sigma0.append((distribution.high - distribution.low) / 6)
-        elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
-            log_high = math.log(distribution.high)
-            log_low = math.log(distribution.low)
-            sigma0.append((log_high - log_low) / 6)
-        elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
-            log_high = math.log(distribution.high)
-            log_low = math.log(distribution.low)
-            sigma0.append((log_high - log_low) / 6)
-        else:
-            raise NotImplementedError(
-                "The distribution {} is not implemented.".format(distribution)
-            )
-    return min(sigma0)
-
-
-def _get_search_space_bound(
-    keys: List[str], search_space: Dict[str, BaseDistribution]
-) -> np.ndarray:
-    bounds = []
-    for param_name in keys:
-        dist = search_space[param_name]
-        if isinstance(
-            dist,
-            (
-                optuna.distributions.UniformDistribution,
-                optuna.distributions.LogUniformDistribution,
-            ),
-        ):
-            # These distributions cannot accept the value which equals to the upper bound.
-            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high) - _EPS])
-        elif isinstance(
-            dist,
-            (
-                optuna.distributions.DiscreteUniformDistribution,
-                optuna.distributions.IntUniformDistribution,
-                optuna.distributions.IntLogUniformDistribution,
-            ),
-        ):
-            bounds.append([_to_cma_param(dist, dist.low), _to_cma_param(dist, dist.high)])
-        else:
-            raise NotImplementedError("The distribution {} is not implemented.".format(dist))
-    return np.array(bounds, dtype=float)

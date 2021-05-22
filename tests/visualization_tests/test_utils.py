@@ -1,8 +1,13 @@
+from typing import cast
+
+import pytest
+
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.study import create_study
 from optuna.trial import create_trial
 from optuna.visualization import is_available
+from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _is_log_scale
 
 
@@ -44,3 +49,13 @@ def _is_plotly_available() -> bool:
 def test_visualization_is_available() -> None:
 
     assert is_available() == _is_plotly_available()
+
+
+def test_check_plot_args() -> None:
+
+    study = create_study(directions=["minimize", "minimize"])
+    with pytest.raises(ValueError):
+        _check_plot_args(study, None, "Objective Value")
+
+    with pytest.warns(UserWarning):
+        _check_plot_args(study, lambda t: cast(float, t.value), "Objective Value")

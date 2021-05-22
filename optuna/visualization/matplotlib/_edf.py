@@ -13,6 +13,7 @@ from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 
@@ -35,6 +36,12 @@ def plot_edf(
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_edf` for an example,
         where this function can be replaced with it.
+
+    .. note::
+
+        Please refer to `matplotlib.pyplot.legend
+        <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html>`_
+        to adjust the style of the generated legend.
 
     Example:
 
@@ -104,11 +111,7 @@ def plot_edf(
     else:
         studies = list(study)
 
-    if target is None and any(study._is_multi_objective() for study in studies):
-        raise ValueError(
-            "If the `study` is being used for multi-objective optimization, "
-            "please specify the `target`."
-        )
+    _check_plot_args(studies, target, target_name)
     return _get_edf_plot(studies, target, target_name)
 
 
@@ -171,5 +174,8 @@ def _get_edf_plot(
         y_values = np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size
 
         ax.plot(x_values, y_values, color=cmap(i), alpha=0.7, label=study.study_name)
+
+    if len(studies) >= 2:
+        ax.legend()
 
     return ax

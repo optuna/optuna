@@ -5,7 +5,7 @@ from typing import Optional
 
 from allennlp.data.token_indexers.token_indexer import IndexedTokenList
 from allennlp.data.token_indexers.token_indexer import TokenIndexer
-from allennlp.data.tokenizers.token import Token
+from allennlp.data.tokenizers.token_class import Token
 from allennlp.data.vocabulary import Vocabulary
 
 

@@ -5,7 +5,7 @@ FROM python:${PYTHON_VERSION}
 ENV PIP_OPTIONS "--no-cache-dir --progress-bar off"
 
 RUN apt-get update \
-    && apt-get -y install openmpi-bin libopenmpi-dev \
+    && apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir -U pip \
     && pip install ${PIP_OPTIONS} -U setuptools
@@ -17,9 +17,9 @@ ARG BUILD_TYPE='dev'
 
 RUN if [ "${BUILD_TYPE}" = "dev" ]; then \
         if [ "${PYTHON_VERSION}" \< "3.6" ]; then \
-            pip install ${PIP_OPTIONS} -e '.[doctest, document, example, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
+            pip install ${PIP_OPTIONS} -e '.[doctest, document, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
         else \
-            pip install ${PIP_OPTIONS} -e '.[checking, doctest, document, example, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
+            pip install ${PIP_OPTIONS} -e '.[checking, doctest, document, testing]' -f https://download.pytorch.org/whl/torch_stable.html; \
         fi \
     else \
         pip install ${PIP_OPTIONS} -e .; \

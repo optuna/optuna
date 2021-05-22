@@ -1,0 +1,103 @@
+name: Tests (RDB storage)
+
+on:
+  push:
+    branches:
+      - master
+  pull_request: {}
+  schedule:
+    - cron: '0 23 * * SUN-THU'
+
+jobs:
+  tests-rdbstorage:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+
+    services:
+      mysql:
+        image: mysql:5.7
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: mandatory_arguments
+          MYSQL_DATABASE: optunatest
+          MYSQL_USER: user
+          MYSQL_PASSWORD: test
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      postgres:
+        image: postgres:10.1-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: optunatest
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Python${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Setup cache
+      uses: actions/cache@v2
+      env:
+        cache-name: test-rdbstorage
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+
+    - name: Setup environment
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install openmpi-bin libopenmpi-dev
+
+    - name: Install
+      run: |
+        python -m pip install --upgrade pip
+        pip install --use-deprecated=legacy-resolver --progress-bar off -U setuptools
+
+        # Install minimal dependencies and confirm that `import optuna` is successful.
+        pip install --use-deprecated=legacy-resolver --progress-bar off .
+        python -c 'import optuna'
+        optuna --version
+
+        pip install --use-deprecated=legacy-resolver --progress-bar off .[tests]
+
+    - name: Install RDB bindings
+      run: |
+        pip install --use-deprecated=legacy-resolver --progress-bar off PyMySQL cryptography psycopg2-binary
+
+    - name: Tests MySQL
+      run: |
+        pytest tests/storages_tests/rdb_tests/test_with_server.py
+      env:
+        OMP_NUM_THREADS: 1
+        TEST_DB_URL: mysql+pymysql://user:test@127.0.0.1/optunatest
+
+    - name: Tests PostgreSQL
+      run: |
+        pytest tests/storages_tests/rdb_tests/test_with_server.py
+      env:
+        OMP_NUM_THREADS: 1
+        TEST_DB_URL: postgresql+psycopg2://user:test@127.0.0.1/optunatest

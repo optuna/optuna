@@ -14,8 +14,8 @@ if not _imports.is_successful():
 class TensorFlowPruningHook(SessionRunHook):
     """TensorFlow SessionRunHook to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/examples/
-    pruning/tensorflow_estimator_integration.py>`_
+    See `the example <https://github.com/optuna/optuna-examples/tree/main/
+    tensorflow/tensorflow_estimator_integration.py>`_
     if you want to add a pruning hook to TensorFlow's estimator.
 
     Args:

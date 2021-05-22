@@ -71,7 +71,9 @@ def get_param_importances(
             the objective values are used.
 
             .. note::
-                Specify this argument if ``study`` is being used for multi-objective optimization.
+                Specify this argument if ``study`` is being used for multi-objective
+                optimization. For example, to get the hyperparameter importance of the first
+                objective, use ``target=lambda t: t.values[0]`` for the target parameter.
 
     Returns:
         An :class:`collections.OrderedDict` where the keys are parameter names and the values are

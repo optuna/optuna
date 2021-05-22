@@ -4,6 +4,7 @@ from typing import List
 from unittest.mock import call
 from unittest.mock import Mock
 from unittest.mock import patch
+import warnings
 
 import pytest
 from skopt.space import space
@@ -27,17 +28,17 @@ def test_conversion_from_distribution_to_dimension() -> None:
         study.optimize(_objective, n_trials=2, catch=())
 
         dimensions = [
-            # Original: trial.suggest_uniform('p0', -3.3, 5.2)
+            # Original: trial.suggest_float('p0', -3.3, 5.2)
             space.Real(-3.3, 5.2),
-            # Original: trial.suggest_uniform('p1', 2.0, 2.0)
+            # Original: trial.suggest_float('p1', 2.0, 2.0)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
-            # Original: trial.suggest_discrete_uniform('p9', 2.2, 2.2, 0.5)
+            # Original: trial.suggest_float('p9', 2.2, 2.2, step=0.5)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
             # Original: trial.suggest_categorical('p10', ['9', '3', '0', '8'])
             space.Categorical(("9", "3", "0", "8")),
-            # Original: trial.suggest_loguniform('p2', 0.0001, 0.3)
+            # Original: trial.suggest_float('p2', 0.0001, 0.3, log=True)
             space.Real(0.0001, 0.3, prior="log-uniform"),
-            # Original: trial.suggest_loguniform('p3', 1.1, 1.1)
+            # Original: trial.suggest_float('p3', 1.1, 1.1, log=True)
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
             # Original: trial.suggest_int('p4', -100, 8)
             space.Integer(0, 108),
@@ -45,9 +46,9 @@ def test_conversion_from_distribution_to_dimension() -> None:
             # => Skipped because `skopt.Optimizer` cannot handle an empty `Real` dimension.
             # Original: trial.suggest_int('p6', 1, 8, log=True)
             space.Real(0.5, 8.5, prior="log-uniform"),
-            # Original: trial.suggest_discrete_uniform('p7', 10, 20, 2)
+            # Original: trial.suggest_float('p7', 10, 20, step=2)
             space.Integer(0, 5),
-            # Original: trial.suggest_discrete_uniform('p8', 0.1, 1.0, 0.1)
+            # Original: trial.suggest_float('p8', 0.1, 1.0, step=0.1)
             space.Integer(0, 8),
         ]
 
@@ -84,7 +85,7 @@ def test_is_compatible() -> None:
     sampler = optuna.integration.SkoptSampler()
     study = optuna.create_study(sampler=sampler)
 
-    study.optimize(lambda t: t.suggest_uniform("p0", 0, 10), n_trials=1)
+    study.optimize(lambda t: t.suggest_float("p0", 0, 10), n_trials=1)
     search_space = optuna.samplers.intersection_search_space(study)
     assert search_space == {"p0": distributions.UniformDistribution(low=0, high=10)}
 
@@ -145,16 +146,16 @@ def test_reseed_rng() -> None:
 
 def _objective(trial: optuna.trial.Trial) -> float:
 
-    p0 = trial.suggest_uniform("p0", -3.3, 5.2)
-    p1 = trial.suggest_uniform("p1", 2.0, 2.0)
-    p2 = trial.suggest_loguniform("p2", 0.0001, 0.3)
-    p3 = trial.suggest_loguniform("p3", 1.1, 1.1)
+    p0 = trial.suggest_float("p0", -3.3, 5.2)
+    p1 = trial.suggest_float("p1", 2.0, 2.0)
+    p2 = trial.suggest_float("p2", 0.0001, 0.3, log=True)
+    p3 = trial.suggest_float("p3", 1.1, 1.1, log=True)
     p4 = trial.suggest_int("p4", -100, 8)
     p5 = trial.suggest_int("p5", -20, -20)
     p6 = trial.suggest_int("p6", 1, 8, log=True)
-    p7 = trial.suggest_discrete_uniform("p7", 10, 20, 2)
-    p8 = trial.suggest_discrete_uniform("p8", 0.1, 1.0, 0.1)
-    p9 = trial.suggest_discrete_uniform("p9", 2.2, 2.2, 0.5)
+    p7 = trial.suggest_float("p7", 10, 20, step=2)
+    p8 = trial.suggest_float("p8", 0.1, 1.0, step=0.1)
+    p9 = trial.suggest_float("p9", 2.2, 2.2, step=0.5)
     p10 = trial.suggest_categorical("p10", ["9", "3", "0", "8"])
     assert isinstance(p10, str)
 
@@ -236,3 +237,16 @@ def _create_frozen_trial(
         datetime_complete=None,
         trial_id=0,
     )
+
+
+def test_call_after_trial_of_independent_sampler() -> None:
+    independent_sampler = optuna.samplers.RandomSampler()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = optuna.integration.SkoptSampler(independent_sampler=independent_sampler)
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(
+        independent_sampler, "after_trial", wraps=independent_sampler.after_trial
+    ) as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1

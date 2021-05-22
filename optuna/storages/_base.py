@@ -1,5 +1,6 @@
 import abc
 from typing import Any
+from typing import Callable
 from typing import cast
 from typing import Dict
 from typing import List
@@ -8,6 +9,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Union
 
+import optuna
 from optuna._study_direction import StudyDirection
 from optuna._study_summary import StudySummary
 from optuna.distributions import BaseDistribution
@@ -81,7 +83,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
     of `Study` and writes on `state` of `Trial` are guaranteed to be persistent.
     Additionally, any preceding writes on any attributes of `Trial` are guaranteed to
     be written into a persistent storage before writes on `state` of `Trial` succeed.
-    The same applies for `user_attrs', 'system_attrs' and 'intermediate_values` attributes.
+    The same applies for `param`, `user_attrs', 'system_attrs' and 'intermediate_values`
+    attributes.
 
     .. note::
 
@@ -374,6 +377,24 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 If no trial with the matching ``trial_id`` exists.
             :exc:`RuntimeError`:
                 If the trial is already finished.
+        """
+        raise NotImplementedError
+
+    def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
+        """Read the trial id of a trial.
+
+        Args:
+            study_id:
+                ID of the study.
+            trial_number:
+                Number of the trial.
+
+        Returns:
+            ID of the trial.
+
+        Raises:
+            :exc:`KeyError`:
+                If no trial with the matching ``study_id`` and ``trial_number`` exists.
         """
         raise NotImplementedError
 
@@ -701,3 +722,56 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             raise RuntimeError(
                 "Trial#{} has already finished and can not be updated.".format(trial.number)
             )
+
+    def record_heartbeat(self, trial_id: int) -> None:
+        """Record the heartbeat of the trial.
+
+        Args:
+            trial_id:
+                ID of the trial.
+        """
+        pass
+
+    def fail_stale_trials(self, study_id: int) -> List[int]:
+        """Fail stale trials.
+
+        The running trials whose heartbeat has not been updated for a long time will be failed,
+        that is, those states will be changed to :obj:`~optuna.trial.TrialState.FAIL`.
+        The grace period is ``2 * heartbeat_interval``.
+
+        Args:
+            study_id:
+                ID of the related study.
+        Returns:
+            List of trial IDs of the failed trials.
+        """
+        pass
+
+    def is_heartbeat_enabled(self) -> bool:
+        """Check whether the storage enables the heartbeat.
+
+        Returns:
+            :obj:`True` if the storage supports the heartbeat and the return value of
+            :meth:`~optuna.storages.BaseStorage.get_heartbeat_interval` is an integer,
+            otherwise :obj:`False`.
+        """
+        return self._is_heartbeat_supported() and self.get_heartbeat_interval() is not None
+
+    def _is_heartbeat_supported(self) -> bool:
+        return False
+
+    def get_heartbeat_interval(self) -> Optional[int]:
+        """Get the heartbeat interval if it is set.
+
+        Returns:
+            The heartbeat interval if it is set, otherwise :obj:`None`.
+        """
+        return None
+
+    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
+        """Get the failed trial callback function.
+
+        Returns:
+            The failed trial callback function if it is set, otherwise :obj:`None`.
+        """
+        return None

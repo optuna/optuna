@@ -9,6 +9,7 @@ from typing import Mapping
 from typing import Optional
 from typing import Sequence
 from typing import Union
+import warnings
 
 from optuna.distributions import BaseDistribution
 from optuna.logging import get_logger
@@ -39,14 +40,14 @@ class GridSampler(BaseSampler):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -100, 100)
+                x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_int("y", -100, 100)
                 return x ** 2 + y ** 2
 
 
             search_space = {"x": [-50, 0, 50], "y": [-99, 0, 99]}
             study = optuna.create_study(sampler=optuna.samplers.GridSampler(search_space))
-            study.optimize(objective, n_trials=3 * 3)
+            study.optimize(objective)
 
     Note:
 
@@ -68,7 +69,7 @@ class GridSampler(BaseSampler):
 
             def objective(trial):
                 # The following suggest method specifies integer points between -5 and 5.
-                x = trial.suggest_discrete_uniform("x", -5, 5, 1)
+                x = trial.suggest_float("x", -5, 5, step=1)
                 return x ** 2
 
 
@@ -168,13 +169,9 @@ class GridSampler(BaseSampler):
         param_value = self._all_grids[grid_id][self._param_names.index(param_name)]
         contains = param_distribution._contains(param_distribution.to_internal_repr(param_value))
         if not contains:
-            raise ValueError(
-                "The value `{}` is out of range of the parameter `{}`. Please make "
-                "sure the search space of the `GridSampler` only contains values "
-                "consistent with the distribution specified in the objective "
-                "function. The distribution is: `{}`.".format(
-                    param_value, param_name, param_distribution
-                )
+            warnings.warn(
+                f"The value `{param_value}` is out of range of the parameter `{param_name}`. "
+                f"The value will be used but the actual distribution is: `{param_distribution}`."
             )
 
         return param_value
@@ -211,7 +208,13 @@ class GridSampler(BaseSampler):
 
         # List up unvisited grids based on already finished ones.
         visited_grids = []
-        for t in study.trials:
+
+        # We directly query the storage to get trials here instead of `study.get_trials`,
+        # since some pruners such as `HyperbandPruner` use the study transformed
+        # to filter trials. See https://github.com/optuna/optuna/issues/2327 for details.
+        trials = study._storage.get_all_trials(study._study_id, deepcopy=False)
+
+        for t in trials:
             if (
                 t.state.is_finished()
                 and "grid_id" in t.system_attrs

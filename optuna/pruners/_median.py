@@ -26,7 +26,7 @@ class MedianPruner(PercentilePruner):
 
 
             def objective(trial):
-                alpha = trial.suggest_uniform("alpha", 0.0, 1.0)
+                alpha = trial.suggest_float("alpha", 0.0, 1.0)
                 clf = SGDClassifier(alpha=alpha)
                 n_train_iter = 100
 
@@ -60,10 +60,22 @@ class MedianPruner(PercentilePruner):
             Interval in number of steps between the pruning checks, offset by the warmup steps.
             If no value has been reported at the time of a pruning check, that particular check
             will be postponed until a value is reported.
+        n_min_trials:
+            Minimum number of reported trial results at a step to judge whether to prune.
+            If the number of reported intermediate values from all trials at the current step
+            is less than ``n_min_trials``, the trial will not be pruned. This can be used to ensure
+            that a minimum number of trials are run to completion without being pruned.
     """
 
     def __init__(
-        self, n_startup_trials: int = 5, n_warmup_steps: int = 0, interval_steps: int = 1
+        self,
+        n_startup_trials: int = 5,
+        n_warmup_steps: int = 0,
+        interval_steps: int = 1,
+        *,
+        n_min_trials: int = 1,
     ) -> None:
 
-        super(MedianPruner, self).__init__(50.0, n_startup_trials, n_warmup_steps, interval_steps)
+        super().__init__(
+            50.0, n_startup_trials, n_warmup_steps, interval_steps, n_min_trials=n_min_trials
+        )

@@ -314,7 +314,12 @@ class RedisStorage(BaseStorage):
             study_summary = self._get_study_summary(study_id)
             study_summary.n_trials = len(self._get_study_trials(study_id))
             min_datetime_start = min(
-                [cast(datetime, t.datetime_start) for t in self.get_all_trials(study_id)]
+                [
+                    cast(datetime, t.datetime_start)
+                    for t in self.get_all_trials(study_id)
+                    if t.datetime_start is not None
+                ],
+                default=None,
             )
             study_summary.datetime_start = min_datetime_start
             pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
@@ -352,6 +357,10 @@ class RedisStorage(BaseStorage):
             return False
 
         trial.state = state
+
+        if state == TrialState.RUNNING:
+            trial.datetime_start = datetime.now()
+
         if state.is_finished():
             trial.datetime_complete = datetime.now()
             self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
@@ -395,6 +404,18 @@ class RedisStorage(BaseStorage):
             trial.distributions[param_name] = distribution
             pipe.set(self._key_trial(trial_id), pickle.dumps(trial))
             pipe.execute()
+
+    def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
+
+        trial_ids = self._get_study_trials(study_id)
+        if len(trial_ids) <= trial_number:
+            raise KeyError(
+                "No trial with trial number {} exists in study with study_id {}.".format(
+                    trial_number, study_id
+                )
+            )
+
+        return trial_ids[trial_number]
 
     def get_trial_number_from_id(self, trial_id: int) -> int:
 

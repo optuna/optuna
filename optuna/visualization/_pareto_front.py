@@ -47,7 +47,8 @@ def plot_pareto_front(
             study = optuna.create_study(directions=["minimize", "minimize"])
             study.optimize(objective, n_trials=50)
 
-            optuna.visualization.plot_pareto_front(study)
+            fig = optuna.visualization.plot_pareto_front(study)
+            fig.show()
 
     Args:
         study:
@@ -103,13 +104,12 @@ def _get_pareto_front_2d(
         raise ValueError("The length of `target_names` is supposed to be 2.")
 
     trials = study.best_trials
+    n_best_trials = len(trials)
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
-    point_colors = ["blue"] * len(trials)
     if include_dominated_trials:
         non_pareto_trials = _get_non_pareto_front_trials(study, trials)
-        point_colors += ["red"] * len(non_pareto_trials)
         trials += non_pareto_trials
 
     if axis_order is None:
@@ -132,14 +132,42 @@ def _get_pareto_front_2d(
                 "lower than 0."
             )
 
-    data = go.Scatter(
-        x=[t.values[axis_order[0]] for t in trials],
-        y=[t.values[axis_order[1]] for t in trials],
-        text=[_make_hovertext(t) for t in trials],
-        mode="markers",
-        hovertemplate="%{text}<extra></extra>",
-        marker={"color": point_colors},
-    )
+    data = [
+        go.Scatter(
+            x=[t.values[axis_order[0]] for t in trials[n_best_trials:]],
+            y=[t.values[axis_order[1]] for t in trials[n_best_trials:]],
+            text=[_make_hovertext(t) for t in trials[n_best_trials:]],
+            mode="markers",
+            hovertemplate="%{text}<extra>Trial</extra>",
+            marker={
+                "line": {"width": 0.5, "color": "Grey"},
+                "color": [t.number for t in trials[n_best_trials:]],
+                "colorscale": "Blues",
+                "colorbar": {
+                    "title": "#Trials",
+                },
+            },
+            showlegend=False,
+        ),
+        go.Scatter(
+            x=[t.values[axis_order[0]] for t in trials[:n_best_trials]],
+            y=[t.values[axis_order[1]] for t in trials[:n_best_trials]],
+            text=[_make_hovertext(t) for t in trials[:n_best_trials]],
+            mode="markers",
+            hovertemplate="%{text}<extra>Best Trial</extra>",
+            marker={
+                "line": {"width": 0.5, "color": "Grey"},
+                "color": [t.number for t in trials[:n_best_trials]],
+                "colorscale": "Reds",
+                "colorbar": {
+                    "title": "#Best trials",
+                    "x": 1.1 if include_dominated_trials else 1,
+                    "xpad": 40,
+                },
+            },
+            showlegend=False,
+        ),
+    ]
     layout = go.Layout(
         title="Pareto-front Plot",
         xaxis_title=target_names[axis_order[0]],
@@ -160,13 +188,12 @@ def _get_pareto_front_3d(
         raise ValueError("The length of `target_names` is supposed to be 3.")
 
     trials = study.best_trials
+    n_best_trials = len(trials)
     if len(trials) == 0:
         _logger.warning("Your study does not have any completed trials.")
 
-    point_colors = ["blue"] * len(trials)
     if include_dominated_trials:
         non_pareto_trials = _get_non_pareto_front_trials(study, trials)
-        point_colors += ["red"] * len(non_pareto_trials)
         trials += non_pareto_trials
 
     if axis_order is None:
@@ -189,15 +216,44 @@ def _get_pareto_front_3d(
                 "lower than 0."
             )
 
-    data = go.Scatter3d(
-        x=[t.values[axis_order[0]] for t in trials],
-        y=[t.values[axis_order[1]] for t in trials],
-        z=[t.values[axis_order[2]] for t in trials],
-        text=[_make_hovertext(t) for t in trials],
-        mode="markers",
-        hovertemplate="%{text}<extra></extra>",
-        marker={"color": point_colors},
-    )
+    data = [
+        go.Scatter3d(
+            x=[t.values[axis_order[0]] for t in trials[n_best_trials:]],
+            y=[t.values[axis_order[1]] for t in trials[n_best_trials:]],
+            z=[t.values[axis_order[2]] for t in trials[n_best_trials:]],
+            text=[_make_hovertext(t) for t in trials[n_best_trials:]],
+            hovertemplate="%{text}<extra>Trial</extra>",
+            mode="markers",
+            marker={
+                "line": {"width": 0.5, "color": "Grey"},
+                "color": [t.number for t in trials[n_best_trials:]],
+                "colorscale": "Blues",
+                "colorbar": {
+                    "title": "#Trials",
+                },
+            },
+            showlegend=False,
+        ),
+        go.Scatter3d(
+            x=[t.values[axis_order[0]] for t in trials[:n_best_trials]],
+            y=[t.values[axis_order[1]] for t in trials[:n_best_trials]],
+            z=[t.values[axis_order[2]] for t in trials[:n_best_trials]],
+            text=[_make_hovertext(t) for t in trials[:n_best_trials]],
+            hovertemplate="%{text}<extra>Best Trial</extra>",
+            mode="markers",
+            marker={
+                "line": {"width": 0.5, "color": "Grey"},
+                "color": [t.number for t in trials[:n_best_trials]],
+                "colorscale": "Reds",
+                "colorbar": {
+                    "title": "#Best trials",
+                    "x": 1.1 if include_dominated_trials else 1,
+                    "xpad": 40,
+                },
+            },
+            showlegend=False,
+        ),
+    ]
     layout = go.Layout(
         title="Pareto-front Plot",
         scene={

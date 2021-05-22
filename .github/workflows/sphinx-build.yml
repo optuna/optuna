@@ -15,9 +15,14 @@ jobs:
 
     - uses: actions/checkout@v2
 
+    # note (crcrpar): `readthedocs/build:latest` seems to use Python3.8.
+    # Optuna uses that image in CircleCI documentation build,
+    # so we can use Python3.7 here for the backward compatibility
+    # of Pickle's protocol version (Python3.8's pickle's default protocol version
+    # is not compatible completely with Python3.7 and Python3.6).
     - uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: 3.7
 
     # note (crcrpar): We've not updated tutorial frequently enough so far thus
     # it'd be okay to discard cache by any small changes including typo fix under tutorial directory.
@@ -29,12 +34,12 @@ jobs:
         path: |
           tutorial/MNIST
           docs/source/tutorial
-        key: py3.8-${{ env.cache-name }}-${{ hashFiles('tutorial/**/*') }}
+        key: py3.7-${{ env.cache-name }}-${{ hashFiles('tutorial/**/*') }}
 
     - name: Install Dependencies
       run: |
         python -m pip install -U pip
-        pip install --progress-bar off -U .[document] -f https://download.pytorch.org/whl/torch_stable.html
+        pip install --progress-bar off -U .[document]
 
     - name: Build Document
       run: |
@@ -44,8 +49,15 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: built-document
-        path: docs/build
+        name: built-html
+        path: |
+            docs/build/html
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: tutorial
+        path: |
+            docs/source/tutorial
 
   doctest:
 
@@ -72,7 +84,7 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install -U pip
-        pip install --progress-bar off -U .[document,doctest] -f https://download.pytorch.org/whl/torch_stable.html
+        pip install --use-deprecated=legacy-resolver --progress-bar off -U .[document,doctest]
 
     - name: Run Doctest
       run: |

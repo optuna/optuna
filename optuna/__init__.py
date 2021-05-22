@@ -17,6 +17,7 @@ from optuna import trial
 from optuna import version
 from optuna import visualization
 from optuna.exceptions import TrialPruned
+from optuna.study import copy_study
 from optuna.study import create_study
 from optuna.study import delete_study
 from optuna.study import get_all_study_summaries
@@ -33,6 +34,7 @@ __all__ = [
     "Trial",
     "TrialPruned",
     "__version__",
+    "copy_study",
     "create_study",
     "create_trial",
     "delete_study",
@@ -68,7 +70,7 @@ class _LazyImport(types.ModuleType):
     """
 
     def __init__(self, name: str) -> None:
-        super(_LazyImport, self).__init__(name)
+        super().__init__(name)
         self._name = name
 
     def _load(self) -> types.ModuleType:

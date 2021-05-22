@@ -16,6 +16,17 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
         plot_contour(study)
 
 
+def test_target_is_not_none_and_study_is_multi_obj() -> None:
+
+    # Multiple sub-figures.
+    study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=True)
+    plot_contour(study, target=lambda t: t.values[0])
+
+    # Single figure.
+    study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=False)
+    plot_contour(study, target=lambda t: t.values[0])
+
+
 @pytest.mark.parametrize(
     "params",
     [
@@ -79,7 +90,8 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
 def test_plot_contour_customized_target(params: List[str]) -> None:
 
     study = prepare_study_with_trials(more_than_three=True)
-    figure = plot_contour(study, params=params, target=lambda t: t.params["param_d"])
+    with pytest.warns(UserWarning):
+        figure = plot_contour(study, params=params, target=lambda t: t.params["param_d"])
     if len(params) == 2:
         assert figure.has_data()
     else:

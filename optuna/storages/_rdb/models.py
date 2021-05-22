@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any
 from typing import List
 from typing import Optional
@@ -15,6 +14,7 @@ from sqlalchemy import func
 from sqlalchemy import Integer
 from sqlalchemy import orm
 from sqlalchemy import String
+from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -28,7 +28,6 @@ from optuna.trial import TrialState
 SCHEMA_VERSION = 12
 
 MAX_INDEXED_STRING_LENGTH = 512
-MAX_STRING_LENGTH = 2048
 MAX_VERSION_LENGTH = 256
 
 NOT_FOUND_MSG = "Record does not exist."
@@ -111,7 +110,7 @@ class StudyUserAttributeModel(BaseModel):
     study_user_attribute_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = Column(String(MAX_STRING_LENGTH))
+    value_json = Column(Text())
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("user_attributes", cascade="all, delete-orphan")
@@ -145,7 +144,7 @@ class StudySystemAttributeModel(BaseModel):
     study_system_attribute_id = Column(Integer, primary_key=True)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = Column(String(MAX_STRING_LENGTH))
+    value_json = Column(Text())
 
     study = orm.relationship(
         StudyModel, backref=orm.backref("system_attributes", cascade="all, delete-orphan")
@@ -182,7 +181,7 @@ class TrialModel(BaseModel):
     number = Column(Integer)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     state = Column(Enum(TrialState), nullable=False)
-    datetime_start = Column(DateTime, default=datetime.now)
+    datetime_start = Column(DateTime)
     datetime_complete = Column(DateTime)
 
     study = orm.relationship(
@@ -275,7 +274,7 @@ class TrialUserAttributeModel(BaseModel):
     trial_user_attribute_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = Column(String(MAX_STRING_LENGTH))
+    value_json = Column(Text())
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("user_attributes", cascade="all, delete-orphan")
@@ -309,7 +308,7 @@ class TrialSystemAttributeModel(BaseModel):
     trial_system_attribute_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     key = Column(String(MAX_INDEXED_STRING_LENGTH))
-    value_json = Column(String(MAX_STRING_LENGTH))
+    value_json = Column(Text())
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("system_attributes", cascade="all, delete-orphan")
@@ -344,7 +343,7 @@ class TrialParamModel(BaseModel):
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     param_name = Column(String(MAX_INDEXED_STRING_LENGTH))
     param_value = Column(Float)
-    distribution_json = Column(String(MAX_STRING_LENGTH))
+    distribution_json = Column(Text())
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("params", cascade="all, delete-orphan")
@@ -478,6 +477,24 @@ class TrialIntermediateValueModel(BaseModel):
         trial_intermediate_values = session.query(cls).filter(cls.trial_id == trial_id).all()
 
         return trial_intermediate_values
+
+
+class TrialHeartbeatModel(BaseModel):
+    __tablename__ = "trial_heartbeats"
+    __table_args__: Any = (UniqueConstraint("trial_id"),)
+    trial_heartbeat_id = Column(Integer, primary_key=True)
+    trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
+    heartbeat = Column(DateTime, nullable=False, default=func.current_timestamp())
+
+    trial = orm.relationship(
+        TrialModel, backref=orm.backref("heartbeats", cascade="all, delete-orphan")
+    )
+
+    @classmethod
+    def where_trial_id(
+        cls, trial_id: int, session: orm.Session
+    ) -> Optional["TrialHeartbeatModel"]:
+        return session.query(cls).filter(cls.trial_id == trial_id).one_or_none()
 
 
 class VersionInfoModel(BaseModel):

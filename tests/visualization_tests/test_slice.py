@@ -41,7 +41,8 @@ def test_plot_slice() -> None:
     assert figure.data[0]["y"] == (0.0, 1.0)
 
     # Test with a customized target value.
-    figure = plot_slice(study, params=["param_a"], target=lambda t: t.params["param_b"])
+    with pytest.warns(UserWarning):
+        figure = plot_slice(study, params=["param_a"], target=lambda t: t.params["param_b"])
     assert len(figure.data) == 1
     assert figure.data[0]["x"] == (1.0, 2.5)
     assert figure.data[0]["y"] == (2.0, 1.0)

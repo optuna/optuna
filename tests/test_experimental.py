@@ -89,6 +89,7 @@ def test_experimental_class_decorator_name() -> None:
     with pytest.warns(ExperimentalWarning) as record:
         decorated_sample("a", "b", "c")
 
+    assert isinstance(record.list[0].message, Warning)
     assert name in record.list[0].message.args[0]
 
 
@@ -101,4 +102,5 @@ def test_experimental_decorator_name() -> None:
     with pytest.warns(ExperimentalWarning) as record:
         decorated_sample_func()
 
+    assert isinstance(record.list[0].message, Warning)
     assert name in record.list[0].message.args[0]

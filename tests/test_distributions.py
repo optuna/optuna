@@ -37,7 +37,7 @@ EXAMPLE_JSONS = {
 
 def test_json_to_distribution() -> None:
 
-    for key in EXAMPLE_JSONS.keys():
+    for key in EXAMPLE_JSONS:
         distribution_actual = distributions.json_to_distribution(EXAMPLE_JSONS[key])
         assert distribution_actual == EXAMPLE_DISTRIBUTIONS[key]
 
@@ -55,7 +55,7 @@ def test_backward_compatibility_int_uniform_distribution() -> None:
 
 def test_distribution_to_json() -> None:
 
-    for key in EXAMPLE_JSONS.keys():
+    for key in EXAMPLE_JSONS:
         json_actual = distributions.distribution_to_json(EXAMPLE_DISTRIBUTIONS[key])
         assert json.loads(json_actual) == json.loads(EXAMPLE_JSONS[key])
 
@@ -63,7 +63,7 @@ def test_distribution_to_json() -> None:
 def test_check_distribution_compatibility() -> None:
 
     # test the same distribution
-    for key in EXAMPLE_JSONS.keys():
+    for key in EXAMPLE_JSONS:
         distributions.check_distribution_compatibility(
             EXAMPLE_DISTRIBUTIONS[key], EXAMPLE_DISTRIBUTIONS[key]
         )
@@ -109,13 +109,15 @@ def test_contains() -> None:
     assert not u._contains(0.9)
     assert u._contains(1)
     assert u._contains(1.5)
-    assert not u._contains(2)
+    assert u._contains(2)
+    assert not u._contains(2.1)
 
     lu = distributions.LogUniformDistribution(low=0.001, high=100)
     assert not lu._contains(0.0)
     assert lu._contains(0.001)
     assert lu._contains(12.3)
-    assert not lu._contains(100)
+    assert lu._contains(100)
+    assert not lu._contains(1000)
 
     with warnings.catch_warnings():
         # UserWarning will be raised since the range is not divisible by 2.
@@ -124,8 +126,8 @@ def test_contains() -> None:
         du = distributions.DiscreteUniformDistribution(low=1.0, high=10.0, q=2.0)
     assert not du._contains(0.9)
     assert du._contains(1.0)
-    assert du._contains(3.5)
-    assert du._contains(6)
+    assert not du._contains(3.5)
+    assert not du._contains(6)
     assert du._contains(9)
     assert not du._contains(9.1)
     assert not du._contains(10)
@@ -147,8 +149,8 @@ def test_contains() -> None:
         iuq = distributions.IntUniformDistribution(low=1, high=10, step=2)
     assert not iuq._contains(0.9)
     assert iuq._contains(1)
-    assert iuq._contains(4)
-    assert iuq._contains(6)
+    assert not iuq._contains(4)
+    assert not iuq._contains(6)
     assert iuq._contains(9)
     assert not iuq._contains(9.1)
     assert not iuq._contains(10)

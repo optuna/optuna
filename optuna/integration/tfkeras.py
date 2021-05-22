@@ -1,6 +1,7 @@
 from typing import Any
 from typing import Dict
 from typing import Optional
+import warnings
 
 import optuna
 
@@ -16,10 +17,10 @@ class TFKerasPruningCallback(Callback):
     """tf.keras callback to prune unpromising trials.
 
     This callback is intend to be compatible for TensorFlow v1 and v2,
-    but only tested with TensorFlow v1.
+    but only tested with TensorFlow v2.
 
     See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/pruning/tfkeras_integration.py>`__
+    examples/tfkeras/tfkeras_integration.py>`__
     if you want to add a pruning callback which observes the validation accuracy.
 
     Args:
@@ -32,7 +33,7 @@ class TFKerasPruningCallback(Callback):
 
     def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
 
-        super(TFKerasPruningCallback, self).__init__()
+        super().__init__()
 
         _imports.check()
 
@@ -45,6 +46,11 @@ class TFKerasPruningCallback(Callback):
         current_score = logs.get(self._monitor)
 
         if current_score is None:
+            message = (
+                "The metric '{}' is not in the evaluation logs for pruning. "
+                "Please make sure you set the correct metric name.".format(self._monitor)
+            )
+            warnings.warn(message)
             return
 
         # Report current score and epoch to Optuna's trial.

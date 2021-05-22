@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 
 from optuna.multi_objective._hypervolume import _compute_2d
@@ -15,11 +17,11 @@ class WFG(BaseHypervolume):
     """
 
     def __init__(self) -> None:
-        self._reference_point = None
+        self._reference_point: Optional[np.ndarray] = None
 
     def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
-        self._reference_point = reference_point.copy()
-        return self._compute_rec(solution_set)
+        self._reference_point = reference_point.astype(np.float64)
+        return self._compute_rec(solution_set.astype(np.float64))
 
     def _compute_rec(self, solution_set: np.ndarray) -> float:
         assert self._reference_point is not None
@@ -48,6 +50,7 @@ class WFG(BaseHypervolume):
         return volume
 
     def _compute_exclusive_hv(self, point: np.ndarray, solution_set: np.ndarray) -> float:
+        assert self._reference_point is not None
         volume = _compute_2points_volume(point, self._reference_point)
         limited_solution_set = self._limit(point, solution_set)
         n_points_of_s = limited_solution_set.shape[0]

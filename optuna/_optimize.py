@@ -1,22 +1,27 @@
+from concurrent.futures import FIRST_COMPLETED
+from concurrent.futures import Future
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import wait
 import copy
 import datetime
 import gc
+import itertools
 import math
+import os
 import sys
+from threading import Event
+from threading import Thread
 from typing import Any
 from typing import Callable
 from typing import cast
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import Union
 import warnings
-
-import joblib
-from joblib import delayed
-from joblib import Parallel
 
 import optuna
 from optuna import exceptions
@@ -73,51 +78,47 @@ def _optimize(
             if show_progress_bar:
                 warnings.warn("Progress bar only supports serial execution (`n_jobs=1`).")
 
+            if n_jobs == -1:
+                n_jobs = os.cpu_count() or 1
+
             time_start = datetime.datetime.now()
+            futures: Set[Future] = set()
 
-            def _should_stop() -> bool:
-                if study._stop_flag:
-                    return True
+            with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+                for n_submitted_trials in itertools.count():
+                    if study._stop_flag:
+                        break
 
-                if timeout is not None:
-                    # This is needed for mypy.
-                    t: float = timeout
-                    return (datetime.datetime.now() - time_start).total_seconds() > t
+                    if (
+                        timeout is not None
+                        and (datetime.datetime.now() - time_start).total_seconds() > timeout
+                    ):
+                        break
 
-                return False
+                    if n_trials is not None and n_submitted_trials >= n_trials:
+                        break
 
-            if n_trials is not None:
-                _iter = iter(range(n_trials))
-            else:
-                _iter = iter(_should_stop, True)
+                    if len(futures) >= n_jobs:
+                        completed, futures = wait(futures, return_when=FIRST_COMPLETED)
+                        # Raise if exception occurred in executing the completed futures.
+                        for f in completed:
+                            f.result()
 
-            with Parallel(n_jobs=n_jobs, prefer="threads") as parallel:
-                if not isinstance(
-                    parallel._backend, joblib.parallel.ThreadingBackend
-                ) and isinstance(study._storage, storages.InMemoryStorage):
-                    warnings.warn(
-                        "The default storage cannot be shared by multiple processes. "
-                        "Please use an RDB (RDBStorage) when you use joblib for "
-                        "multi-processing. The usage of RDBStorage can be found in "
-                        "https://optuna.readthedocs.io/en/stable/tutorial/rdb.html.",
-                        UserWarning,
+                    futures.add(
+                        executor.submit(
+                            _optimize_sequential,
+                            study,
+                            func,
+                            1,
+                            timeout,
+                            catch,
+                            callbacks,
+                            gc_after_trial,
+                            True,
+                            time_start,
+                            None,
+                        )
                     )
-
-                parallel(
-                    delayed(_optimize_sequential)(
-                        study,
-                        func,
-                        1,
-                        timeout,
-                        catch,
-                        callbacks,
-                        gc_after_trial,
-                        reseed_sampler_rng=True,
-                        time_start=time_start,
-                        progress_bar=None,
-                    )
-                    for _ in _iter
-                )
     finally:
         study._optimize_lock.release()
         progress_bar.close()
@@ -185,7 +186,15 @@ def _run_trial(
     func: "optuna.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.Trial:
-    trial = study._ask()
+    if study._storage.is_heartbeat_enabled():
+        failed_trial_ids = study._storage.fail_stale_trials(study._study_id)
+        failed_trial_callback = study._storage.get_failed_trial_callback()
+        if failed_trial_callback is not None:
+            for trial_id in failed_trial_ids:
+                failed_trial = copy.deepcopy(study._storage.get_trial(trial_id))
+                failed_trial_callback(study, failed_trial)
+
+    trial = study.ask()
 
     state: Optional[TrialState] = None
     values: Optional[List[float]] = None
@@ -193,39 +202,48 @@ def _run_trial(
     func_err_fail_exc_info: Optional[Any] = None
     # Set to a string if `func` returns correctly but the return value violates assumptions.
     values_conversion_failure_message: Optional[str] = None
+    stop_event: Optional[Event] = None
+    thread: Optional[Thread] = None
+
+    if study._storage.is_heartbeat_enabled():
+        stop_event = Event()
+        thread = Thread(
+            target=_record_heartbeat, args=(trial._trial_id, study._storage, stop_event)
+        )
+        thread.start()
 
     try:
         value_or_values = func(trial)
     except exceptions.TrialPruned as e:
         # TODO(mamu): Handle multi-objective cases.
-        # Register the last intermediate value if present as the value of the trial.
-        # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
         state = TrialState.PRUNED
-        frozen_trial = study._storage.get_trial(trial._trial_id)
-        last_step = frozen_trial.last_step
-        if last_step is not None:
-            values = [frozen_trial.intermediate_values[last_step]]
         func_err = e
     except Exception as e:
         state = TrialState.FAIL
         func_err = e
         func_err_fail_exc_info = sys.exc_info()
     else:
+        # TODO(hvy): Avoid checking the values both here and inside `Study.tell`.
         values, values_conversion_failure_message = _check_and_convert_to_values(
-            len(study.directions), value_or_values, trial
+            len(study.directions), value_or_values, trial.number
         )
         if values_conversion_failure_message is not None:
             state = TrialState.FAIL
         else:
             state = TrialState.COMPLETE
 
+    if study._storage.is_heartbeat_enabled():
+        assert stop_event is not None
+        assert thread is not None
+        stop_event.set()
+        thread.join()
+
+    # `Study.tell` may raise during trial post-processing.
     try:
-        trial._after_func(state, values)
+        study.tell(trial, values=values, state=state)
     except Exception:
         raise
     finally:
-        study._tell(trial, state, values)
-
         if state == TrialState.COMPLETE:
             study._log_completed_trial(trial, cast(List[float], values))
         elif state == TrialState.PRUNED:
@@ -251,15 +269,15 @@ def _run_trial(
 
 
 def _check_and_convert_to_values(
-    n_objectives: int, original_value: Union[float, Sequence[float]], trial: trial_module.Trial
+    n_objectives: int, original_value: Union[float, Sequence[float]], trial_number: int
 ) -> Tuple[Optional[List[float]], Optional[str]]:
     if isinstance(original_value, Sequence):
         if n_objectives != len(original_value):
             return (
                 None,
                 (
-                    f"Trial {trial.number} failed, because the number of the values "
-                    f"{len(original_value)} is did not match the number of the objectives "
+                    f"Trial {trial_number} failed, because the number of the values "
+                    f"{len(original_value)} did not match the number of the objectives "
                     f"{n_objectives}."
                 ),
             )
@@ -270,7 +288,7 @@ def _check_and_convert_to_values(
 
     _checked_values = []
     for v in _original_values:
-        checked_v, failure_message = _check_single_value(v, trial)
+        checked_v, failure_message = _check_single_value(v, trial_number)
         if failure_message is not None:
             # TODO(Imamura): Construct error message taking into account all values and do not
             #  early return
@@ -285,7 +303,7 @@ def _check_and_convert_to_values(
 
 
 def _check_single_value(
-    original_value: float, trial: trial_module.Trial
+    original_value: float, trial_number: int
 ) -> Tuple[Optional[float], Optional[str]]:
     value = None
     failure_message = None
@@ -297,16 +315,24 @@ def _check_single_value(
         TypeError,
     ):
         failure_message = (
-            f"Trial {trial.number} failed, because the returned value from the "
-            f"objective function cannot be cast to float. Returned value is: "
-            f"{repr(original_value)}"
+            f"Trial {trial_number} failed, because the value {repr(original_value)} could not be "
+            "cast to float."
         )
 
     if value is not None and math.isnan(value):
         value = None
         failure_message = (
-            f"Trial {trial.number} failed, because the objective function returned "
+            f"Trial {trial_number} failed, because the objective function returned "
             f"{original_value}."
         )
 
     return value, failure_message
+
+
+def _record_heartbeat(trial_id: int, storage: storages.BaseStorage, stop_event: Event) -> None:
+    heartbeat_interval = storage.get_heartbeat_interval()
+    assert heartbeat_interval is not None
+    while True:
+        storage.record_heartbeat(trial_id)
+        if stop_event.wait(timeout=heartbeat_interval):
+            return

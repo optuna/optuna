@@ -25,7 +25,7 @@ class TestParzenEstimator(object):
     ) -> None:
 
         s_weights, s_mus, s_sigmas = _ParzenEstimator._calculate(
-            mus,
+            np.array(mus),
             -1.0,
             1.0,
             prior_weight=1.0,
@@ -106,7 +106,7 @@ class TestParzenEstimator(object):
     ) -> None:
 
         s_weights, s_mus, s_sigmas = _ParzenEstimator._calculate(
-            mus,
+            np.array(mus),
             -1.0,
             1.0,
             prior_weight=1.0,

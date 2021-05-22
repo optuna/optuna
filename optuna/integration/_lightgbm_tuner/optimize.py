@@ -146,7 +146,7 @@ class _BaseTuner(object):
     def higher_is_better(self) -> bool:
 
         metric_name = self.lgbm_params.get("metric", "binary_logloss")
-        return metric_name in ("auc", "ndcg", "map")
+        return metric_name in ("auc", "auc_mu", "ndcg", "map", "average_precision")
 
     def compare_validation_metrics(self, val_score: float, best_score: float) -> bool:
 
@@ -294,7 +294,7 @@ class _OptunaObjectiveCV(_OptunaObjective):
         pbar: Optional[tqdm.tqdm] = None,
     ):
 
-        super(_OptunaObjectiveCV, self).__init__(
+        super().__init__(
             target_param_names,
             lgbm_params,
             train_set,
@@ -370,6 +370,8 @@ class _LightGBMBaseTuner(_BaseTuner):
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
         model_dir: Optional[str] = None,
+        *,
+        optuna_seed: Optional[int] = None,
     ) -> None:
 
         _imports.check()
@@ -401,6 +403,7 @@ class _LightGBMBaseTuner(_BaseTuner):
             Tuple[Union[lgb.Booster, lgb.CVBooster], int]
         ] = None
         self._model_dir = model_dir
+        self._optuna_seed = optuna_seed
 
         # Should not alter data since `min_data_in_leaf` is tuned.
         # https://lightgbm.readthedocs.io/en/latest/Parameters.html#feature_pre_filter
@@ -441,6 +444,9 @@ class _LightGBMBaseTuner(_BaseTuner):
                 " instead.",
                 FutureWarning,
             )
+
+        if self._model_dir is not None and not os.path.exists(self._model_dir):
+            os.mkdir(self._model_dir)
 
     @property
     def best_score(self) -> float:
@@ -565,11 +571,19 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction")
 
     def tune_num_leaves(self, n_trials: int = 20) -> None:
-        self._tune_params(["num_leaves"], n_trials, optuna.samplers.TPESampler(), "num_leaves")
+        self._tune_params(
+            ["num_leaves"],
+            n_trials,
+            optuna.samplers.TPESampler(seed=self._optuna_seed),
+            "num_leaves",
+        )
 
     def tune_bagging(self, n_trials: int = 10) -> None:
         self._tune_params(
-            ["bagging_fraction", "bagging_freq"], n_trials, optuna.samplers.TPESampler(), "bagging"
+            ["bagging_fraction", "bagging_freq"],
+            n_trials,
+            optuna.samplers.TPESampler(seed=self._optuna_seed),
+            "bagging",
         )
 
     def tune_feature_fraction_stage2(self, n_trials: int = 6) -> None:
@@ -587,7 +601,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._tune_params(
             ["lambda_l1", "lambda_l2"],
             n_trials,
-            optuna.samplers.TPESampler(),
+            optuna.samplers.TPESampler(seed=self._optuna_seed),
             "regularization_factors",
         )
 
@@ -773,8 +787,18 @@ class LightGBMTuner(_LightGBMBaseTuner):
                 Progress bars will be fragmented by logging messages of LightGBM and Optuna.
                 Please suppress such messages to show the progress bars properly.
 
+        optuna_seed:
+            ``seed`` of :class:`~optuna.samplers.TPESampler` for random number generator
+            that affects sampling for ``num_leaves``, ``bagging_fraction``, ``bagging_freq``,
+            ``lambda_l1``, and ``lambda_l2``.
+
+            .. note::
+                The `deterministic`_ parameter of LightGBM makes training reproducible.
+                Please enable it when you use this argument.
+
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     .. _LightGBM's verbosity: https://lightgbm.readthedocs.io/en/latest/Parameters.html#verbosity
+    .. _deterministic: https://lightgbm.readthedocs.io/en/latest/Parameters.html#deterministic
     """
 
     def __init__(
@@ -801,9 +825,11 @@ class LightGBMTuner(_LightGBMBaseTuner):
         model_dir: Optional[str] = None,
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
+        *,
+        optuna_seed: Optional[int] = None,
     ) -> None:
 
-        super(LightGBMTuner, self).__init__(
+        super().__init__(
             params,
             train_set,
             num_boost_round=num_boost_round,
@@ -820,6 +846,8 @@ class LightGBMTuner(_LightGBMBaseTuner):
             optuna_callbacks=optuna_callbacks,
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
+            model_dir=model_dir,
+            optuna_seed=optuna_seed,
         )
 
         self.lgbm_kwargs["valid_sets"] = valid_sets
@@ -829,10 +857,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
         self.lgbm_kwargs["keep_training_booster"] = keep_training_booster
 
         self._best_booster_with_trial_number: Optional[Tuple[lgb.Booster, int]] = None
-        self._model_dir = model_dir
-
-        if self._model_dir is not None and not os.path.exists(self._model_dir):
-            os.mkdir(self._model_dir)
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
@@ -877,8 +901,8 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
     :class:`~optuna.integration.lightgbm.LightGBMTunerCV` invokes `lightgbm.cv()`_ to train
     and validate boosters while :class:`~optuna.integration.lightgbm.LightGBMTuner` invokes
     `lightgbm.train()`_. See
-    `a simple example <https://github.com/optuna/optuna/blob/master/examples/lightgbm_tuner_cv.
-    py>`_ which optimizes the validation log loss of cancer detection.
+    `a simple example <https://github.com/optuna/optuna-examples/tree/main/lightgbm/
+    lightgbm_tuner_cv.py>`_ which optimizes the validation log loss of cancer detection.
 
     Arguments and keyword arguments for `lightgbm.cv()`_ can be passed except
     ``metrics``, ``init_model`` and ``eval_train_metric``.
@@ -903,6 +927,15 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
             Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
 
+        model_dir:
+            A directory to save boosters. By default, it is set to :obj:`None` and no boosters are
+            saved. Please set shared directory (e.g., directories on NFS) if you want to access
+            :meth:`~optuna.integration.LightGBMTunerCV.get_best_booster`
+            in distributed environments.
+            Otherwise, it may raise :obj:`ValueError`. If the directory does not exist, it will be
+            created. The filenames of the boosters will be ``{model_dir}/{trial_number}.pkl``
+            (e.g., ``./boosters/0.pkl``).
+
         verbosity:
             A verbosity level to change Optuna's logging level. The level is aligned to
             `LightGBM's verbosity`_ .
@@ -921,9 +954,22 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
                 Progress bars will be fragmented by logging messages of LightGBM and Optuna.
                 Please suppress such messages to show the progress bars properly.
 
+        return_cvbooster:
+            Flag to enable :meth:`~optuna.integration.LightGBMTunerCV.get_best_booster`.
+
+        optuna_seed:
+            ``seed`` of :class:`~optuna.samplers.TPESampler` for random number generator
+            that affects sampling for ``num_leaves``, ``bagging_fraction``, ``bagging_freq``,
+            ``lambda_l1``, and ``lambda_l2``.
+
+            .. note::
+                The `deterministic`_ parameter of LightGBM makes training reproducible.
+                Please enable it when you use this argument.
+
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     .. _lightgbm.cv(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html
     .. _LightGBM's verbosity: https://lightgbm.readthedocs.io/en/latest/Parameters.html#verbosity
+    .. _deterministic: https://lightgbm.readthedocs.io/en/latest/Parameters.html#deterministic
     """
 
     def __init__(
@@ -959,9 +1005,11 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         show_progress_bar: bool = True,
         model_dir: Optional[str] = None,
         return_cvbooster: Optional[bool] = None,
+        *,
+        optuna_seed: Optional[int] = None,
     ) -> None:
 
-        super(LightGBMTunerCV, self).__init__(
+        super().__init__(
             params,
             train_set,
             num_boost_round,
@@ -979,6 +1027,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
             model_dir=model_dir,
+            optuna_seed=optuna_seed,
         )
 
         self.lgbm_kwargs["folds"] = folds

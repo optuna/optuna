@@ -80,7 +80,7 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 # :func:`~optuna.trial.Trial.should_prune` decides termination of the trial that does not meet a predefined condition.
 #
 # We would recommend using integration modules for major machine learning frameworks.
-# Exclusive list is :mod:`optuna.integration` and usecases are available in  `optuna/examples <https://github.com/optuna/optuna/tree/master/examples/>`_.
+# Exclusive list is :mod:`optuna.integration` and usecases are available in  `optuna/examples <https://github.com/optuna/optuna-examples/>`_.
 
 
 import logging
@@ -98,7 +98,7 @@ def objective(trial):
         iris.data, iris.target, test_size=0.25, random_state=0
     )
 
-    alpha = trial.suggest_loguniform("alpha", 1e-5, 1e-1)
+    alpha = trial.suggest_float("alpha", 1e-5, 1e-1, log=True)
     clf = sklearn.linear_model.SGDClassifier(alpha=alpha)
 
     for step in range(100):
@@ -138,7 +138,9 @@ study.optimize(objective, n_trials=20)
 #
 # However, note that the benchmark is not deep learning.
 # For deep learning tasks,
-# consult the below table from `Ozaki et al, Hyperparameter Optimization Methods: Overview and Characteristics, in IEICE Trans, Vol.J103-D No.9 pp.615-631, 2020 <https://doi.org/10.14923/transinfj.2019JDR0003>`_,
+# consult the below table.
+# This table is from the `Ozaki et al., Hyperparameter Optimization Methods: Overview and Characteristics, in IEICE Trans, Vol.J103-D No.9 pp.615-631, 2020 <https://doi.org/10.14923/transinfj.2019JDR0003>`_ paper,
+# which is written in Japanese.
 #
 # +---------------------------+-----------------------------------------+---------------------------------------------------------------+
 # | Parallel Compute Resource | Categorical/Conditional Hyperparameters | Recommended Algorithms                                        |
@@ -161,7 +163,7 @@ study.optimize(objective, n_trials=20)
 # For the complete list of Optuna's integration modules, see :mod:`optuna.integration`.
 #
 # For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
-# (See also `example <https://github.com/optuna/optuna/blob/master/examples/pruning/xgboost_integration.py>`_ for the entire script.)
+# (See also `example <https://github.com/optuna/optuna-examples/tree/main/xgboost/xgboost_integration.py>`_ for the entire script.)
 #
 # .. code-block:: python
 #

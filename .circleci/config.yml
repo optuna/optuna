@@ -5,7 +5,6 @@ workflows:
   commit-build:
     jobs:
       - document
-      - tests-rdbstorage
 
 jobs:
 
@@ -32,7 +31,7 @@ jobs:
             python -m venv venv || virtualenv venv --python=python3.8
             . venv/bin/activate
             pip install -U pip
-            pip install --progress-bar off .[document] -f https://download.pytorch.org/whl/torch_stable.html
+            pip install --progress-bar off .[document]
 
       - run:
           name: build
@@ -45,66 +44,3 @@ jobs:
 
       - store_artifacts:
           path: ./docs/build/html
-
-  # Unit tests
-
-  tests-rdbstorage:
-    docker:
-      - image: circleci/python:3.7
-      - image: circleci/mysql:5.7
-        environment:
-          MYSQL_DATABASE: optunatest
-          MYSQL_USER: user
-          MYSQL_PASSWORD: test
-      - image: circleci/postgres:10.1-alpine
-        environment:
-          POSTGRES_USER: user
-          POSTGRES_DB: optunatest
-          POSTGRES_PASSWORD: test
-    steps:
-      - checkout
-
-      - run: *checkout-merge-master
-
-      - run: &install
-          name: install
-          command: |
-            sudo apt-get update
-            sudo apt-get -y install openmpi-bin libopenmpi-dev
-
-            python -m venv venv || virtualenv venv
-            . venv/bin/activate
-            pip install -U pip
-            pip install --progress-bar off -U setuptools
-            python setup.py sdist
-
-            # Install minimal dependencies and confirm that `import optuna` is successful.
-            pip install --progress-bar off $(ls dist/*.tar.gz)
-            python -c 'import optuna'
-
-            # Install all dependencies needed for testing.
-            pip install --progress-bar off $(ls dist/*.tar.gz)[testing] -f https://download.pytorch.org/whl/torch_stable.html
-
-      - run: &install-rdb-bindings
-          name: install-rdb-bindings
-          command: |
-            . venv/bin/activate
-            pip install --progress-bar off PyMySQL cryptography psycopg2-binary
-
-      - run: &tests-mysql
-          name: tests-mysql
-          command: |
-            . venv/bin/activate
-            pytest tests/storages_tests/rdb_tests/test_with_server.py
-          environment:
-            OMP_NUM_THREADS: 1
-            TEST_DB_URL: mysql+pymysql://user:test@127.0.0.1/optunatest
-
-      - run: &tests-postgresql
-          name: tests-postgresql
-          command: |
-            . venv/bin/activate
-            pytest tests/storages_tests/rdb_tests/test_with_server.py
-          environment:
-            OMP_NUM_THREADS: 1
-            TEST_DB_URL: postgresql+psycopg2://user:test@127.0.0.1/optunatest

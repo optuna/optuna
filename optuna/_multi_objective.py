@@ -8,7 +8,34 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-def _get_pareto_front_trials(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
+def _get_pareto_front_trials_2d(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
+    trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
+
+    n_trials = len(trials)
+    if n_trials == 0:
+        return []
+
+    trials.sort(
+        key=lambda trial: (
+            _normalize_value(trial.values[0], study.directions[0]),
+            _normalize_value(trial.values[1], study.directions[1]),
+        ),
+    )
+
+    last_nondominated_trial = trials[0]
+    pareto_front = [last_nondominated_trial]
+    for i in range(1, n_trials):
+        trial = trials[i]
+        if _dominates(last_nondominated_trial, trial, study.directions):
+            continue
+        pareto_front.append(trial)
+        last_nondominated_trial = trial
+
+    pareto_front.sort(key=lambda trial: trial.number)
+    return pareto_front
+
+
+def _get_pareto_front_trials_nd(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
     pareto_front = []
     trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
@@ -24,6 +51,12 @@ def _get_pareto_front_trials(study: "optuna.study.BaseStudy") -> List[FrozenTria
             pareto_front.append(trial)
 
     return pareto_front
+
+
+def _get_pareto_front_trials(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
+    if len(study.directions) == 2:
+        return _get_pareto_front_trials_2d(study)  # Log-linear in number of trials.
+    return _get_pareto_front_trials_nd(study)  # Quadratic in number of trials.
 
 
 def _dominates(

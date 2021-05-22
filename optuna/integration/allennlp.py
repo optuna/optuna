@@ -7,6 +7,8 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+from packaging import version
+
 import optuna
 from optuna import load_study
 from optuna import Trial
@@ -19,21 +21,22 @@ with try_import() as _imports:
     import allennlp.commands
     import allennlp.common.util
 
-# EpochCallback is conditionally imported because allennlp may be unavailable in
+# TrainerCallback is conditionally imported because allennlp may be unavailable in
 # the environment that builds the documentation.
 if _imports.is_successful():
     import _jsonnet
-    from allennlp.training import EpochCallback
+    from allennlp.training import GradientDescentTrainer
+    from allennlp.training import TrainerCallback
 else:
-    # I disable mypy here since `allennlp.training.EpochCallback` is a subclass of `Registrable`
-    # (https://docs.allennlp.org/master/api/training/trainer/#epochcallback) but `EpochCallback`
+    # I disable mypy here since `allennlp.training.TrainerCallback` is a subclass of `Registrable`
+    # (https://docs.allennlp.org/main/api/training/trainer/#trainercallback) but `TrainerCallback`
     # defined here is not `Registrable`, which causes a mypy checking failure.
-    class EpochCallback:  # type: ignore
-        """Stub for EpochCallback."""
+    class TrainerCallback:  # type: ignore
+        """Stub for TrainerCallback."""
 
         @classmethod
         def register(cls: Any, *args: Any, **kwargs: Any) -> Callable:
-            """Stub method for `EpochCallback.register`.
+            """Stub method for `TrainerCallback.register`.
 
             This method has the same signature as
             `Registrable.register <https://docs.allennlp.org/master/
@@ -205,18 +208,18 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
     # It removes when dumping configuration since
     # the result of `dump_best_config` can be passed to
     # `allennlp train`.
-    if "epoch_callbacks" in best_config["trainer"]:
-        new_epoch_callbacks = []
-        epoch_callbacks = best_config["trainer"]["epoch_callbacks"]
-        for callback in epoch_callbacks:
+    if "callbacks" in best_config["trainer"]:
+        new_callbacks = []
+        callbacks = best_config["trainer"]["callbacks"]
+        for callback in callbacks:
             if callback["type"] == "optuna_pruner":
                 continue
-            new_epoch_callbacks.append(callback)
+            new_callbacks.append(callback)
 
-        if len(new_epoch_callbacks) == 0:
-            best_config["trainer"].pop("epoch_callbacks")
+        if len(new_callbacks) == 0:
+            best_config["trainer"].pop("callbacks")
         else:
-            best_config["trainer"]["epoch_callbacks"] = new_epoch_callbacks
+            best_config["trainer"]["callbacks"] = new_callbacks
 
     with open(output_config_file, "w") as f:
         json.dump(best_config, f, indent=4)
@@ -229,8 +232,8 @@ class AllenNLPExecutor(object):
     This feature is experimental since AllenNLP major release will come soon.
     The interface may change without prior notice to correspond to the update.
 
-    See the examples of `objective function <https://github.com/optuna/optuna/blob/
-    master/examples/allennlp/allennlp_jsonnet.py>`_.
+    See the examples of `objective function <https://github.com/optuna/optuna-examples/tree/
+    main/allennlp/allennlp_jsonnet.py>`_.
 
     You can also see the tutorial of our AllenNLP integration on
     `AllenNLP Guide <https://guide.allennlp.org/hyperparameter-optimization>`_.
@@ -238,8 +241,8 @@ class AllenNLPExecutor(object):
     .. note::
         From Optuna v2.1.0, users have to cast their parameters by using methods in Jsonnet.
         Call ``std.parseInt`` for integer, or ``std.parseJson`` for floating point.
-        Please see the `example configuration <https://github.com/optuna/optuna/blob/master/
-        examples/allennlp/classifier.jsonnet>`_.
+        Please see the `example configuration <https://github.com/optuna/optuna-examples/tree/main/
+        allennlp/classifier.jsonnet>`_.
 
     .. note::
         In :class:`~optuna.integration.AllenNLPExecutor`,
@@ -357,13 +360,8 @@ class AllenNLPExecutor(object):
 
     def run(self) -> float:
         """Train a model using AllenNLP."""
-        try:
-            import_func = allennlp.common.util.import_submodules  # type: ignore
-        except AttributeError:
-            import_func = allennlp.common.util.import_module_and_submodules
-
         for package_name in self._include_package:
-            import_func(package_name)
+            allennlp.common.util.import_module_and_submodules(package_name)
 
         self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
@@ -379,13 +377,13 @@ class AllenNLPExecutor(object):
 
 
 @experimental("2.0.0")
-@EpochCallback.register("optuna_pruner")
-class AllenNLPPruningCallback(EpochCallback):
+@TrainerCallback.register("optuna_pruner")
+class AllenNLPPruningCallback(TrainerCallback):
     """AllenNLP callback to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/allennlp/allennlp_simple.py>`__
-    if you want to add a proning callback which observes a metric.
+    See `the example <https://github.com/optuna/optuna-examples/tree/main/
+    allennlp/allennlp_simple.py>`__
+    if you want to add a pruning callback which observes a metric.
 
     You can also see the tutorial of our AllenNLP integration on
     `AllenNLP Guide <https://guide.allennlp.org/hyperparameter-optimization>`_.
@@ -418,8 +416,12 @@ class AllenNLPPruningCallback(EpochCallback):
     ):
         _imports.check()
 
-        if allennlp.__version__ < "1.0.0":
-            raise Exception("AllenNLPPruningCallback requires `allennlp`>=1.0.0.")
+        if version.parse(allennlp.__version__) < version.parse("2.0.0"):
+            raise ImportError(
+                "`AllenNLPPruningCallback` requires AllenNLP>=v2.0.0."
+                "If you want to use a callback with an old version of AllenNLP, "
+                "please install Optuna v2.5.0 by executing `pip install 'optuna==2.5.0'`."
+            )
 
         # When `AllenNLPPruningCallback` is instantiated in Python script,
         # trial and monitor should not be `None`.
@@ -443,7 +445,7 @@ class AllenNLPPruningCallback(EpochCallback):
                     " without `AllenNLPExecutor`. If you want to use a callback"
                     " without an executor, you have to instantiate a callback with"
                     "`trial` and `monitor. Please see the Optuna example: https://github.com/"
-                    "optuna/optuna/blob/master/examples/allennlp/allennlp_simple.py."
+                    "optuna/optuna-examples/tree/main/allennlp/allennlp_simple.py."
                 )
                 raise RuntimeError(message)
 
@@ -463,13 +465,30 @@ class AllenNLPPruningCallback(EpochCallback):
                 self._trial = Trial(study, int(trial_id))
                 self._monitor = monitor
 
-    def __call__(
+    def on_epoch(
         self,
-        trainer: "allennlp.training.GradientDescentTrainer",
+        trainer: "GradientDescentTrainer",
         metrics: Dict[str, Any],
         epoch: int,
-        is_master: bool,
+        is_primary: bool = True,
+        **kwargs: Any,
     ) -> None:
+        """Check if a training reaches saturation.
+
+        Args:
+            trainer:
+                AllenNLP's trainer
+            metrics:
+                Dictionary of metrics.
+            epoch:
+                Number of current epoch.
+            is_primary:
+                A flag for AllenNLP internal.
+
+        """
+        if not is_primary:
+            return None
+
         value = metrics.get(self._monitor)
         if value is None:
             return
