@@ -1,3 +1,5 @@
+from typing import List
+
 import optuna
 from optuna.pruners import BasePruner
 
@@ -46,3 +48,6 @@ class NopPruner(BasePruner):
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         return False
+
+    def _arguments(self) -> List[str]:
+        return []

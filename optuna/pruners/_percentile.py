@@ -174,6 +174,15 @@ class PercentilePruner(BasePruner):
         self._interval_steps = interval_steps
         self._n_min_trials = n_min_trials
 
+    def _arguments(self) -> List[str]:
+        return [
+            f"percentile={repr(self._percentile)}",
+            f"n_startup_trials={repr(self._n_startup_trials)}",
+            f"n_warmup_steps={repr(self._n_warmup_steps)}",
+            f"interval_steps={repr(self._interval_steps)}",
+            f"n_min_trials={repr(self._n_min_trials)}",
+        ]
+
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         all_trials = study.get_trials(deepcopy=False)

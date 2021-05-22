@@ -160,6 +160,15 @@ class SuccessiveHalvingPruner(BasePruner):
         self._min_early_stopping_rate = min_early_stopping_rate
         self._bootstrap_count = bootstrap_count
 
+    def _arguments(self) -> List[str]:
+        min_resource = "auto" if self._min_resource is None else self._min_resource
+        return [
+            f"min_resource={repr(min_resource)}",
+            f"reduction_factor={repr(self._reduction_factor)}",
+            f"min_early_stopping_rate={repr(self._min_early_stopping_rate)}",
+            f"bootstrap_count={repr(self._bootstrap_count)}",
+        ]
+
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         step = trial.last_step

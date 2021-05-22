@@ -1,4 +1,5 @@
 import abc
+from typing import List
 
 import optuna
 
@@ -26,3 +27,11 @@ class BasePruner(object, metaclass=abc.ABCMeta):
         """
 
         raise NotImplementedError
+
+    @abc.abstractclassmethod
+    def _arguments(self) -> List[str]:
+        raise NotImplementedError
+
+    def __repr__(self) -> str:
+        arguments = ", ".join(self._arguments())
+        return f"{self.__class__.__name__}({arguments})"

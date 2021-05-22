@@ -1,6 +1,7 @@
 import math
 from typing import Any
 from typing import Optional
+from typing import List
 
 import optuna
 from optuna.pruners import BasePruner
@@ -110,6 +111,16 @@ class ThresholdPruner(BasePruner):
         self._upper = upper
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
+
+    def _arguments(self) -> List[str]:
+        lower = None if self._lower == -float("inf") else self._lower
+        upper = None if self._upper == float("inf") else self._upper
+        return [
+            f"lower={repr(lower)}",
+            f"upper={repr(upper)}",
+            f"n_warmup_steps={repr(self._n_warmup_steps)}",
+            f"interval_steps={repr(self._interval_steps)}",
+        ]
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 

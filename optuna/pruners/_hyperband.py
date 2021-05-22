@@ -165,6 +165,14 @@ class HyperbandPruner(BasePruner):
                 "are mutually incompatible, bootstrap_count is {}".format(self._bootstrap_count)
             )
 
+    def _arguments(self) -> List[str]:
+        return [
+            f"min_resource={repr(self._min_resource)}",
+            f"max_resource={repr(self._max_resource)}",
+            f"reduction_factor={repr(self._reduction_factor)}",
+            f"bootstrap_count={repr(self._bootstrap_count)}",
+        ]
+
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
         if len(self._pruners) == 0:
             self._try_initialization(study)
