@@ -14,12 +14,12 @@ from optuna import load_study
 from optuna import Trial
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna.pruners import ThresholdPruner  # NOQA
-from optuna.pruners import SuccessiveHalvingPruner  # NOQA
 from optuna.pruners import HyperbandPruner  # NOQA
+from optuna.pruners import MedianPruner  # NOQA
 from optuna.pruners import NopPruner  # NOQA
 from optuna.pruners import PercentilePruner  # NOQA
-from optuna.pruners import MedianPruner  # NOQA
+from optuna.pruners import SuccessiveHalvingPruner  # NOQA
+from optuna.pruners import ThresholdPruner  # NOQA
 
 
 with try_import() as _imports:

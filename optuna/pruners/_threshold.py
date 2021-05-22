@@ -1,7 +1,7 @@
 import math
 from typing import Any
-from typing import Optional
 from typing import List
+from typing import Optional
 
 import optuna
 from optuna.pruners import BasePruner
