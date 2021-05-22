@@ -97,5 +97,13 @@ def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
     trial = create_running_trial(study, 1.0)
     callback = PyTorchLightningPruningCallback(trial, "InvalidMonitor")
 
+    trainer = pl.Trainer(
+        min_epochs=0,  # Required to fire the callback after the first epoch.
+        max_epochs=1,
+        checkpoint_callback=False,
+        callbacks=[callback],
+    )
+    model = Model()
+
     with pytest.warns(UserWarning):
-        callback.on_validation_end(0, {"loss": 1.0})
+        callback.on_validation_end(trainer, model)
