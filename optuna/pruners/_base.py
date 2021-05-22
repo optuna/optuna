@@ -28,9 +28,8 @@ class BasePruner(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
-    @abc.abstractclassmethod
     def _arguments(self) -> List[str]:
-        raise NotImplementedError
+        raise []
 
     def __repr__(self) -> str:
         arguments = ", ".join(self._arguments())
