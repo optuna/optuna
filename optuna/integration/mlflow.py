@@ -209,7 +209,7 @@ class MLflowCallback(object):
         # This sets the experiment of MLflow.
         mlflow.set_experiment(study.study_name)
 
-    def _set_tags(self, trial: optuna.trial.BaseTrial, study: optuna.study.Study) -> None:
+    def _set_tags(self, trial: optuna.trial.FrozenTrial, study: optuna.study.Study) -> None:
         """Sets the Optuna tags for the current MLFlow run
 
         Args:
@@ -219,13 +219,13 @@ class MLflowCallback(object):
         tags: Dict[str, str] = {}
         tags["number"] = str(trial.number)
         tags["datetime_start"] = str(trial.datetime_start)
-        if isinstance(trial, optuna.trial.FrozenTrial):
-            tags["datetime_complete"] = str(trial.datetime_complete)
 
-            # Set state and convert it to str and remove the common prefix.
-            trial_state = trial.state
-            if isinstance(trial_state, TrialState) and trial_state.is_finished():
-                tags["state"] = str(trial_state).split(".")[-1]
+        tags["datetime_complete"] = str(trial.datetime_complete)
+
+        # Set state and convert it to str and remove the common prefix.
+        trial_state = trial.state
+        if isinstance(trial_state, TrialState) and trial_state.is_finished():
+            tags["state"] = str(trial_state).split(".")[-1]
 
         # Set direction and convert it to str and remove the common prefix.
         study_direction = study.direction
