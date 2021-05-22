@@ -14,6 +14,12 @@ from optuna import load_study
 from optuna import Trial
 from optuna._experimental import experimental
 from optuna._imports import try_import
+from optuna.pruners import ThresholdPruner  # NOQA
+from optuna.pruners import SuccessiveHalvingPruner  # NOQA
+from optuna.pruners import HyperbandPruner  # NOQA
+from optuna.pruners import NopPruner  # NOQA
+from optuna.pruners import PercentilePruner  # NOQA
+from optuna.pruners import MedianPruner  # NOQA
 
 
 with try_import() as _imports:
@@ -50,7 +56,6 @@ else:
             return wrapper
 
 
-_NONE = "<PYTHON_NONE_OBJECT>"
 _PPID = os.getppid()
 
 """
@@ -66,16 +71,10 @@ environment variables.
 _PREFIX = "{}_OPTUNA_ALLENNLP".format(_PPID)
 _MONITOR = "{}_MONITOR".format(_PREFIX)
 _PRUNER_CLASS = "{}_PRUNER_CLASS".format(_PREFIX)
-_PRUNER_KEYS = "{}_PRUNER_KEYS".format(_PREFIX)
+_PRUNER_REPR = "{}_PRUNER_REPR".format(_PREFIX)
 _STORAGE_NAME = "{}_STORAGE_NAME".format(_PREFIX)
 _STUDY_NAME = "{}_STUDY_NAME".format(_PREFIX)
 _TRIAL_ID = "{}_TRIAL_ID".format(_PREFIX)
-
-
-def _encode_param(value: Any) -> str:
-    if value is None:
-        return _NONE
-    return str(value)
 
 
 def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
@@ -93,39 +92,11 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     if pruner_class is None:
         return None
 
-    pruner_params = _get_environment_variables_for_pruner()
-    pruner = getattr(optuna.pruners, pruner_class, None)
-
-    if pruner is None:
+    pruner_repr = os.getenv(_PRUNER_REPR)
+    if pruner_repr is None:
         return None
 
-    return pruner(**pruner_params)
-
-
-def _infer_and_cast(value: Optional[str]) -> Optional[Union[str, int, float, bool]]:
-    """Infer and cast a string to desired types.
-
-    We are only able to set strings as environment variables.
-    However, parameters of a pruner could be integer, float,
-    boolean, or else. We infer and cast environment variables
-    to desired types.
-
-    """
-    if value is None or value == _NONE:
-        return None
-
-    try:
-        return int(value)
-    except ValueError:
-        try:
-            return float(value)
-        except ValueError:
-            if value == "True":
-                return True
-            if value == "False":
-                return False
-
-    return value
+    return eval(pruner_repr)
 
 
 def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
@@ -135,60 +106,6 @@ def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
         "storage": os.getenv(_STORAGE_NAME),
         "monitor": os.getenv(_MONITOR),
     }
-
-
-def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int, float, bool]]]:
-    keys = os.getenv(_PRUNER_KEYS)
-
-    # keys would be empty when `_PRUNER_CLASS` is `NopPruner`
-    if keys is None or keys == "":
-        return {}
-
-    kwargs = {}
-    for key in keys.split(","):
-        key_without_prefix = key.replace("{}_".format(_PREFIX), "")
-        kwargs[key_without_prefix] = _infer_and_cast(os.getenv(key))
-
-    return kwargs
-
-
-def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
-    pruner = trial.study.pruner
-    kwargs: Dict[str, Any] = {}
-
-    if isinstance(pruner, optuna.pruners.HyperbandPruner):
-        kwargs["min_resource"] = pruner._min_resource
-        kwargs["max_resource"] = pruner._max_resource
-        kwargs["reduction_factor"] = pruner._reduction_factor
-
-    elif isinstance(pruner, optuna.pruners.MedianPruner):
-        kwargs["n_startup_trials"] = pruner._n_startup_trials
-        kwargs["n_warmup_steps"] = pruner._n_warmup_steps
-        kwargs["interval_steps"] = pruner._interval_steps
-
-    elif isinstance(pruner, optuna.pruners.PercentilePruner):
-        kwargs["percentile"] = pruner._percentile
-        kwargs["n_startup_trials"] = pruner._n_startup_trials
-        kwargs["n_warmup_steps"] = pruner._n_warmup_steps
-        kwargs["interval_steps"] = pruner._interval_steps
-
-    elif isinstance(pruner, optuna.pruners.SuccessiveHalvingPruner):
-        min_resource = pruner._min_resource if pruner._min_resource is not None else "auto"
-        kwargs["min_resource"] = min_resource
-        kwargs["reduction_factor"] = pruner._reduction_factor
-        kwargs["min_early_stopping_rate"] = pruner._min_early_stopping_rate
-
-    elif isinstance(pruner, optuna.pruners.ThresholdPruner):
-        kwargs["lower"] = pruner._lower if pruner._lower != -float("inf") else None
-        kwargs["upper"] = pruner._upper if pruner._upper != float("inf") else None
-        kwargs["n_warmup_steps"] = pruner._n_warmup_steps
-        kwargs["interval_steps"] = pruner._interval_steps
-    elif isinstance(pruner, optuna.pruners.NopPruner):
-        pass
-    else:
-        raise ValueError("Unsupported pruner is specified: {}".format(type(pruner)))
-
-    return kwargs
 
 
 def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
@@ -322,24 +239,17 @@ class AllenNLPExecutor(object):
         else:
             url = ""
 
-        pruner_params = _fetch_pruner_config(trial)
-        pruner_params = {
-            "{}_{}".format(_PREFIX, key): _encode_param(value)
-            for key, value in pruner_params.items()
-        }
-
         system_attrs = {
             _STUDY_NAME: trial.study.study_name,
             _TRIAL_ID: str(trial._trial_id),
             _STORAGE_NAME: url,
             _MONITOR: metrics,
-            _PRUNER_KEYS: ",".join(pruner_params.keys()),
+            _PRUNER_REPR: repr(trial.study.pruner),
         }
 
         if trial.study.pruner is not None:
             system_attrs[_PRUNER_CLASS] = type(trial.study.pruner).__name__
 
-        system_attrs.update(pruner_params)
         self._system_attrs = system_attrs
 
     def _build_params(self) -> Dict[str, Any]:
