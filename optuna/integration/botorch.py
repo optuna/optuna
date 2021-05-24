@@ -335,8 +335,8 @@ class BoTorchSampler(BaseSampler):
     transformed back to Optuna's representations. Categorical parameters are one-hot encoded.
 
     .. seealso::
-        See an `example <https://github.com/optuna/optuna/blob/master/examples/
-        multi_objective/botorch_simple.py>`_ how to use the sampler.
+        See an `example <https://github.com/optuna/optuna-examples/blob/main/multi_objective/
+        botorch_simple.py>`_ how to use the sampler.
 
     .. seealso::
         See the `BoTorch <https://botorch.org/>`_ homepage for details and for how to implement

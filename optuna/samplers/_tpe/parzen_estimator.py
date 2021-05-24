@@ -43,14 +43,14 @@ class _ParzenEstimatorParameters(
 class _ParzenEstimator:
     def __init__(
         self,
-        multivariate_observations: Dict[str, np.ndarray],
+        observations: Dict[str, np.ndarray],
         search_space: Dict[str, BaseDistribution],
         parameters: _ParzenEstimatorParameters,
     ) -> None:
 
         self._search_space = search_space
         self._parameters = parameters
-        self._n_observations = next(iter(multivariate_observations.values())).size
+        self._n_observations = next(iter(observations.values())).size
         self._weights = self._calculate_weights()
 
         self._low: Dict[str, Optional[float]] = {}
@@ -66,22 +66,24 @@ class _ParzenEstimator:
             self._q[param_name] = q
 
         # `_low`, `_high`, `_q` are needed for transformation.
-        multivariate_observations = self._transform_to_uniform(multivariate_observations)
+        observations = self._transform_to_uniform(observations)
 
-        # Transformed `multivariate_observations` might be needed for following operations.
-        self._sigmas0 = self._precompute_sigmas0(multivariate_observations)
+        # Transformed `observations` might be needed for following operations.
+        self._sigmas0 = self._precompute_sigmas0(observations)
 
         self._mus: Dict[str, Optional[np.ndarray]] = {}
         self._sigmas: Dict[str, Optional[np.ndarray]] = {}
         self._categorical_weights: Dict[str, Optional[np.ndarray]] = {}
         categorical_weights: Optional[np.ndarray]
         for param_name, dist in search_space.items():
-            observations = multivariate_observations[param_name]
+            param_observations = observations[param_name]
             if isinstance(dist, distributions.CategoricalDistribution):
                 mus = sigmas = None
-                categorical_weights = self._calculate_categorical_params(observations, param_name)
+                categorical_weights = self._calculate_categorical_params(
+                    param_observations, param_name
+                )
             else:
-                mus, sigmas = self._calculate_numerical_params(observations, param_name)
+                mus, sigmas = self._calculate_numerical_params(param_observations, param_name)
                 categorical_weights = None
             self._mus[param_name] = mus
             self._sigmas[param_name] = sigmas
@@ -188,8 +190,8 @@ class _ParzenEstimator:
         weights_func = self._parameters.weights
         n_observations = self._n_observations
         if consider_prior:
-            weights = np.empty(n_observations + 1)
-            weights[:-1] = weights_func(n_observations)
+            weights = np.zeros(n_observations + 1)
+            weights[:-1] = weights_func(n_observations)[:n_observations]
             weights[-1] = prior_weight
         else:
             weights = weights_func(n_observations)

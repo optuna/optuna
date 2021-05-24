@@ -185,6 +185,21 @@ class TPESampler(BaseSampler):
             If this is :obj:`True` and ``multivariate=True``, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler.
             If ``multivariate=False``, this flag has no effect.
+        constant_liar:
+            If :obj:`True`, penalize running trials to avoid suggesting parameter configurations
+            nearby.
+
+            .. note::
+                It is recommended to set this value to :obj:`True` during distributed
+                optimization to avoid having multiple workers evaluating similar parameter
+                configurations. In particular, if each objective function evaluation is costly
+                and the durations of the running states are significant, and/or the number of
+                workers is high.
+
+            .. note::
+                Added in v2.8.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.8.0.
 
     Raises:
         ValueError:
@@ -206,6 +221,7 @@ class TPESampler(BaseSampler):
         multivariate: bool = False,
         group: bool = False,
         warn_independent_sampling: bool = True,
+        constant_liar: bool = False,
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
@@ -226,6 +242,7 @@ class TPESampler(BaseSampler):
         self._group_decomposed_search_space: Optional[_GroupDecomposedSearchSpace] = None
         self._search_space_group: Optional[_SearchSpaceGroup] = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
+        self._constant_liar = constant_liar
 
         # The following two attributes are used in the multi-objective optimization.
         self._split_cache: Dict[int, Any] = {}
@@ -249,6 +266,13 @@ class TPESampler(BaseSampler):
                 ExperimentalWarning,
             )
             self._group_decomposed_search_space = _GroupDecomposedSearchSpace(True)
+
+        if constant_liar:
+            warnings.warn(
+                "``constant_liar`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
     def reseed_rng(self) -> None:
 
@@ -323,7 +347,7 @@ class TPESampler(BaseSampler):
             return {}
 
         param_names = list(search_space.keys())
-        values, scores = _get_observation_pairs(study, param_names)
+        values, scores = _get_observation_pairs(study, param_names, self._constant_liar)
 
         # If the number of samples is insufficient, we run random trial.
         n = len(scores)
@@ -356,7 +380,7 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        values, scores = _get_observation_pairs(study, [param_name])
+        values, scores = _get_observation_pairs(study, [param_name], self._constant_liar)
 
         n = len(scores)
 
@@ -683,12 +707,15 @@ def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
 
 
 def _get_observation_pairs(
-    study: Study, param_names: List[str]
+    study: Study,
+    param_names: List[str],
+    constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
 ) -> Tuple[Dict[str, List[float]], List[Tuple[float, List[float]]]]:
     """Get observation pairs from the study.
 
     This function collects observation pairs from the complete or pruned trials of the study.
-    The values for trials that don't contain the parameter named ``param_name`` are set to None.
+    In addition, if ``constant_liar`` is :obj:`True`, the running trials are considered.
+    The values for trials that don't contain the parameter in the ``param_names`` are skipped.
 
     An observation pair fundamentally consists of a parameter value and an objective value.
     However, due to the pruning mechanism of Optuna, final objective values are not always
@@ -709,9 +736,15 @@ def _get_observation_pairs(
         else:
             signs.append(-1)
 
+    states: Tuple[TrialState, ...]
+    if constant_liar:
+        states = (TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING)
+    else:
+        states = (TrialState.COMPLETE, TrialState.PRUNED)
+
     scores = []
     values: Dict[str, List[float]] = {param_name: [] for param_name in param_names}
-    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
+    for trial in study.get_trials(deepcopy=False, states=states):
         # If ``group`` = True, there may be trials that are not included in each subspace.
         # Such trials should be ignored here.
         if any([param_name not in trial.params for param_name in param_names]):
@@ -734,6 +767,9 @@ def _get_observation_pairs(
                     score = (-step, [signs[0] * intermediate_value])
             else:
                 score = (float("inf"), [0.0])
+        elif trial.state is TrialState.RUNNING:
+            assert constant_liar
+            score = (-float("inf"), [signs[0] * float("inf")])
         else:
             assert False
         scores.append(score)

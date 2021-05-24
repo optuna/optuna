@@ -5,7 +5,7 @@ This page contains a list of example codes written with Optuna. The example file
 
 ### Simple Black-box Optimization
 
-* [Quadratic function](./quadratic_simple.py)
+* [Quadratic function](https://github.com/optuna/optuna-examples/blob/main/quadratic_simple.py)
 
 ### Examples with ML Libraries
 
@@ -45,7 +45,7 @@ The following example demonstrates how to implement an objective function that u
 
 The following example demonstrates how to implement pruning logic with Optuna.
 
-* [Simple pruning (scikit-learn)](./simple_pruning.py)
+* [Simple pruning (scikit-learn)](https://github.com/optuna/optuna-examples/blob/main/simple_pruning.py)
 
 In addition, integration modules are available for the following libraries, providing simpler interfaces to utilize pruning.
 
@@ -65,22 +65,23 @@ In addition, integration modules are available for the following libraries, prov
 * [Pruning with XGBoost integration module](https://github.com/optuna/optuna-examples/blob/main/xgboost/xgboost_integration.py)
 * [Pruning with XGBoost integration module (cross validation, XGBoost.cv)](https://github.com/optuna/optuna-examples/blob/main/xgboost/xgboost_cv_integration.py)
 
-### Examples of User-Defined Sampler
+### Examples of Samplers
 
-* [SimulatedAnnealingSampler](./samplers/simulated_annealing_sampler.py)
+* [Warm Starting CMA-ES](https://github.com/optuna/optuna-examples/blob/main/samplers/warm_starting_cma.py)
+* [User-defined SimulatedAnnealingSampler](https://github.com/optuna/optuna-examples/blob/main/samplers/simulated_annealing_sampler.py)
 
 ### Examples of Multi-Objective Optimization
 
-* [Optimization with BoTorch](./multi_objective/botorch_simple.py)
-* [Optimization of MLP with PyTorch](./multi_objective/pytorch_simple.py)
+* [Optimization with BoTorch](https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py)
+* [Optimization of MLP with PyTorch](https://github.com/optuna/optuna-examples/blob/main/multi_objective/pytorch_simple.py)
 
 ### Examples of Visualization
 
-* [Visualizing study](https://colab.research.google.com/github/optuna/optuna/blob/master/examples/visualization/plot_study.ipynb)
+* [Visualizing study](https://colab.research.google.com/github/optuna/optuna-examples/blob/main/visualization/plot_study.ipynb)
 
 ### An example to enqueue trials with given parameter values
 
-* [Enqueuing trials with given parameters](./enqueue_trial.py)
+* [Enqueuing trials with given parameters](https://github.com/optuna/optuna-examples/blob/main/enqueue_trial.py)
 
 ### Examples of MLflow
 
@@ -112,13 +113,4 @@ In addition, integration modules are available for the following libraries, prov
 * [PyKEEN](https://github.com/pykeen/pykeen)
 * [RL Baselines Zoo](https://github.com/DLR-RM/rl-baselines3-zoo)
 
-PRs to add additional projects welcome!
-
-### Running with Optuna's Docker images?
-You can use our docker images with the tag ending with `-dev` to run most of the examples.
-For example, you can run [PyTorch example](./multi_objective/pytorch_simple.py) via `docker run --rm optuna/optuna:py3.7-dev python examples/multi_objective/pytorch_simple.py`.
-Also, you can try our visualization example in Jupyter Notebook by opening `locqalhost:8888` in your browser after executing this:
-
-```bash
-docker run -p 8888:8888 --rm optuna/optuna:py3.7-dev jupyter notebook --allow-root --no-browser --port 8888 --ip 0.0.0.0 --NotebookApp.token='' --NotebookApp.password=''
-```
+PRs to add additional projects welcome in [optuna-examples](https://github.com/optuna/optuna-examples)!
