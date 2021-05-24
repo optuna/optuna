@@ -16,7 +16,7 @@ from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
-from optuna.multi_objective._hypervolume import WFG
+from optuna._hypervolume import WFG
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
@@ -403,9 +403,12 @@ class TPESampler(BaseSampler):
     def _split_observation_pairs(
         self,
         trial_id: int,
-        config_vals: Dict[str, List[Optional[float]]],
+        config_vals: Dict[str, List[float]],
         loss_vals: List[Tuple[float, List[float]]],
     ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+
+        if len(loss_vals) == 0:
+            return {}, {}
 
         config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
 
@@ -420,9 +423,12 @@ class TPESampler(BaseSampler):
             indices_above = np.sort(index_loss_ascending[n_below:])
 
         else:
-            loss_vals = [v for _, v in loss_vals]
+            # Multi-objective TPE only sees the first parameter to determine the weights.
+            assert len(config_vals) > 0
+            cvals = np.asarray(list(config_vals.values())[0])
 
-            cvals = np.asarray(list(config_vals.values()))
+            # Multi-objective TPE does not support pruning, so it ignores the ``step``.
+            loss_vals = [v for _, v in loss_vals]
             lvals = np.asarray(loss_vals)
 
             # Solving HSSP for variables number of times is a waste of time.
@@ -678,7 +684,7 @@ def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
 
 def _get_observation_pairs(
     study: Study, param_names: List[str]
-) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, List[float]]]]:
+) -> Tuple[Dict[str, List[float]], List[Tuple[float, List[float]]]]:
     """Get observation pairs from the study.
 
     This function collects observation pairs from the complete or pruned trials of the study.
@@ -704,7 +710,7 @@ def _get_observation_pairs(
             signs.append(-1)
 
     scores = []
-    values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
+    values: Dict[str, List[float]] = {param_name: [] for param_name in param_names}
     for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
         # If ``group`` = True, there may be trials that are not included in each subspace.
         # Such trials should be ignored here.
@@ -727,7 +733,7 @@ def _get_observation_pairs(
                 else:
                     score = (-step, [signs[0] * intermediate_value])
             else:
-                score = (float("inf"), 0.0)
+                score = (float("inf"), [0.0])
         else:
             assert False
         scores.append(score)

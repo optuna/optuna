@@ -730,10 +730,10 @@ def test_get_observation_pairs() -> None:
     assert _tpe.sampler._get_observation_pairs(study, ["x"]) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         [
-            (-float("inf"), 5.0),  # COMPLETE
-            (-7, 2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+            (-float("inf"), [5.0]),  # COMPLETE
+            (-7, [2]),  # PRUNED (with intermediate values)
+            (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
         ],
     )
     assert _tpe.sampler._get_observation_pairs(study, ["y"]) == ({"y": []}, [])
@@ -746,10 +746,10 @@ def test_get_observation_pairs() -> None:
     assert _tpe.sampler._get_observation_pairs(study, ["x"]) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         [
-            (-float("inf"), -5.0),  # COMPLETE
-            (-7, -2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+            (-float("inf"), [-5.0]),  # COMPLETE
+            (-7, [-2]),  # PRUNED (with intermediate values)
+            (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
         ],
     )
     assert _tpe.sampler._get_observation_pairs(study, ["y"]) == ({"y": []}, [])
@@ -779,10 +779,10 @@ def test_get_observation_pairs() -> None:
     assert _tpe.sampler._get_observation_pairs(study, ["x", "y"]) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
-            (-float("inf"), 11.0),  # COMPLETE
-            (-7, 2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+            (-float("inf"), [11.0]),  # COMPLETE
+            (-7, [2]),  # PRUNED (with intermediate values)
+            (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
         ],
     )
 
@@ -794,10 +794,10 @@ def test_get_observation_pairs() -> None:
     assert _tpe.sampler._get_observation_pairs(study, ["x", "y"]) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
-            (-float("inf"), -11.0),  # COMPLETE
-            (-7, -2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+            (-float("inf"), [-11.0]),  # COMPLETE
+            (-7, [-2]),  # PRUNED (with intermediate values)
+            (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
         ],
     )
 
