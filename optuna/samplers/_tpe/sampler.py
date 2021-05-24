@@ -768,6 +768,9 @@ def _get_observation_pairs(
             else:
                 score = (float("inf"), [0.0])
         elif trial.state is TrialState.RUNNING:
+            if study._is_multi_objective():
+                continue
+
             assert constant_liar
             score = (-float("inf"), [signs[0] * float("inf")])
         else:
