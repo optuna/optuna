@@ -58,8 +58,10 @@ class MaxTrialsCallback:
 
 
 @experimental("2.8.0")
-def RetryFailedTrialCallback(study, trial):
-    """When a trail fails, this callback can be used with the :class:`optuna.storage` class to
+class RetryFailedTrialCallback:
+    """Retry a failed trial up to a maximum number of times
+
+    When a trail fails, this callback can be used with the :class:`optuna.storage` class to
     recreate the trial in :obj:`TrialState.WAITING` to queue up the trial to be run again.
 
     This is helpful in environments where trials may fail due to external conditions, such as
@@ -68,6 +70,8 @@ def RetryFailedTrialCallback(study, trial):
     Usage:
 
         .. testcode::
+
+            from optuna.storage import RetryFailedTrialCallback
 
             storage = optuna.storages.RDBStorage(
                 args.optuna_storage,
@@ -79,6 +83,7 @@ def RetryFailedTrialCallback(study, trial):
             study = optuna.create_study(
                 storage=storage,
             )
+
     """
 
     def __init__(self, max_retry: int) -> None:
