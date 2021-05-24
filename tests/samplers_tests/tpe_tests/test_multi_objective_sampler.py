@@ -13,8 +13,8 @@ import numpy as np
 import pytest
 
 import optuna
-from optuna.samplers import TPESampler
 from optuna.samplers import _tpe
+from optuna.samplers import TPESampler
 
 
 class MockSystemAttr:
@@ -432,7 +432,9 @@ def test_multi_objective_sample_int_uniform_distributions() -> None:
         (optuna.trial.TrialState.WAITING,),
     ],
 )
-def test_multi_objective_sample_independent_handle_unsuccessful_states(state: optuna.trial.TrialState) -> None:
+def test_multi_objective_sample_independent_handle_unsuccessful_states(
+    state: optuna.trial.TrialState,
+) -> None:
     study = optuna.create_study(directions=["minimize", "maximize"])
     dist = optuna.distributions.UniformDistribution(1.0, 100.0)
     random.seed(128)
@@ -523,11 +525,11 @@ def test_multi_objective_get_observation_pairs() -> None:
     study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
     study.optimize(objective, n_trials=5)
 
-    assert _tpe.sampler._get_observation_pairs(study, "x") == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"]) == (
         {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
     )
-    assert _tpe.sampler._get_observation_pairs(study, "y") == ({"y": []}, [])
+    assert _tpe.sampler._get_observation_pairs(study, ["y"]) == ({"y": []}, [])
 
 
 def test_calculate_nondomination_rank() -> None:

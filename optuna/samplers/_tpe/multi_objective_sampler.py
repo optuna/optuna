@@ -123,6 +123,3 @@ class MOTPESampler(TPESampler):
             weights=weights_above,
             seed=seed,
         )
-
-
-

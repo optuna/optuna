@@ -12,11 +12,11 @@ import warnings
 import numpy as np
 
 from optuna import distributions
+from optuna._hypervolume import WFG
 from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
-from optuna._hypervolume import WFG
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
@@ -355,7 +355,9 @@ class TPESampler(BaseSampler):
             return {}
 
         # We divide data into below and above.
-        below, above = self._split_observation_pairs(trial._trial_id, values, scores)
+        below, above = self._split_observation_pairs(
+            len(study.directions), trial._trial_id, values, scores
+        )
         # We then sample by maximizing log likelihood ratio.
         below_parzen_estimator_parameter = self._create_below_parzen_estimator_parameter(
             study, trial._trial_id
@@ -389,7 +391,9 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        below, above = self._split_observation_pairs(trial._trial_id, values, scores)
+        below, above = self._split_observation_pairs(
+            len(study.directions), trial._trial_id, values, scores
+        )
         below_parzen_estimator_parameter = self._create_below_parzen_estimator_parameter(
             study, trial._trial_id
         )
@@ -426,34 +430,31 @@ class TPESampler(BaseSampler):
 
     def _split_observation_pairs(
         self,
+        n_objectives: int,
         trial_id: int,
         config_vals: Dict[str, List[float]],
         loss_vals: List[Tuple[float, List[float]]],
     ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
 
-        if len(loss_vals) == 0:
-            return {}, {}
-
         config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
 
-        if len(loss_vals[0][1]) <= 1:
-            loss_vals = [(s, v[0]) for s, v in loss_vals]
-            loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
+        if n_objectives <= 1:
+            loss_values = np.asarray(
+                [(s, v[0]) for s, v in loss_vals], dtype=[("step", float), ("score", float)]
+            )
 
             n_below = self._gamma(len(loss_values))
             index_loss_ascending = np.argsort(loss_values)
             # `np.sort` is used to keep chronological order.
             indices_below = np.sort(index_loss_ascending[:n_below])
             indices_above = np.sort(index_loss_ascending[n_below:])
-
         else:
             # Multi-objective TPE only sees the first parameter to determine the weights.
             assert len(config_vals) > 0
             cvals = np.asarray(list(config_vals.values())[0])
 
             # Multi-objective TPE does not support pruning, so it ignores the ``step``.
-            loss_vals = [v for _, v in loss_vals]
-            lvals = np.asarray(loss_vals)
+            lvals = np.asarray([v for _, v in loss_vals])
 
             # Solving HSSP for variables number of times is a waste of time.
             # We cache the result of splitting.
@@ -476,7 +477,7 @@ class TPESampler(BaseSampler):
                 last_idx = 0
                 while last_idx + sum(nondomination_ranks == i) <= n_below:
                     length = indices[nondomination_ranks == i].shape[0]
-                    indices_below[last_idx: last_idx + length] = indices[nondomination_ranks == i]
+                    indices_below[last_idx : last_idx + length] = indices[nondomination_ranks == i]
                     last_idx += length
                     i += 1
 
@@ -507,7 +508,7 @@ class TPESampler(BaseSampler):
 
             self._weights_below[trial_id] = np.asarray(
                 [w for w, v in zip(weights_below, cvals[indices_below]) if v is not None],
-                dtype=float
+                dtype=float,
             )
 
         below = {}
@@ -580,8 +581,8 @@ class TPESampler(BaseSampler):
                     continue
                 p = np.max([selected_vec, v], axis=0)
                 contributions[j] -= (
-                        self._compute_hypervolume(np.asarray(selected_vecs + [p]), reference_point)
-                        - hv_selected
+                    self._compute_hypervolume(np.asarray(selected_vecs + [p]), reference_point)
+                    - hv_selected
                 )
             selected_vecs += [selected_vec]
             selected_indices += [selected_index]
