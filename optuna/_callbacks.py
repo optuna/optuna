@@ -71,7 +71,7 @@ class RetryFailedTrialCallback:
 
         .. testcode::
 
-            from optuna.storage import RetryFailedTrialCallback
+            from optuna.storages import RetryFailedTrialCallback
 
             storage = optuna.storages.RDBStorage(
                 args.optuna_storage,
@@ -90,14 +90,17 @@ class RetryFailedTrialCallback:
         self._max_retry = max_retry
 
     def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
+        user_attrs = {"failed_trial": trial.number}
+        user_attrs.update(trial.user_attrs)
         failed_trials = (
-            trial.user_attrs["failed_trials"] if "failed_trials" in trial.user_attrs else []
+            study.user_attrs["failed_trials"] if "failed_trials" in study.user_attrs else []
         )
-        failed_trials.append(trial.number)
+        failed_trials.append(user_attrs["failed_trial"])
+        study.user_attrs.update({"failed_trials": failed_trials})
+        print(study.user_attrs, user_attrs, failed_trials)
         if failed_trials.count(trial.number) > self._max_retry:
             return
 
-        trial.user_attrs.update({"last_failed_trial": trial.number})
         study.add_trial(
             optuna.create_trial(
                 state=optuna.trial.TrialState.WAITING,

@@ -16,8 +16,8 @@ from optuna import Study
 from optuna import version
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
-from optuna.storage import RetryFailedTrialCallback
 from optuna.storages import RDBStorage
+from optuna.storages import RetryFailedTrialCallback
 from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import VersionInfoModel
@@ -419,6 +419,8 @@ def test_RetryFailedTrialCallback() -> None:
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
         with patch("optuna._optimize.Thread", _TestableThread):
-            with patch.object(storage, "failed_trial_callback", wraps=failed_trial_callback) as m:
-                study.optimize(lambda _: 1.0, n_trials=1)
-                m.assert_called_once()
+            with patch.object(
+                storage, "failed_trial_callback", wraps=RetryFailedTrialCallback(max_retry=2)
+            ):
+                study.optimize(lambda _: 1.0, n_trials=3)
+                assert study.user_attrs.failed_trials.count(study.user_attrs.failed_trials[0]) == 2
