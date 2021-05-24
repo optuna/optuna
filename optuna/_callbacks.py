@@ -69,21 +69,36 @@ def RetryFailedTrialCallback(study, trial):
 
         .. testcode::
 
-            study = optuna.create_study()
-            study.optimize(
-                objective,
-                callbacks=[MaxTrialsCallback(10, states=(TrialState.COMPLETE,))],
+            storage = optuna.storages.RDBStorage(
+                args.optuna_storage,
+                heartbeat_interval=60,
+                grace_period=120,
+                failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
             )
 
+            study = optuna.create_study(
+                storage=storage,
+            )
     """
 
-    trial.user_attrs.update({"last_failed_trial": trial.number})
-    study.add_trial(
-        optuna.create_trial(
-            state=optuna.trial.TrialState.WAITING,
-            params=trial.params,
-            distributions=trial.distributions,
-            user_attrs=trial.user_attrs,
-            system_attrs=trial.system_attrs,
+    def __init__(self, max_retry: int) -> None:
+        self._max_retry = max_retry
+
+    def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
+        failed_trials = (
+            trial.user_attrs["failed_trials"] if "failed_trials" in trial.user_attrs else []
         )
-    )
+        failed_trials.append(trial.number)
+        if failed_trials.count(trial.number) > self._max_retry:
+            return
+
+        trial.user_attrs.update({"last_failed_trial": trial.number})
+        study.add_trial(
+            optuna.create_trial(
+                state=optuna.trial.TrialState.WAITING,
+                params=trial.params,
+                distributions=trial.distributions,
+                user_attrs=trial.user_attrs,
+                system_attrs=trial.system_attrs,
+            )
+        )
