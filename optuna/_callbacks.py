@@ -59,7 +59,7 @@ class MaxTrialsCallback:
 
 @experimental("2.8.0")
 class RetryFailedTrialCallback:
-    """Retry a failed trial up to a maximum number of times
+    """Retry a failed trial up to a maximum number of times.
 
     When a trial fails, this callback can be used with the :class:`optuna.storage` class to
     recreate the trial in :obj:`TrialState.WAITING` to queue up the trial to be run again.
