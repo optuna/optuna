@@ -75,7 +75,7 @@ class RetryFailedTrialCallback:
             from optuna.storages import RetryFailedTrialCallback
 
             storage = optuna.storages.RDBStorage(
-                url='sqlite:///:memory:',
+                url="sqlite:///:memory:",
                 heartbeat_interval=60,
                 grace_period=120,
                 failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
