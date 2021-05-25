@@ -34,6 +34,7 @@ class _ParzenEstimatorParameters(
             ("consider_magic_clip", bool),
             ("consider_endpoints", bool),
             ("weights", Callable[[int], np.ndarray]),
+            ("multivariate", bool),
         ],
     )
 ):
@@ -295,14 +296,14 @@ class _ParzenEstimator:
 
         return transformed
 
-    @staticmethod
-    def _precompute_sigmas0(observations: Dict[str, np.ndarray]) -> Optional[np.ndarray]:
+    def _precompute_sigmas0(self, observations: Dict[str, np.ndarray]) -> Optional[np.ndarray]:
 
         n_observations = next(iter(observations.values())).size
         n_observations = max(n_observations, 1)
         n_params = len(observations)
 
-        if n_params == 1:
+        # If it is univariate, there is no need to precompute sigmas0, so this method returns None.
+        if not self._parameters.multivariate:
             return None
 
         # We use Scott's rule for bandwidth selection if the number of parameters > 1.
@@ -348,6 +349,7 @@ class _ParzenEstimator:
         n_observations = self._n_observations
         consider_prior = self._parameters.consider_prior
         consider_magic_clip = self._parameters.consider_magic_clip
+        multivariate = self._parameters.multivariate
         sigmas0 = self._sigmas0
         low = self._low[param_name]
         high = self._high[param_name]
@@ -373,7 +375,9 @@ class _ParzenEstimator:
             mus[:n_observations] = observations
             mus[n_observations] = prior_mu
 
-            if sigmas0 is None:
+            if not multivariate:
+                assert sigmas0 is None
+                # If it is univariate, we compute the sigmas according to the TPE's original rule.
                 pairs_of_observation_and_idx = np.vstack(
                     [pairs_of_observation_and_idx, (prior_mu, n_observations + 1)]
                 )
@@ -394,12 +398,14 @@ class _ParzenEstimator:
                 ][:-1, 0]
                 sigmas[n_observations] = prior_sigma
             else:
+                assert sigmas0 is not None
                 sigmas = np.empty(n_observations + 1)
                 sigmas[:n_observations] = sigmas0 * (high - low)
                 sigmas[n_observations] = prior_sigma
         else:
             mus = observations
-            if sigmas0 is None:
+            if not multivariate:
+                assert sigmas0 is None
                 pairs_of_sigma_and_idx = np.empty((n_observations, 2))
                 pairs_of_sigma_and_idx[:, 0] = np.maximum(
                     pairs_of_observation_and_idx[1:-1, 0] - pairs_of_observation_and_idx[0:-2, 0],
@@ -408,6 +414,7 @@ class _ParzenEstimator:
                 pairs_of_sigma_and_idx[:, 1] = pairs_of_observation_and_idx[1:-1, 1]
                 sigmas = pairs_of_sigma_and_idx[np.argsort(pairs_of_sigma_and_idx[:, 1])][:, 0]
             else:
+                assert sigmas0 is not None
                 sigmas = sigmas0 * (high - low)
 
         # We adjust the range of the 'sigmas' according to the 'consider_magic_clip' flag.
