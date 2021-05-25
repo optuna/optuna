@@ -71,10 +71,10 @@ class RetryFailedTrialCallback:
 
         .. testcode::
 
+            import optuna
             from optuna.storages import RetryFailedTrialCallback
 
             storage = optuna.storages.RDBStorage(
-                args.optuna_storage,
                 heartbeat_interval=60,
                 grace_period=120,
                 failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
