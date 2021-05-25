@@ -18,7 +18,7 @@ class PyTorchLightningPruningCallback(Callback):
     """PyTorch Lightning callback to prune unpromising trials.
 
     See `the example <https://github.com/optuna/optuna-examples/blob/
-    pytorch/pytorch_lightning_simple.py>`__
+    main/pytorch/pytorch_lightning_simple.py>`__
     if you want to add a pruning callback which observes accuracy.
 
     Args:
