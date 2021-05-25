@@ -56,13 +56,13 @@ def test_percentile_pruner_interval_steps() -> None:
 
 def test_percentile_pruner_with_one_trial() -> None:
 
-    study = optuna.study.create_study()
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.report(1, 1)
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
+    study = optuna.study.create_study(pruner=pruner)
+    trial = study.ask()
+    trial.report(1, 1)
 
     # A pruner is not activated at a first trial.
-    assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
+    assert not trial.should_prune()
 
 
 @pytest.mark.parametrize(
@@ -74,43 +74,43 @@ def test_25_percentile_pruner_intermediate_values(
 
     direction, intermediate_values, latest_value = direction_value
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
-    study = optuna.study.create_study(direction=direction)
+    study = optuna.study.create_study(direction=direction, pruner=pruner)
 
     for v in intermediate_values:
-        trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+        trial = study.ask()
         trial.report(v, 1)
-        study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
+        study.tell(trial, v)
 
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial = study.ask()
     # A pruner is not activated if a trial has no intermediate values.
-    assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
+    assert not trial.should_prune()
 
     trial.report(latest_value, 1)
     # A pruner is activated if a trial has an intermediate value.
-    assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
+    assert trial.should_prune()
 
 
 def test_25_percentile_pruner_intermediate_values_nan() -> None:
 
     pruner = optuna.pruners.PercentilePruner(25.0, 0, 0)
-    study = optuna.study.create_study()
+    study = optuna.study.create_study(pruner=pruner)
 
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial = study.ask()
     trial.report(float("nan"), 1)
     # A pruner is not activated if the study does not have any previous trials.
-    assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
-    study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
+    assert not trial.should_prune()
+    study.tell(trial, -1)
 
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial = study.ask()
     trial.report(float("nan"), 1)
     # A pruner is activated if the best intermediate value of this trial is NaN.
-    assert pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
-    study._storage.set_trial_state(trial._trial_id, TrialState.COMPLETE)
+    assert trial.should_prune()
+    study.tell(trial, -1)
 
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
+    trial = study.ask()
     trial.report(1, 1)
     # A pruner is not activated if the 25 percentile intermediate value is NaN.
-    assert not pruner.prune(study=study, trial=study._storage.get_trial(trial._trial_id))
+    assert not trial.should_prune()
 
 
 @pytest.mark.parametrize(
