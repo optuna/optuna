@@ -425,5 +425,5 @@ def test_RetryFailedTrialCallback() -> None:
             with patch("optuna._optimize.Thread", _TestableThread):
                 study.optimize(lambda _: n, n_trials=1)
 
-            retried_trials = sum("failed_trial" in s.user_attrs for s in study.trials)
+            retried_trials = sum("failed_trial" in s.system_attrs for s in study.trials)
             assert retried_trials == n

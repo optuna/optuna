@@ -91,20 +91,22 @@ class RetryFailedTrialCallback:
         self._max_retry = max_retry
 
     def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
-        retries = sum(("failed_trial", trial.number) in s.user_attrs.items() for s in study.trials)
+        retries = sum(
+            ("failed_trial", trial.number) in s.system_attrs.items() for s in study.trials
+        )
 
         if retries + 1 > self._max_retry:
             return
 
-        user_attrs = {"failed_trial": trial.number}
-        user_attrs.update(trial.user_attrs)
+        system_attrs = {"failed_trial": trial.number}
+        system_attrs.update(trial.system_attrs)
 
         study.add_trial(
             optuna.create_trial(
                 state=optuna.trial.TrialState.WAITING,
                 params=trial.params,
                 distributions=trial.distributions,
-                user_attrs=user_attrs,
-                system_attrs=trial.system_attrs,
+                user_attrs=trial.user_attrs,
+                system_attrs=system_attrs,
             )
         )
