@@ -96,8 +96,8 @@ class RetryFailedTrialCallback:
             study.user_attrs["failed_trials"] if "failed_trials" in study.user_attrs else []
         )
         failed_trials.append(user_attrs["failed_trial"])
-        study.user_attrs.update({"failed_trials": failed_trials})
-        print(study.user_attrs, user_attrs, failed_trials)
+        study.set_user_attr("failed_trials", failed_trials)
+
         if failed_trials.count(trial.number) > self._max_retry:
             return
 
@@ -106,7 +106,7 @@ class RetryFailedTrialCallback:
                 state=optuna.trial.TrialState.WAITING,
                 params=trial.params,
                 distributions=trial.distributions,
-                user_attrs=trial.user_attrs,
+                user_attrs=user_attrs,
                 system_attrs=trial.system_attrs,
             )
         )
