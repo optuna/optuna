@@ -423,7 +423,7 @@ def test_RetryFailedTrialCallback() -> None:
 
             # Exceptions raised in spawned threads are caught by `_TestableThread`.
             with patch("optuna._optimize.Thread", _TestableThread):
-                study.optimize(lambda _: n, n_trials=1)
+                study.optimize(lambda _: 1.0, n_trials=1)
 
             retried_trials = sum("failed_trial" in s.system_attrs for s in study.trials)
             assert retried_trials == n
