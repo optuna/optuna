@@ -12,6 +12,7 @@ The :mod:`~optuna.pruners` module defines a :class:`~optuna.pruners.BasePruner` 
    optuna.pruners.BasePruner
    optuna.pruners.MedianPruner
    optuna.pruners.NopPruner
+   optuna.pruners.PatientPruner
    optuna.pruners.PercentilePruner
    optuna.pruners.SuccessiveHalvingPruner
    optuna.pruners.HyperbandPruner
