@@ -25,8 +25,8 @@ if not _imports.is_successful():
 class KerasPruningCallback(Callback):
     """Keras callback to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/keras/keras_integration.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/blob/main/
+    keras/keras_integration.py>`__
     if you want to add a pruning callback which observes validation accuracy.
 
     Args:

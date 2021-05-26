@@ -17,8 +17,8 @@ if not _imports.is_successful():
 class PyTorchLightningPruningCallback(Callback):
     """PyTorch Lightning callback to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/pytorch/pytorch_lightning_simple.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/blob/
+    main/pytorch/pytorch_lightning_simple.py>`__
     if you want to add a pruning callback which observes accuracy.
 
     Args:
