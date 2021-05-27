@@ -60,7 +60,7 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 #
 # Optuna provides the following pruning algorithms:
 #
-# - Asynchronous Successive Halving algorithm implemted in :class:`optuna.pruners.SuccessiveHalvingPruner`
+# - Asynchronous Successive Halving algorithm implemented in :class:`optuna.pruners.SuccessiveHalvingPruner`
 #
 # - Hyperband algorithm implemented in :class:`optuna.pruners.HyperbandPruner`
 #
