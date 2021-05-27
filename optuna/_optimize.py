@@ -11,7 +11,6 @@ import os
 import sys
 from threading import Event
 from threading import Thread
-import time
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -335,6 +334,5 @@ def _record_heartbeat(trial_id: int, storage: storages.BaseStorage, stop_event: 
     assert heartbeat_interval is not None
     while True:
         storage.record_heartbeat(trial_id)
-        if stop_event.is_set():
+        if stop_event.wait(timeout=heartbeat_interval):
             return
-        time.sleep(heartbeat_interval)
