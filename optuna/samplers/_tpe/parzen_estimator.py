@@ -373,18 +373,27 @@ class _ParzenEstimator:
 
             if not multivariate:
                 assert sigmas0 is None
-                sorted_observations = np.hstack([observations, low, high, prior_mu])
-                indices = np.hstack(
-                    [np.arange(n_observations), -1, n_observations + 1, n_observations]
+                pairs_of_observation_and_idx = np.asarray(
+                    [(low, -1)]
+                    + [(x, i) for i, x in enumerate(observations)]
+                    + [(high, n_observations + 1)]
+                    + [(prior_mu, n_observations)]
                 )
-                indices = indices[np.argsort(sorted_observations)]
-                sorted_observations = np.sort(sorted_observations)
+                pairs_of_observation_and_idx = pairs_of_observation_and_idx[
+                    np.argsort(pairs_of_observation_and_idx[:, 0])
+                ]
 
-                sigmas = np.maximum(
-                    sorted_observations[1:-1] - sorted_observations[:-2],
-                    sorted_observations[2:] - sorted_observations[1:-1],
+                pairs_of_sigma_and_idx = np.empty((n_observations + 1, 2))
+                pairs_of_sigma_and_idx[:, 0] = np.maximum(
+                    pairs_of_observation_and_idx[1:-1, 0] - pairs_of_observation_and_idx[0:-2, 0],
+                    pairs_of_observation_and_idx[2:, 0] - pairs_of_observation_and_idx[1:-1, 0],
                 )
-                sigmas = sigmas[indices[1:-1]]
+                pairs_of_sigma_and_idx[:, 1] = pairs_of_observation_and_idx[1:-1, 1]
+
+                sigmas = np.empty(n_observations + 1)
+                sigmas[:n_observations] = pairs_of_sigma_and_idx[
+                    np.argsort(pairs_of_sigma_and_idx[:, 1])
+                ][:-1, 0]
                 sigmas[n_observations] = prior_sigma
 
             else:
@@ -396,16 +405,18 @@ class _ParzenEstimator:
             mus = observations
             if not multivariate:
                 assert sigmas0 is None
-                sorted_observations = np.hstack([observations, low, high])
-                indices = np.hstack([np.arange(n_observations), -1, n_observations + 1])
-                indices = indices[np.argsort(sorted_observations)]
-                sorted_observations = np.sort(sorted_observations)
-
-                sigmas = np.maximum(
-                    sorted_observations[1:-1] - sorted_observations[:-2],
-                    sorted_observations[2:] - sorted_observations[1:-1],
+                pairs_of_observation_and_idx = np.asarray(
+                    [(low, -1)]
+                    + [(x, i) for i, x in enumerate(observations)]
+                    + [(high, n_observations)]
                 )
-                sigmas = sigmas[indices[1:-1]]
+                pairs_of_sigma_and_idx = np.empty((n_observations, 2))
+                pairs_of_sigma_and_idx[:, 0] = np.maximum(
+                    pairs_of_observation_and_idx[1:-1, 0] - pairs_of_observation_and_idx[0:-2, 0],
+                    pairs_of_observation_and_idx[2:, 0] - pairs_of_observation_and_idx[1:-1, 0],
+                )
+                pairs_of_sigma_and_idx[:, 1] = pairs_of_observation_and_idx[1:-1, 1]
+                sigmas = pairs_of_sigma_and_idx[np.argsort(pairs_of_sigma_and_idx[:, 1])][:, 0]
             else:
                 assert sigmas0 is not None
                 sigmas = sigmas0 * (high - low)
