@@ -193,7 +193,7 @@ def _environment_variables() -> Dict[str, str]:
 
 
 def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
-    """Save JSON config file after updating with parameters from the best trial in the study.
+    """Save JSON config file with environment variables and best performing hyperparameters.
 
     Args:
         input_config_file:
