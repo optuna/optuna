@@ -119,7 +119,7 @@ class RetryFailedTrialCallback:
 
     @staticmethod
     def retried_trial_number(trial: FrozenTrial) -> Optional[int]:
-        """Return the number of the trail being retried.
+        """Return the number of the trial being retried.
 
         Args:
             trial:
