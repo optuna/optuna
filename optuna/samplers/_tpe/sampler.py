@@ -535,8 +535,8 @@ def _get_observation_pairs(
     ``(-step, value)``).
     """
 
-    if len(param_names) > 1 and not multivariate:
-        raise ValueError("If the multiple parameters are given, please use `multivariate` = True.")
+    if len(param_names) > 1:
+        assert multivariate
 
     sign = 1
     if study.direction == StudyDirection.MAXIMIZE:

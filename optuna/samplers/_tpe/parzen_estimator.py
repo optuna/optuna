@@ -191,6 +191,8 @@ class _ParzenEstimator:
         weights_func = self._parameters.weights
         n_observations = self._n_observations
         if consider_prior:
+            # TODO(HideakiImamura) Raise `ValueError` if the weight function returns an ndarray of
+            # unexpected size.
             weights = np.zeros(n_observations + 1)
             weights[:-1] = weights_func(n_observations)[:n_observations]
             weights[-1] = prior_weight
@@ -355,16 +357,10 @@ class _ParzenEstimator:
         high = self._high[param_name]
         assert low is not None
         assert high is not None
+        assert len(observations) == self._n_observations
 
         if n_observations == 0:
             consider_prior = True
-
-        pairs_of_observation_and_idx = np.asarray(
-            [(low, -1)] + [(x, i) for i, x in enumerate(observations)] + [(high, n_observations)]
-        )
-        pairs_of_observation_and_idx = pairs_of_observation_and_idx[
-            np.argsort(pairs_of_observation_and_idx[:, 0])
-        ]
 
         if consider_prior:
 
@@ -377,26 +373,20 @@ class _ParzenEstimator:
 
             if not multivariate:
                 assert sigmas0 is None
-                # If it is univariate, we compute the sigmas according to the TPE's original rule.
-                pairs_of_observation_and_idx = np.vstack(
-                    [pairs_of_observation_and_idx, (prior_mu, n_observations + 1)]
+                sorted_observations = np.hstack([observations, low, high, prior_mu])
+                indices = np.hstack(
+                    [np.arange(n_observations), -1, n_observations + 1, n_observations]
                 )
-                pairs_of_observation_and_idx = pairs_of_observation_and_idx[
-                    np.argsort(pairs_of_observation_and_idx[:, 0])
-                ]
+                indices = indices[np.argsort(sorted_observations)]
+                sorted_observations = np.sort(sorted_observations)
 
-                pairs_of_sigma_and_idx = np.empty((n_observations + 1, 2))
-                pairs_of_sigma_and_idx[:, 0] = np.maximum(
-                    pairs_of_observation_and_idx[1:-1, 0] - pairs_of_observation_and_idx[0:-2, 0],
-                    pairs_of_observation_and_idx[2:, 0] - pairs_of_observation_and_idx[1:-1, 0],
+                sigmas = np.maximum(
+                    sorted_observations[1:-1] - sorted_observations[:-2],
+                    sorted_observations[2:] - sorted_observations[1:-1],
                 )
-                pairs_of_sigma_and_idx[:, 1] = pairs_of_observation_and_idx[1:-1, 1]
-
-                sigmas = np.empty(n_observations + 1)
-                sigmas[:n_observations] = pairs_of_sigma_and_idx[
-                    np.argsort(pairs_of_sigma_and_idx[:, 1])
-                ][:-1, 0]
+                sigmas = sigmas[indices[1:-1]]
                 sigmas[n_observations] = prior_sigma
+
             else:
                 assert sigmas0 is not None
                 sigmas = np.empty(n_observations + 1)
@@ -406,13 +396,18 @@ class _ParzenEstimator:
             mus = observations
             if not multivariate:
                 assert sigmas0 is None
-                pairs_of_sigma_and_idx = np.empty((n_observations, 2))
-                pairs_of_sigma_and_idx[:, 0] = np.maximum(
-                    pairs_of_observation_and_idx[1:-1, 0] - pairs_of_observation_and_idx[0:-2, 0],
-                    pairs_of_observation_and_idx[2:, 0] - pairs_of_observation_and_idx[1:-1, 0],
+                sorted_observations = np.hstack([observations, low, high])
+                indices = np.hstack(
+                    [np.arange(n_observations), -1, n_observations + 1]
                 )
-                pairs_of_sigma_and_idx[:, 1] = pairs_of_observation_and_idx[1:-1, 1]
-                sigmas = pairs_of_sigma_and_idx[np.argsort(pairs_of_sigma_and_idx[:, 1])][:, 0]
+                indices = indices[np.argsort(sorted_observations)]
+                sorted_observations = np.sort(sorted_observations)
+
+                sigmas = np.maximum(
+                    sorted_observations[1:-1] - sorted_observations[:-2],
+                    sorted_observations[2:] - sorted_observations[1:-1],
+                )
+                sigmas = sigmas[indices[1:-1]]
             else:
                 assert sigmas0 is not None
                 sigmas = sigmas0 * (high - low)
