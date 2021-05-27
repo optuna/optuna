@@ -431,4 +431,3 @@ def test_RetryFailedTrialCallback() -> None:
             )
             retried_trials = sum("failed_trial" in s.system_attrs for s in study.trials)
             assert retried_trials == n
-        assert False
