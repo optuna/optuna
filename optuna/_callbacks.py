@@ -1,3 +1,4 @@
+from typing import Optional
 from typing import Tuple
 
 import optuna
@@ -115,3 +116,17 @@ class RetryFailedTrialCallback:
                 system_attrs=system_attrs,
             )
         )
+
+    def retried_trial_number(trial) -> Optional[int]:
+        """Return the number of the trail being retried.
+
+        Args:
+            trial:
+                The :obj:`trial` object.
+
+        Returns:
+            The number of the previous trial. If not retry of a previous trial,
+            returns :obj:`None`.
+        """
+
+        return trial.system_attrs.get("failed_trial", None)
