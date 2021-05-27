@@ -123,7 +123,7 @@ class RetryFailedTrialCallback:
 
         Args:
             trial:
-                The :obj:`trial` object.
+                The trial object.
 
         Returns:
             The number of the previous trial. If not retry of a previous trial,
