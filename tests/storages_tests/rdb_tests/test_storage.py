@@ -402,7 +402,7 @@ def test_failed_trial_callback() -> None:
                 m.assert_called_once()
 
 
-def test_RetryFailedTrialCallback() -> None:
+def test_retry_failed_trial_callback() -> None:
     heartbeat_interval = 1
     grace_period = 2
 
