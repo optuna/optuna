@@ -397,9 +397,7 @@ class _ParzenEstimator:
             if not multivariate:
                 assert sigmas0 is None
                 sorted_observations = np.hstack([observations, low, high])
-                indices = np.hstack(
-                    [np.arange(n_observations), -1, n_observations + 1]
-                )
+                indices = np.hstack([np.arange(n_observations), -1, n_observations + 1])
                 indices = indices[np.argsort(sorted_observations)]
                 sorted_observations = np.sort(sorted_observations)
 

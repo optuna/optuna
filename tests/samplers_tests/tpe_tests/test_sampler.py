@@ -734,13 +734,16 @@ def test_get_observation_pairs() -> None:
         (float("inf"), 0.0),  # PRUNED (without intermediate values)
     ]
     assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
-        {"x": [5.0, 5.0, 5.0, 5.0]}, scores
+        {"x": [5.0, 5.0, 5.0, 5.0]},
+        scores,
     )
     assert _tpe.sampler._get_observation_pairs(study, ["y"], False) == (
-        {"y": [None, None, None, None]}, scores
+        {"y": [None, None, None, None]},
+        scores,
     )
     assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
-        {"x": [5.0, 5.0, 5.0, 5.0]}, scores
+        {"x": [5.0, 5.0, 5.0, 5.0]},
+        scores,
     )
     assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
 
@@ -756,13 +759,16 @@ def test_get_observation_pairs() -> None:
     ]
 
     assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
-        {"x": [5.0, 5.0, 5.0, 5.0]}, scores
+        {"x": [5.0, 5.0, 5.0, 5.0]},
+        scores,
     )
     assert _tpe.sampler._get_observation_pairs(study, ["y"], False) == (
-        {"y": [None, None, None, None]}, scores
+        {"y": [None, None, None, None]},
+        scores,
     )
     assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
-        {"x": [5.0, 5.0, 5.0, 5.0]}, scores
+        {"x": [5.0, 5.0, 5.0, 5.0]},
+        scores,
     )
     assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
 
