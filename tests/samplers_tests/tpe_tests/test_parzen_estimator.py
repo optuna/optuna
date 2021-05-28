@@ -1,3 +1,6 @@
+import itertools
+from typing import Dict
+from typing import List
 from unittest.mock import patch
 
 import numpy as np
@@ -6,6 +9,7 @@ import pytest
 from optuna import distributions
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
+from optuna.samplers._tpe.sampler import default_weights
 
 
 SEARCH_SPACE = {
@@ -170,7 +174,7 @@ def test_suggest_with_step_parzen_estimator(multivariate: bool) -> None:
         "c": distributions.DiscreteUniformDistribution(low=1.0, high=7.0, q=3.0),
         "d": distributions.IntUniformDistribution(low=1, high=5, step=2),
     }
-    multivariate_samples = {"c": np.array([4]), "d": np.array([1])}
+    multivariate_samples = {"c": np.array([4]), "d": np.array([3])}
     valid_ranges = {"c": set(np.arange(1.0, 10.0, 3.0)), "d": set(np.arange(1, 7, 2))}
 
     sigmas0 = np.ones(2) if multivariate else None
@@ -204,3 +208,120 @@ def test_log_pdf_parzen_estimator(multivariate: bool) -> None:
     # The likelihood of the previous observations is a positive value, and that of the points
     # sampled by the Parzen estimator is almost zero.
     assert np.all(log_pdf >= output_log_pdf)
+
+
+@pytest.mark.parametrize(
+    "mus, prior, magic_clip, endpoints",
+    itertools.product(
+        (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])),  # mus
+        (True, False),  # prior
+        (True, False),  # magic_clip
+        (True, False),  # endpoints
+    ),
+)
+def test_calculate_shape_check(
+    mus: np.ndarray, prior: bool, magic_clip: bool, endpoints: bool
+) -> None:
+
+    parameters = _ParzenEstimatorParameters(
+        prior_weight=1.0,
+        consider_prior=prior,
+        consider_magic_clip=magic_clip,
+        consider_endpoints=endpoints,
+        weights=default_weights,
+        multivariate=False,
+    )
+    mpe = _ParzenEstimator(
+        {"a": mus}, {"a": distributions.UniformDistribution(-1.0, 1.0)}, parameters
+    )
+    s_weights, s_mus, s_sigmas = mpe._weights, mpe._mus["a"], mpe._sigmas["a"]
+
+    # Result contains an additional value for a prior distribution if prior is True or
+    # len(mus) == 0 (in this case, prior is always used).
+    assert s_mus is not None
+    assert s_sigmas is not None
+    assert len(s_weights) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
+    assert len(s_mus) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
+    assert len(s_sigmas) == len(mus) + int(prior) if len(mus) > 0 else len(mus) + 1
+
+
+# TODO(ytsmiling): Improve test coverage for weights.
+@pytest.mark.parametrize(
+    "mus, flags, expected",
+    [
+        [
+            np.asarray([]),
+            {"prior": False, "magic_clip": False, "endpoints": True},
+            {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
+        ],
+        [
+            np.asarray([]),
+            {"prior": True, "magic_clip": False, "endpoints": True},
+            {"weights": [1.0], "mus": [0.0], "sigmas": [2.0]},
+        ],
+        [
+            np.asarray([0.4]),
+            {"prior": True, "magic_clip": False, "endpoints": True},
+            {"weights": [0.5, 0.5], "mus": [0.4, 0.0], "sigmas": [0.6, 2.0]},
+        ],
+        [
+            np.asarray([-0.4]),
+            {"prior": True, "magic_clip": False, "endpoints": True},
+            {"weights": [0.5, 0.5], "mus": [-0.4, 0.0], "sigmas": [0.6, 2.0]},
+        ],
+        [
+            np.asarray([-0.4, 0.4]),
+            {"prior": True, "magic_clip": False, "endpoints": True},
+            {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.6, 0.6, 2.0]},
+        ],
+        [
+            np.asarray([-0.4, 0.4]),
+            {"prior": True, "magic_clip": False, "endpoints": False},
+            {"weights": [1.0 / 3] * 3, "mus": [-0.4, 0.4, 0.0], "sigmas": [0.4, 0.4, 2.0]},
+        ],
+        [
+            np.asarray([-0.4, 0.4]),
+            {"prior": False, "magic_clip": False, "endpoints": True},
+            {"weights": [0.5, 0.5], "mus": [-0.4, 0.4], "sigmas": [0.8, 0.8]},
+        ],
+        [
+            np.asarray([-0.4, 0.4, 0.41, 0.42]),
+            {"prior": False, "magic_clip": False, "endpoints": True},
+            {
+                "weights": [0.25, 0.25, 0.25, 0.25],
+                "mus": [-0.4, 0.4, 0.41, 0.42],
+                "sigmas": [0.8, 0.8, 0.01, 0.58],
+            },
+        ],
+        [
+            np.asarray([-0.4, 0.4, 0.41, 0.42]),
+            {"prior": False, "magic_clip": True, "endpoints": True},
+            {
+                "weights": [0.25, 0.25, 0.25, 0.25],
+                "mus": [-0.4, 0.4, 0.41, 0.42],
+                "sigmas": [0.8, 0.8, 0.4, 0.58],
+            },
+        ],
+    ],
+)
+def test_calculate(
+    mus: np.ndarray, flags: Dict[str, bool], expected: Dict[str, List[float]]
+) -> None:
+
+    parameters = _ParzenEstimatorParameters(
+        prior_weight=1.0,
+        consider_prior=flags["prior"],
+        consider_magic_clip=flags["magic_clip"],
+        consider_endpoints=flags["endpoints"],
+        weights=default_weights,
+        multivariate=False,
+    )
+    mpe = _ParzenEstimator(
+        {"a": mus}, {"a": distributions.UniformDistribution(-1.0, 1.0)}, parameters
+    )
+    s_weights, s_mus, s_sigmas = mpe._weights, mpe._mus["a"], mpe._sigmas["a"]
+
+    # Result contains an additional value for a prior distribution if consider_prior is True.
+    np.testing.assert_almost_equal(s_weights, expected["weights"])
+    np.testing.assert_almost_equal(s_mus, expected["mus"])
+    np.testing.assert_almost_equal(s_sigmas, expected["sigmas"])

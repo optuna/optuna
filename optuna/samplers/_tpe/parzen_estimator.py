@@ -190,6 +190,10 @@ class _ParzenEstimator:
         prior_weight = self._parameters.prior_weight
         weights_func = self._parameters.weights
         n_observations = self._n_observations
+
+        if n_observations == 0:
+            consider_prior = True
+
         if consider_prior:
             # TODO(HideakiImamura) Raise `ValueError` if the weight function returns an ndarray of
             # unexpected size.
@@ -350,6 +354,7 @@ class _ParzenEstimator:
 
         n_observations = self._n_observations
         consider_prior = self._parameters.consider_prior
+        consider_endpoints = self._parameters.consider_endpoints
         consider_magic_clip = self._parameters.consider_magic_clip
         multivariate = self._parameters.multivariate
         sigmas0 = self._sigmas0
@@ -362,39 +367,30 @@ class _ParzenEstimator:
         if n_observations == 0:
             consider_prior = True
 
+        sorted_mus_with_endpoints = np.asarray([], dtype=float)
+        prior_mu = 0.5 * (low + high)
+        prior_sigma = 1.0 * (high - low)
+
         if consider_prior:
-
-            prior_mu = 0.5 * (low + high)
-            prior_sigma = 1.0 * (high - low)
-
             mus = np.empty(n_observations + 1)
             mus[:n_observations] = observations
             mus[n_observations] = prior_mu
 
             if not multivariate:
                 assert sigmas0 is None
-                pairs_of_observation_and_idx = np.asarray(
-                    [(low, -1)]
-                    + [(x, i) for i, x in enumerate(observations)]
-                    + [(high, n_observations + 1)]
-                    + [(prior_mu, n_observations)]
-                )
-                pairs_of_observation_and_idx = pairs_of_observation_and_idx[
-                    np.argsort(pairs_of_observation_and_idx[:, 0])
-                ]
+                sorted_indices = np.argsort(mus)
+                sorted_mus = mus[sorted_indices]
+                sorted_mus_with_endpoints = np.empty(n_observations + 3, dtype=float)
+                sorted_mus_with_endpoints[0] = low
+                sorted_mus_with_endpoints[1:-1] = sorted_mus
+                sorted_mus_with_endpoints[-1] = high
 
-                pairs_of_sigma_and_idx = np.empty((n_observations + 1, 2))
-                pairs_of_sigma_and_idx[:, 0] = np.maximum(
-                    pairs_of_observation_and_idx[1:-1, 0] - pairs_of_observation_and_idx[0:-2, 0],
-                    pairs_of_observation_and_idx[2:, 0] - pairs_of_observation_and_idx[1:-1, 0],
+                sorted_sigmas = np.maximum(
+                    sorted_mus_with_endpoints[1:-1] - sorted_mus_with_endpoints[0:-2],
+                    sorted_mus_with_endpoints[2:] - sorted_mus_with_endpoints[1:-1],
                 )
-                pairs_of_sigma_and_idx[:, 1] = pairs_of_observation_and_idx[1:-1, 1]
-
-                sigmas = np.empty(n_observations + 1)
-                sigmas[:n_observations] = pairs_of_sigma_and_idx[
-                    np.argsort(pairs_of_sigma_and_idx[:, 1])
-                ][:-1, 0]
-                sigmas[n_observations] = prior_sigma
+                sigmas = sorted_sigmas[np.argsort(sorted_indices)]
+                sigmas[-1] = prior_sigma
 
             else:
                 assert sigmas0 is not None
@@ -405,21 +401,25 @@ class _ParzenEstimator:
             mus = observations
             if not multivariate:
                 assert sigmas0 is None
-                pairs_of_observation_and_idx = np.asarray(
-                    [(low, -1)]
-                    + [(x, i) for i, x in enumerate(observations)]
-                    + [(high, n_observations)]
+                sorted_indices = np.argsort(mus)
+                sorted_mus = mus[sorted_indices]
+                sorted_mus_with_endpoints = np.empty(n_observations + 2, dtype=float)
+                sorted_mus_with_endpoints[0] = low
+                sorted_mus_with_endpoints[1:-1] = sorted_mus
+                sorted_mus_with_endpoints[-1] = high
+
+                sorted_sigmas = np.maximum(
+                    sorted_mus_with_endpoints[1:-1] - sorted_mus_with_endpoints[0:-2],
+                    sorted_mus_with_endpoints[2:] - sorted_mus_with_endpoints[1:-1],
                 )
-                pairs_of_sigma_and_idx = np.empty((n_observations, 2))
-                pairs_of_sigma_and_idx[:, 0] = np.maximum(
-                    pairs_of_observation_and_idx[1:-1, 0] - pairs_of_observation_and_idx[0:-2, 0],
-                    pairs_of_observation_and_idx[2:, 0] - pairs_of_observation_and_idx[1:-1, 0],
-                )
-                pairs_of_sigma_and_idx[:, 1] = pairs_of_observation_and_idx[1:-1, 1]
-                sigmas = pairs_of_sigma_and_idx[np.argsort(pairs_of_sigma_and_idx[:, 1])][:, 0]
+                sigmas = sorted_sigmas[np.argsort(sorted_indices)]
             else:
                 assert sigmas0 is not None
                 sigmas = sigmas0 * (high - low)
+
+        if not multivariate and not consider_endpoints and sorted_mus_with_endpoints.shape[0] >= 4:
+            sigmas[np.argmin(mus)] = sorted_mus_with_endpoints[2] - sorted_mus_with_endpoints[1]
+            sigmas[np.argmax(mus)] = sorted_mus_with_endpoints[-2] - sorted_mus_with_endpoints[-3]
 
         # We adjust the range of the 'sigmas' according to the 'consider_magic_clip' flag.
         maxsigma = 1.0 * (high - low)
@@ -428,6 +428,9 @@ class _ParzenEstimator:
         else:
             minsigma = EPS
         sigmas = np.asarray(np.clip(sigmas, minsigma, maxsigma))
+
+        if consider_prior:
+            sigmas[-1] = prior_sigma
 
         return mus, sigmas
 
