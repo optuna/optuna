@@ -86,9 +86,14 @@ class RetryFailedTrialCallback:
                 storage=storage,
             )
 
+    Args:
+        max_retry:
+            The max number of times a trial can be retried. Must be set to :obj:`None` or an
+            integer. If set to the default value of :obj:`None` will retry indefinitely.
+            If set to an integer, will only retry that many times.
     """
 
-    def __init__(self, max_retry: int) -> None:
+    def __init__(self, max_retry: Optional[int] = None) -> None:
         self._max_retry = max_retry
 
     def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
@@ -104,7 +109,7 @@ class RetryFailedTrialCallback:
             for s in study.trials
         )
 
-        if retries + 1 > self._max_retry:
+        if self._max_retry is not None and retries + 1 > self._max_retry:
             return
 
         study.add_trial(
