@@ -402,7 +402,8 @@ def test_failed_trial_callback() -> None:
                 m.assert_called_once()
 
 
-def test_retry_failed_trial_callback() -> None:
+@pytest.mark.parametrize("max_retry", [None, 0, 1])
+def test_retry_failed_trial_callback(max_retry: Optional[int]) -> None:
     heartbeat_interval = 1
     grace_period = 2
 
@@ -411,23 +412,21 @@ def test_retry_failed_trial_callback() -> None:
         storage.heartbeat_interval = heartbeat_interval
         storage.grace_period = grace_period
 
-        # Test with n = 0 to make sure if max_rety=0 no retries are done
-        # Test with n = 1 to make sure if max_rety=1 one trial is retried
-        for n in range(2):
-            storage.failed_trial_callback = RetryFailedTrialCallback(max_retry=n)
-            study = create_study(storage=storage)
+        storage.failed_trial_callback = RetryFailedTrialCallback(max_retry=max_retry)
+        study = create_study(storage=storage)
 
-            trial = study.ask()
-            storage.record_heartbeat(trial._trial_id)
-            time.sleep(grace_period + 1)
+        trial = study.ask()
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
 
-            # Exceptions raised in spawned threads are caught by `_TestableThread`.
-            with patch("optuna._optimize.Thread", _TestableThread):
-                study.optimize(lambda _: 1.0, n_trials=1)
+        # Exceptions raised in spawned threads are caught by `_TestableThread`.
+        with patch("optuna._optimize.Thread", _TestableThread):
+            study.optimize(lambda _: 1.0, n_trials=1)
 
-            # Test the last trial to see if it was a retry of the first trial or not
-            assert RetryFailedTrialCallback.retried_trial_number(study.trials[1]) == (
-                0 if n == 1 else None
-            )
-            retried_trials = sum("failed_trial" in s.system_attrs for s in study.trials)
-            assert retried_trials == n
+        # Test the last trial to see if it was a retry of the first trial or not
+        # Test max_rety=None to see if trial is retried
+        # Test max_rety=0 to see if no trials are retried
+        # Test max_rety=1 to see if trial is retried
+        assert RetryFailedTrialCallback.retried_trial_number(study.trials[1]) == (
+            None if max_retry == 0 else 0
+        )
