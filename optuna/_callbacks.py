@@ -117,8 +117,8 @@ class RetryFailedTrialCallback:
             )
         )
 
-    @experimental("2.8.0")
     @staticmethod
+    @experimental("2.8.0")
     def retried_trial_number(trial: FrozenTrial) -> Optional[int]:
         """Return the number of the trial being retried.
 
