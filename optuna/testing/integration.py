@@ -6,9 +6,6 @@ class DeterministicPruner(optuna.pruners.BasePruner):
 
         self.is_pruning = is_pruning
 
-    def __repr__(self) -> str:
-        return "{}()".format(self.__class__.__name__)
-
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         return self.is_pruning

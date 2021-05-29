@@ -357,9 +357,6 @@ def test_allennlp_pruning_callback_with_invalid_executor() -> None:
         def __init__(self) -> None:
             pass
 
-        def __repr__(self) -> str:
-            return "{}()".format(self.__class__.__name__)
-
         def prune(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> bool:
             return False
 
