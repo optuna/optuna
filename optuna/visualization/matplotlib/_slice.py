@@ -15,6 +15,7 @@ from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 from optuna.visualization.matplotlib._utils import _is_categorical
 from optuna.visualization.matplotlib._utils import _is_log_scale
+from optuna.visualization.matplotlib._utils import _is_numerical
 
 
 if _imports.is_successful():
@@ -181,6 +182,9 @@ def _generate_slice_subplot(
     if _is_log_scale(trials, param):
         ax.set_xscale("log")
         scale = "log"
+    elif _is_numerical(trials, param):
+        x_values = [x for x in x_values]
+        scale = "numerical"
     elif _is_categorical(trials, param):
         x_values = [str(x) for x in x_values]
         scale = "categorical"
