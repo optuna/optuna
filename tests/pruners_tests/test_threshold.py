@@ -127,6 +127,7 @@ def test_repr() -> None:
 
     pruner = optuna.pruners.ThresholdPruner(lower, upper)
     from optuna.pruners import ThresholdPruner
+
     restored_pruner: ThresholdPruner = eval(repr(pruner))
 
     assert pruner._lower == restored_pruner._lower

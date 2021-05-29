@@ -168,6 +168,7 @@ def test_median_pruner_n_min_trials() -> None:
 def test_repr() -> None:
     pruner = optuna.pruners.MedianPruner(2, 0, 1, n_min_trials=2)
     from optuna.pruners import MedianPruner
+
     restored_pruner: MedianPruner = eval(repr(pruner))
 
     assert isinstance(restored_pruner, MedianPruner)

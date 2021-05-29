@@ -276,6 +276,7 @@ def test_successive_halving_pruner_bootstrap_parameter() -> None:
 def test_repr() -> None:
     pruner = optuna.pruners.SuccessiveHalvingPruner()
     from optuna.pruners import SuccessiveHalvingPruner
+
     restored_pruner: SuccessiveHalvingPruner = eval(repr(pruner))
 
     assert pruner._min_resource == restored_pruner._min_resource

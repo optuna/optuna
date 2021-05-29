@@ -102,8 +102,9 @@ def test_repr() -> None:
 
     pruner = optuna.pruners.PatientPruner(wrapped_pruner, patience, min_delta)
     # [RFC] Import for ``HyperbandPruner`` is needed to eval a wrapped pruner
-    from optuna.pruners import PatientPruner
     from optuna.pruners import HyperbandPruner  # noqa
+    from optuna.pruners import PatientPruner
+
     restored_pruner: PatientPruner = eval(repr(pruner))
 
     assert isinstance(pruner, PatientPruner)

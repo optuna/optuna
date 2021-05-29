@@ -244,6 +244,7 @@ def test_hyperband_pruner_and_grid_sampler() -> None:
 
 def test_repr() -> None:
     from optuna.pruners import HyperbandPruner
+
     pruner = optuna.pruners.HyperbandPruner(
         min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
     )
