@@ -85,6 +85,10 @@ class ThresholdPruner(BasePruner):
         interval_steps: int = 1,
     ) -> None:
 
+        # [RFC] Additional instance variables for __repr__
+        self._raw_lower = lower
+        self._raw_upper = upper
+
         if lower is None and upper is None:
             raise TypeError("Either lower or upper must be specified.")
         if lower is not None:
@@ -110,6 +114,16 @@ class ThresholdPruner(BasePruner):
         self._upper = upper
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
+
+    def __repr__(self) -> str:
+        text = "{}(lower={},upper={},n_warmup_steps={},interval_steps={})"
+        return text.format(
+            self.__class__.__name__,
+            repr(self._raw_lower),
+            repr(self._raw_upper),
+            repr(self._n_warmup_steps),
+            repr(self._interval_steps),
+        )
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 

@@ -79,3 +79,13 @@ class MedianPruner(PercentilePruner):
         super().__init__(
             50.0, n_startup_trials, n_warmup_steps, interval_steps, n_min_trials=n_min_trials
         )
+
+    def __repr__(self) -> str:
+        text = "{}(n_startup_trials={},n_warmup_steps={},interval_steps={},n_min_trials={})"
+        return text.format(
+            self.__class__.__name__,
+            repr(self._n_startup_trials),
+            repr(self._n_warmup_steps),
+            repr(self._interval_steps),
+            repr(self._n_min_trials),
+        )

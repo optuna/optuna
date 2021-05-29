@@ -117,6 +117,9 @@ class SuccessiveHalvingPruner(BasePruner):
         bootstrap_count: int = 0,
     ) -> None:
 
+        # [RFC] additional instance variable for ``__repr__``
+        self._raw_min_resource = min_resource
+
         if isinstance(min_resource, str) and min_resource != "auto":
             raise ValueError(
                 "The value of `min_resource` is {}, "
@@ -159,6 +162,16 @@ class SuccessiveHalvingPruner(BasePruner):
         self._reduction_factor = reduction_factor
         self._min_early_stopping_rate = min_early_stopping_rate
         self._bootstrap_count = bootstrap_count
+
+    def __repr__(self) -> str:
+        text = "{}(min_resource={},reduction_factor={},min_early_stopping_rate={},bootstrap_count={})"  # noqa: E501
+        return text.format(
+            self.__class__.__name__,
+            repr(self._raw_min_resource),
+            repr(self._reduction_factor),
+            repr(self._min_early_stopping_rate),
+            repr(self._bootstrap_count),
+        )
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 

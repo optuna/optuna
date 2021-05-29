@@ -79,6 +79,15 @@ class PatientPruner(BasePruner):
         self._patience = patience
         self._min_delta = min_delta
 
+    def __repr__(self) -> str:
+        text = "{}(wrapped_pruner={},patience={},min_delta={})"
+        return text.format(
+            self.__class__.__name__,
+            repr(self._wrapped_pruner),
+            repr(self._patience),
+            repr(self._min_delta),
+        )
+
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
         step = trial.last_step
         if step is None:

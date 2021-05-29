@@ -7,6 +7,10 @@ class BasePruner(object, metaclass=abc.ABCMeta):
     """Base class for pruners."""
 
     @abc.abstractmethod
+    def __repr__(self) -> str:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
         """Judge whether the trial should be pruned based on the reported values.
 
