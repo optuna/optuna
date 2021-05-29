@@ -70,14 +70,6 @@ class LastPlacePruner(BasePruner):
         self._warmup_steps = warmup_steps
         self._warmup_trials = warmup_trials
 
-    def __repr__(self) -> str:
-        text = "{}(warmup_steps={},warmup_trials={})"
-        return text.format(
-            self.__class__.__name__,
-            self._warmup_steps,
-            self._warmup_trials,
-        )
-
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
         # Get the latest score reported from this trial
         step = trial.last_step
