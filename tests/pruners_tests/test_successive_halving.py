@@ -271,3 +271,14 @@ def test_successive_halving_pruner_bootstrap_parameter() -> None:
 
     trial2.report(1, step=1)
     assert not trial2.should_prune()
+
+
+def test_repr() -> None:
+    pruner = optuna.pruners.SuccessiveHalvingPruner()
+    from optuna.pruners import SuccessiveHalvingPruner
+    restored_pruner: SuccessiveHalvingPruner = eval(repr(pruner))
+
+    assert pruner._min_resource == restored_pruner._min_resource
+    assert pruner._reduction_factor == restored_pruner._reduction_factor
+    assert pruner._min_early_stopping_rate == restored_pruner._min_early_stopping_rate
+    assert pruner._bootstrap_count == restored_pruner._bootstrap_count

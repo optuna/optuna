@@ -239,3 +239,15 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
             all_trials, direction, 2, 75, 2
         )
     )
+
+
+def test_repr() -> None:
+    pruner = optuna.pruners.PercentilePruner(25.0)
+    from optuna.pruners import PercentilePruner
+    restored_pruner: PercentilePruner = eval(repr(pruner))
+
+    assert pruner._percentile == restored_pruner._percentile
+    assert pruner._n_startup_trials == restored_pruner._n_startup_trials
+    assert pruner._n_warmup_steps == restored_pruner._n_warmup_steps
+    assert pruner._interval_steps == restored_pruner._interval_steps
+    assert pruner._n_min_trials == restored_pruner._n_min_trials

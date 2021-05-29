@@ -240,3 +240,20 @@ def test_hyperband_pruner_and_grid_sampler() -> None:
 
     trials = study.trials
     assert len(trials) == 9
+
+
+def test_repr() -> None:
+    from optuna.pruners import HyperbandPruner
+    pruner = optuna.pruners.HyperbandPruner(
+        min_resource=MIN_RESOURCE, max_resource=MAX_RESOURCE, reduction_factor=REDUCTION_FACTOR
+    )
+    restored_pruner: HyperbandPruner = eval(repr(pruner))
+
+    assert isinstance(restored_pruner, HyperbandPruner)
+    assert pruner._min_resource == restored_pruner._min_resource
+    assert pruner._max_resource == restored_pruner._max_resource
+    assert pruner._reduction_factor == restored_pruner._reduction_factor
+    assert pruner._bootstrap_count == restored_pruner._bootstrap_count
+    assert pruner._total_trial_allocation_budget == restored_pruner._total_trial_allocation_budget
+    assert pruner._trial_allocation_budgets == restored_pruner._trial_allocation_budgets
+    assert pruner._n_brackets == restored_pruner._n_brackets

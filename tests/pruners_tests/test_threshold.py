@@ -119,3 +119,17 @@ def test_threshold_pruner_interval_steps() -> None:
 
     trial.report(1000.0, 4)
     assert trial.should_prune()
+
+
+def test_repr() -> None:
+    lower = None
+    upper = 1e3
+
+    pruner = optuna.pruners.ThresholdPruner(lower, upper)
+    from optuna.pruners import ThresholdPruner
+    restored_pruner: ThresholdPruner = eval(repr(pruner))
+
+    assert pruner._lower == restored_pruner._lower
+    assert pruner._upper == restored_pruner._upper
+    assert pruner._n_warmup_steps == restored_pruner._n_warmup_steps
+    assert pruner._interval_steps == restored_pruner._interval_steps

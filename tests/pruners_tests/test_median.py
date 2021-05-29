@@ -163,3 +163,16 @@ def test_median_pruner_n_min_trials() -> None:
     trial.report(3, 2)
     # A pruner is activated after the values at step 2 observed n_min_trials times.
     assert trial.should_prune()
+
+
+def test_repr() -> None:
+    pruner = optuna.pruners.MedianPruner(2, 0, 1, n_min_trials=2)
+    from optuna.pruners import MedianPruner
+    restored_pruner: MedianPruner = eval(repr(pruner))
+
+    assert isinstance(restored_pruner, MedianPruner)
+    assert pruner._percentile == restored_pruner._percentile
+    assert pruner._n_startup_trials == restored_pruner._n_startup_trials
+    assert pruner._n_warmup_steps == restored_pruner._n_warmup_steps
+    assert pruner._interval_steps == restored_pruner._interval_steps
+    assert pruner._n_min_trials == restored_pruner._n_min_trials

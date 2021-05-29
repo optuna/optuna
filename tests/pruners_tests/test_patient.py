@@ -93,3 +93,20 @@ def test_patient_pruner_intermediate_values(
         if trial.should_prune():
             pruned.append(step)
     assert pruned == expected_prune_steps
+
+
+def test_repr() -> None:
+    wrapped_pruner = optuna.pruners.HyperbandPruner()
+    patience = 3
+    min_delta = 1e-5
+
+    pruner = optuna.pruners.PatientPruner(wrapped_pruner, patience, min_delta)
+    # [RFC] Import for ``HyperbandPruner`` is needed to eval a wrapped pruner
+    from optuna.pruners import PatientPruner
+    from optuna.pruners import HyperbandPruner  # noqa
+    restored_pruner: PatientPruner = eval(repr(pruner))
+
+    assert isinstance(pruner, PatientPruner)
+    assert isinstance(restored_pruner._wrapped_pruner, wrapped_pruner.__class__)
+    assert pruner._patience == restored_pruner._patience
+    assert pruner._min_delta == restored_pruner._min_delta
