@@ -77,6 +77,8 @@ class ThresholdPruner(BasePruner):
 
     """
 
+    SPECIAL_KEYWORDS = {"lower": "_raw_lower", "upper": "_raw_upper"}
+
     def __init__(
         self,
         lower: Optional[float] = None,
@@ -114,16 +116,6 @@ class ThresholdPruner(BasePruner):
         self._upper = upper
         self._n_warmup_steps = n_warmup_steps
         self._interval_steps = interval_steps
-
-    def __repr__(self) -> str:
-        text = "{}(lower={},upper={},n_warmup_steps={},interval_steps={})"
-        return text.format(
-            self.__class__.__name__,
-            repr(self._raw_lower),
-            repr(self._raw_upper),
-            repr(self._n_warmup_steps),
-            repr(self._interval_steps),
-        )
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 

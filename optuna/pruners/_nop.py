@@ -43,9 +43,6 @@ class NopPruner(BasePruner):
             study.optimize(objective, n_trials=20)
     """
 
-    def __repr__(self) -> str:
-        return "{}()".format(self.__class__.__name__)
-
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         return False

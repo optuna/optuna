@@ -174,17 +174,6 @@ class PercentilePruner(BasePruner):
         self._interval_steps = interval_steps
         self._n_min_trials = n_min_trials
 
-    def __repr__(self) -> str:
-        text = "{}(percentile={},n_startup_trials={},n_warmup_steps={},interval_steps={},n_min_trials={})"  # noqa: E501
-        return text.format(
-            self.__class__.__name__,
-            repr(self._percentile),
-            repr(self._n_startup_trials),
-            repr(self._n_warmup_steps),
-            repr(self._interval_steps),
-            repr(self._n_min_trials),
-        )
-
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         all_trials = study.get_trials(deepcopy=False)

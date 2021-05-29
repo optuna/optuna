@@ -109,6 +109,8 @@ class SuccessiveHalvingPruner(BasePruner):
             is considered for promotion into the next rung.
     """
 
+    SPECIAL_KEYWORDS = {"min_resource": "_raw_min_resource"}
+
     def __init__(
         self,
         min_resource: Union[str, int] = "auto",
@@ -162,16 +164,6 @@ class SuccessiveHalvingPruner(BasePruner):
         self._reduction_factor = reduction_factor
         self._min_early_stopping_rate = min_early_stopping_rate
         self._bootstrap_count = bootstrap_count
-
-    def __repr__(self) -> str:
-        text = "{}(min_resource={},reduction_factor={},min_early_stopping_rate={},bootstrap_count={})"  # noqa: E501
-        return text.format(
-            self.__class__.__name__,
-            repr(self._raw_min_resource),
-            repr(self._reduction_factor),
-            repr(self._min_early_stopping_rate),
-            repr(self._bootstrap_count),
-        )
 
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 

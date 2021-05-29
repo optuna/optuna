@@ -1,4 +1,5 @@
 import abc
+from typing import Dict
 
 import optuna
 
@@ -6,9 +7,27 @@ import optuna
 class BasePruner(object, metaclass=abc.ABCMeta):
     """Base class for pruners."""
 
-    @abc.abstractmethod
+    SPECIAL_KEYWORDS: Dict[str, str] = {}
+
     def __repr__(self) -> str:
-        raise NotImplementedError
+        import inspect
+
+        parameters = []
+        for keyword in inspect.signature(self.__class__.__init__).parameters:
+            if keyword == "self":
+                continue
+
+            access_keyword = "_{keyword}".format(keyword=keyword)
+            if keyword in self.SPECIAL_KEYWORDS:
+                access_keyword = self.SPECIAL_KEYWORDS[keyword]
+
+            if hasattr(self, access_keyword):
+                parameters.append("{}={}".format(keyword, repr(getattr(self, access_keyword))))
+
+        return "{class_name}({parameters})".format(
+            class_name=self.__class__.__name__,
+            parameters=",".join(parameters),
+        )
 
     @abc.abstractmethod
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
