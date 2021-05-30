@@ -71,7 +71,7 @@ If you catch format errors, you can automatically fix them by auto-formatters.
 
 ```bash
 # Install auto-formatters.
-$ pip install .[checking]
+$ pip install ".[checking]"
 
 $ ./formats.sh
 ```
