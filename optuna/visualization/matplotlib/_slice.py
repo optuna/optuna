@@ -182,10 +182,7 @@ def _generate_slice_subplot(
     if _is_log_scale(trials, param):
         ax.set_xscale("log")
         scale = "log"
-    elif _is_numerical(trials, param):
-        x_values = [x for x in x_values]
-        scale = "numerical"
-    elif _is_categorical(trials, param):
+    elif not _is_numerical(trials, param):
         x_values = [str(x) for x in x_values]
         scale = "categorical"
     xlim = _calc_lim_with_padding(x_values, padding_ratio, scale)
