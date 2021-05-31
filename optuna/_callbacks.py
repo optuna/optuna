@@ -66,7 +66,7 @@ class RetryFailedTrialCallback:
     recreate the trial in :obj:`TrialState.WAITING` to queue up the trial to be run again.
 
     This is helpful in environments where trials may fail due to external conditions, such as
-    being pre-empted by other processes.
+    being preempted by other processes.
 
     Usage:
 
