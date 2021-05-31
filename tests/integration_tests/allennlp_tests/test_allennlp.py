@@ -257,6 +257,8 @@ def test_dump_best_config_with_environment_variables() -> None:
         assert os.getenv("TRAIN_PATH") == best_config["train_data_path"]
         assert os.getenv("VALID_PATH") == best_config["validation_data_path"]
 
+        del os.environ["TRAIN_PATH"]
+        del os.environ["VALID_PATH"]
 
 def test_allennlp_pruning_callback() -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:

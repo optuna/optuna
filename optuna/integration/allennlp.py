@@ -208,10 +208,10 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
     """
     _imports.check()
 
-    # environment variables
+    # Get environment variables.
     ext_vars = _environment_variables()
 
-    # hyperparameters
+    # Get the best hyperparameters.
     best_params = study.best_params
     for key, value in best_params.items():
         best_params[key] = str(value)
