@@ -423,10 +423,10 @@ def test_retry_failed_trial_callback(max_retry: Optional[int]) -> None:
         with patch("optuna._optimize.Thread", _TestableThread):
             study.optimize(lambda _: 1.0, n_trials=1)
 
-        # Test the last trial to see if it was a retry of the first trial or not
-        # Test max_rety=None to see if trial is retried
-        # Test max_rety=0 to see if no trials are retried
-        # Test max_rety=1 to see if trial is retried
+        # Test the last trial to see if it was a retry of the first trial or not.
+        # Test max_rety=None to see if trial is retried.
+        # Test max_rety=0 to see if no trials are retried.
+        # Test max_rety=1 to see if trial is retried.
         assert RetryFailedTrialCallback.retried_trial_number(study.trials[1]) == (
             None if max_retry == 0 else 0
         )
