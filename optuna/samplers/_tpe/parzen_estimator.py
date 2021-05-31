@@ -302,7 +302,7 @@ class _ParzenEstimator:
 
         return transformed
 
-    def _precompute_sigmas0(self, observations: Dict[str, np.ndarray]) -> Optional[np.ndarray]:
+    def _precompute_sigmas0(self, observations: Dict[str, np.ndarray]) -> Optional[float]:
 
         n_observations = next(iter(observations.values())).size
         n_observations = max(n_observations, 1)
@@ -315,9 +315,7 @@ class _ParzenEstimator:
         # We use Scott's rule for bandwidth selection if the number of parameters > 1.
         # This rule was used in the BOHB paper.
         # TODO(kstoneriv3): The constant factor SIGMA0_MAGNITUDE=0.2 might not be optimal.
-        return (
-            SIGMA0_MAGNITUDE * n_observations ** (-1.0 / (n_params + 4)) * np.ones(n_observations)
-        )
+        return SIGMA0_MAGNITUDE * n_observations ** (-1.0 / (n_params + 4))
 
     def _calculate_categorical_params(
         self, observations: np.ndarray, param_name: str
@@ -375,47 +373,31 @@ class _ParzenEstimator:
             mus = np.empty(n_observations + 1)
             mus[:n_observations] = observations
             mus[n_observations] = prior_mu
-
-            if not multivariate:
-                assert sigmas0 is None
-                sorted_indices = np.argsort(mus)
-                sorted_mus = mus[sorted_indices]
-                sorted_mus_with_endpoints = np.empty(n_observations + 3, dtype=float)
-                sorted_mus_with_endpoints[0] = low
-                sorted_mus_with_endpoints[1:-1] = sorted_mus
-                sorted_mus_with_endpoints[-1] = high
-
-                sorted_sigmas = np.maximum(
-                    sorted_mus_with_endpoints[1:-1] - sorted_mus_with_endpoints[0:-2],
-                    sorted_mus_with_endpoints[2:] - sorted_mus_with_endpoints[1:-1],
-                )
-                sigmas = sorted_sigmas[np.argsort(sorted_indices)]
-                sigmas[-1] = prior_sigma
-
-            else:
-                assert sigmas0 is not None
-                sigmas = np.empty(n_observations + 1)
-                sigmas[:n_observations] = sigmas0 * (high - low)
-                sigmas[n_observations] = prior_sigma
+            sigmas = np.empty(n_observations + 1)
         else:
             mus = observations
-            if not multivariate:
-                assert sigmas0 is None
-                sorted_indices = np.argsort(mus)
-                sorted_mus = mus[sorted_indices]
-                sorted_mus_with_endpoints = np.empty(n_observations + 2, dtype=float)
-                sorted_mus_with_endpoints[0] = low
-                sorted_mus_with_endpoints[1:-1] = sorted_mus
-                sorted_mus_with_endpoints[-1] = high
+            sigmas = np.empty(n_observations)
 
-                sorted_sigmas = np.maximum(
-                    sorted_mus_with_endpoints[1:-1] - sorted_mus_with_endpoints[0:-2],
-                    sorted_mus_with_endpoints[2:] - sorted_mus_with_endpoints[1:-1],
-                )
-                sigmas = sorted_sigmas[np.argsort(sorted_indices)]
-            else:
-                assert sigmas0 is not None
-                sigmas = sigmas0 * (high - low)
+        if multivariate:
+            assert sigmas0 is not None
+            sigmas[:] = sigmas0 * (high - low)
+        else:
+            assert sigmas0 is None
+            sorted_indices = np.argsort(mus)
+            sorted_mus = mus[sorted_indices]
+            sorted_mus_with_endpoints = np.empty(len(mus) + 2, dtype=float)
+            sorted_mus_with_endpoints[0] = low
+            sorted_mus_with_endpoints[1:-1] = sorted_mus
+            sorted_mus_with_endpoints[-1] = high
+
+            sorted_sigmas = np.maximum(
+                sorted_mus_with_endpoints[1:-1] - sorted_mus_with_endpoints[0:-2],
+                sorted_mus_with_endpoints[2:] - sorted_mus_with_endpoints[1:-1],
+            )
+            sigmas[:] = sorted_sigmas[np.argsort(sorted_indices)]
+
+        if consider_prior:
+            sigmas[n_observations] = prior_sigma
 
         if not multivariate and not consider_endpoints and sorted_mus_with_endpoints.shape[0] >= 4:
             sigmas[np.argmin(mus)] = sorted_mus_with_endpoints[2] - sorted_mus_with_endpoints[1]

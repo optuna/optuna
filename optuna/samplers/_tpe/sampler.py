@@ -553,7 +553,7 @@ def _get_observation_pairs(
     for trial in study.get_trials(deepcopy=False, states=states):
         # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
         # included in each subspace.
-        # If ``multivariate`` = False, we consider such trials.
+        # If ``multivariate`` = False, we skip the check.
         if multivariate and any([param_name not in trial.params for param_name in param_names]):
             continue
 

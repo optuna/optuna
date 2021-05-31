@@ -46,7 +46,7 @@ def test_init_parzen_estimator(consider_prior: bool, multivariate: bool) -> None
         multivariate=multivariate,
     )
 
-    sigmas0 = np.ones(1) if multivariate else None
+    sigmas0 = 1 if multivariate else None
     with patch(_PRECOMPUTE_SIGMAS0, return_value=sigmas0):
         mpe = _ParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
 
@@ -129,7 +129,7 @@ def test_sample_parzen_estimator(multivariate: bool) -> None:
         weights=lambda x: np.arange(x) + 1.0,
         multivariate=multivariate,
     )
-    sigmas0 = 1e-8 * np.ones(2) if multivariate else None
+    sigmas0 = 1e-8 if multivariate else None
     with patch(_PRECOMPUTE_SIGMAS0, return_value=sigmas0):
         mpe = _ParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
 
@@ -177,7 +177,7 @@ def test_suggest_with_step_parzen_estimator(multivariate: bool) -> None:
     multivariate_samples = {"c": np.array([4]), "d": np.array([3])}
     valid_ranges = {"c": set(np.arange(1.0, 10.0, 3.0)), "d": set(np.arange(1, 7, 2))}
 
-    sigmas0 = np.ones(2) if multivariate else None
+    sigmas0 = 1 if multivariate else None
     with patch(_PRECOMPUTE_SIGMAS0, return_value=sigmas0):
         mpe = _ParzenEstimator(multivariate_samples, search_space, parameters)
 
@@ -198,7 +198,7 @@ def test_log_pdf_parzen_estimator(multivariate: bool) -> None:
         multivariate=multivariate,
     )
     # Parzen estimator almost becomes mixture of Dirac measures.
-    sigmas0 = 1e-8 * np.ones(1) if multivariate else None
+    sigmas0 = 1e-8 if multivariate else None
     with patch(_PRECOMPUTE_SIGMAS0, return_value=sigmas0):
         mpe = _ParzenEstimator(MULTIVARIATE_SAMPLES, SEARCH_SPACE, parameters)
 
