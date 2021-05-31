@@ -105,8 +105,8 @@ class RetryFailedTrialCallback:
         system_attrs.update(trial.system_attrs)
 
         retries = sum(
-            ("failed_trial", system_attrs["failed_trial"]) in s.system_attrs.items()
-            for s in study.trials
+            ("failed_trial", system_attrs["failed_trial"]) in t.system_attrs.items()
+            for t in study.trials
         )
 
         if self._max_retry is not None and retries + 1 > self._max_retry:
