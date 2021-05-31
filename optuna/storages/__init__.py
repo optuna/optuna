@@ -1,5 +1,6 @@
 from typing import Union
 
+from optuna._callbacks import RetryFailedTrialCallback  # NOQA
 from optuna.storages._base import BaseStorage
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._in_memory import InMemoryStorage
