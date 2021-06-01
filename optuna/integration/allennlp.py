@@ -373,6 +373,14 @@ class AllenNLPExecutor(object):
         for package_name in self._include_package:
             allennlp.common.util.import_module_and_submodules(package_name)
 
+        # Without the following lines, the transformer model construction only takes place in the
+        # first trial (which would consume some random numbers), and the cached model will be used
+        # in trials afterwards (which would not consume random numbers), leading to inconsistent
+        # results between `allennlp tune` and `allennlp retrain`. To make `allennlp tune` results
+        # reproducible by `allennlp retrain`, we clear the cache before each trial.
+        allennlp.common.cached_transformers._model_cache.clear()
+        allennlp.common.cached_transformers._tokenizer_cache.clear()
+
         self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
         allennlp.commands.train.train_model(
