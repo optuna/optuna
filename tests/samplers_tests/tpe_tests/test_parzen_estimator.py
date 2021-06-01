@@ -1,4 +1,3 @@
-import itertools
 from typing import Dict
 from typing import List
 from unittest.mock import patch
@@ -210,15 +209,10 @@ def test_log_pdf_parzen_estimator(multivariate: bool) -> None:
     assert np.all(log_pdf >= output_log_pdf)
 
 
-@pytest.mark.parametrize(
-    "mus, prior, magic_clip, endpoints",
-    itertools.product(
-        (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])),  # mus
-        (True, False),  # prior
-        (True, False),  # magic_clip
-        (True, False),  # endpoints
-    ),
-)
+@pytest.mark.parametrize("mus", (np.asarray([]), np.asarray([0.4]), np.asarray([-0.4, 0.4])))
+@pytest.mark.parametrize("prior", (True, False))
+@pytest.mark.parametrize("magic_clip", (True, False))
+@pytest.mark.parametrize("endpoints", (True, False))
 def test_calculate_shape_check(
     mus: np.ndarray, prior: bool, magic_clip: bool, endpoints: bool
 ) -> None:

@@ -365,7 +365,6 @@ class _ParzenEstimator:
         if n_observations == 0:
             consider_prior = True
 
-        sorted_mus_with_endpoints = np.asarray([], dtype=float)
         prior_mu = 0.5 * (low + high)
         prior_sigma = 1.0 * (high - low)
 
@@ -394,14 +393,12 @@ class _ParzenEstimator:
                 sorted_mus_with_endpoints[1:-1] - sorted_mus_with_endpoints[0:-2],
                 sorted_mus_with_endpoints[2:] - sorted_mus_with_endpoints[1:-1],
             )
+
+            if not consider_endpoints and sorted_mus_with_endpoints.shape[0] >= 4:
+                sorted_sigmas[0] = sorted_mus_with_endpoints[2] - sorted_mus_with_endpoints[1]
+                sorted_sigmas[-1] = sorted_mus_with_endpoints[-2] - sorted_mus_with_endpoints[-3]
+
             sigmas[:] = sorted_sigmas[np.argsort(sorted_indices)]
-
-        if consider_prior:
-            sigmas[n_observations] = prior_sigma
-
-        if not multivariate and not consider_endpoints and sorted_mus_with_endpoints.shape[0] >= 4:
-            sigmas[np.argmin(mus)] = sorted_mus_with_endpoints[2] - sorted_mus_with_endpoints[1]
-            sigmas[np.argmax(mus)] = sorted_mus_with_endpoints[-2] - sorted_mus_with_endpoints[-3]
 
         # We adjust the range of the 'sigmas' according to the 'consider_magic_clip' flag.
         maxsigma = 1.0 * (high - low)
@@ -412,7 +409,7 @@ class _ParzenEstimator:
         sigmas = np.asarray(np.clip(sigmas, minsigma, maxsigma))
 
         if consider_prior:
-            sigmas[-1] = prior_sigma
+            sigmas[n_observations] = prior_sigma
 
         return mus, sigmas
 
