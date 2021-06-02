@@ -342,24 +342,42 @@ These variables are in accordance with the Dirichlet distribution.
 .. code-block:: python
 
     import numpy as np
+    import matplotlib.pyplot as plt
     import optuna
 
 
     def objective(trial):
-        n = 5
-        x = []
-        for i in range(n):
-            x.append(- np.log(trial.suggest_float(f"x_{i}", 0, 1)))
-
+    n = 5
+    x = []
+    for i in range(n):
+        x.append(- np.log(trial.suggest_float(f"x_{i}", 0, 1)))
+        ​
         p = []
         for i in range(n):
             p.append(x[i] / sum(x))
 
+        for i in range(n):
+            trial.set_user_attr(f"p_{i}", p[i])
         return 0
-
 
     study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
     study.optimize(objective, n_trials=1000)
+
+    n = 5
+    p = []
+    for i in range(n):
+        p.append([trial.user_attrs[f"p_{i}"] for trial in study.trials])
+    axes= plt.subplots(n, n, figsize=(20, 20))[1]
+
+    for i in range(n):
+        for j in range(n):
+            axes[j][i].scatter(p[i], p[j], marker='.')
+            axes[j][i].set_xlim(0, 1)
+            axes[j][i].set_ylim(0, 1)
+            axes[j][i].set_xlabel(f"p_{i}")
+            axes[j][i].set_ylabel(f"p_{j}")
+
+    plt.savefig("ratio2.png")
 
 This method is justified in the following way.
 First, if we apply the transformation `x = - log(u)` to the variable `u` sampled from the uniform distribution `Uni(0, 1)` in the interval [0, 1], the variable `x` will follow the exponential distribution `Exp(1)` with scale parameter 1.
