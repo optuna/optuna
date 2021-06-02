@@ -334,7 +334,7 @@ Note that the above examples are similar to running the garbage collector inside
     When using this class, you will have to call the garbage collector inside the objective function.
 
 How do I suggest variables which represent the proportion, that is, are in accordance with Dirichlet distribution?
-----------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
 
 When you want to suggest `n` variables which represent the proportion, that is, `p[0], p[1], ..., p[n-1]` which satisfy `0 <= p[k] <= 1` for any `k` and `p[0] + p[1] + ... + p[n-1] = 1`, try the following.
 These variables are in accordance with
