@@ -337,7 +337,7 @@ How do I suggest variables which represent the proportion, that is, are in accor
 ------------------------------------------------------------------------------------------------------------------
 
 When you want to suggest `n` variables which represent the proportion, that is, `p[0], p[1], ..., p[n-1]` which satisfy `0 <= p[k] <= 1` for any `k` and `p[0] + p[1] + ... + p[n-1] = 1`, try the following.
-These variables are in accordance with
+These variables are in accordance with the Dirichlet distribution.
 
 .. code-block:: python
 
@@ -381,7 +381,7 @@ These variables are in accordance with
             axes[j][i].set_xlabel(f"p_{i}")
             axes[j][i].set_ylabel(f"p_{j}")
 
-    plt.savefig("ratio.png")
+    plt.plot()
 
 This method is justified in the following way.
 First, if we apply the transformation `x = - log(u)` to the variable `u` sampled from the uniform distribution `Uni(0, 1)` in the interval [0, 1], the variable `x` will follow the exponential distribution `Exp(1)` with scale parameter 1.
