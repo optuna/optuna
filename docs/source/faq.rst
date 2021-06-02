@@ -351,7 +351,7 @@ These variables are in accordance with the Dirichlet distribution.
     x = []
     for i in range(n):
         x.append(- np.log(trial.suggest_float(f"x_{i}", 0, 1)))
-        ​
+
         p = []
         for i in range(n):
             p.append(x[i] / sum(x))
