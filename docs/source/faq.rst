@@ -342,14 +342,13 @@ These variables are in accordance with the Dirichlet distribution.
 .. code-block:: python
 
     import numpy as np
-    import matplotlib.pyplot as plt
     import optuna
-    ​
+
 
     def objective(trial):
         n = 5
         x = []
-        for i in range(n - 1):
+        for i in range(n):
             x.append(- np.log(trial.suggest_float(f"x_{i}", 0, 1)))
 
         p = []
