@@ -332,3 +332,58 @@ Note that the above examples are similar to running the garbage collector inside
 
     :class:`~optuna.integration.ChainerMNStudy` does currently not provide ``gc_after_trial`` nor callbacks for :func:`~optuna.integration.ChainerMNStudy.optimize`.
     When using this class, you will have to call the garbage collector inside the objective function.
+
+How do I suggest variables which represent the proportion, that is, are in accordance with Dirichlet distribution?
+----------------------------------------------------------
+
+When you want to suggest `n` variables which represent the proportion, that is, `p[0], p[1], ..., p[n-1]` which satisfy `0 <= p[k] <= 1` for any `k` and `p[0] + p[1] + ... + p[n-1] = 1`, try the following.
+These variables are in accordance with
+
+.. code-block:: python
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import optuna
+    ​
+
+    def objective(trial):
+        n = 5
+        x = []
+        for i in range(n - 1):
+            x.append(- np.log(trial.suggest_float(f"x_{i}", 0, 1)))
+
+        p = []
+        for i in range(n):
+            p.append(x[i] / sum(x))
+
+        # Store `p` to visualize.
+        for i in range(n):
+            trial.set_user_attr(f"p_{i}", p[i])
+
+        return 0
+
+
+    study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
+    study.optimize(objective, n_trials=1000)
+
+    # Visualize sampled proportions.
+    n = 5
+    p = []
+    for i in range(n):
+        p.append([trial.user_attrs[f"p_{i}"] for trial in study.trials])
+    ​
+    axes= plt.subplots(n, n, figsize=(20, 20))[1]
+    for i in range(n):
+        for j in range(n):
+            axes[j][i].scatter(p[i], p[j], marker='.')
+            axes[j][i].set_xlim(0, 1)
+            axes[j][i].set_ylim(0, 1)
+            axes[j][i].set_xlabel(f"p_{i}")
+            axes[j][i].set_ylabel(f"p_{j}")
+
+    plt.savefig("ratio.png")
+
+This method is justified in the following way.
+First, if we apply the transformation `x = - log(u)` to the variable `u` sampled from the uniform distribution `Uni(0, 1)` in the interval [0, 1], the variable `x` will follow the exponential distribution `Exp(1)` with scale parameter 1.
+Furthermore, for `n` variables `x[0], ..., x[n-1]` that follow the exponential distribution of scale parameter 1 independently, normalizing them with `p[i] = x[i] / sum(x)`, the vector `p` follows the Dirichlet distribution `Dir(\alpha)` of scale parameter `\alpha = (1, ..., 1)`.
+You can verify the transformation by elemental calculation of Jacobian.
