@@ -377,7 +377,7 @@ These variables are in accordance with the Dirichlet distribution.
             axes[j][i].set_xlabel(f"p_{i}")
             axes[j][i].set_ylabel(f"p_{j}")
 
-    plt.savefig("ratio2.png")
+    plt.savefig("sampled_ps.png")
 
 This method is justified in the following way.
 First, if we apply the transformation `x = - log(u)` to the variable `u` sampled from the uniform distribution `Uni(0, 1)` in the interval [0, 1], the variable `x` will follow the exponential distribution `Exp(1)` with scale parameter 1.
