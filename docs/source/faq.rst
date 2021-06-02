@@ -342,6 +342,7 @@ These variables are in accordance with the Dirichlet distribution.
 .. code-block:: python
 
     import numpy as np
+    import matplotlib.pyplot as plt
     import optuna
     ​
 
@@ -354,6 +355,12 @@ These variables are in accordance with the Dirichlet distribution.
         p = []
         for i in range(n):
             p.append(x[i] / sum(x))
+
+        return 0
+
+
+    study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
+    study.optimize(objective, n_trials=1000)
 
 This method is justified in the following way.
 First, if we apply the transformation `x = - log(u)` to the variable `u` sampled from the uniform distribution `Uni(0, 1)` in the interval [0, 1], the variable `x` will follow the exponential distribution `Exp(1)` with scale parameter 1.
