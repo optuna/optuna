@@ -390,7 +390,7 @@ def _generate_contour_subplot(
         if x_param != y_param:
             # Contour the gridded data.
             ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k")
-            cs = ax.contourf(xi, yi, zi, 15, cmap=cmap)
+            cs = ax.contourf(xi, yi, zi, 15, cmap=cmap.reversed())
             # Plot data points.
             if x_values_dummy_count > 0:
                 x_org_len = int(len(x_values) / (x_values_dummy_count + 1))
