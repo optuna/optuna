@@ -3,7 +3,7 @@ from typing import Optional
 from typing import Sequence
 
 import optuna
-from optuna._study_direction import StudyDirection
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 

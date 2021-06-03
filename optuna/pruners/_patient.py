@@ -4,8 +4,8 @@ import numpy as np
 
 import optuna
 from optuna._experimental import experimental
-from optuna._study_direction import StudyDirection
 from optuna.pruners import BasePruner
+from optuna.study._study_direction import StudyDirection
 
 
 @experimental("2.8.0")

@@ -11,9 +11,9 @@ import numpy as np
 from packaging import version
 
 from optuna._imports import try_import
-from optuna._study_direction import StudyDirection
 import optuna.logging
 import optuna.study
+from optuna.study._study_direction import StudyDirection
 import optuna.trial
 
 

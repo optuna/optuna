@@ -13,10 +13,10 @@ from typing import Union
 
 import optuna
 from optuna import distributions
-from optuna._study_direction import StudyDirection
-from optuna._study_summary import StudySummary
 from optuna.storages import BaseStorage
 from optuna.storages._rdb.storage import RDBStorage
+from optuna.study._study_direction import StudyDirection
+from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 

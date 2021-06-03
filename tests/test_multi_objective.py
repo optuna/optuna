@@ -1,8 +1,8 @@
 from typing import Tuple
 
 from optuna import create_study
-from optuna._multi_objective import _get_pareto_front_trials_2d
-from optuna._multi_objective import _get_pareto_front_trials_nd
+from optuna.study._multi_objective import _get_pareto_front_trials_2d
+from optuna.study._multi_objective import _get_pareto_front_trials_nd
 from optuna.trial import FrozenTrial
 
 

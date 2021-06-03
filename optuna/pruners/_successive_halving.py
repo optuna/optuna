@@ -4,8 +4,8 @@ from typing import Optional
 from typing import Union
 
 import optuna
-from optuna._study_direction import StudyDirection
 from optuna.pruners._base import BasePruner
+from optuna.study._study_direction import StudyDirection
 from optuna.trial._state import TrialState
 
 

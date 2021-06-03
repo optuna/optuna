@@ -669,7 +669,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
         assert t.params["x"] == 1
 
 
-@patch("optuna._optimize.gc.collect")
+@patch("optuna.study._optimize.gc.collect")
 def test_optimize_with_gc(collect_mock: Mock) -> None:
 
     study = create_study()
@@ -678,7 +678,7 @@ def test_optimize_with_gc(collect_mock: Mock) -> None:
     assert collect_mock.call_count == 10
 
 
-@patch("optuna._optimize.gc.collect")
+@patch("optuna.study._optimize.gc.collect")
 def test_optimize_without_gc(collect_mock: Mock) -> None:
 
     study = create_study()

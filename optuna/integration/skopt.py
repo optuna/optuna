@@ -13,10 +13,10 @@ import optuna
 from optuna import distributions
 from optuna import samplers
 from optuna._imports import try_import
-from optuna._study_direction import StudyDirection
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
 from optuna.study import Study
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
