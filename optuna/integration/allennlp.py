@@ -376,8 +376,8 @@ class AllenNLPExecutor(object):
         # Without the following lines, the transformer model construction only takes place in the
         # first trial (which would consume some random numbers), and the cached model will be used
         # in trials afterwards (which would not consume random numbers), leading to inconsistent
-        # results between single trial and multiple trials. To make results reproducible in multiple
-        # trials, we clear the cache before each trial.
+        # results between single trial and multiple trials. To make results reproducible in
+        # multiple trials, we clear the cache before each trial.
         allennlp.common.cached_transformers._model_cache.clear()
         allennlp.common.cached_transformers._tokenizer_cache.clear()
 
