@@ -16,6 +16,8 @@ from optuna.trial import TrialState
 with try_import() as _imports:
     import mlflow
 
+RUN_ID_ATTRIBUTE_KEY = "mlflow_run_id"
+
 
 @experimental("1.4.0")
 class MLflowCallback(object):
@@ -151,14 +153,15 @@ class MLflowCallback(object):
         self._metric_name = metric_name
         self._nest_trials = nest_trials
         self._tag_study_user_attrs = tag_study_user_attrs
-        self._last_run_id = None
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
         self.initialize_experiment(study)
 
         with mlflow.start_run(
-            run_id=self._last_run_id, run_name=str(trial.number), nested=self._nest_trials
+            run_id=trial.user_attrs.get(RUN_ID_ATTRIBUTE_KEY),
+            run_name=str(trial.number),
+            nested=self._nest_trials,
         ):
 
             # This sets the metric for MLflow.
@@ -189,7 +192,7 @@ class MLflowCallback(object):
                 self.initialize_experiment(study)
 
                 with mlflow.start_run(run_name=str(trial.number), nested=self._nest_trials) as run:
-                    self._last_run_id = run.info.run_id
+                    trial.set_user_attr(RUN_ID_ATTRIBUTE_KEY, run.info.run_id)
 
                     return func(trial)
 
@@ -236,12 +239,13 @@ class MLflowCallback(object):
             tags["direction"] = str(study_direction).split(".")[-1]
 
         tags.update(trial.user_attrs)
+        tags.pop(RUN_ID_ATTRIBUTE_KEY, None)
         distributions = {(k + "_distribution"): str(v) for (k, v) in trial.distributions.items()}
         tags.update(distributions)
 
         if self._tag_study_user_attrs:
             tags.update(study.user_attrs)
-
+            
         # This is a temporary fix on Optuna side. It avoids an error with user
         # attributes that are too long. It should be fixed on MLflow side later.
         # When it is fixed on MLflow side this codeblock can be removed.
