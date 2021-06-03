@@ -67,6 +67,54 @@ class MLflowCallback(object):
             :options: +NORMALIZE_WHITESPACE
 
             INFO: 'my_study' does not exist. Creating a new experiment
+            Log an additional metric to MLFlow
+
+        Add additional logging to MLflow
+
+        .. testsetup::
+
+            import pathlib
+            import tempfile
+
+            tempdir = tempfile.mkdtemp()
+            YOUR_TRACKING_URI = pathlib.Path(tempdir).as_uri()
+
+        .. testcode::
+
+            import optuna
+            import mlflow
+            from optuna.integration.mlflow import MLflowCallback
+
+            raise Exception("hello")
+            mlflc = MLflowCallback(
+                tracking_uri=YOUR_TRACKING_URI,
+                metric_name="my metric score",
+            )
+
+
+            @mlflc.track_in_mlflow()
+            def objective(trial):
+                x = trial.suggest_float("x", -10, 10)
+                mlflow.log_param("power", 2)
+                mlflow.log_metric("base of metric", x - 2)
+
+                return (x - 2) ** 2
+
+
+            study = optuna.create_study(study_name="my_study")
+            study.optimize(objective, n_trials=10, callbacks=[mlflc])
+
+        .. testcleanup::
+
+            import shutil
+
+            shutil.rmtree(tempdir)
+
+        .. testoutput::
+            :hide:
+            :options: +NORMALIZE_WHITESPACE
+
+            INFO: 'my_study' does not exist. Creating a new experiment
 
     Args:
         tracking_uri:
@@ -130,51 +178,6 @@ class MLflowCallback(object):
 
         All information logged in the decorated objective function will be added to the MLFlow
         run for the trial created by the callback.
-
-        .. testsetup::
-
-            import pathlib
-            import tempfile
-
-            tempdir = tempfile.mkdtemp()
-            YOUR_TRACKING_URI = pathlib.Path(tempdir).as_uri()
-
-        .. testcode::
-
-            import optuna
-            import mlflow
-            from optuna.integration.mlflow import MLflowCallback
-
-
-            mlflc = MLflowCallback(
-                tracking_uri=YOUR_TRACKING_URI,
-                metric_name="my metric score",
-            )
-
-
-            @mlflc.track_in_mlflow()
-            def objective(trial):
-                x = trial.suggest_float("x", -10, 10)
-                mlflow.log_param("power", 2)
-                mlflow.log_metric("base of metric", x - 2)
-
-                return (x - 2) ** 2
-
-
-            study = optuna.create_study(study_name="my_study")
-            study.optimize(objective, n_trials=10, callbacks=[mlflc])
-
-        .. testcleanup::
-
-            import shutil
-
-            shutil.rmtree(tempdir)
-
-        .. testoutput::
-            :hide:
-            :options: +NORMALIZE_WHITESPACE
-
-            INFO: 'my_study' does not exist. Creating a new experiment
 
         Returns:
             ObjectiveFuncType: Objective function with tracking to MLFlow enabled
