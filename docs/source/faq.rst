@@ -337,7 +337,7 @@ How do I suggest variables which represent the proportion, that is, are in accor
 ------------------------------------------------------------------------------------------------------------------
 
 When you want to suggest `n` variables which represent the proportion, that is, `p[0], p[1], ..., p[n-1]` which satisfy `0 <= p[k] <= 1` for any `k` and `p[0] + p[1] + ... + p[n-1] = 1`, try the following.
-These variables are in accordance with the Dirichlet distribution.
+These variables are in accordance with the flat Dirichlet distribution.
 
 .. code-block:: python
 
@@ -347,10 +347,10 @@ These variables are in accordance with the Dirichlet distribution.
 
 
     def objective(trial):
-    n = 5
-    x = []
-    for i in range(n):
-        x.append(- np.log(trial.suggest_float(f"x_{i}", 0, 1)))
+        n = 5
+        x = []
+        for i in range(n):
+            x.append(- np.log(trial.suggest_float(f"x_{i}", 0, 1)))
 
         p = []
         for i in range(n):
@@ -358,6 +358,7 @@ These variables are in accordance with the Dirichlet distribution.
 
         for i in range(n):
             trial.set_user_attr(f"p_{i}", p[i])
+
         return 0
 
     study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
@@ -367,11 +368,11 @@ These variables are in accordance with the Dirichlet distribution.
     p = []
     for i in range(n):
         p.append([trial.user_attrs[f"p_{i}"] for trial in study.trials])
-    axes= plt.subplots(n, n, figsize=(20, 20))[1]
+    axes = plt.subplots(n, n, figsize=(20, 20))[1]
 
     for i in range(n):
         for j in range(n):
-            axes[j][i].scatter(p[i], p[j], marker='.')
+            axes[j][i].scatter(p[i], p[j], marker=".")
             axes[j][i].set_xlim(0, 1)
             axes[j][i].set_ylim(0, 1)
             axes[j][i].set_xlabel(f"p_{i}")
