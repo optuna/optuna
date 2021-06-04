@@ -332,3 +332,40 @@ Note that the above examples are similar to running the garbage collector inside
 
     :class:`~optuna.integration.ChainerMNStudy` does currently not provide ``gc_after_trial`` nor callbacks for :func:`~optuna.integration.ChainerMNStudy.optimize`.
     When using this class, you will have to call the garbage collector inside the objective function.
+
+How can I output a log only when the best value is updated?
+-----------------------------------------------------------
+
+Please turn off the logging feature of optuna and implement your own logging-only callback function.
+The implemented callback can be passed to `study.optimize`.
+The following is an example.
+
+.. code-block:: python
+
+    optuna.logging.set_verbosity(optuna.logging.WARN)
+
+
+    def objective(trial):
+        trial.set_user_attr("previous_best_value", trial._study.best_value)
+        x = trial.suggest_float("x", 0, 1)
+        return x ** 2
+
+
+    def callback(study, frozen_trial):
+        previous_best_value = frozen_trial.user_attr["previous_best_value"]
+        # Assume that we minimize the objective function.
+        if previous_best_value > study.best_value:
+            print(
+                "Trial {} finished with value: {} and parameters: {}. "
+                "Best is trial {} with value: {}.".format(
+                    frozen_trial.number,
+                    frozen_trial.value,
+                    frozen_trial.params,
+                    study.best_trial.number,
+                    study.best_value,
+                )
+            )
+
+
+    study = optuna.create_study()
+    study.optimize(objective, callbacks=[callback])
