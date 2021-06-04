@@ -378,6 +378,9 @@ class AllenNLPExecutor(object):
         # in trials afterwards (which would not consume random numbers), leading to inconsistent
         # results between single trial and multiple trials. To make results reproducible in
         # multiple trials, we clear the cache before each trial.
+        # TODO(MagiaSN) When AllenNLP has introduced a better API to do this, one should remove
+        # these lines and use the new API instead. For example, use the `_clear_caches()` method
+        # which will be in the next AllenNLP release after 2.4.0.
         allennlp.common.cached_transformers._model_cache.clear()
         allennlp.common.cached_transformers._tokenizer_cache.clear()
 
