@@ -87,7 +87,6 @@ class MLflowCallback(object):
             import mlflow
             from optuna.integration.mlflow import MLflowCallback
 
-            raise Exception("hello")
             mlflc = MLflowCallback(
                 tracking_uri=YOUR_TRACKING_URI,
                 metric_name="my metric score",
