@@ -19,6 +19,7 @@ from optuna._imports import try_import
 with try_import() as _imports:
     import allennlp
     import allennlp.commands
+    import allennlp.common.cached_transformers
     import allennlp.common.util
 
 # TrainerCallback is conditionally imported because allennlp may be unavailable in
@@ -381,7 +382,6 @@ class AllenNLPExecutor(object):
         # TODO(MagiaSN) When AllenNLP has introduced a better API to do this, one should remove
         # these lines and use the new API instead. For example, use the `_clear_caches()` method
         # which will be in the next AllenNLP release after 2.4.0.
-        import allennlp.common.cached_transformers
         allennlp.common.cached_transformers._model_cache.clear()
         allennlp.common.cached_transformers._tokenizer_cache.clear()
 
