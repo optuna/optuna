@@ -19,6 +19,7 @@ from optuna._imports import try_import
 with try_import() as _imports:
     import allennlp
     import allennlp.commands
+    import allennlp.common.cached_transformers
     import allennlp.common.util
 
 # TrainerCallback is conditionally imported because allennlp may be unavailable in
@@ -372,6 +373,17 @@ class AllenNLPExecutor(object):
         """Train a model using AllenNLP."""
         for package_name in self._include_package:
             allennlp.common.util.import_module_and_submodules(package_name)
+
+        # Without the following lines, the transformer model construction only takes place in the
+        # first trial (which would consume some random numbers), and the cached model will be used
+        # in trials afterwards (which would not consume random numbers), leading to inconsistent
+        # results between single trial and multiple trials. To make results reproducible in
+        # multiple trials, we clear the cache before each trial.
+        # TODO(MagiaSN) When AllenNLP has introduced a better API to do this, one should remove
+        # these lines and use the new API instead. For example, use the `_clear_caches()` method
+        # which will be in the next AllenNLP release after 2.4.0.
+        allennlp.common.cached_transformers._model_cache.clear()
+        allennlp.common.cached_transformers._tokenizer_cache.clear()
 
         self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
