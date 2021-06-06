@@ -1,4 +1,6 @@
 import math
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -143,6 +145,11 @@ class HyperbandPruner(BasePruner):
         reduction_factor: int = 3,
         bootstrap_count: int = 0,
     ) -> None:
+
+        self._init_min_resource = min_resource
+        self._init_max_resource = max_resource
+        self._init_reduction_factor = reduction_factor
+        self._init_bootstrap_count = bootstrap_count
 
         self._min_resource = min_resource
         self._max_resource = max_resource
@@ -318,3 +325,11 @@ class HyperbandPruner(BasePruner):
                     return object.__getattribute__(self, attr_name)
 
         return _BracketStudy(study, bracket_id)
+
+    def _get_init_arguments(self) -> Dict[str, Any]:
+        return {
+            "min_resource": self._init_min_resource,
+            "max_resource": self._init_max_resource,
+            "reduction_factor": self._init_reduction_factor,
+            "bootstrap_count": self._init_bootstrap_count,
+        }

@@ -1,5 +1,6 @@
 import math
 from typing import Any
+from typing import Dict
 from typing import Optional
 
 import optuna
@@ -77,8 +78,6 @@ class ThresholdPruner(BasePruner):
 
     """
 
-    SPECIAL_KEYWORDS = {"lower": "_raw_lower", "upper": "_raw_upper"}
-
     def __init__(
         self,
         lower: Optional[float] = None,
@@ -87,9 +86,10 @@ class ThresholdPruner(BasePruner):
         interval_steps: int = 1,
     ) -> None:
 
-        # [RFC] Additional instance variables for __repr__
-        self._raw_lower = lower
-        self._raw_upper = upper
+        self._init_lower = lower
+        self._init_upper = upper
+        self._init_n_warmup_steps = n_warmup_steps
+        self._init_interval_steps = interval_steps
 
         if lower is None and upper is None:
             raise TypeError("Either lower or upper must be specified.")
@@ -143,3 +143,11 @@ class ThresholdPruner(BasePruner):
             return True
 
         return False
+
+    def _get_init_arguments(self) -> Dict[str, Any]:
+        return {
+            "lower": self._init_lower,
+            "upper": self._init_upper,
+            "n_warmup_steps": self._init_n_warmup_steps,
+            "interval_steps": self._init_interval_steps,
+        }

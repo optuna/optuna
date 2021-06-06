@@ -1,3 +1,6 @@
+from typing import Any
+from typing import Dict
+
 from optuna.pruners._percentile import PercentilePruner
 
 
@@ -76,6 +79,19 @@ class MedianPruner(PercentilePruner):
         n_min_trials: int = 1,
     ) -> None:
 
+        self._init_n_startup_trials = n_startup_trials
+        self._init_n_warmup_steps = n_warmup_steps
+        self._init_interval_steps = interval_steps
+        self._init_n_min_trials = n_min_trials
+
         super().__init__(
             50.0, n_startup_trials, n_warmup_steps, interval_steps, n_min_trials=n_min_trials
         )
+
+    def _get_init_arguments(self) -> Dict[str, Any]:
+        return {
+            "n_startup_trials": self._init_n_startup_trials,
+            "n_warmup_steps": self._n_warmup_steps,
+            "interval_steps": self._init_interval_steps,
+            "n_min_trials": self._init_n_min_trials,
+        }

@@ -1,5 +1,7 @@
 import abc
+from typing import Any
 from typing import Dict
+import warnings
 
 import optuna
 
@@ -7,22 +9,10 @@ import optuna
 class BasePruner(object, metaclass=abc.ABCMeta):
     """Base class for pruners."""
 
-    SPECIAL_KEYWORDS: Dict[str, str] = {}
-
     def __repr__(self) -> str:
-        import inspect
-
         parameters = []
-        for keyword in inspect.signature(self.__class__.__init__).parameters:
-            if keyword == "self":
-                continue
-
-            access_keyword = "_{keyword}".format(keyword=keyword)
-            if keyword in self.SPECIAL_KEYWORDS:
-                access_keyword = self.SPECIAL_KEYWORDS[keyword]
-
-            if hasattr(self, access_keyword):
-                parameters.append("{}={}".format(keyword, repr(getattr(self, access_keyword))))
+        for key, value in self._get_init_arguments().items():
+            parameters.append("{}={}".format(key, repr(value)))
 
         return "{class_name}({parameters})".format(
             class_name=self.__class__.__name__,
@@ -49,3 +39,12 @@ class BasePruner(object, metaclass=abc.ABCMeta):
         """
 
         raise NotImplementedError
+
+    def _get_init_arguments(self) -> Dict[str, Any]:
+        warnings.warn(
+            "{} doesn't have a method `_get_init_arguments`."
+            " If you implement a pruner in your own, consider implementing it."
+            " For more information, please refer to Optuna GitHub PR"
+            " (https://github.com/optuna/optuna/pull/2707).".format(self.__class__.__name__)
+        )
+        return {}

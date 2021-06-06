@@ -1,3 +1,6 @@
+from typing import Any
+from typing import Dict
+
 import optuna
 from optuna.pruners import BasePruner
 
@@ -46,3 +49,6 @@ class NopPruner(BasePruner):
     def prune(self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial") -> bool:
 
         return False
+
+    def _get_init_arguments(self) -> Dict[str, Any]:
+        return {}

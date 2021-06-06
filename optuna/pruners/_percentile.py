@@ -1,5 +1,7 @@
 import functools
 import math
+from typing import Any
+from typing import Dict
 from typing import KeysView
 from typing import List
 
@@ -147,6 +149,12 @@ class PercentilePruner(BasePruner):
         n_min_trials: int = 1,
     ) -> None:
 
+        self._init_percentile = percentile
+        self._init_n_startup_trials = n_startup_trials
+        self._init_n_warmup_steps = n_warmup_steps
+        self._init_interval_steps = interval_steps
+        self._init_n_min_trials = n_min_trials
+
         if not 0.0 <= percentile <= 100:
             raise ValueError(
                 "Percentile must be between 0 and 100 inclusive but got {}.".format(percentile)
@@ -212,3 +220,12 @@ class PercentilePruner(BasePruner):
         if direction == StudyDirection.MAXIMIZE:
             return best_intermediate_result < p
         return best_intermediate_result > p
+
+    def _get_init_arguments(self) -> Dict[str, Any]:
+        return {
+            "percentile": self._init_percentile,
+            "n_startup_trials": self._init_n_startup_trials,
+            "n_warmup_steps": self._init_n_warmup_steps,
+            "interval_steps": self._init_interval_steps,
+            "n_min_trials": self._init_n_min_trials,
+        }

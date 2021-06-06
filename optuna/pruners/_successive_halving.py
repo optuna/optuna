@@ -1,4 +1,6 @@
 import math
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
@@ -109,8 +111,6 @@ class SuccessiveHalvingPruner(BasePruner):
             is considered for promotion into the next rung.
     """
 
-    SPECIAL_KEYWORDS = {"min_resource": "_raw_min_resource"}
-
     def __init__(
         self,
         min_resource: Union[str, int] = "auto",
@@ -119,8 +119,10 @@ class SuccessiveHalvingPruner(BasePruner):
         bootstrap_count: int = 0,
     ) -> None:
 
-        # [RFC] additional instance variable for ``__repr__``
-        self._raw_min_resource = min_resource
+        self._init_min_resource = min_resource
+        self._init_reduction_factor = reduction_factor
+        self._init_min_early_stopping_rate = min_early_stopping_rate
+        self._init_bootstrap_count = bootstrap_count
 
         if isinstance(min_resource, str) and min_resource != "auto":
             raise ValueError(
@@ -216,6 +218,14 @@ class SuccessiveHalvingPruner(BasePruner):
                 return True
 
             rung += 1
+
+    def _get_init_arguments(self) -> Dict[str, Any]:
+        return {
+            "min_resource": self._init_min_resource,
+            "reduction_factor": self._init_reduction_factor,
+            "min_early_stopping_rate": self._init_min_early_stopping_rate,
+            "bootstrap_count": self._init_bootstrap_count,
+        }
 
 
 def _estimate_min_resource(trials: List["optuna.trial.FrozenTrial"]) -> Optional[int]:

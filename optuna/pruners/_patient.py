@@ -1,3 +1,5 @@
+from typing import Any
+from typing import Dict
 from typing import Optional
 
 import numpy as np
@@ -69,6 +71,10 @@ class PatientPruner(BasePruner):
         self, wrapped_pruner: Optional[BasePruner], patience: int, min_delta: float = 0.0
     ) -> None:
 
+        self._init_wrapped_pruner = wrapped_pruner
+        self._init_patience = patience
+        self._init_min_delta = min_delta
+
         if patience < 0:
             raise ValueError(f"patience cannot be negative but got {patience}.")
 
@@ -120,3 +126,10 @@ class PatientPruner(BasePruner):
                 return True
         else:
             return False
+
+    def _get_init_arguments(self) -> Dict[str, Any]:
+        return {
+            "wrapped_pruner": self._init_wrapped_pruner,
+            "patience": self._init_patience,
+            "min_delta": self._init_min_delta,
+        }
