@@ -69,17 +69,8 @@ class MLflowCallback(object):
             :options: +NORMALIZE_WHITESPACE
 
             INFO: 'my_study' does not exist. Creating a new experiment
-            Log an additional metric to MLFlow
 
         Add additional logging to MLflow
-
-        .. testsetup::
-
-            import pathlib
-            import tempfile
-
-            tempdir = tempfile.mkdtemp()
-            YOUR_TRACKING_URI = pathlib.Path(tempdir).as_uri()
 
         .. testcode::
 
@@ -102,20 +93,15 @@ class MLflowCallback(object):
                 return (x - 2) ** 2
 
 
-            study = optuna.create_study(study_name="my_study")
+            study = optuna.create_study(study_name="my_other_study")
             study.optimize(objective, n_trials=10, callbacks=[mlflc])
 
-        .. testcleanup::
-
-            import shutil
-
-            shutil.rmtree(tempdir)
 
         .. testoutput::
             :hide:
             :options: +NORMALIZE_WHITESPACE
 
-            INFO: 'my_study' does not exist. Creating a new experiment
+            INFO: 'my_other_study' does not exist. Creating a new experiment
 
     Args:
         tracking_uri:
@@ -244,7 +230,7 @@ class MLflowCallback(object):
 
         if self._tag_study_user_attrs:
             tags.update(study.user_attrs)
-            
+
         # This is a temporary fix on Optuna side. It avoids an error with user
         # attributes that are too long. It should be fixed on MLflow side later.
         # When it is fixed on MLflow side this codeblock can be removed.
