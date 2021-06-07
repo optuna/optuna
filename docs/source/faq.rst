@@ -342,30 +342,35 @@ The following is an example.
 
 .. code-block:: python
 
+    import optuna
+
+    INF = 1e+9
+
+
+    # Turn off the log of optuna.
     optuna.logging.set_verbosity(optuna.logging.WARN)
 
 
     def objective(trial):
-        trial.set_user_attr("previous_best_value", trial._study.best_value)
+        # Preserve the previous best value before computing objective value.
+        n_completed_trials = len(trial.study.get_trials(states=(optuna.trial.TrialState.COMPLETE,)))
+        if n_completed_trials > 0:
+            trial.set_user_attr("previous_best_value", trial.study.best_value)
         x = trial.suggest_float("x", 0, 1)
         return x ** 2
 
 
-    def callback(study, frozen_trial):
-        previous_best_value = frozen_trial.user_attr["previous_best_value"]
-        # Assume that we minimize the objective function.
+    def logging_callback(study, frozen_trial):
+        previous_best_value = frozen_trial.user_attrs.get("previous_best_value", INF)
         if previous_best_value > study.best_value:
             print(
-                "Trial {} finished with value: {} and parameters: {}. "
-                "Best is trial {} with value: {}.".format(
-                    frozen_trial.number,
-                    frozen_trial.value,
-                    frozen_trial.params,
-                    study.best_trial.number,
-                    study.best_value,
+                "Trial {} finished with best value: {} and parameters: {}. ".format(
+                frozen_trial.number,
+                frozen_trial.value,
+                frozen_trial.params,
                 )
             )
 
 
     study = optuna.create_study()
-    study.optimize(objective, callbacks=[callback])
+    study.optimize(objective, n_trials=100, callbacks=[logging_callback])
