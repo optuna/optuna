@@ -336,8 +336,9 @@ Note that the above examples are similar to running the garbage collector inside
 How do I suggest variables which represent the proportion, that is, are in accordance with Dirichlet distribution?
 ------------------------------------------------------------------------------------------------------------------
 
-When you want to suggest `n` variables which represent the proportion, that is, `p[0], p[1], ..., p[n-1]` which satisfy `0 <= p[k] <= 1` for any `k` and `p[0] + p[1] + ... + p[n-1] = 1`, try the following.
-These variables are in accordance with the flat Dirichlet distribution.
+When you want to suggest :math:`n` variables which represent the proportion, that is, :math:`p[0], p[1], ..., p[n-1]` which satisfy :math:`0 \le p[k] \le 1` for any `k` and :math:`p[0] + p[1] + ... + p[n-1] = 1`, try the following.
+For example, these variables can be used as weights when interpolating the loss functions.
+These variables are in accordance with the flat `Dirichlet distribution <https://en.wikipedia.org/wiki/Dirichlet_distribution>`_.
 
 .. code-block:: python
 
@@ -381,6 +382,6 @@ These variables are in accordance with the flat Dirichlet distribution.
     plt.savefig("sampled_ps.png")
 
 This method is justified in the following way.
-First, if we apply the transformation `x = - log(u)` to the variable `u` sampled from the uniform distribution `Uni(0, 1)` in the interval [0, 1], the variable `x` will follow the exponential distribution `Exp(1)` with scale parameter 1.
-Furthermore, for `n` variables `x[0], ..., x[n-1]` that follow the exponential distribution of scale parameter 1 independently, normalizing them with `p[i] = x[i] / sum(x)`, the vector `p` follows the Dirichlet distribution `Dir(\alpha)` of scale parameter `\alpha = (1, ..., 1)`.
+First, if we apply the transformation :math:`x = - \log (u)` to the variable :math:`u` sampled from the uniform distribution :math:`Uni(0, 1)` in the interval [0, 1], the variable :math:`x` will follow the exponential distribution :math:`Exp(1)` with scale parameter 1.
+Furthermore, for :math:`n` variables :math:`x[0], ..., x[n-1]` that follow the exponential distribution of scale parameter 1 independently, normalizing them with :math:`p[i] = x[i] / sum(x)`, the vector :math:`p` follows the Dirichlet distribution :math:`Dir(\alpha)` of scale parameter :math:`\alpha = (1, ..., 1)`.
 You can verify the transformation by elemental calculation of Jacobian.
