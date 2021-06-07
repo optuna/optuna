@@ -96,32 +96,6 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     return pruner(**pruner_params)
 
 
-def _infer_and_cast(value: Optional[str]) -> Optional[Union[str, int, float, bool]]:
-    """Infer and cast a string to desired types.
-
-    We are only able to set strings as environment variables.
-    However, parameters of a pruner could be integer, float,
-    boolean, or else. We infer and cast environment variables
-    to desired types.
-
-    """
-    if value is None:
-        return None
-
-    try:
-        return int(value)
-    except ValueError:
-        try:
-            return float(value)
-        except ValueError:
-            if value == "True":
-                return True
-            if value == "False":
-                return False
-
-    return value
-
-
 def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
     return {
         "study_name": os.getenv(_STUDY_NAME),
@@ -141,7 +115,9 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int
     kwargs = {}
     for key in keys.split(","):
         key_without_prefix = key.replace("{}_".format(_PREFIX), "")
-        kwargs[key_without_prefix] = _infer_and_cast(os.getenv(key))
+        value = os.getenv(key)
+        assert value is not None
+        kwargs[key_without_prefix] = eval(value)
 
     return kwargs
 
@@ -335,7 +311,7 @@ class AllenNLPExecutor(object):
 
         pruner_params = _fetch_pruner_config(trial)
         pruner_params = {
-            "{}_{}".format(_PREFIX, key): str(value) for key, value in pruner_params.items()
+            "{}_{}".format(_PREFIX, key): repr(value) for key, value in pruner_params.items()
         }
 
         system_attrs = {
