@@ -398,6 +398,9 @@ class AllenNLPPruningCallback(TrainerCallback):
         Then :class:`~optuna.integration.AllenNLPPruningCallback`
         loads them to restore ``trial`` and ``monitor``.
 
+    .. note::
+        Currently, build-in pruners are supported except to `~optuna.pruners.PatientPruner`.
+
     Args:
         trial:
             A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
