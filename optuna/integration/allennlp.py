@@ -117,7 +117,7 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int
         key_without_prefix = key.replace("{}_".format(_PREFIX), "")
         value = os.getenv(key)
         if value is None:
-            raise ValueError("{key} is not found in environment variables.")
+            raise ValueError(f"{key} is not found in environment variables.")
         kwargs[key_without_prefix] = eval(value)
 
     return kwargs
