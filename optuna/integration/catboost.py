@@ -1,13 +1,21 @@
 from typing import Any
 
+from packaging import version
+
 import optuna
+from optuna._imports import try_import
 
 
-with optuna._imports.try_import() as _imports:
-    import catboost
+with try_import() as _imports:
+    import catboost as cb
+
+    if version.parse(cb.__version__) < version.parse("0.26"):
+        raise NotImplementedError(
+            f"This function is available since version 0.26!  catboost version: {cb.__version__}"
+        )
+
 
 class CatBoostPruningCallback(object):
-
     def __init__(self, trial: optuna.trial.Trial, observation_key: str, metric: str) -> None:
         self._trial = trial
         self._observation_key = observation_key
@@ -15,7 +23,7 @@ class CatBoostPruningCallback(object):
         self._pruned = False
         self._message = ""
 
-    def after_iteration(self, info):
+    def after_iteration(self, info: Any) -> bool:
         metrics = info.metrics[self._observation_key]
         scores = metrics[self._metric]
         current_score = scores[-1]
@@ -26,14 +34,8 @@ class CatBoostPruningCallback(object):
             self._message = message
             self._pruned = True
             return False
-#            print(message)
-#            return False
-            # The training should not stop.
         return True
 
-    def check_pruned(self):
+    def check_pruned(self) -> None:
         if self._pruned is True:
             raise optuna.TrialPruned(self._message)
-
-
-
