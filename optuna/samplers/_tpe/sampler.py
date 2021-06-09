@@ -412,7 +412,7 @@ class TPESampler(BaseSampler):
         self, config_vals: Dict[str, List[Optional[float]]], loss_vals: List[Tuple[float, float]]
     ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
 
-        config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
+        config_values = {k: np.asarray(v) for k, v in config_vals.items()}
         loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
 
         n_below = self._gamma(len(loss_values))
