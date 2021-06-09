@@ -13,8 +13,8 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
-from optuna.visualization.matplotlib._utils import _is_categorical
 from optuna.visualization.matplotlib._utils import _is_log_scale
+from optuna.visualization.matplotlib._utils import _is_numerical
 
 
 if _imports.is_successful():
@@ -181,7 +181,7 @@ def _generate_slice_subplot(
     if _is_log_scale(trials, param):
         ax.set_xscale("log")
         scale = "log"
-    elif _is_categorical(trials, param):
+    elif not _is_numerical(trials, param):
         x_values = [str(x) for x in x_values]
         scale = "categorical"
     xlim = _calc_lim_with_padding(x_values, padding_ratio, scale)

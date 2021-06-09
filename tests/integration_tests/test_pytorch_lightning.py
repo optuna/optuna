@@ -1,6 +1,7 @@
 from typing import Dict
 from typing import List
 
+import pytest
 import pytorch_lightning as pl
 import torch
 from torch import nn
@@ -8,6 +9,7 @@ import torch.nn.functional as F
 
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
+from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -88,3 +90,21 @@ def test_pytorch_lightning_pruning_callback() -> None:
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+
+
+def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    trial = create_running_trial(study, 1.0)
+    callback = PyTorchLightningPruningCallback(trial, "InvalidMonitor")
+
+    trainer = pl.Trainer(
+        min_epochs=0,  # Required to fire the callback after the first epoch.
+        max_epochs=1,
+        checkpoint_callback=False,
+        callbacks=[callback],
+    )
+    model = Model()
+
+    with pytest.warns(UserWarning):
+        callback.on_validation_end(trainer, model)

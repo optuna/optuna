@@ -3,10 +3,10 @@ import optuna
 
 def test_nop_pruner() -> None:
 
-    study = optuna.study.create_study()
-    trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-    trial.report(1, 1)
     pruner = optuna.pruners.NopPruner()
+    study = optuna.study.create_study(pruner=pruner)
+    trial = study.ask()
+    trial.report(1, 1)
 
     # A NopPruner instance is always deactivated.
-    assert not pruner.prune(study=study, trial=study.trials[0])
+    assert not trial.should_prune()

@@ -54,8 +54,10 @@ local LEARNING_RATE = std.parseJson(std.extVar('LEARNING_RATE'));
     batch_size: 32,
   },
   trainer: {
-    optimizer: 'adam',
-    lr: LEARNING_RATE,
+    optimizer: {
+      type: 'adam',
+      lr: LEARNING_RATE,
+    },
     num_epochs: 1,
     patience: 10,
     cuda_device: -1,

@@ -225,7 +225,12 @@ class TPESampler(BaseSampler):
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
-            consider_prior, prior_weight, consider_magic_clip, consider_endpoints, weights
+            consider_prior,
+            prior_weight,
+            consider_magic_clip,
+            consider_endpoints,
+            weights,
+            multivariate,
         )
         self._prior_weight = prior_weight
         self._n_startup_trials = n_startup_trials
@@ -347,7 +352,9 @@ class TPESampler(BaseSampler):
             return {}
 
         param_names = list(search_space.keys())
-        values, scores = _get_observation_pairs(study, param_names, self._constant_liar)
+        values, scores = _get_observation_pairs(
+            study, param_names, self._multivariate, self._constant_liar
+        )
 
         # If the number of samples is insufficient, we run random trial.
         n = len(scores)
@@ -382,7 +389,9 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        values, scores = _get_observation_pairs(study, [param_name], self._constant_liar)
+        values, scores = _get_observation_pairs(
+            study, [param_name], self._multivariate, self._constant_liar
+        )
 
         n = len(scores)
 
@@ -710,6 +719,7 @@ def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
 def _get_observation_pairs(
     study: Study,
     param_names: List[str],
+    multivariate: bool,
     constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
 ) -> Tuple[Dict[str, List[float]], List[Tuple[float, List[float]]]]:
     """Get observation pairs from the study.
@@ -730,6 +740,9 @@ def _get_observation_pairs(
     ``(-step, value)``).
     """
 
+    if len(param_names) > 1:
+        assert multivariate
+
     signs = []
     for d in study.directions:
         if d == StudyDirection.MINIMIZE:
@@ -746,9 +759,10 @@ def _get_observation_pairs(
     scores = []
     values: Dict[str, List[float]] = {param_name: [] for param_name in param_names}
     for trial in study.get_trials(deepcopy=False, states=states):
-        # If ``group`` = True, there may be trials that are not included in each subspace.
-        # Such trials should be ignored here.
-        if any([param_name not in trial.params for param_name in param_names]):
+        # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
+        # included in each subspace.
+        # If ``multivariate`` = False, we skip the check.
+        if multivariate and any([param_name not in trial.params for param_name in param_names]):
             continue
 
         # We extract score from the trial.
@@ -780,9 +794,13 @@ def _get_observation_pairs(
 
         # We extract param_value from the trial.
         for param_name in param_names:
-            assert param_name in trial.params
-            distribution = trial.distributions[param_name]
-            param_value = distribution.to_internal_repr(trial.params[param_name])
+            raw_param_value = trial.params.get(param_name, None)
+            param_value: Optional[float]
+            if raw_param_value is not None:
+                distribution = trial.distributions[param_name]
+                param_value = distribution.to_internal_repr(trial.params[param_name])
+            else:
+                param_value = None
             values[param_name].append(param_value)
 
     return values, scores

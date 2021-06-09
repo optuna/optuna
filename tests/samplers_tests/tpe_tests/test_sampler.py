@@ -727,38 +727,50 @@ def test_get_observation_pairs() -> None:
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x"]) == (
+    scores = [
+        (-float("inf"), 5.0),  # COMPLETE
+        (-7, 2),  # PRUNED (with intermediate values)
+        (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+        (float("inf"), 0.0),  # PRUNED (without intermediate values)
+    ]
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
-        [
-            (-float("inf"), [5.0]),  # COMPLETE
-            (-7, [2]),  # PRUNED (with intermediate values)
-            (
-                -3,
-                [float("inf")],
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
-        ],
+        scores,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"]) == ({"y": []}, [])
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], False) == (
+        {"y": [None, None, None, None]},
+        scores,
+    )
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
+        {"x": [5.0, 5.0, 5.0, 5.0]},
+        scores,
+    )
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
 
     # Test direction=maximize.
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=4)
     study._storage.create_new_trial(study._study_id)  # Create a running trial.
+    scores = [
+        (-float("inf"), -5.0),  # COMPLETE
+        (-7, -2),  # PRUNED (with intermediate values)
+        (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+        (float("inf"), 0.0),  # PRUNED (without intermediate values)
+    ]
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x"]) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
-        [
-            (-float("inf"), [-5.0]),  # COMPLETE
-            (-7, [-2]),  # PRUNED (with intermediate values)
-            (
-                -3,
-                [float("inf")],
-            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
-        ],
+        scores,
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"]) == ({"y": []}, [])
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], False) == (
+        {"y": [None, None, None, None]},
+        scores,
+    )
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
+        {"x": [5.0, 5.0, 5.0, 5.0]},
+        scores,
+    )
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
 
     def objective2(trial: Trial) -> float:
 
@@ -782,7 +794,7 @@ def test_get_observation_pairs() -> None:
     study = optuna.create_study(direction="minimize")
     study.optimize(objective2, n_trials=5, catch=(RuntimeError,))
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"]) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
             (-float("inf"), [11.0]),  # COMPLETE
@@ -800,7 +812,7 @@ def test_get_observation_pairs() -> None:
     study.optimize(objective2, n_trials=4)
     study._storage.create_new_trial(study._study_id)  # Create a running trial.
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"]) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
             (-float("inf"), [-11.0]),  # COMPLETE
@@ -968,7 +980,8 @@ def test_group_experimental_warning() -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_constant_liar_observation_pairs(direction: str) -> None:
+@pytest.mark.parametrize("multivariate", [True, False])
+def test_constant_liar_observation_pairs(direction: str, multivariate: bool) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = TPESampler(constant_liar=True)
@@ -986,11 +999,13 @@ def test_constant_liar_observation_pairs(direction: str) -> None:
     # and `-float("inf")` during maximization.
     expected_values = [(-float("inf"), [float("inf") * (-1 if direction == "maximize" else 1)])]
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=False) == (
+    assert _tpe.sampler._get_observation_pairs(
+        study, ["x"], multivariate, constant_liar=False
+    ) == (
         {"x": []},
         [],
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["x"], constant_liar=True) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], multivariate, constant_liar=True) == (
         {"x": [2]},
         expected_values,
     )
