@@ -215,7 +215,7 @@ def test_multi_objective_sample_independent_misc_arguments() -> None:
         mock2.return_value = attrs.value
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
-    sampler = TPESampler(gamma=lambda _: 5, seed=0)
+    sampler = TPESampler(gamma=lambda _: 1, seed=0)
     attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
         study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
@@ -525,11 +525,19 @@ def test_multi_objective_get_observation_pairs() -> None:
     study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
     study.optimize(objective, n_trials=5)
 
-    assert _tpe.sampler._get_observation_pairs(study, ["x"]) == (
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
         {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
         [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
     )
-    assert _tpe.sampler._get_observation_pairs(study, ["y"]) == ({"y": []}, [])
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], False) == (
+        {"y": [None, None, None, None, None]},
+        [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
+    )
+    assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
+        {"x": [5.0, 5.0, 5.0, 5.0, 5.0]},
+        [(-float("inf"), [5.0, -5.0]) for _ in range(5)],
+    )
+    assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
 
 
 def test_calculate_nondomination_rank() -> None:

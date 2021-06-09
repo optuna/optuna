@@ -728,10 +728,10 @@ def test_get_observation_pairs() -> None:
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
     scores = [
-        (-float("inf"), 5.0),  # COMPLETE
-        (-7, 2),  # PRUNED (with intermediate values)
-        (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-        (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        (-float("inf"), [5.0]),  # COMPLETE
+        (-7, [2]),  # PRUNED (with intermediate values)
+        (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+        (float("inf"), [0.0]),  # PRUNED (without intermediate values)
     ]
     assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
@@ -752,10 +752,10 @@ def test_get_observation_pairs() -> None:
     study.optimize(objective, n_trials=4)
     study._storage.create_new_trial(study._study_id)  # Create a running trial.
     scores = [
-        (-float("inf"), -5.0),  # COMPLETE
-        (-7, -2),  # PRUNED (with intermediate values)
-        (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-        (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        (-float("inf"), [-5.0]),  # COMPLETE
+        (-7, [-2]),  # PRUNED (with intermediate values)
+        (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+        (float("inf"), [0.0]),  # PRUNED (without intermediate values)
     ]
 
     assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (

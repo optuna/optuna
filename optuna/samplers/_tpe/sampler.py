@@ -435,6 +435,7 @@ class TPESampler(BaseSampler):
             self._parzen_estimator_parameters.consider_magic_clip,
             self._parzen_estimator_parameters.consider_endpoints,
             weights_below,
+            self._multivariate,
         )
 
     def _split_observation_pairs(
@@ -757,7 +758,7 @@ def _get_observation_pairs(
         states = (TrialState.COMPLETE, TrialState.PRUNED)
 
     scores = []
-    values: Dict[str, List[float]] = {param_name: [] for param_name in param_names}
+    values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
     for trial in study.get_trials(deepcopy=False, states=states):
         # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
         # included in each subspace.
