@@ -336,33 +336,28 @@ Note that the above examples are similar to running the garbage collector inside
 How can I output a log only when the best value is updated?
 -----------------------------------------------------------
 
-Please turn off the logging feature of optuna and implement your own logging-only callback function.
+Here's how to replace the logging feature of optuna and with your own logging callback function.
 The implemented callback can be passed to `study.optimize`.
-The following is an example.
+Here's an example:
 
 .. code-block:: python
 
     import optuna
 
-    INF = 1e+9
 
-
-    # Turn off the log of optuna.
+    # Turn off optuna log notes.
     optuna.logging.set_verbosity(optuna.logging.WARN)
 
 
     def objective(trial):
-        # Preserve the previous best value before computing objective value.
-        n_completed_trials = len(trial.study.get_trials(states=(optuna.trial.TrialState.COMPLETE,)))
-        if n_completed_trials > 0:
-            trial.set_user_attr("previous_best_value", trial.study.best_value)
         x = trial.suggest_float("x", 0, 1)
         return x ** 2
 
 
     def logging_callback(study, frozen_trial):
-        previous_best_value = frozen_trial.user_attrs.get("previous_best_value", INF)
-        if previous_best_value > study.best_value:
+        previous_best_value = study.user_attrs.get("previous_best_value", None)
+        if previous_best_value != study.best_value:
+            study.set_user_attr("previous_best_value", study.best_value)
             print(
                 "Trial {} finished with best value: {} and parameters: {}. ".format(
                 frozen_trial.number,
