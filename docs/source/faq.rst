@@ -336,7 +336,7 @@ Note that the above examples are similar to running the garbage collector inside
 How do I suggest variables which represent the proportion, that is, are in accordance with Dirichlet distribution?
 ------------------------------------------------------------------------------------------------------------------
 
-When you want to suggest :math:`n` variables which represent the proportion, that is, :math:`p[0], p[1], ..., p[n-1]` which satisfy :math:`0 \le p[k] \le 1` for any :math:`k` and :math:`p[0] + p[1] + ... + p[n-1] = 1`, try the following.
+When you want to suggest :math:`n` variables which represent the proportion, that is, :math:`p[0], p[1], ..., p[n-1]` which satisfy :math:`0 \le p[k] \le 1` for any :math:`k` and :math:`p[0] + p[1] + ... + p[n-1] = 1`, try the below.
 For example, these variables can be used as weights when interpolating the loss functions.
 These variables are in accordance with the flat `Dirichlet distribution <https://en.wikipedia.org/wiki/Dirichlet_distribution>`_.
 
@@ -381,7 +381,7 @@ These variables are in accordance with the flat `Dirichlet distribution <https:/
 
     plt.savefig("sampled_ps.png")
 
-This method is justified in the following way.
+This method is justified in the following way:
 First, if we apply the transformation :math:`x = - \log (u)` to the variable :math:`u` sampled from the uniform distribution :math:`Uni(0, 1)` in the interval :math:`[0, 1]`, the variable :math:`x` will follow the exponential distribution :math:`Exp(1)` with scale parameter :math:`1`.
 Furthermore, for :math:`n` variables :math:`x[0], ..., x[n-1]` that follow the exponential distribution of scale parameter :math:`1` independently, normalizing them with :math:`p[i] = x[i] / \sum_i x[i]`, the vector :math:`p` follows the Dirichlet distribution :math:`Dir(\alpha)` of scale parameter :math:`\alpha = (1, ..., 1)`.
-You can verify the transformation by elemental calculation of Jacobian.
+You can verify the transformation by calculating the elements of the Jacobian.
