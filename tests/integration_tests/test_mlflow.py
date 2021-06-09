@@ -264,7 +264,7 @@ def test_initialize_experiment(tmpdir: py.path.local) -> None:
     mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
 
-    mlflc.initialize_experiment(study)
+    mlflc._initialize_experiment(study)
 
     mlfl_client = MlflowClient(tracking_file_name)
     experiments = mlfl_client.list_experiments()
@@ -282,7 +282,7 @@ def test_log_metric(tmpdir: py.path.local) -> None:
 
     mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
-    mlflc.initialize_experiment(study)
+    mlflc._initialize_experiment(study)
 
     with mlflow.start_run():
         mlflc._log_metric(metric_value)
@@ -311,7 +311,7 @@ def test_log_metric_none(tmpdir: py.path.local) -> None:
 
     mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
-    mlflc.initialize_experiment(study)
+    mlflc._initialize_experiment(study)
 
     with mlflow.start_run():
         mlflc._log_metric(metric_value)
@@ -344,9 +344,9 @@ def test_log_params(tmpdir: py.path.local) -> None:
 
     params = {param1_name: param1_value, param2_name: param2_value}
 
-    mlfli = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
-    mlfli.initialize_experiment(study)
+    mlflc._initialize_experiment(study)
 
     with mlflow.start_run():
 
@@ -358,7 +358,7 @@ def test_log_params(tmpdir: py.path.local) -> None:
             },
             value=5.0,
         )
-        mlfli._log_params(trial)
+        mlflc._log_params(trial)
 
     mlfl_client = MlflowClient(tracking_file_name)
     experiments = mlfl_client.list_experiments()

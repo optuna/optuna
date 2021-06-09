@@ -141,7 +141,7 @@ class MLflowCallback(object):
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
-        self.initialize_experiment(study)
+        self._initialize_experiment(study)
 
         with mlflow.start_run(
             run_id=trial.user_attrs.get(RUN_ID_ATTRIBUTE_KEY),
@@ -158,7 +158,7 @@ class MLflowCallback(object):
             # This sets the tags for MLflow.
             self._set_tags(trial, study)
 
-    @experimental("2.8.0")
+    @experimental("2.9.0")
     def track_in_mlflow(self) -> Callable:
         """Decorator for using MLFlow logging in the objective function.
 
@@ -174,7 +174,7 @@ class MLflowCallback(object):
         def decorator(func: ObjectiveFuncType) -> ObjectiveFuncType:
             def wrapper(trial: optuna.trial.Trial) -> Union[float, Sequence[float]]:
                 study = trial.study
-                self.initialize_experiment(study)
+                self._initialize_experiment(study)
 
                 with mlflow.start_run(run_name=str(trial.number), nested=self._nest_trials) as run:
                     trial.set_user_attr(RUN_ID_ATTRIBUTE_KEY, run.info.run_id)
@@ -185,7 +185,7 @@ class MLflowCallback(object):
 
         return decorator
 
-    def initialize_experiment(self, study: optuna.study.Study) -> None:
+    def _initialize_experiment(self, study: optuna.study.Study) -> None:
         """Initialize a MLFlow experiment with the study name.
 
         If a tracking uri has been provided, MLFlow will be initialized to use it.
