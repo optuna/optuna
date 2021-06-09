@@ -442,7 +442,7 @@ class TPESampler(BaseSampler):
         self,
         n_objectives: int,
         trial_id: int,
-        config_vals: Dict[str, List[float]],
+        config_vals: Dict[str, List[Optional[float]]],
         loss_vals: List[Tuple[float, List[float]]],
     ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
 
@@ -524,8 +524,12 @@ class TPESampler(BaseSampler):
         below = {}
         above = {}
         for param_name, param_val in config_values.items():
-            below[param_name] = np.asarray([v for v in param_val[indices_below] if v is not None])
-            above[param_name] = np.asarray([v for v in param_val[indices_above] if v is not None])
+            below[param_name] = np.asarray(
+                [v for v in param_val[indices_below] if v is not None], dtype=float
+            )
+            above[param_name] = np.asarray(
+                [v for v in param_val[indices_above] if v is not None], dtype=float
+            )
 
         return below, above
 
@@ -722,7 +726,7 @@ def _get_observation_pairs(
     param_names: List[str],
     multivariate: bool,
     constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
-) -> Tuple[Dict[str, List[float]], List[Tuple[float, List[float]]]]:
+) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, List[float]]]]:
     """Get observation pairs from the study.
 
     This function collects observation pairs from the complete or pruned trials of the study.
