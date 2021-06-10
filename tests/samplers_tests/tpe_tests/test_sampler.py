@@ -1013,11 +1013,13 @@ def test_constant_liar_experimental_warning() -> None:
 def test_sample_independent_with_branch_division() -> None:
     sampler = TPESampler(n_startup_trials=0)
 
+    # This objective function has different parameters to sample across trials, and TPE should
+    # ignore trials where the parameters you want to sample are not present.
     def objective(trial: Trial) -> float:
         if trial.number < 3:
             return trial.suggest_float("x", 0, 1)
         else:
-            c = trial.suggest_categorical("c", [0., 1., 2.])
+            c = trial.suggest_categorical("c", [0.0, 1.0, 2.0])
             assert isinstance(c, float)
             return c
 
