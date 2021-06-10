@@ -821,7 +821,6 @@ def test_get_observation_pairs() -> None:
 
 
 def test_split_observation_pairs() -> None:
-
     def _gamma(n: int) -> int:
         return n // 2
 

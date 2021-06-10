@@ -569,7 +569,9 @@ def _get_observation_pairs(
 
 
 def _split_observation_pairs(
-    config_vals: Dict[str, List[Optional[float]]], loss_vals: List[Tuple[float, float]], gamma: Callable[[int], int]
+    config_vals: Dict[str, List[Optional[float]]],
+    loss_vals: List[Tuple[float, float]],
+    gamma: Callable[[int], int],
 ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
 
     # `None` items are intentionally converted to `nan` and then filtered out.
