@@ -359,7 +359,7 @@ class TPESampler(BaseSampler):
             return {}
 
         # We divide data into below and above.
-        below, above = self._split_observation_pairs(values, scores)
+        below, above = _split_observation_pairs(values, scores, self._gamma)
         # We then sample by maximizing log likelihood ratio.
         mpe_below = _ParzenEstimator(below, search_space, self._parzen_estimator_parameters)
         mpe_above = _ParzenEstimator(above, search_space, self._parzen_estimator_parameters)
@@ -394,7 +394,7 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        below, above = self._split_observation_pairs(values, scores)
+        below, above = _split_observation_pairs(values, scores, self._gamma)
         mpe_below = _ParzenEstimator(
             below, {param_name: param_distribution}, self._parzen_estimator_parameters
         )
@@ -407,30 +407,6 @@ class TPESampler(BaseSampler):
         ret = TPESampler._compare(samples_below, log_likelihoods_below, log_likelihoods_above)
 
         return param_distribution.to_external_repr(ret[param_name])
-
-    def _split_observation_pairs(
-        self, config_vals: Dict[str, List[Optional[float]]], loss_vals: List[Tuple[float, float]]
-    ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-
-        # `None` items are intentionally converted to `nan` and then filtered out.
-        # For `nan` conversion, the dtype must be float.
-        config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
-        loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
-
-        n_below = self._gamma(len(loss_values))
-        index_loss_ascending = np.argsort(loss_values)
-        # `np.sort` is used to keep chronological order.
-        index_below = np.sort(index_loss_ascending[:n_below])
-        index_above = np.sort(index_loss_ascending[n_below:])
-        below = {}
-        above = {}
-        for param_name, param_val in config_values.items():
-            param_val_below = param_val[index_below]
-            param_val_above = param_val[index_above]
-            below[param_name] = param_val_below[~np.isnan(param_val_below)]
-            above[param_name] = param_val_above[~np.isnan(param_val_above)]
-
-        return below, above
 
     @classmethod
     def _compare(
@@ -590,3 +566,28 @@ def _get_observation_pairs(
             values[param_name].append(param_value)
 
     return values, scores
+
+
+def _split_observation_pairs(
+    config_vals: Dict[str, List[Optional[float]]], loss_vals: List[Tuple[float, float]], gamma: Callable[[int], int]
+) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+
+    # `None` items are intentionally converted to `nan` and then filtered out.
+    # For `nan` conversion, the dtype must be float.
+    config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
+    loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
+
+    n_below = gamma(len(loss_values))
+    index_loss_ascending = np.argsort(loss_values)
+    # `np.sort` is used to keep chronological order.
+    index_below = np.sort(index_loss_ascending[:n_below])
+    index_above = np.sort(index_loss_ascending[n_below:])
+    below = {}
+    above = {}
+    for param_name, param_val in config_values.items():
+        param_val_below = param_val[index_below]
+        param_val_above = param_val[index_above]
+        below[param_name] = param_val_below[~np.isnan(param_val_below)]
+        above[param_name] = param_val_above[~np.isnan(param_val_above)]
+
+    return below, above

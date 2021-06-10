@@ -820,6 +820,27 @@ def test_get_observation_pairs() -> None:
     )
 
 
+def test_split_observation_pairs() -> None:
+
+    def _gamma(n: int) -> int:
+        return n // 2
+
+    below, above = _tpe.sampler._split_observation_pairs(
+        {"x": [1.0, 2.0, 3.0, 4.0], "y": [10.0, None, 20.0, None]},
+        [
+            (-float("inf"), -5.0),  # COMPLETE
+            (-7, -2),  # PRUNED (with intermediate values)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        ],
+        _gamma,
+    )
+    assert (below["x"] == np.asarray([1.0, 2.0])).all()
+    assert (above["x"] == np.asarray([3.0, 4.0])).all()
+    assert (below["y"] == np.asarray([10.0])).all()
+    assert (above["y"] == np.asarray([20.0])).all()
+
+
 def frozen_trial_factory(
     idx: int,
     dist: optuna.distributions.BaseDistribution = optuna.distributions.UniformDistribution(
@@ -1008,20 +1029,3 @@ def test_constant_liar_observation_pairs(direction: str, multivariate: bool) -> 
 def test_constant_liar_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(constant_liar=True)
-
-
-def test_sample_independent_with_branch_division() -> None:
-    sampler = TPESampler(n_startup_trials=0)
-
-    # This objective function has different parameters to sample across trials, and TPE should
-    # ignore trials where the parameters you want to sample are not present.
-    def objective(trial: Trial) -> float:
-        if trial.number < 3:
-            return trial.suggest_float("x", 0, 1)
-        else:
-            c = trial.suggest_categorical("c", [0.0, 1.0, 2.0])
-            assert isinstance(c, float)
-            return c
-
-    study = optuna.create_study(sampler=sampler)
-    study.optimize(objective, n_trials=10)
