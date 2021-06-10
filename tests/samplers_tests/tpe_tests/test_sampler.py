@@ -820,6 +820,23 @@ def test_get_observation_pairs() -> None:
     )
 
 
+def test_split_observation_pairs() -> None:
+    below, above = _tpe.sampler._split_observation_pairs(
+        {"x": [1.0, 2.0, 3.0, 4.0], "y": [10.0, None, 20.0, None]},
+        [
+            (-7, -2),  # PRUNED (with intermediate values)
+            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-float("inf"), -5.0),  # COMPLETE
+        ],
+        2,
+    )
+    np.testing.assert_array_equal(below["x"], np.asarray([1.0, 4.0]))
+    np.testing.assert_array_equal(above["x"], np.asarray([2.0, 3.0]))
+    np.testing.assert_array_equal(below["y"], np.asarray([10.0]))
+    np.testing.assert_array_equal(above["y"], np.asarray([20.0]))
+
+
 def frozen_trial_factory(
     idx: int,
     dist: optuna.distributions.BaseDistribution = optuna.distributions.UniformDistribution(
