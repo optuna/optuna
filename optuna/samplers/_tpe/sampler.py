@@ -412,7 +412,9 @@ class TPESampler(BaseSampler):
         self, config_vals: Dict[str, List[Optional[float]]], loss_vals: List[Tuple[float, float]]
     ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
 
-        config_values = {k: np.asarray(v) for k, v in config_vals.items()}
+        # `None` items are intentionally converted to `nan` and then filter out.
+        # For `nan` conversion, the dtype must be float.
+        config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
         loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
 
         n_below = self._gamma(len(loss_values))
@@ -423,12 +425,10 @@ class TPESampler(BaseSampler):
         below = {}
         above = {}
         for param_name, param_val in config_values.items():
-            below[param_name] = np.asarray(
-                [v for v in param_val[index_below] if v is not None], dtype=float
-            )
-            above[param_name] = np.asarray(
-                [v for v in param_val[index_above] if v is not None], dtype=float
-            )
+            param_val_below = param_val[index_below]
+            param_val_above = param_val[index_above]
+            below[param_name] = param_val_below[~np.isnan(param_val_below)]
+            above[param_name] = param_val_above[~np.isnan(param_val_above)]
 
         return below, above
 

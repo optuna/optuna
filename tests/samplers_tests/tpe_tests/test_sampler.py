@@ -1008,3 +1008,16 @@ def test_constant_liar_observation_pairs(direction: str, multivariate: bool) -> 
 def test_constant_liar_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(constant_liar=True)
+
+
+def test_sample_independent_with_branch_division() -> None:
+    sampler = TPESampler(n_startup_trials=0)
+
+    def objective(trial: Trial) -> float:
+        if trial.number < 3:
+            return trial.suggest_float("x", 0, 1)
+        else:
+            return trial.suggest_categorical("c", [0, 1, 2])
+
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
