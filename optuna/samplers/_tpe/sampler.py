@@ -359,7 +359,7 @@ class TPESampler(BaseSampler):
             return {}
 
         # We divide data into below and above.
-        below, above = _split_observation_pairs(values, scores, self._gamma)
+        below, above = _split_observation_pairs(values, scores, self._gamma(n))
         # We then sample by maximizing log likelihood ratio.
         mpe_below = _ParzenEstimator(below, search_space, self._parzen_estimator_parameters)
         mpe_above = _ParzenEstimator(above, search_space, self._parzen_estimator_parameters)
@@ -394,7 +394,7 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        below, above = _split_observation_pairs(values, scores, self._gamma)
+        below, above = _split_observation_pairs(values, scores, self._gamma(n))
         mpe_below = _ParzenEstimator(
             below, {param_name: param_distribution}, self._parzen_estimator_parameters
         )
@@ -571,7 +571,7 @@ def _get_observation_pairs(
 def _split_observation_pairs(
     config_vals: Dict[str, List[Optional[float]]],
     loss_vals: List[Tuple[float, float]],
-    gamma: Callable[[int], int],
+    n_below: int,
 ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
 
     # `None` items are intentionally converted to `nan` and then filtered out.
@@ -579,7 +579,6 @@ def _split_observation_pairs(
     config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
     loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
 
-    n_below = gamma(len(loss_values))
     index_loss_ascending = np.argsort(loss_values)
     # `np.sort` is used to keep chronological order.
     index_below = np.sort(index_loss_ascending[:n_below])

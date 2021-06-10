@@ -821,9 +821,6 @@ def test_get_observation_pairs() -> None:
 
 
 def test_split_observation_pairs() -> None:
-    def _gamma(n: int) -> int:
-        return n // 2
-
     below, above = _tpe.sampler._split_observation_pairs(
         {"x": [1.0, 2.0, 3.0, 4.0], "y": [10.0, None, 20.0, None]},
         [
@@ -832,7 +829,7 @@ def test_split_observation_pairs() -> None:
             (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
             (float("inf"), 0.0),  # PRUNED (without intermediate values)
         ],
-        _gamma,
+        2,
     )
     assert (below["x"] == np.asarray([1.0, 2.0])).all()
     assert (above["x"] == np.asarray([3.0, 4.0])).all()
