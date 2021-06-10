@@ -1017,7 +1017,9 @@ def test_sample_independent_with_branch_division() -> None:
         if trial.number < 3:
             return trial.suggest_float("x", 0, 1)
         else:
-            return trial.suggest_categorical("c", [0, 1, 2])
+            c = trial.suggest_categorical("c", [0., 1., 2.])
+            assert isinstance(c, float)
+            return c
 
     study = optuna.create_study(sampler=sampler)
     study.optimize(objective, n_trials=10)
