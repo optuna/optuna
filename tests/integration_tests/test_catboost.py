@@ -142,6 +142,8 @@ def test_catboost_pruning_callback_errors(metric: str, valid_name: str) -> None:
         )
         pruning_callback.check_pruned()
 
+        return 1.0
+
     # Unknown validation name or metric
     study = optuna.create_study(pruner=DeterministicPruner(False))
     # catboost terminates with a SystemError.
