@@ -14,7 +14,9 @@ with try_import() as _imports:
             f"This function is available since version 0.26!  catboost version: {cb.__version__}"
         )
 
-_doc = """Callback for catoost to prune unpromising trials.
+
+class CatBoostPruningCallback(object):
+    """Callback for catboost to prune unpromising trials.
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/
     catboost/catboost_integration.py>`__
@@ -34,11 +36,9 @@ _doc = """Callback for catoost to prune unpromising trials.
             Validation names.
             If you set only one eval_set, ``validation`` is used.
             If you set multiple eval_sets, the index number of ``eval_set`` must be
-            included in the valid_name, e.g., ``validation_0`` and ``validation_0``
+            included in the valid_name, e.g., ``validation_0`` and ``validation_1``
     """
 
-
-class CatBoostPruningCallback(object):
     def __init__(
         self, trial: optuna.trial.Trial, metric: str, valid_name: str = "validation"
     ) -> None:
@@ -49,6 +49,7 @@ class CatBoostPruningCallback(object):
         self._message = ""
 
     def after_iteration(self, info: Any) -> bool:
+        """Run after each iteration."""
         epoch = info.iteration - 1
         if self._valid_name not in info.metrics:
             raise ValueError(
@@ -72,5 +73,6 @@ class CatBoostPruningCallback(object):
         return True
 
     def check_pruned(self) -> None:
+        """Check whether pruend."""
         if self._pruned is True:
             raise optuna.TrialPruned(self._message)

@@ -45,6 +45,15 @@ Catalyst
 
    optuna.integration.CatalystPruningCallback
 
+Catboost
+--------
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   optuna.integration.CatBoostPruningCallback
+
 Chainer
 -------
 
