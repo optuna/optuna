@@ -144,7 +144,7 @@ class MLflowCallback(object):
         self._initialize_experiment(study)
 
         with mlflow.start_run(
-            run_id=trial.user_attrs.get(RUN_ID_ATTRIBUTE_KEY),
+            run_id=trial.system_attrs.get(RUN_ID_ATTRIBUTE_KEY),
             run_name=str(trial.number),
             nested=self._nest_trials,
         ):
@@ -177,7 +177,7 @@ class MLflowCallback(object):
                 self._initialize_experiment(study)
 
                 with mlflow.start_run(run_name=str(trial.number), nested=self._nest_trials) as run:
-                    trial.set_user_attr(RUN_ID_ATTRIBUTE_KEY, run.info.run_id)
+                    trial.set_system_attr(RUN_ID_ATTRIBUTE_KEY, run.info.run_id)
 
                     return func(trial)
 
@@ -224,7 +224,6 @@ class MLflowCallback(object):
             tags["direction"] = str(study_direction).split(".")[-1]
 
         tags.update(trial.user_attrs)
-        tags.pop(RUN_ID_ATTRIBUTE_KEY, None)
         distributions = {(k + "_distribution"): str(v) for (k, v) in trial.distributions.items()}
         tags.update(distributions)
 
