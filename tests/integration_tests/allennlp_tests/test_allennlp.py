@@ -19,6 +19,7 @@ import pytest
 import torch.optim
 
 import optuna
+from optuna.integration._allennlp.pruner import _create_pruner
 from optuna.integration.allennlp import AllenNLPPruningCallback
 from optuna.testing.integration import DeterministicPruner
 
@@ -380,7 +381,7 @@ def test_allennlp_pruning_callback_with_executor(
 
         pruner = pruner_class(**pruner_kwargs)  # type: ignore
         run_allennlp_executor(pruner)
-        ret_pruner = optuna.integration.allennlp._create_pruner()
+        ret_pruner = _create_pruner()
 
         assert isinstance(ret_pruner, pruner_class)
         for key, value in pruner_kwargs.items():
