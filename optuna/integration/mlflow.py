@@ -235,11 +235,10 @@ class MLflowCallback(object):
         # When it is fixed on MLflow side this codeblock can be removed.
         # see https://github.com/optuna/optuna/issues/1340
         # see https://github.com/mlflow/mlflow/issues/2931
-        max_mlflow_tag_length = 5000
         for key, value in tags.items():
             value = str(value)  # make sure it is a string
-            if len(value) > max_mlflow_tag_length:
-                tags[key] = textwrap.shorten(value, max_mlflow_tag_length)
+            if len(value) > mlflow.utils.validation.MAX_TAG_VAL_LENGTH:
+                tags[key] = textwrap.shorten(value, mlflow.utils.validation.MAX_TAG_VAL_LENGTH)
 
         # This sets the tags for MLflow.
         mlflow.set_tags(tags)
