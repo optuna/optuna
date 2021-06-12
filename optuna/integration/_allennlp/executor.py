@@ -22,6 +22,7 @@ with try_import() as _imports:
 # the environment that builds the documentation.
 if _imports.is_successful():
     import _jsonnet
+
     from optuna.integration._allennlp.environment import _environment_variables
 else:
     # I disable mypy here since `allennlp.training.TrainerCallback` is a subclass of `Registrable`
