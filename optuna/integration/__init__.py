@@ -35,6 +35,7 @@ __all__ = list(_import_structure.keys()) + sum(_import_structure.values(), [])
 
 
 if TYPE_CHECKING:
+    from optuna.integration.allennlp import dump_best_config  # NOQA
     from optuna.integration.allennlp import AllenNLPExecutor  # NOQA
     from optuna.integration.allennlp import AllenNLPPruningCallback  # NOQA
     from optuna.integration.botorch import BoTorchSampler  # NOQA
