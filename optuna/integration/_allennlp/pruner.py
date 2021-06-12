@@ -1,6 +1,7 @@
 import json
 import os
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Union
@@ -25,6 +26,27 @@ if _imports.is_successful():
     import _jsonnet
     from allennlp.training import GradientDescentTrainer
     from allennlp.training import TrainerCallback
+else:
+    # I disable mypy here since `allennlp.training.TrainerCallback` is a subclass of `Registrable`
+    # (https://docs.allennlp.org/main/api/training/trainer/#trainercallback) but `TrainerCallback`
+    # defined here is not `Registrable`, which causes a mypy checking failure.
+    class TrainerCallback:  # type: ignore
+        """Stub for TrainerCallback."""
+
+        @classmethod
+        def register(cls: Any, *args: Any, **kwargs: Any) -> Callable:
+            """Stub method for `TrainerCallback.register`.
+
+            This method has the same signature as
+            `Registrable.register <https://docs.allennlp.org/master/
+            api/common/registrable/#registrable>`_ in AllenNLP.
+
+            """
+
+            def wrapper(subclass: Any, *args: Any, **kwargs: Any) -> Any:
+                return subclass
+
+            return wrapper
 
 
 _PPID = os.getppid()
