@@ -186,7 +186,7 @@ class MLflowCallback(object):
         return decorator
 
     def _initialize_experiment(self, study: optuna.study.Study) -> None:
-        """Initialize a MLFlow experiment with the study name.
+        """Initialize an MLFlow experiment with the study name.
 
         If a tracking uri has been provided, MLFlow will be initialized to use it.
 
