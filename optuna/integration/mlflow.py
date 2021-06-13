@@ -243,7 +243,7 @@ class MLflowCallback(object):
         # This sets the tags for MLflow.
         mlflow.set_tags(tags)
 
-    def _log_metric(self, value: Union[float, Sequence[float], None]) -> None:
+    def _log_metric(self, value: Union[float, None]) -> None:
         """Log the trial result as metric to MLFlow
 
         Args:
