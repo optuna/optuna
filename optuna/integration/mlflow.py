@@ -8,8 +8,8 @@ from typing import Union
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna._study_direction import StudyDirection
-from optuna.study import ObjectiveFuncType
+from optuna.study._study_direction import StudyDirection
+from optuna.study.study import ObjectiveFuncType
 from optuna.trial import TrialState
 
 

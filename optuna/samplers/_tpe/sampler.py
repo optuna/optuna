@@ -12,7 +12,6 @@ import warnings
 import numpy as np
 
 from optuna import distributions
-from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
@@ -24,6 +23,7 @@ from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.study import Study
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 

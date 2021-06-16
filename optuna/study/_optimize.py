@@ -38,7 +38,7 @@ _logger = logging.get_logger(__name__)
 
 def _optimize(
     study: "optuna.Study",
-    func: "optuna.study.ObjectiveFuncType",
+    func: "optuna.study.study.ObjectiveFuncType",
     n_trials: Optional[int] = None,
     timeout: Optional[float] = None,
     n_jobs: int = 1,
@@ -126,7 +126,7 @@ def _optimize(
 
 def _optimize_sequential(
     study: "optuna.Study",
-    func: "optuna.study.ObjectiveFuncType",
+    func: "optuna.study.study.ObjectiveFuncType",
     n_trials: Optional[int],
     timeout: Optional[float],
     catch: Tuple[Type[Exception], ...],
@@ -183,7 +183,7 @@ def _optimize_sequential(
 
 def _run_trial(
     study: "optuna.Study",
-    func: "optuna.study.ObjectiveFuncType",
+    func: "optuna.study.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.Trial:
     if study._storage.is_heartbeat_enabled():
