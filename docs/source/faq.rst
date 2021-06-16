@@ -337,7 +337,7 @@ How can I output a log only when the best value is updated?
 -----------------------------------------------------------
 
 Here's how to replace the logging feature of optuna and with your own logging callback function.
-The implemented callback can be passed to `study.optimize`.
+The implemented callback can be passed to :func:`~optuna.study.Study.optimize`.
 Here's an example:
 
 .. code-block:: python
