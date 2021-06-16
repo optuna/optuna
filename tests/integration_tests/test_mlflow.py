@@ -1,6 +1,7 @@
 import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
+import numpy as np
 import py
 import pytest
 
@@ -210,3 +211,169 @@ def test_tag_study_user_attrs(tmpdir: py.path.local, tag_study_user_attrs: bool)
         assert all((r.data.tags["my_study_attr"] == "a") for r in runs)
     else:
         assert all(("my_study_attr" not in r.data.tags) for r in runs)
+
+
+def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
+    tracking_file_name = "file:{}".format(tmpdir)
+    study_name = "my_study"
+    n_trials = 3
+
+    metric_name = "additional_metric"
+    metric = 3.14
+
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name)
+
+    @mlflc.track_in_mlflow()
+    def _objective_func(trial: optuna.trial.Trial) -> float:
+
+        x = trial.suggest_float("x", -1.0, 1.0)
+        y = trial.suggest_float("y", 20, 30, log=True)
+        z = trial.suggest_categorical("z", (-1.0, 1.0))
+        assert isinstance(z, float)
+        trial.set_user_attr("my_user_attr", "my_user_attr_value")
+        mlflow.log_metric(metric_name, metric)
+        return (x - 2) ** 2 + (y - 25) ** 2 + z
+
+    study = optuna.create_study(study_name=study_name)
+    study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiments = mlfl_client.list_experiments()
+    assert len(experiments) == 1
+
+    experiment = experiments[0]
+    assert experiment.name == study_name
+    experiment_id = experiment.experiment_id
+
+    run_infos = mlfl_client.list_run_infos(experiment_id)
+    assert len(run_infos) == n_trials
+
+    first_run_id = run_infos[0].run_id
+    first_run = mlfl_client.get_run(first_run_id)
+    first_run_dict = first_run.to_dictionary()
+
+    assert metric_name in first_run_dict["data"]["metrics"]
+    assert first_run_dict["data"]["metrics"][metric_name] == metric
+
+
+def test_initialize_experiment(tmpdir: py.path.local) -> None:
+    tracking_file_name = "file:{}".format(tmpdir)
+    metric_name = "my_metric_name"
+    study_name = "my_study"
+
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
+    study = optuna.create_study(study_name=study_name)
+
+    mlflc._initialize_experiment(study)
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiments = mlfl_client.list_experiments()
+    assert len(experiments) == 1
+
+    experiment = experiments[0]
+    assert experiment.name == study_name
+
+
+def test_log_metric(tmpdir: py.path.local) -> None:
+    tracking_file_name = "file:{}".format(tmpdir)
+    metric_name = "my_metric_name"
+    study_name = "my_study"
+    metric_value = 3.17
+
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
+    study = optuna.create_study(study_name=study_name)
+    mlflc._initialize_experiment(study)
+
+    with mlflow.start_run():
+        mlflc._log_metric(metric_value)
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiments = mlfl_client.list_experiments()
+    experiment = experiments[0]
+    experiment_id = experiment.experiment_id
+
+    run_infos = mlfl_client.list_run_infos(experiment_id)
+    assert len(run_infos) == 1
+
+    first_run_id = run_infos[0].run_id
+    first_run = mlfl_client.get_run(first_run_id)
+    first_run_dict = first_run.to_dictionary()
+
+    assert metric_name in first_run_dict["data"]["metrics"]
+    assert first_run_dict["data"]["metrics"][metric_name] == metric_value
+
+
+def test_log_metric_none(tmpdir: py.path.local) -> None:
+    tracking_file_name = "file:{}".format(tmpdir)
+    metric_name = "my_metric_name"
+    study_name = "my_study"
+    metric_value = None
+
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
+    study = optuna.create_study(study_name=study_name)
+    mlflc._initialize_experiment(study)
+
+    with mlflow.start_run():
+        mlflc._log_metric(metric_value)
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiments = mlfl_client.list_experiments()
+    experiment = experiments[0]
+    experiment_id = experiment.experiment_id
+
+    run_infos = mlfl_client.list_run_infos(experiment_id)
+    assert len(run_infos) == 1
+
+    first_run_id = run_infos[0].run_id
+    first_run = mlfl_client.get_run(first_run_id)
+    first_run_dict = first_run.to_dictionary()
+
+    assert metric_name in first_run_dict["data"]["metrics"]
+    assert np.isnan(first_run_dict["data"]["metrics"][metric_name])
+
+
+def test_log_params(tmpdir: py.path.local) -> None:
+    tracking_file_name = "file:{}".format(tmpdir)
+    metric_name = "my_metric_name"
+    study_name = "my_study"
+
+    param1_name = "my_param1"
+    param1_value = "a"
+    param2_name = "my_param2"
+    param2_value = 5
+
+    params = {param1_name: param1_value, param2_name: param2_value}
+
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
+    study = optuna.create_study(study_name=study_name)
+    mlflc._initialize_experiment(study)
+
+    with mlflow.start_run():
+
+        trial = optuna.trial.create_trial(
+            params=params,
+            distributions={
+                param1_name: optuna.distributions.CategoricalDistribution(["a", "b"]),
+                param2_name: optuna.distributions.UniformDistribution(0, 10),
+            },
+            value=5.0,
+        )
+        mlflc._log_params(trial)
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiments = mlfl_client.list_experiments()
+    experiment = experiments[0]
+    experiment_id = experiment.experiment_id
+
+    run_infos = mlfl_client.list_run_infos(experiment_id)
+    assert len(run_infos) == 1
+
+    first_run_id = run_infos[0].run_id
+    first_run = mlfl_client.get_run(first_run_id)
+    first_run_dict = first_run.to_dictionary()
+
+    assert param1_name in first_run_dict["data"]["params"]
+    assert first_run_dict["data"]["params"][param1_name] == param1_value
+
+    assert param2_name in first_run_dict["data"]["params"]
+    assert first_run_dict["data"]["params"][param2_name] == str(param2_value)
