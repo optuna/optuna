@@ -333,6 +333,43 @@ Note that the above examples are similar to running the garbage collector inside
     :class:`~optuna.integration.ChainerMNStudy` does currently not provide ``gc_after_trial`` nor callbacks for :func:`~optuna.integration.ChainerMNStudy.optimize`.
     When using this class, you will have to call the garbage collector inside the objective function.
 
+How can I output a log only when the best value is updated?
+-----------------------------------------------------------
+
+Here's how to replace the logging feature of optuna and with your own logging callback function.
+The implemented callback can be passed to :func:`~optuna.study.Study.optimize`.
+Here's an example:
+
+.. code-block:: python
+
+    import optuna
+
+
+    # Turn off optuna log notes.
+    optuna.logging.set_verbosity(optuna.logging.WARN)
+
+
+    def objective(trial):
+        x = trial.suggest_float("x", 0, 1)
+        return x ** 2
+
+
+    def logging_callback(study, frozen_trial):
+        previous_best_value = study.user_attrs.get("previous_best_value", None)
+        if previous_best_value != study.best_value:
+            study.set_user_attr("previous_best_value", study.best_value)
+            print(
+                "Trial {} finished with best value: {} and parameters: {}. ".format(
+                frozen_trial.number,
+                frozen_trial.value,
+                frozen_trial.params,
+                )
+            )
+
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=100, callbacks=[logging_callback])
+
 How do I suggest variables which represent the proportion, that is, are in accordance with Dirichlet distribution?
 ------------------------------------------------------------------------------------------------------------------
 
