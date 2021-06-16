@@ -19,6 +19,7 @@ from optuna._imports import try_import
 with try_import() as _imports:
     import allennlp
     import allennlp.commands
+    import allennlp.common.cached_transformers
     import allennlp.common.util
 
 # TrainerCallback is conditionally imported because allennlp may be unavailable in
@@ -95,32 +96,6 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     return pruner(**pruner_params)
 
 
-def _infer_and_cast(value: Optional[str]) -> Optional[Union[str, int, float, bool]]:
-    """Infer and cast a string to desired types.
-
-    We are only able to set strings as environment variables.
-    However, parameters of a pruner could be integer, float,
-    boolean, or else. We infer and cast environment variables
-    to desired types.
-
-    """
-    if value is None:
-        return None
-
-    try:
-        return int(value)
-    except ValueError:
-        try:
-            return float(value)
-        except ValueError:
-            if value == "True":
-                return True
-            if value == "False":
-                return False
-
-    return value
-
-
 def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
     return {
         "study_name": os.getenv(_STUDY_NAME),
@@ -140,7 +115,10 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int
     kwargs = {}
     for key in keys.split(","):
         key_without_prefix = key.replace("{}_".format(_PREFIX), "")
-        kwargs[key_without_prefix] = _infer_and_cast(os.getenv(key))
+        value = os.getenv(key)
+        if value is None:
+            raise ValueError(f"{key} is not found in environment variables.")
+        kwargs[key_without_prefix] = eval(value)
 
     return kwargs
 
@@ -334,7 +312,7 @@ class AllenNLPExecutor(object):
 
         pruner_params = _fetch_pruner_config(trial)
         pruner_params = {
-            "{}_{}".format(_PREFIX, key): str(value) for key, value in pruner_params.items()
+            "{}_{}".format(_PREFIX, key): repr(value) for key, value in pruner_params.items()
         }
 
         system_attrs = {
@@ -373,6 +351,17 @@ class AllenNLPExecutor(object):
         for package_name in self._include_package:
             allennlp.common.util.import_module_and_submodules(package_name)
 
+        # Without the following lines, the transformer model construction only takes place in the
+        # first trial (which would consume some random numbers), and the cached model will be used
+        # in trials afterwards (which would not consume random numbers), leading to inconsistent
+        # results between single trial and multiple trials. To make results reproducible in
+        # multiple trials, we clear the cache before each trial.
+        # TODO(MagiaSN) When AllenNLP has introduced a better API to do this, one should remove
+        # these lines and use the new API instead. For example, use the `_clear_caches()` method
+        # which will be in the next AllenNLP release after 2.4.0.
+        allennlp.common.cached_transformers._model_cache.clear()
+        allennlp.common.cached_transformers._tokenizer_cache.clear()
+
         self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
         allennlp.commands.train.train_model(
@@ -408,6 +397,10 @@ class AllenNLPPruningCallback(TrainerCallback):
         environment variables for a study name, trial id, monitor, and storage.
         Then :class:`~optuna.integration.AllenNLPPruningCallback`
         loads them to restore ``trial`` and ``monitor``.
+
+    .. note::
+        Currently, build-in pruners are supported except for
+        :class:`~optuna.pruners.PatientPruner`.
 
     Args:
         trial:

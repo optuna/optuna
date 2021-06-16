@@ -8,6 +8,7 @@ import pytest
 import optuna
 from optuna import multi_objective
 from optuna.multi_objective.samplers import MOTPEMultiObjectiveSampler
+from optuna.samplers import MOTPESampler
 
 
 class MockSystemAttr:
@@ -61,6 +62,10 @@ def test_sample_independent() -> None:
         y = trial.suggest_float("y", 0, 1)
         return x, y
 
-    with patch.object(sampler, "sample_independent", wraps=sampler.sample_independent) as mock:
+    with patch.object(
+        MOTPESampler,
+        "sample_independent",
+        wraps=sampler._motpe_sampler.sample_independent,
+    ) as mock:
         study.optimize(_objective, n_trials=10)
         assert mock.call_count == 20
