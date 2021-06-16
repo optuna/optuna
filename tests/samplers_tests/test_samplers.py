@@ -14,8 +14,8 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
@@ -561,7 +561,7 @@ def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) ->
         "c": DiscreteUniformDistribution(low=1.0, high=1.0, q=1.0),
         "d": IntUniformDistribution(low=1, high=1),
         "e": IntLogUniformDistribution(low=1, high=1),
-        "f": CategoricalDistribution([1])
+        "f": CategoricalDistribution([1]),
     }
 
     with warnings.catch_warnings():

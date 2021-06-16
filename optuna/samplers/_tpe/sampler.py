@@ -294,7 +294,10 @@ class TPESampler(BaseSampler):
             self._search_space_group = self._group_decomposed_search_space.calculate(study)
             for sub_space in self._search_space_group.search_spaces:
                 for name, distribution in sub_space.items():
-                    if not isinstance(distribution, _DISTRIBUTION_CLASSES) or distribution.single():
+                    if (
+                        not isinstance(distribution, _DISTRIBUTION_CLASSES)
+                        or distribution.single()
+                    ):
                         self._log_independent_sampling(n_complete_trials, trial, name)
                         continue
                     search_space[name] = distribution
