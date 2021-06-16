@@ -294,14 +294,14 @@ class TPESampler(BaseSampler):
             self._search_space_group = self._group_decomposed_search_space.calculate(study)
             for sub_space in self._search_space_group.search_spaces:
                 for name, distribution in sub_space.items():
-                    if not isinstance(distribution, _DISTRIBUTION_CLASSES):
+                    if not isinstance(distribution, _DISTRIBUTION_CLASSES) or distribution.single():
                         self._log_independent_sampling(n_complete_trials, trial, name)
                         continue
                     search_space[name] = distribution
             return search_space
 
         for name, distribution in self._search_space.calculate(study).items():
-            if not isinstance(distribution, _DISTRIBUTION_CLASSES):
+            if not isinstance(distribution, _DISTRIBUTION_CLASSES) or distribution.single():
                 self._log_independent_sampling(n_complete_trials, trial, name)
                 continue
             search_space[name] = distribution
@@ -325,7 +325,6 @@ class TPESampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
-
         self._raise_error_if_multi_objective(study)
 
         if self._group:
