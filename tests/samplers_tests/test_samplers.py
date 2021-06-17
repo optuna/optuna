@@ -573,4 +573,4 @@ def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) ->
         trial = study.ask(fixed_distributions=relative_search_space)
         study.tell(trial, 1.0)
         for param_name in relative_search_space.keys():
-            np.testing.assert_almost_equal(1.0, trial.params[param_name])
+            assert trial.params[param_name] == 1
