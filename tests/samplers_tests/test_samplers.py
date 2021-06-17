@@ -569,7 +569,7 @@ def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) ->
         sampler = sampler_class()
     study = optuna.study.create_study(sampler=sampler)
 
-    for _ in range(100):
+    for _ in range(10):
         trial = study.ask(fixed_distributions=relative_search_space)
         study.tell(trial, 1.0)
         for param_name in relative_search_space.keys():
