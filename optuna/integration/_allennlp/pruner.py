@@ -1,4 +1,3 @@
-import json
 import os
 from typing import Any
 from typing import Callable
@@ -13,7 +12,6 @@ from optuna import load_study
 from optuna import Trial
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna.integration._allennlp.environment import _environment_variables
 
 
 with try_import() as _imports:
@@ -23,7 +21,6 @@ with try_import() as _imports:
     import allennlp.common.util
 
 if _imports.is_successful():
-    import _jsonnet
     from allennlp.training import GradientDescentTrainer
     from allennlp.training import TrainerCallback
 else:
