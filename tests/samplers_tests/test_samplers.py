@@ -569,6 +569,7 @@ def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) ->
         sampler = sampler_class()
     study = optuna.study.create_study(sampler=sampler)
 
+    # We need to test the construction of the model, so we should set `n_trials >= 2`.
     for _ in range(2):
         trial = study.ask(fixed_distributions=relative_search_space)
         study.tell(trial, 1.0)
