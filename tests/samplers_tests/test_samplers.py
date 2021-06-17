@@ -14,6 +14,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
@@ -549,3 +550,28 @@ def test_after_trial_with_study_tell() -> None:
     study.tell(study.ask(), 1.0)
 
     assert n_calls == 1
+
+
+@parametrize_sampler
+def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) -> None:
+
+    relative_search_space = {
+        "a": UniformDistribution(low=1.0, high=1.0),
+        "b": LogUniformDistribution(low=1.0, high=1.0),
+        "c": DiscreteUniformDistribution(low=1.0, high=1.0, q=1.0),
+        "d": IntUniformDistribution(low=1, high=1),
+        "e": IntLogUniformDistribution(low=1, high=1),
+        "f": CategoricalDistribution([1]),
+    }
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = sampler_class()
+    study = optuna.study.create_study(sampler=sampler)
+
+    # We need to test the construction of the model, so we should set `n_trials >= 2`.
+    for _ in range(2):
+        trial = study.ask(fixed_distributions=relative_search_space)
+        study.tell(trial, 1.0)
+        for param_name in relative_search_space.keys():
+            assert trial.params[param_name] == 1
