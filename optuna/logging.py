@@ -6,14 +6,9 @@ from logging import FATAL  # NOQA
 from logging import INFO  # NOQA
 from logging import WARN  # NOQA
 from logging import WARNING  # NOQA
-import threading
 from typing import Optional
 
 import colorlog
-
-
-_lock: threading.Lock = threading.Lock()
-_default_handler: Optional[logging.Handler] = None
 
 
 def create_default_formatter() -> colorlog.ColoredFormatter:
@@ -37,36 +32,25 @@ def _get_library_root_logger() -> logging.Logger:
     return logging.getLogger(_get_library_name())
 
 
+def create_default_handler() -> logging.Handler:
+    handler = logging.StreamHandler()  # Set sys.stderr as stream.
+    handler.setFormatter(create_default_formatter())
+    return handler
+
+
 def _configure_library_root_logger() -> None:
-
-    global _default_handler
-
-    with _lock:
-        if _default_handler:
-            # This library has already configured the library root logger.
-            return
-        _default_handler = logging.StreamHandler()  # Set sys.stderr as stream.
-        _default_handler.setFormatter(create_default_formatter())
-
-        # Apply our default configuration to the library root logger.
-        library_root_logger: logging.Logger = _get_library_root_logger()
-        library_root_logger.addHandler(_default_handler)
-        library_root_logger.setLevel(logging.INFO)
-        library_root_logger.propagate = False
+    if not _logger.handlers:
+        # This library has already configured the library root logger.
+        return
+    _logger.handlers.append(_default_handler)
+    _logger.setLevel(logging.INFO)
+    _logger.propagate = False
 
 
 def _reset_library_root_logger() -> None:
-
-    global _default_handler
-
-    with _lock:
-        if not _default_handler:
-            return
-
-        library_root_logger: logging.Logger = _get_library_root_logger()
-        library_root_logger.removeHandler(_default_handler)
-        library_root_logger.setLevel(logging.NOTSET)
-        _default_handler = None
+    if _default_handler in _logger.handlers:
+        _logger.removeHandler(_default_handler)
+    _logger.setLevel(logging.NOTSET)
 
 
 def get_logger(name: str) -> logging.Logger:
@@ -96,7 +80,7 @@ def get_verbosity() -> int:
     """
 
     _configure_library_root_logger()
-    return _get_library_root_logger().getEffectiveLevel()
+    return _logger.getEffectiveLevel()
 
 
 def set_verbosity(verbosity: int) -> None:
@@ -117,7 +101,7 @@ def set_verbosity(verbosity: int) -> None:
     """
 
     _configure_library_root_logger()
-    _get_library_root_logger().setLevel(verbosity)
+    _logger.setLevel(verbosity)
 
 
 def disable_default_handler() -> None:
@@ -153,10 +137,8 @@ def disable_default_handler() -> None:
 
     """
 
-    _configure_library_root_logger()
-
-    assert _default_handler is not None
-    _get_library_root_logger().removeHandler(_default_handler)
+    if _default_handler in _logger.handlers:
+        _logger.removeHandler(_default_handler)
 
 
 def enable_default_handler() -> None:
@@ -167,8 +149,8 @@ def enable_default_handler() -> None:
 
     _configure_library_root_logger()
 
-    assert _default_handler is not None
-    _get_library_root_logger().addHandler(_default_handler)
+    if _default_handler not in _logger.handlers:
+        _logger.addHandler(_default_handler)
 
 
 def disable_propagation() -> None:
@@ -221,7 +203,7 @@ def disable_propagation() -> None:
     """
 
     _configure_library_root_logger()
-    _get_library_root_logger().propagate = False
+    _logger.propagate = False
 
 
 def enable_propagation() -> None:
@@ -266,4 +248,8 @@ def enable_propagation() -> None:
     """
 
     _configure_library_root_logger()
-    _get_library_root_logger().propagate = True
+    _logger.propagate = True
+
+
+_logger = _get_library_root_logger()
+_default_handler: Optional[logging.Handler] = create_default_handler()
