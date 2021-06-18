@@ -39,10 +39,10 @@ def create_default_handler() -> logging.Handler:
 
 
 def _configure_library_root_logger() -> None:
-    if not _logger.handlers:
+    if _logger.handlers:
         # This library has already configured the library root logger.
         return
-    _logger.handlers.append(_default_handler)
+    _logger.addHandler(_default_handler)
     _logger.setLevel(logging.INFO)
     _logger.propagate = False
 
@@ -252,4 +252,4 @@ def enable_propagation() -> None:
 
 
 _logger = _get_library_root_logger()
-_default_handler: Optional[logging.Handler] = create_default_handler()
+_default_handler: logging.Handler = create_default_handler()
