@@ -70,7 +70,7 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 #
 # We use :class:`optuna.pruners.MedianPruner` in most examples,
 # though basically it is outperformed by :class:`optuna.pruners.SuccessiveHalvingPruner` and
-# :class:`optuna.pruners.HyperbandPruner` as in `this benchmark result <https://github.com/optuna/optuna/wiki/%5BUnder-Construction%5D-Benchmarks-with-Kurobako>`_.
+# :class:`optuna.pruners.HyperbandPruner` as in `this benchmark result <https://github.com/optuna/optuna/wiki/Benchmarks-with-Kurobako>`_.
 #
 #
 # Activating Pruners
@@ -131,7 +131,7 @@ study.optimize(objective, n_trials=20)
 # Which Sampler and Pruner Should be Used?
 # ----------------------------------------
 #
-# From the benchmark results which are available at `optuna/optuna - wiki "Benchmarks with Kurobako" <https://github.com/optuna/optuna/wiki/%5BUnder-Construction%5D-Benchmarks>`_, at least for not deep learning tasks, we would say that
+# From the benchmark results which are available at `optuna/optuna - wiki "Benchmarks with Kurobako" <https://github.com/optuna/optuna/wiki/Benchmarks-with-Kurobako>`_, at least for not deep learning tasks, we would say that
 #
 # * For :class:`optuna.samplers.RandomSampler`, :class:`optuna.pruners.MedianPruner` is the best.
 # * For :class:`optuna.samplers.TPESampler`, :class:`optuna.pruners.Hyperband` is the best.

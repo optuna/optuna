@@ -6,8 +6,8 @@ from typing import List
 import numpy as np
 
 import optuna
-from optuna._study_direction import StudyDirection
 from optuna.pruners import BasePruner
+from optuna.study._study_direction import StudyDirection
 from optuna.trial._state import TrialState
 
 

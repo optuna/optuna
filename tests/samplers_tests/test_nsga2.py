@@ -9,9 +9,9 @@ import warnings
 import pytest
 
 import optuna
-from optuna._study_direction import StudyDirection
 from optuna.samplers import NSGAIISampler
 from optuna.samplers._nsga2 import _CONSTRAINTS_KEY
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 
 

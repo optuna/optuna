@@ -18,17 +18,16 @@ from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
-from optuna._callbacks import MaxTrialsCallback  # NOQA
-from optuna._dataframe import _trials_dataframe
-from optuna._dataframe import pd
 from optuna._deprecated import deprecated
 from optuna._experimental import experimental
-from optuna._multi_objective import _get_pareto_front_trials
-from optuna._optimize import _check_and_convert_to_values
-from optuna._optimize import _optimize
-from optuna._study_direction import StudyDirection
-from optuna._study_summary import StudySummary  # NOQA
 from optuna.distributions import BaseDistribution
+from optuna.study._dataframe import _trials_dataframe
+from optuna.study._dataframe import pd
+from optuna.study._multi_objective import _get_pareto_front_trials
+from optuna.study._optimize import _check_and_convert_to_values
+from optuna.study._optimize import _optimize
+from optuna.study._study_direction import StudyDirection
+from optuna.study._study_summary import StudySummary  # NOQA
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState

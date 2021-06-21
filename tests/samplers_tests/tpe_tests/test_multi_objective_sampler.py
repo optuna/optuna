@@ -558,35 +558,33 @@ def test_calculate_nondomination_rank() -> None:
 
 
 def test_calculate_weights_below_for_multi_objective() -> None:
-    sampler = TPESampler()
-
     # Two samples.
-    weights_below = sampler._calculate_weights_below_for_multi_objective(
-        np.array([[0.2, 0.5], [0.9, 0.4], [1, 1]]), np.array([0, 1])
+    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
+        np.array([[0.2, 0.5], [0.9, 0.4]])
     )
     assert len(weights_below) == 2
     assert weights_below[0] > weights_below[1]
     assert sum(weights_below) > 0
 
     # Two equally contributed samples.
-    weights_below = sampler._calculate_weights_below_for_multi_objective(
-        np.array([[0.2, 0.8], [0.8, 0.2], [1, 1]]), np.array([0, 1])
+    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
+        np.array([[0.2, 0.8], [0.8, 0.2]])
     )
     assert len(weights_below) == 2
     assert weights_below[0] == weights_below[1]
     assert sum(weights_below) > 0
 
     # Duplicated samples.
-    weights_below = sampler._calculate_weights_below_for_multi_objective(
-        np.array([[0.2, 0.8], [0.2, 0.8], [1, 1]]), np.array([0, 1])
+    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
+        np.array([[0.2, 0.8], [0.2, 0.8]])
     )
     assert len(weights_below) == 2
     assert weights_below[0] == weights_below[1]
     assert sum(weights_below) > 0
 
     # Three samples.
-    weights_below = sampler._calculate_weights_below_for_multi_objective(
-        np.array([[0.3, 0.3], [0.2, 0.8], [0.8, 0.2], [1, 1]]), np.array([0, 1, 2])
+    weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
+        np.array([[0.3, 0.3], [0.2, 0.8], [0.8, 0.2]])
     )
     assert len(weights_below) == 3
     assert weights_below[0] > weights_below[1]
@@ -596,8 +594,6 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
 
 def test_solve_hssp() -> None:
-    sampler = TPESampler(seed=0)
-
     random.seed(128)
 
     # Two dimensions
@@ -607,9 +603,9 @@ def test_solve_hssp() -> None:
         r = 1.1 * np.max(test_case, axis=0)
         truth = 0.0
         for subset in itertools.permutations(test_case, subset_size):
-            truth = max(truth, sampler._compute_hypervolume(np.asarray(subset), r))
-        indices = sampler._solve_hssp(test_case, np.arange(len(test_case)), subset_size, r)
-        approx = sampler._compute_hypervolume(test_case[indices], r)
+            truth = max(truth, _tpe.sampler._compute_hypervolume(np.asarray(subset), r))
+        indices = _tpe.sampler._solve_hssp(test_case, np.arange(len(test_case)), subset_size, r)
+        approx = _tpe.sampler._compute_hypervolume(test_case[indices], r)
         assert approx / truth > 0.6321  # 1 - 1/e
 
     # Three dimensions
@@ -621,40 +617,10 @@ def test_solve_hssp() -> None:
         r = 1.1 * np.max(test_case, axis=0)
         truth = 0
         for subset in itertools.permutations(test_case, subset_size):
-            truth = max(truth, sampler._compute_hypervolume(np.asarray(subset), r))
-        indices = sampler._solve_hssp(test_case, np.arange(len(test_case)), subset_size, r)
-        approx = sampler._compute_hypervolume(test_case[indices], r)
+            truth = max(truth, _tpe.sampler._compute_hypervolume(np.asarray(subset), r))
+        indices = _tpe.sampler._solve_hssp(test_case, np.arange(len(test_case)), subset_size, r)
+        approx = _tpe.sampler._compute_hypervolume(test_case[indices], r)
         assert approx / truth > 0.6321  # 1 - 1/e
-
-
-def test_cache() -> None:
-    n = 10
-    sampler = TPESampler(seed=0, n_startup_trials=n)
-
-    def objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
-        x = trial.suggest_float("x", 0, 5)
-
-        if trial._trial_id == n:
-            assert n in sampler._split_cache
-            assert n in sampler._weights_below
-        else:
-            assert n not in sampler._split_cache
-            assert n not in sampler._weights_below
-
-        y = trial.suggest_float("y", 0, 3)
-        v0 = 4 * x ** 2 + 4 * y ** 2
-        v1 = (x - 5) ** 2 + (y - 5) ** 2
-        return v0, v1
-
-    study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
-
-    assert n not in sampler._split_cache
-    assert n not in sampler._weights_below
-
-    study.optimize(objective, n_trials=n + 1)
-
-    assert n not in sampler._split_cache
-    assert n not in sampler._weights_below
 
 
 def frozen_trial_factory(

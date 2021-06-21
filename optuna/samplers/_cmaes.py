@@ -18,11 +18,11 @@ import numpy as np
 
 import optuna
 from optuna import logging
-from optuna._study_direction import StudyDirection
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 

@@ -1,10 +1,10 @@
 import warnings
 
-from optuna import _study_direction
-from optuna import _study_summary
 from optuna import exceptions
 from optuna import trial
 from optuna._deprecated import deprecated
+from optuna.study import _study_direction
+from optuna.study import _study_summary
 
 
 _message = (
