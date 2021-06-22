@@ -279,3 +279,16 @@ def test_get_param_importances_invalid_params_type(
 
     with pytest.raises(TypeError):
         get_param_importances(study, evaluator=evaluator_init_func(), params=[0])  # type: ignore
+
+
+def test_get_param_importances_default_evaluator_deterministic() -> None:
+    def objective(trial: Trial) -> float:
+        return sum(trial.suggest_float(f"x{i}", 0, 1) for i in range(3))
+
+    study = optuna.create_study(sampler=samplers.RandomSampler())
+    study.optimize(objective, n_trials=3)
+
+    param_importance0 = optuna.importance.get_param_importances(study)
+    param_importance1 = optuna.importance.get_param_importances(study)
+
+    assert param_importance0 == param_importance1
