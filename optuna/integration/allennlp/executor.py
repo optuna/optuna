@@ -9,7 +9,7 @@ from typing import Union
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna.integration._allennlp.environment import _environment_variables
+from optuna.integration.allennlp.environment import _environment_variables
 
 
 with try_import() as _imports:

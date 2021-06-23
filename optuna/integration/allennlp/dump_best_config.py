@@ -2,7 +2,7 @@ import json
 
 import optuna
 from optuna._imports import try_import
-from optuna.integration._allennlp.environment import _environment_variables
+from optuna.integration.allennlp.environment import _environment_variables
 
 
 with try_import() as _imports:
