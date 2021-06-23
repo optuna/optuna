@@ -1,4 +1,5 @@
 import logging
+import threading
 from logging import CRITICAL  # NOQA
 from logging import DEBUG  # NOQA
 from logging import ERROR  # NOQA
@@ -6,9 +7,28 @@ from logging import FATAL  # NOQA
 from logging import INFO  # NOQA
 from logging import WARN  # NOQA
 from logging import WARNING  # NOQA
-from typing import Optional
 
 import colorlog
+
+_lock = threading.RLock()
+
+
+def _acquireLock():
+    """
+    Acquire the module-level lock for serializing access to shared data.
+
+    This should be released with _releaseLock().
+    """
+    if _lock:
+        _lock.acquire()
+
+
+def _releaseLock():
+    """
+    Release the module-level lock acquired by calling _acquireLock().
+    """
+    if _lock:
+        _lock.release()
 
 
 def create_default_formatter() -> colorlog.ColoredFormatter:
@@ -32,14 +52,25 @@ def _get_library_root_logger() -> logging.Logger:
     return logging.getLogger(_get_library_name())
 
 
-def create_default_handler() -> logging.Handler:
+def _create_default_handler() -> logging.Handler:
     handler = logging.StreamHandler()  # Set sys.stderr as stream.
     handler.setFormatter(create_default_formatter())
     return handler
 
 
+def _reset_default_handler():
+    global _default_handler
+
+    _acquireLock()
+    try:
+        if _default_handler is not None:
+            _default_handler = _create_default_handler()
+    finally:
+        _releaseLock()
+
+
 def _configure_library_root_logger() -> None:
-    if _logger.handlers:
+    if _default_handler in _logger.handlers:
         # This library has already configured the library root logger.
         return
     _logger.addHandler(_default_handler)
@@ -50,6 +81,7 @@ def _configure_library_root_logger() -> None:
 def _reset_library_root_logger() -> None:
     if _default_handler in _logger.handlers:
         _logger.removeHandler(_default_handler)
+    _reset_default_handler()
     _logger.setLevel(logging.NOTSET)
 
 
@@ -252,4 +284,4 @@ def enable_propagation() -> None:
 
 
 _logger = _get_library_root_logger()
-_default_handler: logging.Handler = create_default_handler()
+_default_handler: logging.Handler = _create_default_handler()
