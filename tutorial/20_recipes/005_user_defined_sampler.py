@@ -99,7 +99,7 @@ class SimulatedAnnealingSampler(optuna.samplers.BaseSampler):
 #    In favor of code simplicity, the above implementation doesn't support some features (e.g., maximization).
 #    If you're interested in how to support those features, please see
 #    `examples/samplers/simulated_annealing.py
-#    <https://github.com/optuna/optuna/blob/master/examples/samplers/simulated_annealing_sampler.py>`_.
+#    <https://github.com/optuna/optuna-examples/blob/main/samplers/simulated_annealing_sampler.py>`_.
 #
 #
 # You can use ``SimulatedAnnealingSampler`` in the same way as built-in samplers as follows:

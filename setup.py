@@ -50,7 +50,7 @@ def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
         # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
-        # examples and tutorials.
+        # tutorials.
         "checking": ["black", "hacking", "isort", "mypy==0.790", "blackdoc"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
@@ -58,12 +58,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
-            "scikit-learn>=0.19.0,<0.23.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "mlflow",
         ],
         "document": [
-            "sphinx",
+            # TODO(nzw): Remove the version constraint after resolving the issue
+            # https://github.com/optuna/optuna/issues/2658.
+            "sphinx<4.0.0",
             "sphinx_rtd_theme",
             "sphinx-copybutton",
             "sphinx-gallery",
@@ -78,40 +80,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0",
             "torchaudio==0.8.0",
             "thop",
-        ],
-        "example": [
-            "catboost",
-            "chainer",
-            "lightgbm",
-            "mlflow",
-            "mpi4py",
-            "mxnet",
-            "nbval",
-            "scikit-image",
-            "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
-            "xgboost",
-            "keras",
-            "tensorflow>=2.0.0",
-            "tensorflow-datasets",
-            "pytorch-ignite",
-            "pytorch-lightning>=1.0.2",
-            "thop",
-            "skorch",
-            "stable-baselines3>=0.7.0",
-            "catalyst<21.3",
-            "torch==1.8.0 ; sys_platform=='darwin'",
-            "torch==1.8.0+cpu ; sys_platform!='darwin'",
-            "torchvision==0.9.0 ; sys_platform=='darwin'",
-            "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
-            "torchaudio==0.8.0",
-            # "allennlp>=2.0.0",  # See https://github.com/optuna/optuna/pull/2442.
-            "dask[dataframe]",
-            "dask-ml",
-            "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
-            "optax",
-            "dm-haiku",
-            "hydra-optuna-sweeper",
         ],
         "experimental": ["redis"],
         "testing": [
@@ -129,22 +97,24 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "plotly>=4.0.0",
             "pytest",
-            "scikit-learn>=0.19.0,<0.23.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
             "keras",
-            "tensorflow",
+            # TODO(HideakiImamura): Remove the version constraint after resolving the issue
+            # https://github.com/keras-team/keras/issues/14632
+            "tensorflow<2.5.0 ; python_version<'3.9'",
             "tensorflow-datasets",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
             "skorch",
-            "catalyst<21.3",
+            "catalyst>=21.3",
             "torch==1.8.0 ; sys_platform=='darwin'",
             "torch==1.8.0+cpu ; sys_platform!='darwin'",
             "torchvision==0.9.0 ; sys_platform=='darwin'",
             "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
             "torchaudio==0.8.0",
-            # "allennlp>=2.0.0",  # See https://github.com/optuna/optuna/pull/2442.
+            "allennlp>=2.2.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
@@ -158,7 +128,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
-            "scikit-learn>=0.19.0,<0.23.0",  # optuna/visualization/param_importances.py.
+            "scikit-learn>=0.24.2",
+            # optuna/visualization/param_importances.py.
         ],
         "integration": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
@@ -170,24 +141,30 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "pandas",
-            "scikit-learn>=0.19.0,<0.23.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            "keras",
-            "tensorflow",
-            "tensorflow-datasets",
+            "keras ; python_version<'3.9'",
+            # TODO(HideakiImamura): Remove the version constraint after resolving the issue
+            # https://github.com/keras-team/keras/issues/14632
+            "tensorflow<2.5.0 ; python_version<'3.9'",
+            "tensorflow-datasets ; python_version<'3.9'",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
             "skorch",
-            "catalyst<21.3",
+            "catalyst>=21.3",
             "torch==1.8.0 ; sys_platform=='darwin'",
             "torch==1.8.0+cpu ; sys_platform!='darwin'",
             "torchvision==0.9.0 ; sys_platform=='darwin'",
             "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
             "torchaudio==0.8.0",
-            # "allennlp>=2.0.0",  # See https://github.com/optuna/optuna/pull/2442.
+            "allennlp>=2.2.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
+        ],
+        "benchmark": [
+            "asv",
+            "virtualenv",
         ],
     }
 
@@ -213,7 +190,7 @@ setup(
     author="Takuya Akiba",
     author_email="akiba@preferred.jp",
     url="https://optuna.org/",
-    packages=find_packages(exclude=("tests", "tests.*")),
+    packages=find_packages(exclude=("tests", "tests.*", "benchmarks")),
     package_data={
         "optuna": [
             "storages/_rdb/alembic.ini",

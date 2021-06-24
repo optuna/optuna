@@ -16,12 +16,12 @@ import numpy as np
 
 import optuna
 from optuna._experimental import ExperimentalWarning
-from optuna._multi_objective import _dominates
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.study import Study
 from optuna.study import StudyDirection
+from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 

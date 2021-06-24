@@ -2,6 +2,7 @@ import copy
 import math
 import pickle
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -17,11 +18,11 @@ import numpy as np
 
 import optuna
 from optuna import logging
-from optuna._study_direction import StudyDirection
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.samplers import BaseSampler
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -37,7 +38,7 @@ CmaClass = Union[CMA, SepCMA]
 
 
 class CmaEsSampler(BaseSampler):
-    """A Sampler using `cmaes <https://github.com/CyberAgent/cmaes>`_ as the backend.
+    """A sampler using `cmaes <https://github.com/CyberAgent/cmaes>`_ as the backend.
 
     Example:
 
@@ -59,6 +60,10 @@ class CmaEsSampler(BaseSampler):
             study.optimize(objective, n_trials=20)
 
     Please note that this sampler does not support CategoricalDistribution.
+    However, :class:`~optuna.distributions.DiscreteUniformDistribution`
+    (:func:`~optuna.trial.Trial.suggest_discrete_uniform`) and
+    Int(Log)Distribution (:func:`~optuna.trial.Trial.suggest_int`) are supported.
+
     If your search space contains categorical parameters, I recommend you
     to use :class:`~optuna.samplers.TPESampler` instead.
     Furthermore, there is room for performance improvements in parallel
@@ -325,7 +330,7 @@ class CmaEsSampler(BaseSampler):
         optimizer, n_restarts = self._restore_optimizer(completed_trials)
         if optimizer is None:
             n_restarts = 0
-            optimizer = self._init_optimizer(trans)
+            optimizer = self._init_optimizer(trans, study.direction)
 
         if self._restart_strategy is None:
             generation_attr_key = "cma:generation"  # for backward compatibility
@@ -364,7 +369,7 @@ class CmaEsSampler(BaseSampler):
                 generation_attr_key = "cma:restart_{}:generation".format(n_restarts)
                 popsize = optimizer.population_size * self._inc_popsize
                 optimizer = self._init_optimizer(
-                    trans, population_size=popsize, randomize_start_point=True
+                    trans, study.direction, population_size=popsize, randomize_start_point=True
                 )
 
             # Store optimizer
@@ -421,6 +426,7 @@ class CmaEsSampler(BaseSampler):
     def _init_optimizer(
         self,
         trans: _SearchSpaceTransform,
+        direction: StudyDirection,
         population_size: Optional[int] = None,
         randomize_start_point: bool = False,
     ) -> CmaClass:
@@ -451,8 +457,9 @@ class CmaEsSampler(BaseSampler):
                 expected_states.append(TrialState.PRUNED)
 
             # TODO(c-bata): Filter parameters by their values instead of checking search space.
+            sign = 1 if direction == StudyDirection.MINIMIZE else -1
             source_solutions = [
-                (trans.transform(t.params), t.value)
+                (trans.transform(t.params), sign * cast(float, t.value))
                 for t in self._source_trials
                 if t.state in expected_states
                 and _is_compatible_search_space(trans, t.distributions)

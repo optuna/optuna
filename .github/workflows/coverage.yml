@@ -36,7 +36,12 @@ jobs:
     - name: Setup environment
       run: |
         sudo apt-get update
-        sudo apt-get -y install openmpi-bin libopenmpi-dev
+        sudo apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev
+
+    # TODO(Crissman): Remove click after issue with allennlp import resolved
+    # https://github.com/optuna/optuna/pull/2665
+    - name: Install click 7.1.2 until allennlp import issue resolved
+      run: pip install --use-deprecated=legacy-resolver --progress-bar off click==7.1.2
 
     - name: Install
       run: |
@@ -57,14 +62,13 @@ jobs:
       env:
         OMP_NUM_THREADS: 1
       run: |
-        pytest --cov=optuna --cov-report=xml tests \
-            --ignore tests/integration_tests/allennlp_tests
+        pytest --cov=optuna --cov-report=xml tests
 
     - name: Multi-node tests
       env:
         OMP_NUM_THREADS: 1
       run: |
-        mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+        mpirun -n 2 -- pytest --cov=optuna --cov-report=xml --cov-append tests/integration_tests/test_chainermn.py
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1

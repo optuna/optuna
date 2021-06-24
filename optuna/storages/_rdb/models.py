@@ -19,7 +19,7 @@ from sqlalchemy import UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 
 from optuna import distributions
-from optuna._study_direction import StudyDirection
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import TrialState
 
 

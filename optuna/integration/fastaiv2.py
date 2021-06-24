@@ -25,8 +25,8 @@ class FastAIV2PruningCallback(TrackerCallback):
     .. note::
         This callback is for fastai>=2.0.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/fastai/fastaiv2_simple.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/blob/main/
+    fastai/fastaiv2_simple.py>`__
     if you want to add a pruning callback which monitors validation loss of a ``Learner``.
 
     Example:

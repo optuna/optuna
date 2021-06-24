@@ -14,11 +14,11 @@ import uuid
 
 import optuna
 from optuna import distributions  # NOQA
-from optuna._study_direction import StudyDirection
-from optuna._study_summary import StudySummary
 from optuna.exceptions import DuplicatedStudyError
 from optuna.storages import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.study._study_direction import StudyDirection
+from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 

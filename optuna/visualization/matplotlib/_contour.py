@@ -17,8 +17,8 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
-from optuna.visualization.matplotlib._utils import _is_categorical
 from optuna.visualization.matplotlib._utils import _is_log_scale
+from optuna.visualization.matplotlib._utils import _is_numerical
 
 
 if _imports.is_successful():
@@ -120,7 +120,7 @@ def _get_contour_plot(
     all_params = {p_name for t in trials for p_name in t.params.keys()}
 
     if params is None:
-        sorted_params = sorted(list(all_params))
+        sorted_params = sorted(all_params)
     elif len(params) <= 1:
         _logger.warning("The length of params must be greater than 1.")
         _, ax = plt.subplots()
@@ -129,7 +129,7 @@ def _get_contour_plot(
         for input_p_name in params:
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
-        sorted_params = sorted(list(set(params)))
+        sorted_params = sorted(set(params))
     n_params = len(sorted_params)
 
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
@@ -137,7 +137,7 @@ def _get_contour_plot(
         # Set up the graph style.
         fig, axs = plt.subplots()
         axs.set_title("Contour Plot")
-        cmap = _set_cmap(study)
+        cmap = _set_cmap(study, target)
         contour_point_num = 1000
 
         # Prepare data and draw contour plots.
@@ -148,7 +148,7 @@ def _get_contour_plot(
             x_param = sorted_params[0]
             y_param = sorted_params[1]
         cs = _generate_contour_subplot(
-            trials, x_param, y_param, axs, cmap, contour_point_num, target, target_name
+            trials, x_param, y_param, axs, cmap, contour_point_num, target
         )
         if isinstance(cs, ContourSet):
             axcb = fig.colorbar(cs)
@@ -157,7 +157,7 @@ def _get_contour_plot(
         # Set up the graph style.
         fig, axs = plt.subplots(n_params, n_params)
         fig.suptitle("Contour Plot")
-        cmap = _set_cmap(study)
+        cmap = _set_cmap(study, target)
         contour_point_num = 100
 
         # Prepare data and draw contour plots.
@@ -166,7 +166,7 @@ def _get_contour_plot(
             for y_i, y_param in enumerate(sorted_params):
                 ax = axs[y_i, x_i]
                 cs = _generate_contour_subplot(
-                    trials, x_param, y_param, ax, cmap, contour_point_num, target, target_name
+                    trials, x_param, y_param, ax, cmap, contour_point_num, target
                 )
                 if isinstance(cs, ContourSet):
                     cs_list.append(cs)
@@ -177,8 +177,8 @@ def _get_contour_plot(
     return axs
 
 
-def _set_cmap(study: Study) -> "Colormap":
-    cmap = "Blues_r" if study.direction == StudyDirection.MINIMIZE else "Blues"
+def _set_cmap(study: Study, target: Optional[Callable[[FrozenTrial], float]]) -> "Colormap":
+    cmap = "Blues_r" if target is None and study.direction == StudyDirection.MINIMIZE else "Blues"
     return plt.get_cmap(cmap)
 
 
@@ -201,7 +201,6 @@ def _calculate_griddata(
     y_indices: List[Union[str, int, float]],
     contour_point_num: int,
     target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
 ) -> Tuple[
     np.ndarray,
     np.ndarray,
@@ -280,14 +279,14 @@ def _calculate_griddata(
     cat_param_pos_x = []  # type: List[int]
     cat_param_labels_y = []  # type: List[str]
     cat_param_pos_y = []  # type: List[int]
-    if _is_categorical(trials, x_param):
+    if not _is_numerical(trials, x_param):
         x_values = [str(x) for x in x_values]
         (
             x_values,
             cat_param_labels_x,
             cat_param_pos_x,
         ) = _convert_categorical2int(x_values)
-    if _is_categorical(trials, y_param):
+    if not _is_numerical(trials, y_param):
         y_values = [str(y) for y in y_values]
         (
             y_values,
@@ -316,13 +315,13 @@ def _calculate_griddata(
         else:
             yi = np.linspace(y_values_min, y_values_max, contour_point_num)
 
-        # Interpolate z-axis data on a grid with cubic interpolator.
+        # Interpolate z-axis data on a grid with linear interpolator.
         # TODO(ytknzw): Implement Plotly-like interpolation algorithm.
         zi = griddata(
             np.column_stack((x_values, y_values)),
             z_values,
             (xi[None, :], yi[:, None]),
-            method="cubic",
+            method="linear",
         )
 
     return (
@@ -350,11 +349,10 @@ def _generate_contour_subplot(
     cmap: "Colormap",
     contour_point_num: int,
     target: Optional[Callable[[FrozenTrial], float]],
-    target_name: str,
 ) -> "ContourSet":
 
-    x_indices = sorted(list({t.params[x_param] for t in trials if x_param in t.params}))
-    y_indices = sorted(list({t.params[y_param] for t in trials if y_param in t.params}))
+    x_indices = sorted({t.params[x_param] for t in trials if x_param in t.params})
+    y_indices = sorted({t.params[y_param] for t in trials if y_param in t.params})
     if len(x_indices) < 2:
         _logger.warning("Param {} unique value length is less than 2.".format(x_param))
         return ax
@@ -377,7 +375,7 @@ def _generate_contour_subplot(
         x_values_dummy_count,
         y_values_dummy_count,
     ) = _calculate_griddata(
-        trials, x_param, x_indices, y_param, y_indices, contour_point_num, target, target_name
+        trials, x_param, x_indices, y_param, y_indices, contour_point_num, target
     )
     cs = None
     ax.set(xlabel=x_param, ylabel=y_param)
@@ -392,7 +390,7 @@ def _generate_contour_subplot(
         if x_param != y_param:
             # Contour the gridded data.
             ax.contour(xi, yi, zi, 15, linewidths=0.5, colors="k")
-            cs = ax.contourf(xi, yi, zi, 15, cmap=cmap)
+            cs = ax.contourf(xi, yi, zi, 15, cmap=cmap.reversed())
             # Plot data points.
             if x_values_dummy_count > 0:
                 x_org_len = int(len(x_values) / (x_values_dummy_count + 1))

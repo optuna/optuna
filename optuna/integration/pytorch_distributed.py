@@ -27,8 +27,8 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
         :class:`~optuna.trial.Trial`. Please refer to :class:`optuna.trial.Trial` for further
         details.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/pytorch/pytorch_distributed_simple.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/blob/main/
+    pytorch/pytorch_distributed_simple.py>`__
     if you want to optimize an objective function that trains neural network
     written with PyTorch distributed data parallel.
 

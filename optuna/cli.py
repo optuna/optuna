@@ -25,6 +25,7 @@ from cliff.commandmanager import CommandManager
 from cliff.lister import Lister
 
 import optuna
+from optuna._deprecated import deprecated
 from optuna.exceptions import CLIUsageError
 from optuna.storages import RDBStorage
 
@@ -56,9 +57,9 @@ class _CreateStudy(_BaseCommand):
         )
         parser.add_argument(
             "--direction",
+            default=None,
             type=str,
             choices=("minimize", "maximize"),
-            default="minimize",
             help="Set direction of optimization to a new study. Set 'minimize' "
             "for minimization and 'maximize' for maximization.",
         )
@@ -68,6 +69,16 @@ class _CreateStudy(_BaseCommand):
             action="store_true",
             help="If specified, the creation of the study is skipped "
             "without any error when the study name is duplicated.",
+        )
+        parser.add_argument(
+            "--directions",
+            type=str,
+            default=None,
+            choices=("minimize", "maximize"),
+            help="Set directions of optimization to a new study."
+            " Put whitespace between directions. Each direction should be"
+            ' either "minimize" or "maximize".',
+            nargs="+",
         )
         return parser
 
@@ -79,6 +90,7 @@ class _CreateStudy(_BaseCommand):
             storage=storage,
             study_name=parsed_args.study_name,
             direction=parsed_args.direction,
+            directions=parsed_args.directions,
             load_if_exists=parsed_args.skip_if_exists,
         ).study_name
         print(study_name)
@@ -172,7 +184,11 @@ class _Studies(Lister):
 
 
 class _Dashboard(_BaseCommand):
-    """Launch web dashboard (beta)."""
+    """Launch web dashboard (beta).
+
+    This feature is deprecated since version 2.7.0. Please use `optuna-dashboard
+    <https://github.com/optuna/optuna-dashboard>`_ instead.
+    """
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
@@ -203,6 +219,12 @@ class _Dashboard(_BaseCommand):
         )
         return parser
 
+    @deprecated(
+        "2.7.0",
+        "3.0.0",
+        name="dashboard",
+        text="Please use optuna-dashboard (https://github.com/optuna/optuna-dashboard) instead.",
+    )
     def take_action(self, parsed_args: Namespace) -> None:
 
         storage_url = _check_storage_url(self.app_args.storage)

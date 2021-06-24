@@ -44,3 +44,12 @@ def _is_categorical(trials: List[FrozenTrial], param: str) -> bool:
         for t in trials
         if param in t.params
     )
+
+
+def _is_numerical(trials: List[FrozenTrial], param: str) -> bool:
+    return all(
+        (isinstance(t.params[param], int) or isinstance(t.params[param], float))
+        and not isinstance(t.params[param], bool)
+        for t in trials
+        if param in t.params
+    )

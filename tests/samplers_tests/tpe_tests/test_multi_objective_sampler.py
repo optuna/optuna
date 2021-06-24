@@ -637,6 +637,36 @@ def test_solve_hssp() -> None:
         assert approx / truth > 0.6321  # 1 - 1/e
 
 
+def test_cache() -> None:
+    n = 10
+    sampler = MOTPESampler(seed=0, n_startup_trials=n)
+
+    def objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
+        x = trial.suggest_float("x", 0, 5)
+
+        if trial._trial_id == n:
+            assert n in sampler._split_cache
+            assert n in sampler._weights_below
+        else:
+            assert n not in sampler._split_cache
+            assert n not in sampler._weights_below
+
+        y = trial.suggest_float("y", 0, 3)
+        v0 = 4 * x ** 2 + 4 * y ** 2
+        v1 = (x - 5) ** 2 + (y - 5) ** 2
+        return v0, v1
+
+    study = optuna.create_study(directions=["minimize", "maximize"], sampler=sampler)
+
+    assert n not in sampler._split_cache
+    assert n not in sampler._weights_below
+
+    study.optimize(objective, n_trials=n + 1)
+
+    assert n not in sampler._split_cache
+    assert n not in sampler._weights_below
+
+
 def frozen_trial_factory(
     number: int,
     values: List[float],

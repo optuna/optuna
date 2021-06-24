@@ -16,7 +16,7 @@ jobs:
     # ref: https://github.com/optuna/optuna/issues/2034
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     # Not intended for forks.
     if: github.repository == 'optuna/optuna'
@@ -43,7 +43,12 @@ jobs:
     - name: Setup environment
       run: |
         sudo apt-get update
-        sudo apt-get -y install openmpi-bin libopenmpi-dev
+        sudo apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev
+
+    # TODO(Crissman): Remove click after issue with allennlp import resolved
+    # https://github.com/optuna/optuna/pull/2665
+    - name: Install click 7.1.2 until allennlp import issue resolved
+      run: pip install --use-deprecated=legacy-resolver --progress-bar off click==7.1.2
 
     - name: Install
       run: |
@@ -62,20 +67,16 @@ jobs:
       run: |
         if [ ${{ matrix.python-version }} = 3.6 ]; then
           pytest tests/integration_tests \
-            --ignore tests/integration_tests/allennlp_tests \
             --ignore tests/integration_tests/test_botorch.py
+        elif  [ ${{ matrix.python-version }} = 3.9 ]; then
+          pytest tests/integration_tests \
+            --ignore tests/integration_tests/test_keras.py \
+            --ignore tests/integration_tests/test_tensorflow.py \
+            --ignore tests/integration_tests/test_tfkeras.py \
+            --ignore tests/integration_tests/test_tensorboard.py
         else
-          # pytest cannot collect allennlp tests with allennlp==1.0.0.
-          pytest -s tests/integration_tests \
-            --ignore tests/integration_tests/allennlp_tests
+          pytest -s tests/integration_tests
         fi
-
-    - name: Tests (AllenNLP)
-      run: |
-        pip uninstall torch torchvision torchaudio -y
-        pip install --use-deprecated=legacy-resolver --progress-bar off allennlp
-
-        pytest -s tests/integration_tests/allennlp_tests
 
     - name: Tests MPI
       run: |

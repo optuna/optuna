@@ -31,11 +31,11 @@ from sqlalchemy.sql import functions
 import optuna
 from optuna import distributions
 from optuna import version
-from optuna._study_direction import StudyDirection
-from optuna._study_summary import StudySummary
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._rdb import models
+from optuna.study._study_direction import StudyDirection
+from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -1356,6 +1356,12 @@ class _VersionManager(object):
 
         config = self._create_alembic_config()
         alembic.command.upgrade(config, "head")
+
+        with _create_scoped_session(self.scoped_session, True) as session:
+            version_info = models.VersionInfoModel.find(session)
+            assert version_info is not None
+            version_info.schema_version = models.SCHEMA_VERSION
+            version_info.library_version = version.__version__
 
     def _is_alembic_supported(self) -> bool:
 

@@ -9,9 +9,9 @@ from typing import Optional
 import numpy as np
 
 from optuna._experimental import experimental
-from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
@@ -126,7 +126,7 @@ def _get_parallel_coordinate_plot(
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
         all_params = set(params)
-    sorted_params = sorted(list(all_params))
+    sorted_params = sorted(all_params)
 
     obj_org = [target(t) for t in trials]
     obj_min = min(obj_org)

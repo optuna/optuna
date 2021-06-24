@@ -9,7 +9,6 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 from unittest.mock import Mock  # NOQA
 from unittest.mock import patch
 import uuid
@@ -17,6 +16,7 @@ import uuid
 import _pytest.capture
 import pytest
 
+from optuna import copy_study
 from optuna import create_study
 from optuna import create_trial
 from optuna import delete_study
@@ -109,6 +109,13 @@ def check_study(study: Study) -> None:
         check_params(study.best_params)
         check_value(study.best_value)
         check_frozen_trial(study.best_trial)
+
+
+def test_optimize_n_jobs_warning() -> None:
+
+    study = create_study()
+    with pytest.warns(FutureWarning):
+        study.optimize(func, n_trials=1, n_jobs=2)
 
 
 def test_optimize_trivial_in_memory_new() -> None:
@@ -381,6 +388,31 @@ def test_load_study(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_load_study_study_name_none(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        if storage is None:
+            # `InMemoryStorage` can not be used with `load_study` function.
+            return
+
+        study_name = str(uuid.uuid4())
+
+        _ = create_study(study_name=study_name, storage=storage)
+
+        loaded_study = load_study(study_name=None, storage=storage)
+
+        assert loaded_study.study_name == study_name
+
+        study_name = str(uuid.uuid4())
+
+        _ = create_study(study_name=study_name, storage=storage)
+
+        # Ambiguous study.
+        with pytest.raises(ValueError):
+            load_study(study_name=None, storage=storage)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_delete_study(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -399,6 +431,60 @@ def test_delete_study(storage_mode: str) -> None:
         # Test failed to delete the study which is already deleted.
         with pytest.raises(KeyError):
             delete_study(study.study_name, storage)
+
+
+@pytest.mark.parametrize("from_storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("to_storage_mode", STORAGE_MODES)
+def test_copy_study(from_storage_mode: str, to_storage_mode: str) -> None:
+    with StorageSupplier(from_storage_mode) as from_storage, StorageSupplier(
+        to_storage_mode
+    ) as to_storage:
+        from_study = create_study(storage=from_storage, directions=["maximize", "minimize"])
+        from_study.set_system_attr("foo", "bar")
+        from_study.set_user_attr("baz", "qux")
+        from_study.optimize(
+            lambda t: (t.suggest_float("x0", 0, 1), t.suggest_float("x1", 0, 1)), n_trials=3
+        )
+
+        copy_study(
+            from_study_name=from_study.study_name,
+            from_storage=from_storage,
+            to_storage=to_storage,
+        )
+
+        to_study = load_study(study_name=from_study.study_name, storage=to_storage)
+
+        assert to_study.study_name == from_study.study_name
+        assert to_study.directions == from_study.directions
+        assert to_study.system_attrs == from_study.system_attrs
+        assert to_study.user_attrs == from_study.user_attrs
+        assert len(to_study.trials) == len(from_study.trials)
+
+
+@pytest.mark.parametrize("from_storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("to_storage_mode", STORAGE_MODES)
+def test_copy_study_to_study_name(from_storage_mode: str, to_storage_mode: str) -> None:
+    with StorageSupplier(from_storage_mode) as from_storage, StorageSupplier(
+        to_storage_mode
+    ) as to_storage:
+        from_study = create_study(study_name="foo", storage=from_storage)
+        _ = create_study(study_name="foo", storage=to_storage)
+
+        with pytest.raises(DuplicatedStudyError):
+            copy_study(
+                from_study_name=from_study.study_name,
+                from_storage=from_storage,
+                to_storage=to_storage,
+            )
+
+        copy_study(
+            from_study_name=from_study.study_name,
+            from_storage=from_storage,
+            to_storage=to_storage,
+            to_study_name="bar",
+        )
+
+        _ = load_study(study_name="bar", storage=to_storage)
 
 
 def test_nested_optimization() -> None:
@@ -583,7 +669,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
         assert t.params["x"] == 1
 
 
-@patch("optuna._optimize.gc.collect")
+@patch("optuna.study._optimize.gc.collect")
 def test_optimize_with_gc(collect_mock: Mock) -> None:
 
     study = create_study()
@@ -592,7 +678,7 @@ def test_optimize_with_gc(collect_mock: Mock) -> None:
     assert collect_mock.call_count == 10
 
 
-@patch("optuna._optimize.gc.collect")
+@patch("optuna.study._optimize.gc.collect")
 def test_optimize_without_gc(collect_mock: Mock) -> None:
 
     study = create_study()
@@ -797,6 +883,14 @@ def test_create_study_with_multi_objectives() -> None:
         _ = create_study(direction="minimize", directions=[])
 
 
+def test_create_study_with_direction_object() -> None:
+    study = create_study(direction=StudyDirection.MAXIMIZE)
+    assert study.direction == StudyDirection.MAXIMIZE
+
+    study = create_study(directions=[StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE])
+    assert study.directions == [StudyDirection.MAXIMIZE, StudyDirection.MINIMIZE]
+
+
 @pytest.mark.parametrize("n_objectives", [2, 3])
 def test_optimize_with_multi_objectives(n_objectives: int) -> None:
     directions = ["minimize" for _ in range(n_objectives)]
@@ -814,30 +908,12 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
         assert len(trial.values) == n_objectives
 
 
-def test_pareto_front() -> None:
-    def _trial_to_values(t: FrozenTrial) -> Tuple[float, ...]:
-        assert t.values is not None
-        return tuple(t.values)
-
+def test_best_trials() -> None:
     study = create_study(directions=["minimize", "maximize"])
-    assert {_trial_to_values(t) for t in study.best_trials} == set()
-
     study.optimize(lambda t: [2, 2], n_trials=1)
-    assert {_trial_to_values(t) for t in study.best_trials} == {(2, 2)}
-
     study.optimize(lambda t: [1, 1], n_trials=1)
-    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
-
     study.optimize(lambda t: [3, 1], n_trials=1)
-    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 1), (2, 2)}
-
-    study.optimize(lambda t: [1, 3], n_trials=1)
-    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 3)}
-    assert len(study.best_trials) == 1
-
-    study.optimize(lambda t: [1, 3], n_trials=1)  # The trial result is the same as the above one.
-    assert {_trial_to_values(t) for t in study.best_trials} == {(1, 3)}
-    assert len(study.best_trials) == 2
+    assert {tuple(t.values) for t in study.best_trials} == {(1, 1), (2, 2)}
 
 
 def test_wrong_n_objectives() -> None:

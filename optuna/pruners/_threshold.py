@@ -61,7 +61,7 @@ class ThresholdPruner(BasePruner):
             study = create_study(pruner=ThresholdPruner(lower=0.0))
             study.optimize(objective_for_lower, n_trials=10)
 
-    Args
+    Args:
         lower:
             A minimum value which determines whether pruner prunes or not.
             If an intermediate value is smaller than lower, it prunes.

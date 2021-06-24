@@ -19,6 +19,7 @@ from optuna._imports import try_import
 with try_import() as _imports:
     import allennlp
     import allennlp.commands
+    import allennlp.common.cached_transformers
     import allennlp.common.util
 
 # TrainerCallback is conditionally imported because allennlp may be unavailable in
@@ -95,32 +96,6 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     return pruner(**pruner_params)
 
 
-def _infer_and_cast(value: Optional[str]) -> Optional[Union[str, int, float, bool]]:
-    """Infer and cast a string to desired types.
-
-    We are only able to set strings as environment variables.
-    However, parameters of a pruner could be integer, float,
-    boolean, or else. We infer and cast environment variables
-    to desired types.
-
-    """
-    if value is None:
-        return None
-
-    try:
-        return int(value)
-    except ValueError:
-        try:
-            return float(value)
-        except ValueError:
-            if value == "True":
-                return True
-            if value == "False":
-                return False
-
-    return value
-
-
 def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
     return {
         "study_name": os.getenv(_STUDY_NAME),
@@ -140,7 +115,10 @@ def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int
     kwargs = {}
     for key in keys.split(","):
         key_without_prefix = key.replace("{}_".format(_PREFIX), "")
-        kwargs[key_without_prefix] = _infer_and_cast(os.getenv(key))
+        value = os.getenv(key)
+        if value is None:
+            raise ValueError(f"{key} is not found in environment variables.")
+        kwargs[key_without_prefix] = eval(value)
 
     return kwargs
 
@@ -183,8 +161,17 @@ def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
     return kwargs
 
 
+def _is_encodable(value: str) -> bool:
+    # https://github.com/allenai/allennlp/blob/master/allennlp/common/params.py#L77-L85
+    return (value == "") or (value.encode("utf-8", "ignore") != b"")
+
+
+def _environment_variables() -> Dict[str, str]:
+    return {key: value for key, value in os.environ.items() if _is_encodable(value)}
+
+
 def dump_best_config(input_config_file: str, output_config_file: str, study: optuna.Study) -> None:
-    """Save JSON config file after updating with parameters from the best trial in the study.
+    """Save JSON config file with environment variables and best performing hyperparameters.
 
     Args:
         input_config_file:
@@ -199,10 +186,19 @@ def dump_best_config(input_config_file: str, output_config_file: str, study: opt
     """
     _imports.check()
 
+    # Get environment variables.
+    ext_vars = _environment_variables()
+
+    # Get the best hyperparameters.
     best_params = study.best_params
     for key, value in best_params.items():
         best_params[key] = str(value)
-    best_config = json.loads(_jsonnet.evaluate_file(input_config_file, ext_vars=best_params))
+
+    # If keys both appear in environment variables and best_params,
+    # values in environment variables are overwritten, which means best_params is prioritized.
+    ext_vars.update(best_params)
+
+    best_config = json.loads(_jsonnet.evaluate_file(input_config_file, ext_vars=ext_vars))
 
     # `optuna_pruner` only works with Optuna.
     # It removes when dumping configuration since
@@ -232,8 +228,8 @@ class AllenNLPExecutor(object):
     This feature is experimental since AllenNLP major release will come soon.
     The interface may change without prior notice to correspond to the update.
 
-    See the examples of `objective function <https://github.com/optuna/optuna/blob/
-    master/examples/allennlp/allennlp_jsonnet.py>`_.
+    See the examples of `objective function <https://github.com/optuna/optuna-examples/tree/
+    main/allennlp/allennlp_jsonnet.py>`_.
 
     You can also see the tutorial of our AllenNLP integration on
     `AllenNLP Guide <https://guide.allennlp.org/hyperparameter-optimization>`_.
@@ -241,8 +237,8 @@ class AllenNLPExecutor(object):
     .. note::
         From Optuna v2.1.0, users have to cast their parameters by using methods in Jsonnet.
         Call ``std.parseInt`` for integer, or ``std.parseJson`` for floating point.
-        Please see the `example configuration <https://github.com/optuna/optuna/blob/master/
-        examples/allennlp/classifier.jsonnet>`_.
+        Please see the `example configuration <https://github.com/optuna/optuna-examples/tree/main/
+        allennlp/classifier.jsonnet>`_.
 
     .. note::
         In :class:`~optuna.integration.AllenNLPExecutor`,
@@ -316,7 +312,7 @@ class AllenNLPExecutor(object):
 
         pruner_params = _fetch_pruner_config(trial)
         pruner_params = {
-            "{}_{}".format(_PREFIX, key): str(value) for key, value in pruner_params.items()
+            "{}_{}".format(_PREFIX, key): repr(value) for key, value in pruner_params.items()
         }
 
         system_attrs = {
@@ -341,7 +337,7 @@ class AllenNLPExecutor(object):
         https://github.com/allenai/allentune/blob/master/allentune/modules/allennlp_runner.py#L34-L65
 
         """
-        params = self._environment_variables()
+        params = _environment_variables()
         params.update({key: str(value) for key, value in self._params.items()})
         params.update(self._system_attrs)
         return json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=params))
@@ -350,18 +346,21 @@ class AllenNLPExecutor(object):
         for key, value in self._system_attrs.items():
             os.environ[key] = value
 
-    @staticmethod
-    def _is_encodable(value: str) -> bool:
-        # https://github.com/allenai/allennlp/blob/master/allennlp/common/params.py#L77-L85
-        return (value == "") or (value.encode("utf-8", "ignore") != b"")
-
-    def _environment_variables(self) -> Dict[str, str]:
-        return {key: value for key, value in os.environ.items() if self._is_encodable(value)}
-
     def run(self) -> float:
         """Train a model using AllenNLP."""
         for package_name in self._include_package:
             allennlp.common.util.import_module_and_submodules(package_name)
+
+        # Without the following lines, the transformer model construction only takes place in the
+        # first trial (which would consume some random numbers), and the cached model will be used
+        # in trials afterwards (which would not consume random numbers), leading to inconsistent
+        # results between single trial and multiple trials. To make results reproducible in
+        # multiple trials, we clear the cache before each trial.
+        # TODO(MagiaSN) When AllenNLP has introduced a better API to do this, one should remove
+        # these lines and use the new API instead. For example, use the `_clear_caches()` method
+        # which will be in the next AllenNLP release after 2.4.0.
+        allennlp.common.cached_transformers._model_cache.clear()
+        allennlp.common.cached_transformers._tokenizer_cache.clear()
 
         self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
@@ -381,8 +380,8 @@ class AllenNLPExecutor(object):
 class AllenNLPPruningCallback(TrainerCallback):
     """AllenNLP callback to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/allennlp/allennlp_simple.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/tree/main/
+    allennlp/allennlp_simple.py>`__
     if you want to add a pruning callback which observes a metric.
 
     You can also see the tutorial of our AllenNLP integration on
@@ -398,6 +397,10 @@ class AllenNLPPruningCallback(TrainerCallback):
         environment variables for a study name, trial id, monitor, and storage.
         Then :class:`~optuna.integration.AllenNLPPruningCallback`
         loads them to restore ``trial`` and ``monitor``.
+
+    .. note::
+        Currently, build-in pruners are supported except for
+        :class:`~optuna.pruners.PatientPruner`.
 
     Args:
         trial:
@@ -445,7 +448,7 @@ class AllenNLPPruningCallback(TrainerCallback):
                     " without `AllenNLPExecutor`. If you want to use a callback"
                     " without an executor, you have to instantiate a callback with"
                     "`trial` and `monitor. Please see the Optuna example: https://github.com/"
-                    "optuna/optuna/blob/master/examples/allennlp/allennlp_simple.py."
+                    "optuna/optuna-examples/tree/main/allennlp/allennlp_simple.py."
                 )
                 raise RuntimeError(message)
 

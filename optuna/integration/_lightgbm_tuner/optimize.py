@@ -370,6 +370,8 @@ class _LightGBMBaseTuner(_BaseTuner):
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
         model_dir: Optional[str] = None,
+        *,
+        optuna_seed: Optional[int] = None,
     ) -> None:
 
         _imports.check()
@@ -401,6 +403,7 @@ class _LightGBMBaseTuner(_BaseTuner):
             Tuple[Union[lgb.Booster, lgb.CVBooster], int]
         ] = None
         self._model_dir = model_dir
+        self._optuna_seed = optuna_seed
 
         # Should not alter data since `min_data_in_leaf` is tuned.
         # https://lightgbm.readthedocs.io/en/latest/Parameters.html#feature_pre_filter
@@ -568,11 +571,19 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._tune_params([param_name], len(param_values), sampler, "feature_fraction")
 
     def tune_num_leaves(self, n_trials: int = 20) -> None:
-        self._tune_params(["num_leaves"], n_trials, optuna.samplers.TPESampler(), "num_leaves")
+        self._tune_params(
+            ["num_leaves"],
+            n_trials,
+            optuna.samplers.TPESampler(seed=self._optuna_seed),
+            "num_leaves",
+        )
 
     def tune_bagging(self, n_trials: int = 10) -> None:
         self._tune_params(
-            ["bagging_fraction", "bagging_freq"], n_trials, optuna.samplers.TPESampler(), "bagging"
+            ["bagging_fraction", "bagging_freq"],
+            n_trials,
+            optuna.samplers.TPESampler(seed=self._optuna_seed),
+            "bagging",
         )
 
     def tune_feature_fraction_stage2(self, n_trials: int = 6) -> None:
@@ -590,7 +601,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         self._tune_params(
             ["lambda_l1", "lambda_l2"],
             n_trials,
-            optuna.samplers.TPESampler(),
+            optuna.samplers.TPESampler(seed=self._optuna_seed),
             "regularization_factors",
         )
 
@@ -776,8 +787,18 @@ class LightGBMTuner(_LightGBMBaseTuner):
                 Progress bars will be fragmented by logging messages of LightGBM and Optuna.
                 Please suppress such messages to show the progress bars properly.
 
+        optuna_seed:
+            ``seed`` of :class:`~optuna.samplers.TPESampler` for random number generator
+            that affects sampling for ``num_leaves``, ``bagging_fraction``, ``bagging_freq``,
+            ``lambda_l1``, and ``lambda_l2``.
+
+            .. note::
+                The `deterministic`_ parameter of LightGBM makes training reproducible.
+                Please enable it when you use this argument.
+
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     .. _LightGBM's verbosity: https://lightgbm.readthedocs.io/en/latest/Parameters.html#verbosity
+    .. _deterministic: https://lightgbm.readthedocs.io/en/latest/Parameters.html#deterministic
     """
 
     def __init__(
@@ -804,6 +825,8 @@ class LightGBMTuner(_LightGBMBaseTuner):
         model_dir: Optional[str] = None,
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
+        *,
+        optuna_seed: Optional[int] = None,
     ) -> None:
 
         super().__init__(
@@ -824,6 +847,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
             model_dir=model_dir,
+            optuna_seed=optuna_seed,
         )
 
         self.lgbm_kwargs["valid_sets"] = valid_sets
@@ -877,7 +901,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
     :class:`~optuna.integration.lightgbm.LightGBMTunerCV` invokes `lightgbm.cv()`_ to train
     and validate boosters while :class:`~optuna.integration.lightgbm.LightGBMTuner` invokes
     `lightgbm.train()`_. See
-    `a simple example <https://github.com/optuna/optuna/blob/master/examples/lightgbm/
+    `a simple example <https://github.com/optuna/optuna-examples/tree/main/lightgbm/
     lightgbm_tuner_cv.py>`_ which optimizes the validation log loss of cancer detection.
 
     Arguments and keyword arguments for `lightgbm.cv()`_ can be passed except
@@ -933,9 +957,19 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         return_cvbooster:
             Flag to enable :meth:`~optuna.integration.LightGBMTunerCV.get_best_booster`.
 
+        optuna_seed:
+            ``seed`` of :class:`~optuna.samplers.TPESampler` for random number generator
+            that affects sampling for ``num_leaves``, ``bagging_fraction``, ``bagging_freq``,
+            ``lambda_l1``, and ``lambda_l2``.
+
+            .. note::
+                The `deterministic`_ parameter of LightGBM makes training reproducible.
+                Please enable it when you use this argument.
+
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     .. _lightgbm.cv(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html
     .. _LightGBM's verbosity: https://lightgbm.readthedocs.io/en/latest/Parameters.html#verbosity
+    .. _deterministic: https://lightgbm.readthedocs.io/en/latest/Parameters.html#deterministic
     """
 
     def __init__(
@@ -971,6 +1005,8 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         show_progress_bar: bool = True,
         model_dir: Optional[str] = None,
         return_cvbooster: Optional[bool] = None,
+        *,
+        optuna_seed: Optional[int] = None,
     ) -> None:
 
         super().__init__(
@@ -991,6 +1027,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             verbosity=verbosity,
             show_progress_bar=show_progress_bar,
             model_dir=model_dir,
+            optuna_seed=optuna_seed,
         )
 
         self.lgbm_kwargs["folds"] = folds

@@ -17,6 +17,7 @@ from optuna import version
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import UniformDistribution
 from optuna.storages import RDBStorage
+from optuna.storages import RetryFailedTrialCallback
 from optuna.storages._rdb.models import SCHEMA_VERSION
 from optuna.storages._rdb.models import TrialHeartbeatModel
 from optuna.storages._rdb.models import VersionInfoModel
@@ -316,7 +317,7 @@ def test_record_heartbeat() -> None:
         storage.heartbeat_interval = heartbeat_interval
         study = create_study(storage=storage)
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna._optimize.Thread", _TestableThread):
+        with patch("optuna.study._optimize.Thread", _TestableThread):
             study.optimize(objective, n_trials=n_trials)
 
         trial_heartbeats = []
@@ -357,7 +358,7 @@ def test_fail_stale_trials() -> None:
         assert storage._get_stale_trial_ids(study1._study_id) == [study1.trials[0]._trial_id]
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna._optimize.Thread", _TestableThread):
+        with patch("optuna.study._optimize.Thread", _TestableThread):
             study1.optimize(lambda _: 1.0, n_trials=1)
 
         assert study1.trials[0].state is TrialState.FAIL
@@ -395,7 +396,37 @@ def test_failed_trial_callback() -> None:
         time.sleep(grace_period + 1)
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna._optimize.Thread", _TestableThread):
+        with patch("optuna.study._optimize.Thread", _TestableThread):
             with patch.object(storage, "failed_trial_callback", wraps=failed_trial_callback) as m:
                 study.optimize(lambda _: 1.0, n_trials=1)
                 m.assert_called_once()
+
+
+@pytest.mark.parametrize("max_retry", [None, 0, 1])
+def test_retry_failed_trial_callback(max_retry: Optional[int]) -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage.heartbeat_interval = heartbeat_interval
+        storage.grace_period = grace_period
+
+        storage.failed_trial_callback = RetryFailedTrialCallback(max_retry=max_retry)
+        study = create_study(storage=storage)
+
+        trial = study.ask()
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        # Exceptions raised in spawned threads are caught by `_TestableThread`.
+        with patch("optuna.study._optimize.Thread", _TestableThread):
+            study.optimize(lambda _: 1.0, n_trials=1)
+
+        # Test the last trial to see if it was a retry of the first trial or not.
+        # Test max_rety=None to see if trial is retried.
+        # Test max_rety=0 to see if no trials are retried.
+        # Test max_rety=1 to see if trial is retried.
+        assert RetryFailedTrialCallback.retried_trial_number(study.trials[1]) == (
+            None if max_retry == 0 else 0
+        )

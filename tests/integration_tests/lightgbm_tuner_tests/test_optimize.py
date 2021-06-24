@@ -12,6 +12,9 @@ import warnings
 
 import numpy as np
 import pytest
+import sklearn.datasets
+from sklearn.model_selection import KFold
+from sklearn.model_selection import train_test_split
 
 import optuna
 from optuna.integration._lightgbm_tuner.optimize import _BaseTuner
@@ -732,6 +735,45 @@ class TestLightGBMTuner(object):
 
         assert callback_mock.call_count == 10
 
+    def test_tune_best_score_reproducibility(self) -> None:
+        boston = sklearn.datasets.load_boston()
+        X_trainval, X_test, y_trainval, y_test = train_test_split(
+            boston.data, boston.target, random_state=0
+        )
+
+        train = lgb.Dataset(X_trainval, y_trainval)
+        valid = lgb.Dataset(X_test, y_test)
+        params = {
+            "objective": "regression",
+            "metric": "rmse",
+            "random_seed": 0,
+            "deterministic": True,
+            "force_col_wise": True,
+            "verbosity": -1,
+        }
+
+        tuner_first_try = lgb.LightGBMTuner(
+            params,
+            train,
+            valid_sets=valid,
+            early_stopping_rounds=3,
+            optuna_seed=10,
+        )
+        tuner_first_try.run()
+        best_score_first_try = tuner_first_try.best_score
+
+        tuner_second_try = lgb.LightGBMTuner(
+            params,
+            train,
+            valid_sets=valid,
+            early_stopping_rounds=3,
+            optuna_seed=10,
+        )
+        tuner_second_try.run()
+        best_score_second_try = tuner_second_try.best_score
+
+        assert best_score_second_try == best_score_first_try
+
 
 class TestLightGBMTunerCV(object):
     def _get_tunercv_object(
@@ -1012,3 +1054,41 @@ class TestLightGBMTunerCV(object):
             # The booster was not saved hence not found in the `model_dir`.
             with pytest.raises(ValueError):
                 tuner3.get_best_booster()
+
+    def test_tune_best_score_reproducibility(self) -> None:
+        boston = sklearn.datasets.load_boston()
+        X_trainval, X_test, y_trainval, y_test = train_test_split(
+            boston.data, boston.target, random_state=0
+        )
+
+        train = lgb.Dataset(X_trainval, y_trainval)
+        params = {
+            "objective": "regression",
+            "metric": "rmse",
+            "random_seed": 0,
+            "deterministic": True,
+            "force_col_wise": True,
+            "verbosity": -1,
+        }
+
+        tuner_first_try = lgb.LightGBMTunerCV(
+            params,
+            train,
+            early_stopping_rounds=3,
+            folds=KFold(n_splits=3),
+            optuna_seed=10,
+        )
+        tuner_first_try.run()
+        best_score_first_try = tuner_first_try.best_score
+
+        tuner_second_try = lgb.LightGBMTunerCV(
+            params,
+            train,
+            early_stopping_rounds=3,
+            folds=KFold(n_splits=3),
+            optuna_seed=10,
+        )
+        tuner_second_try.run()
+        best_score_second_try = tuner_second_try.best_score
+
+        assert best_score_second_try == best_score_first_try
