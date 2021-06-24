@@ -21,6 +21,7 @@ from optuna import trial as trial_module
 from optuna._deprecated import deprecated
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
+from optuna.exceptions import ExperimentalWarning
 from optuna.study._dataframe import _trials_dataframe
 from optuna.study._dataframe import pd
 from optuna.study._multi_objective import _get_pareto_front_trials
@@ -307,6 +308,8 @@ class Study(BaseStudy):
         callbacks: Optional[List[Callable[["Study", FrozenTrial], None]]] = None,
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
+        *,
+        executor: str = "thread_pool",
     ) -> None:
         """Optimize an objective function.
 
@@ -349,18 +352,12 @@ class Study(BaseStudy):
                 set to CPU count.
 
                 .. note::
-                    ``n_jobs`` allows parallelization using :obj:`threading` and may suffer from
-                    `Python's GIL <https://wiki.python.org/moin/GlobalInterpreterLock>`_.
-                    It is recommended to use :ref:`process-based parallelization<distributed>`
-                    if ``func`` is CPU bound.
+                    Redesigned in v2.9.0 as an experimental feature. The interface may change in
+                    newer versions without prior notice. See
+                    https://github.com/optuna/optuna/releases/tag/v2.9.0.
 
-                .. warning::
-                    Deprecated in v2.7.0. This feature will be removed in the future.
-                    It is recommended to use :ref:`process-based parallelization<distributed>`.
-                    The removal of this feature is currently scheduled for v4.0.0, but this
-                    schedule is subject to change.
-                    See https://github.com/optuna/optuna/releases/tag/v2.7.0.
-
+                .. seealso::
+                    The ``executor`` parameter.
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
@@ -384,6 +381,16 @@ class Study(BaseStudy):
                 Flag to show progress bars or not. To disable progress bar, set this ``False``.
                 Currently, progress bar is experimental feature and disabled
                 when ``n_jobs`` :math:`\\ne 1`.
+            executor:
+                Executor to determine how to submit parallel objective funciton evaluations when
+                ``n_jobs`` is larger than one.
+                Can be either ``thread_pool`` or ``process_pool`` for multi-threading or
+                multi-process, respectively. Ignored if ``n_jobs`` is 1.
+
+                .. note::
+                    Added in v2.9.0 as an experimental feature. The interface may change in newer
+                    versions without prior notice. See
+                    https://github.com/optuna/optuna/releases/tag/v2.9.0.
 
         Raises:
             RuntimeError:
@@ -391,10 +398,9 @@ class Study(BaseStudy):
         """
         if n_jobs != 1:
             warnings.warn(
-                "`n_jobs` argument has been deprecated in v2.7.0. "
-                "This feature will be removed in v4.0.0. "
-                "See https://github.com/optuna/optuna/releases/tag/v2.7.0.",
-                FutureWarning,
+                "``n_jobs != 1`` and ``executor`` options are experimental features."
+                " The interface can change in the future.",
+                ExperimentalWarning,
             )
 
         _optimize(
@@ -407,6 +413,7 @@ class Study(BaseStudy):
             callbacks=callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
+            executor=executor,
         )
 
     def ask(

@@ -1,5 +1,6 @@
 from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
+from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
 import copy
@@ -39,6 +40,7 @@ _logger = logging.get_logger(__name__)
 def _optimize(
     study: "optuna.Study",
     func: "optuna.study.study.ObjectiveFuncType",
+    executor: str,
     n_trials: Optional[int] = None,
     timeout: Optional[float] = None,
     n_jobs: int = 1,
@@ -50,6 +52,11 @@ def _optimize(
     if not isinstance(catch, tuple):
         raise TypeError(
             "The catch argument is of type '{}' but must be a tuple.".format(type(catch).__name__)
+        )
+
+    if not executor in ("thread_pool", "process_pool"):
+        raise ValueError(
+            f"Executor must be either 'thread_pool' or 'process_pool' but got '{executor}'."
         )
 
     if not study._optimize_lock.acquire(False):
@@ -84,7 +91,14 @@ def _optimize(
             time_start = datetime.datetime.now()
             futures: Set[Future] = set()
 
-            with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+            if executor == "thread_pool":
+                executor_cls = ThreadPoolExecutor
+            elif executor == "process_pool":
+                executor_cls = ProcessPoolExecutor
+            else:
+                assert False
+
+            with executor_cls(max_workers=n_jobs) as executor:
                 for n_submitted_trials in itertools.count():
                     if study._stop_flag:
                         break

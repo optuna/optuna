@@ -118,6 +118,22 @@ def test_optimize_n_jobs_warning() -> None:
         study.optimize(func, n_trials=1, n_jobs=2)
 
 
+@pytest.mark.parametrize("n_jobs", [1, 2])
+@pytest.mark.parametrize("executor", ["thread_pool", "process_pool"])
+def test_optimize_executor(n_jobs: int, executor: str) -> None:
+
+    study = create_study()
+    study.optimize(func, n_trials=3, n_jobs=n_jobs, executor=executor)
+    check_study(study)
+
+
+def test_optimize_executor_invalid() -> None:
+
+    study = create_study()
+    with pytest.raises(ValueError):
+        study.optimize(func, n_trials=3, executor="foo")
+
+
 def test_optimize_trivial_in_memory_new() -> None:
 
     study = create_study()
