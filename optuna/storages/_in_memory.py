@@ -1,5 +1,7 @@
 import copy
 from datetime import datetime
+from multiprocessing.managers import BaseManager
+import os
 import threading
 from typing import Any
 from typing import cast
@@ -471,3 +473,113 @@ class _StudyInfo:
         self.name: str = name
         self.directions: List[StudyDirection] = [StudyDirection.NOT_SET]
         self.best_trial_id: Optional[int] = None
+
+
+class _Manager(BaseManager):
+    pass
+
+
+_Manager.register("InMemoryStorage", InMemoryStorage)
+
+
+# TODO(hvy): Either support multiple studies, either here or in the `InMemoryStorage`, or
+# hide `MultiprocessInMemoryStorage` from the user entirely.
+class MultiprocessInMemoryStorage(BaseStorage):
+    def __init__(self) -> None:
+        self._manager = _Manager()
+        self._manager.start()
+        self._manager_address = self._manager.address
+        self._storage = self._manager.InMemoryStorage()  # type: ignore
+        self._pid = os.getpid()
+
+    def __getstate__(self) -> Dict[Any, Any]:
+        state = self.__dict__.copy()
+        del state["_manager"]
+        return state
+
+    def __setstate__(self, state: Dict[Any, Any]) -> None:
+        self.__dict__.update(state)
+        self._manager = _Manager(address=self._manager_address)
+        self._manager.connect()
+
+    def __del__(self) -> None:
+        if self._pid == os.getpid():
+            self._manager.shutdown()
+
+    def create_new_study(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.create_new_study(*args, **kwargs)
+
+    def create_new_trial(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.create_new_trial(*args, **kwargs)
+
+    def delete_study(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.delete_study(*args, **kwargs)
+
+    def get_all_study_summaries(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_all_study_summaries(*args, **kwargs)
+
+    def get_all_trials(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_all_trials(*args, **kwargs)
+
+    def get_best_trial(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_best_trial(*args, **kwargs)
+
+    def get_study_directions(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_study_directions(*args, **kwargs)
+
+    def get_study_id_from_name(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_study_id_from_name(*args, **kwargs)
+
+    def get_study_id_from_trial_id(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_study_id_from_trial_id(*args, **kwargs)
+
+    def get_study_name_from_id(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_study_name_from_id(*args, **kwargs)
+
+    def get_study_system_attrs(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_study_system_attrs(*args, **kwargs)
+
+    def get_study_user_attrs(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_study_user_attrs(*args, **kwargs)
+
+    def get_trial(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_trial(*args, **kwargs)
+
+    def get_trial_id_from_study_id_trial_number(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_trial_id_from_study_id_trial_number(*args, **kwargs)
+
+    def get_trial_number_from_id(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_trial_number_from_id(*args, **kwargs)
+
+    def get_trial_param(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.get_trial_param(*args, **kwargs)
+
+    def read_trials_from_remote_storage(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.read_trials_from_remote_storage(*args, **kwargs)
+
+    def set_study_directions(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.set_study_directions(*args, **kwargs)
+
+    def set_study_system_attr(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.set_study_system_attr(*args, **kwargs)
+
+    def set_study_user_attr(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.set_study_user_attr(*args, **kwargs)
+
+    def set_trial_intermediate_value(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.set_trial_intermediate_value(*args, **kwargs)
+
+    def set_trial_param(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.set_trial_param(*args, **kwargs)
+
+    def set_trial_state(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.set_trial_state(*args, **kwargs)
+
+    def set_trial_system_attr(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.set_trial_system_attr(*args, **kwargs)
+
+    def set_trial_user_attr(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.set_trial_user_attr(*args, **kwargs)
+
+    def set_trial_values(self, *args: Any, **kwargs: Any) -> Any:
+        return self._storage.set_trial_values(*args, **kwargs)

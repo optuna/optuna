@@ -4,6 +4,7 @@ from optuna._callbacks import RetryFailedTrialCallback  # NOQA
 from optuna.storages._base import BaseStorage
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._in_memory import InMemoryStorage
+from optuna.storages._in_memory import MultiprocessInMemoryStorage
 from optuna.storages._rdb.storage import RDBStorage
 from optuna.storages._redis import RedisStorage
 
@@ -11,6 +12,7 @@ from optuna.storages._redis import RedisStorage
 __all__ = [
     "BaseStorage",
     "InMemoryStorage",
+    "MultiprocessInMemoryStorage",
     "RDBStorage",
     "RedisStorage",
     "_CachedStorage",
