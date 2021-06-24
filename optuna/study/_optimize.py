@@ -40,7 +40,7 @@ _logger = logging.get_logger(__name__)
 def _optimize(
     study: "optuna.Study",
     func: "optuna.study.study.ObjectiveFuncType",
-    executor: str,
+    scheduler: str,
     n_trials: Optional[int] = None,
     timeout: Optional[float] = None,
     n_jobs: int = 1,
@@ -54,9 +54,9 @@ def _optimize(
             "The catch argument is of type '{}' but must be a tuple.".format(type(catch).__name__)
         )
 
-    if not executor in ("thread_pool", "process_pool"):
+    if not scheduler in ("threads", "processes"):
         raise ValueError(
-            f"Executor must be either 'thread_pool' or 'process_pool' but got '{executor}'."
+            f"Scheduler must be either 'threads' or 'processes' but got '{scheduler}'."
         )
 
     if not study._optimize_lock.acquire(False):
@@ -91,10 +91,30 @@ def _optimize(
             time_start = datetime.datetime.now()
             futures: Set[Future] = set()
 
-            if executor == "thread_pool":
+            if scheduler == "threads":
                 executor_cls = ThreadPoolExecutor
-            elif executor == "process_pool":
+            elif scheduler == "processes":
                 executor_cls = ProcessPoolExecutor
+
+                if isinstance(study._storage, storages.InMemoryStorage):
+                    warnings.warn(
+                        "Multiprocess optimization started with "
+                        f"{study._storage.__class__.__name__} which does not support "
+                        "multiprocessing. "
+                        "Converting storage to one that supports multiprocessing. "
+                        "Specify the 'multiprocess' storage when constructing the study or "
+                        "the 'threads' scheduler when starting the optimization to avoid this "
+                        "warning."
+                    )
+                    multiprocess_storage = storages.MultiprocessInMemoryStorage()
+                    for study_summary in study._storage.get_all_study_summaries():
+                        optuna.copy_study(
+                            from_study_name=study_summary.study_name,
+                            from_storage=study._storage,
+                            to_storage=multiprocess_storage,
+                        )
+                    study._storage = multiprocess_storage
+
             else:
                 assert False
 
@@ -134,6 +154,8 @@ def _optimize(
                         )
                     )
     finally:
+        # TODO(hvy): Restore original storage in case it was automatically converted during
+        # multiprocess optimization with the `InMemoryStorage`.
         study._optimize_lock.release()
         progress_bar.close()
 

@@ -112,29 +112,6 @@ def check_study(study: Study) -> None:
         check_frozen_trial(study.best_trial)
 
 
-def test_optimize_n_jobs_warning() -> None:
-
-    study = create_study()
-    with pytest.warns(ExperimentalWarning):
-        study.optimize(func, n_trials=1, n_jobs=2)
-
-
-@pytest.mark.parametrize("n_jobs", [1, 2])
-@pytest.mark.parametrize("executor", ["thread_pool", "process_pool"])
-def test_optimize_executor(n_jobs: int, executor: str) -> None:
-
-    study = create_study()
-    study.optimize(func, n_trials=3, n_jobs=n_jobs, executor=executor)
-    check_study(study)
-
-
-def test_optimize_executor_invalid() -> None:
-
-    study = create_study()
-    with pytest.raises(ValueError):
-        study.optimize(func, n_trials=3, executor="foo")
-
-
 def test_optimize_trivial_in_memory_new() -> None:
 
     study = create_study()
@@ -1145,3 +1122,36 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         study.enqueue_trial(params={"x": 1})
         summaries = study._storage.get_all_study_summaries()
         assert summaries[0].datetime_start is not None
+
+
+def test_optimize_n_jobs_warning() -> None:
+
+    study = create_study()
+    with pytest.warns(ExperimentalWarning):
+        study.optimize(func, n_trials=1, n_jobs=2)
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+@pytest.mark.parametrize("scheduler", ["threads", "processes"])
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_optimize_scheduler(n_jobs: int, scheduler: str, storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.optimize(func, n_trials=n_jobs, n_jobs=n_jobs, scheduler=scheduler)
+        check_study(study)
+
+
+def test_optimize_scheduler_processes_inmemory_conversion() -> None:
+
+    study = create_study(storage=None)
+    with pytest.warns(UserWarning):
+        study.optimize(func, n_trials=1, n_jobs=2, scheduler="processes")
+    check_study(study)
+
+
+def test_optimize_scheduler_invalid() -> None:
+
+    study = create_study()
+    with pytest.raises(ValueError):
+        study.optimize(func, n_trials=1, scheduler="foo")

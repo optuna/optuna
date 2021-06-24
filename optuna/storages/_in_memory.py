@@ -482,8 +482,6 @@ class _Manager(BaseManager):
 _Manager.register("InMemoryStorage", InMemoryStorage)
 
 
-# TODO(hvy): Either support multiple studies, either here or in the `InMemoryStorage`, or
-# hide `MultiprocessInMemoryStorage` from the user entirely.
 class MultiprocessInMemoryStorage(BaseStorage):
     def __init__(self) -> None:
         self._manager = _Manager()

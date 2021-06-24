@@ -309,7 +309,7 @@ class Study(BaseStudy):
         gc_after_trial: bool = False,
         show_progress_bar: bool = False,
         *,
-        executor: str = "thread_pool",
+        scheduler: str = "threads",
     ) -> None:
         """Optimize an objective function.
 
@@ -357,7 +357,7 @@ class Study(BaseStudy):
                     https://github.com/optuna/optuna/releases/tag/v2.9.0.
 
                 .. seealso::
-                    The ``executor`` parameter.
+                    The ``scheduler`` parameter.
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
@@ -381,11 +381,10 @@ class Study(BaseStudy):
                 Flag to show progress bars or not. To disable progress bar, set this ``False``.
                 Currently, progress bar is experimental feature and disabled
                 when ``n_jobs`` :math:`\\ne 1`.
-            executor:
-                Executor to determine how to submit parallel objective funciton evaluations when
-                ``n_jobs`` is larger than one.
-                Can be either ``thread_pool`` or ``process_pool`` for multi-threading or
-                multi-process, respectively. Ignored if ``n_jobs`` is 1.
+            scheduler:
+                Scheduler to determine how trials are executed in parallel when ``n_jobs`` is
+                larger than one. Can be either ``threads`` or ``processes`` for multithreading or
+                multiprocess, respectively. Ignored if ``n_jobs`` is one.
 
                 .. note::
                     Added in v2.9.0 as an experimental feature. The interface may change in newer
@@ -398,8 +397,8 @@ class Study(BaseStudy):
         """
         if n_jobs != 1:
             warnings.warn(
-                "``n_jobs != 1`` and ``executor`` options are experimental features."
-                " The interface can change in the future.",
+                "``n_jobs != 1`` which enables the scheduler ``scheduler`` is experimental. "
+                "The interface can change in the future.",
                 ExperimentalWarning,
             )
 
@@ -413,7 +412,7 @@ class Study(BaseStudy):
             callbacks=callbacks,
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
-            executor=executor,
+            scheduler=scheduler,
         )
 
     def ask(

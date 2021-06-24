@@ -25,6 +25,8 @@ def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
     if storage is None:
         return InMemoryStorage()
     if isinstance(storage, str):
+        if storage == "multiprocess":
+            return MultiprocessInMemoryStorage()
         if storage.startswith("redis"):
             return RedisStorage(storage)
         else:
