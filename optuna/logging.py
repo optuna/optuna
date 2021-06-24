@@ -58,6 +58,12 @@ def _create_default_handler() -> logging.Handler:
     return handler
 
 
+# Old version of Python has SyntaxError: annotated name 'x' can't be global
+# https://bugs.python.org/issue34939
+_logger = _get_library_root_logger()
+_default_handler: logging.Handler = _create_default_handler()
+
+
 def _reset_default_handler():
     global _default_handler
 
@@ -281,7 +287,3 @@ def enable_propagation() -> None:
 
     _configure_library_root_logger()
     _logger.propagate = True
-
-
-_logger = _get_library_root_logger()
-_default_handler: logging.Handler = _create_default_handler()
