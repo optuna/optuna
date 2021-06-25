@@ -1,3 +1,4 @@
+from concurrent.futures import Executor
 from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ProcessPoolExecutor
@@ -54,7 +55,7 @@ def _optimize(
             "The catch argument is of type '{}' but must be a tuple.".format(type(catch).__name__)
         )
 
-    if not scheduler in ("threads", "processes"):
+    if scheduler not in ("threads", "processes"):
         raise ValueError(
             f"Scheduler must be either 'threads' or 'processes' but got '{scheduler}'."
         )
@@ -91,6 +92,7 @@ def _optimize(
             time_start = datetime.datetime.now()
             futures: Set[Future] = set()
 
+            executor_cls: Type[Executor]
             if scheduler == "threads":
                 executor_cls = ThreadPoolExecutor
             elif scheduler == "processes":
