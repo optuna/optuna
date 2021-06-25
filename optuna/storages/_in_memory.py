@@ -1,7 +1,6 @@
 import copy
 from datetime import datetime
 from multiprocessing.managers import BaseManager
-import os
 import threading
 from typing import Any
 from typing import cast
@@ -488,7 +487,6 @@ class MultiprocessInMemoryStorage(BaseStorage):
         self._manager.start()
         self._manager_address = self._manager.address
         self._storage = self._manager.InMemoryStorage()  # type: ignore
-        self._pid = os.getpid()
 
     def __getstate__(self) -> Dict[Any, Any]:
         state = self.__dict__.copy()
@@ -499,10 +497,6 @@ class MultiprocessInMemoryStorage(BaseStorage):
         self.__dict__.update(state)
         self._manager = _Manager(address=self._manager_address)
         self._manager.connect()
-
-    def __del__(self) -> None:
-        if self._pid == os.getpid():
-            self._manager.shutdown()
 
     def create_new_study(self, *args: Any, **kwargs: Any) -> Any:
         return self._storage.create_new_study(*args, **kwargs)
