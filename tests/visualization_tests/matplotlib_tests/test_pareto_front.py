@@ -23,7 +23,7 @@ def test_plot_pareto_front_2d(
         axis_order=axis_order,
     )
 
-    assert not figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     # Test with three trials.
     study.enqueue_trial({"x": 1, "y": 1})
@@ -36,7 +36,7 @@ def test_plot_pareto_front_2d(
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
@@ -64,7 +64,7 @@ def test_plot_pareto_front_2d(
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
     if axis_order is None:
         assert figure.get_xlabel() == target_names[0]
         assert figure.get_ylabel() == target_names[1]
@@ -88,8 +88,7 @@ def test_plot_pareto_front_3d(
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
-
-    assert not figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     # Test with three trials.
     study.enqueue_trial({"x": 1, "y": 1, "z": 1})
@@ -105,7 +104,7 @@ def test_plot_pareto_front_3d(
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
@@ -143,7 +142,7 @@ def test_plot_pareto_front_3d(
     target_names = ["Foo", "Bar", "Baz"]
     figure = plot_pareto_front(study=study, target_names=target_names, axis_order=axis_order)
 
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     if axis_order is None:
         assert figure.get_xlabel() == target_names[0]
