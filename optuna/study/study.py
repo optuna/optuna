@@ -1069,6 +1069,27 @@ def create_study(
                  https://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls
              .. _SQLAlchemy Engine: https://docs.sqlalchemy.org/en/latest/core/engines.html
 
+            .. note::
+                If ``"multiprocess"``, an in memory storge that supports multiprocessing is
+                created. It can for instance be used together with ``scheduler="processes"`` in
+                :func:`~optuna.study.Study.optimize`.
+
+                .. testcode::
+
+                    import optuna
+
+
+                    def objective(trial):
+                        return trial.suggest_float("x", 0, 10)
+
+
+                    study = optuna.create_study(storage="multiprocess")
+                    study.optimize(obj, n_trials=10, n_jobs=3, scheduler="processes")
+
+                Added in v2.9.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.9.0.
+
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used during
