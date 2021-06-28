@@ -14,19 +14,18 @@ _lock = threading.RLock()
 
 
 def _acquireLock():
-    """
-    Acquire the module-level lock for serializing access to shared data.
+    """Acquire the module-level lock for serializing access to shared data.
 
     This should be released with _releaseLock().
     """
+
     if _lock:
         _lock.acquire()
 
 
 def _releaseLock():
-    """
-    Release the module-level lock acquired by calling _acquireLock().
-    """
+    """Release the module-level lock acquired by calling _acquireLock()."""
+
     if _lock:
         _lock.release()
 
