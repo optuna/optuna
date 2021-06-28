@@ -560,7 +560,9 @@ def test_calculate_nondomination_rank() -> None:
 def test_calculate_weights_below_for_multi_objective() -> None:
     # Two samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        np.array([[0.2, 0.5], [0.9, 0.4]])
+        {"x": [1.0, 2.0, 3.0]},
+        [(0, [0.2, 0.5]), (0, [0.9, 0.4]), (0, [1, 1])],
+        np.array([0, 1])
     )
     assert len(weights_below) == 2
     assert weights_below[0] > weights_below[1]
@@ -568,7 +570,9 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Two equally contributed samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        np.array([[0.2, 0.8], [0.8, 0.2]])
+        {"x": [1.0, 2.0, 3.0]},
+        [(0, [0.2, 0.8]), (0, [0.8, 0.2]), (0, [1, 1])],
+        np.array([0, 1])
     )
     assert len(weights_below) == 2
     assert weights_below[0] == weights_below[1]
@@ -576,7 +580,9 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Duplicated samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        np.array([[0.2, 0.8], [0.2, 0.8]])
+        {"x": [1.0, 2.0, 3.0]},
+        [(0, [0.2, 0.8]), (0, [0.2, 0.8]), (0, [1, 1])],
+        np.array([0, 1])
     )
     assert len(weights_below) == 2
     assert weights_below[0] == weights_below[1]
@@ -584,7 +590,9 @@ def test_calculate_weights_below_for_multi_objective() -> None:
 
     # Three samples.
     weights_below = _tpe.sampler._calculate_weights_below_for_multi_objective(
-        np.array([[0.3, 0.3], [0.2, 0.8], [0.8, 0.2]])
+        {"x": [1.0, 2.0, 3.0, 4.0]},
+        [(0, [0.3, 0.3]), (0, [0.2, 0.8]), (0, [0.8, 0.2]), (0, [1, 1])],
+        np.array([0, 1, 2]),
     )
     assert len(weights_below) == 3
     assert weights_below[0] > weights_below[1]

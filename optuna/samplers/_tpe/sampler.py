@@ -375,13 +375,20 @@ class TPESampler(BaseSampler):
             return {}
 
         # We divide data into below and above.
-        below, above, weights_below = _split_observation_pairs(
-            values, scores, self._gamma(n), self._weights
-        )
+        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
+        below = _build_observation_dict(values, indices_below)
+        above = _build_observation_dict(values, indices_above)
+
         # We then sample by maximizing log likelihood ratio.
-        mpe_below = _ParzenEstimator(
-            below, search_space, self._parzen_estimator_parameters, weights_below
-        )
+        if study._is_multi_objective():
+            weights_below = _calculate_weights_below_for_multi_objective(
+                values, scores, indices_below
+            )
+            mpe_below = _ParzenEstimator(
+                below, search_space, self._parzen_estimator_parameters, weights_below
+            )
+        else:
+            mpe_below = _ParzenEstimator(below, search_space, self._parzen_estimator_parameters)
         mpe_above = _ParzenEstimator(above, search_space, self._parzen_estimator_parameters)
         samples_below = mpe_below.sample(self._rng, self._n_ei_candidates)
         log_likelihoods_below = mpe_below.log_pdf(samples_below)
@@ -412,16 +419,24 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        below, above, weights_below = _split_observation_pairs(
-            values, scores, self._gamma(n), self._weights
-        )
+        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
+        below = _build_observation_dict(values, indices_below)
+        above = _build_observation_dict(values, indices_above)
 
-        mpe_below = _ParzenEstimator(
-            below,
-            {param_name: param_distribution},
-            self._parzen_estimator_parameters,
-            weights_below,
-        )
+        if study._is_multi_objective():
+            weights_below = _calculate_weights_below_for_multi_objective(
+                values, scores, indices_below
+            )
+            mpe_below = _ParzenEstimator(
+                below,
+                {param_name: param_distribution},
+                self._parzen_estimator_parameters,
+                weights_below,
+            )
+        else:
+            mpe_below = _ParzenEstimator(
+                below, {param_name: param_distribution}, self._parzen_estimator_parameters
+            )
         mpe_above = _ParzenEstimator(
             above, {param_name: param_distribution}, self._parzen_estimator_parameters
         )
@@ -629,15 +644,9 @@ def _get_observation_pairs(
 
 
 def _split_observation_pairs(
-    config_vals: Dict[str, List[Optional[float]]],
     loss_vals: List[Tuple[float, List[float]]],
     n_below: int,
-    weights: Callable[[int], np.ndarray],
-) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray], np.ndarray]:
-
-    # `None` items are intentionally converted to `nan` and then filtered out.
-    # For `nan` conversion, the dtype must be float.
-    config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
+) -> Tuple[np.ndarray, np.ndarray]:
 
     n_objectives = 1
     if len(loss_vals) > 0:
@@ -652,7 +661,6 @@ def _split_observation_pairs(
         # `np.sort` is used to keep chronological order.
         indices_below = np.sort(index_loss_ascending[:n_below])
         indices_above = np.sort(index_loss_ascending[n_below:])
-        weights_below = weights(n_below)
     else:
         # Multi-objective TPE does not support pruning, so it ignores the ``step``.
         lvals = np.asarray([v for _, v in loss_vals])
@@ -688,26 +696,23 @@ def _split_observation_pairs(
 
         indices_above = np.setdiff1d(indices, indices_below)
 
-        # Multi-objective TPE only sees the first parameter to determine the weights.
-        # In the call lf `sample_relative`, this logic makes sense because we only have the
-        # intersection search space or group decomposed search space. This means one parameter
-        # misses the one trial, then the other parameter must miss the trial, in this call of
-        # `sample_relative`.
-        # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
-        assert len(config_values) > 0
-        cvals = np.asarray(list(config_vals.values())[0])
-        weights_below = _calculate_weights_below_for_multi_objective(lvals[indices_below])
-        weights_below = weights_below[~np.isnan(cvals[indices_below])]
+    return indices_below, indices_above
 
-    below = {}
-    above = {}
+
+def _build_observation_dict(
+    config_vals: Dict[str, List[Optional[float]]], indices: np.ndarray
+) -> Dict[str, np.ndarray]:
+
+    # `None` items are intentionally converted to `nan` and then filtered out.
+    # For `nan` conversion, the dtype must be float.
+    config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
+
+    observation_dict = {}
     for param_name, param_val in config_values.items():
-        param_val_below = param_val[indices_below]
-        param_val_above = param_val[indices_above]
-        below[param_name] = param_val_below[~np.isnan(param_val_below)]
-        above[param_name] = param_val_above[~np.isnan(param_val_above)]
+        param_values = param_val[indices]
+        observation_dict[param_name] = param_values[~np.isnan(param_values)]
 
-    return below, above, weights_below
+    return observation_dict
 
 
 def _compute_hypervolume(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
@@ -756,13 +761,28 @@ def _solve_hssp(
     return np.asarray(selected_indices, dtype=int)
 
 
-def _calculate_weights_below_for_multi_objective(lvals: np.ndarray) -> np.ndarray:
+def _calculate_weights_below_for_multi_objective(
+    config_vals: Dict[str, List[Optional[float]]],
+    loss_vals: List[Tuple[float, List[float]]],
+    indices: np.ndarray,
+) -> np.ndarray:
+    # Multi-objective TPE only sees the first parameter to determine the weights.
+    # In the call lf `sample_relative`, this logic makes sense because we only have the
+    # intersection search space or group decomposed search space. This means one parameter
+    # misses the one trial, then the other parameter must miss the trial, in this call of
+    # `sample_relative`.
+    # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
+    cvals = np.asarray(list(config_vals.values())[0])[indices]
+
+    # Multi-objective TPE does not support pruning, so it ignores the ``step``.
+    lvals = np.asarray([v for _, v in loss_vals])[indices]
+
     # Calculate weights based on hypervolume contributions.
     n_below = len(lvals)
     if n_below == 0:
-        return np.asarray([])
+        weights_below = np.asarray([])
     elif n_below == 1:
-        return np.asarray([1.0])
+        weights_below = np.asarray([1.0])
     else:
         worst_point = np.max(lvals, axis=0)
         reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
@@ -774,4 +794,6 @@ def _calculate_weights_below_for_multi_objective(lvals: np.ndarray) -> np.ndarra
         )
         contributions += EPS
         weights_below = np.clip(contributions / np.max(contributions), 0, 1)
-        return weights_below
+
+    weights_below = weights_below[~np.isnan(cvals)]
+    return weights_below
