@@ -80,6 +80,8 @@ class TPESampler(BaseSampler):
       <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
     - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
       Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+    - `Multiobjective tree-structured parzen estimator for computationally expensive optimization
+      problems <https://dl.acm.org/doi/10.1145/3377930.3389817>`_
 
     Example:
 
@@ -135,6 +137,14 @@ class TPESampler(BaseSampler):
             See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
             Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
             for more details.
+
+            .. note::
+                In the multi-objective case, this argument is only used to compute the weights of
+                bad trials, i.e., trials to construct `g(x)` in the `paper
+                <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
+                ). The weights of good trials, i.e., trials to construct `l(x)`, are computed by a
+                rule based on the hypervolume contribution proposed in the `paper of MOTPE
+                <https://dl.acm.org/doi/10.1145/3377930.3389817>`_.
         seed:
             Seed for random number generator.
         multivariate:
