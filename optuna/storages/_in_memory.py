@@ -484,6 +484,9 @@ _Manager.register("InMemoryStorage", InMemoryStorage)
 class MultiprocessInMemoryStorage(BaseStorage):
     def __init__(self) -> None:
         self._manager = _Manager()
+        # A manager process is started at object construction. The started manager process is
+        # automatically shut down by the `multiprocessing` library, so explicit shutdown
+        # (`_Manager.shutdown`) is omitted.
         self._manager.start()
         self._manager_address = self._manager.address
         self._storage = self._manager.InMemoryStorage()  # type: ignore
