@@ -32,6 +32,7 @@ from optuna.storages import get_storage
 from optuna.study import StudyDirection
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
+from optuna.testing.threading import _TestableThread
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -196,6 +197,50 @@ def test_optimize_parallel_timeout(n_trials: int, n_jobs: int, storage_mode: str
         n_jobs_actual = n_jobs if n_jobs != -1 else multiprocessing.cpu_count()
         max_calls = (timeout_sec / sleep_sec + 1) * n_jobs_actual
         assert f.n_calls <= max_calls
+
+        check_study(study)
+
+
+def test_optimize_multithread() -> None:
+
+    f = Func(sleep_sec=0.5)
+
+    study = create_study()
+
+    with patch("threading.Thread", _TestableThread) as t:
+        threads = [threading.Thread(target=study.optimize, args=(f, 1)) for _ in range(2)]
+        assert (
+            len(threads) > 1
+        ), "Precondition. Multiple trials required for nested invocation error."
+        for t in threads:
+            t.start()
+        with pytest.raises(RuntimeError):  # "Nested" invocations of study.
+            for t in threads:
+                t.join()
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+@pytest.mark.parametrize("n_trials", [0, 1, 2])
+def test_optimize_multiprocess(storage_mode: str, n_trials: int) -> None:
+
+    # TODO(hvy): Test "redis" by fixing `fakeredis` serialization during forking.
+    if storage_mode in ("inmemory", "redis"):
+        pytest.skip("This test is for storages supporting multiprocess.")
+
+    f = Func(sleep_sec=0.5)
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+
+        processes = [
+            multiprocessing.Process(target=study.optimize, args=(f, 1)) for _ in range(n_trials)
+        ]
+        for p in processes:
+            p.start()
+        for p in processes:
+            p.join()
+
+        assert len(study.trials) == n_trials
 
         check_study(study)
 
