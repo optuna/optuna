@@ -1131,15 +1131,22 @@ def test_optimize_n_jobs_warning() -> None:
         study.optimize(func, n_trials=1, n_jobs=2)
 
 
-@pytest.mark.parametrize("n_jobs", [1, 2])
+@pytest.mark.parametrize("n_jobs", [1, 2, -1])
 @pytest.mark.parametrize("scheduler", ["threads", "processes"])
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_scheduler(n_jobs: int, scheduler: str, storage_mode: str) -> None:
-
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
-        study.optimize(func, n_trials=n_jobs, n_jobs=n_jobs, scheduler=scheduler)
+        study.optimize(func, n_trials=3, n_jobs=n_jobs, scheduler=scheduler)
+
         check_study(study)
+
+        # TODO(hvy): Do not condition on parameters.
+        if storage_mode in ("inmemory", "redis") and scheduler == "processes":
+            return
+
+        assert len(study.trials) == 3
+        assert all(t.state == TrialState.COMPLETE for t in study.trials)
 
 
 def test_optimize_scheduler_processes_inmemory_conversion() -> None:
@@ -1147,6 +1154,7 @@ def test_optimize_scheduler_processes_inmemory_conversion() -> None:
     study = create_study(storage=None)
     with pytest.warns(UserWarning):
         study.optimize(func, n_trials=1, n_jobs=2, scheduler="processes")
+
     check_study(study)
 
 
