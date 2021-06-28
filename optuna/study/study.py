@@ -1084,7 +1084,7 @@ def create_study(
 
 
                     study = optuna.create_study(storage="multiprocess")
-                    study.optimize(obj, n_trials=10, n_jobs=3, scheduler="processes")
+                    study.optimize(objective, n_trials=10, n_jobs=3, scheduler="processes")
 
                 Added in v2.9.0 as an experimental feature. The interface may change in newer
                 versions without prior notice. See
