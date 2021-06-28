@@ -7,6 +7,7 @@ from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 
 import numpy as np
@@ -259,11 +260,12 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
     def _select_parent(
         self,
         study: "multi_objective.study.MultiObjectiveStudy",
-        population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
+        population: Sequence["multi_objective.trial.FrozenMultiObjectiveTrial"],
     ) -> "multi_objective.trial.FrozenMultiObjectiveTrial":
         # TODO(ohta): Consider to allow users to specify the number of parent candidates.
-        candidate0 = self._rng.choice(population)
-        candidate1 = self._rng.choice(population)
+        population_size = len(population)
+        candidate0 = population[self._rng.choice(population_size)]
+        candidate1 = population[self._rng.choice(population_size)]
 
         # TODO(ohta): Consider crowding distance.
         if candidate0._dominates(candidate1, study.directions):
