@@ -1,4 +1,3 @@
-from concurrent.futures import Executor
 from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ProcessPoolExecutor
@@ -92,7 +91,7 @@ def _optimize(
             time_start = datetime.datetime.now()
             futures: Set[Future] = set()
 
-            executor_cls: Type[Executor]
+            executor_cls: Type[Union[ThreadPoolExecutor, ProcessPoolExecutor]]
             if scheduler == "threads":
                 executor_cls = ThreadPoolExecutor
             elif scheduler == "processes":
