@@ -18,7 +18,7 @@ def _default_weights_above(x: int) -> np.ndarray:
     return np.ones(x)
 
 
-@deprecated("2.8.0")
+@deprecated("2.9.0")
 class MOTPESampler(TPESampler):
     """Multi-objective sampler using the MOTPE algorithm.
 
