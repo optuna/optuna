@@ -728,10 +728,10 @@ def test_get_observation_pairs() -> None:
     study.optimize(objective, n_trials=5, catch=(RuntimeError,))
 
     scores = [
-        (-float("inf"), 5.0),  # COMPLETE
-        (-7, 2),  # PRUNED (with intermediate values)
-        (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-        (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        (-float("inf"), [5.0]),  # COMPLETE
+        (-7, [2]),  # PRUNED (with intermediate values)
+        (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+        (float("inf"), [0.0]),  # PRUNED (without intermediate values)
     ]
     assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
@@ -752,10 +752,10 @@ def test_get_observation_pairs() -> None:
     study.optimize(objective, n_trials=4)
     study._storage.create_new_trial(study._study_id)  # Create a running trial.
     scores = [
-        (-float("inf"), -5.0),  # COMPLETE
-        (-7, -2),  # PRUNED (with intermediate values)
-        (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-        (float("inf"), 0.0),  # PRUNED (without intermediate values)
+        (-float("inf"), [-5.0]),  # COMPLETE
+        (-7, [-2]),  # PRUNED (with intermediate values)
+        (-3, [float("inf")]),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+        (float("inf"), [0.0]),  # PRUNED (without intermediate values)
     ]
 
     assert _tpe.sampler._get_observation_pairs(study, ["x"], False) == (
@@ -797,10 +797,13 @@ def test_get_observation_pairs() -> None:
     assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
-            (-float("inf"), 11.0),  # COMPLETE
-            (-7, 2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+            (-float("inf"), [11.0]),  # COMPLETE
+            (-7, [2]),  # PRUNED (with intermediate values)
+            (
+                -3,
+                [float("inf")],
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
         ],
     )
 
@@ -812,29 +815,41 @@ def test_get_observation_pairs() -> None:
     assert _tpe.sampler._get_observation_pairs(study, ["x", "y"], True) == (
         {"x": [5.0, 5.0, 5.0, 5.0], "y": [6.0, 6.0, 6.0, 6.0]},
         [
-            (-float("inf"), -11.0),  # COMPLETE
-            (-7, -2),  # PRUNED (with intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (float("inf"), 0.0),  # PRUNED (without intermediate values)
+            (-float("inf"), [-11.0]),  # COMPLETE
+            (-7, [-2]),  # PRUNED (with intermediate values)
+            (
+                -3,
+                [float("inf")],
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
         ],
     )
 
 
 def test_split_observation_pairs() -> None:
-    below, above = _tpe.sampler._split_observation_pairs(
-        {"x": [1.0, 2.0, 3.0, 4.0], "y": [10.0, None, 20.0, None]},
+    indices_below, indices_above = _tpe.sampler._split_observation_pairs(
         [
-            (-7, -2),  # PRUNED (with intermediate values)
-            (float("inf"), 0.0),  # PRUNED (without intermediate values)
-            (-3, float("inf")),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
-            (-float("inf"), -5.0),  # COMPLETE
+            (-7, [-2]),  # PRUNED (with intermediate values)
+            (float("inf"), [0.0]),  # PRUNED (without intermediate values)
+            (
+                -3,
+                [float("inf")],
+            ),  # PRUNED (with a NaN intermediate value; it's treated as infinity)
+            (-float("inf"), [-5.0]),  # COMPLETE
         ],
         2,
     )
-    np.testing.assert_array_equal(below["x"], np.asarray([1.0, 4.0]))
-    np.testing.assert_array_equal(above["x"], np.asarray([2.0, 3.0]))
-    np.testing.assert_array_equal(below["y"], np.asarray([10.0]))
-    np.testing.assert_array_equal(above["y"], np.asarray([20.0]))
+    assert list(indices_below) == [0, 3]
+    assert list(indices_above) == [1, 2]
+
+
+def test_build_observation_dict() -> None:
+    observation_dict = _tpe.sampler._build_observation_dict(
+        {"x": [1.0, 2.0, 3.0, 4.0], "y": [10.0, None, 20.0, None]}, np.asarray([0, 3])
+    )
+
+    np.testing.assert_array_equal(observation_dict["x"], np.asarray([1.0, 4.0]))
+    np.testing.assert_array_equal(observation_dict["y"], np.asarray([10.0]))
 
 
 def frozen_trial_factory(
@@ -1008,7 +1023,7 @@ def test_constant_liar_observation_pairs(direction: str, multivariate: bool) -> 
 
     # The value of the constant liar should be penalizing, i.e. `float("inf")` during minimization
     # and `-float("inf")` during maximization.
-    expected_values = [(-float("inf"), float("inf") * (-1 if direction == "maximize" else 1))]
+    expected_values = [(-float("inf"), [float("inf") * (-1 if direction == "maximize" else 1)])]
 
     assert _tpe.sampler._get_observation_pairs(
         study, ["x"], multivariate, constant_liar=False
