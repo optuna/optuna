@@ -1,7 +1,9 @@
 import copy
 from datetime import datetime
 import pickle
+import time
 from typing import Any
+from typing import Callable
 from typing import cast
 from typing import Dict
 from typing import List
@@ -59,19 +61,50 @@ class RedisStorage(BaseStorage):
 
     Args:
         url: URL of the redis storage, password and db are optional. (ie: redis://localhost:6379)
+        heartbeat_interval:
+            Interval to record the heartbeat. It is recorded every ``interval`` seconds.
+        grace_period:
+            Grace period before a running trial is failed from the last heartbeat.
+            If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.
+        failed_trial_callback:
+            A callback function that is invoked after failing each stale trial.
+            The function must accept two parameters with the following types in this order:
+            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+
+            .. note::
+                The procedure to fail existing stale trials is called just before asking the
+                study for a new trial.
 
     .. note::
         If you use plan to use Redis as a storage mechanism for optuna,
         make sure Redis in installed and running.
         Please execute ``$ pip install -U redis`` to install redis python library.
+
+    Raises:
+        :exc:`ValueError`:
+            If the given `heartbeat_interval` or `grace_period` is not a positive integer.
     """
 
-    def __init__(self, url: str) -> None:
+    def __init__(
+        self,
+        url: str,
+        heartbeat_interval: Optional[int] = None,
+        grace_period: Optional[int] = None,
+        failed_trial_callback: Optional[Callable[["optuna.Study", FrozenTrial], None]] = None,
+    ) -> None:
 
         _imports.check()
 
+        if heartbeat_interval is not None and heartbeat_interval <= 0:
+            raise ValueError("The value of `heartbeat_interval` should be a positive integer.")
+        if grace_period is not None and grace_period <= 0:
+            raise ValueError("The value of `grace_period` should be a positive integer.")
+
         self._url = url
         self._redis = redis.Redis.from_url(url)
+        self._heartbeat_interval = heartbeat_interval
+        self._grace_period = grace_period
+        self._failed_trial_callback = failed_trial_callback
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
 
@@ -364,6 +397,7 @@ class RedisStorage(BaseStorage):
         if state.is_finished():
             trial.datetime_complete = datetime.now()
             self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
+            self._redis.delete(self._key_heartbeat(trial_id))
             self._update_cache(trial_id)
         else:
             self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
@@ -607,3 +641,48 @@ class RedisStorage(BaseStorage):
 
         if not self._redis.exists(self._key_trial(trial_id)):
             raise KeyError("study_id {} does not exist.".format(trial_id))
+
+    def record_heartbeat(self, trial_id: int) -> None:
+        key = self._key_heartbeat(trial_id)
+        self._redis.set(key, pickle.dumps(time.time()))
+
+    def fail_stale_trials(self, study_id: int) -> List[int]:
+        confirmed = []
+        for trial_id in self._get_stale_trial_ids(study_id):
+            if self.set_trial_state(trial_id, TrialState.FAIL):
+                confirmed.append(trial_id)
+
+        return confirmed
+
+    def _get_stale_trial_ids(self, study_id: int) -> List[int]:
+        assert self._heartbeat_interval is not None
+
+        if self._grace_period is None:
+            grace_period = 2 * self._heartbeat_interval
+        else:
+            grace_period = self._grace_period
+
+        current_time = time.time()
+        trial_ids = self._get_study_trials(study_id)
+        stale = []
+        for trial_id in trial_ids:
+            key = self._key_heartbeat(trial_id)
+            last_heartbeat = self._redis.get(key)
+            if last_heartbeat is not None:
+                last_heartbeat = pickle.loads(last_heartbeat)
+                if current_time - last_heartbeat > grace_period:
+                    stale.append(trial_id)
+        return stale
+
+    def _is_heartbeat_supported(self) -> bool:
+        return True
+
+    def get_heartbeat_interval(self) -> Optional[int]:
+        return self._heartbeat_interval
+
+    @staticmethod
+    def _key_heartbeat(trial_id: int) -> str:
+        return "trial_id:{:010d}:heartbeat".format(trial_id)
+
+    def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
+        return self._failed_trial_callback
