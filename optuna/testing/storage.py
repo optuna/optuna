@@ -1,6 +1,6 @@
 import tempfile
 from types import TracebackType
-from typing import Any, Dict
+from typing import Any
 from typing import IO
 from typing import Optional
 from typing import Type
