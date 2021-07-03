@@ -397,8 +397,10 @@ class RedisStorage(BaseStorage):
         if state.is_finished():
             trial.datetime_complete = datetime.now()
             self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
-            self._redis.delete(self._key_heartbeat(trial_id))
             self._update_cache(trial_id)
+
+            study_id = self.get_study_id_from_trial_id(trial_id)
+            self._redis.hdel(self._key_study_heartbeats(study_id), str(trial_id))
         else:
             self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
@@ -643,8 +645,10 @@ class RedisStorage(BaseStorage):
             raise KeyError("study_id {} does not exist.".format(trial_id))
 
     def record_heartbeat(self, trial_id: int) -> None:
-        key = self._key_heartbeat(trial_id)
-        self._redis.set(key, pickle.dumps(time.time()))
+        study_id = self.get_study_id_from_trial_id(trial_id)
+        self._redis.hset(
+            self._key_study_heartbeats(study_id), str(trial_id), pickle.dumps(time.time())
+        )
 
     def fail_stale_trials(self, study_id: int) -> List[int]:
         confirmed = []
@@ -663,15 +667,13 @@ class RedisStorage(BaseStorage):
             grace_period = self._grace_period
 
         current_time = time.time()
-        trial_ids = self._get_study_trials(study_id)
+        heartbeats = self._redis.hgetall(self._key_study_heartbeats(study_id))
         stale = []
-        for trial_id in trial_ids:
-            key = self._key_heartbeat(trial_id)
-            last_heartbeat = self._redis.get(key)
-            if last_heartbeat is not None:
-                last_heartbeat = pickle.loads(last_heartbeat)
-                if current_time - last_heartbeat > grace_period:
-                    stale.append(trial_id)
+        for trial_id_raw, last_heartbeat_raw in heartbeats.items():
+            last_heartbeat = pickle.loads(last_heartbeat_raw)
+            if current_time - last_heartbeat > grace_period:
+                trial_id = int(trial_id_raw)
+                stale.append(trial_id)
         return stale
 
     def _is_heartbeat_supported(self) -> bool:
@@ -681,8 +683,8 @@ class RedisStorage(BaseStorage):
         return self._heartbeat_interval
 
     @staticmethod
-    def _key_heartbeat(trial_id: int) -> str:
-        return "trial_id:{:010d}:heartbeat".format(trial_id)
+    def _key_study_heartbeats(study_id: int) -> str:
+        return "study_id:{:010d}:heartbeats".format(study_id)
 
     def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
         return self._failed_trial_callback
