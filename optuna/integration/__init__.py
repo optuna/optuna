@@ -52,7 +52,6 @@ if TYPE_CHECKING:
     from optuna.integration.lightgbm import LightGBMTuner  # NOQA
     from optuna.integration.lightgbm import LightGBMTunerCV  # NOQA
     from optuna.integration.mlflow import MLflowCallback  # NOQA
-    from optuna.integration.wandb import WeightsAndBiasesCallback  # NOQA
     from optuna.integration.mxnet import MXNetPruningCallback  # NOQA
     from optuna.integration.pytorch_distributed import TorchDistributedTrial  # NOQA
     from optuna.integration.pytorch_ignite import PyTorchIgnitePruningHandler  # NOQA
@@ -63,6 +62,7 @@ if TYPE_CHECKING:
     from optuna.integration.tensorboard import TensorBoardCallback  # NOQA
     from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA
     from optuna.integration.tfkeras import TFKerasPruningCallback  # NOQA
+    from optuna.integration.wandb import WeightsAndBiasesCallback  # NOQA
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
 else:
 
