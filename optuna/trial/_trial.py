@@ -587,7 +587,7 @@ class Trial(BaseTrial):
 
         if step in intermediate_values:
             # Do nothing if already reported.
-            warnings.warn("this `step` {} is already repoted.".format(step))
+            warnings.warn("The reported value is ignored because this `step` {} is already reported.".format(step))
             return
 
         self.storage.set_trial_intermediate_value(self._trial_id, step, value)
