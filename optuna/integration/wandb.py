@@ -95,10 +95,18 @@ class WeightsAndBiasesCallback(object):
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
-        for key, value in trial.params.items():
-            wandb.log({key: value}, step=trial.number)
+        trial_state = str(trial.state).split(".")[-1]
+        direction = str(study.direction).split(".")[-1]
 
-        wandb.log({self._metric_name: trial.value}, step=trial.number)
+        attributes = {
+            "direction": direction,
+            "trial_state": trial_state,
+            "distributions": trial.distributions,
+            **study.user_attrs,
+        }
+
+        wandb.config.update(attributes)
+        wandb.log({**trial.params, self._metric_name: trial.value}, step=trial.number)
 
     def _initialize_run(self) -> None:
         """Initializes Weights & Biases run."""
