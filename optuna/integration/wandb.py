@@ -52,7 +52,7 @@ class WeightsAndBiasesCallback(object):
     Args:
         metric_name:
             Name of the optimized metric. Since the metric itself is just a number,
-            `metric_name` can be used to give it a name. So you know later
+            ``metric_name`` can be used to give it a name. So you know later
             if it was roc-auc or accuracy.
         project_name:
             Name of the project under which run should be categorized.
@@ -62,11 +62,11 @@ class WeightsAndBiasesCallback(object):
             Please refer to `Group Runs
             <https://docs.wandb.ai/guides/track/advanced/grouping>`_ for more details.
         entity_name:
-            Username or team name under which run should be logged. When set to `None`,
+            Username or team name under which run should be logged. When set to :obj:`None`,
             the run is logged under the current user.
         run_name:
             Specifies the display name in Weights & Biases UI for this run.
-            When set to `None`, random two word name is generated instead.
+            When set to :obj:`None`, random two word name is generated instead.
         job_type:
             Specifies type of the run, and is used as additional grouping
             for the runs.
