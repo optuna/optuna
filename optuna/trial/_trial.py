@@ -587,9 +587,7 @@ class Trial(BaseTrial):
 
         if step in intermediate_values:
             # Do nothing if already reported.
-            # TODO(hvy): Consider raising a warning or an error.
-            # See https://github.com/optuna/optuna/issues/852.
-            warnings.warn("this 'step' {} is already repoted.".format(step))
+            warnings.warn("this `step` {} is already repoted.".format(step))
             return
 
         self.storage.set_trial_intermediate_value(self._trial_id, step, value)
