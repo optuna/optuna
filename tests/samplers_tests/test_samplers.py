@@ -1,4 +1,5 @@
 import pickle
+import sys
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -27,19 +28,20 @@ from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
-parametrize_sampler = pytest.mark.parametrize(
-    "sampler_class",
-    [
-        optuna.samplers.RandomSampler,
-        lambda: optuna.samplers.TPESampler(n_startup_trials=0),
-        lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
-        lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.samplers.QMCSampler(),
-        lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
-        lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
-        optuna.samplers.NSGAIISampler,
-    ],
-)
+parametrize_sampler_list = [
+    optuna.samplers.RandomSampler,
+    lambda: optuna.samplers.TPESampler(n_startup_trials=0),
+    lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
+    lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
+    lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
+    lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+    optuna.samplers.NSGAIISampler,
+]
+# TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
+if sys.version[:3] != "3.6":
+    parametrize_sampler_list.append(lambda: optuna.samplers.QMCSampler())
+
+parametrize_sampler = pytest.mark.parametrize("sampler_class", parametrize_sampler_list)
 parametrize_multi_objective_sampler = pytest.mark.parametrize(
     "multi_objective_sampler_class",
     [

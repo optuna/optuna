@@ -276,7 +276,7 @@ class QMCSampler(BaseSampler):
 
         sample = self._sample_qmc(study, search_space)
         trans = _SearchSpaceTransform(search_space)
-        sample = scipy.stats.qmc.scale(sample, trans.bounds[:, 0], trans.bounds[:, 1])
+        sample = trans.bounds[:, 0] + sample * (trans.bounds[:, 1] - trans.bounds[:, 0])
         sample = trans.untransform(sample[0, :])
         return sample
 

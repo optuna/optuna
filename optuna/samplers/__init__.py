@@ -1,9 +1,10 @@
+import sys
+
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._cmaes import CmaEsSampler
 from optuna.samplers._grid import GridSampler
 from optuna.samplers._nsga2 import NSGAIISampler
 from optuna.samplers._partial_fixed import PartialFixedSampler
-from optuna.samplers._qmc import QMCSampler
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import intersection_search_space
 from optuna.samplers._search_space import IntersectionSearchSpace
@@ -19,8 +20,13 @@ __all__ = [
     "MOTPESampler",
     "NSGAIISampler",
     "PartialFixedSampler",
-    "QMCSampler",
     "RandomSampler",
     "TPESampler",
     "intersection_search_space",
 ]
+
+# TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
+if sys.version[:3] != "3.6":
+    from optuna.samplers._qmc import QMCSampler  # NOQA
+
+    __all__.append("QMCSampler")
