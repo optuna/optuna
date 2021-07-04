@@ -607,7 +607,7 @@ def test_report_warning() -> None:
 
     trial.report(1.23, 1)
 
-    # Warn if multipe times call  report method at the same step
+    # Warn if multiple times call report method at the same step
     with pytest.warns(UserWarning):
         trial.report(1, 1)
 
