@@ -21,7 +21,7 @@ class WeightsAndBiasesCallback(object):
 
     .. note::
         User needs to be logged in to Weights & Biases before
-        using this callback. For more information, please
+        using this callback in online mode. For more information, please
         refer to `wandb setup <https://docs.wandb.ai/quickstart#1-set-up-wandb>`_.
 
     Example:
@@ -70,6 +70,9 @@ class WeightsAndBiasesCallback(object):
         job_type:
             Specifies type of the run, and is used as additional grouping
             for the runs.
+        mode:
+            Specifies execution mode for Weights & Biases. One of
+            ``online``, ``offline`` or ``disabled``. Defaults to online.
     """
 
     def __init__(
@@ -80,6 +83,7 @@ class WeightsAndBiasesCallback(object):
         entity_name: Optional[str] = None,
         run_name: Optional[str] = None,
         job_type: Optional[str] = None,
+        mode: Union[str] = "online",
     ) -> None:
 
         _imports.check()
@@ -90,6 +94,7 @@ class WeightsAndBiasesCallback(object):
         self._entity_name = entity_name
         self._run_name = run_name
         self._job_type = job_type
+        self._mode = mode
 
         self._initialize_run()
 
@@ -117,5 +122,6 @@ class WeightsAndBiasesCallback(object):
             entity=self._entity_name,
             name=self._run_name,
             job_type=self._job_type,
+            mode=self._mode,
             reinit=True,
         )
