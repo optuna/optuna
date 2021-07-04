@@ -588,8 +588,8 @@ class Trial(BaseTrial):
         if step in intermediate_values:
             # Do nothing if already reported.
             warnings.warn(
-                    "The reported value is ignored because this `step` {} is already reported.".format(
-                        step
+                "The reported value is ignored because this `step` {} is already reported.".format(
+                    step
                 )
             )
             return
