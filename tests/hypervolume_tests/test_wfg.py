@@ -11,7 +11,7 @@ def test_wfg_2d() -> None:
         for i in range(n + 1):
             s = np.vstack((s, np.asarray([i, n - i])))
         np.random.shuffle(s)
-        v = optuna.multi_objective._hypervolume.WFG().compute(s, r)
+        v = optuna._hypervolume.WFG().compute(s, r)
         assert v == n * n - n * (n - 1) // 2
 
 
@@ -23,7 +23,7 @@ def test_wfg_3d() -> None:
         s.append(np.random.randint(1, 10, size=(n,)))
     o = np.asarray(s)
     np.random.shuffle(o)
-    v = optuna.multi_objective._hypervolume.WFG().compute(o, r)
+    v = optuna._hypervolume.WFG().compute(o, r)
     assert v == 10 ** n - 1
 
 
@@ -35,7 +35,7 @@ def test_wfg_nd() -> None:
             s.append(np.random.randint(1, 10, size=(n,)))
         o = np.asarray(s)
         np.random.shuffle(o)
-        v = optuna.multi_objective._hypervolume.WFG().compute(o, r)
+        v = optuna._hypervolume.WFG().compute(o, r)
         assert v == 10 ** n - 1
 
 
@@ -46,13 +46,13 @@ def test_wfg_duplicate_points() -> None:
     for _ in range(10):
         s.append(np.random.randint(1, 10, size=(n,)))
     o = np.asarray(s)
-    v = optuna.multi_objective._hypervolume.WFG().compute(o, r)
+    v = optuna._hypervolume.WFG().compute(o, r)
 
     # Add an already existing point.
     o = np.vstack([o, o[-1]])
 
     np.random.shuffle(o)
-    v_with_duplicate_point = optuna.multi_objective._hypervolume.WFG().compute(o, r)
+    v_with_duplicate_point = optuna._hypervolume.WFG().compute(o, r)
     assert v == v_with_duplicate_point
 
 
@@ -60,4 +60,4 @@ def test_invalid_input() -> None:
     r = np.ones(3)
     s = np.atleast_2d(2 * np.ones(3))
     with pytest.raises(ValueError):
-        _ = optuna.multi_objective._hypervolume.WFG().compute(s, r)
+        _ = optuna._hypervolume.WFG().compute(s, r)
