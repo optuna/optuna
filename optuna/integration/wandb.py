@@ -39,9 +39,7 @@ class WeightsAndBiasesCallback(object):
                 return (x - 2) ** 2
 
 
-            n_trials = 10
             wandbc = WeightsAndBiasesCallback(
-                n_trials=n_trials,
                 project_name="my-project-name",
                 group_name="my-group-name",
                 job_type="my-job-type",
@@ -49,11 +47,9 @@ class WeightsAndBiasesCallback(object):
 
 
             study = optuna.create_study(study_name="my_study")
-            study.optimize(objective, n_trials=n_trials, callbacks=[wandbc])
+            study.optimize(objective, n_trials=10, callbacks=[wandbc])
 
     Args:
-        n_trials:
-            The number of optimizer trials.
         metric_name:
             Name of the optimized metric. Since the metric itself is just a number,
             `metric_name` can be used to give it a name. So you know later
@@ -78,7 +74,6 @@ class WeightsAndBiasesCallback(object):
 
     def __init__(
         self,
-        n_trials: int,
         metric_name: Union[str] = "value",
         project_name: Optional[str] = None,
         group_name: Optional[str] = None,
@@ -89,7 +84,6 @@ class WeightsAndBiasesCallback(object):
 
         _imports.check()
 
-        self._n_trials = n_trials
         self._metric_name = metric_name
         self._project_name = project_name
         self._group_name = group_name
@@ -97,41 +91,17 @@ class WeightsAndBiasesCallback(object):
         self._run_name = run_name
         self._job_type = job_type
 
-    def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+        self._initialize_run()
 
-        if trial.number == 0:
-            self._initialize_run(study, trial)
+    def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
         for key, value in trial.params.items():
             wandb.log({key: value}, step=trial.number)
 
         wandb.log({self._metric_name: trial.value}, step=trial.number)
 
-        # We need to know when study ends to allow
-        # Weights & Biases to finish run and sync up.
-        # This means that this callback can't be currently used
-        # for time-constrained or non-constrained studies.
-        if trial.number + 1 == self._n_trials:
-            datetime_complete = str(trial.datetime_complete)
-            wandb.config.update({"datetime_complete": datetime_complete})
-            wandb.finish()
-
-    def _initialize_run(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
-        """Initializes Weights & Biases run.
-
-        Args:
-            trial:
-                First trial in the study.
-            study:
-                Tracked study.
-        """
-
-        study_direction = str(study.direction).split(".")[-1]
-        config = {
-            "direction": study_direction,
-            "n_trials": self._n_trials,
-            "datetime_start": str(trial.datetime_start),
-        }
+    def _initialize_run(self) -> None:
+        """Initializes Weights & Biases run."""
 
         wandb.init(
             project=self._project_name,
@@ -139,6 +109,5 @@ class WeightsAndBiasesCallback(object):
             entity=self._entity_name,
             name=self._run_name,
             job_type=self._job_type,
-            config=config,
             reinit=True,
         )
