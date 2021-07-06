@@ -1,3 +1,5 @@
+from typing import Any
+from typing import Dict
 from typing import Optional
 from typing import Union
 
@@ -39,11 +41,8 @@ class WeightsAndBiasesCallback(object):
                 return (x - 2) ** 2
 
 
-            wandbc = WeightsAndBiasesCallback(
-                project_name="my-project-name",
-                group_name="my-group-name",
-                job_type="my-job-type",
-            )
+            wandb_kwargs = {"project": "my-project"}
+            wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
 
 
             study = optuna.create_study(study_name="my_study")
@@ -54,47 +53,20 @@ class WeightsAndBiasesCallback(object):
             Name of the optimized metric. Since the metric itself is just a number,
             ``metric_name`` can be used to give it a name. So you know later
             if it was roc-auc or accuracy.
-        project_name:
-            Name of the project under which run should be categorized.
-            If the project is not specified, the run is put in an "Uncategorized" project.
-        group_name:
-            Specifies a group under project into which run should be categorized.
-            Please refer to `Group Runs
-            <https://docs.wandb.ai/guides/track/advanced/grouping>`_ for more details.
-        entity_name:
-            Username or team name under which run should be logged. When set to :obj:`None`,
-            the run is logged under the current user.
-        run_name:
-            Specifies the display name in Weights & Biases UI for this run.
-            When set to :obj:`None`, random two word name is generated instead.
-        job_type:
-            Specifies type of the run, and is used as additional grouping
-            for the runs.
-        mode:
-            Specifies execution mode for Weights & Biases. One of
-            ``online``, ``offline`` or ``disabled``. Defaults to online.
+        wandb_kwargs:
+            Set of arguments passed when initializing Weights & Biases run.
+            Please refer to `Weights & Biases API documentation
+            <https://docs.wandb.ai/ref/python/init>`_ for more details.
     """
 
     def __init__(
-        self,
-        metric_name: Union[str] = "value",
-        project_name: Optional[str] = None,
-        group_name: Optional[str] = None,
-        entity_name: Optional[str] = None,
-        run_name: Optional[str] = None,
-        job_type: Optional[str] = None,
-        mode: Union[str] = "online",
+        self, metric_name: Union[str] = "value", wandb_kwargs: Optional[Dict[str, Any]] = None
     ) -> None:
 
         _imports.check()
 
         self._metric_name = metric_name
-        self._project_name = project_name
-        self._group_name = group_name
-        self._entity_name = entity_name
-        self._run_name = run_name
-        self._job_type = job_type
-        self._mode = mode
+        self._wandb_kwargs = wandb_kwargs or {}
 
         self._initialize_run()
 
@@ -116,12 +88,4 @@ class WeightsAndBiasesCallback(object):
     def _initialize_run(self) -> None:
         """Initializes Weights & Biases run."""
 
-        wandb.init(
-            project=self._project_name,
-            group=self._group_name,
-            entity=self._entity_name,
-            name=self._run_name,
-            job_type=self._job_type,
-            mode=self._mode,
-            reinit=True,
-        )
+        wandb.init(**self._wandb_kwargs)

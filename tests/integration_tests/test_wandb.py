@@ -17,22 +17,23 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
 def test_run_initialized(wandb: mock.MagicMock) -> None:
 
     wandb.run = None
+    wandb_kwargs = {
+        "project": "optuna",
+        "group": "summary",
+        "job_type": "logging",
+        "mode": "offline",
+    }
+
     WeightsAndBiasesCallback(
         metric_name="mse",
-        project_name="optuna",
-        group_name="summary",
-        job_type="logging",
-        mode="offline",
+        wandb_kwargs=wandb_kwargs,
     )
 
     wandb.init.assert_called_once_with(
         project="optuna",
         group="summary",
-        entity=None,
-        name=None,
         job_type="logging",
         mode="offline",
-        reinit=True,
     )
 
 
