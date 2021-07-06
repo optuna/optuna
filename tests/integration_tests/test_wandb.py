@@ -14,7 +14,6 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
 @mock.patch("optuna.integration.wandb.wandb")
 def test_run_initialized(wandb: mock.MagicMock) -> None:
 
-    wandb.run = None
     wandb_kwargs = {
         "project": "optuna",
         "group": "summary",
@@ -38,7 +37,6 @@ def test_run_initialized(wandb: mock.MagicMock) -> None:
 @mock.patch("optuna.integration.wandb.wandb")
 def test_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
 
-    wandb.run = None
     wandb.config.update = mock.MagicMock()
 
     wandbc = WeightsAndBiasesCallback()
@@ -52,7 +50,6 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
 @mock.patch("optuna.integration.wandb.wandb")
 def test_log_api_call_count(wandb: mock.Mock) -> None:
 
-    wandb.run = None
     wandb.log = mock.MagicMock()
 
     wandbc = WeightsAndBiasesCallback()
@@ -65,7 +62,6 @@ def test_log_api_call_count(wandb: mock.Mock) -> None:
 @mock.patch("optuna.integration.wandb.wandb")
 def test_values_registered_on_epoch(wandb: mock.Mock) -> None:
 
-    wandb.run = None
     wandb.log = mock.MagicMock()
 
     wandbc = WeightsAndBiasesCallback()
