@@ -200,6 +200,12 @@ class TPESampler(BaseSampler):
             nearby.
 
             .. note::
+                Abnormally terminated trials are often in the running state.
+                Such zombie trials will be penalized and taken into account during optimization.
+                When using an :class:`~optuna.storages.RDBStorage`, it is possible to enable the
+                ``heartbeat_interval`` to automatically fail such zombie trials.
+
+            .. note::
                 It is recommended to set this value to :obj:`True` during distributed
                 optimization to avoid having multiple workers evaluating similar parameter
                 configurations. In particular, if each objective function evaluation is costly
