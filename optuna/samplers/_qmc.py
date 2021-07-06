@@ -361,4 +361,5 @@ class QMCSampler(BaseSampler):
 
 if sys.version[:3] == "3.6":
     class QMCSampler(BaseSampler):
-        raise NotImplementedError("QMCSampler is not supported in Python 3.6.")
+        def __init__(self) -> None:
+            raise NotImplementedError("QMCSampler is not supported in Python 3.6.")
