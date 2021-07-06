@@ -1,8 +1,8 @@
+from collections import OrderedDict
 import sys
 from typing import Any
 from typing import Callable
 from typing import Dict
-from collections import OrderedDict
 from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
