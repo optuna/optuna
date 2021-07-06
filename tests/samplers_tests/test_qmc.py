@@ -246,6 +246,8 @@ def test_sample_relative_sobol() -> None:
     numpy.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
 
 
+# TODO(kstoneriv3): Need to add this test.
+@pytest.mark.skip
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
 @pytest.mark.skipif(sys.version[:3] == "3.6", reason="QMCSampler is not supported in Python 3.6")
 @pytest.mark.parametrize("scramble", [True, False])
