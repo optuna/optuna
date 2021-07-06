@@ -72,15 +72,8 @@ class WeightsAndBiasesCallback(object):
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
-        trial_state = str(trial.state).split(".")[-1]
         direction = str(study.direction).split(".")[-1]
-
-        attributes = {
-            "direction": direction,
-            "trial_state": trial_state,
-            "distributions": trial.distributions,
-            **study.user_attrs,
-        }
+        attributes = {"direction": direction}
 
         wandb.config.update(attributes)
         wandb.log({**trial.params, self._metric_name: trial.value}, step=trial.number)

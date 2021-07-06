@@ -1,8 +1,6 @@
 from unittest import mock
 
 import optuna
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.integration import WeightsAndBiasesCallback
 
 
@@ -47,41 +45,7 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
     study = optuna.create_study(direction="minimize")
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
 
-    expected = {
-        "direction": "MINIMIZE",
-        "trial_state": "COMPLETE",
-        "distributions": {
-            "x": UniformDistribution(high=10.0, low=-10.0),
-            "y": LogUniformDistribution(high=10.0, low=1.0),
-        },
-    }
-
-    wandb.config.update.assert_called_once_with(expected)
-
-
-@mock.patch("optuna.integration.wandb.wandb")
-def test_user_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
-
-    wandb.run = None
-    wandb.config.update = mock.MagicMock()
-
-    wandbc = WeightsAndBiasesCallback()
-    study = optuna.create_study(direction="minimize")
-    study.set_user_attr("contributors", ["Akiba", "Sano"])
-    study.set_user_attr("dataset", "MNIST")
-    study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
-
-    expected = {
-        "direction": "MINIMIZE",
-        "trial_state": "COMPLETE",
-        "distributions": {
-            "x": UniformDistribution(high=10.0, low=-10.0),
-            "y": LogUniformDistribution(high=10.0, low=1.0),
-        },
-        "contributors": ["Akiba", "Sano"],
-        "dataset": "MNIST",
-    }
-
+    expected = {"direction": "MINIMIZE"}
     wandb.config.update.assert_called_once_with(expected)
 
 
