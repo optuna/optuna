@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import sys
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -278,8 +277,7 @@ class QMCSampler(BaseSampler):
         sample = self._sample_qmc(study, search_space)
         trans = _SearchSpaceTransform(search_space)
         sample = trans.bounds[:, 0] + sample * (trans.bounds[:, 1] - trans.bounds[:, 0])
-        sample = trans.untransform(sample[0, :])
-        return sample
+        return trans.untransform(sample[0, :])
 
     def after_trial(
         self,
@@ -357,10 +355,3 @@ class QMCSampler(BaseSampler):
             is_cached &= self._cached_qmc_engine.d == d
             is_cached &= self._cached_qmc_engine.num_generated <= sample_id
             return is_cached
-
-
-if sys.version[:3] == "3.6":
-
-    class QMCSampler(BaseSampler):  # NOQA
-        def __init__(self) -> None:
-            raise NotImplementedError("QMCSampler is not supported in Python 3.6.")

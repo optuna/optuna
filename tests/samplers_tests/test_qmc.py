@@ -33,7 +33,7 @@ _SEARCH_SPACE = OrderedDict(
 @pytest.mark.skipif(sys.version[:3] == "3.6", reason="QMCSampler is not supported in Python 3.6")
 # TODO(kstoneriv3): `QMCSampler` can be initialized without this wrapper
 # Remove this after the experimental warning is removed.
-def _init_QMCSampler_without_warnings(**kwargs: Any) -> optuna.samplers.QMCSampler:
+def _init_QMCSampler_without_warnings(**kwargs: Any) -> optuna.samplers.BaseSampler:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = optuna.samplers.QMCSampler(**kwargs)
@@ -123,7 +123,7 @@ def test_sample_independent() -> None:
         independent_sampler, "sample_independent", wraps=independent_sampler.sample_independent
     ) as mock_sample_indep:
 
-        objective: Callable[Trial, float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
+        objective: Callable[[Trial], Any] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
         sampler = _init_QMCSampler_without_warnings(independent_sampler=independent_sampler)
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=1)
@@ -135,7 +135,7 @@ def test_sample_independent() -> None:
         assert mock_sample_indep.call_count == 2
 
         # Unseen parameter is sampled by independent sampler.
-        new_objective: Callable[Trial, float] = lambda t: t.suggest_int("y", 0, 10)
+        new_objective: Callable[[Trial], int] = lambda t: t.suggest_int("y", 0, 10)
         study.optimize(new_objective, n_trials=1)
         assert mock_sample_indep.call_count == 3
 
@@ -148,7 +148,7 @@ def test_log_independent_sampling() -> None:
     # '_log_independent_sampling is not called in the first trial so called once in total.
     with patch.object(optuna.samplers.QMCSampler, "_log_independent_sampling") as mock_log_indep:
 
-        objective: Callable[Trial, float] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
+        objective: Callable[[Trial], Any] = lambda t: t.suggest_categorical("x", [1.0, 2.0])
         sampler = _init_QMCSampler_without_warnings()
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=2)
@@ -253,7 +253,7 @@ def test_sample_relative_sobol() -> None:
 @pytest.mark.parametrize("scramble", [True, False])
 @pytest.mark.parametrize("qmc_type", ["sobol", "halton"])
 def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
-    objective: Callable[Trial, float] = lambda t: t.suggest_float("x", 0, 1)
+    objective: Callable[[Trial], float] = lambda t: t.suggest_float("x", 0, 1)
 
     # Base case
     sampler = _init_QMCSampler_without_warnings(scramble=scramble, qmc_type=qmc_type, seed=12345)
@@ -303,7 +303,7 @@ def test_call_after_trial() -> None:
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
 @pytest.mark.skipif(sys.version[:3] == "3.6", reason="QMCSampler is not supported in Python 3.6")
 @pytest.mark.parametrize("qmc_type", ["sobol", "halton", "non-qmc"])
-def test_sample_qmc(qmc_type) -> None:
+def test_sample_qmc(qmc_type: str) -> None:
 
     sampler = _init_QMCSampler_without_warnings(qmc_type=qmc_type)
     study = Mock()
