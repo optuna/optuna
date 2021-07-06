@@ -91,7 +91,7 @@ def test_infer_relative_search_space() -> None:
     assert len(relative_search_space.keys()) == 5
     assert set(relative_search_space.keys()) == {"x1", "x2", "x3", "x4", "x5"}
     # In case self._initial_trial already exists.
-    new_search_space: Dict[str:BaseDistribution] = {"x": Mock()}
+    new_search_space: Dict[str, BaseDistribution] = {"x": Mock()}
     sampler._initial_search_space = new_search_space
     assert sampler.infer_relative_search_space(study, trial) == new_search_space
 
@@ -331,7 +331,7 @@ def test_sample_qmc(qmc_type) -> None:
 
     # For new search space, a new QMCEngine is instanciated and cached
     with patch.object(sampler, "_find_sample_id", return_value=0) as _:
-        new_search_space: Dict[str:BaseDistribution] = {"x": Mock()}
+        new_search_space: Dict[str, BaseDistribution] = {"x": Mock()}
         sampler._sample_qmc(study, new_search_space)
         assert sampler._cached_qmc_engine.num_generated == 1
         assert id(sampler._cached_qmc_engine) != engine_id
