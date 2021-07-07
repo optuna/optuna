@@ -12,6 +12,13 @@ from optuna import load_study
 from optuna import Trial
 from optuna._experimental import experimental
 from optuna._imports import try_import
+from optuna.integration.allennlp._variables import _MONITOR
+from optuna.integration.allennlp._variables import _PREFIX
+from optuna.integration.allennlp._variables import _PRUNER_CLASS
+from optuna.integration.allennlp._variables import _PRUNER_KEYS
+from optuna.integration.allennlp._variables import _STORAGE_NAME
+from optuna.integration.allennlp._variables import _STUDY_NAME
+from optuna.integration.allennlp._variables import _TRIAL_ID
 
 
 with try_import() as _imports:
@@ -44,27 +51,6 @@ else:
                 return subclass
 
             return wrapper
-
-
-_PPID = os.getppid()
-
-"""
-User might want to launch multiple studies that uses `AllenNLPExecutor`.
-Because `AllenNLPExecutor` uses environment variables for communicating
-between a parent process and a child process. A parent process creates a study,
-defines a search space, and a child process trains a AllenNLP model by
-`allennlp.commands.train.train_model`. If multiple processes use `AllenNLPExecutor`,
-the one's configuration could be loaded in the another's configuration.
-To avoid this hazard, we add ID of a parent process to each key of
-environment variables.
-"""
-_PREFIX = "{}_OPTUNA_ALLENNLP".format(_PPID)
-_MONITOR = "{}_MONITOR".format(_PREFIX)
-_PRUNER_CLASS = "{}_PRUNER_CLASS".format(_PREFIX)
-_PRUNER_KEYS = "{}_PRUNER_KEYS".format(_PREFIX)
-_STORAGE_NAME = "{}_STORAGE_NAME".format(_PREFIX)
-_STUDY_NAME = "{}_STUDY_NAME".format(_PREFIX)
-_TRIAL_ID = "{}_TRIAL_ID".format(_PREFIX)
 
 
 def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
