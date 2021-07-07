@@ -71,6 +71,10 @@ class NSGAIISampler(BaseSampler):
             If constraints_func returns more than one value for a trial, that trial is considered
             feasible if and only if all values are equal to 0 or smaller.
 
+            The constraint_func will be evaluated after each successful trial.
+            The function won't be called when trials fail or they are pruned, but this behavior is
+            subject to change in the future releases.
+
             The constraints are handled by the constrained domination. A trial x is said to
             constrained-dominate a trial y, if any of the following conditions is true:
 
