@@ -26,6 +26,17 @@ class WeightsAndBiasesCallback(object):
         using this callback in online mode. For more information, please
         refer to `wandb setup <https://docs.wandb.ai/quickstart#1-set-up-wandb>`_.
 
+    .. note::
+        Users who want to run multiple Optuna studies within the same process
+        should call ``wandb.finish()`` between subsequent calls to
+        ``study.optimize()``. Calling ``wandb.finish()`` is not necessary
+        if you are running one Optuna study per process.
+
+    .. note::
+        To ensure correct trial order in Weights & Biases, this callback
+        should only be used with ``study.optimize(n_jobs=1)``.
+
+
     Example:
 
         Add Weights & Biases callback to Optuna optimization.
