@@ -213,6 +213,7 @@ class NSGAIISampler(BaseSampler):
                     generation_to_runnings[generation].append(trial)
                 continue
 
+            # Do not use trials whose states are not COMPLETE, or `constraint` will be unavailable.
             generation_to_population[generation].append(trial)
 
         hasher = hashlib.sha256()
@@ -347,7 +348,8 @@ class NSGAIISampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
-        if self._constraints_func is not None:
+        assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
+        if state == TrialState.COMPLETE and self._constraints_func is not None:
             constraints = None
             try:
                 con = self._constraints_func(trial)
