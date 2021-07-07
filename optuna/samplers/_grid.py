@@ -226,7 +226,8 @@ class GridSampler(BaseSampler):
 
         unvisited_grids = set(range(self._n_min_trials)) - set(visited_grids) - set(running_grids)
 
-        # If evaluations for all grids have been started, return grids that have not yet finished.
+        # If evaluations for all grids have been started, return grids that have not yet finished
+        # because all grids should be evaluated before stopping the optimization.
         if len(unvisited_grids) == 0:
             unvisited_grids = set(range(self._n_min_trials)) - set(visited_grids)
 
