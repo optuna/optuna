@@ -311,6 +311,7 @@ class TPESampler(BaseSampler):
         self, n_complete_trials: int, trial: FrozenTrial, param_name: str
     ) -> None:
         if self._warn_independent_sampling and self._multivariate:
+            # The first trial samples independently.
             if n_complete_trials >= max(self._n_startup_trials, 1):
                 _logger.warning(
                     f"The parameter '{param_name}' in trial#{trial.number} is sampled "
