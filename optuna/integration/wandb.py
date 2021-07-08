@@ -1,7 +1,6 @@
 from typing import Any
 from typing import Dict
 from typing import Optional
-from typing import Union
 
 import optuna
 from optuna._experimental import experimental
@@ -36,6 +35,8 @@ class WeightsAndBiasesCallback(object):
         To ensure correct trial order in Weights & Biases, this callback
         should only be used with ``study.optimize(n_jobs=1)``.
 
+    .. note::
+        This callback currently supports only single-objective optimization.
 
     Example:
 
@@ -71,7 +72,7 @@ class WeightsAndBiasesCallback(object):
     """
 
     def __init__(
-        self, metric_name: Union[str] = "value", wandb_kwargs: Optional[Dict[str, Any]] = None
+        self, metric_name: str = "value", wandb_kwargs: Optional[Dict[str, Any]] = None
     ) -> None:
 
         _imports.check()
@@ -83,7 +84,7 @@ class WeightsAndBiasesCallback(object):
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
-        direction = str(study.direction).split(".")[-1]
+        direction = study.direction.name
         attributes = {"direction": direction}
 
         wandb.config.update(attributes)
