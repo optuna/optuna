@@ -1,9 +1,6 @@
 import json
 import os
 import tempfile
-from typing import Dict
-from typing import Type
-from typing import Union
 from unittest import mock
 
 import _jsonnet
@@ -20,7 +17,6 @@ import torch.optim
 
 import optuna
 from optuna.integration.allennlp import AllenNLPPruningCallback
-from optuna.integration.allennlp._pruner import _create_pruner
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -191,11 +187,12 @@ def test_allennlp_executor_with_options() -> None:
         )
 
         # ``executor.run`` loads ``metrics.json``
-        # after running ``allennlp.commands.train.train_model``.
+        # after running ``optuna.integration.allennlp._train.train_model_with_optuna``.
         with open(os.path.join(executor._serialization_dir, "metrics.json"), "w") as fout:
             json.dump({executor._metrics: 1.0}, fout)
 
-        with mock.patch("allennlp.commands.train.train_model", return_value=None) as mock_obj:
+        patch_target = "optuna.integration.allennlp._train.train_model_with_optuna"
+        with mock.patch(patch_target, return_value=None) as mock_obj:
             executor.run()
             assert mock_obj.call_args[1]["force"]
             assert mock_obj.call_args[1]["file_friendly_logging"]
@@ -310,58 +307,7 @@ def test_allennlp_pruning_callback() -> None:
         assert study.trials[0].value == 1.0
 
 
-def test_allennlp_pruning_callback_with_invalid_storage() -> None:
-    input_config_file = (
-        "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
-    )
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
-
-        def objective(trial: optuna.Trial) -> float:
-            trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-            trial.suggest_float("DROPOUT", 0.0, 0.5)
-            executor = optuna.integration.AllenNLPExecutor(trial, input_config_file, tmp_dir)
-            return executor.run()
-
-        study = optuna.create_study(
-            direction="maximize",
-            pruner=optuna.pruners.HyperbandPruner(),
-            storage=None,
-        )
-
-        with pytest.raises(RuntimeError):
-            study.optimize(objective)
-
-
-@pytest.mark.parametrize(
-    "pruner_class,pruner_kwargs",
-    [
-        (
-            optuna.pruners.HyperbandPruner,
-            {"min_resource": 3, "max_resource": 10, "reduction_factor": 5},
-        ),
-        (
-            optuna.pruners.MedianPruner,
-            {"n_startup_trials": 8, "n_warmup_steps": 1, "interval_steps": 3},
-        ),
-        (optuna.pruners.NopPruner, {}),
-        (
-            optuna.pruners.PercentilePruner,
-            {"percentile": 50.0, "n_startup_trials": 10, "n_warmup_steps": 1, "interval_steps": 3},
-        ),
-        (
-            optuna.pruners.SuccessiveHalvingPruner,
-            {"min_resource": 3, "reduction_factor": 5, "min_early_stopping_rate": 1},
-        ),
-        (
-            optuna.pruners.ThresholdPruner,
-            {"lower": 0.0, "upper": 1.0, "n_warmup_steps": 3, "interval_steps": 2},
-        ),
-    ],
-)
-def test_allennlp_pruning_callback_with_executor(
-    pruner_class: Type[optuna.pruners.BasePruner], pruner_kwargs: Dict[str, Union[int, float]]
-) -> None:
+def test_allennlp_pruning_callback_with_executor() -> None:
     input_config_file = (
         "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
     )
@@ -374,40 +320,10 @@ def test_allennlp_pruning_callback_with_executor(
         executor.run()
 
     with tempfile.TemporaryDirectory() as tmp_dir:
-        pruner_name = pruner_class.__name__
-        os.mkdir(os.path.join(tmp_dir, pruner_name))
-        storage = "sqlite:///" + os.path.join(tmp_dir, pruner_name, "result.db")
-        serialization_dir = os.path.join(tmp_dir, pruner_name, "allennlp")
-
-        pruner = pruner_class(**pruner_kwargs)  # type: ignore
-        run_allennlp_executor(pruner)
-        ret_pruner = _create_pruner()
-
-        assert isinstance(ret_pruner, pruner_class)
-        for key, value in pruner_kwargs.items():
-            assert getattr(ret_pruner, "_{}".format(key)) == value
-
-
-def test_allennlp_pruning_callback_with_invalid_executor() -> None:
-    class SomeNewPruner(optuna.pruners.BasePruner):
-        def __init__(self) -> None:
-            pass
-
-        def prune(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> bool:
-            return False
-
-    input_config_file = (
-        "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
-    )
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
         storage = "sqlite:///" + os.path.join(tmp_dir, "result.db")
         serialization_dir = os.path.join(tmp_dir, "allennlp")
-        pruner = SomeNewPruner()
 
-        study = optuna.create_study(direction="maximize", pruner=pruner, storage=storage)
-        trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
-        trial.suggest_float("DROPOUT", 0.0, 0.5)
-
-        with pytest.raises(ValueError):
-            optuna.integration.AllenNLPExecutor(trial, input_config_file, serialization_dir)
+        pruner_mock = mock.Mock()
+        pruner_mock.prune = mock.Mock(return_value=False)
+        run_allennlp_executor(pruner_mock)
+        pruner_mock.prune.assert_called_once()
