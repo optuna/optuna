@@ -1,24 +1,12 @@
-import os
 from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import Optional
-from typing import Union
 
 from packaging import version
 
 import optuna
-from optuna import load_study
-from optuna import Trial
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna.integration.allennlp._variables import _MONITOR
-from optuna.integration.allennlp._variables import _PREFIX
-from optuna.integration.allennlp._variables import _PRUNER_CLASS
-from optuna.integration.allennlp._variables import _PRUNER_KEYS
-from optuna.integration.allennlp._variables import _STORAGE_NAME
-from optuna.integration.allennlp._variables import _STUDY_NAME
-from optuna.integration.allennlp._variables import _TRIAL_ID
 
 
 with try_import() as _imports:
@@ -51,57 +39,6 @@ else:
                 return subclass
 
             return wrapper
-
-
-def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
-    """Restore a pruner which is defined in `create_study`.
-
-    `AllenNLPPruningCallback` is launched as a sub-process of
-    a main script that defines search spaces.
-    An instance cannot be passed directly from the parent process
-    to its sub-process. For this reason, we set information about
-    pruner as environment variables and load them and
-    re-create the same pruner in `AllenNLPPruningCallback`.
-
-    """
-    pruner_class = os.getenv(_PRUNER_CLASS)
-    if pruner_class is None:
-        return None
-
-    pruner_params = _get_environment_variables_for_pruner()
-    pruner = getattr(optuna.pruners, pruner_class, None)
-
-    if pruner is None:
-        return None
-
-    return pruner(**pruner_params)
-
-
-def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
-    return {
-        "study_name": os.getenv(_STUDY_NAME),
-        "trial_id": os.getenv(_TRIAL_ID),
-        "storage": os.getenv(_STORAGE_NAME),
-        "monitor": os.getenv(_MONITOR),
-    }
-
-
-def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int, float, bool]]]:
-    keys = os.getenv(_PRUNER_KEYS)
-
-    # keys would be empty when `_PRUNER_CLASS` is `NopPruner`
-    if keys is None or keys == "":
-        return {}
-
-    kwargs = {}
-    for key in keys.split(","):
-        key_without_prefix = key.replace("{}_".format(_PREFIX), "")
-        value = os.getenv(key)
-        if value is None:
-            raise ValueError(f"{key} is not found in environment variables.")
-        kwargs[key_without_prefix] = eval(value)
-
-    return kwargs
 
 
 @experimental("2.0.0")
@@ -143,8 +80,8 @@ class AllenNLPPruningCallback(TrainerCallback):
 
     def __init__(
         self,
-        trial: Optional[optuna.trial.Trial] = None,
-        monitor: Optional[str] = None,
+        trial: optuna.trial.Trial,
+        monitor: str,
     ):
         _imports.check()
 
@@ -155,47 +92,8 @@ class AllenNLPPruningCallback(TrainerCallback):
                 "please install Optuna v2.5.0 by executing `pip install 'optuna==2.5.0'`."
             )
 
-        # When `AllenNLPPruningCallback` is instantiated in Python script,
-        # trial and monitor should not be `None`.
-        if trial is not None and monitor is not None:
-            self._trial = trial
-            self._monitor = monitor
-
-        # When `AllenNLPPruningCallback` is used with `AllenNLPExecutor`,
-        # `trial` and `monitor` would be None. `AllenNLPExecutor` sets information
-        # for a study name, trial id, monitor, and storage in environment variables.
-        else:
-            environment_variables = _get_environment_variables_for_trial()
-            study_name = environment_variables["study_name"]
-            trial_id = environment_variables["trial_id"]
-            monitor = environment_variables["monitor"]
-            storage = environment_variables["storage"]
-
-            if study_name is None or trial_id is None or monitor is None or storage is None:
-                message = (
-                    "Fail to load study. Perhaps you attempt to use `AllenNLPPruningCallback`"
-                    " without `AllenNLPExecutor`. If you want to use a callback"
-                    " without an executor, you have to instantiate a callback with"
-                    "`trial` and `monitor. Please see the Optuna example: https://github.com/"
-                    "optuna/optuna-examples/tree/main/allennlp/allennlp_simple.py."
-                )
-                raise RuntimeError(message)
-
-            else:
-                # If `stoage` is empty despite `study_name`, `trial_id`,
-                # and `monitor` are not `None`, users attempt to use `AllenNLPPruningCallback`
-                # with `AllenNLPExecutor` and in-memory storage.
-                # `AllenNLPruningCallback` needs RDB or Redis storages to work.
-                if storage == "":
-                    message = (
-                        "If you want to use AllenNLPExecutor and AllenNLPPruningCallback,"
-                        " you have to use RDB or Redis storage."
-                    )
-                    raise RuntimeError(message)
-
-                study = load_study(study_name, storage, pruner=_create_pruner())
-                self._trial = Trial(study, int(trial_id))
-                self._monitor = monitor
+        self._trial = trial
+        self._monitor = monitor
 
     def on_epoch(
         self,

@@ -10,13 +10,7 @@ import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.integration.allennlp._environment import _environment_variables
-from optuna.integration.allennlp._variables import _MONITOR
-from optuna.integration.allennlp._variables import _PREFIX
-from optuna.integration.allennlp._variables import _PRUNER_CLASS
-from optuna.integration.allennlp._variables import _PRUNER_KEYS
-from optuna.integration.allennlp._variables import _STORAGE_NAME
-from optuna.integration.allennlp._variables import _STUDY_NAME
-from optuna.integration.allennlp._variables import _TRIAL_ID
+import optuna.integration.allennlp._train
 
 
 with try_import() as _imports:
@@ -29,44 +23,6 @@ with try_import() as _imports:
 # the environment that builds the documentation.
 if _imports.is_successful():
     import _jsonnet
-
-
-def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
-    pruner = trial.study.pruner
-    kwargs: Dict[str, Any] = {}
-
-    if isinstance(pruner, optuna.pruners.HyperbandPruner):
-        kwargs["min_resource"] = pruner._min_resource
-        kwargs["max_resource"] = pruner._max_resource
-        kwargs["reduction_factor"] = pruner._reduction_factor
-
-    elif isinstance(pruner, optuna.pruners.MedianPruner):
-        kwargs["n_startup_trials"] = pruner._n_startup_trials
-        kwargs["n_warmup_steps"] = pruner._n_warmup_steps
-        kwargs["interval_steps"] = pruner._interval_steps
-
-    elif isinstance(pruner, optuna.pruners.PercentilePruner):
-        kwargs["percentile"] = pruner._percentile
-        kwargs["n_startup_trials"] = pruner._n_startup_trials
-        kwargs["n_warmup_steps"] = pruner._n_warmup_steps
-        kwargs["interval_steps"] = pruner._interval_steps
-
-    elif isinstance(pruner, optuna.pruners.SuccessiveHalvingPruner):
-        kwargs["min_resource"] = pruner._min_resource
-        kwargs["reduction_factor"] = pruner._reduction_factor
-        kwargs["min_early_stopping_rate"] = pruner._min_early_stopping_rate
-
-    elif isinstance(pruner, optuna.pruners.ThresholdPruner):
-        kwargs["lower"] = pruner._lower
-        kwargs["upper"] = pruner._upper
-        kwargs["n_warmup_steps"] = pruner._n_warmup_steps
-        kwargs["interval_steps"] = pruner._interval_steps
-    elif isinstance(pruner, optuna.pruners.NopPruner):
-        pass
-    else:
-        raise ValueError("Unsupported pruner is specified: {}".format(type(pruner)))
-
-    return kwargs
 
 
 @experimental("1.4.0")
@@ -132,6 +88,7 @@ class AllenNLPExecutor(object):
     ):
         _imports.check()
 
+        self._trial = trial
         self._params = trial.params
         self._config_file = config_file
         self._serialization_dir = serialization_dir
@@ -146,37 +103,6 @@ class AllenNLPExecutor(object):
         else:
             self._include_package = include_package
 
-        storage = trial.study._storage
-
-        if isinstance(storage, optuna.storages.RDBStorage):
-            url = storage.url
-        elif isinstance(storage, optuna.storages.RedisStorage):
-            url = storage._url
-        elif isinstance(storage, optuna.storages._CachedStorage):
-            assert isinstance(storage._backend, optuna.storages.RDBStorage)
-            url = storage._backend.url
-        else:
-            url = ""
-
-        pruner_params = _fetch_pruner_config(trial)
-        pruner_params = {
-            "{}_{}".format(_PREFIX, key): repr(value) for key, value in pruner_params.items()
-        }
-
-        system_attrs = {
-            _STUDY_NAME: trial.study.study_name,
-            _TRIAL_ID: str(trial._trial_id),
-            _STORAGE_NAME: url,
-            _MONITOR: metrics,
-            _PRUNER_KEYS: ",".join(pruner_params.keys()),
-        }
-
-        if trial.study.pruner is not None:
-            system_attrs[_PRUNER_CLASS] = type(trial.study.pruner).__name__
-
-        system_attrs.update(pruner_params)
-        self._system_attrs = system_attrs
-
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.
 
@@ -187,12 +113,7 @@ class AllenNLPExecutor(object):
         """
         params = _environment_variables()
         params.update({key: str(value) for key, value in self._params.items()})
-        params.update(self._system_attrs)
         return json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=params))
-
-    def _set_environment_variables(self) -> None:
-        for key, value in self._system_attrs.items():
-            os.environ[key] = value
 
     def run(self) -> float:
         """Train a model using AllenNLP."""
@@ -210,14 +131,14 @@ class AllenNLPExecutor(object):
         allennlp.common.cached_transformers._model_cache.clear()
         allennlp.common.cached_transformers._tokenizer_cache.clear()
 
-        self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
-        allennlp.commands.train.train_model(
+        optuna.integration.allennlp._train.train_model_with_optuna(
             params=params,
             serialization_dir=self._serialization_dir,
             file_friendly_logging=self._file_friendly_logging,
             force=self._force,
             include_package=self._include_package,
+            trial=self._trial,
         )
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]
