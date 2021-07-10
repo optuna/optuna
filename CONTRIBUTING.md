@@ -164,6 +164,8 @@ Currently, you can run the following jobs: `documentation` and `doctest` may not
 
 - `checks`
   - Checking the format, coding style, and type hints
+- `tests`
+  - Runs unit tests
 - `documentation`
   - Builds documentation including tutorial
 - `doctest`
