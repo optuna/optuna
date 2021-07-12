@@ -10,7 +10,6 @@ import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.integration.allennlp._environment import _environment_variables
-import optuna.integration.allennlp._train
 
 
 with try_import() as _imports:
@@ -18,6 +17,7 @@ with try_import() as _imports:
     import allennlp.commands
     import allennlp.common.cached_transformers
     import allennlp.common.util
+    import optuna.integration.allennlp._train
 
 # TrainerCallback is conditionally imported because allennlp may be unavailable in
 # the environment that builds the documentation.
