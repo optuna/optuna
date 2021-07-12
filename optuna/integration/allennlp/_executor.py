@@ -17,6 +17,7 @@ with try_import() as _imports:
     import allennlp.commands
     import allennlp.common.cached_transformers
     import allennlp.common.util
+
     import optuna.integration.allennlp._train
 
 # TrainerCallback is conditionally imported because allennlp may be unavailable in

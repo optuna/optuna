@@ -11,14 +11,14 @@ from typing import Optional
 from typing import Union
 
 from allennlp.commands.train import TrainModel
+from allennlp.common import logging as common_logging
+from allennlp.common import Params
+from allennlp.common import util as common_util
 from allennlp.common.checks import check_for_gpu
 from allennlp.common.checks import ConfigurationError
-from allennlp.common import logging as common_logging
 from allennlp.common.meta import Meta
 from allennlp.common.meta import META_NAME
-from allennlp.common import Params
 from allennlp.common.plugins import import_plugins
-from allennlp.common import util as common_util
 from allennlp.data import Vocabulary
 from allennlp.models.archival import archive_model
 from allennlp.models.archival import CONFIG_NAME
@@ -30,10 +30,10 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 
-from optuna.storages import _CachedStorage
-from optuna.storages import InMemoryStorage
 from optuna import Trial
 from optuna import TrialPruned
+from optuna.storages import _CachedStorage
+from optuna.storages import InMemoryStorage
 
 
 logger = logging.getLogger(__name__)
