@@ -203,6 +203,7 @@ def train_model_with_optuna(
         except Exception as e:
             if "optuna.exceptions.TrialPruned" in str(e):
                 raise TrialPruned()
+            raise e
 
         if dry_run:
             return None
