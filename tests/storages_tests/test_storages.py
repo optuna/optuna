@@ -9,6 +9,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -1143,16 +1144,11 @@ def test_failed_trial_callback(storage_mode: str) -> None:
     heartbeat_interval = 1
     grace_period = 2
 
-    class FailedTrialCallback:
-        def __init__(self) -> None:
-            self.called_once: bool = False
+    def _failed_trial_callback(study: Study, trial: FrozenTrial) -> None:
+        assert study.system_attrs["test"] == "A"
+        assert trial.system_attrs["test"] == "B"
 
-        def __call__(self, study: Study, trial: FrozenTrial) -> None:
-            assert study.system_attrs["test"] == "A"
-            assert trial.system_attrs["test"] == "B"
-            self.called_once = True
-
-    failed_trial_callback = FailedTrialCallback()
+    failed_trial_callback = Mock(wraps=_failed_trial_callback)
 
     with StorageSupplier(
         storage_mode,
@@ -1173,7 +1169,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
         with patch("optuna.study._optimize.Thread", _TestableThread):
             study.optimize(lambda _: 1.0, n_trials=1)
-            assert failed_trial_callback.called_once
+            failed_trial_callback.assert_called_once()
 
 
 @pytest.mark.parametrize(
