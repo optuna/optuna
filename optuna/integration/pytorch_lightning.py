@@ -52,7 +52,14 @@ class PyTorchLightningPruningCallback(Callback):
             warnings.warn(message)
             return
 
-        self._trial.report(current_score, step=epoch)
+        distributed_backend = trainer.accelerator_connector.distributed_backend
+        try:
+            self._trial.report(current_score, step=epoch)
+        except Exception as e:
+            if distributed_backend is not None:
+                pass
+            else:
+                raise
         if self._trial.should_prune():
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
