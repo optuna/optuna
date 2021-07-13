@@ -13,6 +13,7 @@ _import_structure = {
     "chainermn": ["ChainerMNStudy"],
     "cma": ["CmaEsSampler", "PyCmaSampler"],
     "mlflow": ["MLflowCallback"],
+    "wandb": ["WeightsAndBiasesCallback"],
     "keras": ["KerasPruningCallback"],
     "lightgbm": ["LightGBMPruningCallback", "LightGBMTuner", "LightGBMTunerCV"],
     "pytorch_distributed": ["TorchDistributedTrial"],
@@ -61,6 +62,7 @@ if TYPE_CHECKING:
     from optuna.integration.tensorboard import TensorBoardCallback  # NOQA
     from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA
     from optuna.integration.tfkeras import TFKerasPruningCallback  # NOQA
+    from optuna.integration.wandb import WeightsAndBiasesCallback  # NOQA
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
 else:
 
