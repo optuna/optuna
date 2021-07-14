@@ -19,35 +19,36 @@ def test_plot_param_importances() -> None:
     # Test with no trial.
     study = create_study()
     figure = plot_param_importances(study)
-    assert not figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     study = prepare_study_with_trials(with_c_d=True)
 
     # Test with a trial.
-    # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_param_importances(study)
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
+    assert figure.get_xaxis().label.get_text() == "Importance for Objective Value"
 
     # Test with an evaluator.
-    # TODO(ytknzw): Add more specific assertion with the test case.
     plot_param_importances(study, evaluator=MeanDecreaseImpurityImportanceEvaluator())
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
+    assert figure.get_xaxis().label.get_text() == "Importance for Objective Value"
 
     # Test with a trial to select parameter.
-    # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_param_importances(study, params=["param_b"])
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
+    assert figure.get_xaxis().label.get_text() == "Importance for Objective Value"
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
         figure = plot_param_importances(
             study, target=lambda t: t.params["param_b"] + t.params["param_d"]
         )
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     # Test with a customized target name.
     figure = plot_param_importances(study, target_name="Target Name")
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
+    assert figure.get_xaxis().label.get_text() == "Importance for Target Name"
 
     # Test with wrong parameters.
     with pytest.raises(ValueError):
@@ -61,4 +62,4 @@ def test_plot_param_importances() -> None:
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_param_importances(study)
-    assert not figure.has_data()
+    assert len(figure.get_lines()) == 0

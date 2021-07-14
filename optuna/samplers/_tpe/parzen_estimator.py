@@ -47,12 +47,15 @@ class _ParzenEstimator:
         observations: Dict[str, np.ndarray],
         search_space: Dict[str, BaseDistribution],
         parameters: _ParzenEstimatorParameters,
+        predetermined_weights: Optional[np.ndarray] = None,
     ) -> None:
 
         self._search_space = search_space
         self._parameters = parameters
         self._n_observations = next(iter(observations.values())).size
-        self._weights = self._calculate_weights()
+        if predetermined_weights is not None:
+            assert self._n_observations == len(predetermined_weights)
+        self._weights = self._calculate_weights(predetermined_weights)
 
         self._low: Dict[str, Optional[float]] = {}
         self._high: Dict[str, Optional[float]] = {}
@@ -183,7 +186,7 @@ class _ParzenEstimator:
         ret = scipy.special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
         return ret
 
-    def _calculate_weights(self) -> np.ndarray:
+    def _calculate_weights(self, predetermined_weights: Optional[np.ndarray]) -> np.ndarray:
 
         # We decide the weights.
         consider_prior = self._parameters.consider_prior
@@ -194,14 +197,19 @@ class _ParzenEstimator:
         if n_observations == 0:
             consider_prior = True
 
+        if predetermined_weights is None:
+            w = weights_func(n_observations)[:n_observations]
+        else:
+            w = predetermined_weights[:n_observations]
+
         if consider_prior:
             # TODO(HideakiImamura) Raise `ValueError` if the weight function returns an ndarray of
             # unexpected size.
             weights = np.zeros(n_observations + 1)
-            weights[:-1] = weights_func(n_observations)[:n_observations]
+            weights[:-1] = w
             weights[-1] = prior_weight
         else:
-            weights = weights_func(n_observations)
+            weights = w
         weights /= weights.sum()
         return weights
 

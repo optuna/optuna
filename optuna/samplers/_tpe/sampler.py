@@ -12,6 +12,7 @@ import warnings
 import numpy as np
 
 from optuna import distributions
+from optuna._hypervolume import WFG
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
@@ -79,6 +80,8 @@ class TPESampler(BaseSampler):
       <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
     - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
       Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+    - `Multiobjective tree-structured parzen estimator for computationally expensive optimization
+      problems <https://dl.acm.org/doi/10.1145/3377930.3389817>`_
 
     Example:
 
@@ -134,6 +137,14 @@ class TPESampler(BaseSampler):
             See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
             Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
             for more details.
+
+            .. note::
+                In the multi-objective case, this argument is only used to compute the weights of
+                bad trials, i.e., trials to construct `g(x)` in the `paper
+                <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
+                ). The weights of good trials, i.e., trials to construct `l(x)`, are computed by a
+                rule based on the hypervolume contribution proposed in the `paper of MOTPE
+                <https://dl.acm.org/doi/10.1145/3377930.3389817>`_.
         seed:
             Seed for random number generator.
         multivariate:
@@ -187,6 +198,15 @@ class TPESampler(BaseSampler):
         constant_liar:
             If :obj:`True`, penalize running trials to avoid suggesting parameter configurations
             nearby.
+
+            .. note::
+                Abnormally terminated trials often leave behind a record with a state of
+                `RUNNING` in the storage.
+                Such "zombie" trial parameters will be avoided by the constant liar algorithm
+                during subsequent sampling.
+                When using an :class:`~optuna.storages.RDBStorage`, it is possible to enable the
+                ``heartbeat_interval`` to change the records for abnormally terminated trials to
+                `FAIL`.
 
             .. note::
                 It is recommended to set this value to :obj:`True` during distributed
@@ -329,7 +349,6 @@ class TPESampler(BaseSampler):
     def sample_relative(
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
-        self._raise_error_if_multi_objective(study)
 
         if self._group:
             assert self._search_space_group is not None
@@ -365,9 +384,20 @@ class TPESampler(BaseSampler):
             return {}
 
         # We divide data into below and above.
-        below, above = _split_observation_pairs(values, scores, self._gamma(n))
+        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
+        below = _build_observation_dict(values, indices_below)
+        above = _build_observation_dict(values, indices_above)
+
         # We then sample by maximizing log likelihood ratio.
-        mpe_below = _ParzenEstimator(below, search_space, self._parzen_estimator_parameters)
+        if study._is_multi_objective():
+            weights_below = _calculate_weights_below_for_multi_objective(
+                values, scores, indices_below
+            )
+            mpe_below = _ParzenEstimator(
+                below, search_space, self._parzen_estimator_parameters, weights_below
+            )
+        else:
+            mpe_below = _ParzenEstimator(below, search_space, self._parzen_estimator_parameters)
         mpe_above = _ParzenEstimator(above, search_space, self._parzen_estimator_parameters)
         samples_below = mpe_below.sample(self._rng, self._n_ei_candidates)
         log_likelihoods_below = mpe_below.log_pdf(samples_below)
@@ -387,8 +417,6 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        self._raise_error_if_multi_objective(study)
-
         values, scores = _get_observation_pairs(
             study, [param_name], self._multivariate, self._constant_liar
         )
@@ -400,10 +428,24 @@ class TPESampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        below, above = _split_observation_pairs(values, scores, self._gamma(n))
-        mpe_below = _ParzenEstimator(
-            below, {param_name: param_distribution}, self._parzen_estimator_parameters
-        )
+        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
+        below = _build_observation_dict(values, indices_below)
+        above = _build_observation_dict(values, indices_above)
+
+        if study._is_multi_objective():
+            weights_below = _calculate_weights_below_for_multi_objective(
+                values, scores, indices_below
+            )
+            mpe_below = _ParzenEstimator(
+                below,
+                {param_name: param_distribution},
+                self._parzen_estimator_parameters,
+                weights_below,
+            )
+        else:
+            mpe_below = _ParzenEstimator(
+                below, {param_name: param_distribution}, self._parzen_estimator_parameters
+            )
         mpe_above = _ParzenEstimator(
             above, {param_name: param_distribution}, self._parzen_estimator_parameters
         )
@@ -493,12 +535,39 @@ class TPESampler(BaseSampler):
         self._random_sampler.after_trial(study, trial, state, values)
 
 
+def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
+    vecs = loss_vals.copy()
+
+    # Normalize values
+    lb = vecs.min(axis=0, keepdims=True)
+    ub = vecs.max(axis=0, keepdims=True)
+    vecs = (vecs - lb) / (ub - lb)
+
+    ranks = np.zeros(len(vecs))
+    num_unranked = len(vecs)
+    rank = 0
+    while num_unranked > 0:
+        extended = np.tile(vecs, (vecs.shape[0], 1, 1))
+        counts = np.sum(
+            np.logical_and(
+                np.all(extended <= np.swapaxes(extended, 0, 1), axis=2),
+                np.any(extended < np.swapaxes(extended, 0, 1), axis=2),
+            ),
+            axis=1,
+        )
+        vecs[counts == 0] = 1.1  # mark as ranked
+        ranks[counts == 0] = rank
+        rank += 1
+        num_unranked -= np.sum(counts == 0)
+    return ranks
+
+
 def _get_observation_pairs(
     study: Study,
     param_names: List[str],
     multivariate: bool,
     constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
-) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, float]]]:
+) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, List[float]]]]:
     """Get observation pairs from the study.
 
     This function collects observation pairs from the complete or pruned trials of the study.
@@ -520,9 +589,12 @@ def _get_observation_pairs(
     if len(param_names) > 1:
         assert multivariate
 
-    sign = 1
-    if study.direction == StudyDirection.MAXIMIZE:
-        sign = -1
+    signs = []
+    for d in study.directions:
+        if d == StudyDirection.MINIMIZE:
+            signs.append(1)
+        else:
+            signs.append(-1)
 
     states: Tuple[TrialState, ...]
     if constant_liar:
@@ -541,21 +613,27 @@ def _get_observation_pairs(
 
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE:
-            if trial.value is None:
+            if trial.values is None:
                 continue
-            score = (-float("inf"), sign * trial.value)
+            score = (-float("inf"), [sign * v for sign, v in zip(signs, trial.values)])
         elif trial.state is TrialState.PRUNED:
+            if study._is_multi_objective():
+                continue
+
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
                 if math.isnan(intermediate_value):
-                    score = (-step, float("inf"))
+                    score = (-step, [float("inf")])
                 else:
-                    score = (-step, sign * intermediate_value)
+                    score = (-step, [signs[0] * intermediate_value])
             else:
-                score = (float("inf"), 0.0)
+                score = (float("inf"), [0.0])
         elif trial.state is TrialState.RUNNING:
+            if study._is_multi_objective():
+                continue
+
             assert constant_liar
-            score = (-float("inf"), sign * float("inf"))
+            score = (-float("inf"), [signs[0] * float("inf")])
         else:
             assert False
         scores.append(score)
@@ -575,26 +653,156 @@ def _get_observation_pairs(
 
 
 def _split_observation_pairs(
-    config_vals: Dict[str, List[Optional[float]]],
-    loss_vals: List[Tuple[float, float]],
+    loss_vals: List[Tuple[float, List[float]]],
     n_below: int,
-) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+) -> Tuple[np.ndarray, np.ndarray]:
+
+    n_objectives = 1
+    if len(loss_vals) > 0:
+        n_objectives = len(loss_vals[0][1])
+
+    if n_objectives <= 1:
+        loss_values = np.asarray(
+            [(s, v[0]) for s, v in loss_vals], dtype=[("step", float), ("score", float)]
+        )
+
+        index_loss_ascending = np.argsort(loss_values)
+        # `np.sort` is used to keep chronological order.
+        indices_below = np.sort(index_loss_ascending[:n_below])
+        indices_above = np.sort(index_loss_ascending[n_below:])
+    else:
+        # Multi-objective TPE does not support pruning, so it ignores the ``step``.
+        lvals = np.asarray([v for _, v in loss_vals])
+
+        # Solving HSSP for variables number of times is a waste of time.
+        nondomination_ranks = _calculate_nondomination_rank(lvals)
+        assert 0 <= n_below <= len(lvals)
+
+        indices = np.array(range(len(lvals)))
+        indices_below = np.empty(n_below, dtype=int)
+
+        # Nondomination rank-based selection
+        i = 0
+        last_idx = 0
+        while last_idx + sum(nondomination_ranks == i) <= n_below:
+            length = indices[nondomination_ranks == i].shape[0]
+            indices_below[last_idx : last_idx + length] = indices[nondomination_ranks == i]
+            last_idx += length
+            i += 1
+
+        # Hypervolume subset selection problem (HSSP)-based selection
+        subset_size = n_below - last_idx
+        if subset_size > 0:
+            rank_i_lvals = lvals[nondomination_ranks == i]
+            rank_i_indices = indices[nondomination_ranks == i]
+            worst_point = np.max(rank_i_lvals, axis=0)
+            reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+            reference_point[reference_point == 0] = EPS
+            selected_indices = _solve_hssp(
+                rank_i_lvals, rank_i_indices, subset_size, reference_point
+            )
+            indices_below[last_idx:] = selected_indices
+
+        indices_above = np.setdiff1d(indices, indices_below)
+
+    return indices_below, indices_above
+
+
+def _build_observation_dict(
+    config_vals: Dict[str, List[Optional[float]]], indices: np.ndarray
+) -> Dict[str, np.ndarray]:
 
     # `None` items are intentionally converted to `nan` and then filtered out.
     # For `nan` conversion, the dtype must be float.
     config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
-    loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
 
-    index_loss_ascending = np.argsort(loss_values)
-    # `np.sort` is used to keep chronological order.
-    index_below = np.sort(index_loss_ascending[:n_below])
-    index_above = np.sort(index_loss_ascending[n_below:])
-    below = {}
-    above = {}
+    observation_dict = {}
     for param_name, param_val in config_values.items():
-        param_val_below = param_val[index_below]
-        param_val_above = param_val[index_above]
-        below[param_name] = param_val_below[~np.isnan(param_val_below)]
-        above[param_name] = param_val_above[~np.isnan(param_val_above)]
+        param_values = param_val[indices]
+        observation_dict[param_name] = param_values[~np.isnan(param_values)]
 
-    return below, above
+    return observation_dict
+
+
+def _compute_hypervolume(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+    return WFG().compute(solution_set, reference_point)
+
+
+def _solve_hssp(
+    rank_i_loss_vals: np.ndarray,
+    rank_i_indices: np.ndarray,
+    subset_size: int,
+    reference_point: np.ndarray,
+) -> np.ndarray:
+    """Solve a hypervolume subset selection problem (HSSP) via a greedy algorithm.
+
+    This method is a 1-1/e approximation algorithm to solve HSSP.
+
+    For further information about algorithms to solve HSSP, please refer to the following
+    paper:
+
+    - `Greedy Hypervolume Subset Selection in Low Dimensions
+       <https://ieeexplore.ieee.org/document/7570501>`_
+    """
+    selected_vecs = []  # type: List[np.ndarray]
+    selected_indices = []  # type: List[int]
+    contributions = [
+        _compute_hypervolume(np.asarray([v]), reference_point) for v in rank_i_loss_vals
+    ]
+    hv_selected = 0.0
+    while len(selected_indices) < subset_size:
+        max_index = int(np.argmax(contributions))
+        contributions[max_index] = -1  # mark as selected
+        selected_index = rank_i_indices[max_index]
+        selected_vec = rank_i_loss_vals[max_index]
+        for j, v in enumerate(rank_i_loss_vals):
+            if contributions[j] == -1:
+                continue
+            p = np.max([selected_vec, v], axis=0)
+            contributions[j] -= (
+                _compute_hypervolume(np.asarray(selected_vecs + [p]), reference_point)
+                - hv_selected
+            )
+        selected_vecs += [selected_vec]
+        selected_indices += [selected_index]
+        hv_selected = _compute_hypervolume(np.asarray(selected_vecs), reference_point)
+
+    return np.asarray(selected_indices, dtype=int)
+
+
+def _calculate_weights_below_for_multi_objective(
+    config_vals: Dict[str, List[Optional[float]]],
+    loss_vals: List[Tuple[float, List[float]]],
+    indices: np.ndarray,
+) -> np.ndarray:
+    # Multi-objective TPE only sees the first parameter to determine the weights.
+    # In the call lf `sample_relative`, this logic makes sense because we only have the
+    # intersection search space or group decomposed search space. This means one parameter
+    # misses the one trial, then the other parameter must miss the trial, in this call of
+    # `sample_relative`.
+    # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
+    cvals = np.asarray(list(config_vals.values())[0])[indices]
+
+    # Multi-objective TPE does not support pruning, so it ignores the ``step``.
+    lvals = np.asarray([v for _, v in loss_vals])[indices]
+
+    # Calculate weights based on hypervolume contributions.
+    n_below = len(lvals)
+    if n_below == 0:
+        weights_below = np.asarray([])
+    elif n_below == 1:
+        weights_below = np.asarray([1.0])
+    else:
+        worst_point = np.max(lvals, axis=0)
+        reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+        reference_point[reference_point == 0] = EPS
+        hv = _compute_hypervolume(lvals, reference_point)
+        indices = ~np.eye(n_below).astype(bool)
+        contributions = np.asarray(
+            [hv - _compute_hypervolume(lvals[indices[i]], reference_point) for i in range(n_below)]
+        )
+        contributions += EPS
+        weights_below = np.clip(contributions / np.max(contributions), 0, 1)
+
+    weights_below = weights_below[~np.isnan(cvals)]
+    return weights_below

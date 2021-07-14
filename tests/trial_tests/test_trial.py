@@ -600,6 +600,18 @@ def test_report() -> None:
         trial.report(1.23, -1)
 
 
+def test_report_warning() -> None:
+
+    study = create_study()
+    trial = study.ask()
+
+    trial.report(1.23, 1)
+
+    # Warn if multiple times call report method at the same step
+    with pytest.warns(UserWarning):
+        trial.report(1, 1)
+
+
 def test_study_id() -> None:
 
     study = create_study()

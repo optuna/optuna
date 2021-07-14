@@ -138,6 +138,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "cma",
             "lightgbm",
             "mlflow",
+            "wandb",
             "mpi4py",
             "mxnet",
             "pandas",
