@@ -19,20 +19,22 @@ def test_plot_intermediate_values() -> None:
         return 0.0
 
     # Test with a trial with intermediate values.
-    # TODO(ytknzw): Add more specific assertion with the test case.
     study = create_study()
     study.optimize(lambda t: objective(t, True), n_trials=1)
     figure = plot_intermediate_values(study)
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 1
+    assert list(figure.get_lines()[0].get_xdata()) == [0, 1]
+    assert list(figure.get_lines()[0].get_ydata()) == [1.0, 2.0]
 
     # Test a study with one trial with intermediate values and
     # one trial without intermediate values.
     # Expect the trial with no intermediate values to be ignored.
-    # TODO(ytknzw): Add more specific assertion with the test case.
     study.optimize(lambda t: objective(t, False), n_trials=1)
     assert len(study.trials) == 2
     figure = plot_intermediate_values(study)
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 1
+    assert list(figure.get_lines()[0].get_xdata()) == [0, 1]
+    assert list(figure.get_lines()[0].get_ydata()) == [1.0, 2.0]
 
     # Test a study of only one trial that has no intermediate values.
     study = create_study()
