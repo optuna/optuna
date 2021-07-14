@@ -285,10 +285,11 @@ class NSGAIISampler(BaseSampler):
 
         return elite_population
 
-    def _select_parent(self, study: Study, population: List[FrozenTrial]) -> FrozenTrial:
+    def _select_parent(self, study: Study, population: Sequence[FrozenTrial]) -> FrozenTrial:
         # TODO(ohta): Consider to allow users to specify the number of parent candidates.
-        candidate0 = self._rng.choice(population)
-        candidate1 = self._rng.choice(population)
+        population_size = len(population)
+        candidate0 = population[self._rng.choice(population_size)]
+        candidate1 = population[self._rng.choice(population_size)]
 
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
 
