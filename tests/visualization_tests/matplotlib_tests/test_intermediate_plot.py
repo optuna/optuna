@@ -9,7 +9,7 @@ def test_plot_intermediate_values() -> None:
     # Test with no trials.
     study = prepare_study_with_trials(no_trials=True)
     figure = plot_intermediate_values(study)
-    assert not figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     def objective(trial: Trial, report_intermediate_values: bool) -> float:
 
@@ -40,7 +40,7 @@ def test_plot_intermediate_values() -> None:
     study = create_study()
     study.optimize(lambda t: objective(t, False), n_trials=1)
     figure = plot_intermediate_values(study)
-    assert not figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
@@ -50,4 +50,4 @@ def test_plot_intermediate_values() -> None:
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_intermediate_values(study)
-    assert not figure.has_data()
+    assert len(figure.get_lines()) == 0
