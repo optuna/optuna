@@ -52,6 +52,7 @@ class PyTorchLightningPruningCallback(Callback):
             warnings.warn(message)
             return
 
+        # When multi gpu, on_validation_end function executes multi times.
         distributed_backend = trainer.accelerator_connector.distributed_backend
         try:
             self._trial.report(current_score, step=epoch)
