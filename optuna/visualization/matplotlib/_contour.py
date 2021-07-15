@@ -417,3 +417,26 @@ def _generate_contour_subplot(
         ax.set_yticklabels(y_cat_param_label)
     ax.label_outer()
     return cs
+
+
+def _create_zmatrix(
+    x_values: List[Union[int, float]],
+    y_values: List[Union[int, float]],
+    z_values: List[Union[int, float]],
+    xi: np.ndarray,
+    yi: np.ndarray,
+) -> np.ndarray:
+
+    # creates z-matrix from trial values and params.
+    # since params were upsampled either with linspace or logspace
+    # original params might not be on the xi and yi axes anymore
+    # so we are going with close approximations of z-value positions
+    shape = (*yi.shape, *xi.shape)
+    zmatrix = np.full(shape, fill_value=np.nan)
+
+    for x, y, z in zip(x_values, y_values, z_values):
+        xaxis = np.argmin(np.abs(xi - x))
+        yaxis = np.argmin(np.abs(yi - y))
+        zmatrix[yaxis, xaxis] = z
+
+    return zmatrix
