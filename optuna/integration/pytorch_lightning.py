@@ -56,7 +56,7 @@ class PyTorchLightningPruningCallback(Callback):
         distributed_backend = trainer.accelerator_connector.distributed_backend
         try:
             self._trial.report(current_score, step=epoch)
-        except Exception as e:
+        except Exception:
             if distributed_backend is not None:
                 pass
             else:
