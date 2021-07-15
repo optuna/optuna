@@ -1,7 +1,6 @@
 import copy
 from datetime import datetime
 import pickle
-import time
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -647,7 +646,9 @@ class RedisStorage(BaseStorage):
     def record_heartbeat(self, trial_id: int) -> None:
         study_id = self.get_study_id_from_trial_id(trial_id)
         self._redis.hset(
-            self._key_study_heartbeats(study_id), str(trial_id), pickle.dumps(time.time())
+            self._key_study_heartbeats(study_id),
+            str(trial_id),
+            pickle.dumps(self._get_redis_time()),
         )
 
     def fail_stale_trials(self, study_id: int) -> List[int]:
@@ -666,7 +667,7 @@ class RedisStorage(BaseStorage):
         else:
             grace_period = self._grace_period
 
-        current_time = time.time()
+        current_time = self._get_redis_time()
         heartbeats = self._redis.hgetall(self._key_study_heartbeats(study_id))
         stale = []
         for trial_id_raw, last_heartbeat_raw in heartbeats.items():
@@ -675,6 +676,10 @@ class RedisStorage(BaseStorage):
                 trial_id = int(trial_id_raw)
                 stale.append(trial_id)
         return stale
+
+    def _get_redis_time(self) -> float:
+        seconds, microseconds = self._redis.time()
+        return seconds + microseconds * 1e-6
 
     def _is_heartbeat_supported(self) -> bool:
         return True
