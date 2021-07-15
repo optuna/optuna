@@ -36,6 +36,10 @@ _imports_numba.check()
 _logger = get_logger(__name__)
 
 
+NUM_OPTIMIZATION_ITERATIONS = 100
+FRACTIONAL_DELTA_THRESHOLD = 1e-2
+
+
 @experimental("2.2.0")
 def plot_contour(
     study: Study,
@@ -448,6 +452,43 @@ def _create_zmatrix(
     return zmatrix
 
 
+def _interpolate_zmatrix(zmatrix: np.ndarray) -> np.ndarray:
+
+    # implements interpolation algorithm used in Plotly
+    # to interpolate heatmaps and contour plots
+    # https://github.com/plotly/plotly.js/blob/master/src/traces/heatmap/interp2d.js#L30
+    # citing their doc:
+    #
+    # > Fill in missing data from a 2D array using an iterative
+    # > poisson equation solver with zero-derivative BC at edges.
+    # > Amazingly, this just amounts to repeatedly averaging all the existing
+    # > nearest neighbors
+    max_fractional_delta = 1.0
+    empties = _find_indices_where_empty(zmatrix)
+
+    # we are padding entire z-matrix to avoid trouble with some
+    # fancy array indexing around the edges when running iteration
+    # this means indices of empty values have to be offset too
+    empties += 1
+    zmatrix = np.pad(zmatrix, 1, mode="constant", constant_values=np.nan)
+
+    # one pass to fill in a starting value for all the empties
+    zmatrix, _ = _run_iteration(zmatrix, empties)
+
+    for _ in range(NUM_OPTIMIZATION_ITERATIONS):
+        if max_fractional_delta > FRACTIONAL_DELTA_THRESHOLD:
+            # correct for overshoot and run again
+            max_fractional_delta = 0.5 - 0.25 * min(1, max_fractional_delta * 0.5)
+            zmatrix, max_fractional_delta = _run_iteration(zmatrix, empties, max_fractional_delta)
+
+        else:
+            break
+
+    # we need to remove padding applied at the begining
+    zmatrix = zmatrix[1:-1, 1:-1]
+    return zmatrix
+
+
 def _find_indices_where_empty(zmatrix: np.ndarray) -> np.ndarray:
 
     # this function implements missing value discovery and sorting
@@ -488,3 +529,42 @@ def _find_indices_where_empty(zmatrix: np.ndarray) -> np.ndarray:
 
     iter_queue = np.concatenate(iter_queue)
     return iter_queue  # type: ignore
+
+
+@jit(nopython=True)
+def _run_iteration(
+    zmatrix: np.ndarray, indices: np.ndarray, overshoot: float = 0.0
+) -> Tuple[np.ndarray, float]:
+
+    # we cannot just convolve over z-matrix since values
+    # are accessed by order determined in nan discovery
+    # algorithm. otherwise we could try to fill value
+    # where neighbors were not yet filled in
+    for yidx, xidx in indices:
+        # since z-matrix is padded at this point, we can simply
+        # run 3x3 kernel. neighbors are 4 adjacent values to
+        # the center of the kernel (we are not counting diagonals)
+        area = zmatrix[yidx - 1 : yidx + 2, xidx - 1 : xidx + 2].flatten()
+        initial_val = area[4]
+        neighbors = area[1::2]
+        num_neighbors = len(neighbors[~np.isnan(neighbors)])
+
+        # fill value is just a mean of neighbors
+        zmatrix[yidx, xidx] = np.nanmean(neighbors)
+        max_neighbor = np.nanmax(neighbors)
+        min_neighbor = np.nanmin(neighbors)
+
+        if np.isnan(initial_val):
+            if num_neighbors < 4:
+                max_fractional_delta = 1.0
+
+        else:
+            zmatrix[yidx, xidx] = (1 + overshoot) * zmatrix[yidx, xidx] - overshoot * initial_val
+            if max_neighbor > min_neighbor:
+                # we need to keep track of biggest update during run
+                # to know when we are converging
+                neighbor_diff = max_neighbor - min_neighbor
+                fractional_delta = np.abs(zmatrix[yidx, xidx] - initial_val) / neighbor_diff
+                max_fractional_delta = max(overshoot, fractional_delta)
+
+    return zmatrix, max_fractional_delta
