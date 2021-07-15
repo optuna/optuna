@@ -125,6 +125,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
+            "numba",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.

@@ -7,9 +7,10 @@ from typing import Tuple
 from typing import Union
 
 import numpy as np
-from scipy.interpolate import griddata
+from scipy.ndimage import generic_filter
 
 from optuna._experimental import experimental
+from optuna._imports import try_import
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
@@ -27,6 +28,11 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import ContourSet
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
+
+with try_import() as _imports_numba:
+    from numba import jit
+
+_imports_numba.check()
 _logger = get_logger(__name__)
 
 
@@ -440,3 +446,45 @@ def _create_zmatrix(
         zmatrix[yaxis, xaxis] = z
 
     return zmatrix
+
+
+def _find_indices_where_empty(zmatrix: np.ndarray) -> np.ndarray:
+
+    # this function implements missing value discovery and sorting
+    # algorithm used in Plotly to interpolate heatmaps and contour plots
+    # https://github.com/plotly/plotly.js/blob/master/src/traces/heatmap/find_empties.js
+    # it works by repeteadly convolving 3x3 kernel over copy
+    # of z-matrix in search of patches of missing values with
+    # existing or previously discovered neighbors
+    # when discovered, such patches are added to the iteration queue
+    # sorted by number of neighbors, marking iteration order for interpolation algorithm
+    # search ends when all missing patches have been discovered
+    # and iteration order for interpolation algorithm is complete
+
+    @jit(nopython=True)
+    def _kernel(arr: np.ndarray) -> float:
+        if not np.isnan(arr[4]):
+            # trial value or previously discovered
+            # should no longer be considered
+            return -1.0
+        subarr = arr[1::2]
+        n_missing = np.sum(np.isnan(subarr))
+        if n_missing == 4:
+            # no new neighbours found in this pass
+            # leave for another iteration
+            return np.nan
+        return n_missing
+
+    zcopy = np.copy(zmatrix)
+    iter_queue = []
+
+    while np.isnan(zcopy).any():
+        zcopy = generic_filter(zcopy, _kernel, size=3, mode="constant", cval=np.nan)
+        pos_missing = np.argwhere(zcopy >= 0)
+        num_missing = zcopy[zcopy >= 0]
+        iter_order = np.argsort(num_missing)
+        patch = pos_missing[iter_order]
+        iter_queue.append(patch)
+
+    iter_queue = np.concatenate(iter_queue)
+    return iter_queue  # type: ignore
