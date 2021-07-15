@@ -68,7 +68,7 @@ class RedisStorage(BaseStorage):
         failed_trial_callback:
             A callback function that is invoked after failing each stale trial.
             The function must accept two parameters with the following types in this order:
-            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+            :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
 
             .. note::
                 The procedure to fail existing stale trials is called just before asking the
@@ -87,6 +87,7 @@ class RedisStorage(BaseStorage):
     def __init__(
         self,
         url: str,
+        *,
         heartbeat_interval: Optional[int] = None,
         grace_period: Optional[int] = None,
         failed_trial_callback: Optional[Callable[["optuna.Study", FrozenTrial], None]] = None,
