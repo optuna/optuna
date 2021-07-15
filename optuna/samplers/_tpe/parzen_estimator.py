@@ -289,6 +289,7 @@ class _ParzenEstimator:
                 transformed[param_name] = np.exp(samples)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 q = self._q[param_name]
+                assert q is not None
                 samples = np.round((samples - distribution.low) / q) * q + distribution.low
                 transformed[param_name] = np.asarray(
                     np.clip(samples, distribution.low, distribution.high)

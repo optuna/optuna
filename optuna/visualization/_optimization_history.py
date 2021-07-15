@@ -181,9 +181,9 @@ def _get_optimization_history_with_error_bar(
             trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
             if study.direction == StudyDirection.MINIMIZE:
-                best_vs = np.minimum.accumulate([t.value for t in trials])
+                best_vs = np.minimum.accumulate([cast(float, t.value) for t in trials])
             else:
-                best_vs = np.maximum.accumulate([t.value for t in trials])
+                best_vs = np.maximum.accumulate([cast(float, t.value) for t in trials])
 
             for i, t in enumerate(trials):
                 best_values[t.number].append(best_vs[i])
@@ -230,9 +230,9 @@ def _get_optimization_histories(
         trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
         if target is None:
             if study.direction == StudyDirection.MINIMIZE:
-                best_values = np.minimum.accumulate([t.value for t in trials])
+                best_values = np.minimum.accumulate([cast(float, t.value) for t in trials])
             else:
-                best_values = np.maximum.accumulate([t.value for t in trials])
+                best_values = np.maximum.accumulate([cast(float, t.value) for t in trials])
             traces.append(
                 go.Scatter(
                     x=[t.number for t in trials],

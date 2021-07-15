@@ -2,6 +2,7 @@ import collections
 import threading
 import time
 from typing import Any
+from typing import cast
 from typing import DefaultDict
 from typing import Dict
 from typing import List
@@ -72,7 +73,7 @@ if _imports.is_successful():
             self.trial_ids = set([trial._trial_id for trial in complete_trials])
 
             self.direction = direction
-            values = [trial.value for trial in complete_trials]
+            values = [cast(float, trial.value) for trial in complete_trials]
             if direction == StudyDirection.MINIMIZE:
                 best_values = np.minimum.accumulate(values, axis=0)
             else:
