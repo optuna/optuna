@@ -148,7 +148,7 @@ def _get_contour_plot(
         fig, axs = plt.subplots()
         axs.set_title("Contour Plot")
         cmap = _set_cmap(study, target)
-        contour_point_num = 1000
+        contour_point_num = 100
 
         # Prepare data and draw contour plots.
         if params:
@@ -318,21 +318,21 @@ def _calculate_griddata(
     if x_param != y_param:
         if _is_log_scale(trials, x_param):
             xi = np.logspace(np.log10(x_values_min), np.log10(x_values_max), contour_point_num)
+            tmp_x = np.log10(x_values)
         else:
             xi = np.linspace(x_values_min, x_values_max, contour_point_num)
+            tmp_x = x_values
         if _is_log_scale(trials, y_param):
             yi = np.logspace(np.log10(y_values_min), np.log10(y_values_max), contour_point_num)
+            tmp_y = np.log10(y_values)
         else:
             yi = np.linspace(y_values_min, y_values_max, contour_point_num)
+            tmp_y = y_values
 
-        # Interpolate z-axis data on a grid with linear interpolator.
-        # TODO(ytknzw): Implement Plotly-like interpolation algorithm.
-        zi = griddata(
-            np.column_stack((x_values, y_values)),
-            z_values,
-            (xi[None, :], yi[:, None]),
-            method="linear",
-        )
+        # create irregularly spaced matrix of trial values
+        # and interpolate it with Plotly algorithm
+        zmatrix = _create_zmatrix(tmp_x, tmp_y, z_values, xi, yi)
+        zi = _interpolate_zmatrix(zmatrix)
 
     return (
         xi,
