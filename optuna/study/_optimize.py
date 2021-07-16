@@ -186,13 +186,7 @@ def _run_trial(
     func: "optuna.study.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.Trial:
-    if study._storage.is_heartbeat_enabled():
-        failed_trial_ids = study._storage.fail_stale_trials(study._study_id)
-        failed_trial_callback = study._storage.get_failed_trial_callback()
-        if failed_trial_callback is not None:
-            for trial_id in failed_trial_ids:
-                failed_trial = copy.deepcopy(study._storage.get_trial(trial_id))
-                failed_trial_callback(study, failed_trial)
+    optuna.storages.fail_stale_trials(study)
 
     trial = study.ask()
 
