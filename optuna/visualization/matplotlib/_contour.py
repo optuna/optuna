@@ -316,13 +316,13 @@ def _calculate_griddata(
             tmp_x = np.log10(x_values)
         else:
             xi = np.linspace(x_values_min, x_values_max, contour_point_num)
-            tmp_x = x_values
+            tmp_x = np.array(x_values)
         if _is_log_scale(trials, y_param):
             yi = np.logspace(np.log10(y_values_min), np.log10(y_values_max), contour_point_num)
             tmp_y = np.log10(y_values)
         else:
             yi = np.linspace(y_values_min, y_values_max, contour_point_num)
-            tmp_y = y_values
+            tmp_y = np.array(y_values)
 
         # create irregularly spaced matrix of trial values
         # and interpolate it with Plotly algorithm
@@ -425,8 +425,8 @@ def _generate_contour_subplot(
 
 
 def _create_zmatrix(
-    x_values: List[Union[int, float]],
-    y_values: List[Union[int, float]],
+    x_values: np.ndarray,
+    y_values: np.ndarray,
     z_values: List[Union[int, float]],
     xi: np.ndarray,
     yi: np.ndarray,
