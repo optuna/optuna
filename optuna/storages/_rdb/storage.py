@@ -144,7 +144,7 @@ class RDBStorage(BaseStorage):
             If the given `heartbeat_interval` or `grace_period` is not a positive integer.
         :exc:`RuntimeError`:
             When a process tries to finish a trial that has already
-            been set to FAILED by heartbeat.
+            been set to :class:`~optuna.trial.TrialState.FAIL` by heartbeat.
     """
 
     def __init__(
