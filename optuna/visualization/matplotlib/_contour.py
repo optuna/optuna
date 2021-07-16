@@ -6,11 +6,11 @@ from typing import Optional
 from typing import Tuple
 from typing import Union
 
+from numba import jit
 import numpy as np
 from scipy.ndimage import generic_filter
 
 from optuna._experimental import experimental
-from optuna._imports import try_import
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study import StudyDirection
@@ -28,11 +28,6 @@ if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import ContourSet
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
-
-with try_import() as _imports_numba:
-    from numba import jit
-
-_imports_numba.check()
 _logger = get_logger(__name__)
 
 

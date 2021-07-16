@@ -32,6 +32,7 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
+        "numba",
         "numpy",
         "packaging>=20.0",
         "scipy!=1.4.0",
@@ -125,7 +126,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         "optional": [
             "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
-            "numba",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
