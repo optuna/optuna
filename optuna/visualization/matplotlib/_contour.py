@@ -33,6 +33,7 @@ _logger = get_logger(__name__)
 
 NUM_OPTIMIZATION_ITERATIONS = 100
 FRACTIONAL_DELTA_THRESHOLD = 1e-2
+AXES_PADDING_RATIO = 5e-2
 
 
 @experimental("2.2.0")
@@ -312,15 +313,28 @@ def _calculate_griddata(
     zi = np.array([])
     if x_param != y_param:
         if _is_log_scale(trials, x_param):
+            padding_x = (np.log10(x_values_max) - np.log10(x_values_min)) * AXES_PADDING_RATIO
+            x_values_min = np.power(np.log10(x_values_min) - padding_x, 10)
+            x_values_max = np.power(np.log10(x_values_max) + padding_x, 10)
             xi = np.logspace(np.log10(x_values_min), np.log10(x_values_max), contour_point_num)
             tmp_x = np.log10(x_values)
         else:
+            padding_x = (x_values_max - x_values_min) * AXES_PADDING_RATIO
+            x_values_min -= padding_x
+            x_values_max += padding_x
             xi = np.linspace(x_values_min, x_values_max, contour_point_num)
             tmp_x = np.array(x_values)
+
         if _is_log_scale(trials, y_param):
+            padding_y = (np.log10(y_values_max) - np.log10(y_values_min)) * AXES_PADDING_RATIO
+            y_values_min = np.power(np.log10(y_values_min) - padding_y, 10)
+            y_values_max = np.power(np.log10(y_values_max) + padding_y, 10)
             yi = np.logspace(np.log10(y_values_min), np.log10(y_values_max), contour_point_num)
             tmp_y = np.log10(y_values)
         else:
+            padding_y = (y_values_max - y_values_min) * AXES_PADDING_RATIO
+            y_values_min -= padding_y
+            y_values_max += padding_y
             yi = np.linspace(y_values_min, y_values_max, contour_point_num)
             tmp_y = np.array(y_values)
 
