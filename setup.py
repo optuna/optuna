@@ -51,6 +51,8 @@ def get_extras_require() -> Dict[str, List[str]]:
     requirements = {
         # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
         # tutorials.
+        # TODO(xadrianzetx) Remove `toml` when
+        # https://github.com/keewis/blackdoc/issues/100 is resolved
         "checking": ["black", "hacking", "isort", "mypy==0.790", "blackdoc", "toml"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
