@@ -16,7 +16,7 @@ assignees: ''
 ## Environment
 
 <!--
-You can also get this information by typing the following:
+You can get this information by typing the following:
 ```
 python -c 'import optuna; print(optuna.__version__)'
 python -c 'import platform; print(platform.python_version())'
