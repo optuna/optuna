@@ -1090,7 +1090,7 @@ def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
         )
 
 
-def test_fail_stail_trials() -> None:
+def test_fail_stail_trials_with_callback() -> None:
     heartbeat_interval = 1
     grace_period = 2
 
@@ -1113,6 +1113,6 @@ def test_fail_stail_trials() -> None:
 
         assert study.trials[0].state is TrialState.RUNNING
 
-        optuna.storages.fail_stale_trials(study)
+        optuna.storages.fail_stale_trials_with_callback(study)
 
         assert study.trials[0].state is TrialState.FAIL
