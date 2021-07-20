@@ -145,6 +145,16 @@ class _ParzenEstimator:
         n_samples = next(iter(samples_dict.values())).size
         if n_samples == 0:
             return np.asarray([], dtype=float)
+
+        if len(self._search_space.items()) == 1:
+            param_name, dist = list(self._search_space.items())[0]
+            if isinstance(dist, distributions.CategoricalDistribution):
+                samples = samples_dict[param_name]
+                categorical_weights = self._categorical_weights[param_name]
+                assert categorical_weights is not None
+                ret = np.log(np.inner(categorical_weights.T, self._weights))[samples]
+                return ret
+
         # We compute log pdf (component_log_pdf)
         # for each sample in samples_dict (of size n_samples)
         # for each component of `_MultivariateParzenEstimator` (of size n_observations).
