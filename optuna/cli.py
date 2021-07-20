@@ -10,6 +10,7 @@ c.f. https://docs.openstack.org/cliff/latest/user/demoapp.html#setup-py
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
 from importlib.machinery import SourceFileLoader
+import json
 import logging
 import sys
 import types
@@ -23,6 +24,7 @@ from cliff.app import App
 from cliff.command import Command
 from cliff.commandmanager import CommandManager
 from cliff.lister import Lister
+import yaml
 
 import optuna
 from optuna._deprecated import deprecated
@@ -367,6 +369,100 @@ class _StorageUpgrade(_BaseCommand):
                 "Please try updating optuna to the latest version by "
                 "`$ pip install -U optuna`."
             )
+
+
+class _Ask(_BaseCommand):
+    """Ask."""
+
+    def get_parser(self, prog_name: str) -> ArgumentParser:
+
+        # TODO(hvy): Support mulitple directions.
+        parser = super(_Ask, self).get_parser(prog_name)
+        parser.add_argument("--study-name", type=str)
+        parser.add_argument("--storage", type=str)
+        parser.add_argument("--sampler", type=str)
+        parser.add_argument("--direction", type=str, choices=("minimize", "maximize"))
+        parser.add_argument("--sampler-kwargs", type=str)
+        parser.add_argument("--search-space", type=str)
+        parser.add_argument("--out", type=str, choices=("json", "yaml"))
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> int:
+
+        # TODO(hvy): `parsed_args` input validation.
+        storage_url = _check_storage_url(self.app_args.storage)
+
+        if parsed_args.sampler is not None:
+            if parsed_args.sampler_kwargs is not None:
+                sampler_kwargs = json.loads(parsed_args.sampler_kwargs)
+            else:
+                sampler_kwargs = {}
+
+            sampler_cls = getattr(optuna.samplers, parsed_args.sampler)
+            sampler = sampler_cls(**sampler_kwargs)
+
+        search_space_json = json.loads(parsed_args.search_space)
+        search_space = {
+            name: optuna.distributions.json_to_distribution(json.dumps(j))
+            for name, j in search_space_json.items()
+        }
+
+        # TODO(hvy): Do not require direction.
+        if parsed_args.direction is None:
+            raise ValueError("Direction must be given.")
+
+        study = optuna.create_study(
+            storage=storage_url,
+            study_name=parsed_args.study_name,
+            load_if_exists=True,
+            sampler=sampler,
+            direction=parsed_args.direction,
+        )
+        trial = study.ask(fixed_distributions=search_space)
+
+        data = {
+            "number": trial.number,
+            "params": trial.params,
+        }
+
+        if parsed_args.out is None:
+            print(data)
+        elif parsed_args.out == "json":
+            print(json.dumps(data))
+        elif parsed_args.out == "yaml":
+            print(yaml.dump(data))
+        else:
+            assert False
+
+        return 0
+
+
+class _Tell(_BaseCommand):
+    """Tell."""
+
+    def get_parser(self, prog_name: str) -> ArgumentParser:
+
+        # TODO(hvy): Support multiple values.
+        # TODO(hvy): Support states other than `TrialState.COMPLETE`.
+        parser = super(_Tell, self).get_parser(prog_name)
+        parser.add_argument("--study-name", type=str)
+        parser.add_argument("--storage", type=str)
+        parser.add_argument("--number", type=int)
+        parser.add_argument("--value", type=float)
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> int:
+
+        # TODO(hvy): `parsed_args` input validation.
+        storage_url = _check_storage_url(self.app_args.storage)
+
+        study = optuna.load_study(
+            storage=storage_url,
+            study_name=parsed_args.study_name,
+        )
+        study.tell(trial=parsed_args.number, values=parsed_args.value)
+
+        return 0
 
 
 class _OptunaApp(App):
