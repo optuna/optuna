@@ -1,14 +1,13 @@
 from collections import defaultdict
 from typing import Callable
 from typing import DefaultDict
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
 
-from numba import jit
 import numpy as np
-from scipy.ndimage import generic_filter
 
 from optuna._experimental import experimental
 from optuna.logging import get_logger
@@ -31,6 +30,7 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
+NEIGHBOR_OFFSETS = [1 + 0j, -1 + 0j, 0 + 1j, 0 - 1j]
 NUM_OPTIMIZATION_ITERATIONS = 100
 FRACTIONAL_DELTA_THRESHOLD = 1e-2
 AXES_PADDING_RATIO = 5e-2
@@ -338,10 +338,11 @@ def _calculate_griddata(
             yi = np.linspace(y_values_min, y_values_max, contour_point_num)
             tmp_y = np.array(y_values)
 
-        # create irregularly spaced matrix of trial values
+        # create irregularly spaced map of trial values
         # and interpolate it with Plotly algorithm
-        zmatrix = _create_zmatrix(tmp_x, tmp_y, z_values, xi, yi)
-        zi = _interpolate_zmatrix(zmatrix)
+        zmap = _create_zmap(tmp_x, tmp_y, z_values, xi, yi)
+        zmap = _interpolate_zmap(zmap, contour_point_num)
+        zi = _create_zmatrix_from_zmap(zmap, contour_point_num)
 
     return (
         xi,
@@ -438,30 +439,40 @@ def _generate_contour_subplot(
     return cs
 
 
-def _create_zmatrix(
+def _create_zmap(
     x_values: np.ndarray,
     y_values: np.ndarray,
     z_values: List[Union[int, float]],
     xi: np.ndarray,
     yi: np.ndarray,
-) -> np.ndarray:
+) -> Dict[complex, Union[int, float]]:
 
-    # creates z-matrix from trial values and params.
-    # since params were upsampled either with linspace or logspace
-    # original params might not be on the xi and yi axes anymore
-    # so we are going with close approximations of z-value positions
-    shape = (*yi.shape, *xi.shape)
-    zmatrix = np.full(shape, fill_value=np.nan)
-
+    # creates z-map from trial values and params.
+    # since params were resampled either with linspace or logspace
+    # original params might not be on the x and y axes anymore
+    # so we are going with close approximations of trial value positions
+    zmap = dict()
     for x, y, z in zip(x_values, y_values, z_values):
-        xaxis = np.argmin(np.abs(xi - x))
-        yaxis = np.argmin(np.abs(yi - y))
-        zmatrix[yaxis, xaxis] = z
+        xindex = np.argmin(np.abs(xi - x))
+        yindex = np.argmin(np.abs(yi - y))
+        zmap[complex(xindex, yindex)] = z  # type: ignore
+
+    return zmap
+
+
+def _create_zmatrix_from_zmap(zmap: Dict[complex, Union[int, float]], shape: int) -> np.ndarray:
+
+    # converts hashmap of coordinates to grid
+    zmatrix = np.zeros(shape=(shape, shape))
+    for coord, value in zmap.items():
+        zmatrix[int(coord.imag), int(coord.real)] += value
 
     return zmatrix
 
 
-def _interpolate_zmatrix(zmatrix: np.ndarray) -> np.ndarray:
+def _interpolate_zmap(
+    zmap: Dict[complex, Union[int, float]], contour_plot_num: int
+) -> Dict[complex, Union[int, float]]:
 
     # implements interpolation algorithm used in Plotly
     # to interpolate heatmaps and contour plots
@@ -473,107 +484,112 @@ def _interpolate_zmatrix(zmatrix: np.ndarray) -> np.ndarray:
     # > Amazingly, this just amounts to repeatedly averaging all the existing
     # > nearest neighbors
     max_fractional_delta = 1.0
-    empties = _find_indices_where_empty(zmatrix)
-
-    # we are padding entire z-matrix to avoid trouble with some
-    # fancy array indexing around the edges when running iteration
-    # this means indices of empty values have to be offset too
-    empties += 1
-    zmatrix = np.pad(zmatrix, 1, mode="constant", constant_values=np.nan)
+    empties = _find_coordinates_where_empty(zmap, contour_plot_num)
 
     # one pass to fill in a starting value for all the empties
-    zmatrix, _ = _run_iteration(zmatrix, empties)
+    zmap, _ = _run_iteration(zmap, empties)
 
     for _ in range(NUM_OPTIMIZATION_ITERATIONS):
         if max_fractional_delta > FRACTIONAL_DELTA_THRESHOLD:
             # correct for overshoot and run again
             max_fractional_delta = 0.5 - 0.25 * min(1, max_fractional_delta * 0.5)
-            zmatrix, max_fractional_delta = _run_iteration(zmatrix, empties, max_fractional_delta)
+            zmatrix, max_fractional_delta = _run_iteration(zmap, empties, max_fractional_delta)
 
         else:
             break
 
-    # we need to remove padding applied at the begining
-    zmatrix = zmatrix[1:-1, 1:-1]
-    return zmatrix
+    return zmap
 
 
-def _find_indices_where_empty(zmatrix: np.ndarray) -> np.ndarray:
+def _find_coordinates_where_empty(
+    zmap: Dict[complex, Union[int, float]], contour_point_num: int
+) -> List[complex]:
 
     # this function implements missing value discovery and sorting
     # algorithm used in Plotly to interpolate heatmaps and contour plots
     # https://github.com/plotly/plotly.js/blob/master/src/traces/heatmap/find_empties.js
-    # it works by repeteadly convolving 3x3 kernel over copy
-    # of z-matrix in search of patches of missing values with
-    # existing or previously discovered neighbors
-    # when discovered, such patches are added to the iteration queue
+    # it works by repeteadly interating over coordinate map in search for patches of
+    # missing values with existing or previously discovered neighbors
+    # when discovered, such patches are added to the iteration queue (list of coordinates)
     # sorted by number of neighbors, marking iteration order for interpolation algorithm
     # search ends when all missing patches have been discovered
-    # and iteration order for interpolation algorithm is complete
+    # it's like playing minesweeper in reverse
 
-    @jit(nopython=True)
-    def _kernel(arr: np.ndarray) -> float:
-        if not np.isnan(arr[4]):
-            # trial value or previously discovered
-            # should no longer be considered
-            return -1.0
-        subarr = arr[1::2]
-        n_missing = np.sum(np.isnan(subarr))
-        if n_missing == 4:
-            # no new neighbours found in this pass
-            # leave for another iteration
-            return np.nan
-        return n_missing
+    iter_queue: List[complex] = []
+    zcopy = zmap.copy()
+    discovered = 0
+    n_missing = (contour_point_num ** 2) - len(zmap)
+    coordinates = [
+        complex(xaxis, yaxis)
+        for yaxis in range(contour_point_num)
+        for xaxis in range(contour_point_num)
+    ]
 
-    zcopy = np.copy(zmatrix)
-    iter_queue = []
+    while discovered != n_missing:
+        patchmap: Dict[complex, Union[int, float]] = {}
 
-    while np.isnan(zcopy).any():
-        zcopy = generic_filter(zcopy, _kernel, size=3, mode="constant", cval=np.nan)
-        pos_missing = np.argwhere(zcopy >= 0)
-        num_missing = zcopy[zcopy >= 0]
-        iter_order = np.argsort(num_missing)
-        patch = pos_missing[iter_order]
-        iter_queue.append(patch)
+        for coord in coordinates:
+            value = zcopy.get(coord, None)
 
-    iter_queue = np.concatenate(iter_queue)
-    return iter_queue  # type: ignore
+            if value is not None:
+                # trial value or already discovered
+                continue
+
+            n_neighbors = 0
+            for offset in NEIGHBOR_OFFSETS:
+                neighbor = zcopy.get(coord + offset, None)
+                if neighbor is not None:
+                    n_neighbors += 1
+
+            if n_neighbors > 0:
+                patchmap[coord] = n_neighbors
+
+        zcopy.update(patchmap)
+        patch = [k for k, _ in sorted(patchmap.items(), key=lambda i: i[1], reverse=True)]
+        iter_queue.extend(patch)
+        discovered += len(patch)
+
+    return iter_queue
 
 
-@jit(nopython=True)
 def _run_iteration(
-    zmatrix: np.ndarray, indices: np.ndarray, overshoot: float = 0.0
-) -> Tuple[np.ndarray, float]:
+    zmap: Dict[complex, Union[int, float]], coordinates: List[complex], overshoot: float = 0.0
+) -> Tuple[Dict[complex, Union[int, float]], float]:
 
-    # we cannot just convolve over z-matrix since values
-    # are accessed by order determined in nan discovery
-    # algorithm. otherwise we could try to fill value
-    # where neighbors were not yet filled in
-    for yidx, xidx in indices:
-        # since z-matrix is padded at this point, we can simply
-        # run 3x3 kernel. neighbors are 4 adjacent values to
-        # the center of the kernel (we are not counting diagonals)
-        area = zmatrix[yidx - 1 : yidx + 2, xidx - 1 : xidx + 2].flatten()
-        initial_val = area[4]
-        neighbors = area[1::2]
-        num_neighbors = len(neighbors[~np.isnan(neighbors)])
+    max_fractional_delta = 0.0
 
-        # fill value is just a mean of neighbors
-        zmatrix[yidx, xidx] = np.nanmean(neighbors)
-        max_neighbor = np.nanmax(neighbors)
-        min_neighbor = np.nanmin(neighbors)
+    for coord in coordinates:
+        current_val = zmap.get(coord, None)
+        max_neighbor = -np.inf
+        min_neighbor = np.inf
+        sum_neighbors = 0
+        n_neighbors = 0
 
-        if np.isnan(initial_val):
-            if num_neighbors < 4:
-                max_fractional_delta = 1.0
+        for offset in NEIGHBOR_OFFSETS:
+            neighbor = zmap.get(coord + offset, None)
+
+            if neighbor is None:
+                # off the edge or not filled in
+                continue
+
+            sum_neighbors += neighbor  # type: ignore
+            n_neighbors += 1
+
+            if current_val is not None:
+                max_neighbor = max(max_neighbor, neighbor)
+                min_neighbor = min(min_neighbor, neighbor)
+
+        # fill value is just mean of its neighbors
+        new_val = sum_neighbors / n_neighbors
+
+        if current_val is None:
+            zmap[coord] = new_val
+            max_fractional_delta = 1.0
 
         else:
-            zmatrix[yidx, xidx] = (1 + overshoot) * zmatrix[yidx, xidx] - overshoot * initial_val
+            zmap[coord] = (1 + overshoot) * new_val - overshoot * current_val
             if max_neighbor > min_neighbor:
-                # we need to keep track of biggest update during run
-                # to know when we are converging
-                neighbor_diff = max_neighbor - min_neighbor
-                fractional_delta = np.abs(zmatrix[yidx, xidx] - initial_val) / neighbor_diff
+                fractional_delta = abs(new_val - current_val) / (max_neighbor - min_neighbor)
                 max_fractional_delta = max(overshoot, fractional_delta)
 
-    return zmatrix, max_fractional_delta
+    return zmap, max_fractional_delta
