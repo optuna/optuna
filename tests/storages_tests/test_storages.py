@@ -1090,7 +1090,7 @@ def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
         )
 
 
-def test_fail_stail_trials_with_callback() -> None:
+def test_fail_stale_trials_with_callback() -> None:
     heartbeat_interval = 1
     grace_period = 2
 

@@ -13,7 +13,7 @@ def fail_stale_trials_with_callback(study: "optuna.Study") -> None:
 
     .. seealso::
 
-       See :class:`~optuna.storages.RDBStorage`.
+        See :class:`~optuna.storages.RDBStorage`.
 
     Args:
         study:
