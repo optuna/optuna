@@ -32,7 +32,6 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
-        "numba",
         "numpy",
         "packaging>=20.0",
         "scipy!=1.4.0",
