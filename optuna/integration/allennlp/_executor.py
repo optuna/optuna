@@ -99,10 +99,13 @@ class AllenNLPExecutor(object):
 
         if include_package is None:
             include_package = []
+
         if isinstance(include_package, str):
             self._include_package = [include_package]
         else:
             self._include_package = include_package
+
+        self._trial.set_system_attr("monitor", metrics)
 
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.

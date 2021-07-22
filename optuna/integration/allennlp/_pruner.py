@@ -1,6 +1,7 @@
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Optional
 
 from packaging import version
 
@@ -81,7 +82,7 @@ class AllenNLPPruningCallback(TrainerCallback):
     def __init__(
         self,
         trial: optuna.trial.Trial,
-        monitor: str,
+        monitor: Optional[str] = None,
     ):
         _imports.check()
 
@@ -92,8 +93,12 @@ class AllenNLPPruningCallback(TrainerCallback):
                 "please install Optuna v2.5.0 by executing `pip install 'optuna==2.5.0'`."
             )
 
+        if monitor is None:
+            self._monitor = trial.system_attrs["monitor"]
+        else:
+            self._monitor = monitor
+
         self._trial = trial
-        self._monitor = monitor
 
     def on_epoch(
         self,
