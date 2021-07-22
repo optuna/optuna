@@ -433,7 +433,7 @@ class _OptunaSchedulerExtension:
 
 
 def _register_with_scheduler(
-    dask_scheduler: "distributed.Scheduler", storage: str, name: str
+    dask_scheduler: "distributed.Scheduler", storage: Union[None, str, BaseStorage], name: str
 ) -> None:
     if "optuna" not in dask_scheduler.extensions:
         ext = _OptunaSchedulerExtension(dask_scheduler)
@@ -489,7 +489,12 @@ class DaskStorage(BaseStorage):
 
     """
 
-    def __init__(self, storage: str = None, name: str = None, client: "distributed.Client" = None):
+    def __init__(
+        self,
+        storage: Union[None, str, BaseStorage] = None,
+        name: Optional[str] = None,
+        client: Optional["distributed.Client"] = None,
+    ):
         _imports.check()
         self.name = name or f"dask-storage-{uuid.uuid4().hex}"
         self.client = client or get_client()
