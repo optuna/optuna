@@ -2,8 +2,8 @@
 Optuna example that runs optimization trials in parallel using Dask.
 
 In this example, we perform hyperparameter optimization on a
-RandomForestClassifier which is trained using the Iris dataset.
-Trials are run in parallel on a Dask cluster using Optuna's
+RandomForestClassifier which is trained using the handwritten digits
+dataset. Trials are run in parallel on a Dask cluster using Optuna's
 DaskStorage integration.
 
 To run this example:
@@ -12,7 +12,7 @@ To run this example:
 """
 
 from dask.distributed import Client
-from sklearn.datasets import load_iris
+from sklearn.datasets import load_digits
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
@@ -21,7 +21,7 @@ import optuna
 
 
 def objective(trial):
-    X, y = load_iris(return_X_y=True)
+    X, y = load_digits(return_X_y=True)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=2)
 
     max_depth = trial.suggest_int("max_depth", 2, 10)
