@@ -6,6 +6,8 @@ https://github.com/allenai/allennlp/blob/main/allennlp/commands/train.py
 import logging
 import os
 from os import PathLike
+from typing import Any
+from typing import cast
 from typing import List
 from typing import Optional
 from typing import Union
@@ -16,8 +18,6 @@ from allennlp.common import Params
 from allennlp.common import util as common_util
 from allennlp.common.checks import check_for_gpu
 from allennlp.common.checks import ConfigurationError
-from allennlp.common.meta import Meta
-from allennlp.common.meta import META_NAME
 from allennlp.common.plugins import import_plugins
 from allennlp.data import Vocabulary
 from allennlp.models.archival import archive_model
@@ -32,8 +32,18 @@ import torch.multiprocessing as mp
 
 from optuna import Trial
 from optuna import TrialPruned
+from optuna._imports import try_import
 from optuna.storages import _CachedStorage
 from optuna.storages import InMemoryStorage
+
+
+with try_import() as _imports:
+    from allennlp.common.meta import Meta
+    from allennlp.common.meta import META_NAME
+
+if not _imports.is_successful():
+    Meta = None  # type: ignore  # NOQA
+    META_NAME = None  # type: ignore  # NOQA
 
 
 logger = logging.getLogger(__name__)
@@ -86,8 +96,9 @@ def train_model_with_optuna(
     training_util.create_serialization_dir(params, serialization_dir, recover, force)
     params.to_file(os.path.join(serialization_dir, CONFIG_NAME))
 
-    meta = Meta.new()
-    meta.to_file(os.path.join(serialization_dir, META_NAME))
+    if Meta is not None:
+        meta = Meta.new()
+        meta.to_file(os.path.join(serialization_dir, META_NAME))
 
     include_in_archive = params.pop("include_in_archive", None)
     verify_include_in_archive(include_in_archive)
@@ -351,22 +362,39 @@ def _train_worker_with_optuna(
     except KeyboardInterrupt:
         # if we have completed an epoch, try to create a model archive.
         if primary and os.path.exists(os.path.join(serialization_dir, _DEFAULT_WEIGHTS)):
-            best_weights_path = train_loop.trainer.get_best_weights_path()
-            if best_weights_path is None:
-                logging.info(
-                    "Training interrupted by the user, and no best model has been saved. "
-                    "No model archive created."
-                )
+            if hasattr(train_loop.trainer, "get_best_weights_path"):
+                best_weights_path = train_loop.trainer.get_best_weights_path  # type: Any
+                best_weights_path = cast(Optional[str], best_weights_path)
+
+                if best_weights_path is None:
+                    logging.info(
+                        "Training interrupted by the user, and no best model has been saved. "
+                        "No model archive created."
+                    )
+                else:
+                    logging.info(
+                        "Training interrupted by the user. Attempting to create "
+                        "a model archive using the current best epoch weights."
+                    )
+                    archive_model(
+                        serialization_dir,
+                        weights=best_weights_path,
+                        include_in_archive=include_in_archive,
+                    )
+
             else:
+                # TODO(himkt): Remove this fallback logic.
+                # During AllenNLP 2.x.0, we both support
+                # the old implementation and the latest implementation.
+                # If we decide to drop support AllenNLP older than 2.5.0, remove here.
+                #
+                # ref. https://github.com/allenai/allennlp/pull/5220
+                #      https://github.com/allenai/allennlp/releases/tag/v2.5.0
                 logging.info(
                     "Training interrupted by the user. Attempting to create "
                     "a model archive using the current best epoch weights."
                 )
-                archive_model(
-                    serialization_dir,
-                    weights=best_weights_path,
-                    include_in_archive=include_in_archive,
-                )
+                archive_model(serialization_dir, include_in_archive=include_in_archive)
         raise
 
     if primary:
