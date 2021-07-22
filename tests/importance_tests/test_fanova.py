@@ -5,9 +5,9 @@ from optuna.samplers import RandomSampler
 
 
 def objective(trial: Trial) -> float:
-    x1 = trial.suggest_uniform("x1", 0.1, 3)
-    x2 = trial.suggest_loguniform("x2", 0.1, 3)
-    x3 = trial.suggest_loguniform("x3", 2, 4)
+    x1 = trial.suggest_float("x1", 0.1, 3)
+    x2 = trial.suggest_float("x2", 0.1, 3, log=True)
+    x3 = trial.suggest_float("x3", 2, 4, log=True)
     return x1 + x2 * x3
 
 

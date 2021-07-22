@@ -24,7 +24,7 @@ Optuna has modern functionalities as follows:
 
 - :doc:`Efficient optimization algorithms <tutorial/10_key_features/003_efficient_optimization_algorithms>`
 
-  - Adopt state-of-the-art algorithms for sampling hyper parameters and efficiently pruning unpromising trials.
+  - Adopt state-of-the-art algorithms for sampling hyperparameters and efficiently pruning unpromising trials.
 
 - :doc:`Easy parallelization <tutorial/10_key_features/004_distributed>`
 
@@ -60,7 +60,7 @@ optimization *studies*.
         # Invoke suggest methods of a Trial object to generate hyperparameters.
         regressor_name = trial.suggest_categorical('classifier', ['SVR', 'RandomForest'])
         if regressor_name == 'SVR':
-            svr_c = trial.suggest_loguniform('svr_c', 1e-10, 1e10)
+            svr_c = trial.suggest_float('svr_c', 1e-10, 1e10, log=True)
             regressor_obj = sklearn.svm.SVR(C=svr_c)
         else:
             rf_max_depth = trial.suggest_int('rf_max_depth', 2, 32)
@@ -128,4 +128,4 @@ Indices and tables
   :width: 800
   :alt: OPTUNA
 .. |Open in Colab| image:: https://colab.research.google.com/assets/colab-badge.svg
-  :target: http://colab.research.google.com/github/optuna/optuna/blob/master/examples/quickstart.ipynb
+  :target: http://colab.research.google.com/github/optuna/optuna-examples/blob/main/quickstart.ipynb

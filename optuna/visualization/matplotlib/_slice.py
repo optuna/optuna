@@ -13,8 +13,8 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
-from optuna.visualization.matplotlib._utils import _is_categorical
 from optuna.visualization.matplotlib._utils import _is_log_scale
+from optuna.visualization.matplotlib._utils import _is_numerical
 
 
 if _imports.is_successful():
@@ -50,7 +50,7 @@ def plot_slice(
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -100, 100)
+                x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
                 return x ** 2 + y
 
@@ -107,12 +107,12 @@ def _get_slice_plot(
 
     all_params = {p_name for t in trials for p_name in t.params.keys()}
     if params is None:
-        sorted_params = sorted(list(all_params))
+        sorted_params = sorted(all_params)
     else:
         for input_p_name in params:
             if input_p_name not in all_params:
                 raise ValueError("Parameter {} does not exist in your study.".format(input_p_name))
-        sorted_params = sorted(list(set(params)))
+        sorted_params = sorted(set(params))
 
     n_params = len(sorted_params)
 
@@ -181,7 +181,7 @@ def _generate_slice_subplot(
     if _is_log_scale(trials, param):
         ax.set_xscale("log")
         scale = "log"
-    elif _is_categorical(trials, param):
+    elif not _is_numerical(trials, param):
         x_values = [str(x) for x in x_values]
         scale = "categorical"
     xlim = _calc_lim_with_padding(x_values, padding_ratio, scale)

@@ -9,8 +9,8 @@ with optuna._imports.try_import() as _imports:
 class PyTorchIgnitePruningHandler(object):
     """PyTorch Ignite handler to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/pytorch_ignite_simple.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/blob/main/
+    pytorch/pytorch_ignite_simple.py>`__
     if you want to add a pruning handler which observes validation accuracy.
 
     Args:

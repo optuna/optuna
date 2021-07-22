@@ -47,8 +47,8 @@ class Func(object):
 
     def __call__(self, trial: ChainerMNTrial, comm: CommunicatorBase) -> float:
 
-        x = trial.suggest_uniform("x", -10, 10)
-        y = trial.suggest_loguniform("y", 20, 30)
+        x = trial.suggest_float("x", -10, 10)
+        y = trial.suggest_float("y", 20, 30, log=True)
         z = trial.suggest_categorical("z", (-1.0, 1.0))
 
         self.suggested_values[trial.number] = {}
@@ -62,7 +62,7 @@ class Func(object):
 class MultiNodeStorageSupplier(StorageSupplier):
     def __init__(self, storage_specifier: str, comm: CommunicatorBase) -> None:
 
-        super(MultiNodeStorageSupplier, self).__init__(storage_specifier)
+        super().__init__(storage_specifier)
         self.comm = comm
         self.storage: Optional[RDBStorage] = None
 
@@ -294,7 +294,7 @@ class TestChainerMNTrial(object):
                 x1 = mn_trial.suggest_float("x1", low1, high1)
                 assert low1 <= x1 <= high1
 
-                x2 = mn_trial.suggest_uniform("x1", low1, high1)
+                x2 = mn_trial.suggest_float("x1", low1, high1)
 
                 assert x1 == x2
 
@@ -314,7 +314,7 @@ class TestChainerMNTrial(object):
                 assert x3 == x4
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_uniform("x2", low2, high2)
+                    mn_trial.suggest_float("x2", low2, high2)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -327,10 +327,10 @@ class TestChainerMNTrial(object):
             for _ in range(10):
                 mn_trial = _create_new_chainermn_trial(study, comm)
 
-                x1 = mn_trial.suggest_uniform("x", low, high)
+                x1 = mn_trial.suggest_float("x", low, high)
                 assert low <= x1 <= high
 
-                x2 = mn_trial.suggest_uniform("x", low, high)
+                x2 = mn_trial.suggest_float("x", low, high)
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
@@ -354,7 +354,7 @@ class TestChainerMNTrial(object):
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_uniform("x", low, high)
+                    mn_trial.suggest_float("x", low, high)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -375,7 +375,7 @@ class TestChainerMNTrial(object):
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_uniform("x", low, high)
+                    mn_trial.suggest_float("x", low, high)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -399,7 +399,7 @@ class TestChainerMNTrial(object):
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_uniform("x", low, high)
+                    mn_trial.suggest_float("x", low, high)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -420,7 +420,7 @@ class TestChainerMNTrial(object):
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_uniform("x", low, high)
+                    mn_trial.suggest_float("x", low, high)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -439,7 +439,7 @@ class TestChainerMNTrial(object):
                 assert x1 == x2
 
                 with pytest.raises(ValueError):
-                    mn_trial.suggest_uniform("x", 0.0, 1.0)
+                    mn_trial.suggest_float("x", 0.0, 1.0)
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

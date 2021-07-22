@@ -15,8 +15,8 @@ with optuna._imports.try_import() as _imports:
 
 _doc = """Callback for XGBoost to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/pruning/xgboost_integration.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/blob/main/
+    xgboost/xgboost_integration.py>`__
     if you want to add a pruning callback which observes validation AUC of
     a XGBoost model.
 

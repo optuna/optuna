@@ -12,7 +12,7 @@ If you want to manually execute Optuna optimization:
     2. create a study with `--storage` argument
     3. share the study among multiple nodes and processes
 
-Of course, you can use Kubernetes as in `the kubernetes examples <https://github.com/optuna/optuna/tree/master/examples/kubernetes>`_.
+Of course, you can use Kubernetes as in `the kubernetes examples <https://github.com/optuna/optuna-examples/tree/main/kubernetes>`_.
 
 To just see how parallel optimization works in Optuna, check the below video.
 
@@ -43,7 +43,7 @@ Then, write an optimization script. Let's assume that ``foo.py`` contains the fo
 
 
     def objective(trial):
-        x = trial.suggest_uniform("x", -10, 10)
+        x = trial.suggest_float("x", -10, 10)
         return (x - 2) ** 2
 
 

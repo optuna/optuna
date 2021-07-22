@@ -3,12 +3,12 @@ from typing import Optional
 
 import pytest
 
-from optuna import _optimize
 from optuna import create_study
 from optuna import Trial
 from optuna import TrialPruned
 from optuna.exceptions import TrialPruned as TrialPruned_in_exceptions
 from optuna.structs import TrialPruned as TrialPruned_in_structs
+from optuna.study import _optimize
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import TrialState

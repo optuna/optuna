@@ -17,8 +17,8 @@ class TensorBoardCallback(object):
 
     This callback adds relevant information that is tracked by Optuna to TensorBoard.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/tensorboard_simple.py>`_.
+    See `the example <https://github.com/optuna/optuna-examples/blob/main/
+    tensorboard/tensorboard_simple.py>`_.
 
     Args:
         dirname:
@@ -56,34 +56,39 @@ class TensorBoardCallback(object):
     def _add_distributions(
         self, distributions: Dict[str, optuna.distributions.BaseDistribution]
     ) -> None:
+        real_distributions = (
+            optuna.distributions.UniformDistribution,
+            optuna.distributions.LogUniformDistribution,
+            optuna.distributions.DiscreteUniformDistribution,
+        )
+        int_distributions = (
+            optuna.distributions.IntUniformDistribution,
+            optuna.distributions.IntLogUniformDistribution,
+        )
+        categorical_distributions = (optuna.distributions.CategoricalDistribution,)
+        supported_distributions = (
+            real_distributions + int_distributions + categorical_distributions
+        )
+
         for param_name, param_distribution in distributions.items():
-            if isinstance(param_distribution, optuna.distributions.UniformDistribution):
+            if isinstance(param_distribution, real_distributions):
                 self._hp_params[param_name] = hp.HParam(
-                    param_name, hp.RealInterval(param_distribution.low, param_distribution.high)
+                    param_name,
+                    hp.RealInterval(float(param_distribution.low), float(param_distribution.high)),
                 )
-            elif isinstance(param_distribution, optuna.distributions.LogUniformDistribution):
+            elif isinstance(param_distribution, int_distributions):
                 self._hp_params[param_name] = hp.HParam(
-                    param_name, hp.RealInterval(param_distribution.low, param_distribution.high)
+                    param_name,
+                    hp.IntInterval(param_distribution.low, param_distribution.high),
                 )
-            elif isinstance(param_distribution, optuna.distributions.DiscreteUniformDistribution):
+            elif isinstance(param_distribution, categorical_distributions):
                 self._hp_params[param_name] = hp.HParam(
-                    param_name, hp.Discrete(param_distribution.low, param_distribution.high)
-                )
-            elif isinstance(param_distribution, optuna.distributions.IntUniformDistribution):
-                self._hp_params[param_name] = hp.HParam(
-                    param_name, hp.IntInterval(param_distribution.low, param_distribution.high)
-                )
-            elif isinstance(param_distribution, optuna.distributions.CategoricalDistribution):
-                self._hp_params[param_name] = hp.HParam(
-                    param_name, hp.Discrete(param_distribution.choices)
+                    param_name,
+                    hp.Discrete(param_distribution.choices),
                 )
             else:
                 distribution_list = [
-                    optuna.distributions.UniformDistribution.__name__,
-                    optuna.distributions.LogUniformDistribution.__name__,
-                    optuna.distributions.DiscreteUniformDistribution.__name__,
-                    optuna.distributions.IntUniformDistribution.__name__,
-                    optuna.distributions.CategoricalDistribution.__name__,
+                    distribution.__name__ for distribution in supported_distributions
                 ]
                 raise NotImplementedError(
                     "The distribution {} is not implemented. "

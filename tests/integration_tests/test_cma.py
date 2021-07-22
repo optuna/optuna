@@ -3,12 +3,12 @@ from typing import Any
 from typing import Dict
 from unittest.mock import call
 from unittest.mock import patch
+import warnings
 
 import cma
 import pytest
 
 import optuna
-from optuna._study_direction import StudyDirection
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -17,6 +17,7 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.integration.cma import _Optimizer
+from optuna.study._study_direction import StudyDirection
 from optuna.testing.distribution import UnsupportedDistribution
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.trial import FrozenTrial
@@ -140,6 +141,19 @@ class TestPyCmaSampler(object):
 
         with pytest.raises(NotImplementedError):
             optuna.integration.PyCmaSampler._initialize_sigma0({"x": UnsupportedDistribution()})
+
+    @staticmethod
+    def test_call_after_trial_of_independent_sampler() -> None:
+        independent_sampler = optuna.samplers.RandomSampler()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+            sampler = optuna.integration.PyCmaSampler(independent_sampler=independent_sampler)
+        study = optuna.create_study(sampler=sampler)
+        with patch.object(
+            independent_sampler, "after_trial", wraps=independent_sampler.after_trial
+        ) as mock_object:
+            study.optimize(lambda _: 1.0, n_trials=1)
+            assert mock_object.call_count == 1
 
 
 class TestOptimizer(object):

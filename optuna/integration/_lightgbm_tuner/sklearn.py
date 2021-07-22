@@ -16,7 +16,7 @@ class LGBMModel(lgb.LGBMModel):
             "LightGBMTuner doesn't support sklearn API. "
             "Use `train()` or `LightGBMTuner` for hyperparameter tuning."
         )
-        super(LGBMModel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class LGBMClassifier(lgb.LGBMClassifier):
@@ -31,7 +31,7 @@ class LGBMClassifier(lgb.LGBMClassifier):
             "LightGBMTuner doesn't support sklearn API. "
             "Use `train()` or `LightGBMTuner` for hyperparameter tuning."
         )
-        super(LGBMClassifier, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class LGBMRegressor(lgb.LGBMRegressor):
@@ -46,4 +46,4 @@ class LGBMRegressor(lgb.LGBMRegressor):
             "LightGBMTuner doesn't support sklearn API. "
             "Use `train()` or `LightGBMTuner` for hyperparameter tuning."
         )
-        super(LGBMRegressor, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)

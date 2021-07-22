@@ -1,7 +1,7 @@
 from typing import Dict
 from typing import List
-from typing import Union
 
+import pytest
 import pytorch_lightning as pl
 import torch
 from torch import nn
@@ -9,27 +9,32 @@ import torch.nn.functional as F
 
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
+from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 
 
 class Model(pl.LightningModule):
     def __init__(self) -> None:
 
-        super(Model, self).__init__()
+        super().__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
 
-    def forward(self, data: torch.Tensor) -> torch.Tensor:
+    def forward(self, data: torch.Tensor) -> torch.Tensor:  # type: ignore
 
         return self._model(data)
 
-    def training_step(self, batch: List[torch.Tensor], batch_nb: int) -> Dict[str, torch.Tensor]:
+    def training_step(  # type: ignore
+        self, batch: List[torch.Tensor], batch_nb: int
+    ) -> Dict[str, torch.Tensor]:
 
         data, target = batch
         output = self.forward(data)
         loss = F.nll_loss(output, target)
         return {"loss": loss}
 
-    def validation_step(self, batch: List[torch.Tensor], batch_nb: int) -> Dict[str, torch.Tensor]:
+    def validation_step(  # type: ignore
+        self, batch: List[torch.Tensor], batch_nb: int
+    ) -> Dict[str, torch.Tensor]:
 
         data, target = batch
         output = self.forward(data)
@@ -37,12 +42,10 @@ class Model(pl.LightningModule):
         accuracy = pred.eq(target.view_as(pred)).double().mean()
         return {"validation_accuracy": accuracy}
 
-    def validation_epoch_end(
-        self, outputs: List[Dict[str, torch.Tensor]]
-    ) -> Dict[str, Union[torch.Tensor, float]]:
+    def validation_epoch_end(self, outputs: List[Dict[str, torch.Tensor]]) -> None:
 
         accuracy = sum(x["validation_accuracy"] for x in outputs) / len(outputs)
-        return {"accuracy": accuracy}
+        self.log("accuracy", accuracy)
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
 
@@ -87,3 +90,21 @@ def test_pytorch_lightning_pruning_callback() -> None:
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+
+
+def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
+
+    study = optuna.create_study(pruner=DeterministicPruner(True))
+    trial = create_running_trial(study, 1.0)
+    callback = PyTorchLightningPruningCallback(trial, "InvalidMonitor")
+
+    trainer = pl.Trainer(
+        min_epochs=0,  # Required to fire the callback after the first epoch.
+        max_epochs=1,
+        checkpoint_callback=False,
+        callbacks=[callback],
+    )
+    model = Model()
+
+    with pytest.warns(UserWarning):
+        callback.on_validation_end(trainer, model)

@@ -14,8 +14,10 @@ _import_structure = {
     "cma": ["CmaEsSampler", "PyCmaSampler"],
     "dask": ["DaskStorage", "DaskStudy"],
     "mlflow": ["MLflowCallback"],
+    "wandb": ["WeightsAndBiasesCallback"],
     "keras": ["KerasPruningCallback"],
     "lightgbm": ["LightGBMPruningCallback", "LightGBMTuner", "LightGBMTunerCV"],
+    "pytorch_distributed": ["TorchDistributedTrial"],
     "pytorch_ignite": ["PyTorchIgnitePruningHandler"],
     "pytorch_lightning": ["PyTorchLightningPruningCallback"],
     "sklearn": ["OptunaSearchCV"],
@@ -54,6 +56,7 @@ if TYPE_CHECKING:
     from optuna.integration.lightgbm import LightGBMTunerCV  # NOQA
     from optuna.integration.mlflow import MLflowCallback  # NOQA
     from optuna.integration.mxnet import MXNetPruningCallback  # NOQA
+    from optuna.integration.pytorch_distributed import TorchDistributedTrial  # NOQA
     from optuna.integration.pytorch_ignite import PyTorchIgnitePruningHandler  # NOQA
     from optuna.integration.pytorch_lightning import PyTorchLightningPruningCallback  # NOQA
     from optuna.integration.sklearn import OptunaSearchCV  # NOQA
@@ -62,6 +65,7 @@ if TYPE_CHECKING:
     from optuna.integration.tensorboard import TensorBoardCallback  # NOQA
     from optuna.integration.tensorflow import TensorFlowPruningHook  # NOQA
     from optuna.integration.tfkeras import TFKerasPruningCallback  # NOQA
+    from optuna.integration.wandb import WeightsAndBiasesCallback  # NOQA
     from optuna.integration.xgboost import XGBoostPruningCallback  # NOQA
 else:
 

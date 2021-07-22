@@ -16,7 +16,7 @@ jobs:
     # ref: https://github.com/optuna/optuna/issues/2034
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8, 3.9]
 
     # Not intended for forks.
     if: github.repository == 'optuna/optuna'
@@ -43,7 +43,7 @@ jobs:
     - name: Setup environment
       run: |
         sudo apt-get update
-        sudo apt-get -y install openmpi-bin libopenmpi-dev
+        sudo apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev
 
     - name: Install
       run: |
@@ -63,16 +63,19 @@ jobs:
         if [ ${{ matrix.python-version }} = 3.6 ]; then
           pytest tests/integration_tests \
             --ignore tests/integration_tests/test_botorch.py
-        elif [ ${{ matrix.python-version }} = 3.8 ]; then
+        elif  [ ${{ matrix.python-version }} = 3.9 ]; then
           pytest tests/integration_tests \
-            --ignore tests/integration_tests/allennlp_tests/test_allennlp.py
+            --ignore tests/integration_tests/test_keras.py \
+            --ignore tests/integration_tests/test_tensorflow.py \
+            --ignore tests/integration_tests/test_tfkeras.py \
+            --ignore tests/integration_tests/test_tensorboard.py
         else
-          # pytest cannot collect allennlp tests with allennlp==1.0.0.
           pytest -s tests/integration_tests
         fi
 
     - name: Tests MPI
       run: |
         mpirun -n 2 -- pytest tests/integration_tests/test_chainermn.py
+        mpirun -n 2 -- pytest tests/integration_tests/test_pytorch_distributed.py
       env:
         OMP_NUM_THREADS: 1

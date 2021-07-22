@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastai.callback.data import CudaCallback
+from fastai.data.core import DataLoader
 from fastai.data.core import DataLoaders
 from fastai.learner import Learner
 from fastai.metrics import accuracy
@@ -18,7 +18,7 @@ def _generate_dummy_dataset() -> torch.utils.data.DataLoader:
     data = torch.zeros(3, 20, dtype=torch.float32)
     target = torch.zeros(3, dtype=torch.int64)
     dataset = torch.utils.data.TensorDataset(data, target)
-    return torch.utils.data.DataLoader(dataset, batch_size=1)
+    return DataLoader(dataset, batch_size=1)
 
 
 @pytest.fixture(scope="session")
@@ -41,7 +41,6 @@ def test_fastai_pruning_callback(tmpdir: Any) -> None:
             model,
             loss_func=F.nll_loss,
             metrics=[accuracy],
-            cbs=[CudaCallback],
         )
         learn.fit(1, cbs=FastAIV2PruningCallback(trial))
 

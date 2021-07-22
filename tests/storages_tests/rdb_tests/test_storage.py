@@ -37,7 +37,13 @@ def test_init() -> None:
     assert version_info.library_version == version.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
-    assert storage.get_all_versions() == ["v2.4.0.a", "v1.3.0.a", "v1.2.0.a", "v0.9.0.a"]
+    assert storage.get_all_versions() == [
+        "v2.6.0.a",
+        "v2.4.0.a",
+        "v1.3.0.a",
+        "v1.2.0.a",
+        "v0.9.0.a",
+    ]
 
 
 def test_init_url_template() -> None:
@@ -309,7 +315,7 @@ def test_record_heartbeat() -> None:
         storage.heartbeat_interval = heartbeat_interval
         study = create_study(storage=storage)
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna._optimize.Thread", _TestableThread):
+        with patch("optuna.study._optimize.Thread", _TestableThread):
             study.optimize(objective, n_trials=n_trials)
 
         trial_heartbeats = []
@@ -324,38 +330,3 @@ def test_record_heartbeat() -> None:
         assert len(trial_heartbeats) == n_trials
         for i in range(n_trials - 1):
             assert (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds - sleep_sec <= 1
-
-
-def test_fail_stale_trials() -> None:
-
-    heartbeat_interval = 1
-    grace_period = 2
-
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage.heartbeat_interval = heartbeat_interval
-        storage.grace_period = grace_period
-        study = create_study(storage=storage)
-
-        trial = study.ask()
-        storage.record_heartbeat(trial._trial_id)
-        time.sleep(grace_period + 1)
-
-        t = study.trials[0]
-        assert t.state is TrialState.RUNNING
-
-        # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna._optimize.Thread", _TestableThread):
-            study.optimize(lambda _: 1.0, n_trials=1)
-
-        t = study.trials[0]
-        assert t.state is TrialState.FAIL
-
-
-def test_invalid_heartbeat_interval_and_grace_period() -> None:
-
-    with pytest.raises(ValueError):
-        _ = RDBStorage("sqlite:///:memory:", heartbeat_interval=-1)
-
-    with pytest.raises(ValueError):
-        _ = RDBStorage("sqlite:///:memory:", grace_period=-1)

@@ -3,14 +3,15 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from unittest.mock import patch
 import warnings
 
 import pytest
 
 import optuna
-from optuna._study_direction import StudyDirection
 from optuna.samplers import NSGAIISampler
 from optuna.samplers._nsga2 import _CONSTRAINTS_KEY
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 
 
@@ -466,3 +467,13 @@ def _create_frozen_trial(
     trial.number = number
     trial._trial_id = number
     return trial
+
+
+def test_call_after_trial_of_random_sampler() -> None:
+    sampler = NSGAIISampler()
+    study = optuna.create_study(sampler=sampler)
+    with patch.object(
+        sampler._random_sampler, "after_trial", wraps=sampler._random_sampler.after_trial
+    ) as mock_object:
+        study.optimize(lambda _: 1.0, n_trials=1)
+        assert mock_object.call_count == 1

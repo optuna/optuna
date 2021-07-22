@@ -8,7 +8,7 @@ Can I use Optuna with X? (where X is your favorite ML library)
 --------------------------------------------------------------
 
 Optuna is compatible with most ML libraries, and it's easy to use Optuna with those.
-Please refer to `examples <https://github.com/optuna/optuna/tree/master/examples>`_.
+Please refer to `examples <https://github.com/optuna/optuna-examples/>`_.
 
 
 .. _objective-func-additional-args:
@@ -33,7 +33,7 @@ First, callable classes can be used for that purpose as follows:
 
         def __call__(self, trial):
             # Calculate an objective value by using the extra arguments.
-            x = trial.suggest_uniform("x", self.min_x, self.max_x)
+            x = trial.suggest_float("x", self.min_x, self.max_x)
             return (x - 2) ** 2
 
 
@@ -51,7 +51,7 @@ Below is an example that uses ``lambda``:
 
     # Objective function that takes three arguments.
     def objective(trial, min_x, max_x):
-        x = trial.suggest_uniform("x", min_x, max_x)
+        x = trial.suggest_float("x", min_x, max_x)
         return (x - 2) ** 2
 
 
@@ -63,7 +63,7 @@ Below is an example that uses ``lambda``:
     study = optuna.create_study()
     study.optimize(lambda trial: objective(trial, min_x, max_x), n_trials=100)
 
-Please also refer to `sklearn_addtitional_args.py <https://github.com/optuna/optuna/blob/master/examples/sklearn_additional_args.py>`_ example,
+Please also refer to `sklearn_addtitional_args.py <https://github.com/optuna/optuna-examples/tree/main/sklearn/sklearn_additional_args.py>`_ example,
 which reuses the dataset instead of loading it in each trial execution.
 
 
@@ -149,7 +149,7 @@ For example, you can save SVM models trained in the objective function as follow
 .. code-block:: python
 
     def objective(trial):
-        svc_c = trial.suggest_loguniform("svc_c", 1e-10, 1e10)
+        svc_c = trial.suggest_float("svc_c", 1e-10, 1e10, log=True)
         clf = sklearn.svm.SVC(C=svc_c)
         clf.fit(X_train, y_train)
 
@@ -241,7 +241,7 @@ What happens when I dynamically alter a search space?
 -----------------------------------------------------
 
 Since parameters search spaces are specified in each call to the suggestion API, e.g.
-:func:`~optuna.trial.Trial.suggest_uniform` and :func:`~optuna.trial.Trial.suggest_int`,
+:func:`~optuna.trial.Trial.suggest_float` and :func:`~optuna.trial.Trial.suggest_int`,
 it is possible to, in a single study, alter the range by sampling parameters from different search
 spaces in different trials.
 The behavior when altered is defined by each sampler individually.
@@ -283,7 +283,7 @@ For instance, you can input arbitrary values of :math:`x` and :math:`y` to the o
 .. code-block:: python
 
     def objective(trial):
-        x = trial.suggest_uniform("x", -1.0, 1.0)
+        x = trial.suggest_float("x", -1.0, 1.0)
         y = trial.suggest_int("y", -5, 5)
         return x + y
 
@@ -314,7 +314,7 @@ Specify ``gc_after_trial`` to :obj:`True` when calling :func:`~optuna.study.Stud
 .. code-block:: python
 
     def objective(trial):
-        x = trial.suggest_uniform("x", -1.0, 1.0)
+        x = trial.suggest_float("x", -1.0, 1.0)
         y = trial.suggest_int("y", -5, 5)
         return x + y
 
@@ -332,3 +332,93 @@ Note that the above examples are similar to running the garbage collector inside
 
     :class:`~optuna.integration.ChainerMNStudy` does currently not provide ``gc_after_trial`` nor callbacks for :func:`~optuna.integration.ChainerMNStudy.optimize`.
     When using this class, you will have to call the garbage collector inside the objective function.
+
+How can I output a log only when the best value is updated?
+-----------------------------------------------------------
+
+Here's how to replace the logging feature of optuna and with your own logging callback function.
+The implemented callback can be passed to :func:`~optuna.study.Study.optimize`.
+Here's an example:
+
+.. code-block:: python
+
+    import optuna
+
+
+    # Turn off optuna log notes.
+    optuna.logging.set_verbosity(optuna.logging.WARN)
+
+
+    def objective(trial):
+        x = trial.suggest_float("x", 0, 1)
+        return x ** 2
+
+
+    def logging_callback(study, frozen_trial):
+        previous_best_value = study.user_attrs.get("previous_best_value", None)
+        if previous_best_value != study.best_value:
+            study.set_user_attr("previous_best_value", study.best_value)
+            print(
+                "Trial {} finished with best value: {} and parameters: {}. ".format(
+                frozen_trial.number,
+                frozen_trial.value,
+                frozen_trial.params,
+                )
+            )
+
+
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=100, callbacks=[logging_callback])
+
+How do I suggest variables which represent the proportion, that is, are in accordance with Dirichlet distribution?
+------------------------------------------------------------------------------------------------------------------
+
+When you want to suggest :math:`n` variables which represent the proportion, that is, :math:`p[0], p[1], ..., p[n-1]` which satisfy :math:`0 \le p[k] \le 1` for any :math:`k` and :math:`p[0] + p[1] + ... + p[n-1] = 1`, try the below.
+For example, these variables can be used as weights when interpolating the loss functions.
+These variables are in accordance with the flat `Dirichlet distribution <https://en.wikipedia.org/wiki/Dirichlet_distribution>`_.
+
+.. code-block:: python
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import optuna
+
+
+    def objective(trial):
+        n = 5
+        x = []
+        for i in range(n):
+            x.append(- np.log(trial.suggest_float(f"x_{i}", 0, 1)))
+
+        p = []
+        for i in range(n):
+            p.append(x[i] / sum(x))
+
+        for i in range(n):
+            trial.set_user_attr(f"p_{i}", p[i])
+
+        return 0
+
+    study = optuna.create_study(sampler=optuna.samplers.RandomSampler())
+    study.optimize(objective, n_trials=1000)
+
+    n = 5
+    p = []
+    for i in range(n):
+        p.append([trial.user_attrs[f"p_{i}"] for trial in study.trials])
+    axes = plt.subplots(n, n, figsize=(20, 20))[1]
+
+    for i in range(n):
+        for j in range(n):
+            axes[j][i].scatter(p[i], p[j], marker=".")
+            axes[j][i].set_xlim(0, 1)
+            axes[j][i].set_ylim(0, 1)
+            axes[j][i].set_xlabel(f"p_{i}")
+            axes[j][i].set_ylabel(f"p_{j}")
+
+    plt.savefig("sampled_ps.png")
+
+This method is justified in the following way:
+First, if we apply the transformation :math:`x = - \log (u)` to the variable :math:`u` sampled from the uniform distribution :math:`Uni(0, 1)` in the interval :math:`[0, 1]`, the variable :math:`x` will follow the exponential distribution :math:`Exp(1)` with scale parameter :math:`1`.
+Furthermore, for :math:`n` variables :math:`x[0], ..., x[n-1]` that follow the exponential distribution of scale parameter :math:`1` independently, normalizing them with :math:`p[i] = x[i] / \sum_i x[i]`, the vector :math:`p` follows the Dirichlet distribution :math:`Dir(\alpha)` of scale parameter :math:`\alpha = (1, ..., 1)`.
+You can verify the transformation by calculating the elements of the Jacobian.

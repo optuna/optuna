@@ -29,6 +29,17 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
         plot_contour(study)
 
 
+def test_target_is_not_none_and_study_is_multi_obj() -> None:
+
+    # Multiple sub-figures.
+    study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=True)
+    plot_contour(study, target=lambda t: t.values[0])
+
+    # Single figure.
+    study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=False)
+    plot_contour(study, target=lambda t: t.values[0])
+
+
 @pytest.mark.parametrize(
     "params",
     [
@@ -211,7 +222,7 @@ def test_plot_contour_log_scale_and_str_category() -> None:
         param_c_range = ("one", "two")
     param_a_type = "log"
     param_b_type = "category"
-    param_c_type = None
+    param_c_type = "category"
     axis_to_range_and_type = {
         "xaxis": (param_a_range, param_a_type),
         "xaxis2": (param_b_range, param_b_type),
@@ -261,11 +272,13 @@ def test_plot_contour_mixture_category_types() -> None:
         )
     )
     figure = plot_contour(study)
+
+    # yaxis is treated as non-categorical
     if version.parse(plotly.__version__) >= version.parse("4.12.0"):
         assert figure.layout["xaxis"]["range"] == (-0.05, 1.05)
-        assert figure.layout["yaxis"]["range"] == (-0.05, 1.05)
+        assert figure.layout["yaxis"]["range"] == (100.95, 102.05)
     else:
         assert figure.layout["xaxis"]["range"] == ("100", "None")
-        assert figure.layout["yaxis"]["range"] == ("101", "102.0")
+        assert figure.layout["yaxis"]["range"] == (100.95, 102.05)
     assert figure.layout["xaxis"]["type"] == "category"
-    assert figure.layout["yaxis"]["type"] == "category"
+    assert figure.layout["yaxis"]["type"] != "category"

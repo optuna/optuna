@@ -83,6 +83,59 @@ def test_create_study_command_with_direction() -> None:
             subprocess.check_call(command)
 
 
+def test_create_study_command_with_multiple_directions() -> None:
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
+        command = [
+            "optuna",
+            "create-study",
+            "--storage",
+            storage_url,
+            "--directions",
+            "minimize",
+            "maximize",
+        ]
+
+        study_name = str(subprocess.check_output(command).decode().strip())
+        study_id = storage.get_study_id_from_name(study_name)
+        expected_directions = [StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE]
+        assert storage.get_study_directions(study_id) == expected_directions
+
+        command = [
+            "optuna",
+            "create-study",
+            "--storage",
+            storage_url,
+            "--directions",
+            "minimize",
+            "maximize",
+            "test",
+        ]
+
+        # Each direction in --directions should be either `minimize` or `maximize`.
+        with pytest.raises(subprocess.CalledProcessError):
+            subprocess.check_call(command)
+
+        command = [
+            "optuna",
+            "create-study",
+            "--storage",
+            storage_url,
+            "--direction",
+            "minimize",
+            "--directions",
+            "minimize",
+            "maximize",
+            "test",
+        ]
+
+        # It can't specify both --direction and --directions
+        with pytest.raises(subprocess.CalledProcessError):
+            subprocess.check_call(command)
+
+
 def test_delete_study_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -266,7 +319,7 @@ def test_dashboard_command_with_allow_websocket_origin(origins: List[str]) -> No
 # An example of objective functions for testing study optimize command
 def objective_func(trial: Trial) -> float:
 
-    x = trial.suggest_uniform("x", -10, 10)
+    x = trial.suggest_float("x", -10, 10)
     return (x + 5) ** 2
 
 

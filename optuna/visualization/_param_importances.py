@@ -5,12 +5,6 @@ from typing import Optional
 
 import optuna
 from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.importance._base import BaseImportanceEvaluator
 from optuna.logging import get_logger
 from optuna.study import Study
@@ -25,16 +19,6 @@ if _imports.is_successful():
 
     from optuna.visualization._plotly_imports import go
 
-    Blues = plotly.colors.sequential.Blues
-
-    _distribution_colors = {
-        UniformDistribution: Blues[-1],
-        LogUniformDistribution: Blues[-1],
-        DiscreteUniformDistribution: Blues[-1],
-        IntUniformDistribution: Blues[-2],
-        IntLogUniformDistribution: Blues[-2],
-        CategoricalDistribution: Blues[-4],
-    }
 
 logger = get_logger(__name__)
 
@@ -69,7 +53,8 @@ def plot_param_importances(
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=100)
 
-            optuna.visualization.plot_param_importances(study)
+            fig = optuna.visualization.plot_param_importances(study)
+            fig.show()
 
     .. seealso::
 
@@ -92,7 +77,9 @@ def plot_param_importances(
             used for single-objective optimization, the objective values are plotted.
 
             .. note::
-                Specify this argument if ``study`` is being used for multi-objective optimization.
+                Specify this argument if ``study`` is being used for multi-objective
+                optimization. For example, to get the hyperparameter importance of the first
+                objective, use ``target=lambda t: t.values[0]`` for the target parameter.
         target_name:
             Target's name to display on the axis label.
 
@@ -143,7 +130,7 @@ def plot_param_importances(
                     _make_hovertext(param_name, importance, study)
                     for param_name, importance in importances.items()
                 ],
-                marker_color=[_get_color(param_name, study) for param_name in param_names],
+                marker_color=plotly.colors.sequential.Blues[-4],
                 orientation="h",
             )
         ],
@@ -158,10 +145,6 @@ def _get_distribution(param_name: str, study: Study) -> BaseDistribution:
         if param_name in trial.distributions:
             return trial.distributions[param_name]
     assert False
-
-
-def _get_color(param_name: str, study: Study) -> str:
-    return _distribution_colors[type(_get_distribution(param_name, study))]
 
 
 def _make_hovertext(param_name: str, importance: float, study: Study) -> str:

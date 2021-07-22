@@ -4,6 +4,7 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import Union
 import warnings
 
 import numpy
@@ -102,9 +103,9 @@ def qei_candidates_func(
             best_f = train_obj_feas.max()
 
         constraints = []
-        n_contraints = train_con.size(1)
-        for i in range(n_contraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
+        n_constraints = train_con.size(1)
+        for i in range(n_constraints):
+            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
         objective = ConstrainedMCObjective(
             objective=lambda Z: Z[..., 0],
             constraints=constraints,
@@ -173,10 +174,10 @@ def qehvi_candidates_func(
         train_obj_feas = train_obj[is_feas]
 
         constraints = []
-        n_contraints = train_con.size(1)
+        n_constraints = train_con.size(1)
 
-        for i in range(n_contraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
+        for i in range(n_constraints):
+            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
         additional_qehvi_kwargs = {
             "objective": IdentityMCMultiOutputObjective(outcomes=list(range(n_objectives))),
             "constraints": constraints,
@@ -200,11 +201,11 @@ def qehvi_candidates_func(
         alpha = 10 ** (-8 + n_objectives)
     else:
         alpha = 0.0
-    partitioning = NondominatedPartitioning(
-        num_outcomes=n_objectives, Y=train_obj_feas, alpha=alpha
-    )
 
     ref_point = train_obj.min(dim=0).values - 1e-8
+
+    partitioning = NondominatedPartitioning(ref_point=ref_point, Y=train_obj_feas, alpha=alpha)
+
     ref_point_list = ref_point.tolist()
 
     acqf = qExpectedHypervolumeImprovement(
@@ -259,10 +260,10 @@ def qparego_candidates_func(
         train_y = torch.cat([train_obj, train_con], dim=-1)
 
         constraints = []
-        n_contraints = train_con.size(1)
+        n_constraints = train_con.size(1)
 
-        for i in range(n_contraints):
-            constraints.append(lambda Z, i=i: Z[..., -n_contraints + i])
+        for i in range(n_constraints):
+            constraints.append(lambda Z, i=i: Z[..., -n_constraints + i])
 
         objective = ConstrainedMCObjective(
             objective=lambda Z: scalarization(Z[..., :n_objectives]),
@@ -334,7 +335,7 @@ class BoTorchSampler(BaseSampler):
     transformed back to Optuna's representations. Categorical parameters are one-hot encoded.
 
     .. seealso::
-        See an `example <https://github.com/optuna/optuna/blob/master/examples/
+        See an `example <https://github.com/optuna/optuna-examples/blob/main/multi_objective/
         botorch_simple.py>`_ how to use the sampler.
 
     .. seealso::
@@ -342,7 +343,7 @@ class BoTorchSampler(BaseSampler):
         your own ``candidates_func``.
 
     .. note::
-        An instance of this sampler *should be not used with different studies* when used with
+        An instance of this sampler *should not be used with different studies* when used with
         constraints. Instead, a new instance should be created for each new study. The reason for
         this is that the sampler is stateful keeping all the computed constraints.
 
@@ -355,9 +356,9 @@ class BoTorchSampler(BaseSampler):
             :obj:`None`. For any constraints that failed to compute, the tensor will contain
             NaN.
 
-            If omitted, is determined automatically based on the number of objectives. If the
+            If omitted, it is determined automatically based on the number of objectives. If the
             number of objectives is one, Quasi MC-based batch Expected Improvement (qEI) is used.
-            If the number of objectives is larger than one but smaller than four, Quasi MC-based
+            If the number of objectives is either two or three, Quasi MC-based
             batch Expected Hypervolume Improvement (qEHVI) is used. Otherwise, for larger number
             of objectives, the faster Quasi MC-based extended ParEGO (qParEGO) is used.
 
@@ -369,10 +370,10 @@ class BoTorchSampler(BaseSampler):
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
             be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
-            constraints is violated. A value equal to or smaller than 0 is considered feasible.
+            constraint is violated. A value equal to or smaller than 0 is considered feasible.
 
             If omitted, no constraints will be passed to ``candidates_func`` nor taken into
-            account during suggestion if ``candidates_func`` is omitted.
+            account during suggestion.
         n_startup_trials:
             Number of initial trials, that is the number of trials to resort to independent
             sampling.
@@ -415,8 +416,8 @@ class BoTorchSampler(BaseSampler):
         if self._study_id is None:
             self._study_id = study._study_id
         if self._study_id != study._study_id:
-            # Note that the check below is meaningless when `InMemortyStorage` is used
-            # because `InMemortyStorage.create_new_study` always returns the same study ID.
+            # Note that the check below is meaningless when `InMemoryStorage` is used
+            # because `InMemoryStorage.create_new_study` always returns the same study ID.
             raise RuntimeError("BoTorchSampler cannot handle multiple studies.")
 
         return self._search_space.calculate(study, ordered_dict=True)  # type: ignore
@@ -439,13 +440,14 @@ class BoTorchSampler(BaseSampler):
             return {}
 
         trans = _SearchSpaceTransform(search_space)
-
         n_objectives = len(study.directions)
-        values = numpy.empty((n_trials, n_objectives), dtype=numpy.float64)
+        values: Union[numpy.ndarray, torch.Tensor] = numpy.empty(
+            (n_trials, n_objectives), dtype=numpy.float64
+        )
+        params: Union[numpy.ndarray, torch.Tensor]
+        con: Optional[Union[numpy.ndarray, torch.Tensor]] = None
+        bounds: Union[numpy.ndarray, torch.Tensor] = trans.bounds
         params = numpy.empty((n_trials, trans.bounds.shape[0]), dtype=numpy.float64)
-        con = None
-        bounds = trans.bounds
-
         for trial_idx, trial in enumerate(trials):
             params[trial_idx] = trans.transform(trial.params)
             assert len(study.directions) == len(trial.values)
@@ -518,11 +520,7 @@ class BoTorchSampler(BaseSampler):
                 f"{candidates.size(0)}, bounds: {bounds.size(1)}."
             )
 
-        candidates = candidates.numpy()
-
-        params = trans.untransform(candidates)
-
-        return params
+        return trans.untransform(candidates.numpy())
 
     def sample_independent(
         self,
@@ -565,3 +563,4 @@ class BoTorchSampler(BaseSampler):
                     "botorch:constraints",
                     constraints,
                 )
+        self._independent_sampler.after_trial(study, trial, state, values)

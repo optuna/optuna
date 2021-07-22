@@ -16,6 +16,11 @@ _logger = get_logger(__name__)
 def plot_intermediate_values(study: Study) -> "Axes":
     """Plot intermediate values of all trials in a study with Matplotlib.
 
+    .. note::
+        Please refer to `matplotlib.pyplot.legend
+        <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html>`_
+        to adjust the style of the generated legend.
+
     Example:
 
         The following code snippet shows how to plot intermediate values.
@@ -34,7 +39,7 @@ def plot_intermediate_values(study: Study) -> "Axes":
 
 
             def objective(trial):
-                lr = trial.suggest_loguniform("lr", 1e-5, 1e-1)
+                lr = trial.suggest_float("lr", 1e-5, 1e-1, log=True)
 
                 x = 3
                 for step in range(128):
@@ -76,7 +81,7 @@ def _get_intermediate_plot(study: Study) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots(tight_layout=True)
     ax.set_title("Intermediate Values Plot")
     ax.set_xlabel("Step")
     ax.set_ylabel("Intermediate Value")
@@ -109,5 +114,8 @@ def _get_intermediate_plot(study: Study) -> "Axes":
             "You need to set up the pruning feature to utilize `plot_intermediate_values()`"
         )
         return ax
+
+    if len(trials) >= 2:
+        ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left", borderaxespad=0.0)
 
     return ax

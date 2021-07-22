@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import pickle
 from typing import Any
 from typing import Callable
@@ -15,6 +14,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
@@ -22,7 +22,6 @@ from optuna.samplers import BaseSampler
 from optuna.samplers import PartialFixedSampler
 from optuna.study import Study
 from optuna.testing.sampler import DeterministicRelativeSampler
-from optuna.testing.storage import StorageSupplier
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
@@ -44,6 +43,7 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     "multi_objective_sampler_class",
     [
         optuna.samplers.NSGAIISampler,
+        optuna.samplers.MOTPESampler,
     ],
 )
 
@@ -51,8 +51,6 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
 @pytest.mark.parametrize(
     "sampler_class",
     [
-        lambda: optuna.samplers.TPESampler(n_startup_trials=0),
-        lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
         lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
@@ -216,9 +214,9 @@ def test_categorical(
 
         trial = _create_new_trial(study)
         param_value = study.sampler.sample_independent(study, trial, "x", distribution)
-        return distribution.to_internal_repr(param_value)
+        return float(distribution.to_internal_repr(param_value))
 
-    points = np.array([sample() for _ in range(100)])
+    points = np.asarray([sample() for i in range(100)])
 
     # 'x' value is corresponding to an index of distribution.choices.
     assert np.all(points >= 0)
@@ -289,88 +287,19 @@ def test_sample_relative() -> None:
     def objective(trial: Trial) -> float:
 
         # Predefined parameters are sampled by `sample_relative()` method.
-        assert trial.suggest_uniform("a", 0, 5) == 3.2
+        assert trial.suggest_float("a", 0, 5) == 3.2
         assert trial.suggest_categorical("b", ["foo", "bar", "baz"]) == "baz"
 
         # Other parameters are sampled by `sample_independent()` method.
         assert trial.suggest_int("c", 20, 50) == unknown_param_value
-        assert trial.suggest_loguniform("d", 1, 100) == unknown_param_value
-        assert trial.suggest_uniform("e", 20, 40) == unknown_param_value
+        assert trial.suggest_float("d", 1, 100, log=True) == unknown_param_value
+        assert trial.suggest_float("e", 20, 40) == unknown_param_value
 
         return 0.0
 
     study.optimize(objective, n_trials=10, catch=())
     for trial in study.trials:
         assert trial.params == {"a": 3.2, "b": "baz", "c": 30, "d": 30, "e": 30}
-
-
-def test_intersection_search_space() -> None:
-    search_space = optuna.samplers.IntersectionSearchSpace()
-    study = optuna.create_study()
-
-    # No trial.
-    assert search_space.calculate(study) == {}
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-    # First trial.
-    study.optimize(lambda t: t.suggest_uniform("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
-    assert search_space.calculate(study) == {
-        "x": IntUniformDistribution(low=0, high=10),
-        "y": UniformDistribution(low=-3, high=3),
-    }
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-    # Returning sorted `OrderedDict` instead of `dict`.
-    assert search_space.calculate(study, ordered_dict=True) == OrderedDict(
-        [
-            ("x", IntUniformDistribution(low=0, high=10)),
-            ("y", UniformDistribution(low=-3, high=3)),
-        ]
-    )
-    assert search_space.calculate(
-        study, ordered_dict=True
-    ) == optuna.samplers.intersection_search_space(study, ordered_dict=True)
-
-    # Second trial (only 'y' parameter is suggested in this trial).
-    study.optimize(lambda t: t.suggest_uniform("y", -3, 3), n_trials=1)
-    assert search_space.calculate(study) == {"y": UniformDistribution(low=-3, high=3)}
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-    # Failed or pruned trials are not considered in the calculation of
-    # an intersection search space.
-    def objective(trial: Trial, exception: Exception) -> float:
-
-        trial.suggest_uniform("z", 0, 1)
-        raise exception
-
-    study.optimize(lambda t: objective(t, RuntimeError()), n_trials=1, catch=(RuntimeError,))
-    study.optimize(lambda t: objective(t, optuna.TrialPruned()), n_trials=1)
-    assert search_space.calculate(study) == {"y": UniformDistribution(low=-3, high=3)}
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-    # If two parameters have the same name but different distributions,
-    # those are regarded as different parameters.
-    study.optimize(lambda t: t.suggest_uniform("y", -1, 1), n_trials=1)
-    assert search_space.calculate(study) == {}
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-    # The search space remains empty once it is empty.
-    study.optimize(lambda t: t.suggest_uniform("y", -3, 3) + t.suggest_int("x", 0, 10), n_trials=1)
-    assert search_space.calculate(study) == {}
-    assert search_space.calculate(study) == optuna.samplers.intersection_search_space(study)
-
-
-def test_intersection_search_space_class_with_different_studies() -> None:
-    search_space = optuna.samplers.IntersectionSearchSpace()
-
-    with StorageSupplier("sqlite") as storage:
-        study0 = optuna.create_study(storage=storage)
-        study1 = optuna.create_study(storage=storage)
-
-        search_space.calculate(study0)
-        with pytest.raises(ValueError):
-            # An `IntersectionSearchSpace` instance isn't supposed to be used for multiple studies.
-            search_space.calculate(study1)
 
 
 @parametrize_sampler
@@ -380,7 +309,7 @@ def test_nan_objective_value(sampler_class: Callable[[], BaseSampler]) -> None:
 
     def objective(trial: Trial, base_value: float) -> float:
 
-        return trial.suggest_uniform("x", 0.1, 0.2) + base_value
+        return trial.suggest_float("x", 0.1, 0.2) + base_value
 
     # Non NaN objective values.
     for i in range(10, 1, -1):
@@ -490,9 +419,7 @@ def test_after_trial() -> None:
     sampler = SamplerAfterTrial({}, {})
     study = optuna.create_study(directions=["minimize", "minimize"], sampler=sampler)
 
-    study.optimize(
-        lambda t: [t.suggest_uniform("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3
-    )
+    study.optimize(lambda t: [t.suggest_float("y", -3, 3), t.suggest_int("x", 0, 10)], n_trials=3)
 
     assert n_calls == n_trials
 
@@ -621,3 +548,28 @@ def test_after_trial_with_study_tell() -> None:
     study.tell(study.ask(), 1.0)
 
     assert n_calls == 1
+
+
+@parametrize_sampler
+def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) -> None:
+
+    relative_search_space = {
+        "a": UniformDistribution(low=1.0, high=1.0),
+        "b": LogUniformDistribution(low=1.0, high=1.0),
+        "c": DiscreteUniformDistribution(low=1.0, high=1.0, q=1.0),
+        "d": IntUniformDistribution(low=1, high=1),
+        "e": IntLogUniformDistribution(low=1, high=1),
+        "f": CategoricalDistribution([1]),
+    }
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = sampler_class()
+    study = optuna.study.create_study(sampler=sampler)
+
+    # We need to test the construction of the model, so we should set `n_trials >= 2`.
+    for _ in range(2):
+        trial = study.ask(fixed_distributions=relative_search_space)
+        study.tell(trial, 1.0)
+        for param_name in relative_search_space.keys():
+            assert trial.params[param_name] == 1

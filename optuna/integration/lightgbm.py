@@ -38,8 +38,8 @@ else:
 class LightGBMPruningCallback(object):
     """Callback for LightGBM to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/pruning/lightgbm_integration.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/blob/main/
+    lightgbm/lightgbm_integration.py>`__
     if you want to add a pruning callback which observes AUC
     of a LightGBM model.
 

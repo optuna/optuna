@@ -2,6 +2,7 @@ import collections
 import threading
 import time
 from typing import Any
+from typing import cast
 from typing import DefaultDict
 from typing import Dict
 from typing import List
@@ -10,11 +11,10 @@ from typing import Optional
 import numpy as np
 from packaging import version
 
-from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna._study_direction import StudyDirection
 import optuna.logging
 import optuna.study
+from optuna.study._study_direction import StudyDirection
 import optuna.trial
 
 
@@ -73,7 +73,7 @@ if _imports.is_successful():
             self.trial_ids = set([trial._trial_id for trial in complete_trials])
 
             self.direction = direction
-            values = [trial.value for trial in complete_trials]
+            values = [cast(float, trial.value) for trial in complete_trials]
             if direction == StudyDirection.MINIMIZE:
                 best_values = np.minimum.accumulate(values, axis=0)
             else:
@@ -246,12 +246,6 @@ if _imports.is_successful():
             self.all_trials_widget.update(current_trials, new_trials)
 
 
-@experimental("0.1.0", name="Optuna dashboard")
-def _show_experimental_warning() -> None:
-
-    pass
-
-
 def _get_this_source_path() -> str:
 
     path = __file__
@@ -267,7 +261,6 @@ def _serve(study: optuna.study.Study, bokeh_allow_websocket_origins: List[str]) 
     global _mode, _study
 
     _imports.check()
-    _show_experimental_warning()
 
     # We want to pass the mode (launching a server? or, just writing an HTML?) and a target study
     # to our Bokeh app. Unfortunately, as we are using `bokeh.command.bootstrap.main` to launch
@@ -295,7 +288,6 @@ def _write(study: optuna.study.Study, out_path: str) -> None:
     global _mode, _study
 
     _imports.check()
-    _show_experimental_warning()
 
     _mode = "html"
     _study = study

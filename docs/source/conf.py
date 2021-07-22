@@ -47,6 +47,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
+    "sphinx.ext.imgconverter",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
@@ -97,7 +98,7 @@ html_theme = "sphinx_rtd_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {"logo_only": True}
+html_theme_options = {"logo_only": True, "navigation_with_keys": True}
 
 html_favicon = "../image/favicon.ico"
 

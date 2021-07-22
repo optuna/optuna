@@ -1,7 +1,6 @@
 import copy
 import datetime
 from typing import Any
-from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -10,7 +9,6 @@ from typing import Tuple
 import pytest
 
 from optuna import create_study
-from optuna import storages
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -18,16 +16,12 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+from optuna.testing.storage import STORAGE_MODES
+from optuna.testing.storage import StorageSupplier
 from optuna.trial import BaseTrial
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-
-
-parametrize_storage = pytest.mark.parametrize(
-    "storage_init_func",
-    [storages.InMemoryStorage, lambda: storages.RDBStorage("sqlite:///:memory:")],
-)
 
 
 def test_eq_ne() -> None:
@@ -104,8 +98,8 @@ def test_repr() -> None:
     assert trial == eval(repr(trial))
 
 
-@parametrize_storage
-def test_sampling(storage_init_func: Callable[[], storages.BaseStorage]) -> None:
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_sampling(storage_mode: str) -> None:
     def objective(trial: BaseTrial) -> float:
 
         a = trial.suggest_uniform("a", 0.0, 10.0)
@@ -118,15 +112,16 @@ def test_sampling(storage_init_func: Callable[[], storages.BaseStorage]) -> None
         assert isinstance(e, int)
         return a + b + c + d + e + f
 
-    study = create_study(storage_init_func())
-    study.optimize(objective, n_trials=1)
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        study.optimize(objective, n_trials=1)
 
-    best_trial = study.best_trial
+        best_trial = study.best_trial
 
-    # re-evaluate objective with the best hyper-parameters
-    v = objective(best_trial)
+        # re-evaluate objective with the best hyperparameters
+        v = objective(best_trial)
 
-    assert v == best_trial.value
+        assert v == best_trial.value
 
 
 def test_suggest_float() -> None:
@@ -368,11 +363,18 @@ def test_validate() -> None:
     valid_trial = _create_frozen_trial()
     valid_trial._validate()
 
-    # Invalid: `datetime_start` is not set.
-    invalid_trial = copy.copy(valid_trial)
-    invalid_trial.datetime_start = None
-    with pytest.raises(ValueError):
-        invalid_trial._validate()
+    # Invalid: `datetime_start` is not set when the trial is not in the waiting state.
+    for state in [
+        TrialState.RUNNING,
+        TrialState.COMPLETE,
+        TrialState.PRUNED,
+        TrialState.FAIL,
+    ]:
+        invalid_trial = copy.copy(valid_trial)
+        invalid_trial.state = state
+        invalid_trial.datetime_start = None
+        with pytest.raises(ValueError):
+            invalid_trial._validate()
 
     # Invalid: `state` is `RUNNING` and `datetime_complete` is set.
     invalid_trial = copy.copy(valid_trial)

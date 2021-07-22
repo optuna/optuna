@@ -117,5 +117,8 @@ docs/source/reference/multi_objective/generated/
 docs/source/reference/visualization/generated/
 docs/source/tutorial/
 
+# asv
+.asv
+
 # Dask
 dask-worker-space/

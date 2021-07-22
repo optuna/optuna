@@ -21,9 +21,9 @@ def test_plot_pareto_front_2d(
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
-    assert len(figure.data) == 1
-    assert figure.data[0]["x"] == ()
-    assert figure.data[0]["y"] == ()
+    assert len(figure.data) == 2
+    assert (figure.data[1]["x"] + figure.data[0]["x"]) == ()
+    assert (figure.data[1]["y"] + figure.data[0]["y"]) == ()
 
     # Test with three trials.
     study.enqueue_trial({"x": 1, "y": 1})
@@ -36,24 +36,24 @@ def test_plot_pareto_front_2d(
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
-    assert len(figure.data) == 1
+    assert len(figure.data) == 2
     if include_dominated_trials:
         # The last elements come from dominated trial that is enqueued firstly.
         data = [(1, 0, 1), (0, 1, 1)]  # type: ignore
         if axis_order is None:
-            assert figure.data[0]["x"] == data[0]
-            assert figure.data[0]["y"] == data[1]
+            assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
+            assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
         else:
-            assert figure.data[0]["x"] == data[axis_order[0]]
-            assert figure.data[0]["y"] == data[axis_order[1]]
+            assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[axis_order[0]]
+            assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[axis_order[1]]
     else:
         data = [(1, 0), (0, 1)]  # type: ignore
         if axis_order is None:
-            assert figure.data[0]["x"] == data[0]
-            assert figure.data[0]["y"] == data[1]
+            assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
+            assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
         else:
-            assert figure.data[0]["x"] == data[axis_order[0]]
-            assert figure.data[0]["y"] == data[axis_order[1]]
+            assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[axis_order[0]]
+            assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[axis_order[1]]
 
     titles = ["Objective {}".format(i) for i in range(2)]
     if axis_order is None:
@@ -111,10 +111,10 @@ def test_plot_pareto_front_3d(
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
-    assert len(figure.data) == 1
-    assert figure.data[0]["x"] == ()
-    assert figure.data[0]["y"] == ()
-    assert figure.data[0]["z"] == ()
+    assert len(figure.data) == 2
+    assert (figure.data[1]["x"] + figure.data[0]["x"]) == ()
+    assert (figure.data[1]["y"] + figure.data[0]["y"]) == ()
+    assert (figure.data[1]["z"] + figure.data[0]["z"]) == ()
 
     # Test with three trials.
     study.enqueue_trial({"x": 1, "y": 1, "z": 1})
@@ -130,28 +130,28 @@ def test_plot_pareto_front_3d(
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
     )
-    assert len(figure.data) == 1
+    assert len(figure.data) == 2
     if include_dominated_trials:
         # The last elements come from dominated trial that is enqueued firstly.
         data = [(1, 1, 1), (0, 1, 1), (1, 0, 1)]  # type: ignore
         if axis_order is None:
-            assert figure.data[0]["x"] == data[0]
-            assert figure.data[0]["y"] == data[1]
-            assert figure.data[0]["z"] == data[2]
+            assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
+            assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
+            assert (figure.data[1]["z"] + figure.data[0]["z"]) == data[2]
         else:
-            assert figure.data[0]["x"] == data[axis_order[0]]
-            assert figure.data[0]["y"] == data[axis_order[1]]
-            assert figure.data[0]["z"] == data[axis_order[2]]
+            assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[axis_order[0]]
+            assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[axis_order[1]]
+            assert (figure.data[1]["z"] + figure.data[0]["z"]) == data[axis_order[2]]
     else:
         data = [(1, 1), (0, 1), (1, 0)]  # type: ignore
         if axis_order is None:
-            assert figure.data[0]["x"] == data[0]
-            assert figure.data[0]["y"] == data[1]
-            assert figure.data[0]["z"] == data[2]
+            assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
+            assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
+            assert (figure.data[1]["z"] + figure.data[0]["z"]) == data[2]
         else:
-            assert figure.data[0]["x"] == data[axis_order[0]]
-            assert figure.data[0]["y"] == data[axis_order[1]]
-            assert figure.data[0]["z"] == data[axis_order[2]]
+            assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[axis_order[0]]
+            assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[axis_order[1]]
+            assert (figure.data[1]["z"] + figure.data[0]["z"]) == data[axis_order[2]]
 
     titles = ["Objective {}".format(i) for i in range(3)]
     if axis_order is None:
@@ -220,16 +220,6 @@ def test_plot_pareto_front_unsupported_dimensions(include_dominated_trials: bool
         study = optuna.create_study(direction="minimize")
         study.optimize(lambda t: [0], n_trials=1)
         plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
-
-    # Supported: n_objectives == 2.
-    study = optuna.create_study(directions=["minimize", "minimize"])
-    study.optimize(lambda t: [0, 0], n_trials=1)
-    plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
-
-    # Supported: n_objectives == 3.
-    study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
-    study.optimize(lambda t: [0, 0, 0], n_trials=1)
-    plot_pareto_front(study=study, include_dominated_trials=include_dominated_trials)
 
     # Unsupported: n_objectives == 4.
     with pytest.raises(ValueError):

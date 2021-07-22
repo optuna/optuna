@@ -20,10 +20,10 @@ def test_study_optimize_with_single_search_space() -> None:
     def objective(trial: Trial) -> float:
 
         a = trial.suggest_int("a", 0, 100)
-        b = trial.suggest_uniform("b", -0.1, 0.1)
+        b = trial.suggest_float("b", -0.1, 0.1)
         c = trial.suggest_categorical("c", ("x", "y"))
-        d = trial.suggest_discrete_uniform("d", -5, 5, 1)
-        e = trial.suggest_loguniform("e", 0.0001, 1)
+        d = trial.suggest_float("d", -5, 5, step=1)
+        e = trial.suggest_float("e", 0.0001, 1, log=True)
 
         if c == "x":
             return a * d
@@ -66,7 +66,7 @@ def test_study_optimize_with_single_search_space() -> None:
         "e": [0.1],
     }
     study = optuna.create_study(sampler=samplers.GridSampler(search_space))
-    with pytest.raises(ValueError):
+    with pytest.warns(UserWarning):
         study.optimize(objective)
 
 
@@ -101,7 +101,7 @@ def test_study_optimize_with_multiple_search_spaces() -> None:
     def objective(trial: Trial) -> float:
 
         a = trial.suggest_int("a", 0, 100)
-        b = trial.suggest_uniform("b", -100, 100)
+        b = trial.suggest_float("b", -100, 100)
 
         return a * b
 
@@ -161,7 +161,7 @@ def test_has_same_search_space() -> None:
     search_space: Dict[str, List[Union[int, str]]] = {"x": [3, 2, 1], "y": ["a", "b", "c"]}
     sampler = samplers.GridSampler(search_space)
     assert sampler._same_search_space(search_space)
-    assert sampler._same_search_space({"x": np.array([3, 2, 1]), "y": ["a", "b", "c"]})
+    assert sampler._same_search_space({"x": [3, 2, 1], "y": ["a", "b", "c"]})
     assert sampler._same_search_space({"y": ["c", "a", "b"], "x": [1, 2, 3]})
 
     assert not sampler._same_search_space({"x": [3, 2, 1, 0], "y": ["a", "b", "c"]})
