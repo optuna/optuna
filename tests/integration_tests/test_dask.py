@@ -7,7 +7,8 @@ from typing import Iterator
 from distributed import Client
 from distributed import Scheduler
 from distributed import Worker
-from distributed.utils_test import gen_cluster, cleanup
+from distributed.utils_test import clean
+from distributed.utils_test import gen_cluster
 import numpy as np
 import pytest
 
@@ -60,9 +61,10 @@ def objective_slow(trial: Trial) -> float:
 
 
 @pytest.fixture
-def client(cleanup) -> Client:
-    with Client(dashboard_address=":0") as client:
-        yield client
+def client() -> Client:
+    with clean():
+        with Client(dashboard_address=":0") as client:
+            yield client
 
 
 def test_experimental(client: Client) -> None:
