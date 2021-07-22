@@ -1,6 +1,8 @@
 import asyncio
+from contextlib import contextmanager
+import tempfile
 import time
-from typing import Optional
+from typing import Iterator
 
 from distributed import Client
 from distributed import Scheduler
@@ -28,17 +30,24 @@ pytestmark = pytest.mark.filterwarnings(
 STORAGE_MODES = ["inmemory", "sqlite"]
 
 
-def get_storage_url(specifier: str) -> Optional[str]:
-    if specifier == "inmemory":
-        url = None
-    elif specifier == "sqlite":
-        url = "sqlite:///:memory:"
-    else:
-        raise ValueError(
-            "Invalid specifier entered. Was expecting 'inmemory' or 'sqlite'"
-            f"but got {specifier} instead"
-        )
-    return url
+@contextmanager
+def get_storage_url(specifier: str) -> Iterator:
+    tmpfile = None
+    try:
+        if specifier == "inmemory":
+            url = None
+        elif specifier == "sqlite":
+            tmpfile = tempfile.NamedTemporaryFile()
+            url = "sqlite:///{}".format(tmpfile.name)
+        else:
+            raise ValueError(
+                "Invalid specifier entered. Was expecting 'inmemory' or 'sqlite'"
+                f"but got {specifier} instead"
+            )
+        yield url
+    finally:
+        if tmpfile is not None:
+            tmpfile.close()
 
 
 def objective(trial: Trial) -> float:
@@ -100,11 +109,11 @@ def test_create_study_daskstudy(client: Client) -> None:
 
 @pytest.mark.parametrize("storage_specifier", STORAGE_MODES)
 def test_daskstudy_optimize(client: Client, storage_specifier: str) -> None:
-    url = get_storage_url(storage_specifier)
-    storage = DaskStorage(url)
-    study = optuna.create_study(storage=storage)
-    study.optimize(objective, n_trials=10)
-    assert len(study.trials) == 10
+    with get_storage_url(storage_specifier) as url:
+        storage = DaskStorage(url)
+        study = optuna.create_study(storage=storage)
+        study.optimize(objective, n_trials=10)
+        assert len(study.trials) == 10
 
 
 def test_daskstudy_optimize_timeout(client: Client) -> None:
@@ -115,11 +124,11 @@ def test_daskstudy_optimize_timeout(client: Client) -> None:
 
 @pytest.mark.parametrize("storage_specifier", STORAGE_MODES)
 def test_get_base_storage(client: Client, storage_specifier: str) -> None:
-    url = get_storage_url(storage_specifier)
-    dask_storage = DaskStorage(url)
-    storage = dask_storage.get_base_storage()
-    expected_type = type(optuna.storages.get_storage(url))
-    assert type(storage) is expected_type
+    with get_storage_url(storage_specifier) as url:
+        dask_storage = DaskStorage(url)
+        storage = dask_storage.get_base_storage()
+        expected_type = type(optuna.storages.get_storage(url))
+        assert type(storage) is expected_type
 
 
 @pytest.mark.parametrize("direction", ["maximize", "minimize"])
