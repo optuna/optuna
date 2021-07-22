@@ -317,30 +317,30 @@ def _calculate_griddata(
             x_values_min = np.power(np.log10(x_values_min) - padding_x, 10)
             x_values_max = np.power(np.log10(x_values_max) + padding_x, 10)
             xi = np.logspace(np.log10(x_values_min), np.log10(x_values_max), contour_point_num)
-            tmp_x = np.log10(x_values)
+            x_array = np.log10(x_values)
         else:
             padding_x = (x_values_max - x_values_min) * AXES_PADDING_RATIO
             x_values_min -= padding_x
             x_values_max += padding_x
             xi = np.linspace(x_values_min, x_values_max, contour_point_num)
-            tmp_x = np.array(x_values)
+            x_array = np.array(x_values)
 
         if _is_log_scale(trials, y_param):
             padding_y = (np.log10(y_values_max) - np.log10(y_values_min)) * AXES_PADDING_RATIO
             y_values_min = np.power(np.log10(y_values_min) - padding_y, 10)
             y_values_max = np.power(np.log10(y_values_max) + padding_y, 10)
             yi = np.logspace(np.log10(y_values_min), np.log10(y_values_max), contour_point_num)
-            tmp_y = np.log10(y_values)
+            y_array = np.log10(y_values)
         else:
             padding_y = (y_values_max - y_values_min) * AXES_PADDING_RATIO
             y_values_min -= padding_y
             y_values_max += padding_y
             yi = np.linspace(y_values_min, y_values_max, contour_point_num)
-            tmp_y = np.array(y_values)
+            y_array = np.array(y_values)
 
         # create irregularly spaced map of trial values
         # and interpolate it with Plotly algorithm
-        zmap = _create_zmap(tmp_x, tmp_y, z_values, xi, yi)
+        zmap = _create_zmap(x_array, y_array, z_values, xi, yi)
         zmap = _interpolate_zmap(zmap, contour_point_num)
         zi = _create_zmatrix_from_zmap(zmap, contour_point_num)
 
