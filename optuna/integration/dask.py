@@ -465,19 +465,19 @@ class DaskStorage(BaseStorage):
     This storage class wraps a Optuna storage class (e.g. Optuna’s in-memory or sqlite storage)
     and is used to run optimization trials in parallel on a Dask cluster.
     The underlying Optuna storage object lives on the cluster’s scheduler and any method calls on
-    the ``DaskStorage`` instance results in the same method being called on the underlying Optuna
+    the :obj:`DaskStorage` instance results in the same method being called on the underlying Optuna
     storage object.
 
     See `this example <https://github.com/optuna/optuna/blob/master/
     examples/dask_simple.py>`__
-    for how to use ``DaskStorage`` to extend Optuna's in-memory storage class to run across
+    for how to use :obj:`DaskStorage` to extend Optuna's in-memory storage class to run across
     multiple processes.
 
     Args:
         storage:
             Optuna storage url to use for underlying Optuna storage class to wrap
-            (e.g. ``None`` for in-memory storage, ``sqlite:///example.db`` for SQLite storage).
-            Defaults to ``None``.
+            (e.g. :obj:`None` for in-memory storage, ``sqlite:///example.db``
+            for SQLite storage). Defaults to :obj:`None`.
 
         name:
             Unique identifier for the Dask storage class. If not provided, a random name
