@@ -29,7 +29,9 @@ import yaml
 import optuna
 from optuna._deprecated import deprecated
 from optuna.exceptions import CLIUsageError
+from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
+from optuna.trial import TrialState
 
 
 def _check_storage_url(storage_url: Optional[str]) -> str:
@@ -372,65 +374,74 @@ class _StorageUpgrade(_BaseCommand):
 
 
 class _Ask(_BaseCommand):
-    """Ask."""
+    """Create a new trial and suggest parameters."""
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
-        # TODO(hvy): Support mulitple directions.
         parser = super(_Ask, self).get_parser(prog_name)
         parser.add_argument("--study-name", type=str)
-        parser.add_argument("--storage", type=str)
-        parser.add_argument("--sampler", type=str)
         parser.add_argument("--direction", type=str, choices=("minimize", "maximize"))
+        parser.add_argument("--directions", type=str, nargs="+", choices=("minimize", "maximize"))
+        parser.add_argument("--sampler", type=str)
         parser.add_argument("--sampler-kwargs", type=str)
         parser.add_argument("--search-space", type=str)
-        parser.add_argument("--out", type=str, choices=("json", "yaml"))
+        parser.add_argument("--out", type=str, choices=("json", "yaml"), default="json")
         return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
 
-        # TODO(hvy): `parsed_args` input validation.
+        warnings.warn(
+            "ask is an experimental CLI command. The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
         storage_url = _check_storage_url(self.app_args.storage)
 
+        create_study_kwargs = {
+            "storage": storage_url,
+            "study_name": parsed_args.study_name,
+            "direction": parsed_args.direction,
+            "directions": parsed_args.directions,
+            "load_if_exists": True,
+        }
         if parsed_args.sampler is not None:
             if parsed_args.sampler_kwargs is not None:
                 sampler_kwargs = json.loads(parsed_args.sampler_kwargs)
             else:
                 sampler_kwargs = {}
-
             sampler_cls = getattr(optuna.samplers, parsed_args.sampler)
             sampler = sampler_cls(**sampler_kwargs)
+            create_study_kwargs["sampler"] = sampler
 
-        search_space_json = json.loads(parsed_args.search_space)
-        search_space = {
-            name: optuna.distributions.json_to_distribution(json.dumps(j))
-            for name, j in search_space_json.items()
-        }
+        if parsed_args.search_space is not None:
+            # The search space is expected to be a JSON serialized string, e.g.
+            # '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}},
+            #   "y": ...}'.
+            search_space = {
+                name: optuna.distributions.json_to_distribution(json.dumps(dist))
+                for name, dist in json.loads(parsed_args.search_space).items()
+            }
+        else:
+            search_space = {}
 
-        # TODO(hvy): Do not require direction.
-        if parsed_args.direction is None:
-            raise ValueError("Direction must be given.")
-
-        study = optuna.create_study(
-            storage=storage_url,
-            study_name=parsed_args.study_name,
-            load_if_exists=True,
-            sampler=sampler,
-            direction=parsed_args.direction,
-        )
+        study = optuna.create_study(**create_study_kwargs)
         trial = study.ask(fixed_distributions=search_space)
-
-        data = {
-            "number": trial.number,
-            "params": trial.params,
+        out = {
+            "trial": {
+                "number": trial.number,
+                "params": trial.params,
+            }
         }
 
-        if parsed_args.out is None:
-            print(data)
-        elif parsed_args.out == "json":
-            print(json.dumps(data))
+        self.logger.info(
+            f"Asked trial {trial.number} with parameters {trial.params} in study "
+            f"'{study.study_name}' and storage '{storage_url}'."
+        )
+
+        if parsed_args.out == "json":
+            print(json.dumps(out))
         elif parsed_args.out == "yaml":
-            print(yaml.dump(data))
+            print(yaml.dump(out))
         else:
             assert False
 
@@ -438,29 +449,42 @@ class _Ask(_BaseCommand):
 
 
 class _Tell(_BaseCommand):
-    """Tell."""
+    """Finish a trial created with the ask command."""
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
-        # TODO(hvy): Support multiple values.
-        # TODO(hvy): Support states other than `TrialState.COMPLETE`.
         parser = super(_Tell, self).get_parser(prog_name)
         parser.add_argument("--study-name", type=str)
         parser.add_argument("--storage", type=str)
-        parser.add_argument("--number", type=int)
-        parser.add_argument("--value", type=float)
+        parser.add_argument("--trial-number", type=int)
+        parser.add_argument("--values", type=float, nargs="+")
+        parser.add_argument("--state", type=str, default="complete")
         return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
+        warnings.warn(
+            "tell is an experimental CLI command. The interface can change in the future.",
+            ExperimentalWarning,
+        )
 
-        # TODO(hvy): `parsed_args` input validation.
         storage_url = _check_storage_url(self.app_args.storage)
 
         study = optuna.load_study(
             storage=storage_url,
             study_name=parsed_args.study_name,
         )
-        study.tell(trial=parsed_args.number, values=parsed_args.value)
+
+        state = TrialState[parsed_args.state.upper()]
+        study.tell(
+            trial=parsed_args.trial_number,
+            values=parsed_args.values,
+            state=state,
+        )
+
+        self.logger.info(
+            f"Told trial {parsed_args.trial_number} with values {parsed_args.values} and state "
+            f"{state} in study '{study.study_name}' and storage '{storage_url}'."
+        )
 
         return 0
 
