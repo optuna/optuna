@@ -7,6 +7,7 @@ from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
 
+import _pytest.capture
 import numpy as np
 import pytest
 
@@ -31,6 +32,50 @@ def test_hyperopt_parameters(use_hyperband: bool) -> None:
 def test_multivariate_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         optuna.samplers.TPESampler(multivariate=True)
+
+
+def test_warn_independent_sampling(capsys: _pytest.capture.CaptureFixture) -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_categorical("x", ["a", "b"])
+        if x == "a":
+            return trial.suggest_float("y", 0, 1)
+        else:
+            return trial.suggest_float("z", 0, 1)
+
+    # We need to reconstruct our default handler to properly capture stderr.
+    optuna.logging._reset_library_root_logger()
+    optuna.logging.enable_default_handler()
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    sampler = TPESampler(multivariate=True, warn_independent_sampling=True, n_startup_trials=0)
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
+
+    _, err = capsys.readouterr()
+    assert err
+
+
+def test_warn_independent_sampling_group(capsys: _pytest.capture.CaptureFixture) -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_categorical("x", ["a", "b"])
+        if x == "a":
+            return trial.suggest_float("y", 0, 1)
+        else:
+            return trial.suggest_float("z", 0, 1)
+
+    # We need to reconstruct our default handler to properly capture stderr.
+    optuna.logging._reset_library_root_logger()
+    optuna.logging.enable_default_handler()
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    sampler = TPESampler(
+        multivariate=True, warn_independent_sampling=True, group=True, n_startup_trials=0
+    )
+    study = optuna.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
+
+    _, err = capsys.readouterr()
+    assert err == ""
 
 
 def test_infer_relative_search_space() -> None:

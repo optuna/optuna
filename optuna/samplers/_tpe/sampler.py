@@ -11,7 +11,6 @@ import warnings
 
 import numpy as np
 
-from optuna import distributions
 from optuna._hypervolume import WFG
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
@@ -30,14 +29,6 @@ from optuna.trial import TrialState
 
 
 EPS = 1e-12
-_DISTRIBUTION_CLASSES = (
-    distributions.UniformDistribution,
-    distributions.LogUniformDistribution,
-    distributions.DiscreteUniformDistribution,
-    distributions.IntUniformDistribution,
-    distributions.IntLogUniformDistribution,
-    distributions.CategoricalDistribution,
-)
 _logger = get_logger(__name__)
 
 
@@ -306,7 +297,6 @@ class TPESampler(BaseSampler):
         if not self._multivariate:
             return {}
 
-        n_complete_trials = len(study.get_trials(deepcopy=False))
         search_space: Dict[str, BaseDistribution] = {}
 
         if self._group:
@@ -314,18 +304,12 @@ class TPESampler(BaseSampler):
             self._search_space_group = self._group_decomposed_search_space.calculate(study)
             for sub_space in self._search_space_group.search_spaces:
                 for name, distribution in sub_space.items():
-                    if not isinstance(distribution, _DISTRIBUTION_CLASSES):
-                        self._log_independent_sampling(n_complete_trials, trial, name)
-                        continue
                     if distribution.single():
                         continue
                     search_space[name] = distribution
             return search_space
 
         for name, distribution in self._search_space.calculate(study).items():
-            if not isinstance(distribution, _DISTRIBUTION_CLASSES):
-                self._log_independent_sampling(n_complete_trials, trial, name)
-                continue
             if distribution.single():
                 continue
             search_space[name] = distribution
@@ -335,8 +319,9 @@ class TPESampler(BaseSampler):
     def _log_independent_sampling(
         self, n_complete_trials: int, trial: FrozenTrial, param_name: str
     ) -> None:
-        if self._warn_independent_sampling:
-            if n_complete_trials >= self._n_startup_trials:
+        if self._warn_independent_sampling and self._multivariate:
+            # The first trial samples independently.
+            if n_complete_trials >= max(self._n_startup_trials, 1):
                 _logger.warning(
                     f"The parameter '{param_name}' in trial#{trial.number} is sampled "
                     "independently instead of being sampled by multivariate TPE sampler. "
@@ -356,10 +341,7 @@ class TPESampler(BaseSampler):
             for sub_space in self._search_space_group.search_spaces:
                 search_space = {}
                 for name, distribution in sub_space.items():
-                    if (
-                        isinstance(distribution, _DISTRIBUTION_CLASSES)
-                        and not distribution.single()
-                    ):
+                    if not distribution.single():
                         search_space[name] = distribution
                 params.update(self._sample_relative(study, trial, search_space))
             return params
@@ -422,6 +404,8 @@ class TPESampler(BaseSampler):
         )
 
         n = len(scores)
+
+        self._log_independent_sampling(n, trial, param_name)
 
         if n < self._n_startup_trials:
             return self._random_sampler.sample_independent(
