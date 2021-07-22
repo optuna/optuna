@@ -39,7 +39,7 @@ if __name__ == "__main__":
     with Client() as client:
         print(f"Dask dashboard is available at {client.dashboard_link}")
         storage = optuna.integration.dask.DaskStorage()
-        study = optuna.create_study(storage=storage)
+        study = optuna.create_study(storage=storage, direction="maximize")
         study.optimize(objective, n_trials=100)
 
         print(f"Best params: {study.best_params}")
