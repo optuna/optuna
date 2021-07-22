@@ -307,6 +307,18 @@ def test_allennlp_pruning_callback() -> None:
         assert study.trials[0].value == 1.0
 
 
+def test_allennlp_pruning_callback_monitor() -> None:
+    study = optuna.study.create_study()
+    trial = study.ask()
+
+    pruning_callback = AllenNLPPruningCallback(trial, "best_validation_loss")
+    assert pruning_callback._monitor == "best_validation_loss"
+
+    trial.set_system_attr("monitor", "best_validation_accuracy")
+    pruning_callback_without_monitor = AllenNLPPruningCallback(trial)
+    pruning_callback_without_monitor._monitor == "best_validation_accuracy"
+
+
 def test_allennlp_pruning_callback_with_executor() -> None:
     input_config_file = (
         "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
