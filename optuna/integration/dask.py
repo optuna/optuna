@@ -16,15 +16,15 @@ import uuid
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna._optimize import _optimize
 from optuna.distributions import BaseDistribution
 from optuna.distributions import distribution_to_json
 from optuna.distributions import json_to_distribution
 from optuna.storages import BaseStorage
-from optuna.study import ObjectiveFuncType
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study import StudySummary
+from optuna.study._optimize import _optimize
+from optuna.study.study import ObjectiveFuncType
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -458,7 +458,7 @@ def _use_basestorage_doc(func: Callable) -> Callable:
     return func
 
 
-@experimental("2.5.0")
+@experimental("2.9.0")
 class DaskStorage(BaseStorage):
     """Dask-compatible storage class.
 
@@ -795,7 +795,7 @@ class DaskStorage(BaseStorage):
         )
 
 
-@experimental("2.5.0")
+@experimental("2.9.0")
 class DaskStudy(Study):
     def optimize(  # type: ignore
         self,
