@@ -480,8 +480,9 @@ class DaskStorage(BaseStorage):
             for SQLite storage). Defaults to :obj:`None`.
 
         name:
-            Unique identifier for the Dask storage class. If not provided, a random name
-            will be generated.
+            Unique identifier for the Dask storage class. Specifying a custom name can sometimes
+            be useful for logging or debugging. If no name if provided provided,
+            a random name will be automatically generated.
 
         client:
             Dask ``Client`` to connect to. If not provided, will attempt to find an
@@ -522,12 +523,22 @@ class DaskStorage(BaseStorage):
             return _().__await__()
 
     def __reduce__(self) -> tuple:
+        # We don't have a reference to underlying Optuna storage instance which lives
+        # on the scheduler. This is okay since this DaskStorage instance has already been
+        # registered with the scheduler, and ``storage`` is only ever needed during the
+        # scheduler registration process. We use ``storage=None`` below by convention.
         return (DaskStorage, (None, self.name))
 
     def get_study_class(self) -> Type[Study]:
         return DaskStudy
 
     def get_base_storage(self) -> BaseStorage:
+        """Retrieve underlying Optuna storage instance from the scheduler.
+
+        This is a convenience method to extract the Optuna storage instance stored on
+        the Dask scheduler process to the local Python process.
+        """
+
         def _(dask_scheduler: distributed.Scheduler, name: str = None) -> BaseStorage:
             return dask_scheduler.extensions["optuna"].storages[name]
 
