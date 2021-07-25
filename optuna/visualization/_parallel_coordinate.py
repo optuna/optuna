@@ -8,6 +8,9 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
+import numpy as np
+import pandas as pd
+
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
@@ -126,6 +129,8 @@ def _get_parallel_coordinate_plot(
             "range": (min([target(t) for t in trials]), max([target(t) for t in trials])),
         }
     ]
+
+    numeric_cat_params: Dict[str, List[Any]] = {}
     for p_name in sorted_params:
         values = []
         for t in trials:
@@ -150,13 +155,22 @@ def _get_parallel_coordinate_plot(
             }
         elif _is_categorical(trials, p_name):
             vocab: DefaultDict[str, int] = defaultdict(lambda: len(vocab))
-            values = [vocab[v] for v in values]
+
+            if all([isinstance(v, (int, float)) for v in values]):
+                _ = [vocab[v] for v in sorted(values)]
+                values = [vocab[v] for v in values]
+                numeric_cat_params[p_name] = values
+                ticktext = list(sorted(vocab.keys()))
+            else:
+                values = [vocab[v] for v in values]
+                ticktext = list(sorted(vocab.keys(), key=lambda x: vocab[x]))
+
             dim = {
                 "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
                 "values": tuple(values),
                 "range": (min(values), max(values)),
                 "tickvals": list(range(len(vocab))),
-                "ticktext": list(sorted(vocab.keys(), key=lambda x: vocab[x])),
+                "ticktext": ticktext,
             }
         else:
             dim = {
@@ -166,6 +180,17 @@ def _get_parallel_coordinate_plot(
             }
 
         dims.append(dim)
+
+    if len(numeric_cat_params.keys()) != 0:
+        sorted_categorical_vals = (
+            pd.DataFrame()
+            .from_dict(numeric_cat_params)
+            .sort_values(by=list(numeric_cat_params.keys()))
+        )
+        idx = sorted_categorical_vals.index
+
+        for dim in dims:
+            dim.update({"values": tuple(np.array(dim["values"])[idx])})
 
     traces = [
         go.Parcoords(

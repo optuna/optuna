@@ -1,12 +1,15 @@
 from collections import defaultdict
 import math
+from typing import Any
 from typing import Callable
 from typing import cast
 from typing import DefaultDict
+from typing import Dict
 from typing import List
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 
 from optuna._experimental import experimental
 from optuna.logging import get_logger
@@ -140,6 +143,8 @@ def _get_parallel_coordinate_plot(
     log_param_names = []
     param_values = []
     var_names = [target_name]
+    numeric_cat_params: Dict[str, List[Any]] = {}
+
     for p_name in sorted_params:
         values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
 
@@ -148,7 +153,14 @@ def _get_parallel_coordinate_plot(
             log_param_names.append(p_name)
         elif _is_categorical(trials, p_name):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
-            values = [vocab[v] for v in values]
+
+            if all([isinstance(v, (int, float)) for v in values]):
+                _ = [vocab[v] for v in sorted(values)]
+                values = [vocab[v] for v in values]
+                numeric_cat_params[p_name] = values
+            else:
+                values = [vocab[v] for v in values]
+
             cat_param_names.append(p_name)
             vocab_item_sorted = sorted(vocab.items(), key=lambda x: x[1])
             cat_param_values.append([v[0] for v in vocab_item_sorted])
@@ -168,6 +180,16 @@ def _get_parallel_coordinate_plot(
 
         var_names.append(p_name if len(p_name) < 20 else "{}...".format(p_name[:17]))
         param_values.append(values)
+
+    if len(numeric_cat_params.keys()) != 0:
+        sorted_categorical_vals = (
+            pd.DataFrame()
+            .from_dict(numeric_cat_params)
+            .sort_values(by=list(numeric_cat_params.keys()))
+        )
+        idx = sorted_categorical_vals.index
+
+        param_values = [tuple(np.array(v)[idx]) for v in param_values]
 
     # Draw multiple line plots and axes.
     # Ref: https://stackoverflow.com/a/50029441
