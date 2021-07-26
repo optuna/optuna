@@ -182,8 +182,8 @@ def _get_parallel_coordinate_plot(
         param_values.append(values)
 
     if len(numeric_cat_params.keys()) != 0:
-        idx = list(np.lexsort(list(numeric_cat_params.values()))[::-1])
-        param_values = [tuple(np.array(v)[idx]) for v in param_values]
+        sorted_idx = list(np.lexsort(list(numeric_cat_params.values()))[::-1])
+        param_values = [list(np.array(v)[sorted_idx]) for v in param_values]
 
     # Draw multiple line plots and axes.
     # Ref: https://stackoverflow.com/a/50029441
@@ -208,7 +208,7 @@ def _get_parallel_coordinate_plot(
         ax2.plot([1] * len(param_values[i]), param_values[i], visible=False)
         ax2.spines["right"].set_position(("axes", (i + 1) / len(sorted_params)))
         if p_name in cat_param_names:
-            idx = cat_param_names.index(p_name)
+            idx: int = cat_param_names.index(p_name)
             tick_pos = cat_param_ticks[idx]
             tick_labels = cat_param_values[idx]
             ax2.set_yticks(tick_pos)
