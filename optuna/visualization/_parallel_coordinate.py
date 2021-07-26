@@ -20,6 +20,7 @@ from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
+from optuna.visualization._utils import _is_numerical
 
 
 if _imports.is_successful():
@@ -156,7 +157,7 @@ def _get_parallel_coordinate_plot(
         elif _is_categorical(trials, p_name):
             vocab: DefaultDict[str, int] = defaultdict(lambda: len(vocab))
 
-            if all([isinstance(v, (int, float)) for v in values]):
+            if _is_numerical(trials, p_name):
                 _ = [vocab[v] for v in sorted(values)]
                 values = [vocab[v] for v in values]
                 numeric_cat_params[p_name] = values
