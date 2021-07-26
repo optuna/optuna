@@ -183,13 +183,7 @@ def _get_parallel_coordinate_plot(
         param_values.append(values)
 
     if len(numeric_cat_params.keys()) != 0:
-        sorted_categorical_vals = (
-            pd.DataFrame()
-            .from_dict(numeric_cat_params)
-            .sort_values(by=list(numeric_cat_params.keys()))
-        )
-        idx = sorted_categorical_vals.index
-
+        idx = list(np.lexsort(list(numeric_cat_params.values()))[::-1])
         param_values = [tuple(np.array(v)[idx]) for v in param_values]
 
     # Draw multiple line plots and axes.
