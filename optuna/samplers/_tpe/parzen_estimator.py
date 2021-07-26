@@ -146,6 +146,8 @@ class _ParzenEstimator:
         if n_samples == 0:
             return np.asarray([], dtype=float)
 
+        # When the search space is one CategoricalDistribution, we use the faster processing,
+        # whose computation result is equivalent to the general one.
         if len(self._search_space.items()) == 1:
             param_name, dist = list(self._search_space.items())[0]
             if isinstance(dist, distributions.CategoricalDistribution):
