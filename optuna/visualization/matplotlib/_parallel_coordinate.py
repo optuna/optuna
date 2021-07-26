@@ -9,7 +9,6 @@ from typing import List
 from typing import Optional
 
 import numpy as np
-import pandas as pd
 
 from optuna._experimental import experimental
 from optuna.logging import get_logger
