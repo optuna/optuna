@@ -376,6 +376,7 @@ class _OptunaApp(App):
             description="",
             version=optuna.__version__,
             command_manager=CommandManager("optuna.command"),
+            deferred_help=True,
         )
 
     def build_option_parser(
