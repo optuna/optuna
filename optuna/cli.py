@@ -391,7 +391,7 @@ class _Ask(_BaseCommand):
     def take_action(self, parsed_args: Namespace) -> int:
 
         warnings.warn(
-            "ask is an experimental CLI command. The interface can change in the future.",
+            "'ask' is an experimental CLI command. The interface can change in the future.",
             ExperimentalWarning,
         )
 
@@ -463,7 +463,7 @@ class _Tell(_BaseCommand):
 
     def take_action(self, parsed_args: Namespace) -> int:
         warnings.warn(
-            "tell is an experimental CLI command. The interface can change in the future.",
+            "'tell' is an experimental CLI command. The interface can change in the future.",
             ExperimentalWarning,
         )
 
