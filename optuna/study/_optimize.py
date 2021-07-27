@@ -189,7 +189,7 @@ def _run_trial(
 ) -> trial_module.Trial:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", ExperimentalWarning)
-        optuna.storages.fail_stale_trials_with_callback(study)
+        optuna.storages.fail_stale_trials(study)
 
     trial = study.ask()
 
