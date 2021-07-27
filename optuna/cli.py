@@ -485,6 +485,7 @@ class _Tell(_BaseCommand):
         return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
+
         warnings.warn(
             "'tell' is an experimental CLI command. The interface can change in the future.",
             ExperimentalWarning,
