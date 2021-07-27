@@ -379,13 +379,37 @@ class _Ask(_BaseCommand):
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_Ask, self).get_parser(prog_name)
-        parser.add_argument("--study-name", type=str)
-        parser.add_argument("--direction", type=str, choices=("minimize", "maximize"))
-        parser.add_argument("--directions", type=str, nargs="+", choices=("minimize", "maximize"))
-        parser.add_argument("--sampler", type=str)
-        parser.add_argument("--sampler-kwargs", type=str)
-        parser.add_argument("--search-space", type=str)
-        parser.add_argument("--out", type=str, choices=("json", "yaml"), default="json")
+        parser.add_argument("--study-name", type=str, help="Name of study.")
+        parser.add_argument(
+            "--direction",
+            type=str,
+            choices=("minimize", "maximize"),
+            help="Direction of optimization.",
+        )
+        parser.add_argument(
+            "--directions",
+            type=str,
+            nargs="+",
+            choices=("minimize", "maximize"),
+            help="Directions of optimization, if there are multiple objectives.",
+        )
+        parser.add_argument("--sampler", type=str, help="Class name of sampler object to create.")
+        parser.add_argument(
+            "--sampler-kwargs",
+            type=str,
+            help="Sampler object initialization keyword arguments as JSON.",
+        )
+        parser.add_argument(
+            "--search-space",
+            type=str,
+            help=(
+                "Search space as JSON. Keys are names and values are outputs from "
+                ":func:`~optuna.distributions.distribution_to_json`."
+            ),
+        )
+        parser.add_argument(
+            "--out", type=str, choices=("json", "yaml"), default="json", help="Output format."
+        )
         return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
@@ -454,11 +478,10 @@ class _Tell(_BaseCommand):
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_Tell, self).get_parser(prog_name)
-        parser.add_argument("--study-name", type=str)
-        parser.add_argument("--storage", type=str)
-        parser.add_argument("--trial-number", type=int)
-        parser.add_argument("--values", type=float, nargs="+")
-        parser.add_argument("--state", type=str, default="complete")
+        parser.add_argument("--study-name", type=str, help="Name of study.")
+        parser.add_argument("--trial-number", type=int, help="Trial number.")
+        parser.add_argument("--values", type=float, nargs="+", help="Objective values.")
+        parser.add_argument("--state", type=str, default="complete", help="Trial state.")
         return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
