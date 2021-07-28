@@ -26,6 +26,9 @@ if _imports.is_successful():
     import _jsonnet
 
 
+METRICS_KEY = "allennlp:metrics"
+
+
 @experimental("1.4.0")
 class AllenNLPExecutor(object):
     """AllenNLP extension to use optuna with Jsonnet config file.
@@ -105,7 +108,7 @@ class AllenNLPExecutor(object):
         else:
             self._include_package = include_package
 
-        self._trial.set_system_attr("allennlp:monitor", metrics)
+        self._trial.set_system_attr(METRICS_KEY, metrics)
 
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.

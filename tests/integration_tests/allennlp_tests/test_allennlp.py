@@ -17,6 +17,7 @@ import torch.optim
 
 import optuna
 from optuna.integration.allennlp import AllenNLPPruningCallback
+from optuna.integration.allennlp._executor import METRICS_KEY
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -314,7 +315,7 @@ def test_allennlp_pruning_callback_monitor() -> None:
     pruning_callback = AllenNLPPruningCallback(trial, "best_validation_loss")
     assert pruning_callback._monitor == "best_validation_loss"
 
-    trial.set_system_attr("allennlp:monitor", "best_validation_accuracy")
+    trial.set_system_attr(METRICS_KEY, "best_validation_accuracy")
     pruning_callback_without_monitor = AllenNLPPruningCallback(trial)
     pruning_callback_without_monitor._monitor == "best_validation_accuracy"
 

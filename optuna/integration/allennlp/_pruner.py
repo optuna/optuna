@@ -8,6 +8,7 @@ from packaging import version
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
+from optuna.integration.allennlp._executor import METRICS_KEY
 
 
 with try_import() as _imports:
@@ -94,7 +95,7 @@ class AllenNLPPruningCallback(TrainerCallback):
             )
 
         if monitor is None:
-            self._monitor = trial.system_attrs["allennlp:monitor"]
+            self._monitor = trial.system_attrs[METRICS_KEY]
         else:
             self._monitor = monitor
 
