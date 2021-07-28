@@ -341,7 +341,7 @@ def _calculate_griddata(
         # create irregularly spaced map of trial values
         # and interpolate it with Plotly algorithm
         zmap = _create_zmap(x_array, y_array, z_values, xi, yi)
-        zmap = _interpolate_zmap(zmap, contour_point_num)
+        _interpolate_zmap(zmap, contour_point_num)
         zi = _create_zmatrix_from_zmap(zmap, contour_point_num)
 
     return (
@@ -442,10 +442,10 @@ def _generate_contour_subplot(
 def _create_zmap(
     x_values: np.ndarray,
     y_values: np.ndarray,
-    z_values: List[Union[int, float]],
+    z_values: List[float],
     xi: np.ndarray,
     yi: np.ndarray,
-) -> Dict[complex, Union[int, float]]:
+) -> Dict[complex, float]:
 
     # creates z-map from trial values and params.
     # since params were resampled either with linspace or logspace
@@ -460,7 +460,7 @@ def _create_zmap(
     return zmap
 
 
-def _create_zmatrix_from_zmap(zmap: Dict[complex, Union[int, float]], shape: int) -> np.ndarray:
+def _create_zmatrix_from_zmap(zmap: Dict[complex, float], shape: int) -> np.ndarray:
 
     # converts hashmap of coordinates to grid
     zmatrix = np.zeros(shape=(shape, shape))
@@ -470,9 +470,7 @@ def _create_zmatrix_from_zmap(zmap: Dict[complex, Union[int, float]], shape: int
     return zmatrix
 
 
-def _interpolate_zmap(
-    zmap: Dict[complex, Union[int, float]], contour_plot_num: int
-) -> Dict[complex, Union[int, float]]:
+def _interpolate_zmap(zmap: Dict[complex, float], contour_plot_num: int) -> None:
 
     # implements interpolation algorithm used in Plotly
     # to interpolate heatmaps and contour plots
@@ -487,22 +485,20 @@ def _interpolate_zmap(
     empties = _find_coordinates_where_empty(zmap, contour_plot_num)
 
     # one pass to fill in a starting value for all the empties
-    zmap, _ = _run_iteration(zmap, empties)
+    _run_iteration(zmap, empties)
 
     for _ in range(NUM_OPTIMIZATION_ITERATIONS):
         if max_fractional_delta > FRACTIONAL_DELTA_THRESHOLD:
             # correct for overshoot and run again
             max_fractional_delta = 0.5 - 0.25 * min(1, max_fractional_delta * 0.5)
-            zmatrix, max_fractional_delta = _run_iteration(zmap, empties, max_fractional_delta)
+            max_fractional_delta = _run_iteration(zmap, empties, max_fractional_delta)
 
         else:
             break
 
-    return zmap
-
 
 def _find_coordinates_where_empty(
-    zmap: Dict[complex, Union[int, float]], contour_point_num: int
+    zmap: Dict[complex, float], contour_point_num: int
 ) -> List[complex]:
 
     # this function implements missing value discovery and sorting
@@ -526,7 +522,7 @@ def _find_coordinates_where_empty(
     ]
 
     while discovered != n_missing:
-        patchmap: Dict[complex, Union[int, float]] = {}
+        patchmap: Dict[complex, int] = {}
 
         for coord in coordinates:
             value = zcopy.get(coord, None)
@@ -553,8 +549,8 @@ def _find_coordinates_where_empty(
 
 
 def _run_iteration(
-    zmap: Dict[complex, Union[int, float]], coordinates: List[complex], overshoot: float = 0.0
-) -> Tuple[Dict[complex, Union[int, float]], float]:
+    zmap: Dict[complex, float], coordinates: List[complex], overshoot: float = 0.0
+) -> float:
 
     max_fractional_delta = 0.0
 
@@ -562,7 +558,7 @@ def _run_iteration(
         current_val = zmap.get(coord, None)
         max_neighbor = -np.inf
         min_neighbor = np.inf
-        sum_neighbors = 0
+        sum_neighbors = 0.0
         n_neighbors = 0
 
         for offset in NEIGHBOR_OFFSETS:
@@ -572,7 +568,7 @@ def _run_iteration(
                 # off the edge or not filled in
                 continue
 
-            sum_neighbors += neighbor  # type: ignore
+            sum_neighbors += neighbor
             n_neighbors += 1
 
             if current_val is not None:
@@ -592,4 +588,4 @@ def _run_iteration(
                 fractional_delta = abs(new_val - current_val) / (max_neighbor - min_neighbor)
                 max_fractional_delta = max(overshoot, fractional_delta)
 
-    return zmap, max_fractional_delta
+    return max_fractional_delta

@@ -19,7 +19,7 @@ def test_create_zmap() -> None:
 
     x_values = np.arange(10)
     y_values = np.arange(10)
-    z_values = list(np.random.randn(10))
+    z_values = list(np.random.rand(10))
 
     # we are testing for exact placement of z_values
     # so also passing x_values and y_values as xi and yi
@@ -38,9 +38,9 @@ def test_create_zmap() -> None:
 def test_create_zmatrix_from_zmap() -> None:
 
     contour_point_num = 2
-    zmap = {0 + 0j: 1, 1 + 0j: 2, 0 + 1j: 3, 1 + 1j: 4}
-    expected = np.array([[1, 2], [3, 4]])
-    zmatrix = _create_zmatrix_from_zmap(zmap, contour_point_num)  # type: ignore
+    zmap = {0 + 0j: 1.0, 1 + 0j: 2.0, 0 + 1j: 3.0, 1 + 1j: 4.0}
+    expected = np.array([[1.0, 2.0], [3.0, 4.0]])
+    zmatrix = _create_zmatrix_from_zmap(zmap, contour_point_num)
 
     assert zmatrix.shape == (contour_point_num, contour_point_num)
     assert np.array_equal(zmatrix, expected)
@@ -49,9 +49,9 @@ def test_create_zmatrix_from_zmap() -> None:
 def test_find_coordinates_where_empty() -> None:
 
     contour_point_num = 2
-    zmap = {0 + 0j: 1, 1 + 1j: 4}
+    zmap = {0 + 0j: 1.0, 1 + 1j: 4.0}
     n_missing = (contour_point_num ** 2) - len(zmap)
-    empties = _find_coordinates_where_empty(zmap, contour_point_num)  # type: ignore
+    empties = _find_coordinates_where_empty(zmap, contour_point_num)
 
     # test if all missing are found
     assert len(empties) == n_missing
@@ -63,11 +63,11 @@ def test_find_coordinates_where_empty() -> None:
 
 def test_interpolation_first_iteration() -> None:
 
-    zmap = {0 + 0j: 1, 1 + 1j: 4}
+    zmap = {0 + 0j: 1.0, 1 + 1j: 4.0}
     empties = [1 + 0j, 0 + 1j]
     initial_zmap_len = len(zmap)
 
-    zmap, max_fractional_change = _run_iteration(zmap, empties)  # type: ignore
+    max_fractional_change = _run_iteration(zmap, empties)
 
     # test loss after first iter
     assert max_fractional_change == 1.0
@@ -79,10 +79,10 @@ def test_interpolation_first_iteration() -> None:
 def test_interpolate_zmap() -> None:
 
     contour_point_num = 2
-    zmap = {0 + 0j: 1, 1 + 1j: 4}
-    interpolated = {1 + 0j: 2.5, 1 + 1j: 4, 0 + 0j: 1, 0 + 1j: 2.5}
+    zmap = {0 + 0j: 1.0, 1 + 1j: 4.0}
+    interpolated = {1 + 0j: 2.5, 1 + 1j: 4.0, 0 + 0j: 1.0, 0 + 1j: 2.5}
 
-    zmap = _interpolate_zmap(zmap, contour_point_num)  # type: ignore
+    _interpolate_zmap(zmap, contour_point_num)
 
     for coord, value in zmap.items():
         expected_at_coord = interpolated.get(coord)
