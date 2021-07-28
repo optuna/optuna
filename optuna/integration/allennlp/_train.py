@@ -86,31 +86,27 @@ def _train_model_with_optuna(
     Args:
         params:
             A parameter object specifying an AllenNLP Experiment.
-    serialization_dir : `str`
-        The directory in which to save results and logs.
-    recover : `bool`, optional (default=`False`)
-        If `True`, we will try to recover a training run from an existing serialization
-        directory.  This is only intended for use when something actually crashed during the middle
-        of a run.  For continuing training a model on new data, see `Model.from_archive`.
-    force : `bool`, optional (default=`False`)
-        If `True`, we will overwrite the serialization directory if it already exists.
-    node_rank : `int`, optional
-        Rank of the current node in distributed training
-    include_package : `List[str]`, optional
-        In distributed mode, extra packages mentioned will be imported in trainer workers.
-    dry_run : `bool`, optional (default=`False`)
-        Do not train a model, but create a vocabulary, show dataset statistics and other training
-        information.
-    file_friendly_logging : `bool`, optional (default=`False`)
-        If `True`, we add newlines to tqdm output, even on an interactive terminal, and we slow
-        down tqdm's output to only once every 10 seconds.
-
-    # Returns
-
-    best_model : `Optional[Model]`
-        The model with the best epoch weights or `None` if in dry run.
-
+        serialization_dir : `str`
+            The directory in which to save results and logs.
+        recover : `bool`, optional (default=`False`)
+            If `True`, we will try to recover a training run from an existing serialization
+            directory.  This is only intended for use when something actually crashed during the
+            middle of a run.  For continuing training a model on new data,
+            see `Model.from_archive`.
+        force : `bool`, optional (default=`False`)
+            If `True`, we will overwrite the serialization directory if it already exists.
+        node_rank : `int`, optional
+            Rank of the current node in distributed training
+        include_package : `List[str]`, optional
+            In distributed mode, extra packages mentioned will be imported in trainer workers.
+        dry_run : `bool`, optional (default=`False`)
+            Do not train a model, but create a vocabulary, show dataset statistics and other
+            training information.
+        file_friendly_logging : `bool`, optional (default=`False`)
+            If `True`, we add newlines to tqdm output, even on an interactive terminal, and we slow
+            down tqdm's output to only once every 10 seconds.
     """
+
     common_logging.FILE_FRIENDLY_LOGGING = file_friendly_logging
 
     training_util.create_serialization_dir(params, serialization_dir, recover, force)
@@ -261,44 +257,38 @@ def _train_worker_with_optuna(
 ) -> Optional[Model]:
     """Extended AllenNLP train_worker.
 
-    # Parameters
-
-    process_rank : `int`
-        The process index that is initialized using the GPU device id.
-    params : `Params`
-        A parameter object specifying an AllenNLP Experiment.
-    serialization_dir : `str`
-        The directory in which to save results and logs.
-    include_package : `List[str]`, optional
-        In distributed mode, since this function would have been spawned as a separate process,
-        the extra imports need to be done again. NOTE: This does not have any effect in single
-        GPU training.
-    dry_run : `bool`, optional (default=`False`)
-        Do not train a model, but create a vocabulary, show dataset statistics and other training
-        information.
-    node_rank : `int`, optional
-        Rank of the node.
-    primary_addr : `str`, optional (default=`"127.0.0.1"`)
-        Address of the primary node for distributed training.
-    primary_port : `str`, optional (default=`"29500"`)
-        Port of the primary node for distributed training.
-    world_size : `int`, optional
-        The number of processes involved in distributed training.
-    distributed_device_ids: `List[str]`, optional
-        IDs of the devices used involved in distributed training.
-    file_friendly_logging : `bool`, optional (default=`False`)
-        If `True`, we add newlines to tqdm output, even on an interactive terminal, and we slow
-        down tqdm's output to only once every 10 seconds.
-    include_in_archive : `List[str]`, optional
-        Paths relative to `serialization_dir` that should be archived
-        in addition to the default ones.
-
-    # Returns
-
-    best_model : `Optional[Model]`
-        The model with the best epoch weights or `None` if in distributed training or in dry run.
-
+    Args:
+        process_rank : `int`
+            The process index that is initialized using the GPU device id.
+        params : `Params`
+            A parameter object specifying an AllenNLP Experiment.
+        serialization_dir : `str`
+            The directory in which to save results and logs.
+        include_package : `List[str]`, optional
+            In distributed mode, since this function would have been spawned as a separate process,
+            the extra imports need to be done again. NOTE: This does not have any effect in single
+            GPU training.
+        dry_run : `bool`, optional (default=`False`)
+            Do not train a model, but create a vocabulary, show dataset statistics and other
+            training information.
+        node_rank : `int`, optional
+            Rank of the node.
+        primary_addr : `str`, optional (default=`"127.0.0.1"`)
+            Address of the primary node for distributed training.
+        primary_port : `str`, optional (default=`"29500"`)
+            Port of the primary node for distributed training.
+        world_size : `int`, optional
+            The number of processes involved in distributed training.
+        distributed_device_ids: `List[str]`, optional
+            IDs of the devices used involved in distributed training.
+        file_friendly_logging : `bool`, optional (default=`False`)
+            If `True`, we add newlines to tqdm output, even on an interactive terminal, and we slow
+            down tqdm's output to only once every 10 seconds.
+        include_in_archive : `List[str]`, optional
+            Paths relative to `serialization_dir` that should be archived
+            in addition to the default ones.
     """
+
     common_logging.FILE_FRIENDLY_LOGGING = file_friendly_logging
 
     common_logging.prepare_global_logging(
