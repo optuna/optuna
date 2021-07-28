@@ -129,6 +129,56 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
     assert figure.data[0]["dimensions"][2]["ticktext"] == ("net", "una")
 
 
+def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
+    # Test with categorical params that can be interpeted numeric.
+    study_categorical_params = create_study()
+    study_categorical_params.add_trial(
+        create_trial(
+            value=0.0,
+            params={"category_a": 2, "category_b": 20},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+
+    study_categorical_params.add_trial(
+        create_trial(
+            value=1.0,
+            params={"category_a": 1, "category_b": 30},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+
+    study_categorical_params.add_trial(
+        create_trial(
+            value=2.0,
+            params={"category_a": 2, "category_b": 10},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+    figure = plot_parallel_coordinate(study_categorical_params)
+    assert len(figure.data[0]["dimensions"]) == 3
+    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (1.0, 2.0, 0.0)
+    assert figure.data[0]["dimensions"][1]["label"] == "category_a"
+    assert figure.data[0]["dimensions"][1]["range"] == (0, 1)
+    assert figure.data[0]["dimensions"][1]["values"] == (0, 1, 1)
+    assert figure.data[0]["dimensions"][1]["ticktext"] == (1, 2)
+    assert figure.data[0]["dimensions"][2]["label"] == "category_b"
+    assert figure.data[0]["dimensions"][2]["range"] == (0, 2)
+    assert figure.data[0]["dimensions"][2]["values"] == (2, 0, 1)
+    assert figure.data[0]["dimensions"][2]["ticktext"] == (10, 20, 30)
+
+
 def test_plot_parallel_coordinate_log_params() -> None:
     # Test with log params.
     study_log_params = create_study()
