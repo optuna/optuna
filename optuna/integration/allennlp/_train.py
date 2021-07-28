@@ -198,15 +198,20 @@ def _train_model_with_optuna(
 
         assert trial is not None
 
-        if isinstance(trial.study._storage, InMemoryStorage):
-            message = "InMemoryStorage is not supported in distributed configuration."
-            message += " You have to use RDB or Redis to use Optuna with AllenNLP distributed."
-            raise ValueError(message)
-
-        elif isinstance(trial.study._storage, _CachedStorage):
+        if isinstance(trial.study._storage, _CachedStorage):
             # Reconstruct storage to purge a old cache.
             if isinstance(trial.study._storage, _CachedStorage):
                 trial.study._storage = _CachedStorage(trial.study._storage._backend)
+
+        else:
+            message = "RDBStorage is only supported in distributed configuration."
+            message += " For more information about RDBStorage,"
+            message += " please refer our official documentations:\n"
+            message += " - https://optuna.readthedocs.io/en/stable/tutorial/20_recipes"
+            message += "/001_rdb.html#sphx-glr-tutorial-20-recipes-001-rdb-py\n"
+            message += " - https://optuna.readthedocs.io/en/stable/reference/generated"
+            message += "/optuna.storages.RDBStorage.html?highlight=RDB"
+            raise ValueError(message)
 
         try:
             mp.spawn(
