@@ -62,10 +62,9 @@ def train_model_with_optuna(
 ) -> Optional[Model]:
     """Extended AllenNLP training utility.
 
-    # Parameters
-
-    params : `Params`
-        A parameter object specifying an AllenNLP Experiment.
+    Args:
+        params:
+            A parameter object specifying an AllenNLP Experiment.
     serialization_dir : `str`
         The directory in which to save results and logs.
     recover : `bool`, optional (default=`False`)
