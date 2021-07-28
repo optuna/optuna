@@ -49,7 +49,7 @@ if not _imports.is_successful():
 logger = logging.get_logger(__name__)
 
 
-def train_model_with_optuna(
+def _train_model_with_optuna(
     params: Params,
     serialization_dir: Union[str, PathLike],
     recover: bool = False,

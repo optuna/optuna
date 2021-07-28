@@ -187,11 +187,11 @@ def test_allennlp_executor_with_options() -> None:
         )
 
         # ``executor.run`` loads ``metrics.json``
-        # after running ``optuna.integration.allennlp._train.train_model_with_optuna``.
+        # after running ``optuna.integration.allennlp._train._train_model_with_optuna``.
         with open(os.path.join(executor._serialization_dir, "metrics.json"), "w") as fout:
             json.dump({executor._metrics: 1.0}, fout)
 
-        patch_target = "optuna.integration.allennlp._train.train_model_with_optuna"
+        patch_target = "optuna.integration.allennlp._train._train_model_with_optuna"
         with mock.patch(patch_target, return_value=None) as mock_obj:
             executor.run()
             assert mock_obj.call_args[1]["force"]

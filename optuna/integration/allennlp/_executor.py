@@ -136,7 +136,7 @@ class AllenNLPExecutor(object):
         allennlp.common.cached_transformers._tokenizer_cache.clear()
 
         params = allennlp.common.params.Params(self._build_params())
-        optuna.integration.allennlp._train.train_model_with_optuna(
+        optuna.integration.allennlp._train._train_model_with_optuna(
             params=params,
             serialization_dir=self._serialization_dir,
             file_friendly_logging=self._file_friendly_logging,
