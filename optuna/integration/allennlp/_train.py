@@ -16,7 +16,6 @@ from optuna import Trial
 from optuna import TrialPruned
 from optuna._imports import try_import
 from optuna.storages import _CachedStorage
-from optuna.storages import InMemoryStorage
 
 
 with try_import() as _allennlp_imports:
