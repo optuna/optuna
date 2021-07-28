@@ -60,7 +60,6 @@ local DROPOUT = std.parseJson(std.extVar('DROPOUT'));
     callbacks: [
       {
         type: 'optuna_pruner',
-        monitor: 'best_validation_loss',
       }
     ],
   },
