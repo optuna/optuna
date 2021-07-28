@@ -764,7 +764,7 @@ def _solve_hssp(
 
 
 def _calculate_weights_below_for_multi_objective(
-    config_vals: Dict[str, np.ndarray],
+    config_values: Dict[str, np.ndarray],
     loss_vals: List[Tuple[float, List[float]]],
     indices: np.ndarray,
 ) -> np.ndarray:
@@ -774,7 +774,7 @@ def _calculate_weights_below_for_multi_objective(
     # misses the one trial, then the other parameter must miss the trial, in this call of
     # `sample_relative`.
     # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
-    cvals = list(config_vals.values())[0][indices]
+    cvals = list(config_values.values())[0][indices]
 
     # Multi-objective TPE does not support pruning, so it ignores the ``step``.
     lvals = np.asarray([v for _, v in loss_vals])[indices]
