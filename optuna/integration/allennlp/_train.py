@@ -3,7 +3,6 @@ This file is ported from AllenNLP original implementation. (Under Apache 2.0 lic
 https://github.com/allenai/allennlp/blob/main/allennlp/commands/train.py
 """
 
-import logging
 import os
 from os import PathLike
 from typing import Any
@@ -30,6 +29,7 @@ import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 
+from optuna import logging
 from optuna import Trial
 from optuna import TrialPruned
 from optuna._imports import try_import
@@ -46,7 +46,7 @@ if not _imports.is_successful():
     META_NAME = None  # type: ignore  # NOQA
 
 
-logger = logging.getLogger(__name__)
+logger = logging.get_logger(__name__)
 
 
 def train_model_with_optuna(
@@ -173,7 +173,7 @@ def train_model_with_optuna(
             "oov_token": vocab._oov_token,
         }
 
-        logging.info(
+        logger.info(
             "Switching to distributed training mode since multiple GPUs are configured | "
             f"Primary is at: {primary_addr}:{primary_port} | Rank of this node: {node_rank} | "
             f"Number of workers in this node: {num_procs} | Number of nodes: {num_nodes} | "
@@ -339,7 +339,7 @@ def _train_worker_with_optuna(
                 world_size=world_size,
                 rank=global_rank,
             )
-        logging.info(
+        logger.info(
             f"Process group of world size {world_size} initialized "
             f"for distributed training in worker {global_rank}"
         )
@@ -367,12 +367,12 @@ def _train_worker_with_optuna(
                 best_weights_path = cast(Optional[str], best_weights_path)
 
                 if best_weights_path is None:
-                    logging.info(
+                    logger.info(
                         "Training interrupted by the user, and no best model has been saved. "
                         "No model archive created."
                     )
                 else:
-                    logging.info(
+                    logger.info(
                         "Training interrupted by the user. Attempting to create "
                         "a model archive using the current best epoch weights."
                     )
@@ -390,7 +390,7 @@ def _train_worker_with_optuna(
                 #
                 # ref. https://github.com/allenai/allennlp/pull/5220
                 #      https://github.com/allenai/allennlp/releases/tag/v2.5.0
-                logging.info(
+                logger.info(
                     "Training interrupted by the user. Attempting to create "
                     "a model archive using the current best epoch weights."
                 )
