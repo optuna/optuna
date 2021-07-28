@@ -182,7 +182,7 @@ def _get_parallel_coordinate_plot(
         dims.append(dim)
 
     if len(numeric_cat_params.keys()) != 0:
-        idx = list(np.lexsort(list(numeric_cat_params.values()))[::-1])
+        idx = np.lexsort(list(numeric_cat_params.values())[::-1])
         for dim in dims:
             dim.update({"values": tuple(np.array(dim["values"])[idx])})
 
