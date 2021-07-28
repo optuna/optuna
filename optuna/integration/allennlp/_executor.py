@@ -105,7 +105,7 @@ class AllenNLPExecutor(object):
         else:
             self._include_package = include_package
 
-        self._trial.set_system_attr("monitor", metrics)
+        self._trial.set_system_attr("allennlp:monitor", metrics)
 
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.
