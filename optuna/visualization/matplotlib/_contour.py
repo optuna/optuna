@@ -448,6 +448,12 @@ def _create_zmap(
 ) -> Dict[complex, float]:
 
     # creates z-map from trial values and params.
+    # z-map is represented by hashmap of coordinate and trial value pairs
+    #
+    # coordinates are represented by complex numbers, where real part
+    # indicates x-axis index and imaginary part indicates y-axis index
+    # and refer to a position of trial value on irregular param grid
+    #
     # since params were resampled either with linspace or logspace
     # original params might not be on the x and y axes anymore
     # so we are going with close approximations of trial value positions
@@ -481,6 +487,10 @@ def _interpolate_zmap(zmap: Dict[complex, float], contour_plot_num: int) -> None
     # > poisson equation solver with zero-derivative BC at edges.
     # > Amazingly, this just amounts to repeatedly averaging all the existing
     # > nearest neighbors
+    #
+    # our goal here is to assign value to every coordinate that is a part
+    # of 100x100 param grid (so from 0 + 0j up to 100 + 100j) that is not already
+    # occupied by actual trial value
     max_fractional_delta = 1.0
     empties = _find_coordinates_where_empty(zmap, contour_plot_num)
 
@@ -504,7 +514,7 @@ def _find_coordinates_where_empty(
     # this function implements missing value discovery and sorting
     # algorithm used in Plotly to interpolate heatmaps and contour plots
     # https://github.com/plotly/plotly.js/blob/master/src/traces/heatmap/find_empties.js
-    # it works by repeteadly interating over coordinate map in search for patches of
+    # it works by repeatedly iterating  over coordinate map in search for patches of
     # missing values with existing or previously discovered neighbors
     # when discovered, such patches are added to the iteration queue (list of coordinates)
     # sorted by number of neighbors, marking iteration order for interpolation algorithm
@@ -522,9 +532,15 @@ def _find_coordinates_where_empty(
     ]
 
     while discovered != n_missing:
+        # patch will contain coordinates
+        # of missing values, which happen to have neighbors
+        # at this iteration, and were not previously covered
         patchmap: Dict[complex, int] = {}
 
         for coord in coordinates:
+            # we will always iterate over entire grid
+            # surprisingly, this is faster than removing
+            # discovered coordinates from list after each iteration
             value = zcopy.get(coord, None)
 
             if value is not None:
@@ -538,9 +554,17 @@ def _find_coordinates_where_empty(
                     n_neighbors += 1
 
             if n_neighbors > 0:
+                # missing values, which still have no neighbors
+                # are left for subsequent iterations
                 patchmap[coord] = n_neighbors
 
+        # newly discovered values will form
+        # neighbors for another missing value
+        # in the next iteration
         zcopy.update(patchmap)
+
+        # we are sorting patches independently, since neighbor counts for patch `b`
+        # are only valid after patch `a` has been discovered
         patch = [k for k, _ in sorted(patchmap.items(), key=lambda i: i[1], reverse=True)]
         iter_queue.extend(patch)
         discovered += len(patch)
@@ -555,6 +579,10 @@ def _run_iteration(
     max_fractional_delta = 0.0
 
     for coord in coordinates:
+        # we will iterate the grid in order
+        # established by `find_coordinates_where_empty`
+        # this will ensure that we are not trying to interpolate
+        # value with zero neighbors
         current_val = zmap.get(coord, None)
         max_neighbor = -np.inf
         min_neighbor = np.inf
@@ -562,6 +590,9 @@ def _run_iteration(
         n_neighbors = 0
 
         for offset in NEIGHBOR_OFFSETS:
+            # if we represent current value as a center
+            # of 3x3 matrix, neighbors are all other
+            # values excluding those at diagonals
             neighbor = zmap.get(coord + offset, None)
 
             if neighbor is None:
