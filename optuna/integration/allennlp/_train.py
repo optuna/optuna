@@ -1,5 +1,5 @@
 """
-Copyright [2021] Preferred Networks, Inc.
+Copyright [2021] The Allen Institute for Artificial Intelligence.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,10 +12,10 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+"""
 
-===
-
-This file is ported from AllenNLP original implementation. (Under Apache 2.0 license)
+"""
+This file is ported from AllenNLP original implementation.
 https://github.com/allenai/allennlp/blob/main/allennlp/commands/train.py
 """
 
