@@ -11,24 +11,6 @@ from typing import List
 from typing import Optional
 from typing import Union
 
-from allennlp.commands.train import TrainModel
-from allennlp.common import logging as common_logging
-from allennlp.common import Params
-from allennlp.common import util as common_util
-from allennlp.common.checks import check_for_gpu
-from allennlp.common.checks import ConfigurationError
-from allennlp.common.plugins import import_plugins
-from allennlp.data import Vocabulary
-from allennlp.models.archival import archive_model
-from allennlp.models.archival import CONFIG_NAME
-from allennlp.models.archival import verify_include_in_archive
-from allennlp.models.model import _DEFAULT_WEIGHTS
-from allennlp.models.model import Model
-from allennlp.training import util as training_util
-import torch
-import torch.distributed as dist
-import torch.multiprocessing as mp
-
 from optuna import logging
 from optuna import Trial
 from optuna import TrialPruned
@@ -37,11 +19,50 @@ from optuna.storages import _CachedStorage
 from optuna.storages import InMemoryStorage
 
 
-with try_import() as _imports:
+with try_import() as _allennlp_imports:
+    from allennlp.commands.train import TrainModel
+    from allennlp.common import logging as common_logging
+    from allennlp.common import Params
+    from allennlp.common import util as common_util
+    from allennlp.common.checks import check_for_gpu
+    from allennlp.common.checks import ConfigurationError
+    from allennlp.common.plugins import import_plugins
+    from allennlp.data import Vocabulary
+    from allennlp.models.archival import archive_model
+    from allennlp.models.archival import CONFIG_NAME
+    from allennlp.models.archival import verify_include_in_archive
+    from allennlp.models.model import _DEFAULT_WEIGHTS
+    from allennlp.models.model import Model
+    from allennlp.training import util as training_util
+    import torch
+    import torch.distributed as dist
+    import torch.multiprocessing as mp
+
+if not _allennlp_imports.is_successful():
+    TrainModel = None  # type: ignore  # NOQA
+    common_logging = None  # type: ignore  # NOQA
+    Params = None  # type: ignore  # NOQA
+    common_util = None  # type: ignore  # NOQA
+    check_for_gpu = None  # type: ignore  # NOQA
+    ConfigurationError = None  # type: ignore  # NOQA
+    import_plugins = None  # type: ignore  # NOQA
+    Vocabulary = None  # type: ignore  # NOQA
+    archive_model = None  # type: ignore  # NOQA
+    CONFIG_NAME = None  # type: ignore  # NOQA
+    verify_include_in_archive = None  # type: ignore  # NOQA
+    _DEFAULT_WEIGHTS = None  # type: ignore  # NOQA
+    Model = None  # type: ignore  # NOQA
+    training_util = None  # type: ignore  # NOQA
+    torch = None  # type: ignore  # NOQA
+    dist = None  # type: ignore  # NOQA
+    mp = None  # type: ignore  # NOQA
+
+
+with try_import() as _allennlp_meta_imports:
     from allennlp.common.meta import Meta
     from allennlp.common.meta import META_NAME
 
-if not _imports.is_successful():
+if not _allennlp_meta_imports.is_successful():
     Meta = None  # type: ignore  # NOQA
     META_NAME = None  # type: ignore  # NOQA
 
