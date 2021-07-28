@@ -37,6 +37,7 @@ def get_install_requires() -> List[str]:
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
+        "PyYAML",  # Only used in `optuna/cli.py`.
     ]
     return requirements
 
@@ -214,6 +215,8 @@ setup(
             "dashboard = optuna.cli:_Dashboard",
             "study optimize = optuna.cli:_StudyOptimize",
             "storage upgrade = optuna.cli:_StorageUpgrade",
+            "ask = optuna.cli:_Ask",
+            "tell = optuna.cli:_Tell",
         ],
     },
     classifiers=[
