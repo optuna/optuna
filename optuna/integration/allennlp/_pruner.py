@@ -94,7 +94,7 @@ class AllenNLPPruningCallback(TrainerCallback):
             )
 
         if monitor is None:
-            self._monitor = trial.system_attrs["monitor"]
+            self._monitor = trial.system_attrs["allennlp:monitor"]
         else:
             self._monitor = monitor
 
