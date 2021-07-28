@@ -227,6 +227,11 @@ def _train_model_with_optuna(
                 ),
                 nprocs=num_procs,
             )
+
+        # NOTE `mp.spawn` raises `torch.multiprocessing.spawn.ProcessRaisedException` when
+        # some error occurs in a worker. This exception propagates to Optuna and `study.optimize()`
+        # terminates without pruning. To make pruning work, we check a traceback and raise
+        # :class:`~optuna.TrialPruned` if "optuna.exceptions.TrialPruned" appears in the message.
         except Exception as e:
             if "optuna.exceptions.TrialPruned" in str(e):
                 raise TrialPruned()
