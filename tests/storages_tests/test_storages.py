@@ -1097,7 +1097,7 @@ def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
-def test_fail_stale_trials(storage_mode: str) -> None:
+def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
 
     heartbeat_interval = 1
     grace_period = 2
@@ -1204,3 +1204,31 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
         assert RetryFailedTrialCallback.retried_trial_number(study.trials[1]) == (
             None if max_retry == 0 else 0
         )
+
+
+def test_fail_stale_trials() -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    def failed_trial_callback(study: "optuna.Study", trial: FrozenTrial) -> None:
+        assert study.system_attrs["test"] == "A"
+        assert trial.system_attrs["test"] == "B"
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage.heartbeat_interval = heartbeat_interval
+        storage.grace_period = grace_period
+        storage.failed_trial_callback = failed_trial_callback
+        study = optuna.create_study(storage=storage)
+        study.set_system_attr("test", "A")
+
+        trial = study.ask()
+        trial.set_system_attr("test", "B")
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        assert study.trials[0].state is TrialState.RUNNING
+
+        optuna.storages.fail_stale_trials(study)
+
+        assert study.trials[0].state is TrialState.FAIL
