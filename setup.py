@@ -33,12 +33,13 @@ def get_install_requires() -> List[str]:
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
-        "numpy<1.21",
+        "numpy",
         "packaging>=20.0",
         # TODO(kstoneriv3): remove this after deprecation of Python 3.6
         "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
+        "PyYAML",  # Only used in `optuna/cli.py`.
     ]
     return requirements
 
@@ -140,6 +141,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "cma",
             "lightgbm",
             "mlflow",
+            "wandb",
             "mpi4py",
             "mxnet",
             "pandas",
@@ -215,6 +217,8 @@ setup(
             "dashboard = optuna.cli:_Dashboard",
             "study optimize = optuna.cli:_StudyOptimize",
             "storage upgrade = optuna.cli:_StorageUpgrade",
+            "ask = optuna.cli:_Ask",
+            "tell = optuna.cli:_Tell",
         ],
     },
     classifiers=[

@@ -21,6 +21,14 @@ for machine learning. It features an imperative, *define-by-run* style user API.
 *define-by-run* API, the code written with Optuna enjoys high modularity, and the user of
 Optuna can dynamically construct the search spaces for the hyperparameters.
 
+## News
+
+Help us create the next version of Optuna!
+Please take a few minutes to fill in this survey, and let us know how you use Optuna now and what improvements you'd like.🤔
+
+All questions optional. 🙇‍♂️
+https://forms.gle/mCAttqxVg5oUifKV8
+
 ## Key Features
 
 Optuna has modern functionalities as follows:
