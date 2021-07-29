@@ -61,7 +61,7 @@ class QMCSampler(BaseSampler):
             `"halton"` and `"sobol"`. Default is `"halton"`.
 
             .. note:
-                Sobol sequence is designed to have low-discrepancy property when the number of
+               Sobol' sequence is designed to have low-discrepancy property when the number of
                 samples is :math:`n=2^m` for each positive integer :math:`m`. When it is possible
                 to pre-specify the number of trials suggested by `QMCSampler`, it is recommended
                 that the number of trials should be set as power of two.
