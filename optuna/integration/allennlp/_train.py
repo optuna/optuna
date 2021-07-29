@@ -117,6 +117,9 @@ def _train_model_with_optuna(
         file_friendly_logging : `bool`, optional (default=`False`)
             If `True`, we add newlines to tqdm output, even on an interactive terminal, and we slow
             down tqdm's output to only once every 10 seconds.
+        trial : :class:`~optuna.trial.Trial`, optional (default=`None`)
+            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            objective function.
     """
 
     common_logging.FILE_FRIENDLY_LOGGING = file_friendly_logging
@@ -309,6 +312,9 @@ def _train_worker_with_optuna(
         include_in_archive : `List[str]`, optional
             Paths relative to `serialization_dir` that should be archived
             in addition to the default ones.
+        trial : :class:`~optuna.trial.Trial`, optional (default=`None`)
+            A :class:`~optuna.trial.Trial` corresponding to the current evaluation of the
+            objective function.
     """
 
     common_logging.FILE_FRIENDLY_LOGGING = file_friendly_logging
