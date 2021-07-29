@@ -150,7 +150,7 @@ class QMCSampler(BaseSampler):
         self,
         *,
         qmc_type: str = "halton",
-        scramble: bool = True,
+        scramble: bool = False,  # default is False for simplicity in distributed environment.
         seed: Optional[int] = None,
         search_space: Optional[Dict[str, BaseDistribution]] = None,
         independent_sampler: Optional[BaseSampler] = None,
