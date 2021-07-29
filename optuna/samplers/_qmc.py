@@ -160,7 +160,7 @@ class QMCSampler(BaseSampler):
     ) -> None:
 
         self._scramble = scramble
-        self._seed = seed or numpy.random.MT19937().random_raw()
+        self._seed = seed or numpy.random.default_rng()
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._qmc_type = qmc_type
         self._cached_qmc_engine = None
