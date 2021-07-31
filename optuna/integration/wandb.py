@@ -1,6 +1,8 @@
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Union
 
 import optuna
 from optuna._experimental import experimental
@@ -72,7 +74,9 @@ class WeightsAndBiasesCallback(object):
     """
 
     def __init__(
-        self, metric_name: str = "value", wandb_kwargs: Optional[Dict[str, Any]] = None
+        self,
+        metric_name: Union[str, List[str]] = "value",
+        wandb_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
 
         _imports.check()
@@ -84,11 +88,32 @@ class WeightsAndBiasesCallback(object):
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
-        direction = study.direction.name
-        attributes = {"direction": direction}
+        if isinstance(self._metric_name, list):
+            if len(self._metric_name) != len(trial.values):
+                raise RuntimeError(
+                    "Running multi-objective optimization "
+                    "with {} objective values, but {} names specified. "
+                    "Match objective values and names, or use default broadcasting.".format(
+                        len(trial.values), len(self._metric_name)
+                    )
+                )
+
+            else:
+                names = self._metric_name
+
+        if isinstance(self._metric_name, str):
+            if len(trial.values) > 1:
+                # broadcast default name for multi-objective optimization
+                names = ["{}_{}".format(self._metric_name, i) for i in range(len(trial.values))]
+
+            else:
+                names = [self._metric_name]
+
+        metrics = {name: value for name, value in zip(names, trial.values)}
+        attributes = {"direction": [d.name for d in study.directions]}
 
         wandb.config.update(attributes)
-        wandb.log({**trial.params, self._metric_name: trial.value}, step=trial.number)
+        wandb.log({**trial.params, **metrics}, step=trial.number)
 
     def _initialize_run(self) -> None:
         """Initializes Weights & Biases run."""
