@@ -87,7 +87,7 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
 
 
 def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
-    # Test with categorical params that can be interpeted numeric.
+    # Test with categorical params that can be interpreted as numeric params.
     study_categorical_params = create_study()
     study_categorical_params.add_trial(
         create_trial(

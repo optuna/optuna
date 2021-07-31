@@ -1,16 +1,17 @@
 from collections import defaultdict
 import math
-from typing import Any
 from typing import Callable
 from typing import cast
 from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 
 import numpy as np
 
 from optuna._experimental import experimental
+from optuna.distributions import CategoricalChoiceType
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
@@ -143,7 +144,7 @@ def _get_parallel_coordinate_plot(
     log_param_names = []
     param_values = []
     var_names = [target_name]
-    numeric_cat_params: Dict[str, List[Any]] = {}
+    numeric_cat_params: Dict[str, Sequence[CategoricalChoiceType]] = {}
 
     for p_name in sorted_params:
         values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
@@ -181,8 +182,12 @@ def _get_parallel_coordinate_plot(
         var_names.append(p_name if len(p_name) < 20 else "{}...".format(p_name[:17]))
         param_values.append(values)
 
-    if len(numeric_cat_params.keys()) != 0:
+    if numeric_cat_params:
+        # np.lexsort consumes the sort keys the order from back to front.
+        # So the values of parameters have to be reversed the order.
         sorted_idx = np.lexsort(list(numeric_cat_params.values())[::-1])
+        # Since the values are mapped to other categories by the index,
+        # the index will be swapped according to the sorted index of numeric params.
         param_values = [list(np.array(v)[sorted_idx]) for v in param_values]
 
     # Draw multiple line plots and axes.
