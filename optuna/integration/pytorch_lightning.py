@@ -1,7 +1,7 @@
 import warnings
 
 import optuna
-
+import sqlalchemy
 
 with optuna._imports.try_import() as _imports:
     from pytorch_lightning import LightningModule
@@ -53,10 +53,11 @@ class PyTorchLightningPruningCallback(Callback):
             return
 
         # When multi gpu, on_validation_end function executes multi times.
+        # So Exception is ignored to avoid IntegrityError.
         distributed_backend = trainer.accelerator_connector.distributed_backend
         try:
             self._trial.report(current_score, step=epoch)
-        except Exception:
+        except sqlalchemy.exc.IntegrityError:
             if distributed_backend is not None:
                 pass
             else:

@@ -11,13 +11,17 @@ import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
+from optuna.testing.storage import StorageSupplier
+
+from multiprocessing import Process, freeze_support
 
 
 class Model(pl.LightningModule):
-    def __init__(self) -> None:
+    def __init__(self, sync_dist=False) -> None:
 
         super().__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
+        self.sync_dist = sync_dist
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:  # type: ignore
 
@@ -45,7 +49,7 @@ class Model(pl.LightningModule):
     def validation_epoch_end(self, outputs: List[Dict[str, torch.Tensor]]) -> None:
 
         accuracy = sum(x["validation_accuracy"] for x in outputs) / len(outputs)
-        self.log("accuracy", accuracy)
+        self.log("accuracy", accuracy, sync_dist=self.sync_dist)
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
 
@@ -90,6 +94,31 @@ def test_pytorch_lightning_pruning_callback() -> None:
     study.optimize(objective, n_trials=1)
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
+
+@pytest.mark.parametrize("storage_mode", ["inmemory", "sqlite", "cache"])
+def test_pytorch_lightning_pruning_callback_monitor_ddp(
+    storage_mode: str,
+) -> None:
+
+    def objective(trial: optuna.trial.Trial) -> float:
+
+        trainer = pl.Trainer(
+            min_epochs=0,  # Required to fire the callback after the first epoch.
+            max_epochs=1,
+            accelerator="ddp_cpu",
+            num_processes=2,
+            checkpoint_callback=False,
+            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
+        )
+
+        model = Model(sync_dist=True)
+        trainer.fit(model)
+
+        return 1.0
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage, pruner=DeterministicPruner(False))
+        study.optimize(objective, n_trials=1)
 
 
 def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
