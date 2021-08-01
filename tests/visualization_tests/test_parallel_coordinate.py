@@ -241,7 +241,7 @@ def test_plot_parallel_coordinate_log_params() -> None:
 
 
 def test_plot_parallel_coordinate_sample_from_multiple_distribution() -> None:
-    # Test with sample from mulitiple distributions  including categorical params
+    # Test with sample from mulitiple distributions including categorical params
     # that can be interpreted as numeric params.
 
     study_multi_distro_params = create_study()
