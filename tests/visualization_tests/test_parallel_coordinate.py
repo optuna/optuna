@@ -238,3 +238,63 @@ def test_plot_parallel_coordinate_log_params() -> None:
     assert figure.data[0]["dimensions"][2]["values"] == (1.0, math.log10(200), math.log10(30))
     assert figure.data[0]["dimensions"][2]["ticktext"] == ("10", "100", "200")
     assert figure.data[0]["dimensions"][2]["tickvals"] == (1.0, 2.0, math.log10(200))
+
+
+def test_plot_parallel_coordinate_sample_from_multiple_distribution() -> None:
+    # Test with sample from mulitiple distributions  including categorical params
+    # that can be interpreted as numeric params.
+
+    study_multi_distro_params = create_study()
+    study_multi_distro_params.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": "preferred", "param_b": 30, "param_c": 2},
+            distributions={
+                "param_a": CategoricalDistribution(("preferred", "opt")),
+                "param_b": LogUniformDistribution(1, 1000),
+                "param_c": CategoricalDistribution((1, 2, 10)),
+            },
+        )
+    )
+
+    study_multi_distro_params.add_trial(
+        create_trial(
+            value=3.0,
+            params={"param_a": "opt", "param_b": 200, "param_c": 1},
+            distributions={
+                "param_a": CategoricalDistribution(("preferred", "opt")),
+                "param_b": LogUniformDistribution(1, 1000),
+                "param_c": CategoricalDistribution((1, 2, 10)),
+            },
+        )
+    )
+
+    study_multi_distro_params.add_trial(
+        create_trial(
+            value=2.0,
+            params={"param_a": "preferred", "param_b": 10, "param_c": 10},
+            distributions={
+                "param_a": CategoricalDistribution(("preferred", "opt")),
+                "param_b": LogUniformDistribution(1, 1000),
+                "param_c": CategoricalDistribution((1, 2, 10)),
+            },
+        )
+    )
+    figure = plot_parallel_coordinate(study_multi_distro_params)
+    assert len(figure.data[0]["dimensions"]) == 4
+    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 3.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (3.0, 0.0, 2.0)
+    assert figure.data[0]["dimensions"][1]["label"] == "param_a"
+    assert figure.data[0]["dimensions"][1]["range"] == (0, 1)
+    assert figure.data[0]["dimensions"][1]["values"] == (1, 0, 0)
+    assert figure.data[0]["dimensions"][1]["ticktext"] == ("preferred", "opt")
+    assert figure.data[0]["dimensions"][2]["label"] == "param_b"
+    assert figure.data[0]["dimensions"][2]["range"] == (1.0, math.log10(200))
+    assert figure.data[0]["dimensions"][2]["values"] == (math.log10(200), math.log10(30), 1.0)
+    assert figure.data[0]["dimensions"][2]["ticktext"] == ("10", "100", "200")
+    assert figure.data[0]["dimensions"][2]["tickvals"] == (1.0, 2.0, math.log10(200))
+    assert figure.data[0]["dimensions"][3]["label"] == "param_c"
+    assert figure.data[0]["dimensions"][3]["range"] == (0, 2)
+    assert figure.data[0]["dimensions"][3]["values"] == (0, 1, 2)
+    assert figure.data[0]["dimensions"][3]["ticktext"] == (1, 2, 10)
