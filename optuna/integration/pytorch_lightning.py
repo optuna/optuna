@@ -1,7 +1,9 @@
 import warnings
 
-import optuna
 import sqlalchemy
+
+import optuna
+
 
 with optuna._imports.try_import() as _imports:
     from pytorch_lightning import LightningModule

@@ -13,11 +13,9 @@ from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.storage import StorageSupplier
 
-from multiprocessing import Process, freeze_support
-
 
 class Model(pl.LightningModule):
-    def __init__(self, sync_dist=False) -> None:
+    def __init__(self, sync_dist: bool = False) -> None:
 
         super().__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
@@ -95,11 +93,11 @@ def test_pytorch_lightning_pruning_callback() -> None:
     assert study.trials[0].state == optuna.trial.TrialState.COMPLETE
     assert study.trials[0].value == 1.0
 
+
 @pytest.mark.parametrize("storage_mode", ["inmemory", "sqlite", "cache"])
 def test_pytorch_lightning_pruning_callback_monitor_ddp(
     storage_mode: str,
 ) -> None:
-
     def objective(trial: optuna.trial.Trial) -> float:
 
         trainer = pl.Trainer(
