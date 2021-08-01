@@ -15,11 +15,10 @@ from optuna.testing.storage import StorageSupplier
 
 
 class Model(pl.LightningModule):
-    def __init__(self, sync_dist: bool = False) -> None:
+    def __init__(self) -> None:
 
         super().__init__()
         self._model = nn.Sequential(nn.Linear(4, 8))
-        self.sync_dist = sync_dist
 
     def forward(self, data: torch.Tensor) -> torch.Tensor:  # type: ignore
 
@@ -47,7 +46,56 @@ class Model(pl.LightningModule):
     def validation_epoch_end(self, outputs: List[Dict[str, torch.Tensor]]) -> None:
 
         accuracy = sum(x["validation_accuracy"] for x in outputs) / len(outputs)
-        self.log("accuracy", accuracy, sync_dist=self.sync_dist)
+        self.log("accuracy", accuracy)
+
+    def configure_optimizers(self) -> torch.optim.Optimizer:
+
+        return torch.optim.SGD(self._model.parameters(), lr=1e-2)
+
+    def train_dataloader(self) -> torch.utils.data.DataLoader:
+
+        return self._generate_dummy_dataset()
+
+    def val_dataloader(self) -> torch.utils.data.DataLoader:
+
+        return self._generate_dummy_dataset()
+
+    def _generate_dummy_dataset(self) -> torch.utils.data.DataLoader:
+
+        data = torch.zeros(3, 4, dtype=torch.float32)
+        target = torch.zeros(3, dtype=torch.int64)
+        dataset = torch.utils.data.TensorDataset(data, target)
+        return torch.utils.data.DataLoader(dataset, batch_size=1)
+
+
+class Model_DDP(pl.LightningModule):
+    def __init__(self) -> None:
+
+        super().__init__()
+        self._model = nn.Sequential(nn.Linear(4, 8))
+
+    def forward(self, data: torch.Tensor) -> torch.Tensor:  # type: ignore
+
+        return self._model(data)
+
+    def training_step(  # type: ignore
+        self, batch: List[torch.Tensor], batch_nb: int
+    ) -> Dict[str, torch.Tensor]:
+
+        data, target = batch
+        output = self.forward(data)
+        loss = F.nll_loss(output, target)
+        return {"loss": loss}
+
+    def validation_step(  # type: ignore
+        self, batch: List[torch.Tensor], batch_nb: int
+    ) -> Dict[str, torch.Tensor]:
+
+        data, target = batch
+        output = self.forward(data)
+        pred = output.argmax(dim=1, keepdim=True)
+        accuracy = pred.eq(target.view_as(pred)).double().mean()
+        self.log("accuracy", accuracy, sync_dist=True)
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
 
@@ -109,7 +157,7 @@ def test_pytorch_lightning_pruning_callback_monitor_ddp(
             callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
         )
 
-        model = Model(sync_dist=True)
+        model = Model_DDP()
         trainer.fit(model)
 
         return 1.0
