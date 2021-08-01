@@ -1,4 +1,9 @@
+from typing import List
+from typing import Tuple
+from typing import Union
 from unittest import mock
+
+import pytest
 
 import optuna
 from optuna.integration import WeightsAndBiasesCallback
@@ -43,7 +48,8 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
     study = optuna.create_study(direction="minimize")
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
 
-    expected = {"direction": "MINIMIZE"}
+    expected = {"direction": ["MINIMIZE"]}
+    wandb.config.update.assert_called_once_with(expected)
     wandb.config.update.assert_called_once_with(expected)
 
 
@@ -59,15 +65,18 @@ def test_log_api_call_count(wandb: mock.Mock) -> None:
     assert wandb.log.call_count == target_n_trials
 
 
+@pytest.mark.parametrize(
+    "metric,expected", [("value", ["x", "y", "value"]), ("foo", ["x", "y", "foo"])]
+)
 @mock.patch("optuna.integration.wandb.wandb")
-def test_values_registered_on_epoch(wandb: mock.Mock) -> None:
+def test_values_registered_on_epoch(wandb: mock.Mock, metric: str, expected: List[str]) -> None:
 
     wandb.log = mock.MagicMock()
 
-    wandbc = WeightsAndBiasesCallback()
+    wandbc = WeightsAndBiasesCallback(metric_name=metric)
     study = optuna.create_study()
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
 
     kall = wandb.log.call_args
-    assert list(kall[0][0].keys()) == ["x", "y", "value"]
+    assert list(kall[0][0].keys()) == expected
     assert kall[1] == {"step": 0}
