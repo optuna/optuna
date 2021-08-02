@@ -26,17 +26,17 @@ def test_plot_param_importances() -> None:
     # Test with a trial.
     figure = plot_param_importances(study)
     assert len(figure.get_lines()) == 0
-    assert figure.get_xaxis().label.get_text() == "Importance for Objective Value"
+    assert figure.xaxis.label.get_text() == "Importance for Objective Value"
 
     # Test with an evaluator.
     plot_param_importances(study, evaluator=MeanDecreaseImpurityImportanceEvaluator())
     assert len(figure.get_lines()) == 0
-    assert figure.get_xaxis().label.get_text() == "Importance for Objective Value"
+    assert figure.xaxis.label.get_text() == "Importance for Objective Value"
 
     # Test with a trial to select parameter.
     figure = plot_param_importances(study, params=["param_b"])
     assert len(figure.get_lines()) == 0
-    assert figure.get_xaxis().label.get_text() == "Importance for Objective Value"
+    assert figure.xaxis.label.get_text() == "Importance for Objective Value"
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
@@ -48,7 +48,7 @@ def test_plot_param_importances() -> None:
     # Test with a customized target name.
     figure = plot_param_importances(study, target_name="Target Name")
     assert len(figure.get_lines()) == 0
-    assert figure.get_xaxis().label.get_text() == "Importance for Target Name"
+    assert figure.xaxis.label.get_text() == "Importance for Target Name"
 
     # Test with wrong parameters.
     with pytest.raises(ValueError):
