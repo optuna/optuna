@@ -53,6 +53,11 @@ class FrozenTrial(BaseTrial):
             assert objective(study.best_trial) == study.best_value
 
     .. note::
+        Instances are mutable, despite the name.
+        For instance, :func:`~optuna.trial.FrozenTrial.set_user_attr` will update user attributes
+        of objects in-place.
+
+    .. note::
         Please refer to :class:`~optuna.trial.Trial` for details of methods and properties.
 
 
