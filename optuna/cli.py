@@ -457,10 +457,7 @@ class _Ask(_BaseCommand):
             }
         }
 
-        self.logger.info(
-            f"Asked trial {trial.number} with parameters {trial.params} in study "
-            f"'{study.study_name}' and storage '{storage_url}'."
-        )
+        self.logger.info(f"Asked trial {trial.number} with parameters {trial.params}.")
 
         if parsed_args.out == "json":
             print(json.dumps(out))
@@ -507,7 +504,7 @@ class _Tell(_BaseCommand):
 
         self.logger.info(
             f"Told trial {parsed_args.trial_number} with values {parsed_args.values} and state "
-            f"{state} in study '{study.study_name}' and storage '{storage_url}'."
+            f"{state}."
         )
 
         return 0
