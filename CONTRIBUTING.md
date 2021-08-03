@@ -147,7 +147,7 @@ pytest tests/${TARGET_TEST_FILE_NAME}
 
 Optuna repository uses GitHub Actions and CircleCI.
 
-Currently, we are migrating to GitHub Actions but still we use CirclCI for testing `document`
+Currently, we are migrating to GitHub Actions but still we use CircleCI for testing `document`
 because it makes it much easier to check built documentation.
 
 ### Local Verification
