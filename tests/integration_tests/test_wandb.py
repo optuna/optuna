@@ -124,7 +124,7 @@ def test_multiobjective_values_registered_on_epoch(
     assert kall[1] == {"step": 0}
 
 
-@pytest.mark.parametrize("metrics", [(["foo"]), (["foo", "bar", "baz"])])
+@pytest.mark.parametrize("metrics", [["foo"], ["foo", "bar", "baz"]])
 @mock.patch("optuna.integration.wandb.wandb")
 def test_multiobjective_raises_on_name_mismatch(wandb: mock.MagicMock, metrics: List[str]) -> None:
 
