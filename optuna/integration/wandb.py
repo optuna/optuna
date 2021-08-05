@@ -64,6 +64,10 @@ class WeightsAndBiasesCallback(object):
             Name assigned to optimized metric. In case of multi-objective optimization,
             list of names can be passed. Those names will be assigned
             to metrics in the order returned by objective function.
+            If single name is provided, or this argument is left to default value,
+            it will be broadcasted to each objective with a number suffix in order
+            returned by objective function e.g. two objectives and default metric name
+            will be logged as ``value_0`` and ``value_1``.
         wandb_kwargs:
             Set of arguments passed when initializing Weights & Biases run.
             Please refer to `Weights & Biases API documentation
