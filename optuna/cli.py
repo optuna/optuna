@@ -24,6 +24,10 @@ from cliff.app import App
 from cliff.command import Command
 from cliff.commandmanager import CommandManager
 from cliff.lister import Lister
+from cliff.show import ShowOne
+import numpy as np
+from pandas import Timedelta
+from pandas import Timestamp
 import yaml
 
 import optuna
@@ -185,6 +189,76 @@ class _Studies(Lister):
             rows.append(row)
 
         return self._study_list_header, tuple(rows)
+
+
+def _format_trial_values(trial_values: np.ndarray) -> Tuple:
+    row = []
+    for value in trial_values:
+        if isinstance(value, Timestamp):
+            row.append(value.strftime("%Y-%m-%d %H:%M:%S"))
+        elif isinstance(value, Timedelta):
+            row.append(str(value))
+        elif isinstance(value, np.int64):
+            # It is required for conversion to JSON using cliff.
+            row.append(int(value))
+        else:
+            row.append(value)
+    return tuple(row)
+
+
+class _Trials(Lister):
+    """Show a list of trials."""
+
+    def get_parser(self, prog_name: str) -> ArgumentParser:
+
+        parser = super(_Trials, self).get_parser(prog_name)
+        parser.add_argument("--study-name", type=str, required=True, help="Name of study.")
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]:
+
+        storage_url = _check_storage_url(self.app_args.storage)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        df = study.trials_dataframe()
+
+        return tuple(df.columns), tuple(map(_format_trial_values, df.values))
+
+
+class _BestTrial(ShowOne):
+    """Show the best trial."""
+
+    def get_parser(self, prog_name: str) -> ArgumentParser:
+
+        parser = super(_BestTrial, self).get_parser(prog_name)
+        parser.add_argument("--study-name", type=str, required=True, help="Name of study.")
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> Tuple[Tuple, Tuple]:
+
+        storage_url = _check_storage_url(self.app_args.storage)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        df = study.trials_dataframe()
+
+        return tuple(df.columns), _format_trial_values(df.values[study.best_trial.number])
+
+
+class _BestTrials(Lister):
+    """Show a list of trials located at the Pareto front."""
+
+    def get_parser(self, prog_name: str) -> ArgumentParser:
+
+        parser = super(_BestTrials, self).get_parser(prog_name)
+        parser.add_argument("--study-name", type=str, required=True, help="Name of study.")
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]:
+
+        storage_url = _check_storage_url(self.app_args.storage)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        df = study.trials_dataframe()
+        best_trials = [trial.number for trial in study.best_trials]
+
+        return tuple(df.columns), tuple(map(_format_trial_values, df.loc[best_trials].values))
 
 
 class _Dashboard(_BaseCommand):
