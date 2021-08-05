@@ -22,8 +22,7 @@ if not _imports.is_successful():
     "Test before upgrading. "
     "REF: https://github.com/keras-team/keras/releases/tag/2.4.0. "
     "There is an alternative callback function that can be used instead: "
-    """`TFKerasPruningCallback <https://optuna.readthedocs.io/en/stable/reference/
-    generated/optuna.integration.TFKerasPruningCallback.html>`_ """,
+    "`TFKerasPruningCallback <https://optuna.readthedocs.io/en/stable/reference/generated/optuna.integration.TFKerasPruningCallback.html>`_ ",
 )
 class KerasPruningCallback(Callback):
     """Keras callback to prune unpromising trials.
