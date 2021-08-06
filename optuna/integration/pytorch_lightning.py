@@ -3,6 +3,8 @@ import warnings
 import sqlalchemy
 
 import optuna
+from optuna.storages._cached_storage import _CachedStorage
+
 
 with optuna._imports.try_import() as _imports:
     from pytorch_lightning import LightningModule
@@ -78,9 +80,12 @@ class PyTorchLightningDDPPruningCallback(Callback):
             how this dictionary is formatted.
     """
 
-
     def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
         _imports.check()
+
+        if not isinstance(trial.study._storage, _CachedStorage):
+            raise ValueError("PyTorchLightningDDPPruningCallback supports only RDB.")
+
         super().__init__()
 
         self._trial = trial
@@ -120,17 +125,18 @@ class PyTorchLightningDDPPruningCallback(Callback):
                 else:
                     raise
 
-    # Because on_validation_end is executed in threads,  when on_fit_end is executed, it is necessary to report an objective function value for a given step via RDB.
+    # Because on_validation_end is executed in threads, when on_fit_end is executed,
+    # it is necessary to report an objective function value for a given step via RDB.
     def on_fit_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         _trial_id = self._trial._trial_id
         _study = self._trial.study
-        _trial = _study._storage._backend.get_trial(_trial_id)
+        _trial = _study._storage._backend.get_trial(_trial_id)  # type: ignore
         is_pruned = _trial.user_attrs.get("pruned")
         epoch = _trial.user_attrs.get("epoch")
         intermediate_values = _trial.intermediate_values
-        for step , value in intermediate_values.items():
+        for step, value in intermediate_values.items():
             self._trial.report(value, step=step)
-        
+
         if is_pruned:
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
