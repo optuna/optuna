@@ -36,7 +36,7 @@ def test_set_trial_state() -> None:
     storage.set_trial_state(trial_id, TrialState.COMPLETE)
 
     cached_trial = storage.get_trial(trial_id)
-    base_trial = storage._backend.get_trial(trial_id)
+    base_trial = base_storage.get_trial(trial_id)
 
     assert cached_trial == base_trial
 
