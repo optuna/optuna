@@ -154,11 +154,11 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
     elif params is None:
         assert figure.shape == (len(study.best_params), len(study.best_params))
         for i in range(len(study.best_params)):
-            assert figure[i][0].get_yaxis().label.get_text() == list(study.best_params)[i]
+            assert figure[i][0].yaxis.label.get_text() == list(study.best_params)[i]
     else:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
-            assert figure[i][0].get_yaxis().label.get_text() == list(params)[i]
+            assert figure[i][0].yaxis.label.get_text() == list(params)[i]
 
 
 @pytest.mark.parametrize(
@@ -178,7 +178,7 @@ def test_plot_contour_customized_target(params: List[str]) -> None:
     else:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
-            assert figure[i][0].get_yaxis().label.get_text() == list(params)[i]
+            assert figure[i][0].yaxis.label.get_text() == list(params)[i]
 
 
 @pytest.mark.parametrize(
@@ -197,4 +197,4 @@ def test_plot_contour_customized_target_name(params: List[str]) -> None:
     else:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
-            assert figure[i][0].get_yaxis().label.get_text() == list(params)[i]
+            assert figure[i][0].yaxis.label.get_text() == list(params)[i]

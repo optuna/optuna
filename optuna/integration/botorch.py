@@ -76,8 +76,8 @@ def qei_candidates_func(
             constraints. A constraint is violated if strictly larger than 0. If no constraints are
             involved in the optimization, this argument will be :obj:`None`.
         bounds:
-            Search space bounds. A ``torch.Tensor`` of shape ``(n_params, 2)``. ``n_params`` is
-            identical to that of ``train_x``. The first and the second column correspond to the
+            Search space bounds. A ``torch.Tensor`` of shape ``(2, n_params)``. ``n_params`` is
+            identical to that of ``train_x``. The first and the second rows correspond to the
             lower and upper bounds for each parameter respectively.
 
     Returns:
