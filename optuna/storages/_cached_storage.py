@@ -209,8 +209,9 @@ class _CachedStorage(BaseStorage):
                 updates.state = state
 
                 if cached_trial.state.is_finished():
-                    updates.datetime_complete = datetime.datetime.now()
-                    cached_trial.datetime_complete = datetime.datetime.now()
+                    now = datetime.datetime.now()
+                    updates.datetime_complete = now
+                    cached_trial.datetime_complete = now
                 return self._flush_trial(trial_id)
 
         ret = self._backend.set_trial_state(trial_id, state)
