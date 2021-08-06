@@ -29,7 +29,7 @@ def test_plot_optimization_history(direction: str) -> None:
     study0.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
     figure = plot_edf(study0)
     assert len(figure.get_lines()) == 1
-    assert figure.get_xaxis().label.get_text() == "Objective Value"
+    assert figure.xaxis.label.get_text() == "Objective Value"
 
     # Test with two studies.
     study1 = create_study(direction=direction)
@@ -51,4 +51,4 @@ def test_plot_optimization_history(direction: str) -> None:
     study0.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
     figure = plot_edf(study0, target_name="Target Name")
     assert len(figure.get_lines()) == 1
-    assert figure.get_xaxis().label.get_text() == "Target Name"
+    assert figure.xaxis.label.get_text() == "Target Name"
