@@ -28,6 +28,19 @@ def test_create_trial() -> None:
     storage.create_new_trial(study_id)
 
 
+def test_set_trial_state() -> None:
+    base_storage = RDBStorage("sqlite:///:memory:")
+    storage = _CachedStorage(base_storage)
+    study_id = storage.create_new_study("test-study")
+    trial_id = storage.create_new_trial(study_id)
+    storage.set_trial_state(trial_id, TrialState.COMPLETE)
+
+    cached_trial = storage.get_trial(trial_id)
+    base_trial = base_storage.get_trial(trial_id)
+
+    assert cached_trial == base_trial
+
+
 def test_cached_set() -> None:
 
     """Test CachedStorage does not flush to persistent storages.

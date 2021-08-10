@@ -9,7 +9,7 @@ on:
       - master
 
 jobs:
-  tests:
+  tests-mac:
     runs-on: macos-latest
 
     # Not intended for forks.
@@ -52,7 +52,7 @@ jobs:
       run: |
         pytest tests --ignore tests/integration_tests
 
-  tests-integration:
+  tests-integration-mac:
     runs-on: macos-latest
 
     # Not intended for forks.

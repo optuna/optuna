@@ -26,4 +26,7 @@ RUN if [ "${BUILD_TYPE}" = "dev" ]; then \
     fi \
     && pip install ${PIP_OPTIONS} jupyter notebook
 
+# Install RDB bindings.
+RUN pip install ${PIP_OPTIONS} PyMySQL cryptography psycopg2-binary
+
 ENV PIP_OPTIONS ""

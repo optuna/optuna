@@ -30,25 +30,25 @@ def test_plot_slice() -> None:
     assert len(figure) == 2
     assert len(figure[0].get_lines()) == 0
     assert len(figure[1].get_lines()) == 0
-    assert figure[0].get_yaxis().label.get_text() == "Objective Value"
+    assert figure[0].yaxis.label.get_text() == "Objective Value"
 
     # Test with a trial to select parameter.
     figure = plot_slice(study, params=["param_a"])
     assert len(figure.get_lines()) == 0
-    assert figure.get_yaxis().label.get_text() == "Objective Value"
+    assert figure.yaxis.label.get_text() == "Objective Value"
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
         figure = plot_slice(study, params=["param_a"], target=lambda t: t.params["param_b"])
     assert len(figure.get_lines()) == 0
-    assert figure.get_yaxis().label.get_text() == "Objective Value"
+    assert figure.yaxis.label.get_text() == "Objective Value"
 
     # Test with a customized target name.
     figure = plot_slice(study, target_name="Target Name")
     assert len(figure) == 2
     assert len(figure[0].get_lines()) == 0
     assert len(figure[1].get_lines()) == 0
-    assert figure[0].get_yaxis().label.get_text() == "Target Name"
+    assert figure[0].yaxis.label.get_text() == "Target Name"
 
     # Test with wrong parameters.
     with pytest.raises(ValueError):
@@ -83,15 +83,15 @@ def test_plot_slice_log_scale() -> None:
     figure = plot_slice(study, params=["y_log"])
 
     assert len(figure.get_lines()) == 0
-    assert figure.get_xaxis().label.get_text() == "y_log"
+    assert figure.xaxis.label.get_text() == "y_log"
     figure = plot_slice(study, params=["x_linear"])
     assert len(figure.get_lines()) == 0
-    assert figure.get_xaxis().label.get_text() == "x_linear"
+    assert figure.xaxis.label.get_text() == "x_linear"
 
     # Plot multiple parameters.
     figure = plot_slice(study)
     assert len(figure) == 2
     assert len(figure[0].get_lines()) == 0
     assert len(figure[1].get_lines()) == 0
-    assert figure[0].get_xaxis().label.get_text() == "x_linear"
-    assert figure[1].get_xaxis().label.get_text() == "y_log"
+    assert figure[0].xaxis.label.get_text() == "x_linear"
+    assert figure[1].xaxis.label.get_text() == "y_log"

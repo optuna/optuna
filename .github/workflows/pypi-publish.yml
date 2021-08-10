@@ -13,6 +13,10 @@ jobs:
   build-n-publish:
     name: Build and publish Python distributions to PyPI or TestPyPI
     runs-on: ubuntu-18.04
+
+    # Not intended for forks.
+    if: github.repository == 'optuna/optuna'
+
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.7
@@ -26,7 +30,7 @@ jobs:
         python -m pip install -U twine wheel
 
     - name: Change the version file for scheduled TestPyPI upload
-      if: (github.repository == 'optuna/optuna') && (github.event_name == 'schedule')
+      if: github.event_name == 'schedule'
       run: |
         OPTUNA_VERSION=$(cut -d '"' -f 2 optuna/version.py)
         DATE=`date +"%Y%m%d"`
@@ -42,7 +46,7 @@ jobs:
 
     - name: Publish distribution to TestPyPI
       # The following upload action cannot be executed in the forked repository.
-      if: (github.repository == 'optuna/optuna') && ((github.event_name == 'schedule') || (github.event_name == 'release'))
+      if: (github.event_name == 'schedule') || (github.event_name == 'release')
       uses: pypa/gh-action-pypi-publish@v1.1.0
       with:
         user: __token__
@@ -51,7 +55,7 @@ jobs:
 
     - name: Publish distribution to PyPI
       # The following upload action cannot be executed in the forked repository.
-      if: (github.repository == 'optuna/optuna') && (github.event_name == 'release')
+      if: github.event_name == 'release'
       uses: pypa/gh-action-pypi-publish@v1.1.0
       with:
         user: __token__
