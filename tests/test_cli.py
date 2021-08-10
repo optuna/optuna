@@ -4,10 +4,13 @@ import subprocess
 from subprocess import CalledProcessError
 import tempfile
 from typing import Any
+from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Tuple
 
+import numpy as np
+from pandas import Timedelta
 from pandas import Timestamp
 import pytest
 import yaml
@@ -21,6 +24,32 @@ from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
+
+
+# An example of objective functions
+def objective_func(trial: Trial) -> float:
+
+    x = trial.suggest_float("x", -10, 10)
+    return (x + 5) ** 2
+
+
+# An example of objective functions for branched search spaces
+def objective_func_branched_search_space(trial: Trial) -> float:
+
+    c = trial.suggest_categorical("c", ("A", "B"))
+    if c == "A":
+        x = trial.suggest_float("x", -10, 10)
+        return (x + 5) ** 2
+    else:
+        y = trial.suggest_float("y", -10, 10)
+        return (y + 5) ** 2
+
+
+# An example of objective functions for multi-objective optimization
+def objective_func_multi_objective(trial: Trial) -> Tuple[float, float]:
+
+    x = trial.suggest_float("x", -10, 10)
+    return (x + 5) ** 2, (x - 5) ** 2
 
 
 def test_create_study_command() -> None:
@@ -234,7 +263,8 @@ def test_studies_command() -> None:
         assert elms[2] == "10"
 
 
-def test_trials_command() -> None:
+@pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
+def test_trials_command(objective: Callable[[Trial], float]) -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -243,8 +273,18 @@ def test_trials_command() -> None:
         n_trials = 10
 
         study = optuna.create_study(storage, study_name=study_name)
-        study.optimize(objective_func, n_trials=n_trials)
-        df = study.trials_dataframe()
+        study.optimize(objective, n_trials=n_trials)
+        attrs = (
+            "number",
+            "value",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+        df = study.trials_dataframe(attrs)
 
         # Run command.
         command = [
@@ -268,14 +308,20 @@ def test_trials_command() -> None:
             for key, value in trial.items():
                 expected_value = df.loc[i][key]
                 if isinstance(value, int) or isinstance(value, float):
-                    assert value == expected_value
+                    if np.isnan(expected_value):
+                        assert np.isnan(value)
+                    else:
+                        assert value == expected_value
                 elif isinstance(expected_value, Timestamp):
                     assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
+                elif isinstance(expected_value, Timedelta):
+                    assert value == str(expected_value.to_pytimedelta())
                 else:
                     assert value == str(expected_value)
 
 
-def test_best_trial_command() -> None:
+@pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
+def test_best_trial_command(objective: Callable[[Trial], float]) -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -284,8 +330,18 @@ def test_best_trial_command() -> None:
         n_trials = 10
 
         study = optuna.create_study(storage, study_name=study_name)
-        study.optimize(objective_func, n_trials=n_trials)
-        df = study.trials_dataframe()
+        study.optimize(objective, n_trials=n_trials)
+        attrs = (
+            "number",
+            "value",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+        df = study.trials_dataframe(attrs)
 
         # Run command.
         command = [
@@ -306,9 +362,14 @@ def test_best_trial_command() -> None:
         for key, value in best_trial.items():
             expected_value = df.loc[study.best_trial.number][key]
             if isinstance(value, int) or isinstance(value, float):
-                assert value == expected_value
+                if np.isnan(expected_value):
+                    assert np.isnan(value)
+                else:
+                    assert value == expected_value
             elif isinstance(expected_value, Timestamp):
                 assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
+            elif isinstance(expected_value, Timedelta):
+                assert value == str(expected_value.to_pytimedelta())
             else:
                 assert value == str(expected_value)
 
@@ -325,7 +386,17 @@ def test_best_trials_command() -> None:
             storage, study_name=study_name, directions=("minimize", "minimize")
         )
         study.optimize(objective_func_multi_objective, n_trials=n_trials)
-        df = study.trials_dataframe()
+        attrs = (
+            "number",
+            "values",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+        df = study.trials_dataframe(attrs)
 
         # Run command.
         command = [
@@ -351,9 +422,14 @@ def test_best_trials_command() -> None:
             for key, value in trial.items():
                 expected_value = df.loc[trial["number"]][key]
                 if isinstance(value, int) or isinstance(value, float):
-                    assert value == expected_value
+                    if np.isnan(expected_value):
+                        assert np.isnan(value)
+                    else:
+                        assert value == expected_value
                 elif isinstance(expected_value, Timestamp):
                     assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
+                elif isinstance(expected_value, Timedelta):
+                    assert value == str(expected_value.to_pytimedelta())
                 else:
                     assert value == str(expected_value)
 
@@ -445,20 +521,6 @@ def test_dashboard_command_with_allow_websocket_origin(origins: List[str]) -> No
         html = tf_report.read()
         assert "<body>" in html
         assert "bokeh" in html
-
-
-# An example of objective functions
-def objective_func(trial: Trial) -> float:
-
-    x = trial.suggest_float("x", -10, 10)
-    return (x + 5) ** 2
-
-
-# An example of objective functions for multi-objective optimization
-def objective_func_multi_objective(trial: Trial) -> Tuple[float, float]:
-
-    x = trial.suggest_float("x", -10, 10)
-    return (x + 5) ** 2, (x - 5) ** 2
 
 
 def test_study_optimize_command() -> None:

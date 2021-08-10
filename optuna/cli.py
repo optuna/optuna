@@ -9,6 +9,7 @@ c.f. https://docs.openstack.org/cliff/latest/user/demoapp.html#setup-py
 
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
+import datetime
 from importlib.machinery import SourceFileLoader
 import json
 import logging
@@ -16,6 +17,7 @@ import sys
 import types
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
 import warnings
@@ -26,8 +28,6 @@ from cliff.commandmanager import CommandManager
 from cliff.lister import Lister
 from cliff.show import ShowOne
 import numpy as np
-from pandas import Timedelta
-from pandas import Timestamp
 import yaml
 
 import optuna
@@ -35,6 +35,7 @@ from optuna._deprecated import deprecated
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
+from optuna.study import _dataframe
 from optuna.trial import TrialState
 
 
@@ -191,19 +192,19 @@ class _Studies(Lister):
         return self._study_list_header, tuple(rows)
 
 
-def _format_trial_values(trial_values: np.ndarray) -> Tuple:
-    row = []
-    for value in trial_values:
-        if isinstance(value, Timestamp):
-            row.append(value.strftime("%Y-%m-%d %H:%M:%S"))
-        elif isinstance(value, Timedelta):
-            row.append(str(value))
-        elif isinstance(value, np.int64):
-            # It is required for conversion to JSON using cliff.
-            row.append(int(value))
-        else:
+def _format_trial_values(
+    record: Dict[Tuple[str, str], Any], columns: List[Tuple[str, str]]
+) -> List:
+    row: List = []
+    for column in columns:
+        value = record.get(column, np.nan)
+        if isinstance(value, (int, float)):
             row.append(value)
-    return tuple(row)
+        elif isinstance(value, datetime.datetime):
+            row.append(value.strftime("%Y-%m-%d %H:%M:%S"))
+        else:
+            row.append(str(value))
+    return row
 
 
 class _Trials(Lister):
@@ -215,13 +216,24 @@ class _Trials(Lister):
         parser.add_argument("--study-name", type=str, required=True, help="Name of study.")
         return parser
 
-    def take_action(self, parsed_args: Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]:
+    def take_action(self, parsed_args: Namespace) -> Tuple[List[str], List[List]]:
 
         storage_url = _check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
-        df = study.trials_dataframe()
+        attrs = (
+            "number",
+            "value" if not study._is_multi_objective() else "values",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
 
-        return tuple(df.columns), tuple(map(_format_trial_values, df.values))
+        records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
+        trial_values = [_format_trial_values(record, columns) for record in records]
+        return _dataframe._flatten_columns(columns), trial_values
 
 
 class _BestTrial(ShowOne):
@@ -233,13 +245,24 @@ class _BestTrial(ShowOne):
         parser.add_argument("--study-name", type=str, required=True, help="Name of study.")
         return parser
 
-    def take_action(self, parsed_args: Namespace) -> Tuple[Tuple, Tuple]:
+    def take_action(self, parsed_args: Namespace) -> Tuple[List[str], List]:
 
         storage_url = _check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
-        df = study.trials_dataframe()
+        attrs = (
+            "number",
+            "value" if not study._is_multi_objective() else "values",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
 
-        return tuple(df.columns), _format_trial_values(df.values[study.best_trial.number])
+        records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
+        trial_values = _format_trial_values(records[study.best_trial.number], columns)
+        return _dataframe._flatten_columns(columns), trial_values
 
 
 class _BestTrials(Lister):
@@ -251,14 +274,26 @@ class _BestTrials(Lister):
         parser.add_argument("--study-name", type=str, required=True, help="Name of study.")
         return parser
 
-    def take_action(self, parsed_args: Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]:
+    def take_action(self, parsed_args: Namespace) -> Tuple[List[str], List[List]]:
 
         storage_url = _check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
-        df = study.trials_dataframe()
         best_trials = [trial.number for trial in study.best_trials]
+        attrs = (
+            "number",
+            "value" if not study._is_multi_objective() else "values",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
 
-        return tuple(df.columns), tuple(map(_format_trial_values, df.loc[best_trials].values))
+        records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
+        best_records = filter(lambda record: record[("number", "")] in best_trials, records)
+        trial_values = [_format_trial_values(record, columns) for record in best_records]
+        return _dataframe._flatten_columns(columns), trial_values
 
 
 class _Dashboard(_BaseCommand):
