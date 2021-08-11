@@ -1,10 +1,14 @@
+import json
 import re
 import subprocess
 from subprocess import CalledProcessError
 import tempfile
+from typing import Any
 from typing import List
+from typing import Optional
 
 import pytest
+import yaml
 
 import optuna
 from optuna.cli import _Studies
@@ -14,6 +18,7 @@ from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
+from optuna.trial import TrialState
 
 
 def test_create_study_command() -> None:
@@ -409,3 +414,130 @@ def test_storage_upgrade_command() -> None:
 
         command.extend(["--storage", storage_url])
         subprocess.check_call(command)
+
+
+@pytest.mark.parametrize(
+    "direction,directions,sampler,sampler_kwargs,out",
+    [
+        (None, None, None, None, None),
+        ("minimize", None, None, None, None),
+        (None, "minimize maximize", None, None, None),
+        (None, None, "RandomSampler", None, None),
+        (None, None, "TPESampler", '{"multivariate": true}', None),
+        (None, None, None, None, "json"),
+        (None, None, None, None, "yaml"),
+    ],
+)
+def test_ask(
+    direction: Optional[str],
+    directions: Optional[str],
+    sampler: Optional[str],
+    sampler_kwargs: Optional[str],
+    out: Optional[str],
+) -> None:
+
+    study_name = "test_study"
+    search_space = (
+        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
+    )
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        args = [
+            "optuna",
+            "ask",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+            "--search-space",
+            search_space,
+        ]
+
+        if direction is not None:
+            args += ["--direction", direction]
+        if directions is not None:
+            args += ["--directions"] + directions.split()
+        if sampler is not None:
+            args += ["--sampler", sampler]
+        if sampler_kwargs is not None:
+            args += ["--sampler-kwargs", sampler_kwargs]
+        if out is not None:
+            args += ["--out", out]
+
+        output: Any = subprocess.check_output(args)
+        output = output.decode("utf-8")
+
+        if out is None or out == "json":
+            output = json.loads(output)
+        else:  # "yaml".
+            output = yaml.load(output)
+
+        assert output["trial"]["number"] == 0
+        assert len(output["trial"]["params"]) == 2
+        assert 0 <= output["trial"]["params"]["x"] < 1
+        assert output["trial"]["params"]["y"] == "foo"
+
+
+def test_ask_empty_search_space() -> None:
+    study_name = "test_study"
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        args = [
+            "optuna",
+            "ask",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+        ]
+
+        output: Any = subprocess.check_output(args)
+        output = output.decode("utf-8")
+        output = json.loads(output)
+
+        assert output["trial"]["number"] == 0
+        assert len(output["trial"]["params"]) == 0
+
+
+def test_tell() -> None:
+    study_name = "test_study"
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        output: Any = subprocess.check_output(
+            [
+                "optuna",
+                "ask",
+                "--storage",
+                db_url,
+                "--study-name",
+                study_name,
+            ]
+        )
+        output = output.decode("utf-8")
+        output = json.loads(output)
+        trial_number = output["trial"]["number"]
+
+        output = subprocess.check_output(
+            [
+                "optuna",
+                "tell",
+                "--storage",
+                db_url,
+                "--trial-number",
+                str(trial_number),
+                "--values",
+                "1.2",
+            ]
+        )
+
+        study = optuna.load_study(storage=db_url, study_name=study_name)
+        assert len(study.trials) == 1
+        assert study.trials[0].state == TrialState.COMPLETE
+        assert study.trials[0].values == [1.2]
