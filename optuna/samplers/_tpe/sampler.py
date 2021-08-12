@@ -11,7 +11,6 @@ import warnings
 
 import numpy as np
 
-from optuna import distributions
 from optuna._hypervolume import WFG
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
@@ -30,14 +29,6 @@ from optuna.trial import TrialState
 
 
 EPS = 1e-12
-_DISTRIBUTION_CLASSES = (
-    distributions.UniformDistribution,
-    distributions.LogUniformDistribution,
-    distributions.DiscreteUniformDistribution,
-    distributions.IntUniformDistribution,
-    distributions.IntLogUniformDistribution,
-    distributions.CategoricalDistribution,
-)
 _logger = get_logger(__name__)
 
 
@@ -306,7 +297,6 @@ class TPESampler(BaseSampler):
         if not self._multivariate:
             return {}
 
-        n_complete_trials = len(study.get_trials(deepcopy=False))
         search_space: Dict[str, BaseDistribution] = {}
 
         if self._group:
@@ -314,18 +304,12 @@ class TPESampler(BaseSampler):
             self._search_space_group = self._group_decomposed_search_space.calculate(study)
             for sub_space in self._search_space_group.search_spaces:
                 for name, distribution in sub_space.items():
-                    if not isinstance(distribution, _DISTRIBUTION_CLASSES):
-                        self._log_independent_sampling(n_complete_trials, trial, name)
-                        continue
                     if distribution.single():
                         continue
                     search_space[name] = distribution
             return search_space
 
         for name, distribution in self._search_space.calculate(study).items():
-            if not isinstance(distribution, _DISTRIBUTION_CLASSES):
-                self._log_independent_sampling(n_complete_trials, trial, name)
-                continue
             if distribution.single():
                 continue
             search_space[name] = distribution
@@ -335,8 +319,9 @@ class TPESampler(BaseSampler):
     def _log_independent_sampling(
         self, n_complete_trials: int, trial: FrozenTrial, param_name: str
     ) -> None:
-        if self._warn_independent_sampling:
-            if n_complete_trials >= self._n_startup_trials:
+        if self._warn_independent_sampling and self._multivariate:
+            # The first trial samples independently.
+            if n_complete_trials >= max(self._n_startup_trials, 1):
                 _logger.warning(
                     f"The parameter '{param_name}' in trial#{trial.number} is sampled "
                     "independently instead of being sampled by multivariate TPE sampler. "
@@ -356,10 +341,7 @@ class TPESampler(BaseSampler):
             for sub_space in self._search_space_group.search_spaces:
                 search_space = {}
                 for name, distribution in sub_space.items():
-                    if (
-                        isinstance(distribution, _DISTRIBUTION_CLASSES)
-                        and not distribution.single()
-                    ):
+                    if not distribution.single():
                         search_space[name] = distribution
                 params.update(self._sample_relative(study, trial, search_space))
             return params
@@ -385,13 +367,16 @@ class TPESampler(BaseSampler):
 
         # We divide data into below and above.
         indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
-        below = _build_observation_dict(values, indices_below)
-        above = _build_observation_dict(values, indices_above)
+        # `None` items are intentionally converted to `nan` and then filtered out.
+        # For `nan` conversion, the dtype must be float.
+        config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
+        below = _build_observation_dict(config_values, indices_below)
+        above = _build_observation_dict(config_values, indices_above)
 
         # We then sample by maximizing log likelihood ratio.
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                values, scores, indices_below
+                config_values, scores, indices_below
             )
             mpe_below = _ParzenEstimator(
                 below, search_space, self._parzen_estimator_parameters, weights_below
@@ -423,18 +408,23 @@ class TPESampler(BaseSampler):
 
         n = len(scores)
 
+        self._log_independent_sampling(n, trial, param_name)
+
         if n < self._n_startup_trials:
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )
 
         indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
-        below = _build_observation_dict(values, indices_below)
-        above = _build_observation_dict(values, indices_above)
+        # `None` items are intentionally converted to `nan` and then filtered out.
+        # For `nan` conversion, the dtype must be float.
+        config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
+        below = _build_observation_dict(config_values, indices_below)
+        above = _build_observation_dict(config_values, indices_above)
 
         if study._is_multi_objective():
             weights_below = _calculate_weights_below_for_multi_objective(
-                values, scores, indices_below
+                config_values, scores, indices_below
             )
             mpe_below = _ParzenEstimator(
                 below,
@@ -709,12 +699,8 @@ def _split_observation_pairs(
 
 
 def _build_observation_dict(
-    config_vals: Dict[str, List[Optional[float]]], indices: np.ndarray
+    config_values: Dict[str, np.ndarray], indices: np.ndarray
 ) -> Dict[str, np.ndarray]:
-
-    # `None` items are intentionally converted to `nan` and then filtered out.
-    # For `nan` conversion, the dtype must be float.
-    config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
 
     observation_dict = {}
     for param_name, param_val in config_values.items():
@@ -771,7 +757,7 @@ def _solve_hssp(
 
 
 def _calculate_weights_below_for_multi_objective(
-    config_vals: Dict[str, List[Optional[float]]],
+    config_values: Dict[str, np.ndarray],
     loss_vals: List[Tuple[float, List[float]]],
     indices: np.ndarray,
 ) -> np.ndarray:
@@ -781,7 +767,7 @@ def _calculate_weights_below_for_multi_objective(
     # misses the one trial, then the other parameter must miss the trial, in this call of
     # `sample_relative`.
     # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
-    cvals = np.asarray(list(config_vals.values())[0])[indices]
+    cvals = list(config_values.values())[0][indices]
 
     # Multi-objective TPE does not support pruning, so it ignores the ``step``.
     lvals = np.asarray([v for _, v in loss_vals])[indices]

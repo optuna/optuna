@@ -37,6 +37,7 @@ def get_install_requires() -> List[str]:
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
+        "PyYAML",  # Only used in `optuna/cli.py`.
     ]
     return requirements
 
@@ -100,7 +101,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            "keras",
+            # TODO(nzw0301): Remove the version constraint after resolving the CI error
+            # by keras 2.6.0
+            "keras<2.6.0",
             # TODO(HideakiImamura): Remove the version constraint after resolving the issue
             # https://github.com/keras-team/keras/issues/14632
             "tensorflow<2.5.0 ; python_version<'3.9'",
@@ -145,7 +148,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            "keras ; python_version<'3.9'",
+            # TODO(nzw0301): Remove the version constraint after resolving the CI error
+            # by keras 2.6.0
+            "keras<2.6.0 ; python_version<'3.9'",
             # TODO(HideakiImamura): Remove the version constraint after resolving the issue
             # https://github.com/keras-team/keras/issues/14632
             "tensorflow<2.5.0 ; python_version<'3.9'",
@@ -214,6 +219,8 @@ setup(
             "dashboard = optuna.cli:_Dashboard",
             "study optimize = optuna.cli:_StudyOptimize",
             "storage upgrade = optuna.cli:_StorageUpgrade",
+            "ask = optuna.cli:_Ask",
+            "tell = optuna.cli:_Tell",
         ],
     },
     classifiers=[

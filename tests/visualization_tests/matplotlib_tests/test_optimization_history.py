@@ -44,7 +44,7 @@ def test_plot_optimization_history(direction: str) -> None:
     # Test customized target name.
     figure = plot_optimization_history(study, target_name="Target Name")
     assert len(figure.get_lines()) == 1
-    assert figure.get_yaxis().label.get_text() == "Target Name"
+    assert figure.yaxis.label.get_text() == "Target Name"
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:

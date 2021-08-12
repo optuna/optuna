@@ -53,10 +53,9 @@ class FrozenTrial(BaseTrial):
             assert objective(study.best_trial) == study.best_value
 
     .. note::
-        Attributes are set in :func:`optuna.Study.optimize`,
-        but several attributes can be updated after the optimization.
-        That means such attributes are overwritten by the re-evaluation
-        if your objective updates attributes of :class:`~optuna.trial.Trial`.
+        Instances are mutable, despite the name.
+        For instance, :func:`~optuna.trial.FrozenTrial.set_user_attr` will update user attributes
+        of objects in-place.
 
 
         Example:
