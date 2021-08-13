@@ -10,9 +10,7 @@ with try_import() as _imports:
     import catboost as cb
 
     if version.parse(cb.__version__) < version.parse("0.26"):
-        raise ImportError(
-            f"You don't have CatBoost installed! CatBoost version: {cb.__version__}"
-        )
+        raise ImportError(f"You don't have CatBoost installed! CatBoost version: {cb.__version__}")
 
 
 class CatBoostPruningCallback(object):
@@ -36,7 +34,8 @@ class CatBoostPruningCallback(object):
             The name of the target validation.
             If you set only one ``eval_set``, ``validation`` is used.
             If you set multiple datasets as ``eval_set``, the index number of ``eval_set`` must be
-            included in the valid_name, e.g., ``validation_0`` or ``validation_1`` when ``eval_set`` contains two datasets.
+            included in the valid_name, e.g., ``validation_0`` or ``validation_1``
+            when ``eval_set`` contains two datasets.
     """
 
     def __init__(
