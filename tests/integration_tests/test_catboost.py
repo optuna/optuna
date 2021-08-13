@@ -18,7 +18,7 @@ def test_catboost_pruning_callback_call() -> None:
     info = types.SimpleNamespace(
         iteration=1, metrics={"learn": {"Logloss": [1.0]}, "validation": {"Logloss": [1.0]}}
     )
-    assert pruning_callback.after_iteration(info) == True
+    assert pruning_callback.after_iteration(info) is True
 
     # The pruner is activated.
     study = optuna.create_study(pruner=DeterministicPruner(True))
@@ -27,7 +27,7 @@ def test_catboost_pruning_callback_call() -> None:
     info = types.SimpleNamespace(
         iteration=1, metrics={"learn": {"Logloss": [1.0]}, "validation": {"Logloss": [1.0]}}
     )
-    assert pruning_callback.after_iteration(info) == False
+    assert pruning_callback.after_iteration(info) is False
 
 
 def test_catboost_pruning_callback() -> None:

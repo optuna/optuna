@@ -233,7 +233,7 @@ def _run_trial(
     if trial.user_attrs.get("pruned") is True:
         step = trial.user_attrs.get("step")
         state = TrialState.PRUNED
-        func_err = "Trial was pruned at epoch {}.".format(step)
+        func_err = optuna.TrialPruned("Trial was pruned at epoch {}.".format(step))
         values = None
 
     if study._storage.is_heartbeat_enabled():
