@@ -229,6 +229,13 @@ def _run_trial(
         else:
             state = TrialState.COMPLETE
 
+    # add pruned check for catboost
+    if trial.user_attrs.get("pruned") is True:
+        step = trial.user_attrs.get("step")
+        state = TrialState.PRUNED
+        func_err = "Trial was pruned at epoch {}.".format(step)
+        values = None
+
     if study._storage.is_heartbeat_enabled():
         assert stop_event is not None
         assert thread is not None

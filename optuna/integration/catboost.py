@@ -65,12 +65,7 @@ class CatBoostPruningCallback(object):
         current_score = scores[-1]
         self._trial.report(current_score, step=step)
         if self._trial.should_prune():
-            self._message = "Trial was pruned at iteration {}.".format(step)
-            self._pruned = True
+            self._trial.set_user_attr("pruned", True)
+            self._trial.set_user_attr("step", step)
             return False
         return True
-
-    def check_pruned(self) -> None:
-        """Check whether pruend."""
-        if self._pruned is True:
-            raise optuna.TrialPruned(self._message)
