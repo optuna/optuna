@@ -45,7 +45,7 @@ Catalyst
 
    optuna.integration.CatalystPruningCallback
 
-Catboost
+CatBoost
 --------
 
 .. autosummary::

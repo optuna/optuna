@@ -11,7 +11,7 @@ with try_import() as _imports:
 
     if version.parse(cb.__version__) < version.parse("0.26"):
         raise ImportError(
-            f"This function is available since version 0.26!  catboost version: {cb.__version__}"
+            f"You don't have CatBoost installed! CatBoost version: {cb.__version__}"
         )
 
 
@@ -20,7 +20,7 @@ class CatBoostPruningCallback(object):
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/
     catboost/catboost_integration.py>`__
-    if you want to add a pruning handler which observes validation accuracy.
+    if you want to add a pruning callback which observes validation accuracy.
 
     Args:
         trial:
@@ -33,10 +33,10 @@ class CatBoostPruningCallback(object):
             <https://catboost.ai/docs/references/eval-metric__supported-metrics.html>`_
             for further details.
         valid_name:
-            Validation names.
-            If you set only one eval_set, ``validation`` is used.
-            If you set multiple eval_sets, the index number of ``eval_set`` must be
-            included in the valid_name, e.g., ``validation_0`` and ``validation_1``
+            The name of the target validation.
+            If you set only one ``eval_set``, ``validation`` is used.
+            If you set multiple datasets as ``eval_set``, the index number of ``eval_set`` must be
+            included in the valid_name, e.g., ``validation_0`` or ``validation_1`` when ``eval_set`` contains two datasets.
     """
 
     def __init__(
@@ -50,7 +50,7 @@ class CatBoostPruningCallback(object):
 
     def after_iteration(self, info: Any) -> bool:
         """Run after each iteration."""
-        epoch = info.iteration - 1
+        step = info.iteration - 1
         if self._valid_name not in info.metrics:
             raise ValueError(
                 'The entry associated with the validation name "{}" '
@@ -64,10 +64,9 @@ class CatBoostPruningCallback(object):
             )
         scores = metrics[self._metric]
         current_score = scores[-1]
-        self._trial.report(current_score, step=epoch)
+        self._trial.report(current_score, step=step)
         if self._trial.should_prune():
-            message = "Trial was pruned at iteration {}.".format(epoch)
-            self._message = message
+            self._message = "Trial was pruned at iteration {}.".format(step)
             self._pruned = True
             return False
         return True
