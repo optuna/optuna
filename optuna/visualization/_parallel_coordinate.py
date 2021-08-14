@@ -7,7 +7,11 @@ from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 
+import numpy as np
+
+from optuna.distributions import CategoricalChoiceType
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
@@ -17,6 +21,7 @@ from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
+from optuna.visualization._utils import _is_numerical
 
 
 if _imports.is_successful():
@@ -126,6 +131,8 @@ def _get_parallel_coordinate_plot(
             "range": (min([target(t) for t in trials]), max([target(t) for t in trials])),
         }
     ]
+
+    numeric_cat_params: Dict[str, Sequence[CategoricalChoiceType]] = {}
     for p_name in sorted_params:
         values = []
         for t in trials:
@@ -150,13 +157,22 @@ def _get_parallel_coordinate_plot(
             }
         elif _is_categorical(trials, p_name):
             vocab: DefaultDict[str, int] = defaultdict(lambda: len(vocab))
-            values = [vocab[v] for v in values]
+
+            if _is_numerical(trials, p_name):
+                _ = [vocab[v] for v in sorted(values)]
+                values = [vocab[v] for v in values]
+                numeric_cat_params[p_name] = values
+                ticktext = list(sorted(vocab.keys()))
+            else:
+                values = [vocab[v] for v in values]
+                ticktext = list(sorted(vocab.keys(), key=lambda x: vocab[x]))
+
             dim = {
                 "label": p_name if len(p_name) < 20 else "{}...".format(p_name[:17]),
                 "values": tuple(values),
                 "range": (min(values), max(values)),
                 "tickvals": list(range(len(vocab))),
-                "ticktext": list(sorted(vocab.keys(), key=lambda x: vocab[x])),
+                "ticktext": ticktext,
             }
         else:
             dim = {
@@ -166,6 +182,15 @@ def _get_parallel_coordinate_plot(
             }
 
         dims.append(dim)
+
+    if numeric_cat_params:
+        # np.lexsort consumes the sort keys the order from back to front.
+        # So the values of parameters have to be reversed the order.
+        idx = np.lexsort(list(numeric_cat_params.values())[::-1])
+        for dim in dims:
+            # Since the values are mapped to other categories by the index,
+            # the index will be swapped according to the sorted index of numeric params.
+            dim.update({"values": tuple(np.array(dim["values"])[idx])})
 
     traces = [
         go.Parcoords(
