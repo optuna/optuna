@@ -9,9 +9,7 @@ from typing import Union
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna.study._study_direction import StudyDirection
 from optuna.study.study import ObjectiveFuncType
-from optuna.trial import TrialState
 
 
 with try_import() as _imports:
@@ -214,15 +212,12 @@ class MLflowCallback(object):
 
         tags["datetime_complete"] = str(trial.datetime_complete)
 
-        # Set state and convert it to str and remove the common prefix.
-        trial_state = trial.state
-        if isinstance(trial_state, TrialState) and trial_state.is_finished():
-            tags["state"] = str(trial_state).split(".")[-1]
+        # Set trial state.
+        if trial.state.is_finished():
+            tags["state"] = trial.state.name
 
-        # Set direction and convert it to str and remove the common prefix.
-        study_direction = study.direction
-        if isinstance(study_direction, StudyDirection):
-            tags["direction"] = str(study_direction).split(".")[-1]
+        # Set study direction.
+        tags["direction"] = study.direction.name
 
         tags.update(trial.user_attrs)
         distributions = {(k + "_distribution"): str(v) for (k, v) in trial.distributions.items()}
