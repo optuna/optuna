@@ -167,7 +167,7 @@ class MLflowCallback(object):
         run for the trial created by the callback.
 
         Returns:
-            ObjectiveFuncType: Objective function with tracking to MLFlow enabled
+            ObjectiveFuncType: Objective function with tracking to MLFlow enabled.
         """
 
         def decorator(func: ObjectiveFuncType) -> ObjectiveFuncType:
@@ -190,9 +190,9 @@ class MLflowCallback(object):
         If a tracking uri has been provided, MLFlow will be initialized to use it.
 
         Args:
-            study: Study to be tracked in MLFlow
+            study: Study to be tracked in MLFlow.
         """
-        # This sets the tracking_uri for MLflow.
+        # This sets the `tracking_uri` for MLflow.
         if self._tracking_uri is not None:
             mlflow.set_tracking_uri(self._tracking_uri)
 
@@ -200,11 +200,11 @@ class MLflowCallback(object):
         mlflow.set_experiment(study.study_name)
 
     def _set_tags(self, trial: optuna.trial.FrozenTrial, study: optuna.study.Study) -> None:
-        """Sets the Optuna tags for the current MLFlow run
+        """Sets the Optuna tags for the current MLFlow run.
 
         Args:
-            trial: Trial to be tracked
-            study: Study to be tracked
+            trial: Trial to be tracked.
+            study: Study to be tracked.
         """
         tags: Dict[str, str] = {}
         tags["number"] = str(trial.number)
@@ -240,10 +240,10 @@ class MLflowCallback(object):
         mlflow.set_tags(tags)
 
     def _log_metric(self, value: Union[float, None]) -> None:
-        """Log the trial result as metric to MLFlow
+        """Log the trial result as metric to MLFlow.
 
         Args:
-            value: Result of trial
+            value: Result of trial.
         """
         trial_value = value if value is not None else float("nan")
         mlflow.log_metric(self._metric_name, trial_value)
