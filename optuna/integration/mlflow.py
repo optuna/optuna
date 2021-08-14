@@ -1,4 +1,5 @@
 import textwrap
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Optional
@@ -153,7 +154,7 @@ class MLflowCallback(object):
             self._log_metric(trial.value)
 
             # This sets the params for MLflow.
-            self._log_params(trial)
+            self._log_params(trial.params)
 
             # This sets the tags for MLflow.
             self._set_tags(trial, study)
@@ -253,10 +254,10 @@ class MLflowCallback(object):
         mlflow.log_metric(self._metric_name, trial_value)
 
     @staticmethod
-    def _log_params(trial: optuna.trial.BaseTrial) -> None:
-        """Log the parameters of the trial to MLFlow
+    def _log_params(params: Dict[str, Any]) -> None:
+        """Log the parameters of the trial to MLFlow.
 
         Args:
-            trial: Trial to be tracked
+            params: Trial params.
         """
-        mlflow.log_params(trial.params)
+        mlflow.log_params(params)
