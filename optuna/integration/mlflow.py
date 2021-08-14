@@ -126,7 +126,7 @@ class MLflowCallback(object):
     def __init__(
         self,
         tracking_uri: Optional[str] = None,
-        metric_name: Union[str] = "value",
+        metric_name: str = "value",
         nest_trials: bool = False,
         tag_study_user_attrs: bool = False,
     ) -> None:
