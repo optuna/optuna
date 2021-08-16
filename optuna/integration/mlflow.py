@@ -1,4 +1,3 @@
-import textwrap
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -233,8 +232,9 @@ class MLflowCallback(object):
         # see https://github.com/mlflow/mlflow/issues/2931
         for key, value in tags.items():
             value = str(value)  # make sure it is a string
-            if len(value) > mlflow.utils.validation.MAX_TAG_VAL_LENGTH:
-                tags[key] = textwrap.shorten(value, mlflow.utils.validation.MAX_TAG_VAL_LENGTH)
+            max_val_length = mlflow.utils.validation.MAX_TAG_VAL_LENGTH
+            if len(value) > max_val_length:
+                tags[key] = "{}...".format(value[: max_val_length - 3])
 
         # This sets the tags for MLflow.
         mlflow.set_tags(tags)
