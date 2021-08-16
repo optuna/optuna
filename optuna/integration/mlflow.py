@@ -158,15 +158,15 @@ class MLflowCallback(object):
 
     @experimental("2.9.0")
     def track_in_mlflow(self) -> Callable:
-        """Decorator for using MLFlow logging in the objective function.
+        """Decorator for using MLflow logging in the objective function.
 
-        This decorator enables the extension of MLFlow logging provided by the callback.
+        This decorator enables the extension of MLflow logging provided by the callback.
 
-        All information logged in the decorated objective function will be added to the MLFlow
+        All information logged in the decorated objective function will be added to the MLflow
         run for the trial created by the callback.
 
         Returns:
-            ObjectiveFuncType: Objective function with tracking to MLFlow enabled.
+            ObjectiveFuncType: Objective function with tracking to MLflow enabled.
         """
 
         def decorator(func: ObjectiveFuncType) -> ObjectiveFuncType:
@@ -184,12 +184,12 @@ class MLflowCallback(object):
         return decorator
 
     def _initialize_experiment(self, study: optuna.study.Study) -> None:
-        """Initialize an MLFlow experiment with the study name.
+        """Initialize an MLflow experiment with the study name.
 
-        If a tracking uri has been provided, MLFlow will be initialized to use it.
+        If a tracking uri has been provided, MLflow will be initialized to use it.
 
         Args:
-            study: Study to be tracked in MLFlow.
+            study: Study to be tracked in MLflow.
         """
         # This sets the `tracking_uri` for MLflow.
         if self._tracking_uri is not None:
@@ -199,7 +199,7 @@ class MLflowCallback(object):
         mlflow.set_experiment(study.study_name)
 
     def _set_tags(self, trial: optuna.trial.FrozenTrial, study: optuna.study.Study) -> None:
-        """Sets the Optuna tags for the current MLFlow run.
+        """Sets the Optuna tags for the current MLflow run.
 
         Args:
             trial: Trial to be tracked.
@@ -240,7 +240,7 @@ class MLflowCallback(object):
         mlflow.set_tags(tags)
 
     def _log_metric(self, value: Union[float, None]) -> None:
-        """Log the trial result as metric to MLFlow.
+        """Log the trial result as metric to MLflow.
 
         Args:
             value: Result of trial.
@@ -250,7 +250,7 @@ class MLflowCallback(object):
 
     @staticmethod
     def _log_params(params: Dict[str, Any]) -> None:
-        """Log the parameters of the trial to MLFlow.
+        """Log the parameters of the trial to MLflow.
 
         Args:
             params: Trial params.
