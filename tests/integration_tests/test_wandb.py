@@ -1,4 +1,9 @@
+from typing import List
+from typing import Tuple
+from typing import Union
 from unittest import mock
+
+import pytest
 
 import optuna
 from optuna.integration import WeightsAndBiasesCallback
@@ -9,6 +14,16 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
     x = trial.suggest_uniform("x", low=-10, high=10)
     y = trial.suggest_loguniform("y", low=1, high=10)
     return (x - 2) ** 2 + (y - 25) ** 2
+
+
+def _multiobjective_func(trial: optuna.trial.Trial) -> Tuple[float, float]:
+
+    x = trial.suggest_uniform("x", low=-10, high=10)
+    y = trial.suggest_loguniform("y", low=1, high=10)
+    first_objective = (x - 2) ** 2 + (y - 25) ** 2
+    second_objective = (x - 2) ** 3 + (y - 25) ** 3
+
+    return first_objective, second_objective
 
 
 @mock.patch("optuna.integration.wandb.wandb")
@@ -43,7 +58,20 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
     study = optuna.create_study(direction="minimize")
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
 
-    expected = {"direction": "MINIMIZE"}
+    expected = {"direction": ["MINIMIZE"]}
+    wandb.config.update.assert_called_once_with(expected)
+
+
+@mock.patch("optuna.integration.wandb.wandb")
+def test_multiobjective_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
+
+    wandb.config.update = mock.MagicMock()
+
+    wandbc = WeightsAndBiasesCallback()
+    study = optuna.create_study(directions=["minimize", "maximize"])
+    study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
+
+    expected = {"direction": ["MINIMIZE", "MAXIMIZE"]}
     wandb.config.update.assert_called_once_with(expected)
 
 
@@ -59,15 +87,49 @@ def test_log_api_call_count(wandb: mock.Mock) -> None:
     assert wandb.log.call_count == target_n_trials
 
 
+@pytest.mark.parametrize(
+    "metric,expected", [("value", ["x", "y", "value"]), ("foo", ["x", "y", "foo"])]
+)
 @mock.patch("optuna.integration.wandb.wandb")
-def test_values_registered_on_epoch(wandb: mock.Mock) -> None:
+def test_values_registered_on_epoch(wandb: mock.Mock, metric: str, expected: List[str]) -> None:
 
     wandb.log = mock.MagicMock()
 
-    wandbc = WeightsAndBiasesCallback()
+    wandbc = WeightsAndBiasesCallback(metric_name=metric)
     study = optuna.create_study()
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
 
     kall = wandb.log.call_args
-    assert list(kall[0][0].keys()) == ["x", "y", "value"]
+    assert list(kall[0][0].keys()) == expected
     assert kall[1] == {"step": 0}
+
+
+@pytest.mark.parametrize(
+    "metrics,expected",
+    [("value", ["x", "y", "value_0", "value_1"]), (["foo", "bar"], ["x", "y", "foo", "bar"])],
+)
+@mock.patch("optuna.integration.wandb.wandb")
+def test_multiobjective_values_registered_on_epoch(
+    wandb: mock.Mock, metrics: Union[str, List[str]], expected: List[str]
+) -> None:
+
+    wandb.log = mock.MagicMock()
+
+    wandbc = WeightsAndBiasesCallback(metric_name=metrics)
+    study = optuna.create_study(directions=["minimize", "maximize"])
+    study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
+
+    kall = wandb.log.call_args
+    assert list(kall[0][0].keys()) == expected
+    assert kall[1] == {"step": 0}
+
+
+@pytest.mark.parametrize("metrics", [["foo"], ["foo", "bar", "baz"]])
+@mock.patch("optuna.integration.wandb.wandb")
+def test_multiobjective_raises_on_name_mismatch(wandb: mock.MagicMock, metrics: List[str]) -> None:
+
+    wandbc = WeightsAndBiasesCallback(metric_name=metrics)
+    study = optuna.create_study(directions=["minimize", "maximize"])
+
+    with pytest.raises(RuntimeError):
+        study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
