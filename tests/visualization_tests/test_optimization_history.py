@@ -87,7 +87,7 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
             return 0.0
         return 0.0
 
-    # Test with a trial.
+    # Test with trials.
     studies = [create_study(direction=direction) for _ in range(n_studies)]
     for study in studies:
         study.optimize(objective, n_trials=3)
@@ -146,7 +146,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
             return 0.0
         return 0.0
 
-    # Test with a trial.
+    # Test with trials.
     studies = [create_study(direction=direction) for _ in range(n_studies)]
     for study in studies:
         study.optimize(objective, n_trials=3)
