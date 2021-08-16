@@ -213,7 +213,7 @@ class _Trials(Lister):
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_Trials, self).get_parser(prog_name)
-        parser.add_argument("--study-name", type=str, required=True, help="Name of study.")
+        parser.add_argument("--study-name", type=str, required=True, help="The name of the study which includes trials.")
         return parser
 
     def take_action(self, parsed_args: Namespace) -> Tuple[List[str], List[List]]:
@@ -242,7 +242,7 @@ class _BestTrial(ShowOne):
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_BestTrial, self).get_parser(prog_name)
-        parser.add_argument("--study-name", type=str, required=True, help="Name of study.")
+        parser.add_argument("--study-name", type=str, required=True, help="The name of the study to get the best trial.")
         return parser
 
     def take_action(self, parsed_args: Namespace) -> Tuple[List[str], List]:
@@ -271,7 +271,7 @@ class _BestTrials(Lister):
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_BestTrials, self).get_parser(prog_name)
-        parser.add_argument("--study-name", type=str, required=True, help="Name of study.")
+        parser.add_argument("--study-name", type=str, required=True, help="The name of the study to get the best trials (trials at the Pareto front).")
         return parser
 
     def take_action(self, parsed_args: Namespace) -> Tuple[List[str], List[List]]:
