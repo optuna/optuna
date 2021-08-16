@@ -20,6 +20,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 import warnings
 
 from cliff.app import App
@@ -37,6 +38,9 @@ from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
 from optuna.study import _dataframe
 from optuna.trial import TrialState
+
+
+_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def _check_storage_url(storage_url: Optional[str]) -> str:
@@ -166,7 +170,6 @@ class _StudySetUserAttribute(_BaseCommand):
 class _Studies(Lister):
     """Show a list of studies."""
 
-    _datetime_format = "%Y-%m-%d %H:%M:%S"
     _study_list_header = ("NAME", "DIRECTION", "N_TRIALS", "DATETIME_START")
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
@@ -182,7 +185,7 @@ class _Studies(Lister):
         rows = []
         for s in summaries:
             start = (
-                s.datetime_start.strftime(self._datetime_format)
+                s.datetime_start.strftime(_DATETIME_FORMAT)
                 if s.datetime_start is not None
                 else None
             )
@@ -194,14 +197,14 @@ class _Studies(Lister):
 
 def _format_trial_values(
     record: Dict[Tuple[str, str], Any], columns: List[Tuple[str, str]]
-) -> List:
-    row: List = []
+) -> List[Union[int, float, str]]:
+    row: List[Union[int, float, str]] = []
     for column in columns:
         value = record.get(column, np.nan)
         if isinstance(value, (int, float)):
             row.append(value)
         elif isinstance(value, datetime.datetime):
-            row.append(value.strftime("%Y-%m-%d %H:%M:%S"))
+            row.append(value.strftime(_DATETIME_FORMAT))
         else:
             row.append(str(value))
     return row
@@ -213,10 +216,17 @@ class _Trials(Lister):
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_Trials, self).get_parser(prog_name)
-        parser.add_argument("--study-name", type=str, required=True, help="The name of the study which includes trials.")
+        parser.add_argument(
+            "--study-name",
+            type=str,
+            required=True,
+            help="The name of the study which includes trials.",
+        )
         return parser
 
-    def take_action(self, parsed_args: Namespace) -> Tuple[List[str], List[List]]:
+    def take_action(
+        self, parsed_args: Namespace
+    ) -> Tuple[List[str], List[List[Union[int, float, str]]]]:
 
         storage_url = _check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
@@ -232,8 +242,8 @@ class _Trials(Lister):
         )
 
         records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
-        trial_values = [_format_trial_values(record, columns) for record in records]
-        return _dataframe._flatten_columns(columns), trial_values
+        list_of_trial_values = [_format_trial_values(record, columns) for record in records]
+        return _dataframe._flatten_columns(columns), list_of_trial_values
 
 
 class _BestTrial(ShowOne):
@@ -242,10 +252,17 @@ class _BestTrial(ShowOne):
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_BestTrial, self).get_parser(prog_name)
-        parser.add_argument("--study-name", type=str, required=True, help="The name of the study to get the best trial.")
+        parser.add_argument(
+            "--study-name",
+            type=str,
+            required=True,
+            help="The name of the study to get the best trial.",
+        )
         return parser
 
-    def take_action(self, parsed_args: Namespace) -> Tuple[List[str], List]:
+    def take_action(
+        self, parsed_args: Namespace
+    ) -> Tuple[List[str], List[Union[int, float, str]]]:
 
         storage_url = _check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
@@ -271,10 +288,17 @@ class _BestTrials(Lister):
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_BestTrials, self).get_parser(prog_name)
-        parser.add_argument("--study-name", type=str, required=True, help="The name of the study to get the best trials (trials at the Pareto front).")
+        parser.add_argument(
+            "--study-name",
+            type=str,
+            required=True,
+            help="The name of the study to get the best trials (trials at the Pareto front).",
+        )
         return parser
 
-    def take_action(self, parsed_args: Namespace) -> Tuple[List[str], List[List]]:
+    def take_action(
+        self, parsed_args: Namespace
+    ) -> Tuple[List[str], List[List[Union[int, float, str]]]]:
 
         storage_url = _check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
@@ -292,8 +316,8 @@ class _BestTrials(Lister):
 
         records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
         best_records = filter(lambda record: record[("number", "")] in best_trials, records)
-        trial_values = [_format_trial_values(record, columns) for record in best_records]
-        return _dataframe._flatten_columns(columns), trial_values
+        list_of_trial_values = [_format_trial_values(record, columns) for record in best_records]
+        return _dataframe._flatten_columns(columns), list_of_trial_values
 
 
 class _Dashboard(_BaseCommand):
