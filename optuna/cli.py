@@ -228,6 +228,11 @@ class _Trials(Lister):
         self, parsed_args: Namespace
     ) -> Tuple[List[str], List[List[Union[int, float, str]]]]:
 
+        warnings.warn(
+            "'trials' is an experimental CLI command. The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
         storage_url = _check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
         attrs = (
@@ -264,6 +269,11 @@ class _BestTrial(ShowOne):
         self, parsed_args: Namespace
     ) -> Tuple[List[str], List[Union[int, float, str]]]:
 
+        warnings.warn(
+            "'best-trial' is an experimental CLI command. The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
         storage_url = _check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
         attrs = (
@@ -299,6 +309,12 @@ class _BestTrials(Lister):
     def take_action(
         self, parsed_args: Namespace
     ) -> Tuple[List[str], List[List[Union[int, float, str]]]]:
+
+        warnings.warn(
+            "'best-trials' is an experimental CLI command. The interface can change in the "
+            "future.",
+            ExperimentalWarning,
+        )
 
         storage_url = _check_storage_url(self.app_args.storage)
         study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
