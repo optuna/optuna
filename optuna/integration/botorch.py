@@ -34,7 +34,7 @@ with try_import() as _imports:
     from botorch.models.transforms.outcome import Standardize
     from botorch.optim import optimize_acqf
     from botorch.sampling.samplers import SobolQMCNormalSampler
-    from botorch.utils.multi_objective.box_decomposition import NondominatedPartitioning
+    from botorch.utils.multi_objective.box_decompositions import NondominatedPartitioning
     from botorch.utils.multi_objective.scalarization import get_chebyshev_scalarization
     from botorch.utils.sampling import sample_simplex
     from botorch.utils.transforms import normalize
