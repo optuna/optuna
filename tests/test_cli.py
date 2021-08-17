@@ -4,9 +4,14 @@ import subprocess
 from subprocess import CalledProcessError
 import tempfile
 from typing import Any
+from typing import Callable
 from typing import List
 from typing import Optional
+from typing import Tuple
 
+import numpy as np
+from pandas import Timedelta
+from pandas import Timestamp
 import pytest
 import yaml
 
@@ -19,6 +24,32 @@ from optuna.study import StudyDirection
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import Trial
 from optuna.trial import TrialState
+
+
+# An example of objective functions
+def objective_func(trial: Trial) -> float:
+
+    x = trial.suggest_float("x", -10, 10)
+    return (x + 5) ** 2
+
+
+# An example of objective functions for branched search spaces
+def objective_func_branched_search_space(trial: Trial) -> float:
+
+    c = trial.suggest_categorical("c", ("A", "B"))
+    if c == "A":
+        x = trial.suggest_float("x", -10, 10)
+        return (x + 5) ** 2
+    else:
+        y = trial.suggest_float("y", -10, 10)
+        return (y + 5) ** 2
+
+
+# An example of objective functions for multi-objective optimization
+def objective_func_multi_objective(trial: Trial) -> Tuple[float, float]:
+
+    x = trial.suggest_float("x", -10, 10)
+    return (x + 5) ** 2, (x - 5) ** 2
 
 
 def test_create_study_command() -> None:
@@ -232,6 +263,177 @@ def test_studies_command() -> None:
         assert elms[2] == "10"
 
 
+@pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
+def test_trials_command(objective: Callable[[Trial], float]) -> None:
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
+        study_name = "test_study"
+        n_trials = 10
+
+        study = optuna.create_study(storage, study_name=study_name)
+        study.optimize(objective, n_trials=n_trials)
+        attrs = (
+            "number",
+            "value",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+        df = study.trials_dataframe(attrs)
+
+        # Run command.
+        command = [
+            "optuna",
+            "trials",
+            "--storage",
+            storage_url,
+            "--study-name",
+            study_name,
+            "--format",
+            "json",
+        ]
+
+        output = str(subprocess.check_output(command).decode().strip())
+        trials = json.loads(output)
+
+        assert len(trials) == n_trials
+
+        for i, trial in enumerate(trials):
+            assert set(trial.keys()) == set(df.columns)
+            for key, value in trial.items():
+                expected_value = df.loc[i][key]
+                if isinstance(value, int) or isinstance(value, float):
+                    if np.isnan(expected_value):
+                        assert np.isnan(value)
+                    else:
+                        assert value == expected_value
+                elif isinstance(expected_value, Timestamp):
+                    assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
+                elif isinstance(expected_value, Timedelta):
+                    assert value == str(expected_value.to_pytimedelta())
+                else:
+                    assert value == str(expected_value)
+
+
+@pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
+def test_best_trial_command(objective: Callable[[Trial], float]) -> None:
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
+        study_name = "test_study"
+        n_trials = 10
+
+        study = optuna.create_study(storage, study_name=study_name)
+        study.optimize(objective, n_trials=n_trials)
+        attrs = (
+            "number",
+            "value",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+        df = study.trials_dataframe(attrs)
+
+        # Run command.
+        command = [
+            "optuna",
+            "best-trial",
+            "--storage",
+            storage_url,
+            "--study-name",
+            study_name,
+            "--format",
+            "json",
+        ]
+
+        output = str(subprocess.check_output(command).decode().strip())
+        best_trial = json.loads(output)
+
+        assert set(best_trial.keys()) == set(df.columns)
+        for key, value in best_trial.items():
+            expected_value = df.loc[study.best_trial.number][key]
+            if isinstance(value, int) or isinstance(value, float):
+                if np.isnan(expected_value):
+                    assert np.isnan(value)
+                else:
+                    assert value == expected_value
+            elif isinstance(expected_value, Timestamp):
+                assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
+            elif isinstance(expected_value, Timedelta):
+                assert value == str(expected_value.to_pytimedelta())
+            else:
+                assert value == str(expected_value)
+
+
+def test_best_trials_command() -> None:
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
+        study_name = "test_study"
+        n_trials = 10
+
+        study = optuna.create_study(
+            storage, study_name=study_name, directions=("minimize", "minimize")
+        )
+        study.optimize(objective_func_multi_objective, n_trials=n_trials)
+        attrs = (
+            "number",
+            "values",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+        df = study.trials_dataframe(attrs)
+
+        # Run command.
+        command = [
+            "optuna",
+            "best-trials",
+            "--storage",
+            storage_url,
+            "--study-name",
+            study_name,
+            "--format",
+            "json",
+        ]
+
+        output = str(subprocess.check_output(command).decode().strip())
+        trials = json.loads(output)
+        best_trials = [trial.number for trial in study.best_trials]
+
+        assert len(trials) == len(best_trials)
+
+        for trial in trials:
+            assert set(trial.keys()) == set(df.columns)
+            assert trial["number"] in best_trials
+            for key, value in trial.items():
+                expected_value = df.loc[trial["number"]][key]
+                if isinstance(value, int) or isinstance(value, float):
+                    if np.isnan(expected_value):
+                        assert np.isnan(value)
+                    else:
+                        assert value == expected_value
+                elif isinstance(expected_value, Timestamp):
+                    assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
+                elif isinstance(expected_value, Timedelta):
+                    assert value == str(expected_value.to_pytimedelta())
+                else:
+                    assert value == str(expected_value)
+
+
 def test_create_study_command_with_skip_if_exists() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -319,13 +521,6 @@ def test_dashboard_command_with_allow_websocket_origin(origins: List[str]) -> No
         html = tf_report.read()
         assert "<body>" in html
         assert "bokeh" in html
-
-
-# An example of objective functions for testing study optimize command
-def objective_func(trial: Trial) -> float:
-
-    x = trial.suggest_float("x", -10, 10)
-    return (x + 5) ** 2
 
 
 def test_study_optimize_command() -> None:

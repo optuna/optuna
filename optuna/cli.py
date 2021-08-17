@@ -9,6 +9,7 @@ c.f. https://docs.openstack.org/cliff/latest/user/demoapp.html#setup-py
 
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
+import datetime
 from importlib.machinery import SourceFileLoader
 import json
 import logging
@@ -16,14 +17,18 @@ import sys
 import types
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 import warnings
 
 from cliff.app import App
 from cliff.command import Command
 from cliff.commandmanager import CommandManager
 from cliff.lister import Lister
+from cliff.show import ShowOne
+import numpy as np
 import yaml
 
 import optuna
@@ -31,7 +36,11 @@ from optuna._deprecated import deprecated
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
+from optuna.study import _dataframe
 from optuna.trial import TrialState
+
+
+_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def _check_storage_url(storage_url: Optional[str]) -> str:
@@ -161,7 +170,6 @@ class _StudySetUserAttribute(_BaseCommand):
 class _Studies(Lister):
     """Show a list of studies."""
 
-    _datetime_format = "%Y-%m-%d %H:%M:%S"
     _study_list_header = ("NAME", "DIRECTION", "N_TRIALS", "DATETIME_START")
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
@@ -177,7 +185,7 @@ class _Studies(Lister):
         rows = []
         for s in summaries:
             start = (
-                s.datetime_start.strftime(self._datetime_format)
+                s.datetime_start.strftime(_DATETIME_FORMAT)
                 if s.datetime_start is not None
                 else None
             )
@@ -185,6 +193,147 @@ class _Studies(Lister):
             rows.append(row)
 
         return self._study_list_header, tuple(rows)
+
+
+def _format_trial_values(
+    record: Dict[Tuple[str, str], Any], columns: List[Tuple[str, str]]
+) -> List[Union[int, float, str]]:
+    row: List[Union[int, float, str]] = []
+    for column in columns:
+        value = record.get(column, np.nan)
+        if isinstance(value, (int, float)):
+            row.append(value)
+        elif isinstance(value, datetime.datetime):
+            row.append(value.strftime(_DATETIME_FORMAT))
+        else:
+            row.append(str(value))
+    return row
+
+
+class _Trials(Lister):
+    """Show a list of trials."""
+
+    def get_parser(self, prog_name: str) -> ArgumentParser:
+
+        parser = super(_Trials, self).get_parser(prog_name)
+        parser.add_argument(
+            "--study-name",
+            type=str,
+            required=True,
+            help="The name of the study which includes trials.",
+        )
+        return parser
+
+    def take_action(
+        self, parsed_args: Namespace
+    ) -> Tuple[List[str], List[List[Union[int, float, str]]]]:
+
+        warnings.warn(
+            "'trials' is an experimental CLI command. The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
+        storage_url = _check_storage_url(self.app_args.storage)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        attrs = (
+            "number",
+            "value" if not study._is_multi_objective() else "values",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+
+        records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
+        list_of_trial_values = [_format_trial_values(record, columns) for record in records]
+        return _dataframe._flatten_columns(columns), list_of_trial_values
+
+
+class _BestTrial(ShowOne):
+    """Show the best trial."""
+
+    def get_parser(self, prog_name: str) -> ArgumentParser:
+
+        parser = super(_BestTrial, self).get_parser(prog_name)
+        parser.add_argument(
+            "--study-name",
+            type=str,
+            required=True,
+            help="The name of the study to get the best trial.",
+        )
+        return parser
+
+    def take_action(
+        self, parsed_args: Namespace
+    ) -> Tuple[List[str], List[Union[int, float, str]]]:
+
+        warnings.warn(
+            "'best-trial' is an experimental CLI command. The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
+        storage_url = _check_storage_url(self.app_args.storage)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        attrs = (
+            "number",
+            "value" if not study._is_multi_objective() else "values",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+
+        records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
+        trial_values = _format_trial_values(records[study.best_trial.number], columns)
+        return _dataframe._flatten_columns(columns), trial_values
+
+
+class _BestTrials(Lister):
+    """Show a list of trials located at the Pareto front."""
+
+    def get_parser(self, prog_name: str) -> ArgumentParser:
+
+        parser = super(_BestTrials, self).get_parser(prog_name)
+        parser.add_argument(
+            "--study-name",
+            type=str,
+            required=True,
+            help="The name of the study to get the best trials (trials at the Pareto front).",
+        )
+        return parser
+
+    def take_action(
+        self, parsed_args: Namespace
+    ) -> Tuple[List[str], List[List[Union[int, float, str]]]]:
+
+        warnings.warn(
+            "'best-trials' is an experimental CLI command. The interface can change in the "
+            "future.",
+            ExperimentalWarning,
+        )
+
+        storage_url = _check_storage_url(self.app_args.storage)
+        study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
+        best_trials = [trial.number for trial in study.best_trials]
+        attrs = (
+            "number",
+            "value" if not study._is_multi_objective() else "values",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+
+        records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
+        best_records = filter(lambda record: record[("number", "")] in best_trials, records)
+        list_of_trial_values = [_format_trial_values(record, columns) for record in best_records]
+        return _dataframe._flatten_columns(columns), list_of_trial_values
 
 
 class _Dashboard(_BaseCommand):
