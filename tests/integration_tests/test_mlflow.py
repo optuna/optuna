@@ -358,7 +358,7 @@ def test_log_params(tmpdir: py.path.local) -> None:
             },
             value=5.0,
         )
-        mlflc._log_params(trial)
+        mlflc._log_params(trial.params)
 
     mlfl_client = MlflowClient(tracking_file_name)
     experiments = mlfl_client.list_experiments()

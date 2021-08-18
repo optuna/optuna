@@ -1,4 +1,4 @@
-import textwrap
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Optional
@@ -8,9 +8,7 @@ from typing import Union
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna.study._study_direction import StudyDirection
 from optuna.study.study import ObjectiveFuncType
-from optuna.trial import TrialState
 
 
 with try_import() as _imports:
@@ -127,7 +125,7 @@ class MLflowCallback(object):
     def __init__(
         self,
         tracking_uri: Optional[str] = None,
-        metric_name: Union[str] = "value",
+        metric_name: str = "value",
         nest_trials: bool = False,
         tag_study_user_attrs: bool = False,
     ) -> None:
@@ -153,22 +151,22 @@ class MLflowCallback(object):
             self._log_metric(trial.value)
 
             # This sets the params for MLflow.
-            self._log_params(trial)
+            self._log_params(trial.params)
 
             # This sets the tags for MLflow.
             self._set_tags(trial, study)
 
     @experimental("2.9.0")
     def track_in_mlflow(self) -> Callable:
-        """Decorator for using MLFlow logging in the objective function.
+        """Decorator for using MLflow logging in the objective function.
 
-        This decorator enables the extension of MLFlow logging provided by the callback.
+        This decorator enables the extension of MLflow logging provided by the callback.
 
-        All information logged in the decorated objective function will be added to the MLFlow
+        All information logged in the decorated objective function will be added to the MLflow
         run for the trial created by the callback.
 
         Returns:
-            ObjectiveFuncType: Objective function with tracking to MLFlow enabled
+            ObjectiveFuncType: Objective function with tracking to MLflow enabled.
         """
 
         def decorator(func: ObjectiveFuncType) -> ObjectiveFuncType:
@@ -186,14 +184,14 @@ class MLflowCallback(object):
         return decorator
 
     def _initialize_experiment(self, study: optuna.study.Study) -> None:
-        """Initialize an MLFlow experiment with the study name.
+        """Initialize an MLflow experiment with the study name.
 
-        If a tracking uri has been provided, MLFlow will be initialized to use it.
+        If a tracking uri has been provided, MLflow will be initialized to use it.
 
         Args:
-            study: Study to be tracked in MLFlow
+            study: Study to be tracked in MLflow.
         """
-        # This sets the tracking_uri for MLflow.
+        # This sets the `tracking_uri` for MLflow.
         if self._tracking_uri is not None:
             mlflow.set_tracking_uri(self._tracking_uri)
 
@@ -201,11 +199,11 @@ class MLflowCallback(object):
         mlflow.set_experiment(study.study_name)
 
     def _set_tags(self, trial: optuna.trial.FrozenTrial, study: optuna.study.Study) -> None:
-        """Sets the Optuna tags for the current MLFlow run
+        """Sets the Optuna tags for the current MLflow run.
 
         Args:
-            trial: Trial to be tracked
-            study: Study to be tracked
+            trial: Trial to be tracked.
+            study: Study to be tracked.
         """
         tags: Dict[str, str] = {}
         tags["number"] = str(trial.number)
@@ -213,15 +211,12 @@ class MLflowCallback(object):
 
         tags["datetime_complete"] = str(trial.datetime_complete)
 
-        # Set state and convert it to str and remove the common prefix.
-        trial_state = trial.state
-        if isinstance(trial_state, TrialState) and trial_state.is_finished():
-            tags["state"] = str(trial_state).split(".")[-1]
+        # Set trial state.
+        if trial.state.is_finished():
+            tags["state"] = trial.state.name
 
-        # Set direction and convert it to str and remove the common prefix.
-        study_direction = study.direction
-        if isinstance(study_direction, StudyDirection):
-            tags["direction"] = str(study_direction).split(".")[-1]
+        # Set study direction.
+        tags["direction"] = study.direction.name
 
         tags.update(trial.user_attrs)
         distributions = {(k + "_distribution"): str(v) for (k, v) in trial.distributions.items()}
@@ -237,26 +232,27 @@ class MLflowCallback(object):
         # see https://github.com/mlflow/mlflow/issues/2931
         for key, value in tags.items():
             value = str(value)  # make sure it is a string
-            if len(value) > mlflow.utils.validation.MAX_TAG_VAL_LENGTH:
-                tags[key] = textwrap.shorten(value, mlflow.utils.validation.MAX_TAG_VAL_LENGTH)
+            max_val_length = mlflow.utils.validation.MAX_TAG_VAL_LENGTH
+            if len(value) > max_val_length:
+                tags[key] = "{}...".format(value[: max_val_length - 3])
 
         # This sets the tags for MLflow.
         mlflow.set_tags(tags)
 
     def _log_metric(self, value: Union[float, None]) -> None:
-        """Log the trial result as metric to MLFlow
+        """Log the trial result as metric to MLflow.
 
         Args:
-            value: Result of trial
+            value: Result of trial.
         """
         trial_value = value if value is not None else float("nan")
         mlflow.log_metric(self._metric_name, trial_value)
 
     @staticmethod
-    def _log_params(trial: optuna.trial.BaseTrial) -> None:
-        """Log the parameters of the trial to MLFlow
+    def _log_params(params: Dict[str, Any]) -> None:
+        """Log the parameters of the trial to MLflow.
 
         Args:
-            trial: Trial to be tracked
+            params: Trial params.
         """
-        mlflow.log_params(trial.params)
+        mlflow.log_params(params)
