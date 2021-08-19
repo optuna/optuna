@@ -191,6 +191,7 @@ class MLflowCallback(object):
         Args:
             study: Study to be tracked in MLflow.
         """
+
         # This sets the `tracking_uri` for MLflow.
         if self._tracking_uri is not None:
             mlflow.set_tracking_uri(self._tracking_uri)
@@ -205,6 +206,7 @@ class MLflowCallback(object):
             trial: Trial to be tracked.
             study: Study to be tracked.
         """
+
         tags: Dict[str, str] = {}
         tags["number"] = str(trial.number)
         tags["datetime_start"] = str(trial.datetime_start)
@@ -255,4 +257,5 @@ class MLflowCallback(object):
         Args:
             params: Trial params.
         """
+
         mlflow.log_params(params)
