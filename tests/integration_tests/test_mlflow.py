@@ -285,7 +285,7 @@ def test_log_metric(tmpdir: py.path.local) -> None:
     mlflc._initialize_experiment(study)
 
     with mlflow.start_run():
-        mlflc._log_metric(metric_value)
+        mlflc._log_metrics([metric_value])
 
     mlfl_client = MlflowClient(tracking_file_name)
     experiments = mlfl_client.list_experiments()
@@ -314,7 +314,7 @@ def test_log_metric_none(tmpdir: py.path.local) -> None:
     mlflc._initialize_experiment(study)
 
     with mlflow.start_run():
-        mlflc._log_metric(metric_value)
+        mlflc._log_metrics([metric_value])
 
     mlfl_client = MlflowClient(tracking_file_name)
     experiments = mlfl_client.list_experiments()
