@@ -672,7 +672,7 @@ def test_ask(
 
         assert output["trial"]["number"] == 0
         assert len(output["trial"]["params"]) == 2
-        assert 0 <= output["trial"]["params"]["x"] < 1
+        assert 0 <= output["trial"]["params"]["x"] <= 1
         assert output["trial"]["params"]["y"] == "foo"
 
 
