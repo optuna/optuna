@@ -110,9 +110,13 @@ class MLflowCallback(object):
             <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri>`_
             for more details.
         metric_name:
-            Name of the metric. Since the metric itself is just a number,
-            `metric_name` can be used to give it a name. So you know later
-            if it was roc-auc or accuracy.
+            Name assigned to optimized metric. In case of multi-objective optimization,
+            list of names can be passed. Those names will be assigned
+            to metrics in the order returned by objective function.
+            If single name is provided, or this argument is left to default value,
+            it will be broadcasted to each objective with a number suffix in order
+            returned by objective function e.g. two objectives and default metric name
+            will be logged as ``value_0`` and ``value_1``.
         nest_trials:
             Flag indicating whether or not trials should be logged as
             nested runs. This is often helpful for aggregating trials
@@ -244,10 +248,10 @@ class MLflowCallback(object):
         mlflow.set_tags(tags)
 
     def _log_metrics(self, values: List[Union[float, None]]) -> None:
-        """Log the trial result as metric to MLflow.
+        """Log the trial results as metrics to MLflow.
 
         Args:
-            value: Result of trial.
+            values: Results of a trial.
         """
 
         if isinstance(self._metric_name, list):
