@@ -271,7 +271,8 @@ class MLflowCallback(object):
             else:
                 names = [self._metric_name]
 
-        metrics = {name: val or float("nan") for name, val in zip(names, values)}
+        values = [val if val is not None else float("nan") for val in values]
+        metrics = {name: val for name, val in zip(names, values)}
         mlflow.log_metrics(metrics)
 
     @staticmethod
