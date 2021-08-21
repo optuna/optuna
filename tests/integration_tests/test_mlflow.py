@@ -1,3 +1,8 @@
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
+
 import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
@@ -17,6 +22,16 @@ def _objective_func(trial: optuna.trial.Trial) -> float:
     assert isinstance(z, float)
     trial.set_user_attr("my_user_attr", "my_user_attr_value")
     return (x - 2) ** 2 + (y - 25) ** 2 + z
+
+
+def _multiobjective_func(trial: optuna.trial.Trial) -> Tuple[float, float]:
+
+    x = trial.suggest_uniform("x", low=-10, high=10)
+    y = trial.suggest_loguniform("y", low=1, high=10)
+    first_objective = (x - 2) ** 2 + (y - 25) ** 2
+    second_objective = (x - 2) ** 3 + (y - 25) ** 3
+
+    return first_objective, second_objective
 
 
 # This is tool function for a temporary fix on Optuna side. It avoids an error with user
@@ -102,6 +117,34 @@ def test_metric_name(tmpdir: py.path.local) -> None:
     first_run_dict = first_run.to_dictionary()
 
     assert metric_name in first_run_dict["data"]["metrics"]
+
+
+@pytest.mark.parametrize(
+    "names,expected", [("foo", ["foo_0", "foo_1"]), (["foo", "bar"], ["foo", "bar"])]
+)
+def test_metric_name_multiobjective(
+    tmpdir: py.path.local, names: Union[str, List[str]], expected: List[str]
+) -> None:
+
+    tracking_file_name = "file:{}".format(tmpdir)
+
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=names)
+    study = optuna.create_study(study_name="my_study", directions=["minimize", "maximize"])
+    study.optimize(_multiobjective_func, n_trials=3, callbacks=[mlflc])
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiments = mlfl_client.list_experiments()
+
+    experiment = experiments[0]
+    experiment_id = experiment.experiment_id
+
+    run_infos = mlfl_client.list_run_infos(experiment_id)
+
+    first_run_id = run_infos[0].run_id
+    first_run = mlfl_client.get_run(first_run_id)
+    first_run_dict = first_run.to_dictionary()
+
+    assert all([e in first_run_dict["data"]["metrics"] for e in expected])
 
 
 # This is a test for a temporary fix on Optuna side. It avoids an error with user
@@ -274,18 +317,22 @@ def test_initialize_experiment(tmpdir: py.path.local) -> None:
     assert experiment.name == study_name
 
 
-def test_log_metric(tmpdir: py.path.local) -> None:
-    tracking_file_name = "file:{}".format(tmpdir)
-    metric_name = "my_metric_name"
-    study_name = "my_study"
-    metric_value = 3.17
+@pytest.mark.parametrize(
+    "names,values", [(["metric"], [3.17]), (["metric1", "metric2"], [3.17, 3.18])]
+)
+def test_log_metric(
+    tmpdir: py.path.local, names: List[str], values: List[Optional[float]]
+) -> None:
 
-    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
+    tracking_file_name = "file:{}".format(tmpdir)
+    study_name = "my_study"
+
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=names)
     study = optuna.create_study(study_name=study_name)
     mlflc._initialize_experiment(study)
 
     with mlflow.start_run():
-        mlflc._log_metrics([metric_value])
+        mlflc._log_metrics(values)
 
     mlfl_client = MlflowClient(tracking_file_name)
     experiments = mlfl_client.list_experiments()
@@ -299,8 +346,10 @@ def test_log_metric(tmpdir: py.path.local) -> None:
     first_run = mlfl_client.get_run(first_run_id)
     first_run_dict = first_run.to_dictionary()
 
-    assert metric_name in first_run_dict["data"]["metrics"]
-    assert first_run_dict["data"]["metrics"][metric_name] == metric_value
+    assert all(name in first_run_dict["data"]["metrics"] for name in names)
+    assert all(
+        [first_run_dict["data"]["metrics"][name] == val for name, val in zip(names, values)]
+    )
 
 
 def test_log_metric_none(tmpdir: py.path.local) -> None:
@@ -377,3 +426,14 @@ def test_log_params(tmpdir: py.path.local) -> None:
 
     assert param2_name in first_run_dict["data"]["params"]
     assert first_run_dict["data"]["params"][param2_name] == str(param2_value)
+
+
+@pytest.mark.parametrize("metrics", [["foo"], ["foo", "bar", "baz"]])
+def test_multiobjective_raises_on_name_mismatch(tmpdir: py.path.local, metrics: List[str]) -> None:
+
+    tracking_file_name = "file:{}".format(tmpdir)
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metrics)
+    study = optuna.create_study(study_name="my_study", directions=["minimize", "maximize"])
+
+    with pytest.raises(RuntimeError):
+        study.optimize(_multiobjective_func, n_trials=1, callbacks=[mlflc])
