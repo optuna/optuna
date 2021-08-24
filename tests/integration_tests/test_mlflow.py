@@ -120,7 +120,12 @@ def test_metric_name(tmpdir: py.path.local) -> None:
 
 
 @pytest.mark.parametrize(
-    "names,expected", [("foo", ["foo_0", "foo_1"]), (["foo", "bar"], ["foo", "bar"])]
+    "names,expected",
+    [
+        ("foo", ["foo_0", "foo_1"]),
+        (["foo", "bar"], ["foo", "bar"]),
+        (("foo", "bar"), ["foo", "bar"]),
+    ],
 )
 def test_metric_name_multiobjective(
     tmpdir: py.path.local, names: Union[str, List[str]], expected: List[str]

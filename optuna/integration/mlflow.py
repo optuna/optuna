@@ -130,7 +130,7 @@ class MLflowCallback(object):
     def __init__(
         self,
         tracking_uri: Optional[str] = None,
-        metric_name: Union[str, List[str]] = "value",
+        metric_name: Union[str, Sequence[str]] = "value",
         nest_trials: bool = False,
         tag_study_user_attrs: bool = False,
     ) -> None:
@@ -254,7 +254,7 @@ class MLflowCallback(object):
             values: Results of a trial.
         """
 
-        if isinstance(self._metric_name, list):
+        if not isinstance(self._metric_name, str):
             if len(self._metric_name) != len(values):
                 raise ValueError(
                     "Running multi-objective optimization "
