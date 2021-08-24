@@ -256,7 +256,7 @@ class MLflowCallback(object):
 
         if isinstance(self._metric_name, list):
             if len(self._metric_name) != len(values):
-                raise RuntimeError(
+                raise ValueError(
                     "Running multi-objective optimization "
                     "with {} objective values, but {} names specified. "
                     "Match objective values and names, or use default broadcasting.".format(

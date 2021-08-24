@@ -435,5 +435,5 @@ def test_multiobjective_raises_on_name_mismatch(tmpdir: py.path.local, metrics: 
     mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metrics)
     study = optuna.create_study(study_name="my_study", directions=["minimize", "maximize"])
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         study.optimize(_multiobjective_func, n_trials=1, callbacks=[mlflc])
