@@ -269,7 +269,7 @@ class MLflowCallback(object):
 
         else:
             if len(values) > 1:
-                # broadcast default name for multi-objective optimization
+                # Broadcast default name for multi-objective optimization.
                 names = ["{}_{}".format(self._metric_name, i) for i in range(len(values))]
 
             else:
