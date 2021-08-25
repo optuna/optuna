@@ -1,12 +1,13 @@
 import pickle
 from typing import Any
-from typing import cast
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import Optional
 from typing import Sequence
 import warnings
 
+from _pytest.mark.structures import MarkDecorator
 import numpy as np
 import pytest
 
@@ -49,14 +50,17 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         optuna.samplers.MOTPESampler,
     ],
 )
-parametrize_suggest_method = lambda name: pytest.mark.parametrize(
-    f"suggest_method_{name}",
-    [
-        lambda t: t.suggest_float(name, 0, 10),
-        lambda t: t.suggest_int(name, 0, 10),
-        lambda t: cast(float, t.suggest_categorical(name, [0, 1, 2])),
-    ],
-)
+
+
+def parametrize_suggest_method(name: str) -> MarkDecorator:
+    return pytest.mark.parametrize(
+        f"suggest_method_{name}",
+        [
+            lambda t: t.suggest_float(name, 0, 10),
+            lambda t: t.suggest_int(name, 0, 10),
+            lambda t: cast(float, t.suggest_categorical(name, [0, 1, 2])),
+        ],
+    )
 
 
 @pytest.mark.parametrize(
@@ -650,7 +654,7 @@ def test_combination_of_different_distributions_objective(
 
 @parametrize_sampler
 def test_dynamic_range_objective(sampler_class: Callable[[], BaseSampler]) -> None:
-    def objective(trial: Trial, low: float, high: float) -> float:
+    def objective(trial: Trial, low: int, high: int) -> float:
         v = trial.suggest_float("x", low, high)
         v += trial.suggest_int("y", low, high)
         return v
