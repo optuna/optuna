@@ -1,6 +1,7 @@
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -109,9 +110,13 @@ class MLflowCallback(object):
             <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri>`_
             for more details.
         metric_name:
-            Name of the metric. Since the metric itself is just a number,
-            `metric_name` can be used to give it a name. So you know later
-            if it was roc-auc or accuracy.
+            Name assigned to optimized metric. In case of multi-objective optimization,
+            list of names can be passed. Those names will be assigned
+            to metrics in the order returned by objective function.
+            If single name is provided, or this argument is left to default value,
+            it will be broadcasted to each objective with a number suffix in order
+            returned by objective function e.g. two objectives and default metric name
+            will be logged as ``value_0`` and ``value_1``.
         nest_trials:
             Flag indicating whether or not trials should be logged as
             nested runs. This is often helpful for aggregating trials
@@ -125,12 +130,19 @@ class MLflowCallback(object):
     def __init__(
         self,
         tracking_uri: Optional[str] = None,
-        metric_name: str = "value",
+        metric_name: Union[str, Sequence[str]] = "value",
         nest_trials: bool = False,
         tag_study_user_attrs: bool = False,
     ) -> None:
 
         _imports.check()
+
+        if not isinstance(metric_name, Sequence):
+            raise TypeError(
+                "Expected metric_name to be string or sequence of strings, got {}.".format(
+                    type(metric_name)
+                )
+            )
 
         self._tracking_uri = tracking_uri
         self._metric_name = metric_name
@@ -147,8 +159,8 @@ class MLflowCallback(object):
             nested=self._nest_trials,
         ):
 
-            # This sets the metric for MLflow.
-            self._log_metric(trial.value)
+            # This sets the metrics for MLflow.
+            self._log_metrics(trial.values)
 
             # This sets the params for MLflow.
             self._log_params(trial.params)
@@ -191,6 +203,7 @@ class MLflowCallback(object):
         Args:
             study: Study to be tracked in MLflow.
         """
+
         # This sets the `tracking_uri` for MLflow.
         if self._tracking_uri is not None:
             mlflow.set_tracking_uri(self._tracking_uri)
@@ -205,7 +218,8 @@ class MLflowCallback(object):
             trial: Trial to be tracked.
             study: Study to be tracked.
         """
-        tags: Dict[str, str] = {}
+
+        tags: Dict[str, Union[str, List[str]]] = {}
         tags["number"] = str(trial.number)
         tags["datetime_start"] = str(trial.datetime_start)
 
@@ -215,8 +229,9 @@ class MLflowCallback(object):
         if trial.state.is_finished():
             tags["state"] = trial.state.name
 
-        # Set study direction.
-        tags["direction"] = study.direction.name
+        # Set study directions.
+        directions = [d.name for d in study.directions]
+        tags["direction"] = directions if len(directions) != 1 else directions[0]
 
         tags.update(trial.user_attrs)
         distributions = {(k + "_distribution"): str(v) for (k, v) in trial.distributions.items()}
@@ -239,14 +254,37 @@ class MLflowCallback(object):
         # This sets the tags for MLflow.
         mlflow.set_tags(tags)
 
-    def _log_metric(self, value: Union[float, None]) -> None:
-        """Log the trial result as metric to MLflow.
+    def _log_metrics(self, values: List[Union[float, None]]) -> None:
+        """Log the trial results as metrics to MLflow.
 
         Args:
-            value: Result of trial.
+            values: Results of a trial.
         """
-        trial_value = value if value is not None else float("nan")
-        mlflow.log_metric(self._metric_name, trial_value)
+
+        if isinstance(self._metric_name, str):
+            if len(values) > 1:
+                # Broadcast default name for multi-objective optimization.
+                names = ["{}_{}".format(self._metric_name, i) for i in range(len(values))]
+
+            else:
+                names = [self._metric_name]
+
+        else:
+            if len(self._metric_name) != len(values):
+                raise ValueError(
+                    "Running multi-objective optimization "
+                    "with {} objective values, but {} names specified. "
+                    "Match objective values and names, or use default broadcasting.".format(
+                        len(values), len(self._metric_name)
+                    )
+                )
+
+            else:
+                names = [*self._metric_name]
+
+        values = [val if val is not None else float("nan") for val in values]
+        metrics = {name: val for name, val in zip(names, values)}
+        mlflow.log_metrics(metrics)
 
     @staticmethod
     def _log_params(params: Dict[str, Any]) -> None:
@@ -255,4 +293,5 @@ class MLflowCallback(object):
         Args:
             params: Trial params.
         """
+
         mlflow.log_params(params)
