@@ -1,3 +1,4 @@
+from typing import Any
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -445,11 +446,8 @@ def test_multiobjective_raises_on_name_mismatch(tmpdir: py.path.local, metrics: 
 
 
 @pytest.mark.parametrize("metrics", [{0: "foo", 1: "bar"}])
-def test_multiobjective_raises_on_type_mismatch(tmpdir: py.path.local, metrics: List[str]) -> None:
+def test_multiobjective_raises_on_type_mismatch(tmpdir: py.path.local, metrics: Any) -> None:
 
     tracking_file_name = "file:{}".format(tmpdir)
-    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metrics)
-    study = optuna.create_study(study_name="my_strudy", directions=["minimize", "maximize"])
-
     with pytest.raises(TypeError):
-        study.optimize(_multiobjective_func, n_trials=1, callbacks=[mlflc])
+        MLflowCallback(tracking_uri=tracking_file_name, metric_name=metrics)

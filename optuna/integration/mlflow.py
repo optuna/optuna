@@ -137,6 +137,13 @@ class MLflowCallback(object):
 
         _imports.check()
 
+        if not isinstance(metric_name, Sequence):
+            raise TypeError(
+                "Expected metric_name to be string or sequence of strings, got {}.".format(
+                    type(metric_name)
+                )
+            )
+
         self._tracking_uri = tracking_uri
         self._metric_name = metric_name
         self._nest_trials = nest_trials
@@ -253,13 +260,6 @@ class MLflowCallback(object):
         Args:
             values: Results of a trial.
         """
-
-        if not isinstance(self._metric_name, Sequence):
-            raise TypeError(
-                "Expected metric_name to be string or sequence of strings, got {}.".format(
-                    type(self._metric_name)
-                )
-            )
 
         if isinstance(self._metric_name, str):
             if len(values) > 1:
