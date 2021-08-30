@@ -1,4 +1,6 @@
+from typing import Any
 from typing import List
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 from unittest import mock
@@ -106,11 +108,15 @@ def test_values_registered_on_epoch(wandb: mock.Mock, metric: str, expected: Lis
 
 @pytest.mark.parametrize(
     "metrics,expected",
-    [("value", ["x", "y", "value_0", "value_1"]), (["foo", "bar"], ["x", "y", "foo", "bar"])],
+    [
+        ("value", ["x", "y", "value_0", "value_1"]),
+        (["foo", "bar"], ["x", "y", "foo", "bar"]),
+        (("foo", "bar"), ["x", "y", "foo", "bar"]),
+    ],
 )
 @mock.patch("optuna.integration.wandb.wandb")
 def test_multiobjective_values_registered_on_epoch(
-    wandb: mock.Mock, metrics: Union[str, List[str]], expected: List[str]
+    wandb: mock.Mock, metrics: Union[str, Sequence[str]], expected: List[str]
 ) -> None:
 
     wandb.log = mock.MagicMock()
@@ -133,3 +139,10 @@ def test_multiobjective_raises_on_name_mismatch(wandb: mock.MagicMock, metrics: 
 
     with pytest.raises(ValueError):
         study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
+
+
+@pytest.mark.parametrize("metrics", [{0: "foo", 1: "bar"}])
+def test_multiobjective_raises_on_type_mismatch(metrics: Any) -> None:
+
+    with pytest.raises(TypeError):
+        WeightsAndBiasesCallback(metric_name=metrics)
