@@ -76,6 +76,8 @@ class WeightsAndBiasesCallback(object):
     Raises:
         :exc:`ValueError`:
             If there are missing or extra metric names in multi-objective optimization.
+        :exc:`TypeError`:
+            When metric names are not passed as sequence.
     """
 
     def __init__(
