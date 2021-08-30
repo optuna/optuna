@@ -28,7 +28,8 @@ def get_long_description() -> str:
 def get_install_requires() -> List[str]:
 
     requirements = [
-        "alembic",
+        # TODO(nzw) remove this version constraint after fixing mypy error
+        "alembic<1.7.0",
         "cliff",
         "cmaes>=0.8.2",
         "colorlog",
