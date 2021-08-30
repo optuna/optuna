@@ -285,7 +285,7 @@ class HyperbandPruner(BasePruner):
             )
 
             def __init__(
-                self, study: "optuna.study.Study", pruner: BasePruner, bracket_id: int
+                self, study: "optuna.study.Study", pruner: HyperbandPruner, bracket_id: int
             ) -> None:
                 super().__init__(
                     study_name=study.study_name,
