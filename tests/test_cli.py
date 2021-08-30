@@ -250,7 +250,8 @@ def test_studies_command() -> None:
             return [r.strip() for r in rows[row_index].split("|")[1:-1]]
 
         assert len(rows) == 6
-        assert tuple(get_row_elements(1)) == _Studies._study_list_header
+        for i, element in enumerate(get_row_elements(1)):
+            assert element == _Studies._study_list_header[i][0]
 
         # Check study_name and n_trials for the first study.
         elms = get_row_elements(3)
@@ -296,6 +297,7 @@ def test_trials_command(objective: Callable[[Trial], float]) -> None:
             study_name,
             "--format",
             "json",
+            "--flatten",
         ]
 
         output = str(subprocess.check_output(command).decode().strip())
@@ -304,9 +306,17 @@ def test_trials_command(objective: Callable[[Trial], float]) -> None:
         assert len(trials) == n_trials
 
         for i, trial in enumerate(trials):
-            assert set(trial.keys()) == set(df.columns)
-            for key, value in trial.items():
+            assert set(trial.keys()) <= set(df.columns)
+            for key in df.columns:
                 expected_value = df.loc[i][key]
+                if (
+                    key.startswith("params_")
+                    and isinstance(expected_value, float)
+                    and np.isnan(expected_value)
+                ):
+                    assert key not in trial
+                    continue
+                value = trial[key]
                 if isinstance(value, int) or isinstance(value, float):
                     if np.isnan(expected_value):
                         assert np.isnan(value)
@@ -353,14 +363,23 @@ def test_best_trial_command(objective: Callable[[Trial], float]) -> None:
             study_name,
             "--format",
             "json",
+            "--flatten",
         ]
 
         output = str(subprocess.check_output(command).decode().strip())
         best_trial = json.loads(output)
 
-        assert set(best_trial.keys()) == set(df.columns)
-        for key, value in best_trial.items():
+        assert set(best_trial.keys()) <= set(df.columns)
+        for key in df.columns:
             expected_value = df.loc[study.best_trial.number][key]
+            if (
+                key.startswith("params_")
+                and isinstance(expected_value, float)
+                and np.isnan(expected_value)
+            ):
+                assert key not in best_trial
+                continue
+            value = best_trial[key]
             if isinstance(value, int) or isinstance(value, float):
                 if np.isnan(expected_value):
                     assert np.isnan(value)
@@ -408,6 +427,7 @@ def test_best_trials_command() -> None:
             study_name,
             "--format",
             "json",
+            "--flatten",
         ]
 
         output = str(subprocess.check_output(command).decode().strip())
@@ -417,10 +437,18 @@ def test_best_trials_command() -> None:
         assert len(trials) == len(best_trials)
 
         for trial in trials:
-            assert set(trial.keys()) == set(df.columns)
+            assert set(trial.keys()) <= set(df.columns)
             assert trial["number"] in best_trials
-            for key, value in trial.items():
+            for key in df.columns:
                 expected_value = df.loc[trial["number"]][key]
+                if (
+                    key.startswith("params_")
+                    and isinstance(expected_value, float)
+                    and np.isnan(expected_value)
+                ):
+                    assert key not in trial
+                    continue
+                value = trial[key]
                 if isinstance(value, int) or isinstance(value, float):
                     if np.isnan(expected_value):
                         assert np.isnan(value)
@@ -612,7 +640,7 @@ def test_storage_upgrade_command() -> None:
 
 
 @pytest.mark.parametrize(
-    "direction,directions,sampler,sampler_kwargs,out",
+    "direction,directions,sampler,sampler_kwargs,output_format",
     [
         (None, None, None, None, None),
         ("minimize", None, None, None, None),
@@ -628,7 +656,7 @@ def test_ask(
     directions: Optional[str],
     sampler: Optional[str],
     sampler_kwargs: Optional[str],
-    out: Optional[str],
+    output_format: Optional[str],
 ) -> None:
 
     study_name = "test_study"
@@ -659,21 +687,23 @@ def test_ask(
             args += ["--sampler", sampler]
         if sampler_kwargs is not None:
             args += ["--sampler-kwargs", sampler_kwargs]
-        if out is not None:
-            args += ["--out", out]
+        if output_format is None:
+            args += ["--format", "json"]
+        else:
+            args += ["--format", output_format]
 
         output: Any = subprocess.check_output(args)
         output = output.decode("utf-8")
 
-        if out is None or out == "json":
+        if output_format is None or output_format == "json":
             output = json.loads(output)
         else:  # "yaml".
             output = yaml.load(output)
 
-        assert output["trial"]["number"] == 0
-        assert len(output["trial"]["params"]) == 2
-        assert 0 <= output["trial"]["params"]["x"] <= 1
-        assert output["trial"]["params"]["y"] == "foo"
+        assert output["number"] == 0
+        assert len(output["params"]) == 2
+        assert 0 <= output["params"]["x"] <= 1
+        assert output["params"]["y"] == "foo"
 
 
 def test_ask_empty_search_space() -> None:
@@ -689,14 +719,16 @@ def test_ask_empty_search_space() -> None:
             db_url,
             "--study-name",
             study_name,
+            "--format",
+            "json",
         ]
 
         output: Any = subprocess.check_output(args)
         output = output.decode("utf-8")
         output = json.loads(output)
 
-        assert output["trial"]["number"] == 0
-        assert len(output["trial"]["params"]) == 0
+        assert output["number"] == 0
+        assert len(output["params"]) == 0
 
 
 def test_tell() -> None:
@@ -713,11 +745,13 @@ def test_tell() -> None:
                 db_url,
                 "--study-name",
                 study_name,
+                "--format",
+                "json",
             ]
         )
         output = output.decode("utf-8")
         output = json.loads(output)
-        trial_number = output["trial"]["number"]
+        trial_number = output["number"]
 
         output = subprocess.check_output(
             [
