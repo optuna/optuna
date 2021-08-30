@@ -74,7 +74,7 @@ class WeightsAndBiasesCallback(object):
             <https://docs.wandb.ai/ref/python/init>`_ for more details.
 
     Raises:
-        :exc:`RuntimeError`:
+        :exc:`ValueError`:
             If there are missing or extra metric names in multi-objective optimization.
     """
 
@@ -95,7 +95,7 @@ class WeightsAndBiasesCallback(object):
 
         if isinstance(self._metric_name, list):
             if len(self._metric_name) != len(trial.values):
-                raise RuntimeError(
+                raise ValueError(
                     "Running multi-objective optimization "
                     "with {} objective values, but {} names specified. "
                     "Match objective values and names, or use default broadcasting.".format(

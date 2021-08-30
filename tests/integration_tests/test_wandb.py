@@ -131,5 +131,5 @@ def test_multiobjective_raises_on_name_mismatch(wandb: mock.MagicMock, metrics: 
     wandbc = WeightsAndBiasesCallback(metric_name=metrics)
     study = optuna.create_study(directions=["minimize", "maximize"])
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
