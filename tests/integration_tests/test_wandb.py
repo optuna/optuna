@@ -11,15 +11,15 @@ from optuna.integration import WeightsAndBiasesCallback
 
 def _objective_func(trial: optuna.trial.Trial) -> float:
 
-    x = trial.suggest_uniform("x", low=-10, high=10)
-    y = trial.suggest_loguniform("y", low=1, high=10)
+    x = trial.suggest_float("x", low=-10, high=10)
+    y = trial.suggest_float("y", low=1, high=10, log=True)
     return (x - 2) ** 2 + (y - 25) ** 2
 
 
 def _multiobjective_func(trial: optuna.trial.Trial) -> Tuple[float, float]:
 
-    x = trial.suggest_uniform("x", low=-10, high=10)
-    y = trial.suggest_loguniform("y", low=1, high=10)
+    x = trial.suggest_float("x", low=-10, high=10)
+    y = trial.suggest_float("y", low=1, high=10, log=True)
     first_objective = (x - 2) ** 2 + (y - 25) ** 2
     second_objective = (x - 2) ** 3 + (y - 25) ** 3
 
