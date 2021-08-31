@@ -653,7 +653,17 @@ def test_combination_of_different_distributions_objective(
 
 
 @parametrize_sampler
-def test_dynamic_range_objective(sampler_class: Callable[[], BaseSampler]) -> None:
+@pytest.mark.parametrize(
+    "second_low,second_high",
+    [
+        (0, 5),  # Narrow range.
+        (0, 20),  # Expand range.
+        (20, 30),  # Set non-overlapping range.
+    ],
+)
+def test_dynamic_range_objective(
+    sampler_class: Callable[[], BaseSampler], second_low: int, second_high: int
+) -> None:
     def objective(trial: Trial, low: int, high: int) -> float:
         v = trial.suggest_float("x", low, high)
         v += trial.suggest_int("y", low, high)
@@ -665,7 +675,7 @@ def test_dynamic_range_objective(sampler_class: Callable[[], BaseSampler]) -> No
 
     study = optuna.study.create_study(sampler=sampler)
     study.optimize(lambda t: objective(t, 0, 10), n_trials=10)
-    study.optimize(lambda t: objective(t, 0, 5), n_trials=10)
+    study.optimize(lambda t: objective(t, second_low, second_high), n_trials=10)
 
     assert len(study.trials) == 20
     assert all(t.state == TrialState.COMPLETE for t in study.trials)
