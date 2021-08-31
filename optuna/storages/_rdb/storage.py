@@ -1346,7 +1346,9 @@ class _VersionManager(object):
     def _get_base_version(self) -> str:
 
         script = self._create_alembic_script()
-        return script.get_base()
+        base = script.get_base()
+        assert base is not None, "There should be exactly one base, i.e. v0.9.0.a."
+        return base
 
     def get_all_versions(self) -> List[str]:
 
