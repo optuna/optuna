@@ -4,10 +4,12 @@ import shutil
 import sys
 import tempfile
 import time
+from typing import cast
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 from unittest.mock import patch
 
 import packaging
@@ -183,16 +185,16 @@ def test_upgrade_identity() -> None:
 
 @pytest.mark.parametrize("optuna_version", ["0.9.0", "1.2.0", "1.3.0", "2.4.0", "2.6.0"])
 def test_upgrade(optuna_version: str) -> None:
-    def objective(trial):
+    def objective(trial: Trial) -> float:
         x = trial.suggest_uniform("x", -5, 5)  # optuna==0.9.0 does not have suggest_float.
         y = trial.suggest_int("y", 0, 10)
-        z = trial.suggest_categorical("z", [-5, 0, 5])
+        z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
         return x ** 2 + y ** 2 + z ** 2
 
-    def mo_objective(trial):
+    def mo_objective(trial: Trial) -> Tuple[float, float]:
         x = trial.suggest_float("x", -5, 5)
         y = trial.suggest_int("y", 0, 10)
-        z = trial.suggest_categorical("z", [-5, 0, 5])
+        z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
         return x, x ** 2 + y ** 2 + z ** 2
 
     src_db_file = os.path.join(os.path.dirname(__file__), "alembic_tests", f"{optuna_version}.db")
@@ -224,8 +226,8 @@ def test_upgrade(optuna_version: str) -> None:
         study.optimize(objective, n_trials=1)
         assert len(study.trials) == 2
 
-        # optuna==1.x.x does not support multi-objective optimization officially, so skip them.
-        if packaging.version.parse(optuna_version).major < 2:
+        # optuna<2.4.x does not support multi-objective optimization officially, so skip them.
+        if packaging.version.parse(optuna_version) < packaging.version.parse("2.4.0"):
             return
         # Create a new study.
         study = create_study(storage=storage, directions=["minimize", "minimize"])
