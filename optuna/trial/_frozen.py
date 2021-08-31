@@ -548,8 +548,9 @@ def create_trial(
         functions are created inside :func:`~optuna.study.Study.optimize`.
 
     .. note::
-        When ``state`` is ``TrialState.COMPLETE``, the following parameters are
+        When ``state`` is :class:`TrialState.COMPLETE`, the following parameters are
         required:
+
         * ``params``
         * ``distributions``
         * ``value`` or ``values``
@@ -558,12 +559,11 @@ def create_trial(
         state:
             Trial state.
         value:
-            Trial objective value. Must be specified if ``state`` is ``None``
-            or :class:`TrialState.COMPLETE`.
+            Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
         values:
             Sequence of the trial objective values. The length is greater than 1 if the problem is
             multi-objective optimization.
-            Must be specified if ``state`` is ``None`` or :class:`TrialState.COMPLETE`.
+            Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
         params:
             Dictionary with suggested parameters of the trial.
         distributions:
