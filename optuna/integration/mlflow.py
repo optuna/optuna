@@ -124,7 +124,8 @@ class MLflowCallback(object):
         tag_study_user_attrs:
             Flag indicating whether or not to add the study's user attrs
             to the mlflow trial as tags. Please note that when this flag is
-            set, key value pairs in study.user_attrs will supersede existing tags.
+            set, key value pairs in :attr:`~optuna.study.Study.user_attrs`
+            will supersede existing tags.
     """
 
     def __init__(
