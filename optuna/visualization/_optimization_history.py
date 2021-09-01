@@ -158,7 +158,7 @@ def _get_optimization_history_with_error_bar(
 
     mean_of_target_values = [np.mean(v) if len(v) > 0 else None for v in target_values]
     std_of_target_values = [np.std(v) if len(v) > 0 else None for v in target_values]
-    trial_numbers = np.arange(max_trial_number + 1)[[v is not None for v in mean_of_target_values]]
+    trial_numbers = np.arange(max_trial_number + 2)[[v is not None for v in mean_of_target_values]]
     means = np.asarray(mean_of_target_values)[trial_numbers]
     stds = np.asarray(std_of_target_values)[trial_numbers]
     traces = [
