@@ -154,7 +154,11 @@ def _get_optimization_history_with_error_bar(
     for study in studies:
         trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
         for t in trials:
-            target_values[t.number].append(_target(t))
+            try:
+                target_values[t.number].append(_target(t))
+            except IndexError as e:
+                print(max_trial_number, t.number)
+                raise IndexError(e)
 
     mean_of_target_values = [np.mean(v) if len(v) > 0 else None for v in target_values]
     std_of_target_values = [np.std(v) if len(v) > 0 else None for v in target_values]
