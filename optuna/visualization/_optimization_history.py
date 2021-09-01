@@ -150,15 +150,11 @@ def _get_optimization_history_with_error_bar(
     else:
         _target = target
 
-    target_values: List[List[float]] = [[] for _ in range(max_trial_number + 1)]
+    target_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
     for study in studies:
         trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
         for t in trials:
-            try:
-                target_values[t.number].append(_target(t))
-            except IndexError as e:
-                print(max_trial_number, t.number)
-                raise IndexError(e)
+            target_values[t.number].append(_target(t))
 
     mean_of_target_values = [np.mean(v) if len(v) > 0 else None for v in target_values]
     std_of_target_values = [np.std(v) if len(v) > 0 else None for v in target_values]
@@ -180,7 +176,7 @@ def _get_optimization_history_with_error_bar(
     ]
 
     if target is None:
-        best_values: List[List[float]] = [[] for _ in range(max_trial_number + 1)]
+        best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
         for study in studies:
             trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
@@ -190,11 +186,7 @@ def _get_optimization_history_with_error_bar(
                 best_vs = np.maximum.accumulate([cast(float, t.value) for t in trials])
 
             for i, t in enumerate(trials):
-                try:
-                    best_values[t.number].append(best_vs[i])
-                except IndexError as e:
-                    print(max_trial_number, t.number)
-                    raise IndexError(e)
+                best_values[t.number].append(best_vs[i])
 
         mean_of_best_values = [np.mean(v) if len(v) > 0 else None for v in best_values]
         std_of_best_values = [np.std(v) if len(v) > 0 else None for v in best_values]
