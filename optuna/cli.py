@@ -204,9 +204,9 @@ def _format_output(
             return json.dumps(values[0]).strip()
     elif output_format == "yaml":
         if isinstance(records, list):
-            return yaml.dump(values).strip()
+            return yaml.safe_dump(values).strip()
         else:
-            return yaml.dump(values[0]).strip()
+            return yaml.safe_dump(values[0]).strip()
     else:
         raise CLIUsageError(f"Optuna CLI does not supported the {output_format} format.")
 

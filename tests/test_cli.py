@@ -71,7 +71,7 @@ def _parse_output(output: str, output_format: Optional[str]) -> Any:
     elif output_format == "json":
         return json.loads(output)
     elif output_format == "yaml":
-        return yaml.load(output)
+        return yaml.safe_load(output)
     else:
         assert False
 
