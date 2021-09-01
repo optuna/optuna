@@ -190,7 +190,11 @@ def _get_optimization_history_with_error_bar(
                 best_vs = np.maximum.accumulate([cast(float, t.value) for t in trials])
 
             for i, t in enumerate(trials):
-                best_values[t.number].append(best_vs[i])
+                try:
+                    best_values[t.number].append(best_vs[i])
+                except IndexError as e:
+                    print(max_trial_number, t.number)
+                    raise IndexError(e)
 
         mean_of_best_values = [np.mean(v) if len(v) > 0 else None for v in best_values]
         std_of_best_values = [np.std(v) if len(v) > 0 else None for v in best_values]
