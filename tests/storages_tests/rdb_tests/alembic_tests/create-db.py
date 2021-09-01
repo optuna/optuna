@@ -1,4 +1,4 @@
-import sys
+from argparse import ArgumentParser
 from typing import cast
 from typing import Tuple
 
@@ -20,26 +20,28 @@ def mo_objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
 
 
 if __name__ == "__main__":
-    storage_url = sys.argv[1]
+    parser = ArgumentParser(description="Create SQLite database for schema upgrade tests.")
+    parser.add_argument("--storage-url", default=f"sqlite:///{optuna.__version__}.db")
+    args = parser.parse_args()
 
     # Create an empty study.
-    optuna.create_study(storage=storage_url, study_name="single_empty")
+    optuna.create_study(storage=args.storage_url, study_name="single_empty")
 
     # Create a study for single-objective optimization.
-    study = optuna.create_study(storage=storage_url, study_name="single")
+    study = optuna.create_study(storage=args.storage_url, study_name="single")
     study.optimize(objective, n_trials=1)
 
     # Create a study for multi-objective optimization.
     try:
         optuna.create_study(
-            storage=storage_url, study_name="multi_empty", directions=["minimize", "minimize"]
+            storage=args.storage_url, study_name="multi_empty", directions=["minimize", "minimize"]
         )
         study = optuna.create_study(
-            storage=storage_url, study_name="multi", directions=["minimize", "minimize"]
+            storage=args.storage_url, study_name="multi", directions=["minimize", "minimize"]
         )
         study.optimize(mo_objective, n_trials=1)
     except TypeError:
         print(f"optuna=={optuna.__version__} does not support multi-objective optimization.")
 
-    for s in optuna.get_all_study_summaries(storage_url):
+    for s in optuna.get_all_study_summaries(args.storage_url):
         print(f"{s.study_name}, {s.n_trials}")
