@@ -32,8 +32,8 @@ from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
-from .create_db import test_upgrade_mo_objective
-from .create_db import test_upgrade_objective
+from .create_db import mo_objective_test_upgrade
+from .create_db import objective_test_upgrade
 
 
 def test_init() -> None:
@@ -204,19 +204,19 @@ def test_upgrade(optuna_version: str) -> None:
         # Create a new study.
         study = create_study(storage=storage)
         assert len(study.trials) == 0
-        study.optimize(test_upgrade_objective, n_trials=1)
+        study.optimize(objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 1
 
         # Check empty study.
         study = load_study(storage=storage, study_name="single_empty")
         assert len(study.trials) == 0
-        study.optimize(test_upgrade_objective, n_trials=1)
+        study.optimize(objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 1
 
         # Resume single objective optimization.
         study = load_study(storage=storage, study_name="single")
         assert len(study.trials) == 1
-        study.optimize(test_upgrade_objective, n_trials=1)
+        study.optimize(objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 2
         for trial in study.trials:
             assert trial.system_attrs["a"] == 0
@@ -231,19 +231,19 @@ def test_upgrade(optuna_version: str) -> None:
         # Create a new study.
         study = create_study(storage=storage, directions=["minimize", "minimize"])
         assert len(study.trials) == 0
-        study.optimize(test_upgrade_mo_objective, n_trials=1)
+        study.optimize(mo_objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 1
 
         # Check empty study.
         study = load_study(storage=storage, study_name="multi_empty")
         assert len(study.trials) == 0
-        study.optimize(test_upgrade_mo_objective, n_trials=1)
+        study.optimize(mo_objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 1
 
         # Resume multi-objective optimization.
         study = load_study(storage=storage, study_name="multi")
         assert len(study.trials) == 1
-        study.optimize(test_upgrade_mo_objective, n_trials=1)
+        study.optimize(mo_objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 2
         for trial in study.trials:
             assert trial.system_attrs["a"] == 0

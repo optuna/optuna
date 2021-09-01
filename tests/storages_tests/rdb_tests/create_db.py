@@ -5,7 +5,7 @@ from typing import Tuple
 import optuna
 
 
-def test_upgrade_objective(trial: optuna.trial.Trial) -> float:
+def objective_test_upgrade(trial: optuna.trial.Trial) -> float:
     x = trial.suggest_uniform("x", -5, 5)  # optuna==0.9.0 does not have suggest_float.
     y = trial.suggest_int("y", 0, 10)
     z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
@@ -15,7 +15,7 @@ def test_upgrade_objective(trial: optuna.trial.Trial) -> float:
     return x ** 2 + y ** 2 + z ** 2
 
 
-def test_upgrade_mo_objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
+def mo_objective_test_upgrade(trial: optuna.trial.Trial) -> Tuple[float, float]:
     x = trial.suggest_float("x", -5, 5)
     y = trial.suggest_int("y", 0, 10)
     z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     study = optuna.create_study(storage=args.storage_url, study_name="single")
     study.set_system_attr("c", 2)
     study.set_user_attr("d", 3)
-    study.optimize(test_upgrade_objective, n_trials=1)
+    study.optimize(objective_test_upgrade, n_trials=1)
 
     # Create a study for multi-objective optimization.
     try:
@@ -50,7 +50,7 @@ if __name__ == "__main__":
         )
         study.set_system_attr("c", 2)
         study.set_user_attr("d", 3)
-        study.optimize(test_upgrade_mo_objective, n_trials=1)
+        study.optimize(mo_objective_test_upgrade, n_trials=1)
     except TypeError:
         print(f"optuna=={optuna.__version__} does not support multi-objective optimization.")
 
