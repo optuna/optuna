@@ -1,19 +1,21 @@
 import sys
+from typing import cast
+from typing import Tuple
 
 import optuna
 
 
-def objective(trial):
+def objective(trial: optuna.trial.Trial) -> float:
     x = trial.suggest_uniform("x", -5, 5)  # optuna==0.9.0 does not have suggest_float.
     y = trial.suggest_int("y", 0, 10)
-    z = trial.suggest_categorical("z", [-5, 0, 5])
+    z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
     return x ** 2 + y ** 2 + z ** 2
 
 
-def mo_objective(trial):
+def mo_objective(trial: optuna.trial.Trial) -> Tuple[float, float]:
     x = trial.suggest_float("x", -5, 5)
     y = trial.suggest_int("y", 0, 10)
-    z = trial.suggest_categorical("z", [-5, 0, 5])
+    z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
     return x, x ** 2 + y ** 2 + z ** 2
 
 
