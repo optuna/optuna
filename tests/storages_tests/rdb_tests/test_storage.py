@@ -32,6 +32,9 @@ from optuna.trial import FrozenTrial
 from optuna.trial import Trial
 from optuna.trial import TrialState
 
+from .create_db import test_upgrade_mo_objective
+from .create_db import test_upgrade_objective
+
 
 def test_init() -> None:
 
@@ -185,24 +188,9 @@ def test_upgrade_identity() -> None:
 
 @pytest.mark.parametrize("optuna_version", ["0.9.0", "1.2.0", "1.3.0", "2.4.0", "2.6.0"])
 def test_upgrade(optuna_version: str) -> None:
-    def objective(trial: Trial) -> float:
-        x = trial.suggest_uniform("x", -5, 5)  # optuna==0.9.0 does not have suggest_float.
-        y = trial.suggest_int("y", 0, 10)
-        z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
-        trial.set_system_attr("a", 0)
-        trial.set_user_attr("b", 1)
-        trial.report(0.5, step=0)
-        return x ** 2 + y ** 2 + z ** 2
-
-    def mo_objective(trial: Trial) -> Tuple[float, float]:
-        x = trial.suggest_float("x", -5, 5)
-        y = trial.suggest_int("y", 0, 10)
-        z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
-        trial.set_system_attr("a", 0)
-        trial.set_user_attr("b", 1)
-        return x, x ** 2 + y ** 2 + z ** 2
-
-    src_db_file = os.path.join(os.path.dirname(__file__), "alembic_tests", f"{optuna_version}.db")
+    src_db_file = os.path.join(
+        os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
+    )
     with tempfile.TemporaryDirectory() as workdir:
         shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
         storage_url = f"sqlite:///{workdir}/sqlite.db"
@@ -216,19 +204,19 @@ def test_upgrade(optuna_version: str) -> None:
         # Create a new study.
         study = create_study(storage=storage)
         assert len(study.trials) == 0
-        study.optimize(objective, n_trials=1)
+        study.optimize(test_upgrade_objective, n_trials=1)
         assert len(study.trials) == 1
 
         # Check empty study.
         study = load_study(storage=storage, study_name="single_empty")
         assert len(study.trials) == 0
-        study.optimize(objective, n_trials=1)
+        study.optimize(test_upgrade_objective, n_trials=1)
         assert len(study.trials) == 1
 
         # Resume single objective optimization.
         study = load_study(storage=storage, study_name="single")
         assert len(study.trials) == 1
-        study.optimize(objective, n_trials=1)
+        study.optimize(test_upgrade_objective, n_trials=1)
         assert len(study.trials) == 2
         for trial in study.trials:
             assert trial.system_attrs["a"] == 0
@@ -243,19 +231,19 @@ def test_upgrade(optuna_version: str) -> None:
         # Create a new study.
         study = create_study(storage=storage, directions=["minimize", "minimize"])
         assert len(study.trials) == 0
-        study.optimize(mo_objective, n_trials=1)
+        study.optimize(test_upgrade_mo_objective, n_trials=1)
         assert len(study.trials) == 1
 
         # Check empty study.
         study = load_study(storage=storage, study_name="multi_empty")
         assert len(study.trials) == 0
-        study.optimize(mo_objective, n_trials=1)
+        study.optimize(test_upgrade_mo_objective, n_trials=1)
         assert len(study.trials) == 1
 
         # Resume multi-objective optimization.
         study = load_study(storage=storage, study_name="multi")
         assert len(study.trials) == 1
-        study.optimize(mo_objective, n_trials=1)
+        study.optimize(test_upgrade_mo_objective, n_trials=1)
         assert len(study.trials) == 2
         for trial in study.trials:
             assert trial.system_attrs["a"] == 0
