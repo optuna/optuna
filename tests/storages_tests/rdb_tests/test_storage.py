@@ -5,11 +5,9 @@ import sys
 import tempfile
 import time
 from typing import Any
-from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 from unittest.mock import patch
 
 import packaging
