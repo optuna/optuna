@@ -1,4 +1,6 @@
+from typing import Any
 from typing import List
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 from unittest import mock
@@ -11,15 +13,15 @@ from optuna.integration import WeightsAndBiasesCallback
 
 def _objective_func(trial: optuna.trial.Trial) -> float:
 
-    x = trial.suggest_uniform("x", low=-10, high=10)
-    y = trial.suggest_loguniform("y", low=1, high=10)
+    x = trial.suggest_float("x", low=-10, high=10)
+    y = trial.suggest_float("y", low=1, high=10, log=True)
     return (x - 2) ** 2 + (y - 25) ** 2
 
 
 def _multiobjective_func(trial: optuna.trial.Trial) -> Tuple[float, float]:
 
-    x = trial.suggest_uniform("x", low=-10, high=10)
-    y = trial.suggest_loguniform("y", low=1, high=10)
+    x = trial.suggest_float("x", low=-10, high=10)
+    y = trial.suggest_float("y", low=1, high=10, log=True)
     first_objective = (x - 2) ** 2 + (y - 25) ** 2
     second_objective = (x - 2) ** 3 + (y - 25) ** 3
 
@@ -106,11 +108,15 @@ def test_values_registered_on_epoch(wandb: mock.Mock, metric: str, expected: Lis
 
 @pytest.mark.parametrize(
     "metrics,expected",
-    [("value", ["x", "y", "value_0", "value_1"]), (["foo", "bar"], ["x", "y", "foo", "bar"])],
+    [
+        ("value", ["x", "y", "value_0", "value_1"]),
+        (["foo", "bar"], ["x", "y", "foo", "bar"]),
+        (("foo", "bar"), ["x", "y", "foo", "bar"]),
+    ],
 )
 @mock.patch("optuna.integration.wandb.wandb")
 def test_multiobjective_values_registered_on_epoch(
-    wandb: mock.Mock, metrics: Union[str, List[str]], expected: List[str]
+    wandb: mock.Mock, metrics: Union[str, Sequence[str]], expected: List[str]
 ) -> None:
 
     wandb.log = mock.MagicMock()
@@ -131,5 +137,12 @@ def test_multiobjective_raises_on_name_mismatch(wandb: mock.MagicMock, metrics: 
     wandbc = WeightsAndBiasesCallback(metric_name=metrics)
     study = optuna.create_study(directions=["minimize", "maximize"])
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
+
+
+@pytest.mark.parametrize("metrics", [{0: "foo", 1: "bar"}])
+def test_multiobjective_raises_on_type_mismatch(metrics: Any) -> None:
+
+    with pytest.raises(TypeError):
+        WeightsAndBiasesCallback(metric_name=metrics)

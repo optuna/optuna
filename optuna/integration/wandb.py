@@ -1,7 +1,7 @@
 from typing import Any
 from typing import Dict
-from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Union
 
 import optuna
@@ -74,17 +74,26 @@ class WeightsAndBiasesCallback(object):
             <https://docs.wandb.ai/ref/python/init>`_ for more details.
 
     Raises:
-        :exc:`RuntimeError`:
+        :exc:`ValueError`:
             If there are missing or extra metric names in multi-objective optimization.
+        :exc:`TypeError`:
+            When metric names are not passed as sequence.
     """
 
     def __init__(
         self,
-        metric_name: Union[str, List[str]] = "value",
+        metric_name: Union[str, Sequence[str]] = "value",
         wandb_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
 
         _imports.check()
+
+        if not isinstance(metric_name, Sequence):
+            raise TypeError(
+                "Expected metric_name to be string or sequence of strings, got {}.".format(
+                    type(metric_name)
+                )
+            )
 
         self._metric_name = metric_name
         self._wandb_kwargs = wandb_kwargs or {}
@@ -93,9 +102,17 @@ class WeightsAndBiasesCallback(object):
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
-        if isinstance(self._metric_name, list):
+        if isinstance(self._metric_name, str):
+            if len(trial.values) > 1:
+                # Broadcast default name for multi-objective optimization.
+                names = ["{}_{}".format(self._metric_name, i) for i in range(len(trial.values))]
+
+            else:
+                names = [self._metric_name]
+
+        else:
             if len(self._metric_name) != len(trial.values):
-                raise RuntimeError(
+                raise ValueError(
                     "Running multi-objective optimization "
                     "with {} objective values, but {} names specified. "
                     "Match objective values and names, or use default broadcasting.".format(
@@ -104,15 +121,7 @@ class WeightsAndBiasesCallback(object):
                 )
 
             else:
-                names = self._metric_name
-
-        if isinstance(self._metric_name, str):
-            if len(trial.values) > 1:
-                # broadcast default name for multi-objective optimization
-                names = ["{}_{}".format(self._metric_name, i) for i in range(len(trial.values))]
-
-            else:
-                names = [self._metric_name]
+                names = [*self._metric_name]
 
         metrics = {name: value for name, value in zip(names, trial.values)}
         attributes = {"direction": [d.name for d in study.directions]}
