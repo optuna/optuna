@@ -189,12 +189,17 @@ def test_upgrade(optuna_version: str) -> None:
         x = trial.suggest_uniform("x", -5, 5)  # optuna==0.9.0 does not have suggest_float.
         y = trial.suggest_int("y", 0, 10)
         z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
+        trial.set_system_attr("a", 0)
+        trial.set_user_attr("b", 1)
+        trial.report(0.5, step=0)
         return x ** 2 + y ** 2 + z ** 2
 
     def mo_objective(trial: Trial) -> Tuple[float, float]:
         x = trial.suggest_float("x", -5, 5)
         y = trial.suggest_int("y", 0, 10)
         z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
+        trial.set_system_attr("a", 0)
+        trial.set_user_attr("b", 1)
         return x, x ** 2 + y ** 2 + z ** 2
 
     src_db_file = os.path.join(os.path.dirname(__file__), "alembic_tests", f"{optuna_version}.db")
@@ -225,6 +230,12 @@ def test_upgrade(optuna_version: str) -> None:
         assert len(study.trials) == 1
         study.optimize(objective, n_trials=1)
         assert len(study.trials) == 2
+        for trial in study.trials:
+            assert trial.system_attrs["a"] == 0
+            assert trial.user_attrs["b"] == 1
+            assert trial.intermediate_values[0] == 0.5
+        assert study.system_attrs["c"] == 2
+        assert study.user_attrs["d"] == 3
 
         # optuna<2.4.x does not support multi-objective optimization officially, so skip them.
         if packaging.version.parse(optuna_version) < packaging.version.parse("2.4.0"):
@@ -246,6 +257,11 @@ def test_upgrade(optuna_version: str) -> None:
         assert len(study.trials) == 1
         study.optimize(mo_objective, n_trials=1)
         assert len(study.trials) == 2
+        for trial in study.trials:
+            assert trial.system_attrs["a"] == 0
+            assert trial.user_attrs["b"] == 1
+        assert study.system_attrs["c"] == 2
+        assert study.user_attrs["d"] == 3
 
 
 @pytest.mark.parametrize(
