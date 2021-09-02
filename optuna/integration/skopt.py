@@ -292,6 +292,16 @@ class _Optimizer(object):
         params = {}
         param_values = self._optimizer.ask()
         for (name, distribution), value in zip(sorted(self._search_space.items()), param_values):
+            if isinstance(
+                distribution,
+                (
+                    distributions.UniformDistribution,
+                    distributions.LogUniformDistribution,
+                    distributions.DiscreteUniformDistribution,
+                ),
+            ):
+                # Type of value is np.floating, so cast it to Python's built-in float.
+                value = float(value)
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 value = value * distribution.q + distribution.low
             if isinstance(distribution, distributions.IntUniformDistribution):

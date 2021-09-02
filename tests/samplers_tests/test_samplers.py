@@ -41,6 +41,15 @@ parametrize_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIISampler,
     ],
 )
+parametrize_relative_sampler = pytest.mark.parametrize(
+    "relative_sampler_class",
+    [
+        lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
+        lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
+        lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
+        lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+    ],
+)
 parametrize_multi_objective_sampler = pytest.mark.parametrize(
     "multi_objective_sampler_class",
     [
@@ -227,6 +236,120 @@ def test_categorical(
     assert np.all(points <= len(distribution.choices) - 1)
     round_points = np.round(points)
     np.testing.assert_almost_equal(round_points, points)
+
+
+@parametrize_relative_sampler
+@pytest.mark.parametrize(
+    "x_distribution",
+    [
+        UniformDistribution(-1.0, 1.0),
+        LogUniformDistribution(1e-7, 1.0),
+        DiscreteUniformDistribution(-10, 10, 0.5),
+        IntUniformDistribution(1, 10),
+        IntLogUniformDistribution(1, 100),
+    ],
+)
+@pytest.mark.parametrize(
+    "y_distribution",
+    [
+        UniformDistribution(-1.0, 1.0),
+        LogUniformDistribution(1e-7, 1.0),
+        DiscreteUniformDistribution(-10, 10, 0.5),
+        IntUniformDistribution(1, 10),
+        IntLogUniformDistribution(1, 100),
+    ],
+)
+def test_sample_relative_numerical(
+    relative_sampler_class: Callable[[], BaseSampler],
+    x_distribution: BaseDistribution,
+    y_distribution: BaseDistribution,
+) -> None:
+
+    search_space = {"x": x_distribution, "y": y_distribution}
+    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(seed=1))
+    for _ in range(4):
+        trial = study.ask(search_space)
+        study.tell(trial, sum(trial.params.values()))
+    study.sampler = relative_sampler_class()
+
+    values = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
+    for name, distribution in search_space.items():
+        value = values[name]
+        assert isinstance(
+            distribution,
+            (
+                UniformDistribution,
+                LogUniformDistribution,
+                DiscreteUniformDistribution,
+                IntUniformDistribution,
+                IntLogUniformDistribution,
+            ),
+        )
+        assert value >= distribution.low
+        assert value <= distribution.high
+        assert not isinstance(value, np.floating)
+
+
+@parametrize_relative_sampler
+def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSampler]) -> None:
+
+    search_space: Dict[str, BaseDistribution] = {
+        "x": CategoricalDistribution([1, 10, 100]),
+        "y": CategoricalDistribution([-1, -10, -100]),
+    }
+    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(seed=1))
+    for _ in range(4):
+        trial = study.ask(search_space)
+        study.tell(trial, sum(trial.params.values()))
+    study.sampler = relative_sampler_class()
+
+    values = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
+    assert values["x"] in {1, 10, 100}
+    assert values["y"] in {-1, -10, -100}
+    assert not isinstance(values["x"], np.floating)
+    assert not isinstance(values["y"], np.floating)
+
+
+@parametrize_relative_sampler
+@pytest.mark.parametrize(
+    "x_distribution",
+    [
+        UniformDistribution(-1.0, 1.0),
+        LogUniformDistribution(1e-7, 1.0),
+        DiscreteUniformDistribution(-10, 10, 0.5),
+        IntUniformDistribution(1, 10),
+        IntLogUniformDistribution(1, 100),
+    ],
+)
+def test_sample_relative_mixed(
+    relative_sampler_class: Callable[[], BaseSampler], x_distribution: BaseDistribution
+) -> None:
+
+    search_space: Dict[str, BaseDistribution] = {
+        "x": x_distribution,
+        "y": CategoricalDistribution([-1, -10, -100]),
+    }
+    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(seed=1))
+    for _ in range(4):
+        trial = study.ask(search_space)
+        study.tell(trial, sum(trial.params.values()))
+    study.sampler = relative_sampler_class()
+
+    values = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
+    assert isinstance(
+        x_distribution,
+        (
+            UniformDistribution,
+            LogUniformDistribution,
+            DiscreteUniformDistribution,
+            IntUniformDistribution,
+            IntLogUniformDistribution,
+        ),
+    )
+    assert x_distribution.low <= values["x"] <= x_distribution.high
+    assert values["y"] in {-1, -10, -100}
+    assert not isinstance(values["x"], np.floating)
+    assert not isinstance(values["y"], np.floating)
 
 
 def _create_new_trial(study: Study) -> FrozenTrial:
