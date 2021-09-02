@@ -10,7 +10,6 @@ from typing import List
 from typing import Optional
 from unittest.mock import patch
 
-import packaging
 import pytest
 from sqlalchemy.exc import IntegrityError
 
@@ -185,7 +184,7 @@ def test_upgrade_identity() -> None:
 
 
 @pytest.mark.parametrize("optuna_version", ["0.9.0", "1.2.0", "1.3.0", "2.4.0", "2.6.0"])
-def test_upgrade(optuna_version: str) -> None:
+def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
         os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
     )
@@ -228,9 +227,22 @@ def test_upgrade(optuna_version: str) -> None:
         assert study.system_attrs["c"] == 2
         assert study.user_attrs["d"] == 3
 
-        # optuna<2.4.x does not support multi-objective optimization officially, so skip them.
-        if packaging.version.parse(optuna_version) < packaging.version.parse("2.4.0"):
-            return
+
+@pytest.mark.parametrize("optuna_version", ["2.4.0", "2.6.0"])
+def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
+    src_db_file = os.path.join(
+        os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
+    )
+    with tempfile.TemporaryDirectory() as workdir:
+        shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
+        storage_url = f"sqlite:///{workdir}/sqlite.db"
+
+        storage = RDBStorage(storage_url, skip_compatibility_check=True)
+        assert storage.get_current_version() == f"v{optuna_version}.a"
+        head_version = storage.get_head_version()
+        storage.upgrade()
+        assert head_version == storage.get_current_version()
+
         # Create a new study.
         study = create_study(storage=storage, directions=["minimize", "minimize"])
         assert len(study.trials) == 0
