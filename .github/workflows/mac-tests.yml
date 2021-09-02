@@ -108,6 +108,8 @@ jobs:
         do
           pytest $file;
         done
+      env:
+        OMP_NUM_THREADS: 1
 
     - name: Tests MPI
       run: |
