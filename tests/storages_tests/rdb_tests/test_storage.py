@@ -223,7 +223,7 @@ def test_upgrade(optuna_version: str) -> None:
             assert -5 <= trial.params["x"] <= 5
             assert 0 <= trial.params["y"] <= 10
             assert trial.params["z"] in (-5, 0, 5)
-            assert 0 <= trial.value <= 125
+            assert trial.value is not None and 0 <= trial.value <= 125
 
         assert study.system_attrs["c"] == 2
         assert study.user_attrs["d"] == 3
