@@ -97,8 +97,14 @@ jobs:
 
     - name: Tests
       run: |
-        # pytest cannot collect allennlp tests with allennlp==1.0.0.
-        pytest -s tests/integration_tests
+        # 'pytest tests/integration_tests' causes segmentation fault at the end of
+        # tests/integration_tests/test_lightgbm.py as shown in
+        # https://github.com/optuna/optuna/issues/2695. It can be completed if we
+        # execute tests individually.
+        for file in `find tests/integration_tests -name 'test_*.py' -print`;
+        do
+          pytest $file;
+        done
 
     - name: Tests MPI
       run: |
