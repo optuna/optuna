@@ -14,7 +14,6 @@ from unittest.mock import patch
 import uuid
 
 import _pytest.capture
-import _pytest.logging
 import pytest
 
 from optuna import copy_study
