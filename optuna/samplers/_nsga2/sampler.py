@@ -24,7 +24,8 @@ from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-
+from optuna.samplers._nsga2.crossover import crossover, select_hyperparameters
+from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
 
 # Define key names of `Trial.system_attrs`.
 _CONSTRAINTS_KEY = "nsga2:constraints"
@@ -94,10 +95,13 @@ class NSGAIISampler(BaseSampler):
         *,
         population_size: int = 50,
         mutation_prob: Optional[float] = None,
+        crossover_name: str = "spx",
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
+        max_resampling_count: int = 1,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+        **crossover_kwargs,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
@@ -125,10 +129,18 @@ class NSGAIISampler(BaseSampler):
                 ExperimentalWarning,
             )
 
+        if max_resampling_count < 1:
+            raise ValueError("`max_resampling_count` must be greater than or equal to 1")
+
+        hyperparameters = select_hyperparameters(crossover_name, population_size, crossover_kwargs)
+
         self._population_size = population_size
         self._mutation_prob = mutation_prob
+        self._crossover_name = crossover_name
         self._crossover_prob = crossover_prob
         self._swapping_prob = swapping_prob
+        self._max_resampling_count = max_resampling_count
+        self._hyperparameters = hyperparameters
         self._random_sampler = RandomSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
         self._constraints_func = constraints_func
@@ -140,7 +152,16 @@ class NSGAIISampler(BaseSampler):
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
-        return {}
+
+        search_space: Dict[str, BaseDistribution] = {}
+        group_decomposed_search_space = _GroupDecomposedSearchSpace()
+        search_space_group = group_decomposed_search_space.calculate(study)
+        for sub_space in search_space_group.search_spaces:
+            for name, distribution in sub_space.items():
+                if distribution.single():
+                    continue
+                search_space[name] = distribution
+        return search_space
 
     def sample_relative(
         self,
@@ -154,18 +175,38 @@ class NSGAIISampler(BaseSampler):
         generation = parent_generation + 1
         study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
 
+        dominates = _dominates if self._constraints_func is None else _constrained_dominates
         if parent_generation >= 0:
-            p0 = self._select_parent(study, parent_population)
+            # crossover
             if self._rng.rand() < self._crossover_prob:
-                p1 = self._select_parent(
-                    study, [t for t in parent_population if t._trial_id != p0._trial_id]
+                child = crossover(
+                    self._crossover_name,
+                    study,
+                    parent_population,
+                    search_space,
+                    self._rng,
+                    self._swapping_prob,
+                    self._max_resampling_count,
+                    dominates,
+                    self._hyperparameters,
                 )
             else:
-                p1 = p0
+                child = parent_population[0].params
 
-            study._storage.set_trial_system_attr(
-                trial_id, _PARENTS_KEY, [p0._trial_id, p1._trial_id]
-            )
+            # mutation
+            params_len = len(child)
+            if self._mutation_prob is None:
+                mutation_prob = 1.0 / max(1.0, params_len)
+            else:
+                mutation_prob = self._mutation_prob
+
+            for param_name in child.keys():
+                param, param_distribution = child[param_name], search_space[param_name]
+                if param is None or self._rng.rand() < mutation_prob:
+                    child[param_name] = self._random_sampler.sample_independent(
+                        study, trial, param_name, param_distribution
+                    )
+            return child
 
         return {}
 
@@ -181,26 +222,7 @@ class NSGAIISampler(BaseSampler):
                 study, trial, param_name, param_distribution
             )
 
-        p0_id, p1_id = trial.system_attrs[_PARENTS_KEY]
-        p0 = study._storage.get_trial(p0_id)
-        p1 = study._storage.get_trial(p1_id)
-
-        param = p0.params.get(param_name, None)
-        parent_params_len = len(p0.params)
-        if param is None or self._rng.rand() < self._swapping_prob:
-            param = p1.params.get(param_name, None)
-            parent_params_len = len(p1.params)
-
-        mutation_prob = self._mutation_prob
-        if mutation_prob is None:
-            mutation_prob = 1.0 / max(1.0, parent_params_len)
-
-        if param is None or self._rng.rand() < mutation_prob:
-            return self._random_sampler.sample_independent(
-                study, trial, param_name, param_distribution
-            )
-
-        return param
+        return None
 
     def _collect_parent_population(self, study: Study) -> Tuple[int, List[FrozenTrial]]:
         trials = study.get_trials(deepcopy=False)
@@ -289,20 +311,6 @@ class NSGAIISampler(BaseSampler):
                 break
 
         return elite_population
-
-    def _select_parent(self, study: Study, population: Sequence[FrozenTrial]) -> FrozenTrial:
-        # TODO(ohta): Consider to allow users to specify the number of parent candidates.
-        population_size = len(population)
-        candidate0 = population[self._rng.choice(population_size)]
-        candidate1 = population[self._rng.choice(population_size)]
-
-        dominates = _dominates if self._constraints_func is None else _constrained_dominates
-
-        # TODO(ohta): Consider crowding distance.
-        if dominates(candidate0, candidate1, study.directions):
-            return candidate0
-        else:
-            return candidate1
 
     def _fast_non_dominated_sort(
         self,
