@@ -251,7 +251,8 @@ def test_study_set_user_attr_command() -> None:
 
 
 @pytest.mark.parametrize("output_format", ("table", "json", "yaml"))
-def test_studies_command(output_format: str) -> None:
+@pytest.mark.parametrize("flatten", (True, False))
+def test_studies_command(output_format: str, flatten: bool) -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -261,42 +262,97 @@ def test_studies_command(output_format: str) -> None:
         study_1 = optuna.create_study(storage)
 
         # Second study.
-        study_2 = optuna.create_study(storage, study_name="study_2")
-        study_2.optimize(objective_func, n_trials=10)
+        study_2 = optuna.create_study(
+            storage, study_name="study_2", directions=["minimize", "maximize"]
+        )
+        study_2.optimize(objective_func_multi_objective, n_trials=10)
 
         # Run command.
         command = ["optuna", "studies", "--storage", storage_url, "--format", output_format]
+        if flatten:
+            command.append("--flatten")
 
         output = str(subprocess.check_output(command).decode().strip())
         studies = _parse_output(output, output_format)
 
-        assert len(studies) == 2
-        for study in studies:
+        if flatten:
             if output_format == "table":
-                assert list(study.keys()) == ["name", "direction", "n_trials", "datetime_start"]
+                expected_keys_1 = [
+                    "name",
+                    "direction_0",
+                    "direction_1",
+                    "n_trials",
+                    "datetime_start",
+                ]
+                expected_keys_2 = [
+                    "name",
+                    "direction_0",
+                    "direction_1",
+                    "n_trials",
+                    "datetime_start",
+                ]
             else:
-                assert set(study.keys()) == set(
-                    ["name", "direction", "n_trials", "datetime_start"]
-                )
+                expected_keys_1 = ["name", "direction_0", "n_trials", "datetime_start"]
+                expected_keys_2 = [
+                    "name",
+                    "direction_0",
+                    "direction_1",
+                    "n_trials",
+                    "datetime_start",
+                ]
+        else:
+            expected_keys_1 = ["name", "direction", "n_trials", "datetime_start"]
+            expected_keys_2 = ["name", "direction", "n_trials", "datetime_start"]
 
-        # Check study_name and n_trials for the first study.
+        assert len(studies) == 2
+        if output_format == "table":
+            assert list(studies[0].keys()) == expected_keys_1
+            assert list(studies[1].keys()) == expected_keys_2
+        else:
+            assert set(studies[0].keys()) == set(expected_keys_1)
+            assert set(studies[1].keys()) == set(expected_keys_2)
+
+        # Check study_name, direction, and n_trials for the first study.
         assert studies[0]["name"] == study_1.study_name
         if output_format == "table":
             assert studies[0]["n_trials"] == "0"
+            if flatten:
+                assert studies[0]["direction_0"] == "MINIMIZE"
+            else:
+                assert eval(studies[0]["direction"]) == ("MINIMIZE",)
         else:
             assert studies[0]["n_trials"] == 0
+            if flatten:
+                assert studies[0]["direction_0"] == "MINIMIZE"
+            else:
+                assert studies[0]["direction"] == [
+                    "MINIMIZE",
+                ]
 
-        # Check study_name and n_trials for the second study.
+        # Check study_name, direction, and n_trials for the second study.
         assert studies[1]["name"] == study_2.study_name
         if output_format == "table":
             assert studies[1]["n_trials"] == "10"
+            if flatten:
+                assert studies[1]["direction_0"] == "MINIMIZE"
+                assert studies[1]["direction_1"] == "MAXIMIZE"
+            else:
+                assert eval(studies[1]["direction"]) == ("MINIMIZE", "MAXIMIZE")
         else:
             assert studies[1]["n_trials"] == 10
+            if flatten:
+                assert studies[1]["direction_0"] == "MINIMIZE"
+                assert studies[1]["direction_1"] == "MAXIMIZE"
+            else:
+                assert studies[1]["direction"] == ["MINIMIZE", "MAXIMIZE"]
 
 
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @pytest.mark.parametrize("output_format", ("table", "json", "yaml"))
-def test_trials_command(objective: Callable[[Trial], float], output_format: str) -> None:
+@pytest.mark.parametrize("flatten", (True, False))
+def test_trials_command(
+    objective: Callable[[Trial], float], output_format: str, flatten: bool
+) -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -316,7 +372,6 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: str)
             "user_attrs",
             "state",
         )
-        df = study.trials_dataframe(attrs)
 
         # Run command.
         command = [
@@ -328,30 +383,186 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: str)
             study_name,
             "--format",
             output_format,
-            "--flatten",
         ]
+
+        if flatten:
+            command.append("--flatten")
 
         output = str(subprocess.check_output(command).decode().strip())
         trials = _parse_output(output, output_format)
 
         assert len(trials) == n_trials
 
-        for i, trial in enumerate(trials):
-            assert set(trial.keys()) <= set(df.columns)
+        if flatten:
+            df = study.trials_dataframe(attrs)
+
+            for i, trial in enumerate(trials):
+                assert set(trial.keys()) <= set(df.columns)
+                for key in df.columns:
+                    expected_value = df.loc[i][key]
+                    if (
+                        key.startswith("params_")
+                        and isinstance(expected_value, float)
+                        and np.isnan(expected_value)
+                    ):
+                        if output_format == "table":
+                            assert trial[key] == ""
+                        else:
+                            assert key not in trial
+                        continue
+
+                    value = trial[key]
+
+                    if isinstance(value, (int, float)):
+                        if np.isnan(expected_value):
+                            assert np.isnan(value)
+                        else:
+                            assert value == expected_value
+                    elif isinstance(expected_value, Timestamp):
+                        assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
+                    elif isinstance(expected_value, Timedelta):
+                        assert value == str(expected_value.to_pytimedelta())
+                    else:
+                        assert value == str(expected_value)
+        else:
+            df = study.trials_dataframe(attrs, multi_index=True)
+
+            for i, trial in enumerate(trials):
+                for key in df.columns:
+                    expected_value = df.loc[i][key]
+                    if (
+                        key[0] == "params"
+                        and isinstance(expected_value, float)
+                        and np.isnan(expected_value)
+                    ):
+                        if output_format == "table":
+                            assert key[1] not in eval(trial["params"])
+                        else:
+                            assert key[1] not in trial["params"]
+                        continue
+
+                    if key[1] == "":
+                        value = trial[key[0]]
+                    else:
+                        if output_format == "table":
+                            value = eval(trial[key[0]])[key[1]]
+                        else:
+                            value = trial[key[0]][key[1]]
+
+                    if isinstance(value, (int, float)):
+                        if np.isnan(expected_value):
+                            assert np.isnan(value)
+                        else:
+                            assert value == expected_value
+                    elif isinstance(expected_value, Timestamp):
+                        assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
+                    elif isinstance(expected_value, Timedelta):
+                        assert value == str(expected_value.to_pytimedelta())
+                    else:
+                        assert value == str(expected_value)
+
+
+@pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
+@pytest.mark.parametrize("output_format", ("table", "json", "yaml"))
+@pytest.mark.parametrize("flatten", (True, False))
+def test_best_trial_command(
+    objective: Callable[[Trial], float], output_format: str, flatten: bool
+) -> None:
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage_url = str(storage.engine.url)
+        study_name = "test_study"
+        n_trials = 10
+
+        study = optuna.create_study(storage, study_name=study_name)
+        study.optimize(objective, n_trials=n_trials)
+        attrs = (
+            "number",
+            "value",
+            "datetime_start",
+            "datetime_complete",
+            "duration",
+            "params",
+            "user_attrs",
+            "state",
+        )
+
+        # Run command.
+        command = [
+            "optuna",
+            "best-trial",
+            "--storage",
+            storage_url,
+            "--study-name",
+            study_name,
+            "--format",
+            output_format,
+        ]
+
+        if flatten:
+            command.append("--flatten")
+
+        output = str(subprocess.check_output(command).decode().strip())
+        best_trial = _parse_output(output, output_format)
+
+        if output_format == "table":
+            assert len(best_trial) == 1
+            best_trial = best_trial[0]
+
+        if flatten:
+            df = study.trials_dataframe(attrs)
+
+            assert set(best_trial.keys()) <= set(df.columns)
             for key in df.columns:
-                expected_value = df.loc[i][key]
+                expected_value = df.loc[study.best_trial.number][key]
                 if (
                     key.startswith("params_")
                     and isinstance(expected_value, float)
                     and np.isnan(expected_value)
                 ):
                     if output_format == "table":
-                        assert trial[key] == ""
+                        assert best_trial[key] == ""
                     else:
-                        assert key not in trial
+                        assert key not in best_trial
                     continue
-                value = trial[key]
-                if isinstance(value, int) or isinstance(value, float):
+                value = best_trial[key]
+                if isinstance(value, (int, float)):
+                    if np.isnan(expected_value):
+                        assert np.isnan(value)
+                    else:
+                        assert value == expected_value
+                elif isinstance(expected_value, Timestamp):
+                    assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
+                elif isinstance(expected_value, Timedelta):
+                    assert value == str(expected_value.to_pytimedelta())
+                else:
+                    assert value == str(expected_value)
+        else:
+            df = study.trials_dataframe(attrs, multi_index=True)
+
+            for key in df.columns:
+                expected_value = df.loc[study.best_trial.number][key]
+                if (
+                    key[0] == "params"
+                    and isinstance(expected_value, float)
+                    and np.isnan(expected_value)
+                ):
+                    if output_format == "table":
+                        assert key[1] not in eval(best_trial["params"])
+                    else:
+                        assert key[1] not in best_trial["params"]
+                    continue
+
+                if key[1] == "":
+                    value = best_trial[key[0]]
+                else:
+                    if output_format == "table":
+                        value = eval(best_trial[key[0]])[key[1]]
+                    else:
+                        value = best_trial[key[0]][key[1]]
+
+                if isinstance(value, (int, float)):
                     if np.isnan(expected_value):
                         assert np.isnan(value)
                     else:
@@ -364,79 +575,9 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: str)
                     assert value == str(expected_value)
 
 
-@pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @pytest.mark.parametrize("output_format", ("table", "json", "yaml"))
-def test_best_trial_command(objective: Callable[[Trial], float], output_format: str) -> None:
-
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
-        study_name = "test_study"
-        n_trials = 10
-
-        study = optuna.create_study(storage, study_name=study_name)
-        study.optimize(objective, n_trials=n_trials)
-        attrs = (
-            "number",
-            "value",
-            "datetime_start",
-            "datetime_complete",
-            "duration",
-            "params",
-            "user_attrs",
-            "state",
-        )
-        df = study.trials_dataframe(attrs)
-
-        # Run command.
-        command = [
-            "optuna",
-            "best-trial",
-            "--storage",
-            storage_url,
-            "--study-name",
-            study_name,
-            "--format",
-            output_format,
-            "--flatten",
-        ]
-
-        output = str(subprocess.check_output(command).decode().strip())
-        best_trial = _parse_output(output, output_format)
-
-        if output_format == "table":
-            assert len(best_trial) == 1
-            best_trial = best_trial[0]
-
-        assert set(best_trial.keys()) <= set(df.columns)
-        for key in df.columns:
-            expected_value = df.loc[study.best_trial.number][key]
-            if (
-                key.startswith("params_")
-                and isinstance(expected_value, float)
-                and np.isnan(expected_value)
-            ):
-                if output_format == "table":
-                    assert best_trial[key] == ""
-                else:
-                    assert key not in best_trial
-                continue
-            value = best_trial[key]
-            if isinstance(value, int) or isinstance(value, float):
-                if np.isnan(expected_value):
-                    assert np.isnan(value)
-                else:
-                    assert value == expected_value
-            elif isinstance(expected_value, Timestamp):
-                assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
-            elif isinstance(expected_value, Timedelta):
-                assert value == str(expected_value.to_pytimedelta())
-            else:
-                assert value == str(expected_value)
-
-
-@pytest.mark.parametrize("output_format", ("table", "json", "yaml"))
-def test_best_trials_command(output_format: str) -> None:
+@pytest.mark.parametrize("flatten", (True, False))
+def test_best_trials_command(output_format: str, flatten: bool) -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -458,7 +599,6 @@ def test_best_trials_command(output_format: str) -> None:
             "user_attrs",
             "state",
         )
-        df = study.trials_dataframe(attrs)
 
         # Run command.
         command = [
@@ -470,8 +610,10 @@ def test_best_trials_command(output_format: str) -> None:
             study_name,
             "--format",
             output_format,
-            "--flatten",
         ]
+
+        if flatten:
+            command.append("--flatten")
 
         output = str(subprocess.check_output(command).decode().strip())
         trials = _parse_output(output, output_format)
@@ -479,39 +621,85 @@ def test_best_trials_command(output_format: str) -> None:
 
         assert len(trials) == len(best_trials)
 
-        for trial in trials:
-            assert set(trial.keys()) <= set(df.columns)
-            if output_format == "table":
-                assert int(trial["number"]) in best_trials
-            else:
-                assert trial["number"] in best_trials
-            for key in df.columns:
+        if flatten:
+            df = study.trials_dataframe(attrs)
+
+            for trial in trials:
+                assert set(trial.keys()) <= set(df.columns)
                 if output_format == "table":
-                    expected_value = df.loc[int(trial["number"])][key]
+                    assert int(trial["number"]) in best_trials
                 else:
-                    expected_value = df.loc[trial["number"]][key]
-                if (
-                    key.startswith("params_")
-                    and isinstance(expected_value, float)
-                    and np.isnan(expected_value)
-                ):
+                    assert trial["number"] in best_trials
+                for key in df.columns:
                     if output_format == "table":
-                        assert trial[key] == ""
+                        expected_value = df.loc[int(trial["number"])][key]
                     else:
-                        assert key not in trial
-                    continue
-                value = trial[key]
-                if isinstance(value, int) or isinstance(value, float):
-                    if np.isnan(expected_value):
-                        assert np.isnan(value)
+                        expected_value = df.loc[trial["number"]][key]
+                    if (
+                        key.startswith("params_")
+                        and isinstance(expected_value, float)
+                        and np.isnan(expected_value)
+                    ):
+                        if output_format == "table":
+                            assert trial[key] == ""
+                        else:
+                            assert key not in trial
+                        continue
+                    value = trial[key]
+                    if isinstance(value, (int, float)):
+                        if np.isnan(expected_value):
+                            assert np.isnan(value)
+                        else:
+                            assert value == expected_value
+                    elif isinstance(expected_value, Timestamp):
+                        assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
+                    elif isinstance(expected_value, Timedelta):
+                        assert value == str(expected_value.to_pytimedelta())
                     else:
-                        assert value == expected_value
-                elif isinstance(expected_value, Timestamp):
-                    assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
-                elif isinstance(expected_value, Timedelta):
-                    assert value == str(expected_value.to_pytimedelta())
+                        assert value == str(expected_value)
+        else:
+            df = study.trials_dataframe(attrs, multi_index=True)
+
+            for trial in trials:
+                if output_format == "table":
+                    assert int(trial["number"]) in best_trials
                 else:
-                    assert value == str(expected_value)
+                    assert trial["number"] in best_trials
+                for key in df.columns:
+                    if output_format == "table":
+                        expected_value = df.loc[int(trial["number"])][key]
+                    else:
+                        expected_value = df.loc[trial["number"]][key]
+                    if (
+                        key[0] == "params"
+                        and isinstance(expected_value, float)
+                        and np.isnan(expected_value)
+                    ):
+                        if output_format == "table":
+                            assert key[1] not in eval(trial["params"])
+                        else:
+                            assert key[1] not in trial["params"]
+                        continue
+
+                    if key[1] == "":
+                        value = trial[key[0]]
+                    else:
+                        if output_format == "table":
+                            value = eval(trial[key[0]])[key[1]]
+                        else:
+                            value = trial[key[0]][key[1]]
+
+                    if isinstance(value, (int, float)):
+                        if np.isnan(expected_value):
+                            assert np.isnan(value)
+                        else:
+                            assert value == expected_value
+                    elif isinstance(expected_value, Timestamp):
+                        assert value == expected_value.strftime("%Y-%m-%d %H:%M:%S")
+                    elif isinstance(expected_value, Timedelta):
+                        assert value == str(expected_value.to_pytimedelta())
+                    else:
+                        assert value == str(expected_value)
 
 
 def test_create_study_command_with_skip_if_exists() -> None:
@@ -703,12 +891,14 @@ def test_storage_upgrade_command() -> None:
         (None, None, None, None, "yaml"),
     ],
 )
+@pytest.mark.parametrize("flatten", (True, False))
 def test_ask(
     direction: Optional[str],
     directions: Optional[str],
     sampler: Optional[str],
     sampler_kwargs: Optional[str],
     output_format: Optional[str],
+    flatten: bool,
 ) -> None:
 
     study_name = "test_study"
@@ -741,26 +931,41 @@ def test_ask(
             args += ["--sampler-kwargs", sampler_kwargs]
         if output_format is not None:
             args += ["--format", output_format]
+        if flatten:
+            args.append("--flatten")
 
         output = str(subprocess.check_output(args).decode().strip())
         trial = _parse_output(output, output_format)
 
-        if output_format is None or output_format == "table":
-            assert len(trial) == 1
-            trial = trial[0]
-            assert trial["number"] == "0"
-            params = eval(trial["params"])
-            assert len(params) == 2
-            assert 0 <= params["x"] <= 1
-            assert params["y"] == "foo"
+        if flatten:
+            if output_format is None or output_format == "table":
+                assert len(trial) == 1
+                trial = trial[0]
+                assert trial["number"] == "0"
+                assert 0 <= float(trial["params_x"]) <= 1
+                assert trial["params_y"] == "foo"
+            else:
+                assert trial["number"] == 0
+                assert 0 <= trial["params_x"] <= 1
+                assert trial["params_y"] == "foo"
         else:
-            assert trial["number"] == 0
-            assert 0 <= trial["params"]["x"] <= 1
-            assert trial["params"]["y"] == "foo"
+            if output_format is None or output_format == "table":
+                assert len(trial) == 1
+                trial = trial[0]
+                assert trial["number"] == "0"
+                params = eval(trial["params"])
+                assert len(params) == 2
+                assert 0 <= params["x"] <= 1
+                assert params["y"] == "foo"
+            else:
+                assert trial["number"] == 0
+                assert 0 <= trial["params"]["x"] <= 1
+                assert trial["params"]["y"] == "foo"
 
 
 @pytest.mark.parametrize("output_format", ("table", "json", "yaml"))
-def test_ask_empty_search_space(output_format: str) -> None:
+@pytest.mark.parametrize("flatten", (True, False))
+def test_ask_empty_search_space(output_format: str, flatten: bool) -> None:
     study_name = "test_study"
 
     with tempfile.NamedTemporaryFile() as tf:
@@ -777,17 +982,30 @@ def test_ask_empty_search_space(output_format: str) -> None:
             output_format,
         ]
 
+        if flatten:
+            args.append("--flatten")
+
         output = str(subprocess.check_output(args).decode().strip())
         trial = _parse_output(output, output_format)
 
-        if output_format == "table":
-            assert len(trial) == 1
-            trial = trial[0]
-            assert trial["number"] == "0"
-            assert trial["params"] == "{}"
+        if flatten:
+            if output_format == "table":
+                assert len(trial) == 1
+                trial = trial[0]
+                assert trial["number"] == "0"
+                assert "params" not in trial
+            else:
+                assert trial["number"] == 0
+                assert "params" not in trial
         else:
-            assert trial["number"] == 0
-            assert trial["params"] == {}
+            if output_format == "table":
+                assert len(trial) == 1
+                trial = trial[0]
+                assert trial["number"] == "0"
+                assert trial["params"] == "{}"
+            else:
+                assert trial["number"] == 0
+                assert trial["params"] == {}
 
 
 def test_tell() -> None:
