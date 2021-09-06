@@ -133,7 +133,6 @@ class MLflowCallback(object):
         tracking_uri: Optional[str] = None,
         metric_name: Union[str, Sequence[str]] = "value",
         nest_trials: bool = False,
-        tag_study_user_attrs: bool = False,
     ) -> None:
 
         _imports.check()
@@ -148,7 +147,6 @@ class MLflowCallback(object):
         self._tracking_uri = tracking_uri
         self._metric_name = metric_name
         self._nest_trials = nest_trials
-        self._tag_study_user_attrs = tag_study_user_attrs
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
@@ -234,12 +232,8 @@ class MLflowCallback(object):
         directions = [d.name for d in study.directions]
         tags["direction"] = directions if len(directions) != 1 else directions[0]
 
-        tags.update(trial.user_attrs)
         distributions = {(k + "_distribution"): str(v) for (k, v) in trial.distributions.items()}
-        tags.update(distributions)
-
-        if self._tag_study_user_attrs:
-            tags.update(study.user_attrs)
+        tags.update({**distributions, **trial.user_attrs, **study.user_attrs})
 
         # This is a temporary fix on Optuna side. It avoids an error with user
         # attributes that are too long. It should be fixed on MLflow side later.
