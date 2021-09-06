@@ -104,7 +104,12 @@ def _convert_to_dict(
             for column in columns:
                 if column in record:
                     value = _format_value(record[column])
-                    if column[1] != "":
+                    if isinstance(column[1], int):
+                        if attrs[column[0]] == {}:
+                            attrs[column[0]] = []
+                        attrs[column[0]] += [None] * max(column[1] + 1 - len(attrs[column[0]]), 0)
+                        attrs[column[0]][column[1]] = value
+                    elif column[1] != "":
                         attrs[column[0]][column[1]] = value
                     else:
                         attrs[column[0]] = value
