@@ -406,6 +406,38 @@ def test_sample_relative_mixed(
             assert isinstance(param_value, float)
 
 
+@parametrize_sampler
+def test_conditional_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
+
+    study = optuna.study.create_study(sampler=sampler_class())
+    categorical_distribution = CategoricalDistribution(choices=["x", "y"])
+    dependent_distribution = CategoricalDistribution(choices=["a", "b"])
+
+    study.add_trial(
+        optuna.create_trial(
+            params={"category": "x", "x": "a"},
+            distributions={"category": categorical_distribution, "x": dependent_distribution},
+            value=0.1,
+        )
+    )
+
+    study.add_trial(
+        optuna.create_trial(
+            params={"category": "y", "y": "b"},
+            distributions={"category": categorical_distribution, "y": dependent_distribution},
+            value=0.1,
+        )
+    )
+
+    _trial = _create_new_trial(study)
+    category = study.sampler.sample_independent(
+        study, _trial, "category", categorical_distribution
+    )
+    assert category in ["x", "y"]
+    value = study.sampler.sample_independent(study, _trial, category, dependent_distribution)
+    assert value in ["a", "b"]
+
+
 def _create_new_trial(study: Study) -> FrozenTrial:
 
     trial_id = study._storage.create_new_trial(study._study_id)
