@@ -1,16 +1,18 @@
-from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalDistribution
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Sequence
+from typing import Union
 
 import numpy as np
 
 from optuna._transform import _SearchSpaceTransform
-from optuna.trial import FrozenTrial
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
 from optuna.study import Study
 from optuna.study import StudyDirection
+from optuna.trial import FrozenTrial
 
 
 def crossover(
@@ -21,7 +23,7 @@ def crossover(
     rng: np.random.RandomState,
     swapping_prob: float,
     max_resampling_count: int,
-    dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], Sequence[float]],
+    dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
     hyperparameters: Dict,
 ) -> Dict:
     if crossover_name == "uniform":
@@ -60,7 +62,7 @@ def crossover(
 def select_hyperparameters(
     crossover_name: str, population_size: int, crossover_kwargs: Dict
 ) -> Dict:
-    hyperparameters = {}
+    hyperparameters: Dict[str, Optional[Union[int, float]]] = {}
 
     if crossover_name == "uniform":
         pass
@@ -101,7 +103,7 @@ def _selection(
     parent_population: Sequence[FrozenTrial],
     n_select: int,
     rng: np.random.RandomState,
-    dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], Sequence[float]],
+    dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
 ) -> List[FrozenTrial]:
 
     parents = []
@@ -117,7 +119,7 @@ def _select_parent(
     study: Study,
     population: Sequence[FrozenTrial],
     rng: np.random.RandomState,
-    dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], Sequence[float]],
+    dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
 ) -> FrozenTrial:
     # TODO(ohta): Consider to allow users to specify the number of parent candidates.
     population_size = len(population)
@@ -131,7 +133,7 @@ def _select_parent(
         return candidate1
 
 
-def _swap(p0_i: np.float64, p1_i: np.float64, rand: float, swapping_prob: float):
+def _swap(p0_i: np.float64, p1_i: np.float64, rand: float, swapping_prob: float) -> np.float64:
     if rand < swapping_prob:
         return p1_i
     else:
@@ -175,13 +177,13 @@ def _blx_alpha(
 
         # BLX-alpha
         trans = _SearchSpaceTransform({param_name: param_distribution})
-        x0_i = trans.transform({param_name: p0.params[param_name]})
-        x1_i = trans.transform({param_name: p1.params[param_name]})
+        x0_i = trans.transform({param_name: p0.params[param_name]})[0]
+        x1_i = trans.transform({param_name: p1.params[param_name]})[0]
         count = 0
         while True:
-            param = _blx_alpha_core(x0_i, x1_i, rng, alpha)
-            params = trans.untransform(param)
-            param = params.get(param_name, None)
+            param_array = _blx_alpha_core(x0_i, x1_i, rng, alpha)
+            params = trans.untransform(param_array)
+            param = float(params.get(param_name, None))
             if param_distribution._contains(param):
                 break
             if count >= max_resampling_count:
@@ -214,7 +216,7 @@ def _sbx(
     swapping_prob: float,
     max_resampling_count: int,
     eta: float,
-):
+) -> Dict:
     child = {}
     p0, p1 = parents[0], parents[1]
 
@@ -230,15 +232,15 @@ def _sbx(
 
         # SBX
         trans = _SearchSpaceTransform({param_name: param_distribution})
-        x0_i = trans.transform({param_name: p0.params[param_name]})
-        x1_i = trans.transform({param_name: p1.params[param_name]})
+        x0_i = trans.transform({param_name: p0.params[param_name]})[0]
+        x1_i = trans.transform({param_name: p1.params[param_name]})[0]
         count = 0
         while True:
-            param = _sbx_core(
+            param_array = _sbx_core(
                 x0_i, x1_i, param_distribution.low, param_distribution.high, rng, eta
             )
 
-            params = trans.untransform(param)
+            params = trans.untransform(param_array)
             param = params.get(param_name, None)
             if param_distribution._contains(param):
                 break
@@ -301,7 +303,7 @@ def _spx(
 ) -> Dict:
 
     child = {}
-    parents_not_categorical_params = [[] for _ in range(len(parents))]
+    parents_not_categorical_params: List[List[np.float64]] = [[] for _ in range(len(parents))]
     transes = []
     param_names = []
     for param_name in search_space.keys():
@@ -329,15 +331,15 @@ def _spx(
         _params = _spx_core(xs, rng, epsilon)
         _params = [transes[i].untransform(param) for i, param in enumerate(_params)]
         params = {}
-        for param in _params:
-            for param_name in param.keys():
-                params[param_name] = param[param_name]
+        for params in _params:
+            for param_name in params.keys():
+                params[param_name] = params[param_name]
         is_in_constraints = _check_in_constraints(params, search_space)
         if is_in_constraints:
             child.update(params)
             break
         if count >= max_resampling_count:
-            for param_name in param.keys():
+            for param_name in params.keys():
                 param = np.clip(
                     params[param_name], search_space[param_name].low, search_space[param_name].high
                 )

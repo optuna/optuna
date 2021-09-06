@@ -18,15 +18,16 @@ import optuna
 from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
+from optuna.samplers._nsga2.crossover import crossover
+from optuna.samplers._nsga2.crossover import select_hyperparameters
 from optuna.samplers._random import RandomSampler
+from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.samplers._nsga2.crossover import crossover
-from optuna.samplers._nsga2.crossover import select_hyperparameters
-from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
+
 
 # Define key names of `Trial.system_attrs`.
 _CONSTRAINTS_KEY = "nsga2:constraints"
@@ -100,7 +101,7 @@ class NSGAIISampler(BaseSampler):
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
-        max_resampling_count: int = 1,
+        max_resampling_count: int = 100,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
         **crossover_kwargs,
     ) -> None:
