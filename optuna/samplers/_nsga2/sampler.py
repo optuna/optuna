@@ -95,7 +95,7 @@ class NSGAIISampler(BaseSampler):
         *,
         population_size: int = 50,
         mutation_prob: Optional[float] = None,
-        crossover_name: str = "spx",
+        crossover_name: str = "uniform",
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,

@@ -33,20 +33,20 @@ def crossover(
             max_resampling_count,
             hyperparameters["alpha"],
         )
+    elif crossover_name == "sbx":
+        parents = _selection(study, parent_population, 2, rng, dominates)
+        child = _sbx(
+            parents, search_space, rng, swapping_prob, max_resampling_count, hyperparameters["eta"]
+        )
     elif crossover_name == "spx":
         parents = _selection(study, parent_population, hyperparameters["n_select"], rng, dominates)
-        epsilon = (
-            np.sqrt(len(parents[0].params) + 2)
-            if hyperparameters["epsilon"] is None
-            else hyperparameters["epsilon"]
-        )
         child = _spx(
             parents,
             search_space,
             rng,
             swapping_prob,
             max_resampling_count,
-            epsilon,
+            hyperparameters["epsilon"],
         )
     else:
         pass
@@ -67,6 +67,13 @@ def select_hyperparameters(
             if crossover_kwargs["alpha"] < 0:
                 raise ValueError("`alpha` must be greater than or equal to 0.")
             hyperparameters["alpha"] = crossover_kwargs["alpha"]
+    elif crossover_name == "sbx":
+        if "eta" not in crossover_kwargs.keys():
+            hyperparameters["eta"] = 20
+        else:
+            if crossover_kwargs["eta"] < 0:
+                raise ValueError("`eta` must be greater than or equal to 0.")
+            hyperparameters["eta"] = crossover_kwargs["eta"]
     elif crossover_name == "spx":
         if "epsilon" not in crossover_kwargs.keys():
             hyperparameters["epsilon"] = None
@@ -196,13 +203,97 @@ def _blx_alpha_core(
     return param
 
 
+def _sbx(
+    parents: List[FrozenTrial],
+    search_space: Dict[str, BaseDistribution],
+    rng: np.random.RandomState,
+    swapping_prob: float,
+    max_resampling_count: int,
+    eta: float,
+):
+    child = {}
+    p0, p1 = parents[0], parents[1]
+
+    for param_name in search_space.keys():
+        param_distribution = search_space[param_name]
+        p0_i, p1_i = p0.params[param_name], p1.params[param_name]
+
+        # categorical data operates on uniform crossover
+        if isinstance(param_distribution, CategoricalDistribution):
+            param = _swap(p0_i, p1_i, rng.rand(), swapping_prob)
+            child[param_name] = param
+            continue
+
+        # SBX
+        trans = _SearchSpaceTransform({param_name: param_distribution})
+        x0_i = trans.transform({param_name: p0.params[param_name]})
+        x1_i = trans.transform({param_name: p1.params[param_name]})
+        count = 0
+        while True:
+            param = _sbx_core(
+                x0_i, x1_i, param_distribution.low, param_distribution.high, rng, eta
+            )
+
+            params = trans.untransform(param)
+            param = params.get(param_name, None)
+            if param_distribution._contains(param):
+                break
+            if count >= max_resampling_count:
+                param = np.clip(param, param_distribution.low, param_distribution.high)
+                break
+            count += 1
+        child[param_name] = param
+
+    return child
+
+
+def _sbx_core(
+    x0_i: np.float64,
+    x1_i: np.float64,
+    xl: np.float64,
+    xu: np.float64,
+    rng: np.random.RandomState,
+    eta: float,
+) -> np.ndarray:
+    # https://www.kurims.kyoto-u.ac.jp/~kyodo/kokyuroku/contents/pdf/1589-07.pdf
+    x_min = min(x0_i, x1_i)
+    x_max = max(x0_i, x1_i)
+
+    x_diff = np.clip(x_max - x_min, 1e-10, None)
+    beta1 = 1 + 2 * (x_min - xl) / x_diff
+    beta2 = 1 + 2 * (xu - x_max) / x_diff
+    alpha1 = 2 - np.power(beta1, -(eta + 1))
+    alpha2 = 2 - np.power(beta2, -(eta + 1))
+
+    r = rng.uniform(0, 1, size=x0_i.size)
+    if r <= 1 / alpha1:
+        betaq1 = np.power(r * alpha1, 1 / (eta + 1))
+    else:
+        betaq1 = np.power((1 / (2 - r * alpha1)), 1 / (eta + 1))
+
+    if r <= 1 / alpha2:
+        betaq2 = np.power(r * alpha2, 1 / (eta + 1))
+    else:
+        betaq2 = np.power((1 / (2 - r * alpha2)), 1 / (eta + 1))
+
+    c1 = 0.5 * ((x_min + x_max) - betaq1 * x_diff)
+    c2 = 0.5 * ((x_min + x_max) + betaq2 * x_diff)
+
+    if rng.rand() < 0.5:
+        v = c1
+    else:
+        v = c2
+
+    return v
+
+
 def _spx(
     parents: List[FrozenTrial],
     search_space: Dict[str, BaseDistribution],
     rng: np.random.RandomState,
     swapping_prob: float,
     max_resampling_count: int,
-    epsilon: float,
+    _epsilon: float,
 ) -> Dict:
 
     child = {}
@@ -228,6 +319,7 @@ def _spx(
             parents_not_categorical_params[parent_index].append(param)
 
     xs = np.array(parents_not_categorical_params)
+    epsilon = np.sqrt(len(param_names) + 2) if _epsilon is None else _epsilon
     count = 0
     while True:
         _params = _spx_core(xs, rng, epsilon)
