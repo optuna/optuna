@@ -24,7 +24,8 @@ from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.samplers._nsga2.crossover import crossover, select_hyperparameters
+from optuna.samplers._nsga2.crossover import crossover
+from optuna.samplers._nsga2.crossover import select_hyperparameters
 from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
 
 # Define key names of `Trial.system_attrs`.

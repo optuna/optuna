@@ -1,5 +1,9 @@
-from optuna.distributions import BaseDistribution, CategoricalDistribution
-from typing import Callable, Dict, List, Sequence
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Sequence
 
 import numpy as np
 
@@ -127,7 +131,7 @@ def _select_parent(
         return candidate1
 
 
-def _swap(p0_i: np.float64, p1_i: np.float64, rand: np.float, swapping_prob: np.float):
+def _swap(p0_i: np.float64, p1_i: np.float64, rand: float, swapping_prob: float):
     if rand < swapping_prob:
         return p1_i
     else:
