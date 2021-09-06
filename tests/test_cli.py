@@ -53,9 +53,9 @@ def objective_func_multi_objective(trial: Trial) -> Tuple[float, float]:
     return (x + 5) ** 2, (x - 5) ** 2
 
 
-def _parse_output(output: str, output_format: Optional[str]) -> Any:
+def _parse_output(output: str, output_format: str) -> Any:
 
-    if output_format is None or output_format == "table":
+    if output_format == "table":
         rows = output.split("\n")
         assert all(len(rows[0]) == len(row) for row in rows)
         assert rows[0] == rows[2] == rows[-1]
@@ -250,9 +250,9 @@ def test_study_set_user_attr_command() -> None:
         assert all(study_user_attrs[k] == v for k, v in example_attrs.items())
 
 
-@pytest.mark.parametrize("output_format", ("table", "json", "yaml"))
+@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 @pytest.mark.parametrize("flatten", (True, False))
-def test_studies_command(output_format: str, flatten: bool) -> None:
+def test_studies_command(output_format: Optional[str], flatten: bool) -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -268,15 +268,17 @@ def test_studies_command(output_format: str, flatten: bool) -> None:
         study_2.optimize(objective_func_multi_objective, n_trials=10)
 
         # Run command.
-        command = ["optuna", "studies", "--storage", storage_url, "--format", output_format]
+        command = ["optuna", "studies", "--storage", storage_url]
+        if output_format is not None:
+            command += ["--format", output_format]
         if flatten:
             command.append("--flatten")
 
         output = str(subprocess.check_output(command).decode().strip())
-        studies = _parse_output(output, output_format)
+        studies = _parse_output(output, output_format or "table")
 
         if flatten:
-            if output_format == "table":
+            if output_format is None or output_format == "table":
                 expected_keys_1 = [
                     "name",
                     "direction_0",
@@ -305,7 +307,7 @@ def test_studies_command(output_format: str, flatten: bool) -> None:
             expected_keys_2 = ["name", "direction", "n_trials", "datetime_start"]
 
         assert len(studies) == 2
-        if output_format == "table":
+        if output_format is None or output_format == "table":
             assert list(studies[0].keys()) == expected_keys_1
             assert list(studies[1].keys()) == expected_keys_2
         else:
@@ -314,7 +316,7 @@ def test_studies_command(output_format: str, flatten: bool) -> None:
 
         # Check study_name, direction, and n_trials for the first study.
         assert studies[0]["name"] == study_1.study_name
-        if output_format == "table":
+        if output_format is None or output_format == "table":
             assert studies[0]["n_trials"] == "0"
             if flatten:
                 assert studies[0]["direction_0"] == "MINIMIZE"
@@ -331,7 +333,7 @@ def test_studies_command(output_format: str, flatten: bool) -> None:
 
         # Check study_name, direction, and n_trials for the second study.
         assert studies[1]["name"] == study_2.study_name
-        if output_format == "table":
+        if output_format is None or output_format == "table":
             assert studies[1]["n_trials"] == "10"
             if flatten:
                 assert studies[1]["direction_0"] == "MINIMIZE"
@@ -348,10 +350,10 @@ def test_studies_command(output_format: str, flatten: bool) -> None:
 
 
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
-@pytest.mark.parametrize("output_format", ("table", "json", "yaml"))
+@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 @pytest.mark.parametrize("flatten", (True, False))
 def test_trials_command(
-    objective: Callable[[Trial], float], output_format: str, flatten: bool
+    objective: Callable[[Trial], float], output_format: Optional[str], flatten: bool
 ) -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -381,15 +383,15 @@ def test_trials_command(
             storage_url,
             "--study-name",
             study_name,
-            "--format",
-            output_format,
         ]
 
+        if output_format is not None:
+            command += ["--format", output_format]
         if flatten:
             command.append("--flatten")
 
         output = str(subprocess.check_output(command).decode().strip())
-        trials = _parse_output(output, output_format)
+        trials = _parse_output(output, output_format or "table")
 
         assert len(trials) == n_trials
 
@@ -405,7 +407,7 @@ def test_trials_command(
                         and isinstance(expected_value, float)
                         and np.isnan(expected_value)
                     ):
-                        if output_format == "table":
+                        if output_format is None or output_format == "table":
                             assert trial[key] == ""
                         else:
                             assert key not in trial
@@ -435,7 +437,7 @@ def test_trials_command(
                         and isinstance(expected_value, float)
                         and np.isnan(expected_value)
                     ):
-                        if output_format == "table":
+                        if output_format is None or output_format == "table":
                             assert key[1] not in eval(trial["params"])
                         else:
                             assert key[1] not in trial["params"]
@@ -444,7 +446,7 @@ def test_trials_command(
                     if key[1] == "":
                         value = trial[key[0]]
                     else:
-                        if output_format == "table":
+                        if output_format is None or output_format == "table":
                             value = eval(trial[key[0]])[key[1]]
                         else:
                             value = trial[key[0]][key[1]]
@@ -463,10 +465,10 @@ def test_trials_command(
 
 
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
-@pytest.mark.parametrize("output_format", ("table", "json", "yaml"))
+@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 @pytest.mark.parametrize("flatten", (True, False))
 def test_best_trial_command(
-    objective: Callable[[Trial], float], output_format: str, flatten: bool
+    objective: Callable[[Trial], float], output_format: Optional[str], flatten: bool
 ) -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -496,17 +498,17 @@ def test_best_trial_command(
             storage_url,
             "--study-name",
             study_name,
-            "--format",
-            output_format,
         ]
 
+        if output_format is not None:
+            command += ["--format", output_format]
         if flatten:
             command.append("--flatten")
 
         output = str(subprocess.check_output(command).decode().strip())
-        best_trial = _parse_output(output, output_format)
+        best_trial = _parse_output(output, output_format or "table")
 
-        if output_format == "table":
+        if output_format is None or output_format == "table":
             assert len(best_trial) == 1
             best_trial = best_trial[0]
 
@@ -521,7 +523,7 @@ def test_best_trial_command(
                     and isinstance(expected_value, float)
                     and np.isnan(expected_value)
                 ):
-                    if output_format == "table":
+                    if output_format is None or output_format == "table":
                         assert best_trial[key] == ""
                     else:
                         assert key not in best_trial
@@ -548,7 +550,7 @@ def test_best_trial_command(
                     and isinstance(expected_value, float)
                     and np.isnan(expected_value)
                 ):
-                    if output_format == "table":
+                    if output_format is None or output_format == "table":
                         assert key[1] not in eval(best_trial["params"])
                     else:
                         assert key[1] not in best_trial["params"]
@@ -557,7 +559,7 @@ def test_best_trial_command(
                 if key[1] == "":
                     value = best_trial[key[0]]
                 else:
-                    if output_format == "table":
+                    if output_format is None or output_format == "table":
                         value = eval(best_trial[key[0]])[key[1]]
                     else:
                         value = best_trial[key[0]][key[1]]
@@ -575,9 +577,9 @@ def test_best_trial_command(
                     assert value == str(expected_value)
 
 
-@pytest.mark.parametrize("output_format", ("table", "json", "yaml"))
+@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 @pytest.mark.parametrize("flatten", (True, False))
-def test_best_trials_command(output_format: str, flatten: bool) -> None:
+def test_best_trials_command(output_format: Optional[str], flatten: bool) -> None:
 
     with StorageSupplier("sqlite") as storage:
         assert isinstance(storage, RDBStorage)
@@ -608,16 +610,18 @@ def test_best_trials_command(output_format: str, flatten: bool) -> None:
             storage_url,
             "--study-name",
             study_name,
-            "--format",
-            output_format,
         ]
 
+        if output_format is not None:
+            command += ["--format", output_format]
         if flatten:
             command.append("--flatten")
 
         output = str(subprocess.check_output(command).decode().strip())
-        trials = _parse_output(output, output_format)
+        trials = _parse_output(output, output_format or "table")
         best_trials = [trial.number for trial in study.best_trials]
+
+        print(output)
 
         assert len(trials) == len(best_trials)
 
@@ -626,12 +630,12 @@ def test_best_trials_command(output_format: str, flatten: bool) -> None:
 
             for trial in trials:
                 assert set(trial.keys()) <= set(df.columns)
-                if output_format == "table":
+                if output_format is None or output_format == "table":
                     assert int(trial["number"]) in best_trials
                 else:
                     assert trial["number"] in best_trials
                 for key in df.columns:
-                    if output_format == "table":
+                    if output_format is None or output_format == "table":
                         expected_value = df.loc[int(trial["number"])][key]
                     else:
                         expected_value = df.loc[trial["number"]][key]
@@ -640,7 +644,7 @@ def test_best_trials_command(output_format: str, flatten: bool) -> None:
                         and isinstance(expected_value, float)
                         and np.isnan(expected_value)
                     ):
-                        if output_format == "table":
+                        if output_format is None or output_format == "table":
                             assert trial[key] == ""
                         else:
                             assert key not in trial
@@ -661,12 +665,12 @@ def test_best_trials_command(output_format: str, flatten: bool) -> None:
             df = study.trials_dataframe(attrs, multi_index=True)
 
             for trial in trials:
-                if output_format == "table":
+                if output_format is None or output_format == "table":
                     assert int(trial["number"]) in best_trials
                 else:
                     assert trial["number"] in best_trials
                 for key in df.columns:
-                    if output_format == "table":
+                    if output_format is None or output_format == "table":
                         expected_value = df.loc[int(trial["number"])][key]
                     else:
                         expected_value = df.loc[trial["number"]][key]
@@ -675,7 +679,7 @@ def test_best_trials_command(output_format: str, flatten: bool) -> None:
                         and isinstance(expected_value, float)
                         and np.isnan(expected_value)
                     ):
-                        if output_format == "table":
+                        if output_format is None or output_format == "table":
                             assert key[1] not in eval(trial["params"])
                         else:
                             assert key[1] not in trial["params"]
@@ -684,7 +688,7 @@ def test_best_trials_command(output_format: str, flatten: bool) -> None:
                     if key[1] == "":
                         value = trial[key[0]]
                     else:
-                        if output_format == "table":
+                        if output_format is None or output_format == "table":
                             value = eval(trial[key[0]])[key[1]]
                         else:
                             value = trial[key[0]][key[1]]
@@ -935,10 +939,10 @@ def test_ask(
             args.append("--flatten")
 
         output = str(subprocess.check_output(args).decode().strip())
-        trial = _parse_output(output, output_format)
+        trial = _parse_output(output, output_format or "json")
 
         if flatten:
-            if output_format is None or output_format == "table":
+            if output_format == "table":
                 assert len(trial) == 1
                 trial = trial[0]
                 assert trial["number"] == "0"
@@ -949,7 +953,7 @@ def test_ask(
                 assert 0 <= trial["params_x"] <= 1
                 assert trial["params_y"] == "foo"
         else:
-            if output_format is None or output_format == "table":
+            if output_format == "table":
                 assert len(trial) == 1
                 trial = trial[0]
                 assert trial["number"] == "0"
@@ -963,7 +967,7 @@ def test_ask(
                 assert trial["params"]["y"] == "foo"
 
 
-@pytest.mark.parametrize("output_format", ("table", "json", "yaml"))
+@pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 @pytest.mark.parametrize("flatten", (True, False))
 def test_ask_empty_search_space(output_format: str, flatten: bool) -> None:
     study_name = "test_study"
@@ -978,15 +982,15 @@ def test_ask_empty_search_space(output_format: str, flatten: bool) -> None:
             db_url,
             "--study-name",
             study_name,
-            "--format",
-            output_format,
         ]
 
+        if output_format is not None:
+            args += ["--format", output_format]
         if flatten:
             args.append("--flatten")
 
         output = str(subprocess.check_output(args).decode().strip())
-        trial = _parse_output(output, output_format)
+        trial = _parse_output(output, output_format or "json")
 
         if flatten:
             if output_format == "table":

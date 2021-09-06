@@ -751,7 +751,7 @@ class _Ask(_BaseCommand):
             "--format",
             type=str,
             choices=("json", "table", "yaml"),
-            default="table",
+            default="json",
             help="Output format.",
         )
         parser.add_argument("--flatten", default=False, action="store_true", help="Output format.")
