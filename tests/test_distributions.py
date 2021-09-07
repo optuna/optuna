@@ -34,10 +34,31 @@ EXAMPLE_JSONS = {
     '"attributes": {"low": 2, "high": 12, "step": 2}}',
 }
 
+EXAMPLE_ABBREVIATED_JSONS = {
+    "u": '{"type": "float", "low": 1.0, "high": 2.0}',
+    "l": '{"type": "float", "low": 0.001, "high": 100, "log": true}',
+    "du": '{"type": "float", "low": 1.0, "high": 9.0, "step": 2.0}',
+    "iu": '{"type": "int", "low": 1, "high": 9, "step": 2}',
+    "c1": '{"type": "categorical", "choices": [2.71, -Infinity]}',
+    "c2": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
+    "c3": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
+    "ilu": '{"type": "int", "low": 2, "high": 12, "step": 2, "log": true}',
+}
+
 
 def test_json_to_distribution() -> None:
 
     for key in EXAMPLE_JSONS:
+        distribution_actual = distributions.json_to_distribution(EXAMPLE_JSONS[key])
+        assert distribution_actual == EXAMPLE_DISTRIBUTIONS[key]
+
+    unknown_json = '{"name": "UnknownDistribution", "attributes": {"low": 1.0, "high": 2.0}}'
+    pytest.raises(ValueError, lambda: distributions.json_to_distribution(unknown_json))
+
+
+def test_abbreviated_json_to_distribution() -> None:
+
+    for key in EXAMPLE_ABBREVIATED_JSONS:
         distribution_actual = distributions.json_to_distribution(EXAMPLE_JSONS[key])
         assert distribution_actual == EXAMPLE_DISTRIBUTIONS[key]
 
