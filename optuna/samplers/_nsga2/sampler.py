@@ -19,9 +19,8 @@ from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._nsga2.crossover import crossover
-from optuna.samplers._nsga2.crossover import select_hyperparameters
 from optuna.samplers._random import RandomSampler
-from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
+from optuna.samplers._search_space.intersection import intersection_search_space
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
@@ -103,7 +102,6 @@ class NSGAIISampler(BaseSampler):
         seed: Optional[int] = None,
         max_resampling_count: int = 100,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
-        **crossover_kwargs,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
 
@@ -134,15 +132,12 @@ class NSGAIISampler(BaseSampler):
         if max_resampling_count < 1:
             raise ValueError("`max_resampling_count` must be greater than or equal to 1")
 
-        hyperparameters = select_hyperparameters(crossover_name, population_size, crossover_kwargs)
-
         self._population_size = population_size
         self._mutation_prob = mutation_prob
         self._crossover_name = crossover_name
         self._crossover_prob = crossover_prob
         self._swapping_prob = swapping_prob
         self._max_resampling_count = max_resampling_count
-        self._hyperparameters = hyperparameters
         self._random_sampler = RandomSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
         self._constraints_func = constraints_func
@@ -155,14 +150,7 @@ class NSGAIISampler(BaseSampler):
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
 
-        search_space: Dict[str, BaseDistribution] = {}
-        group_decomposed_search_space = _GroupDecomposedSearchSpace()
-        search_space_group = group_decomposed_search_space.calculate(study)
-        for sub_space in search_space_group.search_spaces:
-            for name, distribution in sub_space.items():
-                if distribution.single():
-                    continue
-                search_space[name] = distribution
+        search_space = intersection_search_space(study)
         return search_space
 
     def sample_relative(
@@ -190,7 +178,6 @@ class NSGAIISampler(BaseSampler):
                     self._swapping_prob,
                     self._max_resampling_count,
                     dominates,
-                    self._hyperparameters,
                 )
             else:
                 child = parent_population[0].params
@@ -219,12 +206,10 @@ class NSGAIISampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-        if _PARENTS_KEY not in trial.system_attrs:
-            return self._random_sampler.sample_independent(
-                study, trial, param_name, param_distribution
-            )
 
-        return None
+        return self._random_sampler.sample_independent(
+            study, trial, param_name, param_distribution
+        )
 
     def _collect_parent_population(self, study: Study) -> Tuple[int, List[FrozenTrial]]:
         trials = study.get_trials(deepcopy=False)

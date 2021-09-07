@@ -1,18 +1,31 @@
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Optional
 from typing import Sequence
-from typing import Union
 
 import numpy as np
 
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
+from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntLogUniformDistribution
+from optuna.distributions import IntUniformDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
+
+
+_NUMERICAL_DISTRIBUTIONS = (
+    UniformDistribution,
+    LogUniformDistribution,
+    DiscreteUniformDistribution,
+    IntUniformDistribution,
+    IntLogUniformDistribution,
+)
 
 
 def crossover(
@@ -24,78 +37,41 @@ def crossover(
     swapping_prob: float,
     max_resampling_count: int,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
-    hyperparameters: Dict,
 ) -> Dict:
     if crossover_name == "uniform":
         parents = _selection(study, parent_population, 2, rng, dominates)
         child = _uniform_crossover(parents, rng, swapping_prob)
     elif crossover_name == "blx_alpha":
         parents = _selection(study, parent_population, 2, rng, dominates)
+        alpha = 0.5
         child = _blx_alpha(
             parents,
             search_space,
             rng,
             swapping_prob,
             max_resampling_count,
-            hyperparameters["alpha"],
+            alpha,
         )
     elif crossover_name == "sbx":
+        if len(study.directions) == 1:
+            eta = 2
+        else:
+            eta = 20
         parents = _selection(study, parent_population, 2, rng, dominates)
-        child = _sbx(
-            parents, search_space, rng, swapping_prob, max_resampling_count, hyperparameters["eta"]
-        )
+        child = _sbx(parents, search_space, rng, swapping_prob, max_resampling_count, eta)
     elif crossover_name == "spx":
-        parents = _selection(study, parent_population, hyperparameters["n_select"], rng, dominates)
+        n_select = 3
+        parents = _selection(study, parent_population, n_select, rng, dominates)
         child = _spx(
             parents,
             search_space,
             rng,
             swapping_prob,
             max_resampling_count,
-            hyperparameters["epsilon"],
         )
     else:
         pass
     return child
-
-
-def select_hyperparameters(
-    crossover_name: str, population_size: int, crossover_kwargs: Dict
-) -> Dict:
-    hyperparameters: Dict[str, Optional[Union[int, float]]] = {}
-
-    if crossover_name == "uniform":
-        pass
-    elif crossover_name == "blx_alpha":
-        if "alpha" not in crossover_kwargs.keys():
-            hyperparameters["alpha"] = 0.5
-        else:
-            if crossover_kwargs["alpha"] < 0:
-                raise ValueError("`alpha` must be greater than or equal to 0.")
-            hyperparameters["alpha"] = crossover_kwargs["alpha"]
-    elif crossover_name == "sbx":
-        if "eta" not in crossover_kwargs.keys():
-            hyperparameters["eta"] = 20
-        else:
-            if crossover_kwargs["eta"] < 0:
-                raise ValueError("`eta` must be greater than or equal to 0.")
-            hyperparameters["eta"] = crossover_kwargs["eta"]
-    elif crossover_name == "spx":
-        if "epsilon" not in crossover_kwargs.keys():
-            hyperparameters["epsilon"] = None
-        else:
-            if crossover_kwargs["epsilon"] < 0:
-                raise ValueError("`epsilon` must be greater than or equal to 0.")
-
-        if "n_select" not in crossover_kwargs.keys():
-            hyperparameters["n_select"] = 3
-        else:
-            if crossover_kwargs["n_select"] > population_size:
-                raise ValueError("`n_select` can't be greater than `population_size`")
-    else:
-        raise ValueError(f"{crossover_name} is not implemented yet.")
-
-    return hyperparameters
 
 
 def _selection(
@@ -133,7 +109,7 @@ def _select_parent(
         return candidate1
 
 
-def _swap(p0_i: np.float64, p1_i: np.float64, rand: float, swapping_prob: float) -> np.float64:
+def _swap(p0_i: Any, p1_i: Any, rand: float, swapping_prob: float) -> Any:
     if rand < swapping_prob:
         return p1_i
     else:
@@ -174,6 +150,8 @@ def _blx_alpha(
             param = _swap(p0_i, p1_i, rng.rand(), swapping_prob)
             child[param_name] = param
             continue
+
+        assert isinstance(param_distribution, _NUMERICAL_DISTRIBUTIONS)
 
         # BLX-alpha
         trans = _SearchSpaceTransform({param_name: param_distribution})
@@ -230,6 +208,8 @@ def _sbx(
             child[param_name] = param
             continue
 
+        assert isinstance(param_distribution, _NUMERICAL_DISTRIBUTIONS)
+
         # SBX
         trans = _SearchSpaceTransform({param_name: param_distribution})
         x0_i = trans.transform({param_name: p0.params[param_name]})[0]
@@ -256,14 +236,14 @@ def _sbx(
 def _sbx_core(
     x0_i: np.float64,
     x1_i: np.float64,
-    xl: np.float64,
-    xu: np.float64,
+    xl: float,
+    xu: float,
     rng: np.random.RandomState,
     eta: float,
 ) -> np.ndarray:
     # https://www.kurims.kyoto-u.ac.jp/~kyodo/kokyuroku/contents/pdf/1589-07.pdf
-    x_min = min(x0_i, x1_i)
-    x_max = max(x0_i, x1_i)
+    x_min = min(float(x0_i), float(x1_i))
+    x_max = max(float(x0_i), float(x1_i))
 
     x_diff = np.clip(x_max - x_min, 1e-10, None)
     beta1 = 1 + 2 * (x_min - xl) / x_diff
@@ -299,7 +279,6 @@ def _spx(
     rng: np.random.RandomState,
     swapping_prob: float,
     max_resampling_count: int,
-    _epsilon: float,
 ) -> Dict:
 
     child = {}
@@ -325,11 +304,11 @@ def _spx(
             parents_not_categorical_params[parent_index].append(param)
 
     xs = np.array(parents_not_categorical_params)
-    epsilon = np.sqrt(len(param_names) + 2) if _epsilon is None else _epsilon
+    epsilon = np.sqrt(len(param_names) + 2)
     count = 0
     while True:
-        _params = _spx_core(xs, rng, epsilon)
-        _params = [transes[i].untransform(param) for i, param in enumerate(_params)]
+        params_array = _spx_core(xs, rng, epsilon)
+        _params = [transes[i].untransform(param) for i, param in enumerate(params_array)]
         params = {}
         for params in _params:
             for param_name in params.keys():
@@ -340,8 +319,10 @@ def _spx(
             break
         if count >= max_resampling_count:
             for param_name in params.keys():
+                param_distribution = search_space[param_name]
+                assert isinstance(param_distribution, _NUMERICAL_DISTRIBUTIONS)
                 param = np.clip(
-                    params[param_name], search_space[param_name].low, search_space[param_name].high
+                    params[param_name], param_distribution.low, param_distribution.high
                 )
                 child[param_name] = param
             break
