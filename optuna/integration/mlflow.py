@@ -132,7 +132,7 @@ class MLflowCallback(object):
         self,
         tracking_uri: Optional[str] = None,
         metric_name: Union[str, Sequence[str]] = "value",
-        nest_trials: bool = False,
+        mlflow_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
 
         _imports.check()
@@ -146,7 +146,7 @@ class MLflowCallback(object):
 
         self._tracking_uri = tracking_uri
         self._metric_name = metric_name
-        self._nest_trials = nest_trials
+        self._mlflow_kwargs = mlflow_kwargs or {}
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
@@ -154,8 +154,10 @@ class MLflowCallback(object):
 
         with mlflow.start_run(
             run_id=trial.system_attrs.get(RUN_ID_ATTRIBUTE_KEY),
-            run_name=str(trial.number),
-            nested=self._nest_trials,
+            experiment_id=self._mlflow_kwargs.get("experiment_id"),
+            run_name=self._mlflow_kwargs.get("run_name") or str(trial.number),
+            nested=self._mlflow_kwargs.get("nested") or False,
+            tags=self._mlflow_kwargs.get("tags"),
         ):
 
             # This sets the metrics for MLflow.
@@ -184,8 +186,9 @@ class MLflowCallback(object):
             def wrapper(trial: optuna.trial.Trial) -> Union[float, Sequence[float]]:
                 study = trial.study
                 self._initialize_experiment(study)
+                nested = self._mlflow_kwargs.get("nested")
 
-                with mlflow.start_run(run_name=str(trial.number), nested=self._nest_trials) as run:
+                with mlflow.start_run(run_name=str(trial.number), nested=nested) as run:
                     trial.set_system_attr(RUN_ID_ATTRIBUTE_KEY, run.info.run_id)
 
                     return func(trial)

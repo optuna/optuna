@@ -194,7 +194,7 @@ def test_nest_trials(tmpdir: py.path.local) -> None:
     mlflow.set_tracking_uri(tmp_tracking_uri)
     mlflow.set_experiment(study_name)
 
-    mlflc = MLflowCallback(tracking_uri=tmp_tracking_uri, nest_trials=True)
+    mlflc = MLflowCallback(tracking_uri=tmp_tracking_uri, mlflow_kwargs={"nested": True})
     study = optuna.create_study(study_name=study_name)
 
     n_trials = 3
@@ -224,7 +224,7 @@ def test_mlflow_callback_fails_when_nest_trials_is_false_and_active_run_exists(
     mlflow.set_tracking_uri(tmp_tracking_uri)
     mlflow.set_experiment(study_name)
 
-    mlflc = MLflowCallback(tracking_uri=tmp_tracking_uri, nest_trials=False)
+    mlflc = MLflowCallback(tracking_uri=tmp_tracking_uri)
     study = optuna.create_study(study_name=study_name)
 
     with mlflow.start_run():
