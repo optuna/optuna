@@ -84,7 +84,10 @@ class PyTorchLightningDDPPruningCallback(Callback):
         _imports.check()
 
         if not isinstance(trial.study._storage, _CachedStorage):
-            raise ValueError("PyTorchLightningDDPPruningCallback supports only RDB.")
+            raise ValueError(
+                ":class:`~optuna.integration.PyTorchLightningPruningCallback`"
+                " supports only :class:`~optuna.storages.RDBStorage`."
+            )
 
         super().__init__()
 
@@ -125,7 +128,7 @@ class PyTorchLightningDDPPruningCallback(Callback):
                 else:
                     raise
 
-    # Because on_validation_end is executed in threads, when on_fit_end is executed,
+    # Because on_validation_end is executed in spawned processes, when on_fit_end is executed,
     # it is necessary to report an objective function value for a given step via RDB.
     def on_fit_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         _trial_id = self._trial._trial_id
