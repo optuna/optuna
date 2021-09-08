@@ -67,9 +67,9 @@ def crossover(
 
         if crossover_name == "uniform":
             params_array = _uniform(xs, rng, swapping_prob)
-        elif crossover_name == "blx_alpha":
+        elif crossover_name == "blxalpha":
             alpha = 0.5
-            params_array = _blx_alpha(xs, rng, alpha)
+            params_array = _blxalpha(xs, rng, alpha)
         elif crossover_name == "sbx":
             if len(study.directions) == 1:
                 eta = 2
@@ -92,7 +92,7 @@ def crossover(
             epsilon = np.sqrt(len(xs[0]) + 2)
             params_array = _spx(xs, rng, epsilon)
         else:
-            raise NotImplementedError(f"{crossover_name} is not exist in optuna.")
+            raise ValueError(f"{crossover_name} is not exist in optuna.")
 
         _params = [
             trans.untransform(np.array([param])) for trans, param in zip(transes, params_array)
@@ -115,12 +115,18 @@ def _selection(
     rng: np.random.RandomState,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
 ) -> List[FrozenTrial]:
-    if crossover_name in ["uniform", "blx_alpha", "sbx", "vsbx"]:
+    if crossover_name in ["uniform", "blxalpha", "sbx", "vsbx"]:
         n_select = 2
     elif crossover_name in ["undx", "undxm", "spx"]:
         n_select = 3
     else:
-        raise NotImplementedError(f"{crossover_name} is not exist in optuna.")
+        raise ValueError(f"{crossover_name} is not exist in optuna.")
+    if len(parent_population) < n_select:
+        raise ValueError(
+            f"Using {crossover_name}, \
+            the population size should be greater than or equal to {n_select}."
+        )
+
     parents = []
     for _ in range(n_select):
         parent = _select_parent(
@@ -164,7 +170,7 @@ def _uniform(xs: np.ndarray, rng: np.random.RandomState, swapping_prob: float) -
     return np.array(child)
 
 
-def _blx_alpha(xs: np.ndarray, rng: np.random.RandomState, alpha: float) -> np.ndarray:
+def _blxalpha(xs: np.ndarray, rng: np.random.RandomState, alpha: float) -> np.ndarray:
     x_min = xs.min(axis=0)
     x_max = xs.max(axis=0)
     diff = alpha * (x_max - x_min)

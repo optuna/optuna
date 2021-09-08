@@ -127,8 +127,8 @@ class NSGAIISampler(BaseSampler):
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
-        if crossover_name not in ["uniform", "blx_alpha", "sbx", "vsbx", "undx", "undxm", "spx"]:
-            raise NotImplementedError(f"{crossover_name} is not exist in optuna.")
+        if crossover_name not in ["uniform", "blxalpha", "sbx", "vsbx", "undx", "undxm", "spx"]:
+            raise ValueError(f"{crossover_name} is not exist in optuna.")
 
         self._population_size = population_size
         self._mutation_prob = mutation_prob
