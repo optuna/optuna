@@ -83,11 +83,22 @@ def crossover(
                 eta = 20
             params_array = _vsbx(xs, rng, eta)
         elif crossover_name == "undx":
-            ###
-            params_array = xs[0]
+            sigma_xi = 0.5
+            sigma_eta = 0.35 / np.sqrt(len(xs[0]))
+            params_array = _undx(xs, rng, sigma_xi, sigma_eta)
         elif crossover_name == "undxm":
-            ###
-            params_array = xs[0]
+            _m = 2
+            _n = len(xs[0])
+            sigma_xi = 1 / np.sqrt(_m)
+            sigma_eta = (
+                0.35
+                * np.sqrt(_m + 1)
+                * np.sqrt(3)
+                / np.sqrt(_n - _m)
+                / np.sqrt(_m + 2)
+                / np.sqrt(2)
+            )
+            params_array = _undxm(xs, rng, sigma_xi, sigma_eta)
         elif crossover_name == "spx":
             epsilon = np.sqrt(len(xs[0]) + 2)
             params_array = _spx(xs, rng, epsilon)
@@ -117,8 +128,10 @@ def _selection(
 ) -> List[FrozenTrial]:
     if crossover_name in ["uniform", "blxalpha", "sbx", "vsbx"]:
         n_select = 2
-    elif crossover_name in ["undx", "undxm", "spx"]:
+    elif crossover_name in ["undx", "spx"]:
         n_select = 3
+    elif crossover_name in ["undxm"]:
+        n_select = 4
     else:
         raise ValueError(f"{crossover_name} is not exist in optuna.")
     if len(parent_population) < n_select:
@@ -240,18 +253,17 @@ def _vsbx(
     eta: float,
 ) -> np.ndarray:
     r = rng.uniform(0, 1, size=len(xs[0]))
-    x1 = xs[0]
-    x2 = xs[1]
+    x0, x1 = xs[0], xs[1]
     beta_1 = np.power(1 / 2 * r, 1 / (eta + 1))
     beta_2 = np.power(1 / 2 * (1 - r), 1 / (eta + 1))
     mask = r > 0.5
-    c1 = 0.5 * ((1 + beta_1) * x1 + (1 - beta_1) * x2)
-    c1[mask] = 0.5 * ((1 - beta_1) * x1 + (1 + beta_1) * x2)[mask]
-    c2 = 0.5 * ((3 - beta_2) * x1 - (1 - beta_2) * x2)
-    c2[mask] = 0.5 * (-(1 - beta_2) * x1 + (3 - beta_2) * x2)[mask]
+    c1 = 0.5 * ((1 + beta_1) * x0 + (1 - beta_1) * x1)
+    c1[mask] = 0.5 * ((1 - beta_1) * x0 + (1 + beta_1) * x1)[mask]
+    c2 = 0.5 * ((3 - beta_2) * x0 - (1 - beta_2) * x1)
+    c2[mask] = 0.5 * (-(1 - beta_2) * x0 + (3 - beta_2) * x1)[mask]
 
     v = []
-    for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, xs[0], xs[1]):
+    for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, x0, x1):
         if rng.rand() < 0.5:
             if rng.rand() < 0.5:
                 v.append(c1_i)
@@ -263,6 +275,101 @@ def _vsbx(
             else:
                 v.append(x2_i)
     return np.array(v)
+
+
+def _undx(
+    xs: np.ndarray, rng: np.random.RandomState, sigma_xi: float, sigma_eta: float
+) -> np.ndarray:
+    # https://www.jstage.jst.go.jp/article/sicetr1965/36/10/36_10_875/_pdf
+    x0, x1, x2 = xs[0], xs[1], xs[2]
+    n = len(x0)
+    xp = (x0 + x1) / 2
+    d = x0 - x1
+    D = _distance_from_x_to_PSL(x0, x1, x2)
+    xi = rng.normal(0, sigma_xi ** 2)
+    etas = rng.normal(0, sigma_eta, size=n)
+    es = _orthonormal_basis_vector_to_PSL(x0, x1)
+    one = xp
+    two = xi * d
+    three = np.zeros(len(es[0]))
+    for i in range(n - 1):
+        three += etas[i] * es[i]
+    three *= D
+    return one + two + three
+
+
+def _normalized_x1_to_x2(x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
+    v_12 = x2 - x1
+    m_12 = np.linalg.norm(v_12, ord=2)
+    e_12 = v_12 / np.clip(m_12, 1e-10, None)
+    return e_12
+
+
+def _distance_from_x_to_PSL(x1: np.ndarray, x2: np.ndarray, x3: np.ndarray) -> np.ndarray:
+    e_12 = _normalized_x1_to_x2(x1, x2)
+    v_13 = x3 - x1
+    v_12_3 = v_13 - np.dot(v_13, e_12) * e_12
+    m_12_3 = np.linalg.norm(v_12_3, ord=2)
+    return m_12_3
+
+
+def _orthonormal_basis_vector_to_PSL(x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
+    n = len(x1)
+    e_12 = _normalized_x1_to_x2(x1, x2)
+    basis_matrix = np.identity(n)
+    if np.count_nonzero(e_12) != 0:
+        v_01 = x1 - np.zeros(len(x1))
+        basis_matrix[0] = v_01 - np.dot(v_01, e_12) * e_12
+    basis_matrix_t = basis_matrix.T
+    Q, _ = np.linalg.qr(basis_matrix_t)
+    return Q.T
+
+
+def _undxm(
+    xs: np.ndarray, rng: np.random.RandomState, sigma_xi: float, sigma_eta: float
+) -> np.ndarray:
+    # https://www.jstage.jst.go.jp/article/sicetr1965/36/10/36_10_875/_pdf
+
+    x_mp2, xs = xs[-1], xs[:-1]  # (1), (3)
+    m = len(xs) - 1
+    dim = len(x_mp2)
+    p = np.sum(xs, axis=0) / (m + 1)  # (2)
+    ds = [x - p for x in xs]  # (2)
+    n = normal(rng, ds[:-1])  # Normal to the plane that contains d_i(1,..,m) (4)
+    d_mp2 = x_mp2 - p  # (4)
+    D = np.dot(d_mp2, n) / np.linalg.norm(n)  # (4)
+    es = _orthonormal_basis_vector_from_ds(
+        ds[:-1]
+    )  # orthonormal basis of the subspace orthogonal to d_i(1,..,m) (5)
+
+    one = p
+
+    ws = rng.normal(0, sigma_xi ** 2, size=m)
+    two = np.zeros(dim)
+
+    for i in range(m):
+        two += ws[i] * ds[i]
+
+    three = np.zeros(dim)
+    for i in range(dim - m):
+        vs = rng.normal(0, sigma_eta ** 2, size=dim)
+        three += vs - np.dot(vs, es[i]) * es[i]
+    three *= D
+    return one + two + three
+
+
+def normal(rng: np.random.RandomState, ds: List[np.ndarray]) -> np.ndarray:
+    d = rng.normal(0, 1, size=ds[0].shape[0])
+    ds.append(d)
+    X = np.stack(ds)
+    Q, _ = np.linalg.qr(X.T)
+    return Q.T[-1]
+
+
+def _orthonormal_basis_vector_from_ds(ds: List[np.ndarray]) -> np.ndarray:
+    X = np.stack(ds)
+    Q, _ = np.linalg.qr(X.T)
+    return Q.T[-1]
 
 
 def _spx(xs: np.ndarray, rng: np.random.RandomState, epsilon: float) -> np.ndarray:
