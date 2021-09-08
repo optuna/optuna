@@ -35,53 +35,92 @@ def crossover(
     search_space: Dict[str, BaseDistribution],
     rng: np.random.RandomState,
     swapping_prob: float,
-    max_resampling_count: int,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
 ) -> Dict:
-    if crossover_name == "uniform":
-        parents = _selection(study, parent_population, 2, rng, dominates)
-        child = _uniform_crossover(parents, rng, swapping_prob)
-    elif crossover_name == "blx_alpha":
-        parents = _selection(study, parent_population, 2, rng, dominates)
-        alpha = 0.5
-        child = _blx_alpha(
-            parents,
-            search_space,
-            rng,
-            swapping_prob,
-            max_resampling_count,
-            alpha,
-        )
-    elif crossover_name == "sbx":
-        if len(study.directions) == 1:
-            eta = 2
+
+    while True:
+        parents = _selection(crossover_name, study, parent_population, rng, dominates)
+        child = {}
+        transes = []
+        distributions = []
+        param_names = []
+        parents_not_categorical_params: List[List[np.float64]] = [[] for _ in range(len(parents))]
+        for param_name in search_space.keys():
+            param_distribution = search_space[param_name]
+            parents_param = [p.params[param_name] for p in parents]
+
+            # categorical data operates on uniform crossover
+            if isinstance(search_space[param_name], CategoricalDistribution):
+                param = _swap(parents_param[0], parents_param[-1], rng.rand(), swapping_prob)
+                child[param_name] = param
+                continue
+
+            trans = _SearchSpaceTransform({param_name: param_distribution})
+            transes.append(trans)
+            distributions.append(param_distribution)
+            param_names.append(param_name)
+            for parent_index, trial in enumerate(parents):
+                param = trans.transform({param_name: trial.params[param_name]})[0]
+                parents_not_categorical_params[parent_index].append(param)
+
+        xs = np.array(parents_not_categorical_params)
+
+        if crossover_name == "uniform":
+            params_array = _uniform(xs, rng, swapping_prob)
+        elif crossover_name == "blx_alpha":
+            alpha = 0.5
+            params_array = _blx_alpha(xs, rng, alpha)
+        elif crossover_name == "sbx":
+            if len(study.directions) == 1:
+                eta = 2
+            else:
+                eta = 20
+            params_array = _sbx(xs, rng, distributions, eta)
+        elif crossover_name == "vsbx":
+            if len(study.directions) == 1:
+                eta = 2
+            else:
+                eta = 20
+            params_array = _vsbx(xs, rng, eta)
+        elif crossover_name == "undx":
+            ###
+            params_array = xs[0]
+        elif crossover_name == "undxm":
+            ###
+            params_array = xs[0]
+        elif crossover_name == "spx":
+            epsilon = np.sqrt(len(xs[0]) + 2)
+            params_array = _spx(xs, rng, epsilon)
         else:
-            eta = 20
-        parents = _selection(study, parent_population, 2, rng, dominates)
-        child = _sbx(parents, search_space, rng, swapping_prob, max_resampling_count, eta)
-    elif crossover_name == "spx":
-        n_select = 3
-        parents = _selection(study, parent_population, n_select, rng, dominates)
-        child = _spx(
-            parents,
-            search_space,
-            rng,
-            swapping_prob,
-            max_resampling_count,
-        )
-    else:
-        pass
+            raise NotImplementedError(f"{crossover_name} is not exist in optuna.")
+
+        _params = [
+            trans.untransform(np.array([param])) for trans, param in zip(transes, params_array)
+        ]
+        child = {}
+        for param in _params:
+            for param_name in param.keys():
+                child[param_name] = param[param_name]
+
+        if _check_in_constraints(child, search_space):
+            break
+
     return child
 
 
 def _selection(
+    crossover_name: str,
     study: Study,
     parent_population: Sequence[FrozenTrial],
-    n_select: int,
     rng: np.random.RandomState,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
 ) -> List[FrozenTrial]:
-
+    if crossover_name in ["uniform", "blx_alpha", "sbx", "vsbx"]:
+        n_select = 2
+    elif crossover_name in ["undx", "undxm", "spx"]:
+        n_select = 3
+    else:
+        raise NotImplementedError(f"{crossover_name} is not exist in optuna.")
     parents = []
     for _ in range(n_select):
         parent = _select_parent(
@@ -116,134 +155,45 @@ def _swap(p0_i: Any, p1_i: Any, rand: float, swapping_prob: float) -> Any:
         return p0_i
 
 
-def _uniform_crossover(
-    parents: List[FrozenTrial], rng: np.random.RandomState, swapping_prob: float
-) -> Dict:
-
-    child = {}
-    p0, p1 = parents[0], parents[1]
-    for param_name in p0.params.keys():
-        p0_i, p1_i = p0.params[param_name], p1.params[param_name]
-        param = _swap(p0_i, p1_i, rng.rand(), swapping_prob)
-        child[param_name] = param
-    return child
+def _uniform(xs: np.ndarray, rng: np.random.RandomState, swapping_prob: float) -> np.ndarray:
+    child = []
+    x0, x1 = xs[0], xs[1]
+    for x0_i, x1_i in zip(x0, x1):
+        param = _swap(x0_i, x1_i, rng.rand(), swapping_prob)
+        child.append(param)
+    return np.array(child)
 
 
-def _blx_alpha(
-    parents: List[FrozenTrial],
-    search_space: Dict[str, BaseDistribution],
-    rng: np.random.RandomState,
-    swapping_prob: float,
-    max_resampling_count: int,
-    alpha: float,
-) -> Dict:
-
-    child = {}
-    p0, p1 = parents[0], parents[1]
-
-    for param_name in search_space.keys():
-        param_distribution = search_space[param_name]
-        p0_i, p1_i = p0.params[param_name], p1.params[param_name]
-
-        # categorical data operates on uniform crossover
-        if isinstance(param_distribution, CategoricalDistribution):
-            param = _swap(p0_i, p1_i, rng.rand(), swapping_prob)
-            child[param_name] = param
-            continue
-
-        assert isinstance(param_distribution, _NUMERICAL_DISTRIBUTIONS)
-
-        # BLX-alpha
-        trans = _SearchSpaceTransform({param_name: param_distribution})
-        x0_i = trans.transform({param_name: p0.params[param_name]})[0]
-        x1_i = trans.transform({param_name: p1.params[param_name]})[0]
-        count = 0
-        while True:
-            param_array = _blx_alpha_core(x0_i, x1_i, rng, alpha)
-            params = trans.untransform(param_array)
-            param = float(params.get(param_name, None))
-            if param_distribution._contains(param):
-                break
-            if count >= max_resampling_count:
-                param = np.clip(param, param_distribution.low, param_distribution.high)
-                break
-            count += 1
-        child[param_name] = param
-
-    return child
-
-
-def _blx_alpha_core(
-    x0_i: np.float64, x1_i: np.float64, rng: np.random.RandomState, alpha: float
-) -> np.ndarray:
-    x = np.stack([x0_i, x1_i])
-    x_min = x.min(axis=0)
-    x_max = x.max(axis=0)
+def _blx_alpha(xs: np.ndarray, rng: np.random.RandomState, alpha: float) -> np.ndarray:
+    x_min = xs.min(axis=0)
+    x_max = xs.max(axis=0)
     diff = alpha * (x_max - x_min)
     low = x_min - diff
     high = x_max + diff
-    r = rng.uniform(0, 1, size=1)
+    r = rng.uniform(0, 1, size=len(diff))
     param = (high - low) * r + low
     return param
 
 
 def _sbx(
-    parents: List[FrozenTrial],
-    search_space: Dict[str, BaseDistribution],
+    xs: np.ndarray,
     rng: np.random.RandomState,
-    swapping_prob: float,
-    max_resampling_count: int,
-    eta: float,
-) -> Dict:
-    child = {}
-    p0, p1 = parents[0], parents[1]
-
-    for param_name in search_space.keys():
-        param_distribution = search_space[param_name]
-        p0_i, p1_i = p0.params[param_name], p1.params[param_name]
-
-        # categorical data operates on uniform crossover
-        if isinstance(param_distribution, CategoricalDistribution):
-            param = _swap(p0_i, p1_i, rng.rand(), swapping_prob)
-            child[param_name] = param
-            continue
-
-        assert isinstance(param_distribution, _NUMERICAL_DISTRIBUTIONS)
-
-        # SBX
-        trans = _SearchSpaceTransform({param_name: param_distribution})
-        x0_i = trans.transform({param_name: p0.params[param_name]})[0]
-        x1_i = trans.transform({param_name: p1.params[param_name]})[0]
-        count = 0
-        while True:
-            param_array = _sbx_core(
-                x0_i, x1_i, param_distribution.low, param_distribution.high, rng, eta
-            )
-
-            params = trans.untransform(param_array)
-            param = params.get(param_name, None)
-            if param_distribution._contains(param):
-                break
-            if count >= max_resampling_count:
-                param = np.clip(param, param_distribution.low, param_distribution.high)
-                break
-            count += 1
-        child[param_name] = param
-
-    return child
-
-
-def _sbx_core(
-    x0_i: np.float64,
-    x1_i: np.float64,
-    xl: float,
-    xu: float,
-    rng: np.random.RandomState,
+    distributions: List[BaseDistribution],
     eta: float,
 ) -> np.ndarray:
     # https://www.kurims.kyoto-u.ac.jp/~kyodo/kokyuroku/contents/pdf/1589-07.pdf
-    x_min = min(float(x0_i), float(x1_i))
-    x_max = max(float(x0_i), float(x1_i))
+
+    _xl = []
+    _xu = []
+    for distribution in distributions:
+        assert isinstance(distribution, _NUMERICAL_DISTRIBUTIONS)
+        _xl.append(distribution.low)
+        _xu.append(distribution.high)
+    xl = np.array(_xl)
+    xu = np.array(_xu)
+
+    x_min = np.min(xs, axis=0)
+    x_max = np.max(xs, axis=0)
 
     x_diff = np.clip(x_max - x_min, 1e-10, None)
     beta1 = 1 + 2 * (x_min - xl) / x_diff
@@ -251,86 +201,65 @@ def _sbx_core(
     alpha1 = 2 - np.power(beta1, -(eta + 1))
     alpha2 = 2 - np.power(beta2, -(eta + 1))
 
-    r = rng.uniform(0, 1, size=x0_i.size)
-    if r <= 1 / alpha1:
-        betaq1 = np.power(r * alpha1, 1 / (eta + 1))
-    else:
-        betaq1 = np.power((1 / (2 - r * alpha1)), 1 / (eta + 1))
+    r = rng.uniform(0, 1, size=len(xs[0]))
+    mask1 = r > 1 / alpha1
+    betaq1 = np.power(r * alpha1, 1 / (eta + 1))
+    betaq1[mask1] = np.power((1 / (2 - r * alpha1)), 1 / (eta + 1))[mask1]
 
-    if r <= 1 / alpha2:
-        betaq2 = np.power(r * alpha2, 1 / (eta + 1))
-    else:
-        betaq2 = np.power((1 / (2 - r * alpha2)), 1 / (eta + 1))
+    mask2 = r > 1 / alpha2
+    betaq2 = np.power(r * alpha2, 1 / (eta + 1))
+    betaq2[mask2] = np.power((1 / (2 - r * alpha2)), 1 / (eta + 1))[mask2]
 
     c1 = 0.5 * ((x_min + x_max) - betaq1 * x_diff)
     c2 = 0.5 * ((x_min + x_max) + betaq2 * x_diff)
 
-    if rng.rand() < 0.5:
-        v = c1
-    else:
-        v = c2
+    v = []
+    for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, xs[0], xs[1]):
+        if rng.rand() < 0.5:
+            if rng.rand() < 0.5:
+                v.append(c1_i)
+            else:
+                v.append(c2_i)
+        else:
+            if rng.rand() < 0.5:
+                v.append(x1_i)
+            else:
+                v.append(x2_i)
+    return np.array(v)
 
-    return v
 
-
-def _spx(
-    parents: List[FrozenTrial],
-    search_space: Dict[str, BaseDistribution],
+def _vsbx(
+    xs: np.ndarray,
     rng: np.random.RandomState,
-    swapping_prob: float,
-    max_resampling_count: int,
-) -> Dict:
+    eta: float,
+) -> np.ndarray:
+    r = rng.uniform(0, 1, size=len(xs[0]))
+    x1 = xs[0]
+    x2 = xs[1]
+    beta_1 = np.power(1 / 2 * r, 1 / (eta + 1))
+    beta_2 = np.power(1 / 2 * (1 - r), 1 / (eta + 1))
+    mask = r > 0.5
+    c1 = 0.5 * ((1 + beta_1) * x1 + (1 - beta_1) * x2)
+    c1[mask] = 0.5 * ((1 - beta_1) * x1 + (1 + beta_1) * x2)[mask]
+    c2 = 0.5 * ((3 - beta_2) * x1 - (1 - beta_2) * x2)
+    c2[mask] = 0.5 * (-(1 - beta_2) * x1 + (3 - beta_2) * x2)[mask]
 
-    child = {}
-    parents_not_categorical_params: List[List[np.float64]] = [[] for _ in range(len(parents))]
-    transes = []
-    param_names = []
-    for param_name in search_space.keys():
-        param_distribution = search_space[param_name]
-
-        parents_param = [p.params[param_name] for p in parents]
-
-        # categorical data operates on uniform crossover
-        if isinstance(search_space[param_name], CategoricalDistribution):
-            param = _swap(parents_param[0], parents_param[-1], rng.rand(), swapping_prob)
-            child[param_name] = param
-            continue
-
-        trans = _SearchSpaceTransform({param_name: param_distribution})
-        transes.append(trans)
-        param_names.append(param_name)
-        for parent_index, trial in enumerate(parents):
-            param = trans.transform({param_name: trial.params[param_name]})
-            parents_not_categorical_params[parent_index].append(param)
-
-    xs = np.array(parents_not_categorical_params)
-    epsilon = np.sqrt(len(param_names) + 2)
-    count = 0
-    while True:
-        params_array = _spx_core(xs, rng, epsilon)
-        _params = [transes[i].untransform(param) for i, param in enumerate(params_array)]
-        params = {}
-        for params in _params:
-            for param_name in params.keys():
-                params[param_name] = params[param_name]
-        is_in_constraints = _check_in_constraints(params, search_space)
-        if is_in_constraints:
-            child.update(params)
-            break
-        if count >= max_resampling_count:
-            for param_name in params.keys():
-                param_distribution = search_space[param_name]
-                assert isinstance(param_distribution, _NUMERICAL_DISTRIBUTIONS)
-                param = np.clip(
-                    params[param_name], param_distribution.low, param_distribution.high
-                )
-                child[param_name] = param
-            break
-        count += 1
-    return child
+    v = []
+    for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, xs[0], xs[1]):
+        if rng.rand() < 0.5:
+            if rng.rand() < 0.5:
+                v.append(c1_i)
+            else:
+                v.append(c2_i)
+        else:
+            if rng.rand() < 0.5:
+                v.append(x1_i)
+            else:
+                v.append(x2_i)
+    return np.array(v)
 
 
-def _spx_core(xs: np.ndarray, rng: np.random.RandomState, epsilon: float) -> np.ndarray:
+def _spx(xs: np.ndarray, rng: np.random.RandomState, epsilon: float) -> np.ndarray:
     # https://www.smapip.is.tohoku.ac.jp/~smapip/2003/tutorial/textbook/hajime-kita.pdf
     n = xs.shape[0] - 1
     G = xs.sum(axis=0) / xs.shape[0]

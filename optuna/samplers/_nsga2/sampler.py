@@ -100,7 +100,6 @@ class NSGAIISampler(BaseSampler):
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
-        max_resampling_count: int = 100,
         constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
     ) -> None:
         # TODO(ohta): Reconsider the default value of each parameter.
@@ -128,16 +127,14 @@ class NSGAIISampler(BaseSampler):
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
-
-        if max_resampling_count < 1:
-            raise ValueError("`max_resampling_count` must be greater than or equal to 1")
+        if crossover_name not in ["uniform", "blx_alpha", "sbx", "vsbx", "undx", "undxm", "spx"]:
+            raise NotImplementedError(f"{crossover_name} is not exist in optuna.")
 
         self._population_size = population_size
         self._mutation_prob = mutation_prob
         self._crossover_name = crossover_name
         self._crossover_prob = crossover_prob
         self._swapping_prob = swapping_prob
-        self._max_resampling_count = max_resampling_count
         self._random_sampler = RandomSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
         self._constraints_func = constraints_func
@@ -176,7 +173,6 @@ class NSGAIISampler(BaseSampler):
                     search_space,
                     self._rng,
                     self._swapping_prob,
-                    self._max_resampling_count,
                     dominates,
                 )
             else:
