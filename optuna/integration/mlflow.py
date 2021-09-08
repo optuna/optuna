@@ -132,6 +132,7 @@ class MLflowCallback(object):
         self,
         tracking_uri: Optional[str] = None,
         metric_name: Union[str, Sequence[str]] = "value",
+        create_experiment: bool = True,
         mlflow_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
 
@@ -146,6 +147,7 @@ class MLflowCallback(object):
 
         self._tracking_uri = tracking_uri
         self._metric_name = metric_name
+        self._create_experiment = create_experiment
         self._mlflow_kwargs = mlflow_kwargs or {}
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
@@ -210,8 +212,8 @@ class MLflowCallback(object):
         if self._tracking_uri is not None:
             mlflow.set_tracking_uri(self._tracking_uri)
 
-        # This sets the experiment of MLflow.
-        mlflow.set_experiment(study.study_name)
+        if self._create_experiment:
+            mlflow.set_experiment(study.study_name)
 
     def _set_tags(self, trial: optuna.trial.FrozenTrial, study: optuna.study.Study) -> None:
         """Sets the Optuna tags for the current MLflow run.
