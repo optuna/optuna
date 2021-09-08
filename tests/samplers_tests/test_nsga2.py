@@ -480,14 +480,14 @@ def test_call_after_trial_of_random_sampler() -> None:
 
 
 def test_crossover_name() -> None:
-    sampler = NSGAIISampler()
-    sampler = NSGAIISampler(crossover_name="uniform")
-    sampler = NSGAIISampler(crossover_name="blx_alpha")
-    sampler = NSGAIISampler(crossover_name="sbx")
-    sampler = NSGAIISampler(crossover_name="vsbx")
-    sampler = NSGAIISampler(crossover_name="undx")
-    sampler = NSGAIISampler(crossover_name="undx_m")
-    sampler = NSGAIISampler(crossover_name="spx")
+    NSGAIISampler()
+    NSGAIISampler(crossover_name="uniform")
+    NSGAIISampler(crossover_name="blx_alpha")
+    NSGAIISampler(crossover_name="sbx")
+    NSGAIISampler(crossover_name="vsbx")
+    NSGAIISampler(crossover_name="undx")
+    NSGAIISampler(crossover_name="undx_m")
+    NSGAIISampler(crossover_name="spx")
 
     with pytest.raises(ValueError):
         NSGAIISampler(crossover_name="no_imp_crossover")
