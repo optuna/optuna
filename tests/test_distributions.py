@@ -59,7 +59,7 @@ def test_json_to_distribution() -> None:
 def test_abbreviated_json_to_distribution() -> None:
 
     for key in EXAMPLE_ABBREVIATED_JSONS:
-        distribution_actual = distributions.json_to_distribution(EXAMPLE_JSONS[key])
+        distribution_actual = distributions.json_to_distribution(EXAMPLE_ABBREVIATED_JSONS[key])
         assert distribution_actual == EXAMPLE_DISTRIBUTIONS[key]
 
     unknown_json = '{"name": "UnknownDistribution", "attributes": {"low": 1.0, "high": 2.0}}'
