@@ -59,6 +59,9 @@ def parametrize_suggest_method(name: str) -> MarkDecorator:
             lambda t: t.suggest_float(name, 0, 10),
             lambda t: t.suggest_int(name, 0, 10),
             lambda t: cast(float, t.suggest_categorical(name, [0, 1, 2])),
+            lambda t: t.suggest_float(name, 0, 10, step=0.5),
+            lambda t: t.suggest_float(name, 1e-7, 10, log=True),
+            lambda t: t.suggest_int(name, 1, 10, log=True),
         ],
     )
 
