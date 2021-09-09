@@ -48,7 +48,9 @@ parametrize_relative_sampler = pytest.mark.parametrize(
     [
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
+        lambda: optuna.integration.SkoptSampler(
+            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        ),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
     ],
 )
@@ -276,7 +278,7 @@ def test_sample_relative_numerical(
         params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
         return [params[name] for name in search_space]
 
-    points = np.array([sample() for _ in range(2)])
+    points = np.array([sample() for _ in range(10)])
     for i, distribution in enumerate(search_space.values()):
         assert isinstance(
             distribution,
@@ -308,7 +310,7 @@ def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSa
         params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
         return [params[name] for name in search_space]
 
-    points = np.array([sample() for _ in range(2)])
+    points = np.array([sample() for _ in range(10)])
     for i, distribution in enumerate(search_space.values()):
         assert isinstance(distribution, CategoricalDistribution)
         assert np.all([v in distribution.choices for v in points[:, i]])
@@ -342,7 +344,7 @@ def test_sample_relative_mixed(
         params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
         return [params[name] for name in search_space]
 
-    points = np.array([sample() for _ in range(2)])
+    points = np.array([sample() for _ in range(10)])
     assert isinstance(
         search_space["x"],
         (
