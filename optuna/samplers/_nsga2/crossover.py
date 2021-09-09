@@ -290,17 +290,19 @@ def _undx(
 ) -> np.ndarray:
     # https://www.jstage.jst.go.jp/article/sicetr1965/36/10/36_10_875/_pdf
 
-    x0, x1, x2 = xs[0], xs[1], xs[2]
+    x0, x1, x2 = xs[0], xs[1], xs[2]  # section 2 (1)
     n = len(x0)
-    xp = (x0 + x1) / 2
-    d = x0 - x1
-    D = _distance_from_x_to_psl(x0, x1, x2)
+    xp = (x0 + x1) / 2  # section 2 (2)
+    d = x0 - x1  # section 2 (3)
+    D = _distance_from_x_to_psl(x0, x1, x2)  # section 2 (4)
     xi = rng.normal(0, sigma_xi ** 2)
     etas = rng.normal(0, sigma_eta, size=n)
-    es = _orthonormal_basis_vector_to_psl(x0, x1)
-    one = xp
-    two = xi * d
-    three = np.zeros(len(es[0]))
+    es = _orthonormal_basis_vector_to_psl(
+        x0, x1
+    )  # Orthonormal basis vectors of the subspace orthogonal to the psl
+    one = xp  # section 2 (5)
+    two = xi * d  # section 2 (5)
+    three = np.zeros(len(es[0]))  # section 2 (5)
     for i in range(n - 1):
         three += etas[i] * es[i]
     three *= D
@@ -315,20 +317,20 @@ def _normalized_x1_to_x2(x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
 
 
 def _distance_from_x_to_psl(x1: np.ndarray, x2: np.ndarray, x3: np.ndarray) -> np.ndarray:
-    e_12 = _normalized_x1_to_x2(x1, x2)
-    v_13 = x3 - x1
-    v_12_3 = v_13 - np.dot(v_13, e_12) * e_12
-    m_12_3 = np.linalg.norm(v_12_3, ord=2)
+    e_12 = _normalized_x1_to_x2(x1, x2)  # Normalized vector from x1 to x2
+    v_13 = x3 - x1  # Vector from x1 to x3
+    v_12_3 = v_13 - np.dot(v_13, e_12) * e_12  # Vector orthogonal to v_12 through x3
+    m_12_3 = np.linalg.norm(v_12_3, ord=2)  # 2-norm of v_12_3
     return m_12_3
 
 
 def _orthonormal_basis_vector_to_psl(x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
     n = len(x1)
-    e_12 = _normalized_x1_to_x2(x1, x2)
+    e_12 = _normalized_x1_to_x2(x1, x2)  # Normalized vector from x1 to x2
     basis_matrix = np.identity(n)
     if np.count_nonzero(e_12) != 0:
         v_01 = x1 - np.zeros(len(x1))
-        basis_matrix[0] = v_01 - np.dot(v_01, e_12) * e_12
+        basis_matrix[0] = v_01 - np.dot(v_01, e_12) * e_12  # Vector orthogonal to e_12
     basis_matrix_t = basis_matrix.T
     Q, _ = np.linalg.qr(basis_matrix_t)
     return Q.T
@@ -339,27 +341,26 @@ def _undxm(
 ) -> np.ndarray:
     # https://www.jstage.jst.go.jp/article/sicetr1965/36/10/36_10_875/_pdf
 
-    x_mp2, xs = xs[-1], xs[:-1]  # (1), (3)
+    x_mp2, xs = xs[-1], xs[:-1]  # section 4.2 (1), (3)
     m = len(xs) - 1
     dim = len(x_mp2)
-    p = np.sum(xs, axis=0) / (m + 1)  # (2)
-    ds = [x - p for x in xs]  # (2)
-    n = _normal(rng, ds[:-1])  # Normal to the plane that contains d_i(1,..,m) (4)
-    d_mp2 = x_mp2 - p  # (4)
-    D = np.dot(d_mp2, n) / np.linalg.norm(n)  # (4)
+    p = np.sum(xs, axis=0) / (m + 1)  # section 4.2(2)
+    ds = [x - p for x in xs]  # section 4.2 (2)
+    n = _normal(rng, ds[:-1])  # Normal to the plane that contains d_i(1,..,m) section 4.2 (4)
+    d_mp2 = x_mp2 - p  # section 4.2 (4)
+    D = np.dot(d_mp2, n) / np.linalg.norm(n)  # section 4.2 (4)
     es = _orthonormal_basis_vector_from_ds(
         ds[:-1]
-    )  # orthonormal basis of the subspace orthogonal to d_i(1,..,m) (5)
+    )  # orthonormal basis of the subspace orthogonal to d_i(1,..,m) section 4.2 (5)
 
-    one = p
+    one = p  # section 4.2 (6)
 
     ws = rng.normal(0, sigma_xi ** 2, size=m)
-    two = np.zeros(dim)
-
+    two = np.zeros(dim)  # section 4.2 (6)
     for i in range(m):
         two += ws[i] * ds[i]
 
-    three = np.zeros(dim)
+    three = np.zeros(dim)  # section 4.2 (6)
     for i in range(dim - m):
         vs = rng.normal(0, sigma_eta ** 2, size=dim)
         three += vs - np.dot(vs, es[i]) * es[i]
@@ -368,6 +369,8 @@ def _undxm(
 
 
 def _normal(rng: np.random.RandomState, ds: List[np.ndarray]) -> np.ndarray:
+    # Create an orthonormal basis by adding one appropriate vector to ds
+    # , and extract one vector from the orthonormal basis
     d = rng.normal(0, 1, size=ds[0].shape[0])
     ds.append(d)
     X = np.stack(ds)
@@ -382,16 +385,17 @@ def _orthonormal_basis_vector_from_ds(ds: List[np.ndarray]) -> np.ndarray:
 
 
 def _spx(xs: np.ndarray, rng: np.random.RandomState, epsilon: float) -> np.ndarray:
-    # https://www.smapip.is.tohoku.ac.jp/~smapip/2003/tutorial/textbook/hajime-kita.pdf
+    # https://www.jstage.jst.go.jp/article/tjsai/16/1/16_1_147/_pdf
 
     n = xs.shape[0] - 1
-    G = xs.sum(axis=0) / xs.shape[0]
-    rs = [np.power(rng.uniform(0, 1), 1 / (k + 1)) for k in range(n)]
-    xks = [G + epsilon * (pk - G) for pk in xs]
-    ck = 0
+    G = xs.sum(axis=0) / xs.shape[0]  # section 3.1 [2].
+    rs = [np.power(rng.uniform(0, 1), 1 / (k + 1)) for k in range(n)]  # equation (5)
+    xks = [G + epsilon * (pk - G) for pk in xs]  # equation (3)
+    ck = 0  # equation (4)
     for k in range(1, n + 1):
         ck = rs[k - 1] * (xks[k - 1] - xks[k] + ck)
-    c = xks[-1] + ck
+
+    c = xks[-1] + ck  # equation (7)
     return c
 
 
