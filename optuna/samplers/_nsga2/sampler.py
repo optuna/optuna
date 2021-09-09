@@ -55,6 +55,11 @@ class NSGAIISampler(BaseSampler):
             If :obj:`None` is specified, the value ``1.0 / len(parent_trial.params)`` is used
             where ``parent_trial`` is the parent trial of the target individual.
 
+        crossover:
+            Crossover to be applied when creating child individuals.
+            The available crossovers are
+            `uniform (default)`, `blxalpha`, `sbx`, `vsbx`, `undx`, `undxm`, and `spx`.
+
         crossover_prob:
             Probability that a crossover (parameters swapping between parents) will occur
             when creating a new individual.
@@ -96,7 +101,7 @@ class NSGAIISampler(BaseSampler):
         *,
         population_size: int = 50,
         mutation_prob: Optional[float] = None,
-        crossover_name: str = "uniform",
+        crossover: str = "uniform",
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
@@ -127,12 +132,22 @@ class NSGAIISampler(BaseSampler):
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
-        if crossover_name not in ["uniform", "blxalpha", "sbx", "vsbx", "undx", "undxm", "spx"]:
-            raise ValueError(f"{crossover_name} is not exist in optuna.")
+        if crossover not in ["uniform", "blxalpha", "sbx", "vsbx", "undx", "undxm", "spx"]:
+            raise ValueError(
+                f"'{crossover}' is not a valid crossover name."
+                "The available crossovers are \
+                `uniform (default)`, `blxalpha`, `sbx`, `vsbx`, `undx`, `undxm`, and `spx`."
+            )
+        if crossover != "uniform":
+            warnings.warn(
+                "``crossover`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
 
         self._population_size = population_size
         self._mutation_prob = mutation_prob
-        self._crossover_name = crossover_name
+        self._crossover = crossover
         self._crossover_prob = crossover_prob
         self._swapping_prob = swapping_prob
         self._random_sampler = RandomSampler(seed=seed)
@@ -162,36 +177,35 @@ class NSGAIISampler(BaseSampler):
         generation = parent_generation + 1
         study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
 
-        dominates = _dominates if self._constraints_func is None else _constrained_dominates
+        dominates_func = _dominates if self._constraints_func is None else _constrained_dominates
         if parent_generation >= 0:
-            # crossover
+            # We choose a child based on the specified crossover method.
             if self._rng.rand() < self._crossover_prob:
                 child = crossover(
-                    self._crossover_name,
+                    self._crossover,
                     study,
                     parent_population,
                     search_space,
                     self._rng,
                     self._swapping_prob,
-                    dominates,
+                    dominates_func,
                 )
             else:
-                child = parent_population[0].params
+                parent_population_size = len(parent_population)
+                child = parent_population[self._rng.choice(parent_population_size)].params
 
-            # mutation
             params_len = len(child)
             if self._mutation_prob is None:
                 mutation_prob = 1.0 / max(1.0, params_len)
             else:
                 mutation_prob = self._mutation_prob
 
+            params = {}
             for param_name in child.keys():
-                param, param_distribution = child[param_name], search_space[param_name]
-                if param is None or self._rng.rand() < mutation_prob:
-                    child[param_name] = self._random_sampler.sample_independent(
-                        study, trial, param_name, param_distribution
-                    )
-            return child
+                if self._rng.rand() >= mutation_prob:
+                    params[param_name] = child[param_name]
+
+            return params
 
         return {}
 

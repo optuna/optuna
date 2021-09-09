@@ -36,9 +36,9 @@ def crossover(
     rng: np.random.RandomState,
     swapping_prob: float,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
-) -> Dict:
+) -> Dict[str, Any]:
 
-    while True:
+    while True:  # Repeat while parameters lie outside search space boundaries.
         parents = _selection(crossover_name, study, parent_population, rng, dominates)
         child = {}
         transes = []
@@ -103,7 +103,7 @@ def crossover(
             epsilon = np.sqrt(len(xs[0]) + 2)
             params_array = _spx(xs, rng, epsilon)
         else:
-            raise ValueError(f"{crossover_name} is not exist in optuna.")
+            assert False
 
         _params = [
             trans.untransform(np.array([param])) for trans, param in zip(transes, params_array)
@@ -113,7 +113,7 @@ def crossover(
             for param_name in param.keys():
                 child[param_name] = param[param_name]
 
-        if _check_in_constraints(child, search_space):
+        if _is_constrained(child, search_space):
             break
 
     return child
@@ -133,7 +133,7 @@ def _selection(
     elif crossover_name in ["undxm"]:
         n_select = 4
     else:
-        raise ValueError(f"{crossover_name} is not exist in optuna.")
+        assert False
     if len(parent_population) < n_select:
         raise ValueError(
             f"Using {crossover_name}, \
@@ -184,6 +184,9 @@ def _uniform(xs: np.ndarray, rng: np.random.RandomState, swapping_prob: float) -
 
 
 def _blxalpha(xs: np.ndarray, rng: np.random.RandomState, alpha: float) -> np.ndarray:
+    # https://confit.atlas.jp/guide/event-img/jsai2019/4O3-J-7-02/public/pdf?type=in
+    # https://www.sciencedirect.com/science/article/abs/pii/B9780080948324500180
+
     x_min = xs.min(axis=0)
     x_max = xs.max(axis=0)
     diff = alpha * (x_max - x_min)
@@ -201,50 +204,52 @@ def _sbx(
     eta: float,
 ) -> np.ndarray:
     # https://www.kurims.kyoto-u.ac.jp/~kyodo/kokyuroku/contents/pdf/1589-07.pdf
+    # https://www.slideshare.net/paskorn/simulated-binary-crossover-presentation
 
-    _xl = []
-    _xu = []
+    _xls = []
+    _xus = []
     for distribution in distributions:
         assert isinstance(distribution, _NUMERICAL_DISTRIBUTIONS)
-        _xl.append(distribution.low)
-        _xu.append(distribution.high)
-    xl = np.array(_xl)
-    xu = np.array(_xu)
+        _xls.append(distribution.low)
+        _xus.append(distribution.high)
+    xls = np.array(_xls)
+    xus = np.array(_xus)
 
-    x_min = np.min(xs, axis=0)
-    x_max = np.max(xs, axis=0)
+    xs_min = np.min(xs, axis=0)
+    xs_max = np.max(xs, axis=0)
 
-    x_diff = np.clip(x_max - x_min, 1e-10, None)
-    beta1 = 1 + 2 * (x_min - xl) / x_diff
-    beta2 = 1 + 2 * (xu - x_max) / x_diff
-    alpha1 = 2 - np.power(beta1, -(eta + 1))
-    alpha2 = 2 - np.power(beta2, -(eta + 1))
+    xs_diff = np.clip(xs_max - xs_min, 1e-10, None)
+    beta1 = 1 + 2 * (xs_min - xls) / xs_diff  # (6)
+    beta2 = 1 + 2 * (xus - xs_max) / xs_diff  # (6)
+    alpha1 = 2 - np.power(beta1, -(eta + 1))  # (5)
+    alpha2 = 2 - np.power(beta2, -(eta + 1))  # (5)
 
-    r = rng.uniform(0, 1, size=len(xs[0]))
-    mask1 = r > 1 / alpha1
-    betaq1 = np.power(r * alpha1, 1 / (eta + 1))
-    betaq1[mask1] = np.power((1 / (2 - r * alpha1)), 1 / (eta + 1))[mask1]
+    us = rng.uniform(0, 1, size=len(xs[0]))
 
-    mask2 = r > 1 / alpha2
-    betaq2 = np.power(r * alpha2, 1 / (eta + 1))
-    betaq2[mask2] = np.power((1 / (2 - r * alpha2)), 1 / (eta + 1))[mask2]
+    mask1 = us > 1 / alpha1  # (4)
+    betaq1 = np.power(us * alpha1, 1 / (eta + 1))  # (4)
+    betaq1[mask1] = np.power((1 / (2 - us * alpha1)), 1 / (eta + 1))[mask1]  # (4)
 
-    c1 = 0.5 * ((x_min + x_max) - betaq1 * x_diff)
-    c2 = 0.5 * ((x_min + x_max) + betaq2 * x_diff)
+    mask2 = us > 1 / alpha2  # (4)
+    betaq2 = np.power(us * alpha2, 1 / (eta + 1))  # (4)
+    betaq2[mask2] = np.power((1 / (2 - us * alpha2)), 1 / (eta + 1))[mask2]  # (4)
 
-    v = []
+    c1 = 0.5 * ((xs_min + xs_max) - betaq1 * xs_diff)  # (7)
+    c2 = 0.5 * ((xs_min + xs_max) + betaq2 * xs_diff)  # (7)
+
+    child = []
     for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, xs[0], xs[1]):
         if rng.rand() < 0.5:
             if rng.rand() < 0.5:
-                v.append(c1_i)
+                child.append(c1_i)
             else:
-                v.append(c2_i)
+                child.append(c2_i)
         else:
             if rng.rand() < 0.5:
-                v.append(x1_i)
+                child.append(x1_i)
             else:
-                v.append(x2_i)
-    return np.array(v)
+                child.append(x2_i)
+    return np.array(child)
 
 
 def _vsbx(
@@ -252,43 +257,47 @@ def _vsbx(
     rng: np.random.RandomState,
     eta: float,
 ) -> np.ndarray:
-    r = rng.uniform(0, 1, size=len(xs[0]))
-    x0, x1 = xs[0], xs[1]
-    beta_1 = np.power(1 / 2 * r, 1 / (eta + 1))
-    beta_2 = np.power(1 / 2 * (1 - r), 1 / (eta + 1))
-    mask = r > 0.5
-    c1 = 0.5 * ((1 + beta_1) * x0 + (1 - beta_1) * x1)
-    c1[mask] = 0.5 * ((1 - beta_1) * x0 + (1 + beta_1) * x1)[mask]
-    c2 = 0.5 * ((3 - beta_2) * x0 - (1 - beta_2) * x1)
-    c2[mask] = 0.5 * (-(1 - beta_2) * x0 + (3 - beta_2) * x1)[mask]
+    # https://core.ac.uk/download/pdf/230075112.pdf
+    # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.422.952&rep=rep1&type=pdf
 
-    v = []
+    us = rng.uniform(0, 1, size=len(xs[0]))  # (3.12)
+    x0, x1 = xs[0], xs[1]
+    beta_1 = np.power(1 / 2 * us, 1 / (eta + 1))  # (3.9)
+    beta_2 = np.power(1 / 2 * (1 - us), 1 / (eta + 1))  # (3.11)
+    mask = us > 0.5
+    c1 = 0.5 * ((1 + beta_1) * x0 + (1 - beta_1) * x1)  # (3.8)
+    c1[mask] = 0.5 * ((1 - beta_1) * x0 + (1 + beta_1) * x1)[mask]  # (3.8)
+    c2 = 0.5 * ((3 - beta_2) * x0 - (1 - beta_2) * x1)  # (3.10)
+    c2[mask] = 0.5 * (-(1 - beta_2) * x0 + (3 - beta_2) * x1)[mask]  # (3.10)
+
+    child = []
     for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, x0, x1):
         if rng.rand() < 0.5:
             if rng.rand() < 0.5:
-                v.append(c1_i)
+                child.append(c1_i)
             else:
-                v.append(c2_i)
+                child.append(c2_i)
         else:
             if rng.rand() < 0.5:
-                v.append(x1_i)
+                child.append(x1_i)
             else:
-                v.append(x2_i)
-    return np.array(v)
+                child.append(x2_i)
+    return np.array(child)
 
 
 def _undx(
     xs: np.ndarray, rng: np.random.RandomState, sigma_xi: float, sigma_eta: float
 ) -> np.ndarray:
     # https://www.jstage.jst.go.jp/article/sicetr1965/36/10/36_10_875/_pdf
+
     x0, x1, x2 = xs[0], xs[1], xs[2]
     n = len(x0)
     xp = (x0 + x1) / 2
     d = x0 - x1
-    D = _distance_from_x_to_PSL(x0, x1, x2)
+    D = _distance_from_x_to_psl(x0, x1, x2)
     xi = rng.normal(0, sigma_xi ** 2)
     etas = rng.normal(0, sigma_eta, size=n)
-    es = _orthonormal_basis_vector_to_PSL(x0, x1)
+    es = _orthonormal_basis_vector_to_psl(x0, x1)
     one = xp
     two = xi * d
     three = np.zeros(len(es[0]))
@@ -305,7 +314,7 @@ def _normalized_x1_to_x2(x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
     return e_12
 
 
-def _distance_from_x_to_PSL(x1: np.ndarray, x2: np.ndarray, x3: np.ndarray) -> np.ndarray:
+def _distance_from_x_to_psl(x1: np.ndarray, x2: np.ndarray, x3: np.ndarray) -> np.ndarray:
     e_12 = _normalized_x1_to_x2(x1, x2)
     v_13 = x3 - x1
     v_12_3 = v_13 - np.dot(v_13, e_12) * e_12
@@ -313,7 +322,7 @@ def _distance_from_x_to_PSL(x1: np.ndarray, x2: np.ndarray, x3: np.ndarray) -> n
     return m_12_3
 
 
-def _orthonormal_basis_vector_to_PSL(x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
+def _orthonormal_basis_vector_to_psl(x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
     n = len(x1)
     e_12 = _normalized_x1_to_x2(x1, x2)
     basis_matrix = np.identity(n)
@@ -335,7 +344,7 @@ def _undxm(
     dim = len(x_mp2)
     p = np.sum(xs, axis=0) / (m + 1)  # (2)
     ds = [x - p for x in xs]  # (2)
-    n = normal(rng, ds[:-1])  # Normal to the plane that contains d_i(1,..,m) (4)
+    n = _normal(rng, ds[:-1])  # Normal to the plane that contains d_i(1,..,m) (4)
     d_mp2 = x_mp2 - p  # (4)
     D = np.dot(d_mp2, n) / np.linalg.norm(n)  # (4)
     es = _orthonormal_basis_vector_from_ds(
@@ -358,7 +367,7 @@ def _undxm(
     return one + two + three
 
 
-def normal(rng: np.random.RandomState, ds: List[np.ndarray]) -> np.ndarray:
+def _normal(rng: np.random.RandomState, ds: List[np.ndarray]) -> np.ndarray:
     d = rng.normal(0, 1, size=ds[0].shape[0])
     ds.append(d)
     X = np.stack(ds)
@@ -374,6 +383,7 @@ def _orthonormal_basis_vector_from_ds(ds: List[np.ndarray]) -> np.ndarray:
 
 def _spx(xs: np.ndarray, rng: np.random.RandomState, epsilon: float) -> np.ndarray:
     # https://www.smapip.is.tohoku.ac.jp/~smapip/2003/tutorial/textbook/hajime-kita.pdf
+
     n = xs.shape[0] - 1
     G = xs.sum(axis=0) / xs.shape[0]
     rs = [np.power(rng.uniform(0, 1), 1 / (k + 1)) for k in range(n)]
@@ -385,13 +395,13 @@ def _spx(xs: np.ndarray, rng: np.random.RandomState, epsilon: float) -> np.ndarr
     return c
 
 
-def _check_in_constraints(params: Dict, search_space: Dict) -> bool:
-    contains_flag = True
+def _is_constrained(params: Dict[str, Any], search_space: Dict[str, BaseDistribution]) -> bool:
+    contains = True
     for param_name in params.keys():
         param, param_distribution = params[param_name], search_space[param_name]
         if isinstance(param_distribution, CategoricalDistribution):
             continue
         if not param_distribution._contains(param):
-            contains_flag = False
+            contains = False
             break
-    return contains_flag
+    return contains
