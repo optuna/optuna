@@ -1,7 +1,9 @@
+from collections import OrderedDict
 import pickle
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 import warnings
@@ -265,16 +267,17 @@ def test_sample_relative_numerical(
     y_distribution: BaseDistribution,
 ) -> None:
 
-    search_space = {"x": x_distribution, "y": y_distribution}
-    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(seed=1))
-    for _ in range(4):
-        trial = study.ask(search_space)
-        study.tell(trial, sum(trial.params.values()))
-    study.sampler = relative_sampler_class()
+    search_space: Dict[str, BaseDistribution] = OrderedDict(x=x_distribution, y=y_distribution)
+    study = optuna.study.create_study(sampler=relative_sampler_class())
+    trial = study.ask(search_space)
+    study.tell(trial, sum(trial.params.values()))
 
-    values = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
-    for name, distribution in search_space.items():
-        value = values[name]
+    def sample() -> List[float]:
+        params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
+        return [params[name] for name in search_space]
+
+    points = np.array([sample() for _ in range(2)])
+    for i, distribution in enumerate(search_space.values()):
         assert isinstance(
             distribution,
             (
@@ -285,29 +288,32 @@ def test_sample_relative_numerical(
                 IntLogUniformDistribution,
             ),
         )
-        assert value >= distribution.low
-        assert value <= distribution.high
-        assert not isinstance(value, np.floating)
+        assert np.all(points[:, i] >= distribution.low)
+        assert np.all(points[:, i] <= distribution.high)
+    for param_value in sample():
+        assert not isinstance(param_value, np.floating)
 
 
 @parametrize_relative_sampler
 def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSampler]) -> None:
 
-    search_space: Dict[str, BaseDistribution] = {
-        "x": CategoricalDistribution([1, 10, 100]),
-        "y": CategoricalDistribution([-1, -10, -100]),
-    }
-    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(seed=1))
-    for _ in range(4):
-        trial = study.ask(search_space)
-        study.tell(trial, sum(trial.params.values()))
-    study.sampler = relative_sampler_class()
+    search_space: Dict[str, BaseDistribution] = OrderedDict(
+        x=CategoricalDistribution([1, 10, 100]), y=CategoricalDistribution([-1, -10, -100])
+    )
+    study = optuna.study.create_study(sampler=relative_sampler_class())
+    trial = study.ask(search_space)
+    study.tell(trial, sum(trial.params.values()))
 
-    values = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
-    assert values["x"] in {1, 10, 100}
-    assert values["y"] in {-1, -10, -100}
-    assert not isinstance(values["x"], np.floating)
-    assert not isinstance(values["y"], np.floating)
+    def sample() -> List[float]:
+        params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
+        return [params[name] for name in search_space]
+
+    points = np.array([sample() for _ in range(2)])
+    for i, distribution in enumerate(search_space.values()):
+        assert isinstance(distribution, CategoricalDistribution)
+        assert np.all([v in distribution.choices for v in points[:, i]])
+    for param_value in sample():
+        assert not isinstance(param_value, np.floating)
 
 
 @parametrize_relative_sampler
@@ -325,19 +331,20 @@ def test_sample_relative_mixed(
     relative_sampler_class: Callable[[], BaseSampler], x_distribution: BaseDistribution
 ) -> None:
 
-    search_space: Dict[str, BaseDistribution] = {
-        "x": x_distribution,
-        "y": CategoricalDistribution([-1, -10, -100]),
-    }
-    study = optuna.study.create_study(sampler=optuna.samplers.RandomSampler(seed=1))
-    for _ in range(4):
-        trial = study.ask(search_space)
-        study.tell(trial, sum(trial.params.values()))
-    study.sampler = relative_sampler_class()
+    search_space: Dict[str, BaseDistribution] = OrderedDict(
+        x=x_distribution, y=CategoricalDistribution([-1, -10, -100])
+    )
+    study = optuna.study.create_study(sampler=relative_sampler_class())
+    trial = study.ask(search_space)
+    study.tell(trial, sum(trial.params.values()))
 
-    values = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
+    def sample() -> List[float]:
+        params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
+        return [params[name] for name in search_space]
+
+    points = np.array([sample() for _ in range(2)])
     assert isinstance(
-        x_distribution,
+        search_space["x"],
         (
             UniformDistribution,
             LogUniformDistribution,
@@ -346,10 +353,12 @@ def test_sample_relative_mixed(
             IntLogUniformDistribution,
         ),
     )
-    assert x_distribution.low <= values["x"] <= x_distribution.high
-    assert values["y"] in {-1, -10, -100}
-    assert not isinstance(values["x"], np.floating)
-    assert not isinstance(values["y"], np.floating)
+    assert np.all(points[:, 0] >= search_space["x"].low)
+    assert np.all(points[:, 0] <= search_space["x"].high)
+    assert isinstance(search_space["y"], CategoricalDistribution)
+    assert np.all([v in search_space["y"].choices for v in points[:, 1]])
+    for param_value in sample():
+        assert not isinstance(param_value, np.floating)
 
 
 def _create_new_trial(study: Study) -> FrozenTrial:
