@@ -305,7 +305,7 @@ class _Optimizer(object):
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 value = value * distribution.q + distribution.low
             if isinstance(distribution, distributions.IntUniformDistribution):
-                value = value * distribution.step + distribution.low
+                value = int(value * distribution.step + distribution.low)
             if isinstance(distribution, distributions.IntLogUniformDistribution):
                 value = int(np.round(value))
                 value = min(max(value, distribution.low), distribution.high)
