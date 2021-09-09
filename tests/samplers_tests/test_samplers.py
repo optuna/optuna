@@ -292,8 +292,13 @@ def test_sample_relative_numerical(
         )
         assert np.all(points[:, i] >= distribution.low)
         assert np.all(points[:, i] <= distribution.high)
-    for param_value in sample():
+    for param_value, distribution in zip(sample(), search_space.values()):
         assert not isinstance(param_value, np.floating)
+        assert not isinstance(param_value, np.integer)
+        if isinstance(distribution, (IntUniformDistribution, IntLogUniformDistribution)):
+            assert isinstance(param_value, int)
+        else:
+            assert isinstance(param_value, float)
 
 
 @parametrize_relative_sampler
@@ -316,6 +321,8 @@ def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSa
         assert np.all([v in distribution.choices for v in points[:, i]])
     for param_value in sample():
         assert not isinstance(param_value, np.floating)
+        assert not isinstance(param_value, np.integer)
+        assert isinstance(param_value, int)
 
 
 @parametrize_relative_sampler
@@ -359,8 +366,16 @@ def test_sample_relative_mixed(
     assert np.all(points[:, 0] <= search_space["x"].high)
     assert isinstance(search_space["y"], CategoricalDistribution)
     assert np.all([v in search_space["y"].choices for v in points[:, 1]])
-    for param_value in sample():
+    for param_value, distribution in zip(sample(), search_space.values()):
         assert not isinstance(param_value, np.floating)
+        assert not isinstance(param_value, np.integer)
+        if isinstance(
+            distribution,
+            (IntUniformDistribution, IntLogUniformDistribution, CategoricalDistribution),
+        ):
+            assert isinstance(param_value, int)
+        else:
+            assert isinstance(param_value, float)
 
 
 def _create_new_trial(study: Study) -> FrozenTrial:
