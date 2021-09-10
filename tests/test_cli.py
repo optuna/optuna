@@ -728,8 +728,6 @@ def test_best_trials_command(output_format: Optional[str]) -> None:
         trials = _parse_output(output, output_format or "table")
         best_trials = [trial.number for trial in study.best_trials]
 
-        print(output)
-
         assert len(trials) == len(best_trials)
 
         df = study.trials_dataframe(attrs, multi_index=True)
@@ -817,8 +815,6 @@ def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
         output = str(subprocess.check_output(command).decode().strip())
         trials = _parse_output(output, output_format or "table")
         best_trials = [trial.number for trial in study.best_trials]
-
-        print(output)
 
         assert len(trials) == len(best_trials)
 
