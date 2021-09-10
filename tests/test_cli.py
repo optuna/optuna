@@ -328,14 +328,7 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
         studies = _parse_output(output, output_format or "table")
 
         if output_format is None or output_format == "table":
-            expected_keys_1 = [
-                "name",
-                "direction_0",
-                "direction_1",
-                "n_trials",
-                "datetime_start",
-            ]
-            expected_keys_2 = [
+            expected_keys_1 = expected_keys_2 = [
                 "name",
                 "direction_0",
                 "direction_1",
