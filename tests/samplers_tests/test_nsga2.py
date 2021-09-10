@@ -494,8 +494,9 @@ def test_crossover() -> None:
 
 
 @pytest.mark.parametrize("n_objectives", [(1), (2), (3)])
-def test_uniform(n_objectives: int) -> None:
+def test_uniform_objectives(n_objectives: int) -> None:
     n_trials = 4
+
     sampler = NSGAIISampler(population_size=2, crossover="uniform")
 
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
@@ -506,10 +507,26 @@ def test_uniform(n_objectives: int) -> None:
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize("n_objectives", [(1), (2), (3)])
-def test_blxalpha(n_objectives: int) -> None:
-    n_trials = 4
+@pytest.mark.parametrize("dims", [(1), (2), (3)])
+def test_uniform_dims(dims: int) -> None:
+    def objective1(trial: optuna.Trial) -> float:
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(dims)]
+        return sum(xs)
+
     n_objectives = 1
+    n_trials = 4
+
+    sampler = NSGAIISampler(population_size=2, crossover="uniform")
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(objective1, n_trials=n_trials)
+
+    assert len(study.trials) == n_trials
+
+
+@pytest.mark.parametrize("n_objectives", [(1), (2), (3)])
+def test_blxalpha_objectives(n_objectives: int) -> None:
+    n_trials = 4
 
     sampler = NSGAIISampler(population_size=2, crossover="blxalpha")
 
@@ -521,10 +538,26 @@ def test_blxalpha(n_objectives: int) -> None:
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize("n_objectives", [(1), (2), (3)])
-def test_sbx(n_objectives: int) -> None:
-    n_trials = 4
+@pytest.mark.parametrize("dims", [(1), (2), (3)])
+def test_blxalpha_dims(dims: int) -> None:
+    def objective1(trial: optuna.Trial) -> float:
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(dims)]
+        return sum(xs)
+
     n_objectives = 1
+    n_trials = 4
+
+    sampler = NSGAIISampler(population_size=2, crossover="blxalpha")
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(objective1, n_trials=n_trials)
+
+    assert len(study.trials) == n_trials
+
+
+@pytest.mark.parametrize("n_objectives", [(1), (2), (3)])
+def test_sbx_objectives(n_objectives: int) -> None:
+    n_trials = 4
 
     sampler = NSGAIISampler(population_size=2, crossover="sbx")
 
@@ -536,10 +569,26 @@ def test_sbx(n_objectives: int) -> None:
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize("n_objectives", [(1), (2), (3)])
-def test_vsbx(n_objectives: int) -> None:
-    n_trials = 4
+@pytest.mark.parametrize("dims", [(1), (2), (3)])
+def test_sbx_dims(dims: int) -> None:
+    def objective1(trial: optuna.Trial) -> float:
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(dims)]
+        return sum(xs)
+
     n_objectives = 1
+    n_trials = 4
+
+    sampler = NSGAIISampler(population_size=2, crossover="sbx")
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(objective1, n_trials=n_trials)
+
+    assert len(study.trials) == n_trials
+
+
+@pytest.mark.parametrize("n_objectives", [(1), (2), (3)])
+def test_vsbx_objectives(n_objectives: int) -> None:
+    n_trials = 4
 
     sampler = NSGAIISampler(population_size=2, crossover="vsbx")
 
@@ -551,10 +600,26 @@ def test_vsbx(n_objectives: int) -> None:
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize("n_objectives", [(1), (2), (3)])
-def test_undx(n_objectives: int) -> None:
-    n_trials = 4
+@pytest.mark.parametrize("dims", [(1), (2), (3)])
+def test_vsbx_dims(dims: int) -> None:
+    def objective1(trial: optuna.Trial) -> float:
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(dims)]
+        return sum(xs)
+
     n_objectives = 1
+    n_trials = 4
+
+    sampler = NSGAIISampler(population_size=2, crossover="vsbx")
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(objective1, n_trials=n_trials)
+
+    assert len(study.trials) == n_trials
+
+
+@pytest.mark.parametrize("n_objectives", [(1), (2), (3)])
+def test_undx_objectives(n_objectives: int) -> None:
+    n_trials = 4
 
     sampler = NSGAIISampler(population_size=3, crossover="undx")
 
@@ -565,6 +630,27 @@ def test_undx(n_objectives: int) -> None:
 
     assert len(study.trials) == n_trials
 
+
+@pytest.mark.parametrize("dims", [(1), (2), (3)])
+def test_undx_dims(dims: int) -> None:
+    def objective1(trial: optuna.Trial) -> float:
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(dims)]
+        return sum(xs)
+
+    n_objectives = 1
+    n_trials = 4
+
+    sampler = NSGAIISampler(population_size=3, crossover="undx")
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(objective1, n_trials=n_trials)
+
+    assert len(study.trials) == n_trials
+
+
+def test_undx_population() -> None:
+    n_objectives = 2
+    n_trials = 4
     with pytest.raises(ValueError):
         sampler = NSGAIISampler(population_size=2, crossover="undx")
         study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
@@ -575,9 +661,8 @@ def test_undx(n_objectives: int) -> None:
 
 
 @pytest.mark.parametrize("n_objectives", [(1), (2), (3)])
-def test_undxm(n_objectives: int) -> None:
+def test_undxm_objectives(n_objectives: int) -> None:
     n_trials = 4
-    n_objectives = 1
 
     sampler = NSGAIISampler(population_size=4, crossover="undxm")
 
@@ -588,6 +673,27 @@ def test_undxm(n_objectives: int) -> None:
 
     assert len(study.trials) == n_trials
 
+
+@pytest.mark.parametrize("dims", [(1), (2), (3)])
+def test_undxm_dims(dims: int) -> None:
+    def objective1(trial: optuna.Trial) -> float:
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(dims)]
+        return sum(xs)
+
+    n_objectives = 1
+    n_trials = 4
+
+    sampler = NSGAIISampler(population_size=4, crossover="undxm")
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(objective1, n_trials=n_trials)
+
+    assert len(study.trials) == n_trials
+
+
+def test_undxm_population() -> None:
+    n_objectives = 2
+    n_trials = 4
     with pytest.raises(ValueError):
         sampler = NSGAIISampler(population_size=2, crossover="undxm")
         study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
@@ -598,9 +704,8 @@ def test_undxm(n_objectives: int) -> None:
 
 
 @pytest.mark.parametrize("n_objectives", [(1), (2), (3)])
-def test_spx(n_objectives: int) -> None:
+def test_spx_objectives(n_objectives: int) -> None:
     n_trials = 4
-    n_objectives = 1
 
     sampler = NSGAIISampler(population_size=3, crossover="spx")
 
@@ -610,6 +715,28 @@ def test_spx(n_objectives: int) -> None:
     )
 
     assert len(study.trials) == n_trials
+
+
+@pytest.mark.parametrize("dims", [(1), (2), (3)])
+def test_spx_dims(dims: int) -> None:
+    def objective1(trial: optuna.Trial) -> float:
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(dims)]
+        return sum(xs)
+
+    n_objectives = 1
+    n_trials = 4
+
+    sampler = NSGAIISampler(population_size=3, crossover="spx")
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+    study.optimize(objective1, n_trials=n_trials)
+
+    assert len(study.trials) == n_trials
+
+
+def test_spx_population() -> None:
+    n_objectives = 2
+    n_trials = 4
 
     with pytest.raises(ValueError):
         sampler = NSGAIISampler(population_size=2, crossover="spx")
