@@ -101,12 +101,17 @@ def test_use_existing_or_default_experiment(
     tmpdir: py.path.local, name: Optional[str], expected: str
 ) -> None:
 
-    tracking_file_name = "file:{}".format(tmpdir)
-    mlflow.set_tracking_uri(tracking_file_name)
+    if name is not None:
+        tracking_file_name = "file:{}".format(tmpdir)
+        mlflow.set_tracking_uri(tracking_file_name)
+        mlflow.set_experiment(name)
 
-    # TODO(xadrianzetx) Investigate why `Default` cannot be created
-    # automatically, when tmpdir is used.
-    mlflow.set_experiment(name if name is not None else "Default")
+    else:
+        # Target directory can't exist when initializing first
+        # run with default experiment at non-default uri.
+        tracking_file_name = "file:{}/foo".format(tmpdir)
+        mlflow.set_tracking_uri(tracking_file_name)
+
     mlflc = MLflowCallback(tracking_uri=tracking_file_name, create_experiment=False)
     study = optuna.create_study()
 
