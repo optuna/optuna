@@ -55,7 +55,7 @@ class _CachedStorage(BaseStorage):
     wraps :class:`~optuna.storages.RDBStorage` class.
 
     Args:
-        storage:
+        backend:
             :class:`~optuna.storages.BaseStorage` class instance to wrap.
     """
 
