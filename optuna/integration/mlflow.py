@@ -23,8 +23,7 @@ class MLflowCallback(object):
     """Callback to track Optuna trials with MLflow.
 
     This callback adds relevant information that is
-    tracked by Optuna to MLflow. The MLflow experiment
-    will be named after the Optuna study name.
+    tracked by Optuna to MLflow.
 
     Example:
 
@@ -117,15 +116,26 @@ class MLflowCallback(object):
             it will be broadcasted to each objective with a number suffix in order
             returned by objective function e.g. two objectives and default metric name
             will be logged as ``value_0`` and ``value_1``.
-        nest_trials:
-            Flag indicating whether or not trials should be logged as
-            nested runs. This is often helpful for aggregating trials
-            to a particular study, under a given experiment.
-        tag_study_user_attrs:
-            Flag indicating whether or not to add the study's user attrs
-            to the mlflow trial as tags. Please note that when this flag is
-            set, key value pairs in :attr:`~optuna.study.Study.user_attrs`
-            will supersede existing tags.
+        create_experiment:
+            When ``True``, new MLflow experiment will be created for each optimization run,
+            named after the Optuna study. Setting this argument to ``False`` lets user run
+            optimization under existing experiment, set via `mlflow.set_experiment
+            <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.get_tracking_uri>`_,
+            by passing ``experiment_id`` as one of ``mlflow_kwargs`` or under default MLflow
+            experiment, when no additional arguments are passed. Note that this argument
+            must be set to ``False`` when using Optuna with this callback within
+            Databricks Notebook.
+        mlflow_kwargs:
+            Set of arguments passed when initializing MLflow run.
+            Please refer to `MLflow API documentation
+            <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.start_run>`_
+            for more details.
+
+    Raises:
+        :exc:`ValueError`:
+            If there are missing or extra metric names in multi-objective optimization.
+        :exc:`TypeError`:
+            When metric names are not passed as sequence.
     """
 
     def __init__(
