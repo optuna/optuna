@@ -274,7 +274,7 @@ def test_sample_relative_numerical(
     trial = study.ask(search_space)
     study.tell(trial, sum(trial.params.values()))
 
-    def sample() -> List[float]:
+    def sample() -> List[Union[int, float]]:
         params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
         return [params[name] for name in search_space]
 
