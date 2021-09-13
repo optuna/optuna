@@ -522,7 +522,7 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
                     else:
                         return IntUniformDistribution(low, high)
 
-        raise ValueError("Unknown distribution class: {}".format(json_dict["type"]))
+        raise ValueError("Unknown distribution type: {}".format(json_dict["type"]))
 
 
 def distribution_to_json(dist: BaseDistribution) -> str:
