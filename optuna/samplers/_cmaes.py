@@ -6,7 +6,6 @@ from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 from typing import Union
 import warnings
@@ -270,7 +269,7 @@ class CmaEsSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
         # _cma_rng doesn't require reseeding because the relative sampling reseeds in each trial.
-        self._independent_sampler.reseed_rng()
+        super().reseed_rng()
 
     def infer_relative_search_space(
         self, study: "optuna.Study", trial: "optuna.trial.FrozenTrial"
@@ -544,15 +543,8 @@ class CmaEsSampler(BaseSampler):
                 complete_trials.append(copied_t)
         return complete_trials
 
-    def after_trial(
-        self,
-        study: "optuna.Study",
-        trial: "optuna.trial.FrozenTrial",
-        state: TrialState,
-        values: Optional[Sequence[float]],
-    ) -> None:
-
-        self._independent_sampler.after_trial(study, trial, state, values)
+    def get_child_samplers(self) -> List[BaseSampler]:
+        return [self._independent_sampler]
 
 
 def _split_optimizer_str(optimizer_str: str) -> Dict[str, str]:

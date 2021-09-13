@@ -134,7 +134,7 @@ class NSGAIISampler(BaseSampler):
         self._constraints_func = constraints_func
 
     def reseed_rng(self) -> None:
-        self._random_sampler.reseed_rng()
+        super().reseed_rng()
         self._rng = np.random.RandomState()
 
     def infer_relative_search_space(
@@ -346,6 +346,9 @@ class NSGAIISampler(BaseSampler):
 
         return population_per_rank
 
+    def get_child_samplers(self) -> List[BaseSampler]:
+        return [self._random_sampler]
+
     def after_trial(
         self,
         study: Study,
@@ -373,7 +376,8 @@ class NSGAIISampler(BaseSampler):
                     _CONSTRAINTS_KEY,
                     constraints,
                 )
-        self._random_sampler.after_trial(study, trial, state, values)
+
+        super().after_trial(study, trial, state, values)
 
 
 def _crowding_distance_sort(population: List[FrozenTrial]) -> None:

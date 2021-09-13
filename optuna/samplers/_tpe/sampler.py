@@ -4,7 +4,6 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
 from typing import Tuple
 from typing import Union
 import warnings
@@ -288,7 +287,7 @@ class TPESampler(BaseSampler):
     def reseed_rng(self) -> None:
 
         self._rng = np.random.RandomState()
-        self._random_sampler.reseed_rng()
+        super().reseed_rng()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -514,15 +513,8 @@ class TPESampler(BaseSampler):
             "weights": default_weights,
         }
 
-    def after_trial(
-        self,
-        study: Study,
-        trial: FrozenTrial,
-        state: TrialState,
-        values: Optional[Sequence[float]],
-    ) -> None:
-
-        self._random_sampler.after_trial(study, trial, state, values)
+    def get_child_samplers(self) -> List[BaseSampler]:
+        return [self._random_sampler]
 
 
 def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:

@@ -1,7 +1,6 @@
 from typing import Any
 from typing import Dict
-from typing import Optional
-from typing import Sequence
+from typing import List
 import warnings
 
 from optuna._experimental import experimental
@@ -9,7 +8,6 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
-from optuna.trial import TrialState
 
 
 @experimental("2.4.0")
@@ -56,9 +54,6 @@ class PartialFixedSampler(BaseSampler):
     def __init__(self, fixed_params: Dict[str, Any], base_sampler: BaseSampler) -> None:
         self._fixed_params = fixed_params
         self._base_sampler = base_sampler
-
-    def reseed_rng(self) -> None:
-        self._base_sampler.reseed_rng()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -112,12 +107,5 @@ class PartialFixedSampler(BaseSampler):
                 )
             return param_value
 
-    def after_trial(
-        self,
-        study: Study,
-        trial: FrozenTrial,
-        state: TrialState,
-        values: Optional[Sequence[float]],
-    ) -> None:
-
-        self._base_sampler.after_trial(study, trial, state, values)
+    def get_child_samplers(self) -> List[BaseSampler]:
+        return [self._base_sampler]

@@ -2,6 +2,7 @@ from collections import OrderedDict
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -533,8 +534,8 @@ class BoTorchSampler(BaseSampler):
             study, trial, param_name, param_distribution
         )
 
-    def reseed_rng(self) -> None:
-        self._independent_sampler.reseed_rng()
+    def get_child_samplers(self) -> List[BaseSampler]:
+        return [self._independent_sampler]
 
     def after_trial(
         self,
@@ -563,4 +564,5 @@ class BoTorchSampler(BaseSampler):
                     "botorch:constraints",
                     constraints,
                 )
-        self._independent_sampler.after_trial(study, trial, state, values)
+
+        super().after_trial(study, trial, state, values)

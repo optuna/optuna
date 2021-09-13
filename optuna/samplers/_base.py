@@ -1,6 +1,7 @@
 import abc
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
 
@@ -143,6 +144,15 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
+    def get_child_samplers(self) -> List["BaseSampler"]:
+        """Get the samplers in attribute.
+
+        This method returns sampler attributes in the sampler. Samplers that inherit `BaseSampler`
+        may have sampler attributes, e.g., a random sampler for fallback.
+        """
+
+        return []
+
     def after_trial(
         self,
         study: Study,
@@ -172,7 +182,8 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
         """
 
-        pass
+        for sampler in self.get_child_samplers():
+            sampler.after_trial(study, trial, state, values)
 
     def reseed_rng(self) -> None:
         """Reseed sampler's random number generator.
@@ -184,7 +195,8 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
         number generator.
         """
 
-        pass
+        for sampler in self.get_child_samplers():
+            sampler.reseed_rng()
 
     def _raise_error_if_multi_objective(self, study: Study) -> None:
 
