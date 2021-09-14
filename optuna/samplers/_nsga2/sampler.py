@@ -31,7 +31,6 @@ from optuna.trial import TrialState
 # Define key names of `Trial.system_attrs`.
 _CONSTRAINTS_KEY = "nsga2:constraints"
 _GENERATION_KEY = "nsga2:generation"
-_PARENTS_KEY = "nsga2:parents"
 _POPULATION_CACHE_KEY_PREFIX = "nsga2:population"
 
 
@@ -59,6 +58,45 @@ class NSGAIISampler(BaseSampler):
             Crossover to be applied when creating child individuals.
             The available crossovers are
             `uniform (default)`, `blxalpha`, `sbx`, `vsbx`, `undx`, `undxm`, and `spx`.
+
+            For :class: '~optuna.distributions.CategoricalDistribution',
+            uniform crossover will be applied,
+            and for other distributions, the specified crossover will be applied.
+
+            For more information on each of the crossover methods, please refer to the following
+            - uniform `Gilbert Syswerda. 1989. Uniform Crossover in Genetic Algorithms.
+            In Proceedings of the 3rd International Conference on Genetic Algorithms.
+            Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, 2–9.
+            <https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms>`_
+            - blxalpha `Eshelman, L. and J. D. Schaffer.
+            “Real-Coded Genetic Algorithms and Interval-Schemata.” FOGA (1992).
+            <https://www.sciencedirect.com/science/article/abs/pii/B9780080948324500180>`_
+            - sbx `Deb, K. and R. Agrawal.
+            “Simulated Binary Crossover for Continuous Search Space.”
+            Complex Syst. 9 (1995): n. pag.
+            <https://www.complex-systems.com/abstracts/v09_i02_a02/>`_
+            - vsbx `Pedro J. Ballester, Jonathan N. Carter.
+            Real-Parameter Genetic Algorithms for Finding Multiple Optimal Solutions
+            in Multi-modal Optimization.
+            GECCO 2003: 706-717
+            <https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.422.952&rep=rep1&type=pdf>`_
+            - undx `H. Kita, I. Ono and S. Kobayashi,
+            Multi-parental extension of the unimodal normal distribution crossover
+            for real-coded genetic algorithms,
+            Proceedings of the 1999 Congress on Evolutionary Computation-CEC99 (Cat. No. 99TH8406),
+            1999, pp. 1581-1588 Vol. 2
+            <https://ieeexplore.ieee.org/document/782672>`_
+            - undxm `H. Kita, I. Ono and S. Kobayashi,
+            Multi-parental extension of the unimodal normal distribution crossover
+            for real-coded genetic algorithms,
+            Proceedings of the 1999 Congress on Evolutionary Computation-CEC99 (Cat. No. 99TH8406),
+            1999, pp. 1581-1588 Vol. 2
+            <https://ieeexplore.ieee.org/document/782672>`_
+            - spx `Shigeyoshi Tsutsui and Shigeyoshi Tsutsui and David E. Goldberg and
+            David E. Goldberg and Kumara Sastry and Kumara Sastry
+            Progress Toward Linkage Learning in Real-Coded GAs with Simplex Crossover.
+            IlliGAL Report. 2000.
+            <https://www.researchgate.net/publication/2388486_Progress_Toward_Linkage_Learning_in_Real-Coded_GAs_with_Simplex_Crossover>`_
 
         crossover_prob:
             Probability that a crossover (parameters swapping between parents) will occur
@@ -135,8 +173,8 @@ class NSGAIISampler(BaseSampler):
         if crossover not in ["uniform", "blxalpha", "sbx", "vsbx", "undx", "undxm", "spx"]:
             raise ValueError(
                 f"'{crossover}' is not a valid crossover name."
-                "The available crossovers are \
-                `uniform (default)`, `blxalpha`, `sbx`, `vsbx`, `undx`, `undxm`, and `spx`."
+                "The available crossovers are"
+                "`uniform (default)`, `blxalpha`, `sbx`, `vsbx`, `undx`, `undxm`, and `spx`."
             )
         if crossover != "uniform":
             warnings.warn(
@@ -204,7 +242,6 @@ class NSGAIISampler(BaseSampler):
             for param_name in child.keys():
                 if self._rng.rand() >= mutation_prob:
                     params[param_name] = child[param_name]
-
             return params
 
         return {}
@@ -216,7 +253,6 @@ class NSGAIISampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-
         return self._random_sampler.sample_independent(
             study, trial, param_name, param_distribution
         )
