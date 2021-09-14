@@ -49,7 +49,7 @@ def _check_storage_url(storage_url: Optional[str]) -> str:
 
 
 def _format_value(value: Any) -> Any:
-    #  Format value that can be serialized to JSON or YAML
+    #  Format value that can be serialized to JSON or YAML.
     if value is None or isinstance(value, (int, float)):
         return value
     elif isinstance(value, datetime.datetime):
@@ -85,15 +85,16 @@ def _convert_to_dict(
         for record in records:
             row = {}
             for column in columns:
-                if column in record:
-                    value = _format_value(record[column])
-                    if column[1] != "":
-                        row[f"{column[0]}_{column[1]}"] = value
-                    elif any(isinstance(record.get(column), (list, tuple)) for record in records):
-                        for i, v in enumerate(value):
-                            row[f"{column[0]}_{i}"] = v
-                    else:
-                        row[f"{column[0]}"] = value
+                if column not in record:
+                    continue
+                value = _format_value(record[column])
+                if column[1] != "":
+                    row[f"{column[0]}_{column[1]}"] = value
+                elif any(isinstance(record.get(column), (list, tuple)) for record in records):
+                    for i, v in enumerate(value):
+                        row[f"{column[0]}_{i}"] = v
+                else:
+                    row[f"{column[0]}"] = value
             ret.append(row)
     else:
         for column in columns:
@@ -102,17 +103,18 @@ def _convert_to_dict(
         for record in records:
             attrs: Dict[str, Any] = {column_name: {} for column_name in header}
             for column in columns:
-                if column in record:
-                    value = _format_value(record[column])
-                    if isinstance(column[1], int):
-                        if attrs[column[0]] == {}:
-                            attrs[column[0]] = []
-                        attrs[column[0]] += [None] * max(column[1] + 1 - len(attrs[column[0]]), 0)
-                        attrs[column[0]][column[1]] = value
-                    elif column[1] != "":
-                        attrs[column[0]][column[1]] = value
-                    else:
-                        attrs[column[0]] = value
+                if column not in record:
+                    continue
+                value = _format_value(record[column])
+                if isinstance(column[1], int):
+                    if attrs[column[0]] == {}:
+                        attrs[column[0]] = []
+                    attrs[column[0]] += [None] * max(column[1] + 1 - len(attrs[column[0]]), 0)
+                    attrs[column[0]][column[1]] = value
+                elif column[1] != "":
+                    attrs[column[0]][column[1]] = value
+                else:
+                    attrs[column[0]] = value
             ret.append(attrs)
 
     return ret, header
@@ -163,7 +165,7 @@ def _dump_table(records: List[Dict[str, Any]], header: List[str]) -> str:
 
     separator = "+"
     header_string = "|"
-    rows_string = ["|" for _ in range(len(rows))]
+    rows_string = ["|" for _ in rows]
     for column in range(len(header)):
         value_types = [row[column].value_type for row in rows]
         value_type = ValueType.NUMERIC
