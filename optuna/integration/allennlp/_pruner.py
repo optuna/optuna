@@ -122,7 +122,7 @@ class AllenNLPPruningCallback(TrainerCallback):
 
         On the other hand, when :class:`~optuna.integration.AllenNLPPruningCallback` is used with
         :class:`~optuna.integration.AllenNLPExecutor`, ``trial`` and ``monitor``
-        would be ``None``. :class:`~optuna.integration.AllenNLPExecutor` sets
+        would be :obj:`None`. :class:`~optuna.integration.AllenNLPExecutor` sets
         environment variables for a study name, trial id, monitor, and storage.
         Then :class:`~optuna.integration.AllenNLPPruningCallback`
         loads them to restore ``trial`` and ``monitor``.
