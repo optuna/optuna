@@ -356,7 +356,12 @@ class _Studies(_BaseCommand):
             default="table",
             help="Output format.",
         )
-        parser.add_argument("--flatten", default=False, action="store_true", help="Output format.")
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as directions.",
+        )
         return parser
 
     def take_action(self, parsed_args: Namespace) -> None:
@@ -405,7 +410,12 @@ class _Trials(_BaseCommand):
             default="table",
             help="Output format.",
         )
-        parser.add_argument("--flatten", default=False, action="store_true", help="Output format.")
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params and user_attrs.",
+        )
         return parser
 
     def take_action(self, parsed_args: Namespace) -> None:
@@ -452,7 +462,12 @@ class _BestTrial(_BaseCommand):
             default="table",
             help="Output format.",
         )
-        parser.add_argument("--flatten", default=False, action="store_true", help="Output format.")
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params and user_attrs.",
+        )
         return parser
 
     def take_action(self, parsed_args: Namespace) -> None:
@@ -503,7 +518,12 @@ class _BestTrials(_BaseCommand):
             default="table",
             help="Output format.",
         )
-        parser.add_argument("--flatten", default=False, action="store_true", help="Output format.")
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params and user_attrs.",
+        )
         return parser
 
     def take_action(self, parsed_args: Namespace) -> None:
@@ -761,7 +781,12 @@ class _Ask(_BaseCommand):
             default="json",
             help="Output format.",
         )
-        parser.add_argument("--flatten", default=False, action="store_true", help="Output format.")
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params.",
+        )
         return parser
 
     def take_action(self, parsed_args: Namespace) -> None:
