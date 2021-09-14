@@ -117,13 +117,13 @@ class MLflowCallback(object):
             returned by objective function e.g. two objectives and default metric name
             will be logged as ``value_0`` and ``value_1``.
         create_experiment:
-            When ``True``, new MLflow experiment will be created for each optimization run,
-            named after the Optuna study. Setting this argument to ``False`` lets user run
+            When :obj:`True`, new MLflow experiment will be created for each optimization run,
+            named after the Optuna study. Setting this argument to :obj:`False` lets user run
             optimization under existing experiment, set via `mlflow.set_experiment
             <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.get_tracking_uri>`_,
             by passing ``experiment_id`` as one of ``mlflow_kwargs`` or under default MLflow
             experiment, when no additional arguments are passed. Note that this argument
-            must be set to ``False`` when using Optuna with this callback within
+            must be set to :obj:`False` when using Optuna with this callback within
             Databricks Notebook.
         mlflow_kwargs:
             Set of arguments passed when initializing MLflow run.
