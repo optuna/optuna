@@ -146,7 +146,8 @@ class Trial(BaseTrial):
 
                 .. note::
                     The ``step`` and ``log`` arguments cannot be used at the same time. To set
-                    the ``step`` argument to a float number, set the ``log`` argument to ``False``.
+                    the ``step`` argument to a float number, set the ``log`` argument to
+                    :obj:`False`.
             log:
                 A flag to sample the value from the log domain or not.
                 If ``log`` is true, the value is sampled from the range in the log domain.
@@ -155,7 +156,7 @@ class Trial(BaseTrial):
 
                 .. note::
                     The ``step`` and ``log`` arguments cannot be used at the same time. To set
-                    the ``log`` argument to ``True``, set the ``step`` argument to ``None``.
+                    the ``log`` argument to :obj:`True`, set the ``step`` argument to :obj:`None`.
 
         Raises:
             :exc:`ValueError`:
@@ -407,7 +408,7 @@ class Trial(BaseTrial):
                 .. note::
                     The ``step != 1`` and ``log`` arguments cannot be used at the same time.
                     To set the ``step`` argument :math:`\\mathsf{step} \\ge 2`, set the
-                    ``log`` argument to ``False``.
+                    ``log`` argument to :obj:`False`.
             log:
                 A flag to sample the value from the log domain or not.
 
@@ -423,7 +424,7 @@ class Trial(BaseTrial):
 
                 .. note::
                     The ``step != 1`` and ``log`` arguments cannot be used at the same time.
-                    To set the ``log`` argument to ``True``, set the ``step`` argument to 1.
+                    To set the ``log`` argument to :obj:`True`, set the ``step`` argument to 1.
 
         Raises:
             :exc:`ValueError`:
