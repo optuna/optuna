@@ -14,11 +14,13 @@ EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
     "u": distributions.UniformDistribution(low=1.0, high=2.0),
     "l": distributions.LogUniformDistribution(low=0.001, high=100),
     "du": distributions.DiscreteUniformDistribution(low=1.0, high=9.0, q=2.0),
-    "iu": distributions.IntUniformDistribution(low=1, high=9, step=2),
+    "iu": distributions.IntUniformDistribution(low=1, high=9),
+    "iuq": distributions.IntUniformDistribution(low=1, high=9, step=2),
     "c1": distributions.CategoricalDistribution(choices=(2.71, -float("inf"))),
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
     "c3": distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"]),
-    "ilu": distributions.IntLogUniformDistribution(low=2, high=12, step=2),
+    "ilu": distributions.IntLogUniformDistribution(low=2, high=12),
+    "iluq": distributions.IntLogUniformDistribution(low=2, high=12, step=2),
 }
 
 EXAMPLE_JSONS = {
@@ -26,11 +28,13 @@ EXAMPLE_JSONS = {
     "l": '{"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}}',
     "du": '{"name": "DiscreteUniformDistribution",'
     '"attributes": {"low": 1.0, "high": 9.0, "q": 2.0}}',
-    "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 9, "step": 2}}',
+    "iu": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 9}}',
+    "iuq": '{"name": "IntUniformDistribution", "attributes": {"low": 1, "high": 9, "step": 2}}',
     "c1": '{"name": "CategoricalDistribution", "attributes": {"choices": [2.71, -Infinity]}}',
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
     "c3": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
-    "ilu": '{"name": "IntLogUniformDistribution", '
+    "ilu": '{"name": "IntLogUniformDistribution", "attributes": {"low": 2, "high": 12}}',
+    "iluq": '{"name": "IntLogUniformDistribution", '
     '"attributes": {"low": 2, "high": 12, "step": 2}}',
 }
 
@@ -38,11 +42,13 @@ EXAMPLE_ABBREVIATED_JSONS = {
     "u": '{"type": "float", "low": 1.0, "high": 2.0}',
     "l": '{"type": "float", "low": 0.001, "high": 100, "log": true}',
     "du": '{"type": "float", "low": 1.0, "high": 9.0, "step": 2.0}',
-    "iu": '{"type": "int", "low": 1, "high": 9, "step": 2}',
+    "iu": '{"type": "int", "low": 1, "high": 9}',
+    "iuq": '{"type": "int", "low": 1, "high": 9, "step": 2}',
     "c1": '{"type": "categorical", "choices": [2.71, -Infinity]}',
     "c2": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
     "c3": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
-    "ilu": '{"type": "int", "low": 2, "high": 12, "step": 2, "log": true}',
+    "ilu": '{"type": "int", "low": 2, "high": 12, "log": true}',
+    "iluq": '{"type": "int", "low": 2, "high": 12, "step": 2, "log": true}',
 }
 
 
@@ -82,8 +88,14 @@ def test_backward_compatibility_int_uniform_distribution() -> None:
 def test_distribution_to_json() -> None:
 
     for key in EXAMPLE_JSONS:
-        json_actual = distributions.distribution_to_json(EXAMPLE_DISTRIBUTIONS[key])
-        assert json.loads(json_actual) == json.loads(EXAMPLE_JSONS[key])
+        json_actual = json.loads(distributions.distribution_to_json(EXAMPLE_DISTRIBUTIONS[key]))
+        json_expect = json.loads(EXAMPLE_JSONS[key])
+        if (
+            json_expect["name"] in ("IntUniformDistribution", "IntLogUniformDistribution")
+            and "step" not in json_expect["attributes"]
+        ):
+            json_expect["attributes"]["step"] = 1
+        assert json_actual == json_expect
 
 
 def test_check_distribution_compatibility() -> None:
@@ -126,7 +138,13 @@ def test_check_distribution_compatibility() -> None:
         EXAMPLE_DISTRIBUTIONS["iu"], distributions.IntUniformDistribution(low=-1, high=1)
     )
     distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS["iuq"], distributions.IntUniformDistribution(low=-1, high=1)
+    )
+    distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["ilu"], distributions.IntLogUniformDistribution(low=1, high=13)
+    )
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS["iluq"], distributions.IntLogUniformDistribution(low=1, high=13)
     )
 
 
@@ -367,12 +385,14 @@ def test_discrete_uniform_distribution_asdict() -> None:
 
 def test_int_uniform_distribution_asdict() -> None:
 
-    assert EXAMPLE_DISTRIBUTIONS["iu"]._asdict() == {"low": 1, "high": 9, "step": 2}
+    assert EXAMPLE_DISTRIBUTIONS["iu"]._asdict() == {"low": 1, "high": 9, "step": 1}
+    assert EXAMPLE_DISTRIBUTIONS["iuq"]._asdict() == {"low": 1, "high": 9, "step": 2}
 
 
 def test_int_log_uniform_distribution_asdict() -> None:
 
-    assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12, "step": 2}
+    assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12, "step": 1}
+    assert EXAMPLE_DISTRIBUTIONS["iluq"]._asdict() == {"low": 2, "high": 12, "step": 2}
 
 
 def test_int_log_uniform_distribution_deprecation() -> None:
