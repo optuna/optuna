@@ -107,6 +107,8 @@ def _convert_to_dict(
                     continue
                 value = _format_value(record[column])
                 if isinstance(column[1], int):
+                    # Reconstruct list of values. `_dataframe._create_records_and_aggregate_column`
+                    # returns indices of list as the second key of column.
                     if attrs[column[0]] == {}:
                         attrs[column[0]] = []
                     attrs[column[0]] += [None] * max(column[1] + 1 - len(attrs[column[0]]), 0)
