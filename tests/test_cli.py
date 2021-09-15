@@ -54,6 +54,18 @@ def objective_func_multi_objective(trial: Trial) -> Tuple[float, float]:
 
 
 def _parse_output(output: str, output_format: str) -> Any:
+    """Parse CLI output.
+
+    Args:
+        output:
+            The output of command.
+        output_format:
+            The format of output specified by command.
+
+    Returns:
+        For table format, a list of dict formatted rows.
+        For JSON or YAML format, a list or a dict corresponding to ``output``.
+    """
 
     if output_format == "table":
         rows = output.split("\n")
