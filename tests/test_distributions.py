@@ -65,6 +65,11 @@ def test_abbreviated_json_to_distribution() -> None:
     unknown_json = '{"type": "unknown", "low": 1.0, "high": 2.0}'
     pytest.raises(ValueError, lambda: distributions.json_to_distribution(unknown_json))
 
+    unsupported_distribution = (
+        '{"type": "float", "low": 1.0, "high": 9.0, "step": 2.0, "log": true}'
+    )
+    pytest.raises(ValueError, lambda: distributions.json_to_distribution(unsupported_distribution))
+
 
 def test_backward_compatibility_int_uniform_distribution() -> None:
 
