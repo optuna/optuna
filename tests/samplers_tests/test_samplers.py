@@ -1,4 +1,5 @@
 import pickle
+import sys
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -40,17 +41,21 @@ parametrize_sampler = pytest.mark.parametrize(
             skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
         ),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
-        lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
         optuna.samplers.NSGAIISampler,
-    ],
+    ]
+    + []
+    if sys.version_info < (3, 7, 0)
+    else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)],
 )
 parametrize_multi_objective_sampler = pytest.mark.parametrize(
     "multi_objective_sampler_class",
     [
         optuna.samplers.NSGAIISampler,
         optuna.samplers.MOTPESampler,
-        lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
-    ],
+    ]
+    + []
+    if sys.version_info < (3, 7, 0)
+    else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)],
 )
 
 
