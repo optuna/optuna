@@ -350,6 +350,22 @@ class FrozenTrial(BaseTrial):
                     "{}.".format(param_value, param_name, distribution)
                 )
 
+        if self.values is not None:
+            for i, v in enumerate(self.values):
+                # `value` can be None.
+                if v is None:
+                    continue
+                try:
+                    # Check if `values` element is float. This check accepts float-castable values
+                    # including numpy.floating and numpy.integer, which are sometimes returned
+                    # by objective functions.
+                    _ = v + 1
+                except TypeError:
+                    raise ValueError(
+                        "{}-th element of `values` is {}. All elements are supposed to be float "
+                        "or None.".format(i, type(v).__name__)
+                    ) from None
+
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
 
         if name not in self._params:

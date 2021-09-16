@@ -6,6 +6,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+import numpy as np
 import pytest
 
 from optuna import create_study
@@ -413,6 +414,18 @@ def test_validate() -> None:
         with pytest.raises(ValueError):
             invalid_trial._validate()
 
+    # Valid: `value` accepts float-castable values.
+    _trial = copy.copy(valid_trial)
+    for value in [1.0, 1, np.float32(1.0), np.int_(1)]:
+        _trial.value = value
+        _trial._validate()
+
+    # Invalid: `value` has invalid type value.
+    invalid_trial = copy.copy(valid_trial)
+    for value in ["1", "a", [1], {2}, [3, 4], {"k", "v"}]:
+        invalid_trial.value = value
+        with pytest.raises(ValueError):
+            invalid_trial._validate()
 
 def test_number() -> None:
 
