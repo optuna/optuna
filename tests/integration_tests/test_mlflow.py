@@ -307,6 +307,27 @@ def test_log_user_attrs(tmpdir: py.path.local) -> None:
     assert all((r.data.tags["my_user_attr"] == "my_user_attr_value") for r in runs)
 
 
+def test_colliding_user_attrs(tmpdir: py.path.local) -> None:
+
+    tracking_file_name = "file:{}".format(tmpdir)
+
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name)
+    study = optuna.create_study()
+    study.set_user_attr("my_user_attr", "my_study_attr_value")
+    study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiment = mlfl_client.list_experiments()[0]
+    run_info = mlfl_client.list_run_infos(experiment.experiment_id)[0]
+    run = mlfl_client.get_run(run_info.run_id)
+    tags = run.data.tags
+
+    assert "study_my_user_attr" in tags.keys()
+    assert "trial_my_user_attr" in tags.keys()
+    assert tags["study_my_user_attr"] == "my_study_attr_value"
+    assert tags["trial_my_user_attr"] == "my_user_attr_value"
+
+
 def test_log_mlflow_tags(tmpdir: py.path.local) -> None:
 
     tracking_file_name = "file:{}".format(tmpdir)

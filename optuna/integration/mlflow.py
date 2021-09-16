@@ -248,7 +248,16 @@ class MLflowCallback(object):
         tags["direction"] = directions if len(directions) != 1 else directions[0]
 
         distributions = {(k + "_distribution"): str(v) for (k, v) in trial.distributions.items()}
-        tags.update({**distributions, **trial.user_attrs, **study.user_attrs})
+        study_attrs = study.user_attrs
+        trial_attrs = trial.user_attrs
+        collisions = study_attrs.keys() & trial_attrs.keys()
+
+        for key in collisions:
+            # make colliding trial and study user attributes unique
+            study_attrs["study_{}".format(key)] = study_attrs.pop(key)
+            trial_attrs["trial_{}".format(key)] = trial_attrs.pop(key)
+
+        tags.update({**distributions, **trial_attrs, **study_attrs})
 
         # This is a temporary fix on Optuna side. It avoids an error with user
         # attributes that are too long. It should be fixed on MLflow side later.
