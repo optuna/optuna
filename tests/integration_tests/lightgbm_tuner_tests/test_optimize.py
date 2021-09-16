@@ -743,7 +743,14 @@ class TestLightGBMTuner(object):
 
         train = lgb.Dataset(X_trainval, y_trainval)
         valid = lgb.Dataset(X_test, y_test)
-        params = {"objective": "regression", "metric": "rmse", "random_seed": 0}
+        params = {
+            "objective": "regression",
+            "metric": "rmse",
+            "random_seed": 0,
+            "deterministic": True,
+            "force_col_wise": True,
+            "verbosity": -1,
+        }
 
         tuner_first_try = lgb.LightGBMTuner(
             params,
@@ -1055,7 +1062,14 @@ class TestLightGBMTunerCV(object):
         )
 
         train = lgb.Dataset(X_trainval, y_trainval)
-        params = {"objective": "regression", "metric": "rmse", "random_seed": 0}
+        params = {
+            "objective": "regression",
+            "metric": "rmse",
+            "random_seed": 0,
+            "deterministic": True,
+            "force_col_wise": True,
+            "verbosity": -1,
+        }
 
         tuner_first_try = lgb.LightGBMTunerCV(
             params,

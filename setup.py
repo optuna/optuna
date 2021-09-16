@@ -37,6 +37,7 @@ def get_install_requires() -> List[str]:
         "scipy!=1.4.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
+        "PyYAML",  # Only used in `optuna/cli.py`.
     ]
     return requirements
 
@@ -50,7 +51,7 @@ def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
         # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
-        # examples and tutorials.
+        # tutorials.
         "checking": ["black", "hacking", "isort", "mypy==0.790", "blackdoc"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
@@ -58,12 +59,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
-            "scikit-learn>=0.19.0,<0.23.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "mlflow",
         ],
         "document": [
-            "sphinx",
+            # TODO(nzw): Remove the version constraint after resolving the issue
+            # https://github.com/optuna/optuna/issues/2658.
+            "sphinx<4.0.0",
             "sphinx_rtd_theme",
             "sphinx-copybutton",
             "sphinx-gallery",
@@ -78,42 +81,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0",
             "torchaudio==0.8.0",
             "thop",
-        ],
-        "example": [
-            "catboost",
-            "chainer",
-            "lightgbm",
-            "mlflow",
-            "mpi4py",
-            "mxnet",
-            "nbval",
-            "scikit-image",
-            "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",
-            # optuna/visualization/param_importances.py.
-            "xgboost",
-            "keras ; python_version<'3.9'",
-            "tensorflow>=2.0.0 ; python_version<'3.9'",
-            "tensorflow-datasets ; python_version<'3.9'",
-            "pytorch-ignite",
-            "pytorch-lightning>=1.0.2",
-            "thop",
-            "skorch",
-            "stable-baselines3>=0.7.0",
-            "catalyst>=21.3",
-            "torch==1.8.0 ; sys_platform=='darwin'",
-            "torch==1.8.0+cpu ; sys_platform!='darwin'",
-            "torchvision==0.9.0 ; sys_platform=='darwin'",
-            "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
-            "torchaudio==0.8.0",
-            "allennlp>=2.2.0",
-            "dask[dataframe]",
-            "dask-ml",
-            "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
-            "optax",
-            "dm-haiku",
-            "hydra-optuna-sweeper",
-            "ray",
         ],
         "experimental": ["redis"],
         "testing": [
@@ -131,11 +98,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "plotly>=4.0.0",
             "pytest",
-            "scikit-learn>=0.19.0,<0.23.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            "keras",
-            "tensorflow ; python_version<'3.9'",
+            "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
@@ -146,7 +112,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0 ; sys_platform=='darwin'",
             "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
             "torchaudio==0.8.0",
-            "allennlp>=2.2.0",
+            "allennlp>=2.2.0,<2.7.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
@@ -160,7 +126,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
-            "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",
+            "scikit-learn>=0.24.2",
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
@@ -170,15 +136,15 @@ def get_extras_require() -> Dict[str, List[str]]:
             "cma",
             "lightgbm",
             "mlflow",
+            "wandb",
             "mpi4py",
             "mxnet",
             "pandas",
-            "scikit-learn>=0.19.0,<0.23.0 ; python_version<'3.9'",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            "keras ; python_version<'3.9'",
-            "tensorflow ; python_version<'3.9'",
-            "tensorflow-datasets ; python_version<'3.9'",
+            "tensorflow",
+            "tensorflow-datasets",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
             "skorch",
@@ -188,9 +154,13 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0 ; sys_platform=='darwin'",
             "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
             "torchaudio==0.8.0",
-            "allennlp>=2.2.0",
+            "allennlp>=2.2.0,<2.7.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
+        ],
+        "benchmark": [
+            "asv",
+            "virtualenv",
         ],
     }
 
@@ -216,7 +186,7 @@ setup(
     author="Takuya Akiba",
     author_email="akiba@preferred.jp",
     url="https://optuna.org/",
-    packages=find_packages(exclude=("tests", "tests.*")),
+    packages=find_packages(exclude=("tests", "tests.*", "benchmarks")),
     package_data={
         "optuna": [
             "storages/_rdb/alembic.ini",
@@ -236,9 +206,14 @@ setup(
             "delete-study = optuna.cli:_DeleteStudy",
             "study set-user-attr = optuna.cli:_StudySetUserAttribute",
             "studies = optuna.cli:_Studies",
+            "trials = optuna.cli:_Trials",
+            "best-trial = optuna.cli:_BestTrial",
+            "best-trials = optuna.cli:_BestTrials",
             "dashboard = optuna.cli:_Dashboard",
             "study optimize = optuna.cli:_StudyOptimize",
             "storage upgrade = optuna.cli:_StorageUpgrade",
+            "ask = optuna.cli:_Ask",
+            "tell = optuna.cli:_Tell",
         ],
     },
     classifiers=[

@@ -388,6 +388,31 @@ def test_load_study(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_load_study_study_name_none(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        if storage is None:
+            # `InMemoryStorage` can not be used with `load_study` function.
+            return
+
+        study_name = str(uuid.uuid4())
+
+        _ = create_study(study_name=study_name, storage=storage)
+
+        loaded_study = load_study(study_name=None, storage=storage)
+
+        assert loaded_study.study_name == study_name
+
+        study_name = str(uuid.uuid4())
+
+        _ = create_study(study_name=study_name, storage=storage)
+
+        # Ambiguous study.
+        with pytest.raises(ValueError):
+            load_study(study_name=None, storage=storage)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_delete_study(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -644,7 +669,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
         assert t.params["x"] == 1
 
 
-@patch("optuna._optimize.gc.collect")
+@patch("optuna.study._optimize.gc.collect")
 def test_optimize_with_gc(collect_mock: Mock) -> None:
 
     study = create_study()
@@ -653,13 +678,46 @@ def test_optimize_with_gc(collect_mock: Mock) -> None:
     assert collect_mock.call_count == 10
 
 
-@patch("optuna._optimize.gc.collect")
+@patch("optuna.study._optimize.gc.collect")
 def test_optimize_without_gc(collect_mock: Mock) -> None:
 
     study = create_study()
     study.optimize(func, n_trials=10, gc_after_trial=False)
     check_study(study)
     assert collect_mock.call_count == 0
+
+
+def test_optimize_with_progbar(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    study.optimize(lambda _: 1.0, n_trials=10, show_progress_bar=True)
+    _, err = capsys.readouterr()
+
+    # search for progress bar elements in stderr
+    assert "10/10" in err
+    assert "100%" in err
+
+
+def test_optimize_without_progbar(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    study.optimize(lambda _: 1.0, n_trials=10)
+    _, err = capsys.readouterr()
+
+    assert "10/10" not in err
+    assert "100%" not in err
+
+
+def test_optimize_with_progbar_parallel(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    with pytest.warns(UserWarning, match="Progress bar only supports serial execution"):
+        study.optimize(lambda _: 1.0, n_trials=10, show_progress_bar=True, n_jobs=-1)
+
+    _, err = capsys.readouterr()
+
+    assert "10/10" not in err
+    assert "100%" not in err
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])

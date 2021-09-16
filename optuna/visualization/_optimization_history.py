@@ -1,11 +1,12 @@
 from typing import Callable
+from typing import cast
 from typing import Optional
 
 import numpy as np
 
-from optuna._study_direction import StudyDirection
 from optuna.logging import get_logger
 from optuna.study import Study
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
@@ -94,9 +95,9 @@ def _get_optimization_history_plot(
 
     if target is None:
         if study.direction == StudyDirection.MINIMIZE:
-            best_values = np.minimum.accumulate([t.value for t in trials])
+            best_values = np.minimum.accumulate([cast(float, t.value) for t in trials])
         else:
-            best_values = np.maximum.accumulate([t.value for t in trials])
+            best_values = np.maximum.accumulate([cast(float, t.value) for t in trials])
         traces = [
             go.Scatter(
                 x=[t.number for t in trials],

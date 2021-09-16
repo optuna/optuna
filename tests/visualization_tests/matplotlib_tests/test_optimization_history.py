@@ -17,7 +17,7 @@ def test_plot_optimization_history(direction: str) -> None:
     # Test with no trial.
     study = create_study(direction=direction)
     figure = plot_optimization_history(study)
-    assert not figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     def objective(trial: Trial) -> float:
 
@@ -30,20 +30,21 @@ def test_plot_optimization_history(direction: str) -> None:
         return 0.0
 
     # Test with a trial.
-    # TODO(ytknzw): Add more specific assertion with the test case.
     study = create_study(direction=direction)
     study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(study)
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 1
+    assert list(figure.get_lines()[0].get_xdata()) == [0, 1, 2]
 
     # Test customized target.
     with pytest.warns(UserWarning):
         figure = plot_optimization_history(study, target=lambda t: t.number)
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     # Test customized target name.
     figure = plot_optimization_history(study, target_name="Target Name")
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 1
+    assert figure.yaxis.label.get_text() == "Target Name"
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
@@ -53,4 +54,4 @@ def test_plot_optimization_history(direction: str) -> None:
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
 
     figure = plot_optimization_history(study)
-    assert not figure.has_data()
+    assert len(figure.get_lines()) == 0

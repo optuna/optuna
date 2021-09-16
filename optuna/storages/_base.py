@@ -10,9 +10,9 @@ from typing import Tuple
 from typing import Union
 
 import optuna
-from optuna._study_direction import StudyDirection
-from optuna._study_summary import StudySummary
 from optuna.distributions import BaseDistribution
+from optuna.study._study_direction import StudyDirection
+from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -381,7 +381,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
-        """Read the trial id of a trial.
+        """Read the trial ID of a trial.
 
         Args:
             study_id:

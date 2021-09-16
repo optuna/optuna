@@ -792,8 +792,13 @@ class LightGBMTuner(_LightGBMBaseTuner):
             that affects sampling for ``num_leaves``, ``bagging_fraction``, ``bagging_freq``,
             ``lambda_l1``, and ``lambda_l2``.
 
+            .. note::
+                The `deterministic`_ parameter of LightGBM makes training reproducible.
+                Please enable it when you use this argument.
+
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     .. _LightGBM's verbosity: https://lightgbm.readthedocs.io/en/latest/Parameters.html#verbosity
+    .. _deterministic: https://lightgbm.readthedocs.io/en/latest/Parameters.html#deterministic
     """
 
     def __init__(
@@ -896,7 +901,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
     :class:`~optuna.integration.lightgbm.LightGBMTunerCV` invokes `lightgbm.cv()`_ to train
     and validate boosters while :class:`~optuna.integration.lightgbm.LightGBMTuner` invokes
     `lightgbm.train()`_. See
-    `a simple example <https://github.com/optuna/optuna/blob/master/examples/lightgbm/
+    `a simple example <https://github.com/optuna/optuna-examples/tree/main/lightgbm/
     lightgbm_tuner_cv.py>`_ which optimizes the validation log loss of cancer detection.
 
     Arguments and keyword arguments for `lightgbm.cv()`_ can be passed except
@@ -957,9 +962,14 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
             that affects sampling for ``num_leaves``, ``bagging_fraction``, ``bagging_freq``,
             ``lambda_l1``, and ``lambda_l2``.
 
+            .. note::
+                The `deterministic`_ parameter of LightGBM makes training reproducible.
+                Please enable it when you use this argument.
+
     .. _lightgbm.train(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html
     .. _lightgbm.cv(): https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.cv.html
     .. _LightGBM's verbosity: https://lightgbm.readthedocs.io/en/latest/Parameters.html#verbosity
+    .. _deterministic: https://lightgbm.readthedocs.io/en/latest/Parameters.html#deterministic
     """
 
     def __init__(

@@ -53,10 +53,9 @@ class FrozenTrial(BaseTrial):
             assert objective(study.best_trial) == study.best_value
 
     .. note::
-        Attributes are set in :func:`optuna.Study.optimize`,
-        but several attributes can be updated after the optimization.
-        That means such attributes are overwritten by the re-evaluation
-        if your objective updates attributes of :class:`~optuna.trial.Trial`.
+        Instances are mutable, despite the name.
+        For instance, :func:`~optuna.trial.FrozenTrial.set_user_attr` will update user attributes
+        of objects in-place.
 
 
         Example:
@@ -549,8 +548,9 @@ def create_trial(
         functions are created inside :func:`~optuna.study.Study.optimize`.
 
     .. note::
-        When ``state`` is ``TrialState.COMPLETE``, the following parameters are
+        When ``state`` is :class:`TrialState.COMPLETE`, the following parameters are
         required:
+
         * ``params``
         * ``distributions``
         * ``value`` or ``values``
@@ -559,12 +559,11 @@ def create_trial(
         state:
             Trial state.
         value:
-            Trial objective value. Must be specified if ``state`` is ``None``
-            or :class:`TrialState.COMPLETE`.
+            Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
         values:
             Sequence of the trial objective values. The length is greater than 1 if the problem is
             multi-objective optimization.
-            Must be specified if ``state`` is ``None`` or :class:`TrialState.COMPLETE`.
+            Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
         params:
             Dictionary with suggested parameters of the trial.
         distributions:

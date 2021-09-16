@@ -31,11 +31,11 @@ from sqlalchemy.sql import functions
 import optuna
 from optuna import distributions
 from optuna import version
-from optuna._study_direction import StudyDirection
-from optuna._study_summary import StudySummary
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._rdb import models
+from optuna.study._study_direction import StudyDirection
+from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -143,7 +143,8 @@ class RDBStorage(BaseStorage):
         :exc:`ValueError`:
             If the given `heartbeat_interval` or `grace_period` is not a positive integer.
         :exc:`RuntimeError`:
-            If the a process that was failed by heartbeat but was actually running.
+            When a process tries to finish a trial that has already
+            been set to :class:`~optuna.trial.TrialState.FAIL` by heartbeat.
     """
 
     def __init__(
@@ -1345,7 +1346,9 @@ class _VersionManager(object):
     def _get_base_version(self) -> str:
 
         script = self._create_alembic_script()
-        return script.get_base()
+        base = script.get_base()
+        assert base is not None, "There should be exactly one base, i.e. v0.9.0.a."
+        return base
 
     def get_all_versions(self) -> List[str]:
 
@@ -1356,6 +1359,12 @@ class _VersionManager(object):
 
         config = self._create_alembic_config()
         alembic.command.upgrade(config, "head")
+
+        with _create_scoped_session(self.scoped_session, True) as session:
+            version_info = models.VersionInfoModel.find(session)
+            assert version_info is not None
+            version_info.schema_version = models.SCHEMA_VERSION
+            version_info.library_version = version.__version__
 
     def _is_alembic_supported(self) -> bool:
 

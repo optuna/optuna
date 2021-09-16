@@ -20,6 +20,7 @@ import torch.optim
 
 import optuna
 from optuna.integration.allennlp import AllenNLPPruningCallback
+from optuna.integration.allennlp._pruner import _create_pruner
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -79,7 +80,7 @@ def test_build_params_when_optuna_and_environment_variable_both_exist() -> None:
     os.environ.pop("DROPOUT")
 
     # Optuna trial overwrites a parameter specified by environment variable
-    assert params["trainer"]["lr"] == 1e-2
+    assert params["trainer"]["optimizer"]["lr"] == 1e-2
     path = params["model"]["text_field_embedder"]["token_embedders"]["token_characters"]["dropout"]
     assert path == 0.0
 
@@ -225,6 +226,41 @@ def test_dump_best_config() -> None:
         assert target_config["dropout"] == dropout
 
 
+def test_dump_best_config_with_environment_variables() -> None:
+    with tempfile.TemporaryDirectory() as tmp_dir:
+
+        def objective(trial: optuna.Trial) -> float:
+            trial.suggest_float("DROPOUT", dropout, dropout)
+            trial.suggest_float("LEARNING_RATE", 1e-2, 1e-1)
+            executor = optuna.integration.AllenNLPExecutor(
+                trial,
+                input_config_file,
+                tmp_dir,
+                include_package="tests.integration_tests.allennlp_tests.tiny_single_id",
+            )
+            return executor.run()
+
+        dropout = 0.5
+        input_config_file = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "example_with_environment_variables.jsonnet",
+        )
+        output_config_file = os.path.join(tmp_dir, "result.json")
+
+        os.environ["TRAIN_PATH"] = "tests/integration_tests/allennlp_tests/sentences.train"
+        os.environ["VALID_PATH"] = "tests/integration_tests/allennlp_tests/sentences.valid"
+
+        study = optuna.create_study(direction="maximize")
+        study.optimize(objective, n_trials=1)
+
+        optuna.integration.allennlp.dump_best_config(input_config_file, output_config_file, study)
+        best_config = json.loads(_jsonnet.evaluate_file(output_config_file))
+        assert os.getenv("TRAIN_PATH") == best_config["train_data_path"]
+        assert os.getenv("VALID_PATH") == best_config["validation_data_path"]
+        os.environ.pop("TRAIN_PATH")
+        os.environ.pop("VALID_PATH")
+
+
 def test_allennlp_pruning_callback() -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
 
@@ -345,7 +381,7 @@ def test_allennlp_pruning_callback_with_executor(
 
         pruner = pruner_class(**pruner_kwargs)  # type: ignore
         run_allennlp_executor(pruner)
-        ret_pruner = optuna.integration.allennlp._create_pruner()
+        ret_pruner = _create_pruner()
 
         assert isinstance(ret_pruner, pruner_class)
         for key, value in pruner_kwargs.items():
@@ -375,12 +411,3 @@ def test_allennlp_pruning_callback_with_invalid_executor() -> None:
 
         with pytest.raises(ValueError):
             optuna.integration.AllenNLPExecutor(trial, input_config_file, serialization_dir)
-
-
-def test_infer_and_cast() -> None:
-    assert optuna.integration.allennlp._infer_and_cast(None) is None
-    assert optuna.integration.allennlp._infer_and_cast("True") is True
-    assert optuna.integration.allennlp._infer_and_cast("False") is False
-    assert optuna.integration.allennlp._infer_and_cast("3.14") == 3.14
-    assert optuna.integration.allennlp._infer_and_cast("42") == 42
-    assert optuna.integration.allennlp._infer_and_cast("auto") == "auto"

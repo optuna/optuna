@@ -21,30 +21,28 @@ def test_plot_parallel_coordinate() -> None:
     # Test with no trial.
     study = create_study()
     figure = plot_parallel_coordinate(study)
-    assert not figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     study = prepare_study_with_trials(with_c_d=False)
 
     # Test with a trial.
-    # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_parallel_coordinate(study)
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     # Test with a trial to select parameter.
-    # TODO(ytknzw): Add more specific assertion with the test case.
     figure = plot_parallel_coordinate(study, params=["param_a"])
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
         figure = plot_parallel_coordinate(
             study, params=["param_a"], target=lambda t: t.params["param_b"]
         )
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     # Test with a customized target name.
     figure = plot_parallel_coordinate(study, target_name="Target Name")
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     # Test with wrong params that do not exist in trials
     with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
@@ -58,12 +56,11 @@ def test_plot_parallel_coordinate() -> None:
     study = create_study()
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_parallel_coordinate(study)
-    assert not figure.has_data()
+    assert len(figure.get_lines()) == 0
 
 
 def test_plot_parallel_coordinate_categorical_params() -> None:
     # Test with categorical params that cannot be converted to numeral.
-    # TODO(ytknzw): Add more specific assertion with the test case.
     study_categorical_params = create_study()
     study_categorical_params.add_trial(
         create_trial(
@@ -86,7 +83,46 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
         )
     )
     figure = plot_parallel_coordinate(study_categorical_params)
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
+
+
+def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
+    # Test with categorical params that can be interpreted as numeric params.
+    study_categorical_params = create_study()
+    study_categorical_params.add_trial(
+        create_trial(
+            value=0.0,
+            params={"category_a": 2, "category_b": 20},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+
+    study_categorical_params.add_trial(
+        create_trial(
+            value=1.0,
+            params={"category_a": 1, "category_b": 30},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+
+    study_categorical_params.add_trial(
+        create_trial(
+            value=2.0,
+            params={"category_a": 2, "category_b": 10},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+    figure = plot_parallel_coordinate(study_categorical_params)
+    assert len(figure.get_lines()) == 0
 
 
 def test_plot_parallel_coordinate_log_params() -> None:
@@ -123,7 +159,7 @@ def test_plot_parallel_coordinate_log_params() -> None:
         )
     )
     figure = plot_parallel_coordinate(study_log_params)
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
 
 
 def test_plot_parallel_coordinate_unique_hyper_param() -> None:
@@ -143,7 +179,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
 
     # both hyperparameters contain unique values
     figure = plot_parallel_coordinate(study_categorical_params)
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0
 
     study_categorical_params.add_trial(
         create_trial(
@@ -158,4 +194,4 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
 
     # still "category_a" contains unique suggested value during the optimization.
     figure = plot_parallel_coordinate(study_categorical_params)
-    assert figure.has_data()
+    assert len(figure.get_lines()) == 0

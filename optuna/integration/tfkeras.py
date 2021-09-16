@@ -19,8 +19,8 @@ class TFKerasPruningCallback(Callback):
     This callback is intend to be compatible for TensorFlow v1 and v2,
     but only tested with TensorFlow v2.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/tfkeras/tfkeras_integration.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/blob/main/
+    tfkeras/tfkeras_integration.py>`__
     if you want to add a pruning callback which observes the validation accuracy.
 
     Args:

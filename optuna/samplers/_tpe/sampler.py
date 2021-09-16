@@ -10,11 +10,8 @@ from typing import Union
 import warnings
 
 import numpy as np
-import scipy.special
-from scipy.stats import truncnorm
 
-from optuna import distributions
-from optuna._study_direction import StudyDirection
+from optuna._hypervolume import WFG
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
@@ -23,23 +20,15 @@ from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.samplers._search_space.group_decomposed import _GroupDecomposedSearchSpace
 from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
-from optuna.samplers._tpe.multivariate_parzen_estimator import _MultivariateParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimator
 from optuna.samplers._tpe.parzen_estimator import _ParzenEstimatorParameters
 from optuna.study import Study
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
 EPS = 1e-12
-_DISTRIBUTION_CLASSES = (
-    distributions.UniformDistribution,
-    distributions.LogUniformDistribution,
-    distributions.DiscreteUniformDistribution,
-    distributions.IntUniformDistribution,
-    distributions.IntLogUniformDistribution,
-    distributions.CategoricalDistribution,
-)
 _logger = get_logger(__name__)
 
 
@@ -82,6 +71,8 @@ class TPESampler(BaseSampler):
       <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
     - `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
       Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
+    - `Multiobjective tree-structured parzen estimator for computationally expensive optimization
+      problems <https://dl.acm.org/doi/10.1145/3377930.3389817>`_
 
     Example:
 
@@ -137,6 +128,14 @@ class TPESampler(BaseSampler):
             See `Making a Science of Model Search: Hyperparameter Optimization in Hundreds of
             Dimensions for Vision Architectures <http://proceedings.mlr.press/v28/bergstra13.pdf>`_
             for more details.
+
+            .. note::
+                In the multi-objective case, this argument is only used to compute the weights of
+                bad trials, i.e., trials to construct `g(x)` in the `paper
+                <https://papers.nips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf>`_
+                ). The weights of good trials, i.e., trials to construct `l(x)`, are computed by a
+                rule based on the hypervolume contribution proposed in the `paper of MOTPE
+                <https://dl.acm.org/doi/10.1145/3377930.3389817>`_.
         seed:
             Seed for random number generator.
         multivariate:
@@ -158,33 +157,6 @@ class TPESampler(BaseSampler):
             is a maximal subset of the whole search space, which satisfies the following:
             for a trial in completed trials, the intersection of the subspace and the search space
             of the trial becomes subspace itself or an empty set.
-
-            The search space is decomposed based on the following recursive rules.
-
-            - Initialize the group of the search space with the empty set. The elements of the
-              group are the subset of the search space, and the type is the dictionary of
-              :class:`~optuna.distributions.BaseDistribution`.
-            - Update the group with the following procedure `ADD(trial)` by looking at past trials.
-
-            The procedure of `Add(trial)` is
-
-            - Let ``T = trial.distributions``.
-            - If the intersection of any element of the group and ``T`` is empty, add ``T`` to the
-              group.
-            - If an element ``S`` of the group is contained in ``T``, then add ``T-S`` to the
-              group. We recursively add ``T-S`` to the group because the intersection of ``T-S``
-              and some other elements of the group may not be empty.
-            - If an element ``S`` of a group contains ``T``, remove ``S`` from the group and add
-              ``T`` and ``S-T`` to the group.
-            - If the intersection of an element ``S`` of the group and ``T`` is not empty, remove
-              ``S`` from the group and add ``S∩T``, ``S-T``, and ``T-S`` to the group.
-              We recursively add ``T-S`` to the group because the intersection of ``T-S`` and
-              some other elements of the group may not be empty.
-
-            The group of the search space recursively constructed based on the above rules are
-            disjoint and the union is the entire search space. We perform sampling from the joint
-            distribution for each element of this decomposed group of the search space.
-
             Sampling from the joint distribution on the subspace is realized by multivariate TPE.
 
             .. note::
@@ -214,6 +186,30 @@ class TPESampler(BaseSampler):
             If this is :obj:`True` and ``multivariate=True``, a warning message is emitted when
             the value of a parameter is sampled by using an independent sampler.
             If ``multivariate=False``, this flag has no effect.
+        constant_liar:
+            If :obj:`True`, penalize running trials to avoid suggesting parameter configurations
+            nearby.
+
+            .. note::
+                Abnormally terminated trials often leave behind a record with a state of
+                `RUNNING` in the storage.
+                Such "zombie" trial parameters will be avoided by the constant liar algorithm
+                during subsequent sampling.
+                When using an :class:`~optuna.storages.RDBStorage`, it is possible to enable the
+                ``heartbeat_interval`` to change the records for abnormally terminated trials to
+                `FAIL`.
+
+            .. note::
+                It is recommended to set this value to :obj:`True` during distributed
+                optimization to avoid having multiple workers evaluating similar parameter
+                configurations. In particular, if each objective function evaluation is costly
+                and the durations of the running states are significant, and/or the number of
+                workers is high.
+
+            .. note::
+                Added in v2.8.0 as an experimental feature. The interface may change in newer
+                versions without prior notice. See
+                https://github.com/optuna/optuna/releases/tag/v2.8.0.
 
     Raises:
         ValueError:
@@ -235,10 +231,16 @@ class TPESampler(BaseSampler):
         multivariate: bool = False,
         group: bool = False,
         warn_independent_sampling: bool = True,
+        constant_liar: bool = False,
     ) -> None:
 
         self._parzen_estimator_parameters = _ParzenEstimatorParameters(
-            consider_prior, prior_weight, consider_magic_clip, consider_endpoints, weights
+            consider_prior,
+            prior_weight,
+            consider_magic_clip,
+            consider_endpoints,
+            weights,
+            multivariate,
         )
         self._prior_weight = prior_weight
         self._n_startup_trials = n_startup_trials
@@ -255,6 +257,7 @@ class TPESampler(BaseSampler):
         self._group_decomposed_search_space: Optional[_GroupDecomposedSearchSpace] = None
         self._search_space_group: Optional[_SearchSpaceGroup] = None
         self._search_space = IntersectionSearchSpace(include_pruned=True)
+        self._constant_liar = constant_liar
 
         if multivariate:
             warnings.warn(
@@ -275,6 +278,13 @@ class TPESampler(BaseSampler):
             )
             self._group_decomposed_search_space = _GroupDecomposedSearchSpace(True)
 
+        if constant_liar:
+            warnings.warn(
+                "``constant_liar`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+
     def reseed_rng(self) -> None:
 
         self._rng = np.random.RandomState()
@@ -287,7 +297,6 @@ class TPESampler(BaseSampler):
         if not self._multivariate:
             return {}
 
-        n_complete_trials = len(study.get_trials(deepcopy=False))
         search_space: Dict[str, BaseDistribution] = {}
 
         if self._group:
@@ -295,15 +304,13 @@ class TPESampler(BaseSampler):
             self._search_space_group = self._group_decomposed_search_space.calculate(study)
             for sub_space in self._search_space_group.search_spaces:
                 for name, distribution in sub_space.items():
-                    if not isinstance(distribution, _DISTRIBUTION_CLASSES):
-                        self._log_independent_sampling(n_complete_trials, trial, name)
+                    if distribution.single():
                         continue
                     search_space[name] = distribution
             return search_space
 
         for name, distribution in self._search_space.calculate(study).items():
-            if not isinstance(distribution, _DISTRIBUTION_CLASSES):
-                self._log_independent_sampling(n_complete_trials, trial, name)
+            if distribution.single():
                 continue
             search_space[name] = distribution
 
@@ -312,8 +319,9 @@ class TPESampler(BaseSampler):
     def _log_independent_sampling(
         self, n_complete_trials: int, trial: FrozenTrial, param_name: str
     ) -> None:
-        if self._warn_independent_sampling:
-            if n_complete_trials >= self._n_startup_trials:
+        if self._warn_independent_sampling and self._multivariate:
+            # The first trial samples independently.
+            if n_complete_trials >= max(self._n_startup_trials, 1):
                 _logger.warning(
                     f"The parameter '{param_name}' in trial#{trial.number} is sampled "
                     "independently instead of being sampled by multivariate TPE sampler. "
@@ -327,15 +335,13 @@ class TPESampler(BaseSampler):
         self, study: Study, trial: FrozenTrial, search_space: Dict[str, BaseDistribution]
     ) -> Dict[str, Any]:
 
-        self._raise_error_if_multi_objective(study)
-
         if self._group:
             assert self._search_space_group is not None
             params = {}
             for sub_space in self._search_space_group.search_spaces:
                 search_space = {}
                 for name, distribution in sub_space.items():
-                    if isinstance(distribution, _DISTRIBUTION_CLASSES):
+                    if not distribution.single():
                         search_space[name] = distribution
                 params.update(self._sample_relative(study, trial, search_space))
             return params
@@ -350,7 +356,9 @@ class TPESampler(BaseSampler):
             return {}
 
         param_names = list(search_space.keys())
-        values, scores = _get_multivariate_observation_pairs(study, param_names)
+        values, scores = _get_observation_pairs(
+            study, param_names, self._multivariate, self._constant_liar
+        )
 
         # If the number of samples is insufficient, we run random trial.
         n = len(scores)
@@ -358,20 +366,28 @@ class TPESampler(BaseSampler):
             return {}
 
         # We divide data into below and above.
-        below, above = self._split_multivariate_observation_pairs(values, scores)
+        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
+        # `None` items are intentionally converted to `nan` and then filtered out.
+        # For `nan` conversion, the dtype must be float.
+        config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
+        below = _build_observation_dict(config_values, indices_below)
+        above = _build_observation_dict(config_values, indices_above)
+
         # We then sample by maximizing log likelihood ratio.
-        mpe_below = _MultivariateParzenEstimator(
-            below, search_space, self._parzen_estimator_parameters
-        )
-        mpe_above = _MultivariateParzenEstimator(
-            above, search_space, self._parzen_estimator_parameters
-        )
+        if study._is_multi_objective():
+            weights_below = _calculate_weights_below_for_multi_objective(
+                config_values, scores, indices_below
+            )
+            mpe_below = _ParzenEstimator(
+                below, search_space, self._parzen_estimator_parameters, weights_below
+            )
+        else:
+            mpe_below = _ParzenEstimator(below, search_space, self._parzen_estimator_parameters)
+        mpe_above = _ParzenEstimator(above, search_space, self._parzen_estimator_parameters)
         samples_below = mpe_below.sample(self._rng, self._n_ei_candidates)
         log_likelihoods_below = mpe_below.log_pdf(samples_below)
         log_likelihoods_above = mpe_above.log_pdf(samples_below)
-        ret = TPESampler._compare_multivariate(
-            samples_below, log_likelihoods_below, log_likelihoods_above
-        )
+        ret = TPESampler._compare(samples_below, log_likelihoods_below, log_likelihoods_above)
 
         for param_name, dist in search_space.items():
             ret[param_name] = dist.to_external_repr(ret[param_name])
@@ -386,399 +402,59 @@ class TPESampler(BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        self._raise_error_if_multi_objective(study)
+        values, scores = _get_observation_pairs(
+            study, [param_name], self._multivariate, self._constant_liar
+        )
 
-        values, scores = _get_observation_pairs(study, param_name)
+        n = len(scores)
 
-        n = len(values)
+        self._log_independent_sampling(n, trial, param_name)
 
         if n < self._n_startup_trials:
             return self._random_sampler.sample_independent(
                 study, trial, param_name, param_distribution
             )
-        below_param_values, above_param_values = self._split_observation_pairs(values, scores)
 
-        if isinstance(param_distribution, distributions.UniformDistribution):
-            return self._sample_uniform(param_distribution, below_param_values, above_param_values)
-        elif isinstance(param_distribution, distributions.LogUniformDistribution):
-            return self._sample_loguniform(
-                param_distribution, below_param_values, above_param_values
+        indices_below, indices_above = _split_observation_pairs(scores, self._gamma(n))
+        # `None` items are intentionally converted to `nan` and then filtered out.
+        # For `nan` conversion, the dtype must be float.
+        config_values = {k: np.asarray(v, dtype=float) for k, v in values.items()}
+        below = _build_observation_dict(config_values, indices_below)
+        above = _build_observation_dict(config_values, indices_above)
+
+        if study._is_multi_objective():
+            weights_below = _calculate_weights_below_for_multi_objective(
+                config_values, scores, indices_below
             )
-        elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
-            return self._sample_discrete_uniform(
-                param_distribution, below_param_values, above_param_values
+            mpe_below = _ParzenEstimator(
+                below,
+                {param_name: param_distribution},
+                self._parzen_estimator_parameters,
+                weights_below,
             )
-        elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            return self._sample_int(param_distribution, below_param_values, above_param_values)
-        elif isinstance(param_distribution, distributions.IntLogUniformDistribution):
-            return self._sample_int_loguniform(
-                param_distribution, below_param_values, above_param_values
-            )
-        elif isinstance(param_distribution, distributions.CategoricalDistribution):
-            index = self._sample_categorical_index(
-                param_distribution, below_param_values, above_param_values
-            )
-            return param_distribution.choices[index]
         else:
-            distribution_list = [
-                distributions.UniformDistribution.__name__,
-                distributions.LogUniformDistribution.__name__,
-                distributions.DiscreteUniformDistribution.__name__,
-                distributions.IntUniformDistribution.__name__,
-                distributions.IntLogUniformDistribution.__name__,
-                distributions.CategoricalDistribution.__name__,
-            ]
-            raise NotImplementedError(
-                "The distribution {} is not implemented. "
-                "The parameter distribution should be one of the {}".format(
-                    param_distribution, distribution_list
-                )
+            mpe_below = _ParzenEstimator(
+                below, {param_name: param_distribution}, self._parzen_estimator_parameters
             )
-
-    def _split_observation_pairs(
-        self, config_vals: List[Optional[float]], loss_vals: List[Tuple[float, float]]
-    ) -> Tuple[np.ndarray, np.ndarray]:
-
-        config_values = np.asarray(config_vals)
-        loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
-        n_below = self._gamma(len(config_values))
-        loss_ascending = np.argsort(loss_values)
-        below = config_values[np.sort(loss_ascending[:n_below])]
-        below = np.asarray([v for v in below if v is not None], dtype=float)
-        above = config_values[np.sort(loss_ascending[n_below:])]
-        above = np.asarray([v for v in above if v is not None], dtype=float)
-        return below, above
-
-    def _split_multivariate_observation_pairs(
-        self,
-        config_vals: Dict[str, List[Optional[float]]],
-        loss_vals: List[Tuple[float, float]],
-    ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-
-        config_values = {k: np.asarray(v, dtype=float) for k, v in config_vals.items()}
-        loss_values = np.asarray(loss_vals, dtype=[("step", float), ("score", float)])
-
-        n_below = self._gamma(len(loss_values))
-        index_loss_ascending = np.argsort(loss_values)
-        # `np.sort` is used to keep chronological order.
-        index_below = np.sort(index_loss_ascending[:n_below])
-        index_above = np.sort(index_loss_ascending[n_below:])
-        below = {}
-        above = {}
-        for param_name, param_val in config_values.items():
-            below[param_name] = param_val[index_below]
-            above[param_name] = param_val[index_above]
-
-        return below, above
-
-    def _sample_uniform(
-        self, distribution: distributions.UniformDistribution, below: np.ndarray, above: np.ndarray
-    ) -> float:
-
-        low = distribution.low
-        high = distribution.high
-        return self._sample_numerical(low, high, below, above)
-
-    def _sample_loguniform(
-        self,
-        distribution: distributions.LogUniformDistribution,
-        below: np.ndarray,
-        above: np.ndarray,
-    ) -> float:
-
-        low = distribution.low
-        high = distribution.high
-        return self._sample_numerical(low, high, below, above, is_log=True)
-
-    def _sample_discrete_uniform(
-        self,
-        distribution: distributions.DiscreteUniformDistribution,
-        below: np.ndarray,
-        above: np.ndarray,
-    ) -> float:
-
-        q = distribution.q
-        r = distribution.high - distribution.low
-        # [low, high] is shifted to [0, r] to align sampled values at regular intervals.
-        low = 0 - 0.5 * q
-        high = r + 0.5 * q
-
-        # Shift below and above to [0, r]
-        above -= distribution.low
-        below -= distribution.low
-
-        best_sample = self._sample_numerical(low, high, below, above, q=q) + distribution.low
-        return min(max(best_sample, distribution.low), distribution.high)
-
-    def _sample_int(
-        self,
-        distribution: distributions.IntUniformDistribution,
-        below: np.ndarray,
-        above: np.ndarray,
-    ) -> int:
-
-        d = distributions.DiscreteUniformDistribution(
-            low=distribution.low, high=distribution.high, q=distribution.step
+        mpe_above = _ParzenEstimator(
+            above, {param_name: param_distribution}, self._parzen_estimator_parameters
         )
-        return int(self._sample_discrete_uniform(d, below, above))
+        samples_below = mpe_below.sample(self._rng, self._n_ei_candidates)
+        log_likelihoods_below = mpe_below.log_pdf(samples_below)
+        log_likelihoods_above = mpe_above.log_pdf(samples_below)
+        ret = TPESampler._compare(samples_below, log_likelihoods_below, log_likelihoods_above)
 
-    def _sample_int_loguniform(
-        self,
-        distribution: distributions.IntLogUniformDistribution,
-        below: np.ndarray,
-        above: np.ndarray,
-    ) -> int:
-
-        low = distribution.low - 0.5
-        high = distribution.high + 0.5
-
-        sample = self._sample_numerical(low, high, below, above, is_log=True)
-        best_sample = np.round(sample)
-
-        return int(min(max(best_sample, distribution.low), distribution.high))
-
-    def _sample_numerical(
-        self,
-        low: float,
-        high: float,
-        below: np.ndarray,
-        above: np.ndarray,
-        q: Optional[float] = None,
-        is_log: bool = False,
-    ) -> float:
-
-        if is_log:
-            low = np.log(low)
-            high = np.log(high)
-            below = np.log(below)
-            above = np.log(above)
-
-        size = (self._n_ei_candidates,)
-
-        parzen_estimator_below = _ParzenEstimator(
-            mus=below, low=low, high=high, parameters=self._parzen_estimator_parameters
-        )
-        samples_below = self._sample_from_gmm(
-            parzen_estimator=parzen_estimator_below, low=low, high=high, q=q, size=size
-        )
-        log_likelihoods_below = self._gmm_log_pdf(
-            samples=samples_below,
-            parzen_estimator=parzen_estimator_below,
-            low=low,
-            high=high,
-            q=q,
-        )
-
-        parzen_estimator_above = _ParzenEstimator(
-            mus=above, low=low, high=high, parameters=self._parzen_estimator_parameters
-        )
-
-        log_likelihoods_above = self._gmm_log_pdf(
-            samples=samples_below,
-            parzen_estimator=parzen_estimator_above,
-            low=low,
-            high=high,
-            q=q,
-        )
-
-        ret = float(
-            TPESampler._compare(
-                samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above
-            )[0]
-        )
-        return math.exp(ret) if is_log else ret
-
-    def _sample_categorical_index(
-        self,
-        distribution: distributions.CategoricalDistribution,
-        below: np.ndarray,
-        above: np.ndarray,
-    ) -> int:
-
-        choices = distribution.choices
-        below = below.astype(int)
-        above = above.astype(int)
-        upper = len(choices)
-
-        # We can use `np.arange(len(distribution.choices))` instead of sampling from `l(x)`
-        # when the cardinality of categorical parameters is lower than `n_ei_candidates`.
-        # Though it seems to be theoretically correct, it leads to performance degradation
-        # on the NAS benchmark experiment in https://arxiv.org/abs/1902.09635.
-        # See https://github.com/optuna/optuna/pull/1603 for more details.
-        size = (self._n_ei_candidates,)
-
-        weights_below = self._weights(len(below))
-        counts_below = np.bincount(below, minlength=upper, weights=weights_below)
-        weighted_below = counts_below + self._prior_weight
-        weighted_below /= weighted_below.sum()
-        samples_below = self._sample_from_categorical_dist(weighted_below, size)
-        log_likelihoods_below = TPESampler._categorical_log_pdf(samples_below, weighted_below)
-
-        weights_above = self._weights(len(above))
-        counts_above = np.bincount(above, minlength=upper, weights=weights_above)
-        weighted_above = counts_above + self._prior_weight
-        weighted_above /= weighted_above.sum()
-        log_likelihoods_above = TPESampler._categorical_log_pdf(samples_below, weighted_above)
-
-        return int(
-            TPESampler._compare(
-                samples=samples_below, log_l=log_likelihoods_below, log_g=log_likelihoods_above
-            )[0]
-        )
-
-    def _sample_from_gmm(
-        self,
-        parzen_estimator: _ParzenEstimator,
-        low: float,
-        high: float,
-        q: Optional[float] = None,
-        size: Tuple = (),
-    ) -> np.ndarray:
-
-        weights = parzen_estimator.weights
-        mus = parzen_estimator.mus
-        sigmas = parzen_estimator.sigmas
-        weights, mus, sigmas = map(np.asarray, (weights, mus, sigmas))
-
-        if low >= high:
-            raise ValueError(
-                "The 'low' should be lower than the 'high'. "
-                "But (low, high) = ({}, {}).".format(low, high)
-            )
-
-        active = np.argmax(self._rng.multinomial(1, weights, size=size), axis=-1)
-        trunc_low = (low - mus[active]) / sigmas[active]
-        trunc_high = (high - mus[active]) / sigmas[active]
-        samples = np.full((), fill_value=high + 1.0, dtype=np.float64)
-        while (samples >= high).any():
-            samples = np.where(
-                samples < high,
-                samples,
-                truncnorm.rvs(
-                    trunc_low,
-                    trunc_high,
-                    size=size,
-                    loc=mus[active],
-                    scale=sigmas[active],
-                    random_state=self._rng,
-                ),
-            )
-
-        if q is None:
-            return samples
-        else:
-            return np.round(samples / q) * q
-
-    def _gmm_log_pdf(
-        self,
-        samples: np.ndarray,
-        parzen_estimator: _ParzenEstimator,
-        low: float,
-        high: float,
-        q: Optional[float] = None,
-    ) -> np.ndarray:
-
-        weights = parzen_estimator.weights
-        mus = parzen_estimator.mus
-        sigmas = parzen_estimator.sigmas
-        samples, weights, mus, sigmas = map(np.asarray, (samples, weights, mus, sigmas))
-        if samples.size == 0:
-            return np.asarray([], dtype=float)
-        if weights.ndim != 1:
-            raise ValueError(
-                "The 'weights' should be 1-dimension. "
-                "But weights.shape = {}".format(weights.shape)
-            )
-        if mus.ndim != 1:
-            raise ValueError(
-                "The 'mus' should be 1-dimension. But mus.shape = {}".format(mus.shape)
-            )
-        if sigmas.ndim != 1:
-            raise ValueError(
-                "The 'sigmas' should be 1-dimension. But sigmas.shape = {}".format(sigmas.shape)
-            )
-
-        p_accept = np.sum(
-            weights
-            * (
-                TPESampler._normal_cdf(high, mus, sigmas)
-                - TPESampler._normal_cdf(low, mus, sigmas)
-            )
-        )
-
-        if q is None:
-            distance = samples[..., None] - mus
-            mahalanobis = (distance / np.maximum(sigmas, EPS)) ** 2
-            Z = np.sqrt(2 * np.pi) * sigmas
-            coefficient = weights / Z / p_accept
-            return TPESampler._logsum_rows(-0.5 * mahalanobis + np.log(coefficient))
-        else:
-            cdf_func = TPESampler._normal_cdf
-            upper_bound = np.minimum(samples + q / 2.0, high)
-            lower_bound = np.maximum(samples - q / 2.0, low)
-            probabilities = np.sum(
-                weights[..., None]
-                * (
-                    cdf_func(upper_bound[None], mus[..., None], sigmas[..., None])
-                    - cdf_func(lower_bound[None], mus[..., None], sigmas[..., None])
-                ),
-                axis=0,
-            )
-            return np.log(probabilities + EPS) - np.log(p_accept + EPS)
-
-    def _sample_from_categorical_dist(
-        self, probabilities: np.ndarray, size: Tuple[int]
-    ) -> np.ndarray:
-
-        if size == (0,):
-            return np.asarray([], dtype=float)
-        assert size
-
-        if probabilities.size == 1 and isinstance(probabilities[0], np.ndarray):
-            probabilities = probabilities[0]
-        assert probabilities.ndim == 1
-
-        n_draws = np.prod(size).item()
-        sample = self._rng.multinomial(n=1, pvals=probabilities, size=n_draws)
-        assert sample.shape == size + probabilities.shape
-        return_val = np.dot(sample, np.arange(probabilities.size)).reshape(size)
-        return return_val
+        return param_distribution.to_external_repr(ret[param_name])
 
     @classmethod
-    def _categorical_log_pdf(cls, sample: np.ndarray, p: np.ndarray) -> np.ndarray:
-
-        if sample.size:
-            return np.log(np.asarray(p)[sample])
-        else:
-            return np.asarray([])
-
-    @classmethod
-    def _compare(cls, samples: np.ndarray, log_l: np.ndarray, log_g: np.ndarray) -> np.ndarray:
-
-        samples, log_l, log_g = map(np.asarray, (samples, log_l, log_g))
-        if samples.size:
-            score = log_l - log_g
-            if samples.size != score.size:
-                raise ValueError(
-                    "The size of the 'samples' and that of the 'score' "
-                    "should be same. "
-                    "But (samples.size, score.size) = ({}, {})".format(samples.size, score.size)
-                )
-
-            best = np.argmax(score)
-            return np.asarray([samples[best]] * samples.size)
-        else:
-            return np.asarray([])
-
-    @classmethod
-    def _compare_multivariate(
+    def _compare(
         cls,
-        multivariate_samples: Dict[str, np.ndarray],
+        samples: Dict[str, np.ndarray],
         log_l: np.ndarray,
         log_g: np.ndarray,
     ) -> Dict[str, Union[float, int]]:
 
-        sample_size = next(iter(multivariate_samples.values())).size
+        sample_size = next(iter(samples.values())).size
         if sample_size:
             score = log_l - log_g
             if sample_size != score.size:
@@ -788,28 +464,12 @@ class TPESampler(BaseSampler):
                     "But (samples.size, score.size) = ({}, {})".format(sample_size, score.size)
                 )
             best = np.argmax(score)
-            return {k: v[best].item() for k, v in multivariate_samples.items()}
+            return {k: v[best].item() for k, v in samples.items()}
         else:
             raise ValueError(
                 "The size of 'samples' should be more than 0."
                 "But samples.size = {}".format(sample_size)
             )
-
-    @classmethod
-    def _logsum_rows(cls, x: np.ndarray) -> np.ndarray:
-
-        x = np.asarray(x)
-        m = x.max(axis=1)
-        return np.log(np.exp(x - m[:, None]).sum(axis=1)) + m
-
-    @classmethod
-    def _normal_cdf(cls, x: float, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
-
-        mu, sigma = map(np.asarray, (mu, sigma))
-        denominator = x - mu
-        numerator = np.maximum(np.sqrt(2) * sigma, EPS)
-        z = denominator / numerator
-        return 0.5 * (1 + scipy.special.erf(z))
 
     @staticmethod
     def hyperopt_parameters() -> Dict[str, Any]:
@@ -865,13 +525,44 @@ class TPESampler(BaseSampler):
         self._random_sampler.after_trial(study, trial, state, values)
 
 
+def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
+    vecs = loss_vals.copy()
+
+    # Normalize values
+    lb = vecs.min(axis=0, keepdims=True)
+    ub = vecs.max(axis=0, keepdims=True)
+    vecs = (vecs - lb) / (ub - lb)
+
+    ranks = np.zeros(len(vecs))
+    num_unranked = len(vecs)
+    rank = 0
+    while num_unranked > 0:
+        extended = np.tile(vecs, (vecs.shape[0], 1, 1))
+        counts = np.sum(
+            np.logical_and(
+                np.all(extended <= np.swapaxes(extended, 0, 1), axis=2),
+                np.any(extended < np.swapaxes(extended, 0, 1), axis=2),
+            ),
+            axis=1,
+        )
+        vecs[counts == 0] = 1.1  # mark as ranked
+        ranks[counts == 0] = rank
+        rank += 1
+        num_unranked -= np.sum(counts == 0)
+    return ranks
+
+
 def _get_observation_pairs(
-    study: Study, param_name: str
-) -> Tuple[List[Optional[float]], List[Tuple[float, float]]]:
+    study: Study,
+    param_names: List[str],
+    multivariate: bool,
+    constant_liar: bool = False,  # TODO(hvy): Remove default value and fix unit tests.
+) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, List[float]]]]:
     """Get observation pairs from the study.
 
     This function collects observation pairs from the complete or pruned trials of the study.
-    The values for trials that don't contain the parameter named ``param_name`` are set to None.
+    In addition, if ``constant_liar`` is :obj:`True`, the running trials are considered.
+    The values for trials that don't contain the parameter in the ``param_names`` are skipped.
 
     An observation pair fundamentally consists of a parameter value and an objective value.
     However, due to the pruning mechanism of Optuna, final objective values are not always
@@ -885,79 +576,219 @@ def _get_observation_pairs(
     ``(-step, value)``).
     """
 
-    sign = 1
-    if study.direction == StudyDirection.MAXIMIZE:
-        sign = -1
+    if len(param_names) > 1:
+        assert multivariate
 
-    values = []
-    scores = []
-    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
-        if trial.state is TrialState.COMPLETE:
-            if trial.value is None:
-                continue
-            score = (-float("inf"), sign * trial.value)
-        elif trial.state is TrialState.PRUNED:
-            if len(trial.intermediate_values) > 0:
-                step, intermediate_value = max(trial.intermediate_values.items())
-                if math.isnan(intermediate_value):
-                    score = (-step, float("inf"))
-                else:
-                    score = (-step, sign * intermediate_value)
-            else:
-                score = (float("inf"), 0.0)
+    signs = []
+    for d in study.directions:
+        if d == StudyDirection.MINIMIZE:
+            signs.append(1)
         else:
-            assert False
+            signs.append(-1)
 
-        param_value: Optional[float] = None
-        if param_name in trial.params:
-            distribution = trial.distributions[param_name]
-            param_value = distribution.to_internal_repr(trial.params[param_name])
-
-        values.append(param_value)
-        scores.append(score)
-
-    return values, scores
-
-
-def _get_multivariate_observation_pairs(
-    study: Study, param_names: List[str]
-) -> Tuple[Dict[str, List[Optional[float]]], List[Tuple[float, float]]]:
-
-    sign = 1
-    if study.direction == StudyDirection.MAXIMIZE:
-        sign = -1
+    states: Tuple[TrialState, ...]
+    if constant_liar:
+        states = (TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING)
+    else:
+        states = (TrialState.COMPLETE, TrialState.PRUNED)
 
     scores = []
     values: Dict[str, List[Optional[float]]] = {param_name: [] for param_name in param_names}
-    for trial in study.get_trials(deepcopy=False, states=(TrialState.COMPLETE, TrialState.PRUNED)):
-        # If ``group`` = True, there may be trials that are not included in each subspace.
-        # Such trials should be ignored here.
-        if any([param_name not in trial.params for param_name in param_names]):
+    for trial in study.get_trials(deepcopy=False, states=states):
+        # If ``multivariate`` = True and ``group`` = True, we ignore the trials that are not
+        # included in each subspace.
+        # If ``multivariate`` = False, we skip the check.
+        if multivariate and any([param_name not in trial.params for param_name in param_names]):
             continue
 
         # We extract score from the trial.
         if trial.state is TrialState.COMPLETE:
-            if trial.value is None:
+            if trial.values is None:
                 continue
-            score = (-float("inf"), sign * trial.value)
+            score = (-float("inf"), [sign * v for sign, v in zip(signs, trial.values)])
         elif trial.state is TrialState.PRUNED:
+            if study._is_multi_objective():
+                continue
+
             if len(trial.intermediate_values) > 0:
                 step, intermediate_value = max(trial.intermediate_values.items())
                 if math.isnan(intermediate_value):
-                    score = (-step, float("inf"))
+                    score = (-step, [float("inf")])
                 else:
-                    score = (-step, sign * intermediate_value)
+                    score = (-step, [signs[0] * intermediate_value])
             else:
-                score = (float("inf"), 0.0)
+                score = (float("inf"), [0.0])
+        elif trial.state is TrialState.RUNNING:
+            if study._is_multi_objective():
+                continue
+
+            assert constant_liar
+            score = (-float("inf"), [signs[0] * float("inf")])
         else:
             assert False
         scores.append(score)
 
         # We extract param_value from the trial.
         for param_name in param_names:
-            assert param_name in trial.params
-            distribution = trial.distributions[param_name]
-            param_value = distribution.to_internal_repr(trial.params[param_name])
+            raw_param_value = trial.params.get(param_name, None)
+            param_value: Optional[float]
+            if raw_param_value is not None:
+                distribution = trial.distributions[param_name]
+                param_value = distribution.to_internal_repr(trial.params[param_name])
+            else:
+                param_value = None
             values[param_name].append(param_value)
 
     return values, scores
+
+
+def _split_observation_pairs(
+    loss_vals: List[Tuple[float, List[float]]],
+    n_below: int,
+) -> Tuple[np.ndarray, np.ndarray]:
+
+    n_objectives = 1
+    if len(loss_vals) > 0:
+        n_objectives = len(loss_vals[0][1])
+
+    if n_objectives <= 1:
+        loss_values = np.asarray(
+            [(s, v[0]) for s, v in loss_vals], dtype=[("step", float), ("score", float)]
+        )
+
+        index_loss_ascending = np.argsort(loss_values)
+        # `np.sort` is used to keep chronological order.
+        indices_below = np.sort(index_loss_ascending[:n_below])
+        indices_above = np.sort(index_loss_ascending[n_below:])
+    else:
+        # Multi-objective TPE does not support pruning, so it ignores the ``step``.
+        lvals = np.asarray([v for _, v in loss_vals])
+
+        # Solving HSSP for variables number of times is a waste of time.
+        nondomination_ranks = _calculate_nondomination_rank(lvals)
+        assert 0 <= n_below <= len(lvals)
+
+        indices = np.array(range(len(lvals)))
+        indices_below = np.empty(n_below, dtype=int)
+
+        # Nondomination rank-based selection
+        i = 0
+        last_idx = 0
+        while last_idx + sum(nondomination_ranks == i) <= n_below:
+            length = indices[nondomination_ranks == i].shape[0]
+            indices_below[last_idx : last_idx + length] = indices[nondomination_ranks == i]
+            last_idx += length
+            i += 1
+
+        # Hypervolume subset selection problem (HSSP)-based selection
+        subset_size = n_below - last_idx
+        if subset_size > 0:
+            rank_i_lvals = lvals[nondomination_ranks == i]
+            rank_i_indices = indices[nondomination_ranks == i]
+            worst_point = np.max(rank_i_lvals, axis=0)
+            reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+            reference_point[reference_point == 0] = EPS
+            selected_indices = _solve_hssp(
+                rank_i_lvals, rank_i_indices, subset_size, reference_point
+            )
+            indices_below[last_idx:] = selected_indices
+
+        indices_above = np.setdiff1d(indices, indices_below)
+
+    return indices_below, indices_above
+
+
+def _build_observation_dict(
+    config_values: Dict[str, np.ndarray], indices: np.ndarray
+) -> Dict[str, np.ndarray]:
+
+    observation_dict = {}
+    for param_name, param_val in config_values.items():
+        param_values = param_val[indices]
+        observation_dict[param_name] = param_values[~np.isnan(param_values)]
+
+    return observation_dict
+
+
+def _compute_hypervolume(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+    return WFG().compute(solution_set, reference_point)
+
+
+def _solve_hssp(
+    rank_i_loss_vals: np.ndarray,
+    rank_i_indices: np.ndarray,
+    subset_size: int,
+    reference_point: np.ndarray,
+) -> np.ndarray:
+    """Solve a hypervolume subset selection problem (HSSP) via a greedy algorithm.
+
+    This method is a 1-1/e approximation algorithm to solve HSSP.
+
+    For further information about algorithms to solve HSSP, please refer to the following
+    paper:
+
+    - `Greedy Hypervolume Subset Selection in Low Dimensions
+       <https://ieeexplore.ieee.org/document/7570501>`_
+    """
+    selected_vecs = []  # type: List[np.ndarray]
+    selected_indices = []  # type: List[int]
+    contributions = [
+        _compute_hypervolume(np.asarray([v]), reference_point) for v in rank_i_loss_vals
+    ]
+    hv_selected = 0.0
+    while len(selected_indices) < subset_size:
+        max_index = int(np.argmax(contributions))
+        contributions[max_index] = -1  # mark as selected
+        selected_index = rank_i_indices[max_index]
+        selected_vec = rank_i_loss_vals[max_index]
+        for j, v in enumerate(rank_i_loss_vals):
+            if contributions[j] == -1:
+                continue
+            p = np.max([selected_vec, v], axis=0)
+            contributions[j] -= (
+                _compute_hypervolume(np.asarray(selected_vecs + [p]), reference_point)
+                - hv_selected
+            )
+        selected_vecs += [selected_vec]
+        selected_indices += [selected_index]
+        hv_selected = _compute_hypervolume(np.asarray(selected_vecs), reference_point)
+
+    return np.asarray(selected_indices, dtype=int)
+
+
+def _calculate_weights_below_for_multi_objective(
+    config_values: Dict[str, np.ndarray],
+    loss_vals: List[Tuple[float, List[float]]],
+    indices: np.ndarray,
+) -> np.ndarray:
+    # Multi-objective TPE only sees the first parameter to determine the weights.
+    # In the call lf `sample_relative`, this logic makes sense because we only have the
+    # intersection search space or group decomposed search space. This means one parameter
+    # misses the one trial, then the other parameter must miss the trial, in this call of
+    # `sample_relative`.
+    # In the call of `sample_independent`, we only have one parameter so the logic makes sense.
+    cvals = list(config_values.values())[0][indices]
+
+    # Multi-objective TPE does not support pruning, so it ignores the ``step``.
+    lvals = np.asarray([v for _, v in loss_vals])[indices]
+
+    # Calculate weights based on hypervolume contributions.
+    n_below = len(lvals)
+    if n_below == 0:
+        weights_below = np.asarray([])
+    elif n_below == 1:
+        weights_below = np.asarray([1.0])
+    else:
+        worst_point = np.max(lvals, axis=0)
+        reference_point = np.maximum(1.1 * worst_point, 0.9 * worst_point)
+        reference_point[reference_point == 0] = EPS
+        hv = _compute_hypervolume(lvals, reference_point)
+        indices = ~np.eye(n_below).astype(bool)
+        contributions = np.asarray(
+            [hv - _compute_hypervolume(lvals[indices[i]], reference_point) for i in range(n_below)]
+        )
+        contributions += EPS
+        weights_below = np.clip(contributions / np.max(contributions), 0, 1)
+
+    weights_below = weights_below[~np.isnan(cvals)]
+    return weights_below

@@ -1,3 +1,5 @@
+import warnings
+
 import optuna
 
 
@@ -15,8 +17,8 @@ if not _imports.is_successful():
 class PyTorchLightningPruningCallback(Callback):
     """PyTorch Lightning callback to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/pytorch/pytorch_lightning_simple.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/blob/
+    main/pytorch/pytorch_lightning_simple.py>`__
     if you want to add a pruning callback which observes accuracy.
 
     Args:
@@ -43,6 +45,11 @@ class PyTorchLightningPruningCallback(Callback):
 
         current_score = trainer.callback_metrics.get(self.monitor)
         if current_score is None:
+            message = (
+                "The metric '{}' is not in the evaluation logs for pruning. "
+                "Please make sure you set the correct metric name.".format(self.monitor)
+            )
+            warnings.warn(message)
             return
 
         self._trial.report(current_score, step=epoch)

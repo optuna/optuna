@@ -20,13 +20,15 @@ if not _imports.is_successful():
     "There is now only one Keras: tf.keras. "
     "There may be some breaking changes for some workflows by upgrading to keras 2.4.0. "
     "Test before upgrading. "
-    "REF:https://github.com/keras-team/keras/releases/tag/2.4.0",
+    "REF: https://github.com/keras-team/keras/releases/tag/2.4.0. "
+    "There is an alternative callback function that can be used instead: "
+    ":class:`~optuna.integration.TFKerasPruningCallback`",
 )
 class KerasPruningCallback(Callback):
     """Keras callback to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna/blob/master/
-    examples/keras/keras_integration.py>`__
+    See `the example <https://github.com/optuna/optuna-examples/blob/main/
+    keras/keras_integration.py>`__
     if you want to add a pruning callback which observes validation accuracy.
 
     Args:

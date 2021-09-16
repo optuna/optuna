@@ -21,6 +21,14 @@ for machine learning. It features an imperative, *define-by-run* style user API.
 *define-by-run* API, the code written with Optuna enjoys high modularity, and the user of
 Optuna can dynamically construct the search spaces for the hyperparameters.
 
+## News
+
+Help us create the next version of Optuna!
+Please take a few minutes to fill in this survey, and let us know how you use Optuna now and what improvements you'd like.🤔
+
+All questions optional. 🙇‍♂️
+https://forms.gle/mCAttqxVg5oUifKV8
+
 ## Key Features
 
 Optuna has modern functionalities as follows:
@@ -49,7 +57,7 @@ hyperparameter values (e.g., `classifier` and `svm_c`) through multiple *trials*
 `n_trials=100`). Optuna is a framework designed for the automation and the acceleration of the
 optimization *studies*.
 
-[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/optuna/optuna/blob/master/examples/quickstart.ipynb)
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/optuna/optuna-examples/blob/main/quickstart.ipynb)
 
 ```python
 import ...
@@ -80,25 +88,28 @@ study = optuna.create_study()  # Create a new study.
 study.optimize(objective, n_trials=100)  # Invoke optimization of the objective function.
 ```
 
+## Examples
+
+Examples can be found in [optuna/optuna-examples](https://github.com/optuna/optuna-examples).
 
 ## Integrations
 
 [Integrations modules](https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/003_efficient_optimization_algorithms.html#integration-modules-for-pruning), which allow pruning, or early stopping, of unpromising trials are available for the following libraries:
 
-* [AllenNLP](./examples/allennlp)
-* [Catalyst](./examples/pytorch/catalyst_simple.py)
-* [Catboost](./examples/catboost_simple.py)
-* [Chainer](./examples/chainer/chainer_integration.py)
-* FastAI ([V1](./examples/fastai/fastaiv1_simple.py), [V2](./examples/fastai/fastaiv2_simple.py))
-* [Keras](./examples/keras/keras_integration.py)
-* [LightGBM](./examples/lightgbm/lightgbm_integration.py)
-* [MXNet](./examples/mxnet/mxnet_integration.py)
-* [PyTorch](./examples/pytorch/pytorch_simple.py)
-* [PyTorch Ignite](./examples/pytorch/pytorch_ignite_simple.py)
-* [PyTorch Lightning](./examples/pytorch/pytorch_lightning_simple.py)
-* [TensorFlow](./examples/tensorflow/tensorflow_estimator_integration.py)
-* [tf.keras](./examples/tfkeras/tfkeras_integration.py)
-* [XGBoost](./examples/xgboost/xgboost_integration.py)
+* [AllenNLP](https://github.com/optuna/optuna-examples/tree/main/allennlp)
+* [Catalyst](https://github.com/optuna/optuna-examples/tree/main/pytorch/catalyst_simple.py)
+* [Catboost](https://github.com/optuna/optuna-examples/tree/main/catboost/catboost_simple.py)
+* [Chainer](https://github.com/optuna/optuna-examples/tree/main/chainer/chainer_integration.py)
+* FastAI ([V1](https://github.com/optuna/optuna-examples/tree/main/fastai/fastaiv1_simple.py), [V2](https://github.com/optuna/optuna-examples/tree/main/fastai/fastaiv2_simple.py))
+* [Keras](https://github.com/optuna/optuna-examples/tree/main/keras/keras_integration.py)
+* [LightGBM](https://github.com/optuna/optuna-examples/tree/main/lightgbm/lightgbm_integration.py)
+* [MXNet](https://github.com/optuna/optuna-examples/tree/main/mxnet/mxnet_integration.py)
+* [PyTorch](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_simple.py)
+* [PyTorch Ignite](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_ignite_simple.py)
+* [PyTorch Lightning](https://github.com/optuna/optuna-examples/tree/main/pytorch/pytorch_lightning_simple.py)
+* [TensorFlow](https://github.com/optuna/optuna-examples/tree/main/tensorflow/tensorflow_estimator_integration.py)
+* [tf.keras](https://github.com/optuna/optuna-examples/tree/main/tfkeras/tfkeras_integration.py)
+* [XGBoost](https://github.com/optuna/optuna-examples/tree/main/xgboost/xgboost_integration.py)
 
 
 ## Web Dashboard (experimental)

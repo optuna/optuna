@@ -13,10 +13,10 @@ from typing import Union
 
 import optuna
 from optuna import distributions
-from optuna._study_direction import StudyDirection
-from optuna._study_summary import StudySummary
 from optuna.storages import BaseStorage
 from optuna.storages._rdb.storage import RDBStorage
+from optuna.study._study_direction import StudyDirection
+from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -55,7 +55,7 @@ class _CachedStorage(BaseStorage):
     wraps :class:`~optuna.storages.RDBStorage` class.
 
     Args:
-        storage:
+        backend:
             :class:`~optuna.storages.BaseStorage` class instance to wrap.
     """
 
@@ -209,8 +209,9 @@ class _CachedStorage(BaseStorage):
                 updates.state = state
 
                 if cached_trial.state.is_finished():
-                    updates.datetime_complete = datetime.datetime.now()
-                    cached_trial.datetime_complete = datetime.datetime.now()
+                    now = datetime.datetime.now()
+                    updates.datetime_complete = now
+                    cached_trial.datetime_complete = now
                 return self._flush_trial(trial_id)
 
         ret = self._backend.set_trial_state(trial_id, state)

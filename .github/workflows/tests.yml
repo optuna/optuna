@@ -25,9 +25,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    # Not intended for forks.
-    if: github.repository == 'optuna/optuna'
-
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -49,34 +46,27 @@ jobs:
 
     # TODO(c-bata): Remove this step after fixing the version constraint of sklearn.
     - name: Install Cython for scikit-learn installation which does not provide Python 3.9 wheel.
-      run: pip install --use-deprecated=legacy-resolver --progress-bar off Cython
+      run: pip install --progress-bar off Cython
       if: matrix.python-version == '3.9'
 
     - name: Install
       run: |
         python -m pip install --upgrade pip
-        pip install --use-deprecated=legacy-resolver --progress-bar off -U setuptools
+        pip install --progress-bar off -U setuptools
 
         # Install minimal dependencies and confirm that `import optuna` is successful.
-        pip install --use-deprecated=legacy-resolver --progress-bar off .
+        pip install --progress-bar off .
         python -c 'import optuna'
         optuna --version
 
-        pip install --use-deprecated=legacy-resolver --progress-bar off .[tests]
-        pip install --use-deprecated=legacy-resolver --progress-bar off .[optional]
+        pip install --progress-bar off .[tests]
+        pip install --progress-bar off .[optional]
 
         # Required for samplers_tests/test_samplers.py.
         # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
-        pip install --use-deprecated=legacy-resolver scikit-optimize
-        pip install --use-deprecated=legacy-resolver cma
+        pip install scikit-optimize
+        pip install cma
 
-    # TODO: Add the deselected tests back after fixing version constraint of sklearn.
     - name: Tests
       run: |
-        if [ ${{ matrix.python-version }} = 3.9 ]; then
-          pytest tests --ignore tests/integration_tests \
-            --deselect tests/samplers_tests/test_samplers.py::test_nan_objective_value \
-            --deselect tests/samplers_tests/test_samplers.py::test_partial_fixed_sampling
-        else
-          pytest tests --ignore tests/integration_tests
-        fi
+        pytest tests --ignore tests/integration_tests

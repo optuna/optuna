@@ -1,19 +1,22 @@
 import copy
 from datetime import datetime
+import itertools
 import random
+import time
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
 
 import optuna
-from optuna._study_direction import StudyDirection
-from optuna._study_summary import StudySummary
+from optuna import Study
+from optuna._callbacks import RetryFailedTrialCallback
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
@@ -23,8 +26,12 @@ from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages import RedisStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.study._study_direction import StudyDirection
+from optuna.study._study_summary import StudySummary
 from optuna.testing.storage import STORAGE_MODES
+from optuna.testing.storage import STORAGE_MODES_HEARTBEAT
 from optuna.testing.storage import StorageSupplier
+from optuna.testing.threading import _TestableThread
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -1087,3 +1094,141 @@ def test_get_trial_id_from_study_id_trial_number(storage_mode: str) -> None:
         assert trial_id == storage.get_trial_id_from_study_id_trial_number(
             study_id, trial_number=0
         )
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
+def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
+
+    heartbeat_interval = 1
+    grace_period = 2
+
+    with StorageSupplier(
+        storage_mode, heartbeat_interval=heartbeat_interval, grace_period=grace_period
+    ) as storage:
+        assert storage.is_heartbeat_enabled()
+
+        study1 = optuna.create_study(storage=storage)
+        study2 = optuna.create_study(storage=storage)
+
+        trial1 = study1.ask()
+        trial2 = study2.ask()
+        storage.record_heartbeat(trial1._trial_id)
+        storage.record_heartbeat(trial2._trial_id)
+        time.sleep(grace_period + 1)
+
+        assert study1.trials[0].state is TrialState.RUNNING
+        assert study2.trials[0].state is TrialState.RUNNING
+
+        # Exceptions raised in spawned threads are caught by `_TestableThread`.
+        with patch("optuna.study._optimize.Thread", _TestableThread):
+            study1.optimize(lambda _: 1.0, n_trials=1)
+
+        assert study1.trials[0].state is TrialState.FAIL
+        assert study2.trials[0].state is TrialState.RUNNING
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
+def test_invalid_heartbeat_interval_and_grace_period(storage_mode: str) -> None:
+
+    with pytest.raises(ValueError):
+        with StorageSupplier(storage_mode, heartbeat_interval=-1):
+            pass
+
+    with pytest.raises(ValueError):
+        with StorageSupplier(storage_mode, grace_period=-1):
+            pass
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
+def test_failed_trial_callback(storage_mode: str) -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    def _failed_trial_callback(study: Study, trial: FrozenTrial) -> None:
+        assert study.system_attrs["test"] == "A"
+        assert trial.system_attrs["test"] == "B"
+
+    failed_trial_callback = Mock(wraps=_failed_trial_callback)
+
+    with StorageSupplier(
+        storage_mode,
+        heartbeat_interval=heartbeat_interval,
+        grace_period=grace_period,
+        failed_trial_callback=failed_trial_callback,
+    ) as storage:
+        assert storage.is_heartbeat_enabled()
+
+        study = optuna.create_study(storage=storage)
+        study.set_system_attr("test", "A")
+
+        trial = study.ask()
+        trial.set_system_attr("test", "B")
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        # Exceptions raised in spawned threads are caught by `_TestableThread`.
+        with patch("optuna.study._optimize.Thread", _TestableThread):
+            study.optimize(lambda _: 1.0, n_trials=1)
+            failed_trial_callback.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "storage_mode,max_retry", itertools.product(STORAGE_MODES_HEARTBEAT, [None, 0, 1])
+)
+def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]) -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    with StorageSupplier(
+        storage_mode,
+        heartbeat_interval=heartbeat_interval,
+        grace_period=grace_period,
+        failed_trial_callback=RetryFailedTrialCallback(max_retry=max_retry),
+    ) as storage:
+        assert storage.is_heartbeat_enabled()
+
+        study = optuna.create_study(storage=storage)
+
+        trial = study.ask()
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        # Exceptions raised in spawned threads are caught by `_TestableThread`.
+        with patch("optuna.study._optimize.Thread", _TestableThread):
+            study.optimize(lambda _: 1.0, n_trials=1)
+
+        # Test the last trial to see if it was a retry of the first trial or not.
+        # Test max_retry=None to see if trial is retried.
+        # Test max_retry=0 to see if no trials are retried.
+        # Test max_retry=1 to see if trial is retried.
+        assert RetryFailedTrialCallback.retried_trial_number(study.trials[1]) == (
+            None if max_retry == 0 else 0
+        )
+
+
+def test_fail_stale_trials() -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    def failed_trial_callback(study: "optuna.Study", trial: FrozenTrial) -> None:
+        assert study.system_attrs["test"] == "A"
+        assert trial.system_attrs["test"] == "B"
+
+    with StorageSupplier("sqlite") as storage:
+        assert isinstance(storage, RDBStorage)
+        storage.heartbeat_interval = heartbeat_interval
+        storage.grace_period = grace_period
+        storage.failed_trial_callback = failed_trial_callback
+        study = optuna.create_study(storage=storage)
+        study.set_system_attr("test", "A")
+
+        trial = study.ask()
+        trial.set_system_attr("test", "B")
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        assert study.trials[0].state is TrialState.RUNNING
+
+        optuna.storages.fail_stale_trials(study)
+
+        assert study.trials[0].state is TrialState.FAIL

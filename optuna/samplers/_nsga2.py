@@ -16,12 +16,12 @@ import numpy as np
 
 import optuna
 from optuna._experimental import ExperimentalWarning
-from optuna._multi_objective import _dominates
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
 from optuna.study import Study
 from optuna.study import StudyDirection
+from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -70,6 +70,10 @@ class NSGAIISampler(BaseSampler):
             constraints is violated. A value equal to or smaller than 0 is considered feasible.
             If constraints_func returns more than one value for a trial, that trial is considered
             feasible if and only if all values are equal to 0 or smaller.
+
+            The constraint_func will be evaluated after each successful trial.
+            The function won't be called when trials fail or they are pruned, but this behavior is
+            subject to change in the future releases.
 
             The constraints are handled by the constrained domination. A trial x is said to
             constrained-dominate a trial y, if any of the following conditions is true:
@@ -213,6 +217,7 @@ class NSGAIISampler(BaseSampler):
                     generation_to_runnings[generation].append(trial)
                 continue
 
+            # Do not use trials whose states are not COMPLETE, or `constraint` will be unavailable.
             generation_to_population[generation].append(trial)
 
         hasher = hashlib.sha256()
@@ -285,10 +290,11 @@ class NSGAIISampler(BaseSampler):
 
         return elite_population
 
-    def _select_parent(self, study: Study, population: List[FrozenTrial]) -> FrozenTrial:
+    def _select_parent(self, study: Study, population: Sequence[FrozenTrial]) -> FrozenTrial:
         # TODO(ohta): Consider to allow users to specify the number of parent candidates.
-        candidate0 = self._rng.choice(population)
-        candidate1 = self._rng.choice(population)
+        population_size = len(population)
+        candidate0 = population[self._rng.choice(population_size)]
+        candidate1 = population[self._rng.choice(population_size)]
 
         dominates = _dominates if self._constraints_func is None else _constrained_dominates
 
@@ -347,7 +353,8 @@ class NSGAIISampler(BaseSampler):
         state: TrialState,
         values: Optional[Sequence[float]],
     ) -> None:
-        if self._constraints_func is not None:
+        assert state in [TrialState.COMPLETE, TrialState.FAIL, TrialState.PRUNED]
+        if state == TrialState.COMPLETE and self._constraints_func is not None:
             constraints = None
             try:
                 con = self._constraints_func(trial)
