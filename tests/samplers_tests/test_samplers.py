@@ -49,6 +49,7 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
     [
         optuna.samplers.NSGAIISampler,
         optuna.samplers.MOTPESampler,
+        lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
     ],
 )
 
