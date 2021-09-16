@@ -429,6 +429,8 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: Opti
         for i, trial in enumerate(trials):
             for key in df.columns:
                 expected_value = df.loc[i][key]
+
+                # The param may be NaN when the objective function has branched search space.
                 if (
                     key[0] == "params"
                     and isinstance(expected_value, float)
@@ -511,6 +513,8 @@ def test_trials_command_flatten(
             assert set(trial.keys()) <= set(df.columns)
             for key in df.columns:
                 expected_value = df.loc[i][key]
+
+                # The param may be NaN when the objective function has branched search space.
                 if (
                     key.startswith("params_")
                     and isinstance(expected_value, float)
@@ -586,6 +590,8 @@ def test_best_trial_command(
 
         for key in df.columns:
             expected_value = df.loc[study.best_trial.number][key]
+
+            # The param may be NaN when the objective function has branched search space.
             if (
                 key[0] == "params"
                 and isinstance(expected_value, float)
@@ -669,6 +675,8 @@ def test_best_trial_command_flatten(
         assert set(best_trial.keys()) <= set(df.columns)
         for key in df.columns:
             expected_value = df.loc[study.best_trial.number][key]
+
+            # The param may be NaN when the objective function has branched search space.
             if (
                 key.startswith("params_")
                 and isinstance(expected_value, float)
@@ -679,6 +687,7 @@ def test_best_trial_command_flatten(
                 else:
                     assert key not in best_trial
                 continue
+
             value = best_trial[key]
             if isinstance(value, (int, float)):
                 if np.isnan(expected_value):
@@ -743,6 +752,8 @@ def test_best_trials_command(output_format: Optional[str]) -> None:
             assert number in best_trials
             for key in df.columns:
                 expected_value = df.loc[number][key]
+
+                # The param may be NaN when the objective function has branched search space.
                 if (
                     key[0] == "params"
                     and isinstance(expected_value, float)
@@ -826,6 +837,8 @@ def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
             number = int(trial["number"]) if output_format in (None, "table") else trial["number"]
             for key in df.columns:
                 expected_value = df.loc[number][key]
+
+                # The param may be NaN when the objective function has branched search space.
                 if (
                     key.startswith("params_")
                     and isinstance(expected_value, float)
@@ -836,6 +849,7 @@ def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
                     else:
                         assert key not in trial
                     continue
+
                 value = trial[key]
                 if isinstance(value, (int, float)):
                     if np.isnan(expected_value):
