@@ -423,7 +423,7 @@ def test_validate() -> None:
     # Invalid: `value` has invalid type value.
     invalid_trial = copy.copy(valid_trial)
     for value in ["1", "a", [1], {2}, [3, 4], {"k", "v"}]:
-        invalid_trial.value = value
+        invalid_trial.value = value  # type: ignore
         with pytest.raises(ValueError):
             invalid_trial._validate()
 
