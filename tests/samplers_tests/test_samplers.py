@@ -40,6 +40,7 @@ parametrize_sampler = pytest.mark.parametrize(
             skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
         ),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
+        lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
         optuna.samplers.NSGAIISampler,
     ],
 )
