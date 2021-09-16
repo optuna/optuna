@@ -427,6 +427,7 @@ def test_validate() -> None:
         with pytest.raises(ValueError):
             invalid_trial._validate()
 
+
 def test_number() -> None:
 
     trial = _create_frozen_trial()
