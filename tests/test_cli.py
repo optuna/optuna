@@ -823,15 +823,9 @@ def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
 
         for trial in trials:
             assert set(trial.keys()) <= set(df.columns)
-            if output_format is None or output_format == "table":
-                assert int(trial["number"]) in best_trials
-            else:
-                assert trial["number"] in best_trials
+            number = int(trial["number"]) if output_format in (None, "table") else trial["number"]
             for key in df.columns:
-                if output_format is None or output_format == "table":
-                    expected_value = df.loc[int(trial["number"])][key]
-                else:
-                    expected_value = df.loc[trial["number"]][key]
+                expected_value = df.loc[number][key]
                 if (
                     key.startswith("params_")
                     and isinstance(expected_value, float)
