@@ -50,12 +50,12 @@ class PyTorchLightningPruningCallback(Callback):
         if self.is_ddp_backend is True:
             if version.parse(pl.__version__) < version.parse("1.4.0"):
                 raise ValueError(
-                    "PyTorch Lightning>=1.4.0 is required in Distributed Data Parallel."
+                    "PyTorch Lightning>=1.4.0 is required in DDP."
                 )
             if not isinstance(self._trial.study._storage, _CachedStorage):
                 raise ValueError(
                     ":class:`~optuna.integration.PyTorchLightningPruningCallback`"
-                    " supports only :class:`~optuna.storages.RDBStorage`."
+                    " supports only :class:`~optuna.storages.RDBStorage` in DDP."
                 )
 
     def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
@@ -85,13 +85,9 @@ class PyTorchLightningPruningCallback(Callback):
 
             if self._trial.should_prune():
                 trainer.should_stop = True
-                try:
+                if trainer.is_global_zero:
                     self._trial.set_system_attr("pruned", True)
                     self._trial.set_system_attr("epoch", epoch)
-                except sqlalchemy.exc.IntegrityError:
-                    pass
-                except:
-                    raise
 
     def on_fit_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         if self.is_ddp_backend is False:
