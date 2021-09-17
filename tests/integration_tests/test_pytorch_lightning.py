@@ -9,7 +9,6 @@ from torch import nn
 import torch.nn.functional as F
 
 import optuna
-from optuna.integration import PyTorchLightningDDPPruningCallback
 from optuna.integration import PyTorchLightningPruningCallback
 from optuna.testing.integration import create_running_trial
 from optuna.testing.integration import DeterministicPruner
@@ -180,7 +179,7 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
             accelerator="ddp_cpu",
             num_processes=2,
             checkpoint_callback=False,
-            callbacks=[PyTorchLightningDDPPruningCallback(trial, monitor="accuracy")],
+            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
         )
 
         model = Model_DDP()
@@ -216,7 +215,7 @@ def test_pytorch_lightning_pruning_callback_ddp_storage_not_suppored(
             accelerator="ddp_cpu",
             num_processes=2,
             checkpoint_callback=False,
-            callbacks=[PyTorchLightningDDPPruningCallback(trial, monitor="accuracy")],
+            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
         )
 
         model = Model_DDP()
