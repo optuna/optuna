@@ -67,51 +67,64 @@ class NSGAIISampler(BaseSampler):
 
             - uniform: Select each parameter with equal probability
               from the two parent individuals.
-                  - `Gilbert Syswerda. 1989. Uniform Crossover in Genetic Algorithms.
-                    In Proceedings of the 3rd International Conference on Genetic Algorithms.
-                    Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, 2–9.
-                    <https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms>`_
+
+                - `Gilbert Syswerda. 1989. Uniform Crossover in Genetic Algorithms.
+                  In Proceedings of the 3rd International Conference on Genetic Algorithms.
+                  Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, 2–9.
+                  <https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms>`_
+
             - blxalpha: Uniformly sample child individuals from the hyper-rectangles created
               by the two parent individuals.
-                  - `Eshelman, L. and J. D. Schaffer.
-                    Real-Coded Genetic Algorithms and Interval-Schemata. FOGA (1992).
-                    <https://www.sciencedirect.com/science/article/abs/pii/B9780080948324500180>`_
+
+                - `Eshelman, L. and J. D. Schaffer.
+                  Real-Coded Genetic Algorithms and Interval-Schemata. FOGA (1992).
+                  <https://www.sciencedirect.com/science/article/abs/pii/B9780080948324500180>`_
+
             - sbx: Generate a child from two parent individuals
               according to the following polynomial probability distribution.
-                  - `Deb, K. and R. Agrawal.
-                    “Simulated Binary Crossover for Continuous Search Space.”
-                    Complex Syst. 9 (1995): n. pag.
-                    <https://www.complex-systems.com/abstracts/v09_i02_a02/>`_
+
+                - `Deb, K. and R. Agrawal.
+                  “Simulated Binary Crossover for Continuous Search Space.”
+                  Complex Syst. 9 (1995): n. pag.
+                  <https://www.complex-systems.com/abstracts/v09_i02_a02/>`_
+
             - vsbx: In SBX, the probability of occurrence of child individuals
               becomes zero in some parameter regions.
-                  - `Pedro J. Ballester, Jonathan N. Carter.
-                    Real-Parameter Genetic Algorithms for Finding Multiple Optimal Solutions
-                    in Multi-modal Optimization. GECCO 2003: 706-717
-                    <https://link.springer.com/chapter/10.1007/3-540-45105-6_86>`_
+
+                - `Pedro J. Ballester, Jonathan N. Carter.
+                  Real-Parameter Genetic Algorithms for Finding Multiple Optimal Solutions
+                  in Multi-modal Optimization. GECCO 2003: 706-717
+                  <https://link.springer.com/chapter/10.1007/3-540-45105-6_86>`_
+
             - undx: Generate child individuals from the three parents
               using a multivariate normal distribution.
-                  - `H. Kita, I. Ono and S. Kobayashi,
-                    Multi-parental extension of the unimodal normal distribution crossover
-                    for real-coded genetic algorithms,
-                    Proceedings of the 1999 Congress on Evolutionary Computation-CEC99
-                    (Cat. No. 99TH8406), 1999, pp. 1581-1588 Vol. 2
-                    <https://ieeexplore.ieee.org/document/782672>`_
+
+                - `H. Kita, I. Ono and S. Kobayashi,
+                  Multi-parental extension of the unimodal normal distribution crossover
+                  for real-coded genetic algorithms,
+                  Proceedings of the 1999 Congress on Evolutionary Computation-CEC99
+                  (Cat. No. 99TH8406), 1999, pp. 1581-1588 Vol. 2
+                  <https://ieeexplore.ieee.org/document/782672>`_
+
             - undxm: In UNDX, the child is generated only in a limited area of the search range;
               in UNDX-m, the child are generated in a distribution
               that covers the search range more densely.
-                  - `H. Kita, I. Ono and S. Kobayashi,
-                    Multi-parental extension of the unimodal normal distribution crossover
-                    for real-coded genetic algorithms,
-                    Proceedings of the 1999 Congress on Evolutionary Computation-CEC99
-                    (Cat. No. 99TH8406), 1999, pp. 1581-1588 Vol. 2
-                    <https://ieeexplore.ieee.org/document/782672>`_
+
+                - `H. Kita, I. Ono and S. Kobayashi,
+                  Multi-parental extension of the unimodal normal distribution crossover
+                  for real-coded genetic algorithms,
+                  Proceedings of the 1999 Congress on Evolutionary Computation-CEC99
+                  (Cat. No. 99TH8406), 1999, pp. 1581-1588 Vol. 2
+                  <https://ieeexplore.ieee.org/document/782672>`_
+
             - spx: It uniformly sample child individuals from within a single simplex
               that is similar to the simplex produced by the parent individual.
-                  - `Shigeyoshi Tsutsui and Shigeyoshi Tsutsui and David E. Goldberg and
-                    David E. Goldberg and Kumara Sastry and Kumara Sastry
-                    Progress Toward Linkage Learning in Real-Coded GAs with Simplex Crossover.
-                    IlliGAL Report. 2000.
-                    <https://www.researchgate.net/publication/2388486_Progress_Toward_Linkage_Learning_in_Real-Coded_GAs_with_Simplex_Crossover>`_
+
+                - `Shigeyoshi Tsutsui and Shigeyoshi Tsutsui and David E. Goldberg and
+                  David E. Goldberg and Kumara Sastry and Kumara Sastry
+                  Progress Toward Linkage Learning in Real-Coded GAs with Simplex Crossover.
+                  IlliGAL Report. 2000.
+                  <https://www.researchgate.net/publication/2388486_Progress_Toward_Linkage_Learning_in_Real-Coded_GAs_with_Simplex_Crossover>`_
 
         crossover_prob:
             Probability that a crossover (parameters swapping between parents) will occur
