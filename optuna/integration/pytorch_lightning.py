@@ -1,10 +1,11 @@
 import warnings
 
+from packaging import version
 import sqlalchemy
 
 import optuna
 from optuna.storages._cached_storage import _CachedStorage
-from packaging import version
+
 
 with optuna._imports.try_import() as _imports:
     import pytorch_lightning as pl
@@ -49,9 +50,7 @@ class PyTorchLightningPruningCallback(Callback):
         self.is_ddp_backend = trainer.accelerator_connector.distributed_backend is not None
         if self.is_ddp_backend is True:
             if version.parse(pl.__version__) < version.parse("1.4.0"):
-                raise ValueError(
-                    "PyTorch Lightning>=1.4.0 is required in DDP."
-                )
+                raise ValueError("PyTorch Lightning>=1.4.0 is required in DDP.")
             if not isinstance(self._trial.study._storage, _CachedStorage):
                 raise ValueError(
                     ":class:`~optuna.integration.PyTorchLightningPruningCallback`"
@@ -80,8 +79,6 @@ class PyTorchLightningPruningCallback(Callback):
                 self._trial.report(current_score, step=epoch)
             except sqlalchemy.exc.IntegrityError:
                 pass
-            except:
-                raise
 
             if self._trial.should_prune():
                 trainer.should_stop = True
