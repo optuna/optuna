@@ -417,7 +417,7 @@ def test_validate() -> None:
     # Valid: `value` accepts float-castable values.
     _trial = copy.copy(valid_trial)
     for value in [1.0, 1, np.float32(1.0), np.int_(1)]:
-        _trial.value = value  #type: ignore
+        _trial.value = value  # type: ignore
         _trial._validate()
 
     # Invalid: `value` has invalid type value.
