@@ -6,6 +6,8 @@ from sklearn.decomposition import PCA
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.metrics._scorer import neg_log_loss
 from sklearn.neighbors import KernelDensity
 
 from optuna import distributions
@@ -73,6 +75,102 @@ def test_optuna_search(enable_pruning: bool, fit_params: str) -> None:
     optuna_search.score(X, y)
 
 
+@pytest.mark.parametrize("enable_pruning", [True, False])
+@pytest.mark.parametrize("fit_params", ["", "coef_init"])
+@pytest.mark.filterwarnings("ignore::UserWarning")
+def test_optuna_search_multimetric_list(enable_pruning: bool, fit_params: str) -> None:
+
+    X, y = make_blobs(n_samples=10)
+    est = SGDClassifier(max_iter=5, tol=1e-03)
+    param_dist = {"alpha": distributions.LogUniformDistribution(1e-04, 1e03)}
+    optuna_search = integration.OptunaSearchCV(
+        est,
+        param_dist,
+        cv=3,
+        enable_pruning=enable_pruning,
+        error_score="raise",
+        max_iter=5,
+        random_state=0,
+        refit="neg_log_loss",
+        return_train_score=True,
+        scoring=["neg_log_loss", "accuracy"]
+    )
+
+    with pytest.raises(NotFittedError):
+        optuna_search._check_is_fitted()
+
+    if fit_params == "coef_init" and not enable_pruning:
+        optuna_search.fit(X, y, coef_init=np.ones((3, 2), dtype=np.float64))
+    else:
+        optuna_search.fit(X, y)
+
+    optuna_search.trials_dataframe()
+    optuna_search.decision_function(X)
+    optuna_search.predict(X)
+    optuna_search.score(X, y)
+
+
+@pytest.mark.parametrize("enable_pruning", [True, False])
+@pytest.mark.parametrize("fit_params", ["", "coef_init"])
+@pytest.mark.filterwarnings("ignore::UserWarning")
+def test_optuna_search_multimetric_dict(enable_pruning: bool, fit_params: str) -> None:
+
+    X, y = make_blobs(n_samples=10)
+    est = SGDClassifier(max_iter=5, tol=1e-03)
+    param_dist = {"alpha": distributions.LogUniformDistribution(1e-04, 1e03)}
+    optuna_search = integration.OptunaSearchCV(
+        est,
+        param_dist,
+        cv=3,
+        enable_pruning=enable_pruning,
+        error_score="raise",
+        max_iter=5,
+        random_state=0,
+        refit="score_two",
+        return_train_score=True,
+        scoring={"score_one": neg_log_loss, "score_two": accuracy_score}
+    )
+
+    with pytest.raises(NotFittedError):
+        optuna_search._check_is_fitted()
+
+    if fit_params == "coef_init" and not enable_pruning:
+        optuna_search.fit(X, y, coef_init=np.ones((3, 2), dtype=np.float64))
+    else:
+        optuna_search.fit(X, y)
+
+    optuna_search.trials_dataframe()
+    optuna_search.decision_function(X)
+    optuna_search.predict(X)
+    optuna_search.score(X, y)
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+def test_optuna_search_properties() -> None:
+
+    X, y = make_blobs(n_samples=10)
+    est = LogisticRegression(tol=1e-03)
+    param_dist = {"C": distributions.LogUniformDistribution(1e-04, 1e03)}
+
+    optuna_search = integration.OptunaSearchCV(
+        est, param_dist, cv=3, error_score="raise", random_state=0, return_train_score=True
+    )
+    optuna_search.fit(X, y)
+    optuna_search.set_user_attr("dataset", "blobs")
+
+    assert optuna_search._estimator_type == "classifier"
+    assert type(optuna_search.best_index_) == int
+    assert type(optuna_search.best_params_) == dict
+    assert optuna_search.best_score_ is not None
+    assert optuna_search.best_trial_ is not None
+    assert np.allclose(optuna_search.classes_, np.array([0, 1, 2]))
+    assert optuna_search.n_trials_ == 10
+    assert optuna_search.user_attrs_ == {"dataset": "blobs"}
+    assert type(optuna_search.predict_log_proba(X)) == np.ndarray
+    assert type(optuna_search.predict_proba(X)) == np.ndarray
+
+
+# FIXME
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_optuna_search_properties() -> None:
 

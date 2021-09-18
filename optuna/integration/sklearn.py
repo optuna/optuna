@@ -1,3 +1,4 @@
+from ast import Call
 from logging import DEBUG
 from logging import INFO
 from logging import WARNING
@@ -11,6 +12,7 @@ from typing import Iterable
 from typing import List
 from typing import Mapping
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 import numpy as np
@@ -36,9 +38,11 @@ with try_import() as _imports:
     from sklearn.base import clone
     from sklearn.base import is_classifier
     from sklearn.metrics import check_scoring
+    from sklearn.metrics._scorer import _check_multimetric_scoring
     from sklearn.model_selection import BaseCrossValidator
     from sklearn.model_selection import check_cv
     from sklearn.model_selection import cross_validate
+    from sklearn.model_selection._validation import _score
     from sklearn.utils import check_random_state
     from sklearn.utils.metaestimators import _safe_split
 
@@ -79,6 +83,19 @@ def _check_fit_params(
             fit_params_validated[key] = _make_indexable(value)
             fit_params_validated[key] = _safe_indexing(fit_params_validated[key], indices)
     return fit_params_validated
+
+
+# NOTE Original implementation:
+# https://github.com/scikit-learn/scikit-learn/blob/ \
+# 28ef9973362257e0627bd39db9b788c93f49362f/sklearn/model_selection/_search.py#L348-L355
+def _check_refit(search_cv, attr):
+    if not search_cv.refit:
+        raise AttributeError(
+            f"This {type(search_cv).__name__} instance was initialized with "
+            f"`refit=False`. {attr} is available only after refitting on the best "
+            "parameters. You can refit an estimator manually using the "
+            "`best_params_` attribute"
+        )
 
 
 # NOTE Original implementation:
@@ -130,7 +147,37 @@ def _safe_indexing(
     return sklearn_safe_indexing(X, indices)
 
 
-class _Objective(object):
+class MultiMetricMixin:
+    """As per optuna implementation, some functionalities that
+    sklearn.model_selection.BaseSearchCV provide for multi-metric evaluation
+    are shared by `_Objective` and `OptunaSearchCV`. Those functions are
+    organized in this mixin class.
+    
+    """
+
+    # NOTE Original implementation:
+    # https://github.com/scikit-learn/scikit-learn/blob/ \
+    # 2beed5584/sklearn/model_selection/_search.py#L706-L721
+    def _check_refit_for_multimetric(self, scores):
+        """Check `refit` is compatible with `scores` is valid"""
+        multimetric_refit_msg = (
+            "For multi-metric scoring, the parameter refit must be set to a "
+            "scorer key or a callable to refit an estimator with the best "
+            "parameter setting on the whole data and make the best_* "
+            "attributes available for that metric. If this is not needed, "
+            f"refit should be set to False explicitly. {self.refit!r} was "
+            "passed."
+        )
+
+        valid_refit_dict = isinstance(self.refit, str) and (
+            self.refit in scores or f"test_{self.refit}" in scores
+        )
+
+        if self.refit is not False and not valid_refit_dict and not callable(self.refit):
+            raise ValueError(multimetric_refit_msg)
+
+
+class _Objective(MultiMetricMixin, object):
     """Callable that implements objective function.
 
     Args:
@@ -174,6 +221,16 @@ class _Objective(object):
             Maximum number of epochs. This is only used if the underlying
             estimator supports ``partial_fit``.
 
+        refit:
+            If :obj:`True`, refit the estimator with the best found
+            hyperparameters. The refitted estimator is made available at the
+            ``best_estimator_`` attribute and permits using ``predict``
+            directly.
+
+            For multiple metric evaluation, this needs to be a `str` denoting
+            the scorer that would be used to find the best parameters for
+            refitting the estimator at the end.
+
         return_train_score:
             If :obj:`True`, training scores will be included. Computing
             training scores is used to get insights on how different
@@ -184,7 +241,8 @@ class _Objective(object):
             performance.
 
         scoring:
-            Scorer function.
+            Scorer function or a dict which maps the scorer key to the scorer
+            callable.
     """
 
     def __init__(
@@ -199,8 +257,18 @@ class _Objective(object):
         fit_params: Dict[str, Any],
         groups: Optional[OneDimArrayLikeType],
         max_iter: int,
+        refit: Union[bool, str, Callable],
         return_train_score: bool,
-        scoring: Callable[..., Number],
+        scoring: Optional[
+            Union[
+                str,
+                Callable[..., float],
+                List[str],
+                Tuple[str],
+                Callable[..., Dict[str, float]],
+                Dict[str, Callable[..., float]],
+            ]
+        ] = None,
     ) -> None:
 
         self.cv = cv
@@ -211,6 +279,7 @@ class _Objective(object):
         self.groups = groups
         self.max_iter = max_iter
         self.param_distributions = param_distributions
+        self.refit = refit
         self.return_train_score = return_train_score
         self.scoring = scoring
         self.X = X
@@ -237,10 +306,18 @@ class _Objective(object):
                 return_train_score=self.return_train_score,
                 scoring=self.scoring,
             )
+            self.multimetric_ = not "test_score" in scores
+
+            # check refit_metric now for a callabe scorer that is multimetric
+            if callable(self.scoring) and self.multimetric_:
+                self._check_refit_for_multimetric(scores)
 
         self._store_scores(trial, scores)
 
-        return trial.user_attrs["mean_test_score"]
+        if self.multimetric_:
+            return trial.user_attrs[f"mean_test_{self.refit}"]
+        else:
+            return trial.user_attrs["mean_test_score"]
 
     def _cross_validate_with_pruning(
         self, trial: Trial, estimator: "BaseEstimator"
@@ -260,24 +337,62 @@ class _Objective(object):
         scores = {
             "fit_time": np.zeros(n_splits),
             "score_time": np.zeros(n_splits),
-            "test_score": np.empty(n_splits),
         }
-
-        if self.return_train_score:
-            scores["train_score"] = np.empty(n_splits)
 
         for step in range(self.max_iter):
             for i, (train, test) in enumerate(self.cv.split(self.X, self.y, groups=self.groups)):
                 out = self._partial_fit_and_score(estimators[i], train, test, partial_fit_params)
 
-                if self.return_train_score:
-                    scores["train_score"][i] = out.pop(0)
+                # NOTE Original implementaiton:
+                # https://github.com/scikit-learn/scikit-learn/blob/ \
+                # 642127806a830346886a0337fcbefedc871159c0/sklearn/model_selection/_search.py#L844-L852
 
-                scores["test_score"][i] = out[0]
+                # multimetric is determined here because in the case of a callable
+                # self.scoring the return type is only known after calling
+                self.multimetric_ = isinstance(out[0], dict)
+
+                # Initialize scores if necessary
+                if not self.multimetric_:
+                    if "test_score" not in scores:
+                        scores["test_score"] = np.empty(n_splits)
+                    if self.return_train_score and "train_score" not in scores:
+                        scores["train_score"] = np.empty(n_splits)
+                else:
+                    metricnames = list(out[0].keys())
+                    for metricname in metricnames:
+                        if f"test_{metricname}" not in scores:
+                            scores[f"test_{metricname}"] = np.empty(n_splits)
+                        if self.return_train_score and f"train_{metricname}" not in scores:
+                            scores[f"train_{metricname}"] = np.empty(n_splits)
+
+                if self.return_train_score:
+                    if not self.multimetric_:
+                        scores["train_score"][i] = out.pop(0)
+                    else:
+                        out_pop0 = out.pop(0)
+                        for metricname in metricnames:
+                            scores[f"train_{metricname}"][i] = out_pop0[metricname]
+
+                if not self.multimetric_:
+                    scores["test_score"][i] = out[0]
+                else:
+                    for metricname in metricnames:
+                        scores[f"train_{metricname}"][i] = out[0][metricname]
                 scores["fit_time"][i] += out[1]
                 scores["score_time"][i] += out[2]
 
-            intermediate_value = np.nanmean(scores["test_score"])
+                # NOTE Original implementaiton:
+                # https://github.com/scikit-learn/scikit-learn/blob/ \
+                # 642127806a830346886a0337fcbefedc871159c0/sklearn/model_selection/_search.py#L844-L852
+
+                # check refit_metric now for a callabe scorer that is multimetric
+                if callable(self.scoring) and self.multimetric_:
+                    self._check_refit_for_multimetric(out[0])
+
+            if self.multimetric_:
+                intermediate_value = np.nanmean(scores[f"test_{self.refit}"])
+            else:
+                intermediate_value = np.nanmean(scores["test_score"])
 
             trial.report(intermediate_value, step=step)
 
@@ -308,47 +423,51 @@ class _Objective(object):
 
         start_time = time()
 
+        # NOTE Original Implementation:
+        # https://github.com/scikit-learn/scikit-learn/blob/ \
+        # 642127806a830346886a0337fcbefedc871159c0/sklearn/model_selection/_validation.py#L677-L706
         try:
             estimator.partial_fit(X_train, y_train, **partial_fit_params)
 
         except Exception as e:
+            fit_time = time() - start_time
+            score_time = 0.0
             if self.error_score == "raise":
                 raise e
-
             elif isinstance(self.error_score, Number):
-                fit_time = time() - start_time
-                test_score = self.error_score
-                score_time = 0.0
-
-                if self.return_train_score:
-                    train_score = self.error_score
-
+                if isinstance(self.scoring, dict):
+                    test_scores = {name: self.error_score for name in self.scoring}
+                    if self.return_train_score:
+                        train_scores = test_scores.copy()
+                else:
+                    test_scores = self.error_score
+                    if self.return_train_score:
+                        train_scores = self.error_score
             else:
                 raise ValueError("error_score must be 'raise' or numeric.") from e
 
         else:
             fit_time = time() - start_time
-            test_score = self.scoring(estimator, X_test, y_test)
+            test_scores = _score(estimator, X_test, y_test, self.scoring, self.error_score)
             score_time = time() - fit_time - start_time
 
             if self.return_train_score:
-                train_score = self.scoring(estimator, X_train, y_train)
+                train_scores = _score(estimator, X_train, y_train, self.scoring, self.error_score)
 
         # Required for type checking but is never expected to fail.
         assert isinstance(fit_time, Number)
         assert isinstance(score_time, Number)
 
-        ret = [test_score, fit_time, score_time]
+        ret = [test_scores, fit_time, score_time]
 
         if self.return_train_score:
-            ret.insert(0, train_score)
+            ret.insert(0, train_scores)
 
         return ret
 
     def _store_scores(self, trial: Trial, scores: Mapping[str, OneDimArrayLikeType]) -> None:
-
         for name, array in scores.items():
-            if name in ["test_score", "train_score"]:
+            if name.startswith("test_") or name.startswith("train_"):
                 for i, score in enumerate(array):
                     trial.set_user_attr("split{}_{}".format(i, name), score)
 
@@ -357,7 +476,7 @@ class _Objective(object):
 
 
 @experimental("0.17.0")
-class OptunaSearchCV(BaseEstimator):
+class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
     """Hyperparameter search with cross-validation.
 
     Args:
@@ -434,6 +553,10 @@ class OptunaSearchCV(BaseEstimator):
             ``best_estimator_`` attribute and permits using ``predict``
             directly.
 
+            For multiple metric evaluation, this needs to be a `str` denoting
+            the scorer that would be used to find the best parameters for
+            refitting the estimator at the end.
+
         return_train_score:
             If :obj:`True`, training scores will be included. Computing
             training scores is used to get insights on how different
@@ -444,7 +567,20 @@ class OptunaSearchCV(BaseEstimator):
             performance.
 
         scoring:
-            String or callable to evaluate the predictions on the validation data.
+            String, callable, list, tuple or dict to evaluate the
+            predictions on the validation data.
+
+            If `scoring` represents a single score, one can use:
+                - a single string;
+                - a callable that returns a single value.
+
+            If `scoring` represents multiple scores, one can use:
+                - a list or tuple of unique strings;
+                - a callable returning a dictionary where the keys are the
+                metric names and the values are the metric scores;
+                - a dictionary with metric names as keys and callables a
+                values.
+
             If :obj:`None`, ``score`` on the estimator is used.
 
         study:
@@ -473,6 +609,9 @@ class OptunaSearchCV(BaseEstimator):
             Estimator that was chosen by the search. This is present only if
             ``refit`` is set to :obj:`True`.
 
+        multimetric_:
+            Whether or not the scorers compute several metrics.
+
         n_splits_:
             Number of cross-validation splits.
 
@@ -484,7 +623,8 @@ class OptunaSearchCV(BaseEstimator):
             Indices of samples that are used during hyperparameter search.
 
         scorer_:
-            Scorer function.
+            Scorer function or a dict which maps the scorer key to the scorer
+            callable.
 
         study_:
             Actual study.
@@ -685,9 +825,18 @@ class OptunaSearchCV(BaseEstimator):
         n_jobs: int = 1,
         n_trials: int = 10,
         random_state: Optional[Union[int, np.random.RandomState]] = None,
-        refit: bool = True,
+        refit: Union[bool, str, Callable] = True,
         return_train_score: bool = False,
-        scoring: Optional[Union[Callable[..., float], str]] = None,
+        scoring: Optional[
+            Union[
+                str,
+                Callable[..., float],
+                List[str],
+                Tuple[str],
+                Callable[..., Dict[str, float]],
+                Dict[str, Callable[..., float]],
+            ]
+        ] = None,
         study: Optional[study_module.Study] = None,
         subsample: Union[float, int] = 1.0,
         timeout: Optional[float] = None,
@@ -841,7 +990,14 @@ class OptunaSearchCV(BaseEstimator):
         cv = check_cv(self.cv, y_res, classifier)
 
         self.n_splits_ = cv.get_n_splits(X_res, y_res, groups=groups_res)
-        self.scorer_ = check_scoring(self.estimator, scoring=self.scoring)
+
+        if callable(self.scoring):
+            self.scorer_ = self.scoring
+        elif self.scoring is None or isinstance(self.scoring, str):
+            self.scorer_ = check_scoring(self.estimator, self.scoring)
+        else:
+            self.scorer_ = _check_multimetric_scoring(self.estimator, self.scoring)
+            self._check_refit_for_multimetric(self.scorer_)
 
         if self.study is None:
             seed = random_state.randint(0, np.iinfo("int32").max)
@@ -863,6 +1019,7 @@ class OptunaSearchCV(BaseEstimator):
             fit_params_res,
             groups_res,
             self.max_iter,
+            self.refit,
             self.return_train_score,
             self.scorer_,
         )
@@ -878,6 +1035,8 @@ class OptunaSearchCV(BaseEstimator):
 
         _logger.info("Finished hyperparemeter search!")
 
+        self.multimetric_ = objective.multimetric_
+
         if self.refit:
             self._refit(X, y, **fit_params)
 
@@ -885,12 +1044,18 @@ class OptunaSearchCV(BaseEstimator):
 
         return self
 
+    # NOTE Original implementation:
+    # https://github.com/scikit-learn/scikit-learn/blob/ \
+    # 28ef9973362257e0627bd39db9b788c93f49362f/sklearn/model_selection/_search.py#L434-L476
     def score(
         self,
         X: TwoDimArrayLikeType,
         y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]] = None,
     ) -> float:
-        """Return the score on the given data.
+        """Return the score on the given data, if the estimator has been refit.
+
+        This uses the score defined by ``scoring`` where provided, and the
+        ``best_estimator_.score`` method otherwise.
 
         Args:
             X:
@@ -903,5 +1068,22 @@ class OptunaSearchCV(BaseEstimator):
             score:
                 Scaler score.
         """
+        _check_refit(self, "score")
+        self._check_is_fitted()
+        if self.scorer_ is None:
+            raise ValueError(
+                "No score function explicitly defined, "
+                "and the estimator doesn't provide one %s" % self.best_estimator_
+            )
+        if isinstance(self.scorer_, dict):
+            if self.multimetric_:
+                scorer = self.scorer_[self.refit]
+            else:
+                scorer = self.scorer_
+            return scorer(self.best_estimator_, X, y)
 
-        return self.scorer_(self.best_estimator_, X, y)
+        # callable
+        score = self.scorer_(self.best_estimator_, X, y)
+        if self.multimetric_:
+            score = score[self.refit]
+        return score
