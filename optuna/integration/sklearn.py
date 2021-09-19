@@ -583,6 +583,12 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
 
             If :obj:`None`, ``score`` on the estimator is used.
 
+                .. note::
+                    Even when `scoring` represents multiple scores, the
+                    optimization shall be performed on the single score
+                    specified by `refit`. For optimization with multiple
+                    scores, please refer to Tutorial<https://optuna.readthedocs.io/en/stable/tutorial/20_recipes/002_multi_objective.html>
+
         study:
             Study corresponds to the optimization task. If :obj:`None`, a new
             study is created.
