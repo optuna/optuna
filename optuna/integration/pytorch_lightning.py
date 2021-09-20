@@ -46,9 +46,9 @@ class PyTorchLightningPruningCallback(Callback):
         self.monitor = monitor
         self.is_ddp_backend = False
 
-    def on_init_start(self, trainer: Trainer):
+    def on_init_start(self, trainer: Trainer) -> None:
         self.is_ddp_backend = trainer.accelerator_connector.distributed_backend is not None
-        if self.is_ddp_backend is True:
+        if self.is_ddp_backend:
             if version.parse(pl.__version__) < version.parse("1.4.0"):
                 raise ValueError("PyTorch Lightning>=1.4.0 is required in DDP.")
             if not isinstance(self._trial.study._storage, _CachedStorage):
@@ -69,7 +69,7 @@ class PyTorchLightningPruningCallback(Callback):
             warnings.warn(message)
             return
 
-        if self.is_ddp_backend is False:
+        if not self.is_ddp_backend:
             self._trial.report(current_score, step=epoch)
             if self._trial.should_prune():
                 message = "Trial was pruned at epoch {}.".format(epoch)
@@ -83,14 +83,14 @@ class PyTorchLightningPruningCallback(Callback):
             should_stop = self._trial.should_prune()
             # stop every ddp process if any world process decides to stop
             should_stop = trainer.training_type_plugin.reduce_boolean_decision(should_stop)
-            if should_stop == True:
+            if should_stop:
                 trainer.should_stop = True
                 if trainer.is_global_zero:
                     self._trial.set_system_attr("pruned", True)
                     self._trial.set_system_attr("epoch", epoch)
 
     def on_fit_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
-        if self.is_ddp_backend is False:
+        if not self.is_ddp_backend:
             return
 
         # Because on_validation_end is executed in spawned processes,
