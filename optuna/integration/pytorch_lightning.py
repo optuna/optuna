@@ -80,7 +80,10 @@ class PyTorchLightningPruningCallback(Callback):
             except sqlalchemy.exc.IntegrityError:
                 pass
 
-            if self._trial.should_prune():
+            should_stop = self._trial.should_prune()
+            # stop every ddp process if any world process decides to stop
+            should_stop = trainer.training_type_plugin.reduce_boolean_decision(should_stop)
+            if should_stop == True:
                 trainer.should_stop = True
                 if trainer.is_global_zero:
                     self._trial.set_system_attr("pruned", True)
