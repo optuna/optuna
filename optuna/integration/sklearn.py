@@ -133,39 +133,45 @@ def _safe_indexing(
     return sklearn_safe_indexing(X, indices)
 
 
-class _MultiMetricMixin:
-    """A mixin class for utilities.
-
-    As per optuna implementation, some functionalities that
-    ``sklearn.model_selection.BaseSearchCV`` provides for multi-metric evaluation
-    are shared by ``_Objective`` and :class:`~optuna.integration.OptunaSearchCV`. Those functions are
-    organized in this mixin class.
-    """
-
-    # NOTE Original implementation:
-    # https://github.com/scikit-learn/scikit-learn/blob/ \
-    # 2beed5584/sklearn/model_selection/_search.py#L706-L721
-    @classmethod
-    def _check_refit_for_multimetric(cls, scores: Union[Callable[..., float], Callable[..., Dict[str, float]]], refit: Union[bool, str, Callable]) -> None:
-        """Check `refit` is compatible with `scores` is valid"""
-        multimetric_refit_msg = (
-            "For multi-metric scoring, the parameter refit must be set to a "
-            "scorer key or a callable to refit an estimator with the best "
-            "parameter setting on the whole data and make the best_* "
-            "attributes available for that metric. If this is not needed, "
-            f"refit should be set to False explicitly. {refit!r} was "
-            "passed."
+# NOTE Original implementation:
+# https://github.com/scikit-learn/scikit-learn/blob/ \
+# 28ef9973362257e0627bd39db9b788c93f49362f/sklearn/model_selection/_search.py#L348-L355
+# NOTE This function is newly introduced on Scikit-Learn 1.0.0 (rename of 0.25)
+# TODO(tsuga) Remove this code block and import this function from sklearn after we
+# migrate our dependencies beyond Scikit-Learn 1.0.0
+def _check_refit(search_cv: Any, attr: str) -> None:
+    if not search_cv.refit:
+        raise AttributeError(
+            f"This {type(search_cv).__name__} instance was initialized with "
+            f"`refit=False`. {attr} is available only after refitting on the best "
+            "parameters. You can refit an estimator manually using the "
+            "`best_params_` attribute"
         )
 
-        valid_refit_dict = isinstance(refit, str) and (
-            refit in scores or f"test_{refit}" in scores
-        )
 
-        if refit is not False and not valid_refit_dict and not callable(refit):
-            raise ValueError(multimetric_refit_msg)
+# NOTE Original implementation:
+# https://github.com/scikit-learn/scikit-learn/blob/ \
+# 2beed5584/sklearn/model_selection/_search.py#L706-L721
+def _check_refit_for_multimetric(
+    scores: Any, refit: Union[bool, str, Callable[..., float]]
+) -> None:
+    """Check `refit` is compatible with `scores` is valid"""
+    multimetric_refit_msg = (
+        "For multi-metric scoring, the parameter refit must be set to a "
+        "scorer key or a callable to refit an estimator with the best "
+        "parameter setting on the whole data and make the best_* "
+        "attributes available for that metric. If this is not needed, "
+        f"refit should be set to False explicitly. {refit!r} was "
+        "passed."
+    )
+
+    valid_refit_dict = isinstance(refit, str) and (refit in scores or f"test_{refit}" in scores)
+
+    if refit is not False and not valid_refit_dict and not callable(refit):
+        raise ValueError(multimetric_refit_msg)
 
 
-class _Objective(MultiMetricMixin, object):
+class _Objective(object):
     """Callable that implements objective function.
 
     Args:
@@ -298,7 +304,7 @@ class _Objective(MultiMetricMixin, object):
 
             # check refit_metric now for a callabe scorer that is multimetric
             if callable(self.scoring) and self.multimetric_:
-                self._check_refit_for_multimetric(scores, self.refit)
+                _check_refit_for_multimetric(scores, self.refit)
 
         self._store_scores(trial, scores)
 
@@ -346,7 +352,7 @@ class _Objective(MultiMetricMixin, object):
                     if self.return_train_score and "train_score" not in scores:
                         scores["train_score"] = np.empty(n_splits)
                 else:
-                    metricnames = list(out[0].keys())
+                    metricnames = list(out[0].keys())  # type: ignore
                     for metricname in metricnames:
                         if f"test_{metricname}" not in scores:
                             scores[f"test_{metricname}"] = np.empty(n_splits)
@@ -357,7 +363,7 @@ class _Objective(MultiMetricMixin, object):
                     if not self.multimetric_:
                         scores["train_score"][i] = out.pop(0)
                     else:
-                        out_pop0 = out.pop(0)
+                        out_pop0: Dict[str, float] = out.pop(0)  # type: ignore
                         for metricname in metricnames:
                             scores[f"train_{metricname}"][i] = out_pop0[metricname]
 
@@ -365,7 +371,7 @@ class _Objective(MultiMetricMixin, object):
                     scores["test_score"][i] = out[0]
                 else:
                     for metricname in metricnames:
-                        scores[f"train_{metricname}"][i] = out[0][metricname]
+                        scores[f"train_{metricname}"][i] = out[0][metricname]  # type: ignore
                 scores["fit_time"][i] += out[1]
                 scores["score_time"][i] += out[2]
 
@@ -375,7 +381,7 @@ class _Objective(MultiMetricMixin, object):
 
                 # check refit_metric now for a callabe scorer that is multimetric
                 if callable(self.scoring) and self.multimetric_:
-                    self._check_refit_for_multimetric(out[0], self.refit)
+                    _check_refit_for_multimetric(out[0], self.refit)
 
             if self.multimetric_:
                 intermediate_value = np.nanmean(scores[f"test_{self.refit}"])
@@ -404,7 +410,7 @@ class _Objective(MultiMetricMixin, object):
         train: List[int],
         test: List[int],
         partial_fit_params: Dict[str, Any],
-    ) -> List[Union[Number, Dict]]:
+    ) -> List[Union[float, Dict[str, float]]]:
 
         X_train, y_train = _safe_split(estimator, self.X, self.y, train)
         X_test, y_test = _safe_split(estimator, self.X, self.y, test, train_indices=train)
@@ -424,13 +430,13 @@ class _Objective(MultiMetricMixin, object):
                 raise e
             elif isinstance(self.error_score, Number):
                 if isinstance(self.scoring, dict):
-                    test_scores: Union[Number, Dict[str, Number]] = {name: self.error_score for name in self.scoring}
+                    test_scores = {name: self.error_score for name in self.scoring}  # type: ignore
                     if self.return_train_score:
-                        train_scores = test_scores.copy()
+                        train_scores = test_scores.copy()  # type: ignore
                 else:
-                    test_scores = self.error_score
+                    test_scores = self.error_score  # type: ignore
                     if self.return_train_score:
-                        train_scores = self.error_score
+                        train_scores = self.error_score  # type: ignore
             else:
                 raise ValueError("error_score must be 'raise' or numeric.") from e
 
@@ -451,7 +457,7 @@ class _Objective(MultiMetricMixin, object):
         if self.return_train_score:
             ret.insert(0, train_scores)
 
-        return ret
+        return ret  # type: ignore
 
     def _store_scores(self, trial: Trial, scores: Mapping[str, OneDimArrayLikeType]) -> None:
         for name, array in scores.items():
@@ -464,7 +470,7 @@ class _Objective(MultiMetricMixin, object):
 
 
 @experimental("0.17.0")
-class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
+class OptunaSearchCV(BaseEstimator):
     """Hyperparameter search with cross-validation.
 
     Args:
@@ -864,18 +870,6 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
             attributes += ["best_estimator_", "refit_time_"]
 
         check_is_fitted(self, attributes)
-    
-    # NOTE Original implementation:
-    # https://github.com/scikit-learn/scikit-learn/blob/ \
-    # 28ef9973362257e0627bd39db9b788c93f49362f/sklearn/model_selection/_search.py#L348-L355
-    def _check_refit(self, attr: str) -> None:
-        if not self.refit:
-            raise AttributeError(
-                f"This {type(self).__name__} instance was initialized with "
-                f"`refit=False`. {attr} is available only after refitting on the best "
-                "parameters. You can refit an estimator manually using the "
-                "`best_params_` attribute"
-            )
 
     def _check_params(self) -> None:
 
@@ -1003,7 +997,7 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
             self.scorer_ = check_scoring(self.estimator, self.scoring)
         else:
             self.scorer_ = _check_multimetric_scoring(self.estimator, self.scoring)
-            self._check_refit_for_multimetric(self.scorer_, self.refit)
+            _check_refit_for_multimetric(self.scorer_, self.refit)
 
         if self.study is None:
             seed = random_state.randint(0, np.iinfo("int32").max)
@@ -1057,7 +1051,7 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
         self,
         X: TwoDimArrayLikeType,
         y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]] = None,
-    ) -> Union[Number, Dict[str, Number]]:
+    ) -> Union[float, Dict[str, float]]:
         """Return the score on the given data, if the estimator has been refit.
 
         This uses the score defined by ``scoring`` where provided, and the
@@ -1074,7 +1068,7 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
             score:
                 Scaler score.
         """
-        self._check_refit("score")
+        _check_refit(self, "score")
         self._check_is_fitted()
         if self.scorer_ is None:
             raise ValueError(
@@ -1091,5 +1085,5 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
         # callable
         score = self.scorer_(self.best_estimator_, X, y)
         if self.multimetric_:
-            score = score[self.refit]
+            score = score[self.refit]  # type: ignore
         return score
