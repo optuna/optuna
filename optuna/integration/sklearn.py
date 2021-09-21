@@ -573,7 +573,7 @@ class OptunaSearchCV(BaseEstimator):
                 - a callable returning a dictionary where the keys are the
                     metric names and the values are the metric scores;
                 - a dictionary with metric names as keys and callables a
-                values.
+                    values.
 
             If :obj:`None`, ``score`` on the estimator is used.
 
