@@ -1,7 +1,14 @@
 import numpy as np
 import pytest
 import scipy as sp
+from typing import Optional
+from typing import Union
+from typing import Tuple
+from typing import Callable
+from typing import List
+from typing import Dict
 from sklearn.datasets import make_blobs
+from sklearn.base import BaseEstimator
 from sklearn.decomposition import PCA
 from sklearn.exceptions import NotFittedError
 from sklearn.linear_model import LogisticRegression
@@ -77,13 +84,22 @@ def test_optuna_search(enable_pruning: bool, fit_params: str) -> None:
     optuna_search.score(X, y)
 
 
-def custom_scoring(estimator, X, y):
+def custom_scoring(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray):
     y_pred = estimator.predict(X)
     return {
         "neg_mse": mean_squared_error(y, y_pred),
         "acc": accuracy_score(y, y_pred),
     }
 
+
+ScoringType = Optional[Union[
+                str,
+                Callable[..., float],
+                List[str],
+                Tuple[str],
+                Callable[..., Dict[str, float]],
+                Dict[str, Callable[..., float]],
+            ]]
 
 @pytest.mark.parametrize("enable_pruning", [True, False])
 @pytest.mark.parametrize("fit_params", ["", "coef_init"])
@@ -104,7 +120,7 @@ def custom_scoring(estimator, X, y):
     ],
 )
 @pytest.mark.filterwarnings("ignore::UserWarning")
-def test_optuna_search_multimetric(enable_pruning: bool, fit_params: str, refit, scoring) -> None:
+def test_optuna_search_multimetric(enable_pruning: bool, fit_params: str, refit: Union[bool, str, Callable], scoring: ScoringType) -> None:
 
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
@@ -154,7 +170,7 @@ def test_optuna_search_multimetric(enable_pruning: bool, fit_params: str, refit,
 )
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_optuna_search_multimetric_error(
-    enable_pruning: bool, fit_params: str, refit, scoring
+    enable_pruning: bool, fit_params: str, refit: Union[bool, str, Callable], scoring: ScoringType
 ) -> None:
 
     X, y = make_blobs(n_samples=10)

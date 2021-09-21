@@ -86,19 +86,6 @@ def _check_fit_params(
 
 # NOTE Original implementation:
 # https://github.com/scikit-learn/scikit-learn/blob/ \
-# 28ef9973362257e0627bd39db9b788c93f49362f/sklearn/model_selection/_search.py#L348-L355
-def _check_refit(search_cv, attr):
-    if not search_cv.refit:
-        raise AttributeError(
-            f"This {type(search_cv).__name__} instance was initialized with "
-            f"`refit=False`. {attr} is available only after refitting on the best "
-            "parameters. You can refit an estimator manually using the "
-            "`best_params_` attribute"
-        )
-
-
-# NOTE Original implementation:
-# https://github.com/scikit-learn/scikit-learn/blob/ \
 # 8caa93889f85254fc3ca84caa0a24a1640eebdd1/sklearn/utils/validation.py#L131-L135
 def _is_arraylike(x: Any) -> bool:
 
@@ -158,22 +145,23 @@ class _MultiMetricMixin:
     # NOTE Original implementation:
     # https://github.com/scikit-learn/scikit-learn/blob/ \
     # 2beed5584/sklearn/model_selection/_search.py#L706-L721
-    def _check_refit_for_multimetric(self, scores):
+    @classmethod
+    def _check_refit_for_multimetric(cls, scores: Union[Callable[..., float], Callable[..., Dict[str, float]]], refit: Union[bool, str, Callable]) -> None:
         """Check `refit` is compatible with `scores` is valid"""
         multimetric_refit_msg = (
             "For multi-metric scoring, the parameter refit must be set to a "
             "scorer key or a callable to refit an estimator with the best "
             "parameter setting on the whole data and make the best_* "
             "attributes available for that metric. If this is not needed, "
-            f"refit should be set to False explicitly. {self.refit!r} was "
+            f"refit should be set to False explicitly. {refit!r} was "
             "passed."
         )
 
-        valid_refit_dict = isinstance(self.refit, str) and (
-            self.refit in scores or f"test_{self.refit}" in scores
+        valid_refit_dict = isinstance(refit, str) and (
+            refit in scores or f"test_{refit}" in scores
         )
 
-        if self.refit is not False and not valid_refit_dict and not callable(self.refit):
+        if refit is not False and not valid_refit_dict and not callable(refit):
             raise ValueError(multimetric_refit_msg)
 
 
@@ -310,7 +298,7 @@ class _Objective(MultiMetricMixin, object):
 
             # check refit_metric now for a callabe scorer that is multimetric
             if callable(self.scoring) and self.multimetric_:
-                self._check_refit_for_multimetric(scores)
+                self._check_refit_for_multimetric(scores, self.refit)
 
         self._store_scores(trial, scores)
 
@@ -387,7 +375,7 @@ class _Objective(MultiMetricMixin, object):
 
                 # check refit_metric now for a callabe scorer that is multimetric
                 if callable(self.scoring) and self.multimetric_:
-                    self._check_refit_for_multimetric(out[0])
+                    self._check_refit_for_multimetric(out[0], self.refit)
 
             if self.multimetric_:
                 intermediate_value = np.nanmean(scores[f"test_{self.refit}"])
@@ -416,7 +404,7 @@ class _Objective(MultiMetricMixin, object):
         train: List[int],
         test: List[int],
         partial_fit_params: Dict[str, Any],
-    ) -> List[Number]:
+    ) -> List[Union[Number, Dict]]:
 
         X_train, y_train = _safe_split(estimator, self.X, self.y, train)
         X_test, y_test = _safe_split(estimator, self.X, self.y, test, train_indices=train)
@@ -436,7 +424,7 @@ class _Objective(MultiMetricMixin, object):
                 raise e
             elif isinstance(self.error_score, Number):
                 if isinstance(self.scoring, dict):
-                    test_scores = {name: self.error_score for name in self.scoring}
+                    test_scores: Union[Number, Dict[str, Number]] = {name: self.error_score for name in self.scoring}
                     if self.return_train_score:
                         train_scores = test_scores.copy()
                 else:
@@ -876,6 +864,18 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
             attributes += ["best_estimator_", "refit_time_"]
 
         check_is_fitted(self, attributes)
+    
+    # NOTE Original implementation:
+    # https://github.com/scikit-learn/scikit-learn/blob/ \
+    # 28ef9973362257e0627bd39db9b788c93f49362f/sklearn/model_selection/_search.py#L348-L355
+    def _check_refit(self, attr: str) -> None:
+        if not self.refit:
+            raise AttributeError(
+                f"This {type(self).__name__} instance was initialized with "
+                f"`refit=False`. {attr} is available only after refitting on the best "
+                "parameters. You can refit an estimator manually using the "
+                "`best_params_` attribute"
+            )
 
     def _check_params(self) -> None:
 
@@ -1003,7 +1003,7 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
             self.scorer_ = check_scoring(self.estimator, self.scoring)
         else:
             self.scorer_ = _check_multimetric_scoring(self.estimator, self.scoring)
-            self._check_refit_for_multimetric(self.scorer_)
+            self._check_refit_for_multimetric(self.scorer_, self.refit)
 
         if self.study is None:
             seed = random_state.randint(0, np.iinfo("int32").max)
@@ -1057,7 +1057,7 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
         self,
         X: TwoDimArrayLikeType,
         y: Optional[Union[OneDimArrayLikeType, TwoDimArrayLikeType]] = None,
-    ) -> float:
+    ) -> Union[Number, Dict[str, Number]]:
         """Return the score on the given data, if the estimator has been refit.
 
         This uses the score defined by ``scoring`` where provided, and the
@@ -1074,7 +1074,7 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
             score:
                 Scaler score.
         """
-        _check_refit(self, "score")
+        self._check_refit("score")
         self._check_is_fitted()
         if self.scorer_ is None:
             raise ValueError(
