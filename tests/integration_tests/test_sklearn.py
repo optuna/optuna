@@ -229,13 +229,13 @@ def test_optuna_search_properties() -> None:
     assert type(optuna_search.predict_log_proba(X)) == np.ndarray
     assert type(optuna_search.predict_proba(X)) == np.ndarray
     assert optuna_search.multimetric_ is False
-    assert "user_attrs_mean_test_score" in optuna_search.trials_dataframe().columns
-    assert "user_attrs_mean_train_score" in optuna_search.trials_dataframe().columns
-    assert "user_attrs_split0_train_score" in optuna_search.trials_dataframe().columns
-    assert "user_attrs_split0_test_score" in optuna_search.trials_dataframe().columns
+    assert "system_attrs_mean_test_score" in optuna_search.trials_dataframe().columns
+    assert "system_attrs_mean_train_score" in optuna_search.trials_dataframe().columns
+    assert "system_attrs_split0_train_score" in optuna_search.trials_dataframe().columns
+    assert "system_attrs_split0_test_score" in optuna_search.trials_dataframe().columns
     assert (
         optuna_search.trials_dataframe()["value"]
-        == optuna_search.trials_dataframe()["user_attrs_mean_test_score"]
+        == optuna_search.trials_dataframe()["system_attrs_mean_test_score"]
     ).all()
 
 
@@ -274,17 +274,17 @@ def test_optuna_search_properties_multimetric() -> None:
     assert type(optuna_search.predict_log_proba(X)) == np.ndarray
     assert type(optuna_search.predict_proba(X)) == np.ndarray
     assert optuna_search.multimetric_ is True
-    assert f"user_attrs_mean_test_{scoring1}" in optuna_search.trials_dataframe().columns
-    assert f"user_attrs_mean_train_{scoring1}" in optuna_search.trials_dataframe().columns
-    assert f"user_attrs_mean_test_{scoring2}" in optuna_search.trials_dataframe().columns
-    assert f"user_attrs_mean_train_{scoring2}" in optuna_search.trials_dataframe().columns
-    assert f"user_attrs_split0_test_{scoring1}" in optuna_search.trials_dataframe().columns
-    assert f"user_attrs_split0_train_{scoring1}" in optuna_search.trials_dataframe().columns
-    assert f"user_attrs_split0_test_{scoring2}" in optuna_search.trials_dataframe().columns
-    assert f"user_attrs_split0_train_{scoring2}" in optuna_search.trials_dataframe().columns
+    assert f"system_attrs_mean_test_{scoring1}" in optuna_search.trials_dataframe().columns
+    assert f"system_attrs_mean_train_{scoring1}" in optuna_search.trials_dataframe().columns
+    assert f"system_attrs_mean_test_{scoring2}" in optuna_search.trials_dataframe().columns
+    assert f"system_attrs_mean_train_{scoring2}" in optuna_search.trials_dataframe().columns
+    assert f"system_attrs_split0_test_{scoring1}" in optuna_search.trials_dataframe().columns
+    assert f"system_attrs_split0_train_{scoring1}" in optuna_search.trials_dataframe().columns
+    assert f"system_attrs_split0_test_{scoring2}" in optuna_search.trials_dataframe().columns
+    assert f"system_attrs_split0_train_{scoring2}" in optuna_search.trials_dataframe().columns
     assert (
         optuna_search.trials_dataframe()["value"]
-        == optuna_search.trials_dataframe()[f"user_attrs_mean_test_{refit}"]
+        == optuna_search.trials_dataframe()[f"system_attrs_mean_test_{refit}"]
     ).all()
 
 

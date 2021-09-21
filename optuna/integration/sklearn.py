@@ -309,9 +309,9 @@ class _Objective(object):
         self._store_scores(trial, scores)
 
         if self.multimetric_:
-            return trial.user_attrs[f"mean_test_{self.refit}"]
+            return trial.system_attrs[f"mean_test_{self.refit}"]
         else:
-            return trial.user_attrs["mean_test_score"]
+            return trial.system_attrs["mean_test_score"]
 
     def _cross_validate_with_pruning(
         self, trial: Trial, estimator: "BaseEstimator"
@@ -463,10 +463,10 @@ class _Objective(object):
         for name, array in scores.items():
             if name.startswith("test_") or name.startswith("train_"):
                 for i, score in enumerate(array):
-                    trial.set_user_attr("split{}_{}".format(i, name), score)
+                    trial.set_system_attr("split{}_{}".format(i, name), score)
 
-            trial.set_user_attr("mean_{}".format(name), np.nanmean(array))
-            trial.set_user_attr("std_{}".format(name), np.nanstd(array))
+            trial.set_system_attr("mean_{}".format(name), np.nanmean(array))
+            trial.set_system_attr("std_{}".format(name), np.nanstd(array))
 
 
 @experimental("0.17.0")
