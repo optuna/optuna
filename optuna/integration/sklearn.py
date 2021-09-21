@@ -146,12 +146,12 @@ def _safe_indexing(
     return sklearn_safe_indexing(X, indices)
 
 
-class MultiMetricMixin:
+class _MultiMetricMixin:
     """A mixin class for utilities.
 
     As per optuna implementation, some functionalities that
-    sklearn.model_selection.BaseSearchCV provide for multi-metric evaluation
-    are shared by `_Objective` and `OptunaSearchCV`. Those functions are
+    ``sklearn.model_selection.BaseSearchCV`` provides for multi-metric evaluation
+    are shared by ``_Objective`` and :class:`~optuna.integration.OptunaSearchCV`. Those functions are
     organized in this mixin class.
     """
 
@@ -227,7 +227,7 @@ class _Objective(MultiMetricMixin, object):
             ``best_estimator_`` attribute and permits using ``predict``
             directly.
 
-            For multiple metric evaluation, this needs to be a `str` denoting
+            For multiple metric evaluation, this needs to be a :class:`str` denoting
             the scorer that would be used to find the best parameters for
             refitting the estimator at the end.
 
@@ -553,7 +553,7 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
             ``best_estimator_`` attribute and permits using ``predict``
             directly.
 
-            For multiple metric evaluation, this needs to be a `str` denoting
+            For multiple metric evaluation, this needs to be a :class:`str` denoting
             the scorer that would be used to find the best parameters for
             refitting the estimator at the end.
 
@@ -570,11 +570,11 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
             String, callable, list, tuple or dict to evaluate the
             predictions on the validation data.
 
-            If `scoring` represents a single score, one can use:
+            If ``scoring`` represents a single score, one can use:
                 - a single string;
                 - a callable that returns a single value.
 
-            If `scoring` represents multiple scores, one can use:
+            If ``scoring`` represents multiple scores, one can use:
                 - a list or tuple of unique strings;
                 - a callable returning a dictionary where the keys are the
                     metric names and the values are the metric scores;
@@ -586,7 +586,7 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
                 .. note::
                     Even when `scoring` represents multiple scores, the
                     optimization shall be performed on the single score
-                    specified by `refit`. For optimization with multiple
+                    specified by ``refit``. For optimization with multiple
                     scores, please refer to Tutorial<multi_objective>
 
         study:
