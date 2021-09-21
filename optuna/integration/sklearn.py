@@ -1,4 +1,3 @@
-from ast import Call
 from logging import DEBUG
 from logging import INFO
 from logging import WARNING
@@ -148,11 +147,12 @@ def _safe_indexing(
 
 
 class MultiMetricMixin:
-    """As per optuna implementation, some functionalities that
+    """A mixin class for utilities.
+
+    As per optuna implementation, some functionalities that
     sklearn.model_selection.BaseSearchCV provide for multi-metric evaluation
     are shared by `_Objective` and `OptunaSearchCV`. Those functions are
     organized in this mixin class.
-    
     """
 
     # NOTE Original implementation:
@@ -306,7 +306,7 @@ class _Objective(MultiMetricMixin, object):
                 return_train_score=self.return_train_score,
                 scoring=self.scoring,
             )
-            self.multimetric_ = not "test_score" in scores
+            self.multimetric_ = "test_score" not in scores
 
             # check refit_metric now for a callabe scorer that is multimetric
             if callable(self.scoring) and self.multimetric_:
@@ -577,7 +577,7 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
             If `scoring` represents multiple scores, one can use:
                 - a list or tuple of unique strings;
                 - a callable returning a dictionary where the keys are the
-                metric names and the values are the metric scores;
+                    metric names and the values are the metric scores;
                 - a dictionary with metric names as keys and callables a
                 values.
 
@@ -587,7 +587,7 @@ class OptunaSearchCV(BaseEstimator, MultiMetricMixin):
                     Even when `scoring` represents multiple scores, the
                     optimization shall be performed on the single score
                     specified by `refit`. For optimization with multiple
-                    scores, please refer to Tutorial<https://optuna.readthedocs.io/en/stable/tutorial/20_recipes/002_multi_objective.html>
+                    scores, please refer to Tutorial<multi_objective>
 
         study:
             Study corresponds to the optimization task. If :obj:`None`, a new
