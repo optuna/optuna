@@ -10,6 +10,7 @@ c.f. https://docs.openstack.org/cliff/latest/user/demoapp.html#setup-py
 from argparse import ArgumentParser  # NOQA
 from argparse import Namespace  # NOQA
 import datetime
+from enum import Enum
 from importlib.machinery import SourceFileLoader
 import json
 import logging
@@ -26,9 +27,6 @@ import warnings
 from cliff.app import App
 from cliff.command import Command
 from cliff.commandmanager import CommandManager
-from cliff.lister import Lister
-from cliff.show import ShowOne
-import numpy as np
 import yaml
 
 import optuna
@@ -48,6 +46,178 @@ def _check_storage_url(storage_url: Optional[str]) -> str:
     if storage_url is None:
         raise CLIUsageError("Storage URL is not specified.")
     return storage_url
+
+
+def _format_value(value: Any) -> Any:
+    #  Format value that can be serialized to JSON or YAML.
+    if value is None or isinstance(value, (int, float)):
+        return value
+    elif isinstance(value, datetime.datetime):
+        return value.strftime(_DATETIME_FORMAT)
+    elif isinstance(value, list):
+        return list(_format_value(v) for v in value)
+    elif isinstance(value, tuple):
+        return tuple(_format_value(v) for v in value)
+    elif isinstance(value, dict):
+        return {_format_value(k): _format_value(v) for k, v in value.items()}
+    else:
+        return str(value)
+
+
+def _convert_to_dict(
+    records: List[Dict[Tuple[str, str], Any]], columns: List[Tuple[str, str]], flatten: bool
+) -> Tuple[List[Dict[str, Any]], List[str]]:
+    header = []
+    ret = []
+    if flatten:
+        for column in columns:
+            if column[1] != "":
+                header.append(f"{column[0]}_{column[1]}")
+            elif any(isinstance(record.get(column), (list, tuple)) for record in records):
+                max_length = 0
+                for record in records:
+                    if column in record:
+                        max_length = max(max_length, len(record[column]))
+                for i in range(max_length):
+                    header.append(f"{column[0]}_{i}")
+            else:
+                header.append(column[0])
+        for record in records:
+            row = {}
+            for column in columns:
+                if column not in record:
+                    continue
+                value = _format_value(record[column])
+                if column[1] != "":
+                    row[f"{column[0]}_{column[1]}"] = value
+                elif any(isinstance(record.get(column), (list, tuple)) for record in records):
+                    for i, v in enumerate(value):
+                        row[f"{column[0]}_{i}"] = v
+                else:
+                    row[f"{column[0]}"] = value
+            ret.append(row)
+    else:
+        for column in columns:
+            if column[0] not in header:
+                header.append(column[0])
+        for record in records:
+            attrs: Dict[str, Any] = {column_name: {} for column_name in header}
+            for column in columns:
+                if column not in record:
+                    continue
+                value = _format_value(record[column])
+                if isinstance(column[1], int):
+                    # Reconstruct list of values. `_dataframe._create_records_and_aggregate_column`
+                    # returns indices of list as the second key of column.
+                    if attrs[column[0]] == {}:
+                        attrs[column[0]] = []
+                    attrs[column[0]] += [None] * max(column[1] + 1 - len(attrs[column[0]]), 0)
+                    attrs[column[0]][column[1]] = value
+                elif column[1] != "":
+                    attrs[column[0]][column[1]] = value
+                else:
+                    attrs[column[0]] = value
+            ret.append(attrs)
+
+    return ret, header
+
+
+class ValueType(Enum):
+    NONE = 0
+    NUMERIC = 1
+    STRING = 2
+
+
+class CellValue:
+    def __init__(self, value: Any) -> None:
+        self.value = value
+        if value is None:
+            self.value_type = ValueType.NONE
+        elif isinstance(value, (int, float)):
+            self.value_type = ValueType.NUMERIC
+        else:
+            self.value_type = ValueType.STRING
+
+    def __str__(self) -> str:
+        if isinstance(self.value, datetime.datetime):
+            return self.value.strftime(_DATETIME_FORMAT)
+        else:
+            return str(self.value)
+
+    def width(self) -> int:
+        return len(str(self.value))
+
+    def get_string(self, value_type: ValueType, width: int) -> str:
+        value = str(self.value)
+        if self.value is None:
+            return " " * width
+        elif value_type == ValueType.NUMERIC:
+            return f"{value:>{width}}"
+        else:
+            return f"{value:<{width}}"
+
+
+def _dump_table(records: List[Dict[str, Any]], header: List[str]) -> str:
+    rows = []
+    for record in records:
+        row = []
+        for column_name in header:
+            row.append(CellValue(record.get(column_name)))
+        rows.append(row)
+
+    separator = "+"
+    header_string = "|"
+    rows_string = ["|" for _ in rows]
+    for column in range(len(header)):
+        value_types = [row[column].value_type for row in rows]
+        value_type = ValueType.NUMERIC
+        for t in value_types:
+            if t == ValueType.STRING:
+                value_type = ValueType.STRING
+        max_width = max(len(header[column]), max(row[column].width() for row in rows))
+        separator += "-" * (max_width + 2) + "+"
+        if value_type == ValueType.NUMERIC:
+            header_string += f" {header[column]:>{max_width}} |"
+        else:
+            header_string += f" {header[column]:<{max_width}} |"
+        for i, row in enumerate(rows):
+            rows_string[i] += " " + row[column].get_string(value_type, max_width) + " |"
+
+    ret = ""
+    ret += separator + "\n"
+    ret += header_string + "\n"
+    ret += separator + "\n"
+    ret += "\n".join(rows_string) + "\n"
+    ret += separator + "\n"
+
+    return ret
+
+
+def _format_output(
+    records: Union[List[Dict[Tuple[str, str], Any]], Dict[Tuple[str, str], Any]],
+    columns: List[Tuple[str, str]],
+    output_format: str,
+    flatten: bool,
+) -> str:
+    if isinstance(records, list):
+        values, header = _convert_to_dict(records, columns, flatten)
+    else:
+        values, header = _convert_to_dict([records], columns, flatten)
+
+    if output_format == "table":
+        return _dump_table(values, header).strip()
+    elif output_format == "json":
+        if isinstance(records, list):
+            return json.dumps(values).strip()
+        else:
+            return json.dumps(values[0]).strip()
+    elif output_format == "yaml":
+        if isinstance(records, list):
+            return yaml.safe_dump(values).strip()
+        else:
+            return yaml.safe_dump(values[0]).strip()
+    else:
+        raise CLIUsageError(f"Optuna CLI does not supported the {output_format} format.")
 
 
 class _BaseCommand(Command):
@@ -167,50 +337,62 @@ class _StudySetUserAttribute(_BaseCommand):
         self.logger.info("Attribute successfully written.")
 
 
-class _Studies(Lister):
+class _Studies(_BaseCommand):
     """Show a list of studies."""
 
-    _study_list_header = ("NAME", "DIRECTION", "N_TRIALS", "DATETIME_START")
+    _study_list_header = [
+        ("name", ""),
+        ("direction", ""),
+        ("n_trials", ""),
+        ("datetime_start", ""),
+    ]
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_Studies, self).get_parser(prog_name)
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            choices=("json", "table", "yaml"),
+            default="table",
+            help="Output format.",
+        )
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as directions.",
+        )
         return parser
 
-    def take_action(self, parsed_args: Namespace) -> Tuple[Tuple, Tuple[Tuple, ...]]:
+    def take_action(self, parsed_args: Namespace) -> None:
 
         storage_url = _check_storage_url(self.app_args.storage)
         summaries = optuna.get_all_study_summaries(storage=storage_url)
 
-        rows = []
+        records = []
         for s in summaries:
             start = (
                 s.datetime_start.strftime(_DATETIME_FORMAT)
                 if s.datetime_start is not None
                 else None
             )
-            row = (s.study_name, tuple(d.name for d in s.directions), s.n_trials, start)
-            rows.append(row)
+            record: Dict[Tuple[str, str], Any] = {}
+            record[("name", "")] = s.study_name
+            record[("direction", "")] = tuple(d.name for d in s.directions)
+            record[("n_trials", "")] = s.n_trials
+            record[("datetime_start", "")] = start
+            records.append(record)
 
-        return self._study_list_header, tuple(rows)
-
-
-def _format_trial_values(
-    record: Dict[Tuple[str, str], Any], columns: List[Tuple[str, str]]
-) -> List[Union[int, float, str]]:
-    row: List[Union[int, float, str]] = []
-    for column in columns:
-        value = record.get(column, np.nan)
-        if isinstance(value, (int, float)):
-            row.append(value)
-        elif isinstance(value, datetime.datetime):
-            row.append(value.strftime(_DATETIME_FORMAT))
-        else:
-            row.append(str(value))
-    return row
+        print(
+            _format_output(
+                records, self._study_list_header, parsed_args.format, parsed_args.flatten
+            )
+        )
 
 
-class _Trials(Lister):
+class _Trials(_BaseCommand):
     """Show a list of trials."""
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
@@ -222,11 +404,23 @@ class _Trials(Lister):
             required=True,
             help="The name of the study which includes trials.",
         )
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            choices=("json", "table", "yaml"),
+            default="table",
+            help="Output format.",
+        )
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params and user_attrs.",
+        )
         return parser
 
-    def take_action(
-        self, parsed_args: Namespace
-    ) -> Tuple[List[str], List[List[Union[int, float, str]]]]:
+    def take_action(self, parsed_args: Namespace) -> None:
 
         warnings.warn(
             "'trials' is an experimental CLI command. The interface can change in the future.",
@@ -247,11 +441,10 @@ class _Trials(Lister):
         )
 
         records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
-        list_of_trial_values = [_format_trial_values(record, columns) for record in records]
-        return _dataframe._flatten_columns(columns), list_of_trial_values
+        print(_format_output(records, columns, parsed_args.format, parsed_args.flatten))
 
 
-class _BestTrial(ShowOne):
+class _BestTrial(_BaseCommand):
     """Show the best trial."""
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
@@ -263,11 +456,23 @@ class _BestTrial(ShowOne):
             required=True,
             help="The name of the study to get the best trial.",
         )
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            choices=("json", "table", "yaml"),
+            default="table",
+            help="Output format.",
+        )
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params and user_attrs.",
+        )
         return parser
 
-    def take_action(
-        self, parsed_args: Namespace
-    ) -> Tuple[List[str], List[Union[int, float, str]]]:
+    def take_action(self, parsed_args: Namespace) -> None:
 
         warnings.warn(
             "'best-trial' is an experimental CLI command. The interface can change in the future.",
@@ -288,11 +493,14 @@ class _BestTrial(ShowOne):
         )
 
         records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
-        trial_values = _format_trial_values(records[study.best_trial.number], columns)
-        return _dataframe._flatten_columns(columns), trial_values
+        print(
+            _format_output(
+                records[study.best_trial.number], columns, parsed_args.format, parsed_args.flatten
+            )
+        )
 
 
-class _BestTrials(Lister):
+class _BestTrials(_BaseCommand):
     """Show a list of trials located at the Pareto front."""
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
@@ -304,11 +512,23 @@ class _BestTrials(Lister):
             required=True,
             help="The name of the study to get the best trials (trials at the Pareto front).",
         )
+        parser.add_argument(
+            "-f",
+            "--format",
+            type=str,
+            choices=("json", "table", "yaml"),
+            default="table",
+            help="Output format.",
+        )
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params and user_attrs.",
+        )
         return parser
 
-    def take_action(
-        self, parsed_args: Namespace
-    ) -> Tuple[List[str], List[List[Union[int, float, str]]]]:
+    def take_action(self, parsed_args: Namespace) -> None:
 
         warnings.warn(
             "'best-trials' is an experimental CLI command. The interface can change in the "
@@ -331,9 +551,8 @@ class _BestTrials(Lister):
         )
 
         records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
-        best_records = filter(lambda record: record[("number", "")] in best_trials, records)
-        list_of_trial_values = [_format_trial_values(record, columns) for record in best_records]
-        return _dataframe._flatten_columns(columns), list_of_trial_values
+        best_records = list(filter(lambda record: record[("number", "")] in best_trials, records))
+        print(_format_output(best_records, columns, parsed_args.format, parsed_args.flatten))
 
 
 class _Dashboard(_BaseCommand):
@@ -557,11 +776,22 @@ class _Ask(_BaseCommand):
             ),
         )
         parser.add_argument(
-            "--out", type=str, choices=("json", "yaml"), default="json", help="Output format."
+            "-f",
+            "--format",
+            type=str,
+            choices=("json", "table", "yaml"),
+            default="json",
+            help="Output format.",
+        )
+        parser.add_argument(
+            "--flatten",
+            default=False,
+            action="store_true",
+            help="Flatten nested columns such as params.",
         )
         return parser
 
-    def take_action(self, parsed_args: Namespace) -> int:
+    def take_action(self, parsed_args: Namespace) -> None:
 
         warnings.warn(
             "'ask' is an experimental CLI command. The interface can change in the future.",
@@ -599,23 +829,21 @@ class _Ask(_BaseCommand):
 
         study = optuna.create_study(**create_study_kwargs)
         trial = study.ask(fixed_distributions=search_space)
-        out = {
-            "trial": {
-                "number": trial.number,
-                "params": trial.params,
-            }
-        }
 
         self.logger.info(f"Asked trial {trial.number} with parameters {trial.params}.")
 
-        if parsed_args.out == "json":
-            print(json.dumps(out))
-        elif parsed_args.out == "yaml":
-            print(yaml.dump(out))
-        else:
-            assert False
+        record: Dict[Tuple[str, str], Any] = {("number", ""): trial.number}
+        columns = [("number", "")]
 
-        return 0
+        if len(trial.params) == 0 and not parsed_args.flatten:
+            record[("params", "")] = {}
+            columns.append(("params", ""))
+        else:
+            for param_name, param_value in trial.params.items():
+                record[("params", param_name)] = param_value
+                columns.append(("params", param_name))
+
+        print(_format_output(record, columns, parsed_args.format, parsed_args.flatten))
 
 
 class _Tell(_BaseCommand):
