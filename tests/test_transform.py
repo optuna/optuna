@@ -166,6 +166,8 @@ def test_search_space_transform_untransform_params() -> None:
         "x5": LogUniformDistribution(1, 10),
         "x6": IntUniformDistribution(2, 4),
         "x7": CategoricalDistribution(["corge"]),
+        "x8": UniformDistribution(-2, -2),
+        "x9": LogUniformDistribution(1, 1),
     }
 
     params = {
@@ -177,6 +179,8 @@ def test_search_space_transform_untransform_params() -> None:
         "x5": 1.0,
         "x6": 2,
         "x7": "corge",
+        "x8": -2.0,
+        "x9": 1.0,
     }
 
     trans = _SearchSpaceTransform(search_space)
