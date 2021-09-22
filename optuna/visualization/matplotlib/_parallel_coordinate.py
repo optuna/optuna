@@ -3,15 +3,12 @@ import math
 from typing import Callable
 from typing import cast
 from typing import DefaultDict
-from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
 
 import numpy as np
 
 from optuna._experimental import experimental
-from optuna.distributions import CategoricalChoiceType
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
@@ -144,9 +141,9 @@ def _get_parallel_coordinate_plot(
     log_param_names = []
     param_values = []
     var_names = [target_name]
-    numeric_cat_params: Dict[str, Sequence[CategoricalChoiceType]] = {}
+    numeric_cat_params_indices: List[int] = []
 
-    for p_name in sorted_params:
+    for param_index, p_name in enumerate(sorted_params):
         values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
 
         if _is_log_scale(trials, p_name):
@@ -157,10 +154,9 @@ def _get_parallel_coordinate_plot(
 
             if _is_numerical(trials, p_name):
                 _ = [vocab[v] for v in sorted(values)]
-                values = [vocab[v] for v in values]
-                numeric_cat_params[p_name] = values
-            else:
-                values = [vocab[v] for v in values]
+                numeric_cat_params_indices.append(param_index)
+
+            values = [vocab[v] for v in values]
 
             cat_param_names.append(p_name)
             vocab_item_sorted = sorted(vocab.items(), key=lambda x: x[1])
@@ -182,10 +178,12 @@ def _get_parallel_coordinate_plot(
         var_names.append(p_name if len(p_name) < 20 else "{}...".format(p_name[:17]))
         param_values.append(values)
 
-    if numeric_cat_params:
+    if numeric_cat_params_indices:
         # np.lexsort consumes the sort keys the order from back to front.
         # So the values of parameters have to be reversed the order.
-        sorted_idx = np.lexsort(list(numeric_cat_params.values())[::-1])
+        sorted_idx = np.lexsort(
+            [param_values[index] for index in numeric_cat_params_indices][::-1]
+        )
         # Since the values are mapped to other categories by the index,
         # the index will be swapped according to the sorted index of numeric params.
         param_values = [list(np.array(v)[sorted_idx]) for v in param_values]

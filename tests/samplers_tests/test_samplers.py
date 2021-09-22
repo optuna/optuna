@@ -1,11 +1,13 @@
 import pickle
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import Optional
 from typing import Sequence
 import warnings
 
+from _pytest.mark.structures import MarkDecorator
 import numpy as np
 import pytest
 
@@ -34,7 +36,9 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
+        lambda: optuna.integration.SkoptSampler(
+            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        ),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
         optuna.samplers.NSGAIISampler,
     ],
@@ -48,11 +52,27 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
 )
 
 
+def parametrize_suggest_method(name: str) -> MarkDecorator:
+    return pytest.mark.parametrize(
+        f"suggest_method_{name}",
+        [
+            lambda t: t.suggest_float(name, 0, 10),
+            lambda t: t.suggest_int(name, 0, 10),
+            lambda t: cast(float, t.suggest_categorical(name, [0, 1, 2])),
+            lambda t: t.suggest_float(name, 0, 10, step=0.5),
+            lambda t: t.suggest_float(name, 1e-7, 10, log=True),
+            lambda t: t.suggest_int(name, 1, 10, log=True),
+        ],
+    )
+
+
 @pytest.mark.parametrize(
     "sampler_class",
     [
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
+        lambda: optuna.integration.SkoptSampler(
+            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        ),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
     ],
 )
@@ -573,3 +593,92 @@ def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) ->
         study.tell(trial, 1.0)
         for param_name in relative_search_space.keys():
             assert trial.params[param_name] == 1
+
+
+@parametrize_sampler
+@parametrize_suggest_method("x")
+def test_single_parameter_objective(
+    sampler_class: Callable[[], BaseSampler], suggest_method_x: Callable[[Trial], float]
+) -> None:
+    def objective(trial: Trial) -> float:
+        return suggest_method_x(trial)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = sampler_class()
+
+    study = optuna.study.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
+
+    assert len(study.trials) == 10
+    assert all(t.state == TrialState.COMPLETE for t in study.trials)
+
+
+@parametrize_sampler
+def test_conditional_parameter_objective(sampler_class: Callable[[], BaseSampler]) -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_categorical("x", [True, False])
+        if x:
+            return trial.suggest_float("y", 0, 1)
+        return trial.suggest_float("z", 0, 1)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = sampler_class()
+
+    study = optuna.study.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
+
+    assert len(study.trials) == 10
+    assert all(t.state == TrialState.COMPLETE for t in study.trials)
+
+
+@parametrize_sampler
+@parametrize_suggest_method("x")
+@parametrize_suggest_method("y")
+def test_combination_of_different_distributions_objective(
+    sampler_class: Callable[[], BaseSampler],
+    suggest_method_x: Callable[[Trial], float],
+    suggest_method_y: Callable[[Trial], float],
+) -> None:
+    def objective(trial: Trial) -> float:
+        return suggest_method_x(trial) + suggest_method_y(trial)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = sampler_class()
+
+    study = optuna.study.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
+
+    assert len(study.trials) == 10
+    assert all(t.state == TrialState.COMPLETE for t in study.trials)
+
+
+@parametrize_sampler
+@pytest.mark.parametrize(
+    "second_low,second_high",
+    [
+        (0, 5),  # Narrow range.
+        (0, 20),  # Expand range.
+        (20, 30),  # Set non-overlapping range.
+    ],
+)
+def test_dynamic_range_objective(
+    sampler_class: Callable[[], BaseSampler], second_low: int, second_high: int
+) -> None:
+    def objective(trial: Trial, low: int, high: int) -> float:
+        v = trial.suggest_float("x", low, high)
+        v += trial.suggest_int("y", low, high)
+        return v
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = sampler_class()
+
+    study = optuna.study.create_study(sampler=sampler)
+    study.optimize(lambda t: objective(t, 0, 10), n_trials=10)
+    study.optimize(lambda t: objective(t, second_low, second_high), n_trials=10)
+
+    assert len(study.trials) == 20
+    assert all(t.state == TrialState.COMPLETE for t in study.trials)

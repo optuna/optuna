@@ -15,14 +15,14 @@ def prepare_study_with_trials(
     """Prepare a study for tests.
 
     Args:
-        no_trials: If ``False``, create a study with no trials.
-        less_than_two: If ``True``, create a study with two/four hyperparameters where
+        no_trials: If :obj:`False`, create a study with no trials.
+        less_than_two: If :obj:`True`, create a study with two/four hyperparameters where
             'param_a' (and 'param_c') appear(s) only once while 'param_b' (and 'param_d')
             appear(s) twice in `study.trials`.
-        more_than_three: If ``True``, create a study with two/four hyperparameters where
+        more_than_three: If :obj:`True`, create a study with two/four hyperparameters where
             'param_a' (and 'param_c') appear(s) only three times while 'param_b' (and 'param_d')
             appear(s) four times in `study.trials`.
-        with_c_d: If ``True``, the study has four hyperparameters named 'param_a',
+        with_c_d: If :obj:`True`, the study has four hyperparameters named 'param_a',
             'param_b', 'param_c', and 'param_d'. Otherwise, there are only two
             hyperparameters ('param_a' and 'param_b').
         n_objectives: Number of objective values.
