@@ -19,8 +19,9 @@ from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._nsga2.crossover import crossover
+from optuna.samplers._nsga2.crossover import select_m
 from optuna.samplers._random import RandomSampler
-from optuna.samplers._search_space.intersection import intersection_search_space
+from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
@@ -63,7 +64,7 @@ class NSGAIISampler(BaseSampler):
             uniform crossover will be applied,
             and for other distributions, the specified crossover will be applied.
 
-            For more information on each of the crossover methods, please refer to the following.
+            For more information on each of the crossover method, please refer to the following.
 
             - uniform: Select each parameter with equal probability
               from the two parent individuals.
@@ -81,7 +82,7 @@ class NSGAIISampler(BaseSampler):
                   <https://www.sciencedirect.com/science/article/abs/pii/B9780080948324500180>`_
 
             - sbx: Generate a child from two parent individuals
-              according to the following polynomial probability distribution.
+              according to the polynomial probability distribution.
 
                 - `Deb, K. and R. Agrawal.
                   “Simulated Binary Crossover for Continuous Search Space.”
@@ -90,6 +91,8 @@ class NSGAIISampler(BaseSampler):
 
             - vsbx: In SBX, the probability of occurrence of child individuals
               becomes zero in some parameter regions.
+              vSBX generates child individuals without excluding any region of the parameter space,
+              while maintaining the excellent properties of SBX.
 
                 - `Pedro J. Ballester, Jonathan N. Carter.
                   Real-Parameter Genetic Algorithms for Finding Multiple Optimal Solutions
@@ -160,6 +163,16 @@ class NSGAIISampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.5.0.
 
+    Raises:
+        ValueError:
+            If `crossover` is `undx` or `spx` and `population_size` is less than or equal to two
+            (To use three parental individuals during crossover applied).
+            If `crossover` is `undxm` and `population_size` is less than or equal to three
+            (To use four parental individuals during crossover applied).
+        RuntimeError:
+            If `crossover` is `undxm and
+            the dimensionality of the number of parameters of the individuals
+            is less than or equal to two
     """
 
     def __init__(
@@ -201,14 +214,20 @@ class NSGAIISampler(BaseSampler):
         if crossover not in ["uniform", "blxalpha", "sbx", "vsbx", "undx", "undxm", "spx"]:
             raise ValueError(
                 f"'{crossover}' is not a valid crossover name."
-                "The available crossovers are"
-                "`uniform (default)`, `blxalpha`, `sbx`, `vsbx`, `undx`, `undxm`, and `spx`."
+                " The available crossovers are"
+                " `uniform` (default), `blxalpha`, `sbx`, `vsbx`, `undx`, `undxm`, and `spx`."
             )
         if crossover != "uniform":
             warnings.warn(
                 "``crossover`` option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
+            )
+        m = select_m(crossover)
+        if population_size < m:
+            raise ValueError(
+                f"Using {crossover},"
+                f" the population size should be greater than or equal to {m}."
             )
 
         self._population_size = population_size
@@ -219,6 +238,7 @@ class NSGAIISampler(BaseSampler):
         self._random_sampler = RandomSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
         self._constraints_func = constraints_func
+        self._search_space = IntersectionSearchSpace()
 
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
@@ -227,8 +247,15 @@ class NSGAIISampler(BaseSampler):
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
-
-        search_space = intersection_search_space(study)
+        search_space: Dict[str, BaseDistribution] = {}
+        for name, distribution in self._search_space.calculate(study).items():
+            if distribution.single():
+                # The `untransform` method of `optuna._transform._SearchSpaceTransform`
+                # does not assume a single value,
+                # so single value objects are not sampled with the `sample_relative` method,
+                # but with the `sample_ independent` method.
+                continue
+            search_space[name] = distribution
         return search_space
 
     def sample_relative(
@@ -244,10 +271,11 @@ class NSGAIISampler(BaseSampler):
         study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
 
         dominates_func = _dominates if self._constraints_func is None else _constrained_dominates
+
         if parent_generation >= 0:
             # We choose a child based on the specified crossover method.
             if self._rng.rand() < self._crossover_prob:
-                child = crossover(
+                child_params = crossover(
                     self._crossover,
                     study,
                     parent_population,
@@ -258,18 +286,22 @@ class NSGAIISampler(BaseSampler):
                 )
             else:
                 parent_population_size = len(parent_population)
-                child = parent_population[self._rng.choice(parent_population_size)].params
+                child_params = {}
+                for param_name in search_space.keys():
+                    child_params[param_name] = parent_population[
+                        self._rng.choice(parent_population_size)
+                    ].params[param_name]
 
-            params_len = len(child)
+            n_params = len(child_params)
             if self._mutation_prob is None:
-                mutation_prob = 1.0 / max(1.0, params_len)
+                mutation_prob = 1.0 / max(1.0, n_params)
             else:
                 mutation_prob = self._mutation_prob
 
             params = {}
-            for param_name in child.keys():
+            for param_name in child_params.keys():
                 if self._rng.rand() >= mutation_prob:
-                    params[param_name] = child[param_name]
+                    params[param_name] = child_params[param_name]
             return params
 
         return {}
@@ -281,6 +313,11 @@ class NSGAIISampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+        # Following parameters are randomly sampled here.
+        # 1. A parameter in the initial population/first generation.
+        # 2. A parameter to mutate.
+        # 3. A parameter excluded from the intersection search space.
+
         return self._random_sampler.sample_independent(
             study, trial, param_name, param_distribution
         )
