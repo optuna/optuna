@@ -506,10 +506,6 @@ parametrize_nsga2_sampler = pytest.mark.parametrize(
     ],
 )
 
-parametrize_raise_population_nsga2_sampler = pytest.mark.parametrize(
-    "crossover_name", ["undx", "undxm", "spx"]
-)
-
 
 @parametrize_nsga2_sampler
 @pytest.mark.parametrize("n_objectives", [1, 2, 3])
@@ -525,10 +521,10 @@ def test_crossover_objectives(n_objectives: int, sampler_class: Optional[BaseSam
 
 
 @parametrize_nsga2_sampler
-@pytest.mark.parametrize("dims", [1, 2, 3])
-def test_crossover_dims(dims: int, sampler_class: Optional[BaseSampler]) -> None:
+@pytest.mark.parametrize("n_params", [1, 2, 3])
+def test_crossover_dims(n_params: int, sampler_class: Optional[BaseSampler]) -> None:
     def objective1(trial: optuna.Trial) -> float:
-        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(dims)]
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(n_params)]
         return sum(xs)
 
     n_objectives = 1
@@ -540,28 +536,8 @@ def test_crossover_dims(dims: int, sampler_class: Optional[BaseSampler]) -> None
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize("n_objectives", [1, 2, 3])
-def test_undxm_objective(n_objectives: int) -> None:
-    def objectivem(trial: optuna.Trial) -> List[float]:
-        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(3)]
-        return xs[:n_objectives]
-
-    n_objectives = 1
-    n_trials = 8
-
-    sampler = NSGAIISampler(population_size=4, crossover="undxm")
-    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
-    study.optimize(objectivem, n_trials=n_trials)
-
-    assert len(study.trials) == n_trials
-
-
 def test_undxm_dim() -> None:
-    def objective1_dim2(trial: optuna.Trial) -> float:
-        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(2)]
-        return sum(xs)
-
-    def objective1_dim3(trial: optuna.Trial) -> float:
+    def objective_1(trial: optuna.Trial) -> float:
         xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(3)]
         return sum(xs)
 
@@ -570,17 +546,27 @@ def test_undxm_dim() -> None:
 
     sampler = NSGAIISampler(population_size=4, crossover="undxm")
     study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
-    study.optimize(objective1_dim3, n_trials=n_trials)
+    study.optimize(objective_1, n_trials=n_trials)
 
     assert len(study.trials) == n_trials
+
+
+@pytest.mark.parametrize("n_params", [1, 2])
+def test_undxm_invalid_dim(n_params: int) -> None:
+    def objective_1(trial: optuna.Trial) -> float:
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(n_params)]
+        return sum(xs)
+
+    n_objectives = 1
+    n_trials = 8
 
     with pytest.raises(ValueError):
         sampler = NSGAIISampler(population_size=2, crossover="undxm")
         study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
-        study.optimize(objective1_dim2, n_trials=n_trials)
+        study.optimize(objective_1, n_trials=n_trials)
 
 
-@parametrize_raise_population_nsga2_sampler
+@pytest.mark.parametrize("crossover_name", ["undx", "undxm", "spx"])
 def test_crossover_population(crossover_name: str) -> None:
     n_objectives = 2
     n_trials = 8
