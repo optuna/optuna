@@ -125,6 +125,11 @@ class GridSampler(BaseSampler):
         # object is hard to get at the beginning of trial, while we need the access to the object
         # to validate the sampled value.
 
+        # When the trial is created by RetryFailedTrialCallback or enqueue_trial, we should not
+        # assign a new grid_id.
+        if "grid_id" in trial.system_attrs or "fixed_params" in trial.system_attrs:
+            return {}
+
         target_grids = self._get_unvisited_grid_ids(study)
 
         if len(target_grids) == 0:
@@ -157,6 +162,10 @@ class GridSampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
+
+        if "grid_id" not in trial.system_attrs:
+            message = "You should specify all parameters in enqueue_trial when using GridSampler."
+            raise ValueError(message)
 
         if param_name not in self._search_space:
             message = "The parameter name, {}, is not found in the given grid.".format(param_name)
