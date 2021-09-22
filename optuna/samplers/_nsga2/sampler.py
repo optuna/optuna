@@ -58,7 +58,7 @@ class NSGAIISampler(BaseSampler):
         crossover:
             Crossover to be applied when creating child individuals.
             The available crossovers are
-            `uniform (default)`, `blxalpha`, `sbx`, `vsbx`, `undx`, `undxm`, and `spx`.
+            `uniform` (default), `blxalpha`, `sbx`, `vsbx`, `undx`, `undxm`, and `spx`.
 
             For :class:`~optuna.distributions.CategoricalDistribution`,
             uniform crossover will be applied,
@@ -165,12 +165,13 @@ class NSGAIISampler(BaseSampler):
 
     Raises:
         ValueError:
-            If `crossover` is `undx` or `spx` and `population_size` is less than or equal to two
+            If ``crossover`` is `undx` or `spx` and `population_size` is less than or equal to two
             (To use three parental individuals during crossover applied).
-            If `crossover` is `undxm` and `population_size` is less than or equal to three
+            If ``crossover`` is `undxm` and `population_size` is less than or equal to three
             (To use four parental individuals during crossover applied).
+
         RuntimeError:
-            If `crossover` is `undxm and
+            If ``crossover`` is `undxm` and
             the dimensionality of the number of parameters of the individuals
             is less than or equal to two
     """
