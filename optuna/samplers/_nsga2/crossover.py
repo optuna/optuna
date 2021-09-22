@@ -38,12 +38,14 @@ def crossover(
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
 ) -> Dict[str, Any]:
 
-    numerical_search_space = {
-        key: value
-        for key, value in search_space.items()
-        if isinstance(value, _NUMERICAL_DISTRIBUTIONS)
-    }
-    numerical_distributions = list(numerical_search_space.values())
+    numerical_search_space: Dict[str, BaseDistribution] = {}
+    numerical_distributions: List[BaseDistribution] = []
+
+    for key, value in search_space.items():
+        if isinstance(value, _NUMERICAL_DISTRIBUTIONS):
+            numerical_search_space[key] = value
+            numerical_distributions.append(value)
+
     if len(numerical_distributions) != 0:
         numerical_transform = _SearchSpaceTransform(numerical_search_space)
 
