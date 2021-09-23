@@ -89,6 +89,11 @@ class GridSampler(BaseSampler):
         suggested may vary. This is to reduce duplicate suggestions during distributed
         optimization.
 
+    Note:
+        When the trial is created by :meth:`~optuna.study.Study.enqueue_trial`,
+        :class:`~optuna.samplers.GridSampler` does not consider the trial to be a grid. We should
+        specify all parameters with :meth:`~optuna.study.Study.enqueue_trial` in this case.
+
     Args:
         search_space:
             A dictionary whose key and value are a parameter name and the corresponding candidates
