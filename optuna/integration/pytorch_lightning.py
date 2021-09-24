@@ -1,7 +1,6 @@
 import warnings
 
 from packaging import version
-import sqlalchemy
 
 import optuna
 from optuna.storages._cached_storage import _CachedStorage
@@ -69,25 +68,23 @@ class PyTorchLightningPruningCallback(Callback):
             warnings.warn(message)
             return
 
-        if not self.is_ddp_backend:
+        should_stop = False
+        if trainer.is_global_zero:
             self._trial.report(current_score, step=epoch)
-            if self._trial.should_prune():
-                message = "Trial was pruned at epoch {}.".format(epoch)
-                raise optuna.TrialPruned(message)
-        else:
-            try:
-                self._trial.report(current_score, step=epoch)
-            except sqlalchemy.exc.IntegrityError:
-                pass
-
             should_stop = self._trial.should_prune()
-            # stop every ddp process if any world process decides to stop
-            should_stop = trainer.training_type_plugin.reduce_boolean_decision(should_stop)
-            if should_stop:
-                trainer.should_stop = True
-                if trainer.is_global_zero:
-                    self._trial.set_system_attr("pruned", True)
-                    self._trial.set_system_attr("epoch", epoch)
+        should_stop = trainer.training_type_plugin.broadcast(should_stop)
+        if not should_stop:
+            return
+
+        if not self.is_ddp_backend:
+            message = "Trial was pruned at epoch {}.".format(epoch)
+            raise optuna.TrialPruned(message)
+        else:
+            # stop every ddp process if global rank 0 process decides to stop
+            trainer.should_stop = True
+            if trainer.is_global_zero:
+                self._trial.set_system_attr("pruned", True)
+                self._trial.set_system_attr("epoch", epoch)
 
     def on_fit_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         if not self.is_ddp_backend:
