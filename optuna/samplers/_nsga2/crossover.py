@@ -51,20 +51,20 @@ def crossover(
 
     while True:  # Repeat while parameters lie outside search space boundaries.
         parents = _select_parents(crossover_name, study, parent_population, rng, dominates)
-        child = {}
+        child_params: Dict[str, Any] = {}
 
         for param_name in search_space.keys():
-            # categorical data operates on uniform crossover
+            # Categorical parameters always use uniform crossover.
             if isinstance(search_space[param_name], CategoricalDistribution):
                 param = (
                     parents[0].params[param_name]
                     if rng.rand() < swapping_prob
                     else parents[-1].params[param_name]
                 )
-                child[param_name] = param
+                child_params[param_name] = param
 
         if len(numerical_distributions) == 0:
-            if _is_contained(child, search_space):
+            if _is_contained(child_params, search_space):
                 break
             continue
 
@@ -81,7 +81,7 @@ def crossover(
             ]
         )  # Parent individual with NUMERICAL_DISTRIBUTIONS parameter.
         if crossover_name == "uniform":
-            params_array = _uniform(
+            child_params_array = _uniform(
                 parents_numerical_params_array[0],
                 parents_numerical_params_array[1],
                 rng,
@@ -89,7 +89,7 @@ def crossover(
             )
         elif crossover_name == "blxalpha":
             alpha = 0.5
-            params_array = _blxalpha(
+            child_params_array = _blxalpha(
                 parents_numerical_params_array[0], parents_numerical_params_array[1], rng, alpha
             )
         elif crossover_name == "sbx":
@@ -97,7 +97,7 @@ def crossover(
                 eta = 2
             else:
                 eta = 20
-            params_array = _sbx(
+            child_params_array = _sbx(
                 parents_numerical_params_array[0],
                 parents_numerical_params_array[1],
                 rng,
@@ -109,13 +109,13 @@ def crossover(
                 eta = 2
             else:
                 eta = 20
-            params_array = _vsbx(
+            child_params_array = _vsbx(
                 parents_numerical_params_array[0], parents_numerical_params_array[1], rng, eta
             )
         elif crossover_name == "undx":
             sigma_xi = 0.5
             sigma_eta = 0.35 / np.sqrt(len(parents_numerical_params_array[0]))
-            params_array = _undx(
+            child_params_array = _undx(
                 parents_numerical_params_array[0],
                 parents_numerical_params_array[1],
                 parents_numerical_params_array[2],
@@ -124,52 +124,50 @@ def crossover(
                 sigma_eta,
             )
         elif crossover_name == "undxm":
-            _m = len(parents_numerical_params_array) - 2
-            _n = len(parents_numerical_params_array[0])
-            if _n - _m <= 0:
+            m = len(parents_numerical_params_array) - 2
+            n_params = len(parents_numerical_params_array[0])
+            if n_params - m <= 0:
                 raise RuntimeError(
-                    "undxm must be n > m-2,"
-                    " where m is the number of parental individuals to be selected"
-                    " at crossover (m=4) and n is the number of parameters of the individuals."
+                    "'undxm' crossover requires that the number of non-categorical parameters"
+                    f" in the intersection search space is at least 3. Actual: {n_params}"
                 )
 
-            sigma_xi = 1 / np.sqrt(_m)
+            sigma_xi = 1 / np.sqrt(m)
             sigma_eta = (
                 0.35
-                * np.sqrt(_m + 1)
+                * np.sqrt(m + 1)
                 * np.sqrt(3)
-                / np.sqrt(_n - _m)
-                / np.sqrt(_m + 2)
+                / np.sqrt(n_params - m)
+                / np.sqrt(m + 2)
                 / np.sqrt(2)
             )
-            params_array = _undxm(parents_numerical_params_array, rng, sigma_xi, sigma_eta)
+            child_params_array = _undxm(parents_numerical_params_array, rng, sigma_xi, sigma_eta)
         elif crossover_name == "spx":
             epsilon = np.sqrt(len(parents_numerical_params_array[0]) + 2)
-            params_array = _spx(parents_numerical_params_array, rng, epsilon)
+            child_params_array = _spx(parents_numerical_params_array, rng, epsilon)
         else:
             assert False
 
-        params = numerical_transform.untransform(params_array)
-        for param_name in params.keys():
-            child[param_name] = params[param_name]
+        child_numerical_params = numerical_transform.untransform(child_params_array)
+        child_params.update(child_numerical_params)
 
-        if _is_contained(child, search_space):
+        if _is_contained(child_params, search_space):
             break
 
-    return child
+    return child_params
 
 
-def select_m(crossover_name: str) -> int:
+def get_n_parents(crossover_name: str) -> int:
     # Select the number of parent individuals to be used for crossover.
     if crossover_name in ["uniform", "blxalpha", "sbx", "vsbx"]:
-        m = 2
+        n_parents = 2
     elif crossover_name in ["undx", "spx"]:
-        m = 3
+        n_parents = 3
     elif crossover_name in ["undxm"]:
-        m = 4
+        n_parents = 4
     else:
         assert False
-    return m
+    return n_parents
 
 
 def _select_parents(
@@ -179,9 +177,9 @@ def _select_parents(
     rng: np.random.RandomState,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
 ) -> List[FrozenTrial]:
-    m = select_m(crossover_name)
+    n_parents = get_n_parents(crossover_name)
     parents = []
-    for _ in range(m):
+    for _ in range(n_parents):
         parent = _select_parent(
             study, [t for t in parent_population if t not in parents], rng, dominates
         )
@@ -195,7 +193,6 @@ def _select_parent(
     rng: np.random.RandomState,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
 ) -> FrozenTrial:
-    # TODO(ohta): Consider to allow users to specify the number of parent candidates.
     population_size = len(parent_population)
     candidate0 = parent_population[rng.choice(population_size)]
     candidate1 = parent_population[rng.choice(population_size)]
@@ -214,13 +211,14 @@ def _uniform(
     # Section 1 Introduction
 
     assert x1.shape == x2.shape
-    assert len(x1.shape) == 1
+    assert x1.ndim == 1
 
-    child = []
+    child_params_list = []
     for x1_i, x2_i in zip(x1, x2):
         param = x1_i if rng.rand() < swapping_prob else x2_i
-        child.append(param)
-    return np.array(child)
+        child_params_list.append(param)
+    child_params_array = np.array(child_params_list)
+    return child_params_array
 
 
 def _blxalpha(
@@ -230,18 +228,18 @@ def _blxalpha(
     # Section 2 Crossover Operators for RCGA 2.1 Blend Crossover
 
     assert x1.shape == x2.shape
-    assert len(x1.shape) == 1
+    assert x1.ndim == 1
 
     xs = np.stack([x1, x2])
 
     x_min = xs.min(axis=0)
     x_max = xs.max(axis=0)
-    diff = alpha * (x_max - x_min)  # Equation (1)
-    low = x_min - diff  # Equation (1)
-    high = x_max + diff  # Equation (1)
+    diff = alpha * (x_max - x_min)  # Equation (1).
+    low = x_min - diff  # Equation (1).
+    high = x_max + diff  # Equation (1).
     r = rng.uniform(0, 1, size=len(diff))
-    param = (high - low) * r + low
-    return param
+    child_params_array = (high - low) * r + low
+    return child_params_array
 
 
 def _sbx(
@@ -255,18 +253,18 @@ def _sbx(
     # Section 2 Simulated Binary Crossover (SBX)
 
     # To avoid generating solutions that violate the box constraints,
-    # alpha1, alpha2, xls and xus is introduced, unlike the reference.
-    _xls = []
-    _xus = []
+    # alpha1, alpha2, xls and xus are introduced, unlike the reference.
+    xls_list = []
+    xus_list = []
     for distribution in distributions:
         assert isinstance(distribution, _NUMERICAL_DISTRIBUTIONS)
-        _xls.append(distribution.low)
-        _xus.append(distribution.high)
-    xls = np.array(_xls)
-    xus = np.array(_xus)
+        xls_list.append(distribution.low)
+        xus_list.append(distribution.high)
+    xls = np.array(xls_list)
+    xus = np.array(xus_list)
 
     assert x1.shape == x2.shape
-    assert len(x1.shape) == 1
+    assert x1.ndim == 1
 
     xs = np.stack([x1, x2])
     xs_min = np.min(xs, axis=0)
@@ -280,16 +278,16 @@ def _sbx(
 
     us = rng.uniform(0, 1, size=len(xs[0]))
 
-    mask1 = us > 1 / alpha1  # Equation (3)
-    betaq1 = np.power(us * alpha1, 1 / (eta + 1))  # Equation (3)
-    betaq1[mask1] = np.power((1 / (2 - us * alpha1)), 1 / (eta + 1))[mask1]  # Equation (3)
+    mask1 = us > 1 / alpha1  # Equation (3).
+    betaq1 = np.power(us * alpha1, 1 / (eta + 1))  # Equation (3).
+    betaq1[mask1] = np.power((1 / (2 - us * alpha1)), 1 / (eta + 1))[mask1]  # Equation (3).
 
-    mask2 = us > 1 / alpha2  # Equation (3)
+    mask2 = us > 1 / alpha2  # Equation (3).
     betaq2 = np.power(us * alpha2, 1 / (eta + 1))  # Equation (3)
-    betaq2[mask2] = np.power((1 / (2 - us * alpha2)), 1 / (eta + 1))[mask2]  # Equation (3)
+    betaq2[mask2] = np.power((1 / (2 - us * alpha2)), 1 / (eta + 1))[mask2]  # Equation (3).
 
-    c1 = 0.5 * ((xs_min + xs_max) - betaq1 * xs_diff)  # Equation (4)
-    c2 = 0.5 * ((xs_min + xs_max) + betaq2 * xs_diff)  # Equation (5)
+    c1 = 0.5 * ((xs_min + xs_max) - betaq1 * xs_diff)  # Equation (4).
+    c2 = 0.5 * ((xs_min + xs_max) + betaq2 * xs_diff)  # Equation (5).
 
     # SBX applies crossover with establishment 0.5, and with probability 0.5,
     # the gene of the parent individual is the gene of the child individual.
@@ -298,19 +296,20 @@ def _sbx(
     # Therefore, when there is no crossover,
     # the gene is selected with equal probability from the parent individuals x1 and x2.
 
-    child = []
+    child_params_list = []
     for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, xs[0], xs[1]):
         if rng.rand() < 0.5:
             if rng.rand() < 0.5:
-                child.append(c1_i)
+                child_params_list.append(c1_i)
             else:
-                child.append(c2_i)
+                child_params_list.append(c2_i)
         else:
             if rng.rand() < 0.5:
-                child.append(x1_i)
+                child_params_list.append(x1_i)
             else:
-                child.append(x2_i)
-    return np.array(child)
+                child_params_list.append(x2_i)
+    child_params_array = np.array(child_params_list)
+    return child_params_array
 
 
 def _vsbx(
@@ -323,7 +322,7 @@ def _vsbx(
     # Section 3.2 Crossover Schemes (vSBX)
 
     assert x1.shape == x2.shape
-    assert len(x1.shape) == 1
+    assert x1.ndim == 1
 
     us = rng.uniform(0, 1, size=len(x1))
     beta_1 = np.power(1 / 2 * us, 1 / (eta + 1))
@@ -341,19 +340,20 @@ def _vsbx(
     # Therefore, when there is no crossover,
     # the gene is selected with equal probability from the parent individuals x1 and x2.
 
-    child = []
+    child_params_list = []
     for c1_i, c2_i, x1_i, x2_i in zip(c1, c2, x1, x2):
         if rng.rand() < 0.5:
             if rng.rand() < 0.5:
-                child.append(c1_i)
+                child_params_list.append(c1_i)
             else:
-                child.append(c2_i)
+                child_params_list.append(c2_i)
         else:
             if rng.rand() < 0.5:
-                child.append(x1_i)
+                child_params_list.append(x1_i)
             else:
-                child.append(x2_i)
-    return np.array(child)
+                child_params_list.append(x2_i)
+    child_params_array = np.array(child_params_list)
+    return child_params_array
 
 
 def _undx(
@@ -368,10 +368,10 @@ def _undx(
     # Section 2 Unimodal Normal Distribution Crossover
 
     assert x1.shape == x2.shape == x3.shape
-    assert len(x1.shape) == 1
+    assert x1.ndim == 1
 
     def _normalized_x1_to_x2(x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
-        # Compute the normalized vector from x1 to x2
+        # Compute the normalized vector from x1 to x2.
 
         v_12 = x2 - x1
         m_12 = np.linalg.norm(v_12, ord=2)
@@ -382,41 +382,42 @@ def _undx(
         # The line connecting x1 to x2 is called psl (primary search line).
         # Compute the 2-norm of the vector orthogonal to psl from x3.
 
-        e_12 = _normalized_x1_to_x2(x1, x2)  # Normalized vector from x1 to x2
-        v_13 = x3 - x1  # Vector from x1 to x3
-        v_12_3 = v_13 - np.dot(v_13, e_12) * e_12  # Vector orthogonal to v_12 through x3
-        m_12_3 = np.linalg.norm(v_12_3, ord=2)  # 2-norm of v_12_3
+        e_12 = _normalized_x1_to_x2(x1, x2)  # Normalized vector from x1 to x2.
+        v_13 = x3 - x1  # Vector from x1 to x3.
+        v_12_3 = v_13 - np.dot(v_13, e_12) * e_12  # Vector orthogonal to v_12 through x3.
+        m_12_3 = np.linalg.norm(v_12_3, ord=2)  # 2-norm of v_12_3.
         return m_12_3
 
     def _orthonormal_basis_vector_to_psl(x1: np.ndarray, x2: np.ndarray) -> np.ndarray:
-        # Compute orthogonal basis vectors for the subspace orthogonal to psl
+        # Compute orthogonal basis vectors for the subspace orthogonal to psl.
 
         n = len(x1)
-        e_12 = _normalized_x1_to_x2(x1, x2)  # Normalized vector from x1 to x2
+        e_12 = _normalized_x1_to_x2(x1, x2)  # Normalized vector from x1 to x2.
         basis_matrix = np.identity(n)
         if np.count_nonzero(e_12) != 0:
             v_01 = x1 - np.zeros(len(x1))
-            basis_matrix[0] = v_01 - np.dot(v_01, e_12) * e_12  # Vector orthogonal to e_12
+            basis_matrix[0] = v_01 - np.dot(v_01, e_12) * e_12  # Vector orthogonal to e_12.
         basis_matrix_t = basis_matrix.T
         Q, _ = np.linalg.qr(basis_matrix_t)
         return Q.T
 
     n = len(x1)
-    xp = (x1 + x2) / 2  # Section 2 (2)
-    d = x1 - x2  # Section 2 (3)
-    D = _distance_from_x_to_psl(x1, x2, x3)  # Section 2 (4)
+    xp = (x1 + x2) / 2  # Section 2 (2).
+    d = x1 - x2  # Section 2 (3).
+    D = _distance_from_x_to_psl(x1, x2, x3)  # Section 2 (4).
     xi = rng.normal(0, sigma_xi ** 2)
     etas = rng.normal(0, sigma_eta ** 2, size=n)
     es = _orthonormal_basis_vector_to_psl(
         x1, x2
-    )  # Orthonormal basis vectors of the subspace orthogonal to the psl
-    one = xp  # Section 2 (5)
-    two = xi * d  # Section 2 (5)
-    three = np.zeros(len(es[0]))  # Section 2 (5)
+    )  # Orthonormal basis vectors of the subspace orthogonal to the psl.
+    one = xp  # Section 2 (5).
+    two = xi * d  # Section 2 (5).
+    three = np.zeros(len(es[0]))  # Section 2 (5).
     for i in range(n - 1):
         three += etas[i] * es[i]
     three *= D
-    return one + two + three
+    child_params_array = one + two + three
+    return child_params_array
 
 
 def _undxm(
@@ -427,7 +428,7 @@ def _undxm(
 
     def _normal(rng: np.random.RandomState, ds: List[np.ndarray]) -> np.ndarray:
         # Compute an orthonormal basis by adding one appropriate vector to ds,
-        # and extract one vector from the orthonormal basis
+        # and extract one vector from the orthonormal basis.
 
         d = rng.normal(0, 1, size=ds[0].shape[0])
         ds.append(d)
@@ -436,7 +437,7 @@ def _undxm(
         return Q.T[-1]
 
     def _orthonormal_basis_vector_from_ds(ds: List[np.ndarray]) -> np.ndarray:
-        # Compute an orthonormal basis of the subspace orthogonal to d_i(1,..i,..m)
+        # Compute an orthonormal basis of the subspace orthogonal to d_i(1,..i,..m).
 
         X = np.stack(ds)
         Q, _ = np.linalg.qr(X.T)
@@ -445,32 +446,33 @@ def _undxm(
     assert xs.ndim == 2
     # In this case, `len(xs)==4` because `n_select` is fixed at 4.
 
-    x_mp2, xs = xs[-1], xs[:-1]  # Section 4.2 (1), (3)
+    x_mp2, xs = xs[-1], xs[:-1]  # Section 4.2 (1), (3).
     m = len(xs) - 1
     dim = len(x_mp2)
 
-    p = np.sum(xs, axis=0) / (m + 1)  # Section 4.2 (2)
-    ds = [x - p for x in xs]  # Section 4.2 (2)
-    n = _normal(rng, ds[:-1])  # Normal to the plane that contains d_i(1,..,m) section 4.2 (4)
-    d_mp2 = x_mp2 - p  # Section 4.2 (4)
-    D = np.dot(d_mp2, n) / np.linalg.norm(n)  # Section 4.2 (4)
+    p = np.sum(xs, axis=0) / (m + 1)  # Section 4.2 (2).
+    ds = [x - p for x in xs]  # Section 4.2 (2).
+    n = _normal(rng, ds[:-1])  # Normal to the plane that contains d_i(1,..,m) section 4.2 (4).
+    d_mp2 = x_mp2 - p  # Section 4.2 (4).
+    D = np.dot(d_mp2, n) / np.linalg.norm(n)  # Section 4.2 (4).
     es = _orthonormal_basis_vector_from_ds(
         ds[:-1]
-    )  # Orthonormal basis of the subspace orthogonal to d_i(1,..,m) section 4.2 (5)
+    )  # Orthonormal basis of the subspace orthogonal to d_i(1,..,m) section 4.2 (5).
 
-    one = p  # Section 4.2 (6)
+    one = p  # Section 4.2 (6).
 
     ws = rng.normal(0, sigma_xi ** 2, size=m)
-    two = np.zeros(dim)  # Section 4.2 (6)
+    two = np.zeros(dim)  # Section 4.2 (6).
     for i in range(m):
         two += ws[i] * ds[i]
 
-    three = np.zeros(dim)  # Section 4.2 (6)
+    three = np.zeros(dim)  # Section 4.2 (6).
     for i in range(dim - m):
         vs = rng.normal(0, sigma_eta ** 2, size=dim)
         three += vs - np.dot(vs, es[i]) * es[i]
     three *= D
-    return one + two + three
+    child_params_array = one + two + three
+    return child_params_array
 
 
 def _spx(xs: np.ndarray, rng: np.random.RandomState, epsilon: float) -> np.ndarray:
@@ -481,15 +483,15 @@ def _spx(xs: np.ndarray, rng: np.random.RandomState, epsilon: float) -> np.ndarr
     # In this case, `len(xs)==3` because `n_select` is fixed at 3.
 
     n = xs.shape[0] - 1
-    G = xs.sum(axis=0) / xs.shape[0]  # Equation (1)
-    rs = [np.power(rng.uniform(0, 1), 1 / (k + 1)) for k in range(n)]  # Equation (2)
-    xks = [G + epsilon * (pk - G) for pk in xs]  # Equation (3)
-    ck = 0  # Equation (4)
+    G = xs.sum(axis=0) / xs.shape[0]  # Equation (1).
+    rs = [np.power(rng.uniform(0, 1), 1 / (k + 1)) for k in range(n)]  # Equation (2).
+    xks = [G + epsilon * (pk - G) for pk in xs]  # Equation (3).
+    ck = 0  # Equation (4).
     for k in range(1, n + 1):
         ck = rs[k - 1] * (xks[k - 1] - xks[k] + ck)
 
-    c = xks[-1] + ck  # Equation (5)
-    return c
+    child_params_array = xks[-1] + ck  # Equation (5).
+    return child_params_array
 
 
 def _is_contained(params: Dict[str, Any], search_space: Dict[str, BaseDistribution]) -> bool:

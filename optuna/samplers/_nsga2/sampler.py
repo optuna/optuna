@@ -19,7 +19,7 @@ from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._nsga2.crossover import crossover
-from optuna.samplers._nsga2.crossover import select_m
+from optuna.samplers._nsga2.crossover import get_n_parents
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.study import Study
@@ -224,11 +224,11 @@ class NSGAIISampler(BaseSampler):
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
-        m = select_m(crossover)
-        if population_size < m:
+        n_parents = get_n_parents(crossover)
+        if population_size < n_parents:
             raise ValueError(
                 f"Using {crossover},"
-                f" the population size should be greater than or equal to {m}."
+                f" the population size should be greater than or equal to {n_parents}."
             )
 
         self._population_size = population_size
@@ -287,11 +287,10 @@ class NSGAIISampler(BaseSampler):
                 )
             else:
                 parent_population_size = len(parent_population)
+                parent_params = parent_population[self._rng.choice(parent_population_size)].params
                 child_params = {}
                 for param_name in search_space.keys():
-                    child_params[param_name] = parent_population[
-                        self._rng.choice(parent_population_size)
-                    ].params[param_name]
+                    child_params[param_name] = parent_params[param_name]
 
             n_params = len(child_params)
             if self._mutation_prob is None:

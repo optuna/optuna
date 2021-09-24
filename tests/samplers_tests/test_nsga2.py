@@ -495,6 +495,9 @@ def test_crossover() -> None:
         NSGAIISampler(crossover="no_imp_crossover")
 
 
+# Unlike other crossover operators,
+# undxm will cause errors depending on the number of dimensions of the search space.
+# Therefore, to test for ValueError, we remove undxm  and test it separately.
 parametrize_nsga2_sampler = pytest.mark.parametrize(
     "sampler_class",
     [
