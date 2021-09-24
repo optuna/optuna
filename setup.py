@@ -59,7 +59,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
-            "scikit-learn>=0.24.2",
+            # TODO(nzw0301) remove the constraint of sklearn `1.0.0 `
+            # after skopt supports sklearn >= 1.0.0
+            "scikit-learn>=0.24.2,<1.0.0",
             "scikit-optimize",
             "mlflow",
         ],
@@ -98,7 +100,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "plotly>=4.0.0",
             "pytest",
-            "scikit-learn>=0.24.2",
+            # TODO(nzw0301) remove the constraint of sklearn `1.0.0 `
+            # after skopt supports sklearn >= 1.0.0
+            "scikit-learn>=0.24.2,<1.0.0",
             "scikit-optimize",
             "xgboost",
             "tensorflow",
@@ -140,7 +144,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "pandas",
-            "scikit-learn>=0.24.2",
+            # TODO(nzw0301) remove the constraint of sklearn `1.0.0 `
+            # after skopt supports sklearn >= 1.0.0
+            "scikit-learn>=0.24.2,<1.0.0",
             "scikit-optimize",
             "xgboost",
             "tensorflow",
