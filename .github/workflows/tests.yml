@@ -62,6 +62,10 @@ jobs:
         pip install --progress-bar off .[tests]
         pip install --progress-bar off .[optional]
 
+        # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
+        # after skopt supports sklearn >= 1.0.0
+        pip install "scikit-learn<1.0.0"
+
         # Required for samplers_tests/test_samplers.py.
         # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
         pip install scikit-optimize
