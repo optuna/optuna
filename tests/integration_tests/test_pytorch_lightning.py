@@ -128,7 +128,6 @@ def test_pytorch_lightning_pruning_callback() -> None:
     def objective(trial: optuna.trial.Trial) -> float:
 
         trainer = pl.Trainer(
-            min_epochs=0,  # Required to fire the callback after the first epoch.
             max_epochs=2,
             checkpoint_callback=False,
             callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
@@ -156,7 +155,6 @@ def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
     callback = PyTorchLightningPruningCallback(trial, "InvalidMonitor")
 
     trainer = pl.Trainer(
-        min_epochs=0,  # Required to fire the callback after the first epoch.
         max_epochs=1,
         checkpoint_callback=False,
         callbacks=[callback],
@@ -174,7 +172,6 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
     def objective(trial: optuna.trial.Trial) -> float:
 
         trainer = pl.Trainer(
-            min_epochs=0,  # Required to fire the callback after the first epoch.
             max_epochs=2,
             accelerator="ddp_cpu",
             num_processes=2,
@@ -204,13 +201,12 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
 
 
 @pytest.mark.parametrize("storage_mode", ["inmemory", "redis"])
-def test_pytorch_lightning_pruning_callback_ddp_storage_not_suppored(
+def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage(
     storage_mode: str,
 ) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
 
         trainer = pl.Trainer(
-            min_epochs=0,  # Required to fire the callback after the first epoch.
             max_epochs=1,
             accelerator="ddp_cpu",
             num_processes=2,
