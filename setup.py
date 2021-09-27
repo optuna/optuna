@@ -75,7 +75,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "sphinx-plotly-directive",
             "pillow",
             "matplotlib",
-            "scikit-learn",
+            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
+            # after skopt supports sklearn >= 1.0.0
+            "scikit-learn<1.0.0",
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
             "lightgbm",
