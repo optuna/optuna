@@ -130,7 +130,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
-            "scikit-learn>=0.24.2",
+            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
+            # after skopt supports sklearn >= 1.0.0
+            "scikit-learn>=0.24.2,<1.0.0",
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
