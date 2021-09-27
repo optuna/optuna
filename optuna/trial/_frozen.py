@@ -1,4 +1,5 @@
 import datetime
+import numbers
 from typing import Any
 from typing import Dict
 from typing import List
@@ -355,16 +356,14 @@ class FrozenTrial(BaseTrial):
                 # `value` can be None.
                 if v is None:
                     continue
-                try:
-                    # Check if `values` element is float. This check accepts float-castable values
-                    # including numpy.floating and numpy.integer, which are sometimes returned
-                    # by objective functions.
-                    _ = v + 1
-                except TypeError:
+                # Check if `values` element is a real number. This check accepts float-castable
+                # values including numpy.floating and numpy.integer, which are sometimes returned
+                # by objective functions.
+                if not isinstance(v, numbers.Real):
                     raise ValueError(
                         "{}-th element of `values` is {}. All elements are supposed to be float "
                         "or None.".format(i, type(v).__name__)
-                    ) from None
+                    )
 
     def _suggest(self, name: str, distribution: BaseDistribution) -> Any:
 
