@@ -136,6 +136,11 @@ class MLflowCallback(object):
             set, key value pairs in :attr:`~optuna.study.Study.user_attrs`
             will supersede existing tags.
 
+    .. note::
+        ``nest_trials`` argument is now a part of ``mlflow_kwargs``. Anyone using
+        ``nest_trials=True`` should migrate to ``mlflow_kwargs={"nested": True}``
+        to avoid raising :exc:`TypeError`.
+
     Raises:
         :exc:`ValueError`:
             If there are missing or extra metric names in multi-objective optimization.
