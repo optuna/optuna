@@ -281,15 +281,18 @@ def test_mlflow_callback_fails_when_nest_trials_is_false_and_active_run_exists(
             study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
 
 
-def test_log_user_attrs(tmpdir: py.path.local) -> None:
+@pytest.mark.parametrize("tag_study_user_attrs", [True, False])
+def test_tag_study_user_attrs(tmpdir: py.path.local, tag_study_user_attrs: bool) -> None:
     tracking_file_name = "file:{}".format(tmpdir)
     study_name = "my_study"
     n_trials = 3
 
-    mlflc = MLflowCallback(tracking_uri=tracking_file_name)
+    mlflc = MLflowCallback(
+        tracking_uri=tracking_file_name, tag_study_user_attrs=tag_study_user_attrs
+    )
     study = optuna.create_study(study_name=study_name)
     study.set_user_attr("my_study_attr", "a")
-    study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
+    study.optimize(_objective_func_long_user_attr, n_trials=n_trials, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_file_name)
     experiments = mlfl_client.list_experiments()
@@ -301,31 +304,11 @@ def test_log_user_attrs(tmpdir: py.path.local) -> None:
 
     runs = mlfl_client.search_runs([experiment_id])
     assert len(runs) == n_trials
-    # test if study user attributes are present
-    assert all((r.data.tags["my_study_attr"] == "a") for r in runs)
-    # test if trial user attributes are present
-    assert all((r.data.tags["my_user_attr"] == "my_user_attr_value") for r in runs)
 
-
-def test_colliding_user_attrs(tmpdir: py.path.local) -> None:
-
-    tracking_file_name = "file:{}".format(tmpdir)
-
-    mlflc = MLflowCallback(tracking_uri=tracking_file_name)
-    study = optuna.create_study()
-    study.set_user_attr("my_user_attr", "my_study_attr_value")
-    study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
-
-    mlfl_client = MlflowClient(tracking_file_name)
-    experiment = mlfl_client.list_experiments()[0]
-    run_info = mlfl_client.list_run_infos(experiment.experiment_id)[0]
-    run = mlfl_client.get_run(run_info.run_id)
-    tags = run.data.tags
-
-    assert "study_my_user_attr" in tags.keys()
-    assert "trial_my_user_attr" in tags.keys()
-    assert tags["study_my_user_attr"] == "my_study_attr_value"
-    assert tags["trial_my_user_attr"] == "my_user_attr_value"
+    if tag_study_user_attrs:
+        assert all((r.data.tags["my_study_attr"] == "a") for r in runs)
+    else:
+        assert all(("my_study_attr" not in r.data.tags) for r in runs)
 
 
 def test_log_mlflow_tags(tmpdir: py.path.local) -> None:
