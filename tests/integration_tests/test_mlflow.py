@@ -127,6 +127,33 @@ def test_use_existing_or_default_experiment(
     assert len(runs) == 10
 
 
+def test_use_existing_experiment_by_id(tmpdir: py.path.local) -> None:
+
+    tracking_uri = "file:{}".format(tmpdir)
+    mlflow.set_tracking_uri(tracking_uri)
+    experiment_id = mlflow.create_experiment("foo")
+
+    mlflow_kwargs = {"experiment_id": experiment_id}
+    mlflc = MLflowCallback(
+        tracking_uri=tracking_uri, create_experiment=False, mlflow_kwargs=mlflow_kwargs
+    )
+    study = optuna.create_study()
+
+    for _ in range(10):
+        study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
+
+    mlfl_client = MlflowClient(tracking_uri)
+    experiment_list = mlfl_client.list_experiments()
+    assert len(experiment_list) == 1
+
+    experiment = experiment_list[0]
+    assert experiment.experiment_id == experiment_id
+    assert experiment.name == "foo"
+
+    runs = mlfl_client.list_run_infos(experiment_id)
+    assert len(runs) == 10
+
+
 def test_metric_name(tmpdir: py.path.local) -> None:
 
     tracking_file_name = "file:{}".format(tmpdir)
