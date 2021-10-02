@@ -1,4 +1,5 @@
 import sys
+from typing import List
 from typing import Optional
 
 import optuna
@@ -87,7 +88,7 @@ class LightGBMPruningCallback(object):
 
     def _find_evaluation_result(
         self, target_valid_name: str, env: "CallbackEnv"
-    ) -> Optional[list]:
+    ) -> Optional[List]:
 
         for evaluation_result in env.evaluation_result_list:
             valid_name, metric, current_score, is_higher_better = evaluation_result[:4]
@@ -143,5 +144,3 @@ class LightGBMPruningCallback(object):
             if self._trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(env.iteration)
                 raise optuna.TrialPruned(message)
-
-        return None
