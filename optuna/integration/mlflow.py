@@ -137,8 +137,8 @@ class MLflowCallback(object):
             will supersede existing tags.
 
     .. note::
-        ``nest_trials`` argument is now a part of ``mlflow_kwargs``. Anyone using
-        ``nest_trials=True`` should migrate to ``mlflow_kwargs={"nested": True}``
+        ``nest_trials`` argument added in v2.3.0 is a part of ``mlflow_kwargs`` since v2.11.0.
+        Anyone using ``nest_trials=True`` should migrate to ``mlflow_kwargs={"nested": True}``
         to avoid raising :exc:`TypeError`.
 
     Raises:
