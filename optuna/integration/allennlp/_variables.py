@@ -1,22 +1,54 @@
 import os
+from typing import Dict
+from typing import Optional
 
 
-_PPID = os.getppid()
+class _VariableManager:
+    """A environment variable manager for AllenNLP integration.
 
-"""
-User might want to launch multiple studies that uses `AllenNLPExecutor`.
-Because `AllenNLPExecutor` uses environment variables for communicating
-between a parent process and a child process. A parent process creates a study,
-defines a search space, and a child process trains a AllenNLP model by
-`allennlp.commands.train.train_model`. If multiple processes use `AllenNLPExecutor`,
-the one's configuration could be loaded in the another's configuration.
-To avoid this hazard, we add ID of a parent process to each key of
-environment variables.
-"""
-_PREFIX = "{}_OPTUNA_ALLENNLP".format(_PPID)
-_MONITOR = "{}_MONITOR".format(_PREFIX)
-_PRUNER_CLASS = "{}_PRUNER_CLASS".format(_PREFIX)
-_PRUNER_KEYS = "{}_PRUNER_KEYS".format(_PREFIX)
-_STORAGE_NAME = "{}_STORAGE_NAME".format(_PREFIX)
-_STUDY_NAME = "{}_STUDY_NAME".format(_PREFIX)
-_TRIAL_ID = "{}_TRIAL_ID".format(_PREFIX)
+    User might want to launch multiple studies that uses `AllenNLPExecutor`.
+    Because `AllenNLPExecutor` uses environment variables for communicating
+    between a parent process and a child process. A parent process creates a study,
+    defines a search space, and a child process trains a AllenNLP model by
+    `allennlp.commands.train.train_model`. If multiple processes use `AllenNLPExecutor`,
+    the one's configuration could be loaded in the another's configuration.
+    To avoid this hazard, we add ID of a parent process to each key of
+    environment variables.
+
+    """
+
+    NAME_OF_KEY = {
+        "monitor": "{}_MONITOR",
+        "pruner_class": "{}_PRUNER_CLASS",
+        "pruner_keys": "{}_PRUNER_KEYS",
+        "storage_name": "{}_STORAGE_NAME",
+        "study_name": "{}_STUDY_NAME",
+        "trial_id": "{}_TRIAL_ID",
+    }
+
+    def __init__(self, target_pid: int, environments: Dict[str, str]) -> None:
+        self.target_pid = target_pid
+        self.environments = environments
+
+    @property
+    def prefix(self) -> str:
+        return "{}_OPTUNA_ALLENNLP".format(self.target_pid)
+
+    def get_key(self, name: str) -> Optional[str]:
+        return self.NAME_OF_KEY.get(name)
+
+    def set_value(self, name: str, value: str) -> None:
+        key = self.get_key(name)
+        if key is None:
+            return
+        key = key.format(self.target_pid)
+        os.environ[key] = value
+
+    def get_value(self, name: str) -> Optional[str]:
+        key = self.get_key(name)
+        name_of_path = "optuna.integration.allennlp._variables._VariableManager.NAME_OF_KEY"
+        assert key is not None, f"{name} is not found in `{name_of_path}`."
+        key = key.format(self.target_pid)
+        value = os.environ.get(key)
+        assert value is not None, f"{key} is not found in environment variables."
+        return value
