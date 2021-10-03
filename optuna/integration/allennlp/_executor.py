@@ -7,8 +7,6 @@ from typing import Optional
 from typing import Union
 import warnings
 
-import psutil
-
 import optuna
 from optuna._experimental import experimental
 from optuna._imports import try_import
@@ -27,6 +25,7 @@ with try_import() as _imports:
 # the environment that builds the documentation.
 if _imports.is_successful():
     import _jsonnet
+    import psutil
 
 
 def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
