@@ -6,7 +6,6 @@ from typing import Optional
 from typing import Union
 
 from packaging import version
-import psutil
 
 import optuna
 from optuna import load_study
@@ -26,6 +25,8 @@ with try_import() as _imports:
 if _imports.is_successful():
     from allennlp.training import GradientDescentTrainer
     from allennlp.training import TrainerCallback
+    import psutil
+
 else:
     # I disable mypy here since `allennlp.training.TrainerCallback` is a subclass of `Registrable`
     # (https://docs.allennlp.org/main/api/training/trainer/#trainercallback) but `TrainerCallback`
