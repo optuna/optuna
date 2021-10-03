@@ -1,6 +1,8 @@
 import os
-from typing import Dict
 from typing import Optional
+
+
+SPECIAL_DELIMITER = "[OPTUNA_ALLENNLP_INTEGRATION_DELIMITER]"
 
 
 class _VariableManager:
@@ -21,14 +23,14 @@ class _VariableManager:
         "monitor": "{}_MONITOR",
         "pruner_class": "{}_PRUNER_CLASS",
         "pruner_keys": "{}_PRUNER_KEYS",
+        "pruner_values": "{}_PRUNER_VALUES",
         "storage_name": "{}_STORAGE_NAME",
         "study_name": "{}_STUDY_NAME",
         "trial_id": "{}_TRIAL_ID",
     }
 
-    def __init__(self, target_pid: int, environments: Dict[str, str]) -> None:
+    def __init__(self, target_pid: int) -> None:
         self.target_pid = target_pid
-        self.environments = environments
 
     @property
     def prefix(self) -> str:
