@@ -155,6 +155,8 @@ class AllenNLPPruningCallback(TrainerCallback):
                 "please install Optuna v2.5.0 by executing `pip install 'optuna==2.5.0'`."
             )
 
+        self.pruned = False
+
         # When `AllenNLPPruningCallback` is instantiated in Python script,
         # trial and monitor should not be `None`.
         if trial is not None and monitor is not None:
@@ -227,4 +229,16 @@ class AllenNLPPruningCallback(TrainerCallback):
 
         self._trial.report(float(value), epoch)
         if self._trial.should_prune():
+            trainer._metric_tracker.should_stop_early = lambda: True  # type: ignore
+            self.pruned = True
+
+    def on_end(
+        self,
+        trainer: "GradientDescentTrainer",
+        metrics: Dict[str, Any] = None,
+        epoch: int = None,
+        is_primary: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        if self.pruned:
             raise optuna.TrialPruned()
