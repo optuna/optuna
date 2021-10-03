@@ -15,12 +15,14 @@ import allennlp.modules
 import allennlp.modules.seq2vec_encoders
 import allennlp.modules.text_field_embedders
 import allennlp.training
+import psutil
 import pytest
 import torch.optim
 
 import optuna
 from optuna.integration.allennlp import AllenNLPPruningCallback
 from optuna.integration.allennlp._pruner import _create_pruner
+from optuna.integration.allennlp._variables import _VariableManager
 from optuna.testing.integration import DeterministicPruner
 
 
@@ -381,7 +383,9 @@ def test_allennlp_pruning_callback_with_executor(
 
         pruner = pruner_class(**pruner_kwargs)  # type: ignore
         run_allennlp_executor(pruner)
-        ret_pruner = _create_pruner()
+        process = psutil.Process()
+        manager = _VariableManager(process.ppid(), dict(os.environ))
+        ret_pruner = _create_pruner(manager.pruner_class, manager.pruner_keys, manager.prefix)
 
         assert isinstance(ret_pruner, pruner_class)
         for key, value in pruner_kwargs.items():
