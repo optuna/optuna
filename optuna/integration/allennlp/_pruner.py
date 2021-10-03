@@ -6,19 +6,15 @@ from typing import Optional
 from typing import Union
 
 from packaging import version
+import psutil
 
 import optuna
 from optuna import load_study
 from optuna import Trial
 from optuna._experimental import experimental
 from optuna._imports import try_import
-from optuna.integration.allennlp._variables import _MONITOR
-from optuna.integration.allennlp._variables import _PREFIX
-from optuna.integration.allennlp._variables import _PRUNER_CLASS
-from optuna.integration.allennlp._variables import _PRUNER_KEYS
-from optuna.integration.allennlp._variables import _STORAGE_NAME
-from optuna.integration.allennlp._variables import _STUDY_NAME
-from optuna.integration.allennlp._variables import _TRIAL_ID
+from optuna.integration.allennlp._variables import _VariableManager
+from optuna.integration.allennlp._variables import SPECIAL_DELIMITER as DELIMITER
 
 
 with try_import() as _imports:
@@ -53,7 +49,12 @@ else:
             return wrapper
 
 
-def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
+def _create_pruner(
+    pruner_class: Optional[str],
+    pruner_keys: Optional[str],
+    pruner_values: Optional[str],
+) -> Optional[optuna.pruners.BasePruner]:
+
     """Restore a pruner which is defined in `create_study`.
 
     `AllenNLPPruningCallback` is launched as a sub-process of
@@ -64,11 +65,10 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     re-create the same pruner in `AllenNLPPruningCallback`.
 
     """
-    pruner_class = os.getenv(_PRUNER_CLASS)
     if pruner_class is None:
         return None
 
-    pruner_params = _get_environment_variables_for_pruner()
+    pruner_params = _construct_pruner_kwargs(pruner_keys, pruner_values)
     pruner = getattr(optuna.pruners, pruner_class, None)
 
     if pruner is None:
@@ -77,29 +77,23 @@ def _create_pruner() -> Optional[optuna.pruners.BasePruner]:
     return pruner(**pruner_params)
 
 
-def _get_environment_variables_for_trial() -> Dict[str, Optional[str]]:
-    return {
-        "study_name": os.getenv(_STUDY_NAME),
-        "trial_id": os.getenv(_TRIAL_ID),
-        "storage": os.getenv(_STORAGE_NAME),
-        "monitor": os.getenv(_MONITOR),
-    }
-
-
-def _get_environment_variables_for_pruner() -> Dict[str, Optional[Union[str, int, float, bool]]]:
-    keys = os.getenv(_PRUNER_KEYS)
+def _construct_pruner_kwargs(
+    keys_str: Optional[str],
+    values_str: Optional[str],
+) -> Dict[str, Optional[Union[str, int, float, bool]]]:
 
     # keys would be empty when `_PRUNER_CLASS` is `NopPruner`
-    if keys is None or keys == "":
+    if keys_str is None or keys_str == "":
         return {}
 
+    assert values_str is not None
+
+    keys = keys_str.split(DELIMITER)
+    values = values_str.split(DELIMITER)
+
     kwargs = {}
-    for key in keys.split(","):
-        key_without_prefix = key.replace("{}_".format(_PREFIX), "")
-        value = os.getenv(key)
-        if value is None:
-            raise ValueError(f"{key} is not found in environment variables.")
-        kwargs[key_without_prefix] = eval(value)
+    for key, value in zip(keys, values):
+        kwargs[key] = eval(value)
 
     return kwargs
 
@@ -167,11 +161,22 @@ class AllenNLPPruningCallback(TrainerCallback):
         # `trial` and `monitor` would be None. `AllenNLPExecutor` sets information
         # for a study name, trial id, monitor, and storage in environment variables.
         else:
-            environment_variables = _get_environment_variables_for_trial()
-            study_name = environment_variables["study_name"]
-            trial_id = environment_variables["trial_id"]
-            monitor = environment_variables["monitor"]
-            storage = environment_variables["storage"]
+            current_process = psutil.Process()
+
+            if os.getenv("OPTUNA_ALLENNLP_USE_DISTRIBUTED") == "1":
+                os.environ.pop("OPTUNA_ALLENNLP_USE_DISTRIBUTED")
+                parent_process = current_process.parent()
+                target_pid = parent_process.ppid()
+
+            else:
+                target_pid = current_process.ppid()
+
+            variable_manager = _VariableManager(target_pid)
+
+            study_name = variable_manager.get_value("study_name")
+            trial_id = variable_manager.get_value("trial_id")
+            monitor = variable_manager.get_value("monitor")
+            storage = variable_manager.get_value("storage_name")
 
             if study_name is None or trial_id is None or monitor is None or storage is None:
                 message = (
@@ -195,7 +200,17 @@ class AllenNLPPruningCallback(TrainerCallback):
                     )
                     raise RuntimeError(message)
 
-                study = load_study(study_name, storage, pruner=_create_pruner())
+                pruner = _create_pruner(
+                    variable_manager.get_value("pruner_class"),
+                    variable_manager.get_value("pruner_keys"),
+                    variable_manager.get_value("pruner_values"),
+                )
+
+                study = load_study(
+                    study_name,
+                    storage,
+                    pruner=pruner,
+                )
                 self._trial = Trial(study, int(trial_id))
                 self._monitor = monitor
 
