@@ -384,8 +384,12 @@ def test_allennlp_pruning_callback_with_executor(
         pruner = pruner_class(**pruner_kwargs)  # type: ignore
         run_allennlp_executor(pruner)
         process = psutil.Process()
-        manager = _VariableManager(process.ppid(), dict(os.environ))
-        ret_pruner = _create_pruner(manager.pruner_class, manager.pruner_keys, manager.prefix)
+        manager = _VariableManager(process.ppid())
+        ret_pruner = _create_pruner(
+            manager.get_value("pruner_class"),
+            manager.get_value("pruner_keys"),
+            manager.get_value("pruner_values"),
+        )
 
         assert isinstance(ret_pruner, pruner_class)
         for key, value in pruner_kwargs.items():
