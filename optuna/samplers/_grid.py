@@ -90,9 +90,7 @@ class GridSampler(BaseSampler):
         optimization.
 
     Note:
-        When the trial is created by :meth:`~optuna.study.Study.enqueue_trial`,
-        :class:`~optuna.samplers.GridSampler` does not consider the trial to be a grid. We should
-        specify all parameters with :meth:`~optuna.study.Study.enqueue_trial` in this case.
+        All parameters must be specified when using :class:`~optuna.samplers.GridSampler` with :meth:`~optuna.study.Study.enqueue_trial`.
 
     Args:
         search_space:
@@ -169,7 +167,7 @@ class GridSampler(BaseSampler):
     ) -> Any:
 
         if "grid_id" not in trial.system_attrs:
-            message = "You should specify all parameters in enqueue_trial when using GridSampler."
+            message = "All parameters must be specified when using GridSampler with enqueue_trial."
             raise ValueError(message)
 
         if param_name not in self._search_space:
