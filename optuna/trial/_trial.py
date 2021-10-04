@@ -518,6 +518,11 @@ class Trial(BaseTrial):
             function internally. Thus, it accepts all float-like types (e.g., ``numpy.float32``).
             If the conversion fails, a ``TypeError`` is raised.
 
+        .. note::
+            If this method is called multiple times at the same ``step`` in a trial,
+            reported ``value`` only the first time is stored and the reported values
+            from the second time are ignored.
+
         Example:
 
             Report intermediate scores of `SGDClassifier <https://scikit-learn.org/stable/modules/
