@@ -69,7 +69,7 @@ class Model(pl.LightningModule):
         return torch.utils.data.DataLoader(dataset, batch_size=1)
 
 
-class Model_DDP(pl.LightningModule):
+class ModelDDP(pl.LightningModule):
     def __init__(self) -> None:
 
         super().__init__()
@@ -179,7 +179,7 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
             callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
         )
 
-        model = Model_DDP()
+        model = ModelDDP()
         trainer.fit(model)
 
         return 1.0
@@ -214,7 +214,7 @@ def test_pytorch_lightning_pruning_callback_ddp_unsupported_storage(
             callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
         )
 
-        model = Model_DDP()
+        model = ModelDDP()
         trainer.fit(model)
 
         return 1.0

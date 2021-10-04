@@ -6,6 +6,11 @@ import optuna
 from optuna.storages._cached_storage import _CachedStorage
 
 
+# Define key names of `Trial.system_attrs`.
+_PRUNED_KEY = "ddp_pl:pruned"
+_EPOCH_KEY = "ddp_pl:epoch"
+
+
 with optuna._imports.try_import() as _imports:
     import pytorch_lightning as pl
     from pytorch_lightning import LightningModule
@@ -52,8 +57,8 @@ class PyTorchLightningPruningCallback(Callback):
                 raise ValueError("PyTorch Lightning>=1.4.0 is required in DDP.")
             if not isinstance(self._trial.study._storage, _CachedStorage):
                 raise ValueError(
-                    ":class:`~optuna.integration.PyTorchLightningPruningCallback`"
-                    " supports only :class:`~optuna.storages.RDBStorage` in DDP."
+                    "optuna.integration.PyTorchLightningPruningCallback"
+                    " supports only optuna.storages.RDBStorage in DDP."
                 )
 
     def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
@@ -80,23 +85,23 @@ class PyTorchLightningPruningCallback(Callback):
             message = "Trial was pruned at epoch {}.".format(epoch)
             raise optuna.TrialPruned(message)
         else:
-            # stop every ddp process if global rank 0 process decides to stop
+            # Stop every DDP process if global rank 0 process decides to stop.
             trainer.should_stop = True
             if trainer.is_global_zero:
-                self._trial.set_system_attr("pruned", True)
-                self._trial.set_system_attr("epoch", epoch)
+                self._trial.set_system_attr(_PRUNED_KEY, True)
+                self._trial.set_system_attr(_EPOCH_KEY, epoch)
 
     def on_fit_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         if not self.is_ddp_backend:
             return
 
         # Because on_validation_end is executed in spawned processes,
-        # _trial_report is necessary to update the memory in main process, not to update the RDB.
+        # _trial.report is necessary to update the memory in main process, not to update the RDB.
         _trial_id = self._trial._trial_id
         _study = self._trial.study
         _trial = _study._storage._backend.get_trial(_trial_id)  # type: ignore
-        is_pruned = _trial.system_attrs.get("pruned")
-        epoch = _trial.system_attrs.get("epoch")
+        is_pruned = _trial.system_attrs.get(_PRUNED_KEY)
+        epoch = _trial.system_attrs.get(_EPOCH_KEY)
         intermediate_values = _trial.intermediate_values
         for step, value in intermediate_values.items():
             self._trial.report(value, step=step)
