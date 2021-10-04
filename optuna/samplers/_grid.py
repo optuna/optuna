@@ -90,7 +90,8 @@ class GridSampler(BaseSampler):
         optimization.
 
     Note:
-        All parameters must be specified when using :class:`~optuna.samplers.GridSampler` with :meth:`~optuna.study.Study.enqueue_trial`.
+        All parameters must be specified when using :class:`~optuna.samplers.GridSampler` with
+        :meth:`~optuna.study.Study.enqueue_trial`.
 
     Args:
         search_space:
