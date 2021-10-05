@@ -39,11 +39,48 @@ ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]
 _logger = logging.get_logger(__name__)
 
 
-class BaseStudy(object):
-    def __init__(self, study_id: int, storage: storages.BaseStorage) -> None:
+class Study:
+    """A study corresponds to an optimization task, i.e., a set of trials.
 
+    This object provides interfaces to run a new :class:`~optuna.trial.Trial`, access trials'
+    history, set/get user-defined attributes of the study itself.
+
+    Note that the direct use of this constructor is not recommended.
+    To create and load a study, please refer to the documentation of
+    :func:`~optuna.study.create_study` and :func:`~optuna.study.load_study` respectively.
+
+    """
+
+    def __init__(
+        self,
+        study_name: str,
+        storage: Union[str, storages.BaseStorage],
+        sampler: Optional["samplers.BaseSampler"] = None,
+        pruner: Optional[pruners.BasePruner] = None,
+    ) -> None:
+
+        self.study_name = study_name
+        storage = storages.get_storage(storage)
+        study_id = storage.get_study_id_from_name(study_name)
         self._study_id = study_id
         self._storage = storage
+
+        self.sampler = sampler or samplers.TPESampler()
+        self.pruner = pruner or pruners.MedianPruner()
+
+        self._optimize_lock = threading.Lock()
+        self._stop_flag = False
+
+    def __getstate__(self) -> Dict[Any, Any]:
+
+        state = self.__dict__.copy()
+        del state["_optimize_lock"]
+        return state
+
+    def __setstate__(self, state: Dict[Any, Any]) -> None:
+
+        self.__dict__.update(state)
+        self._optimize_lock = threading.Lock()
 
     @property
     def best_params(self) -> Dict[str, Any]:
@@ -142,6 +179,16 @@ class BaseStudy(object):
         return self._storage.get_study_directions(self._study_id)
 
     @property
+    def system_attrs(self) -> Dict[str, Any]:
+        """Return system attributes.
+
+        Returns:
+            A dictionary containing all system attributes.
+        """
+
+        return copy.deepcopy(self._storage.get_study_system_attrs(self._study_id))
+
+    @property
     def trials(self) -> List[FrozenTrial]:
         """Return all trials in the study.
 
@@ -155,14 +202,44 @@ class BaseStudy(object):
 
         return self.get_trials(deepcopy=True, states=None)
 
-    def _is_multi_objective(self) -> bool:
-        """Return :obj:`True` if the study has multiple objectives.
+    @property
+    def user_attrs(self) -> Dict[str, Any]:
+        """Return user attributes.
+
+        .. seealso::
+
+            See :func:`~optuna.study.Study.set_user_attr` for related method.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+
+                def objective(trial):
+                    x = trial.suggest_float("x", 0, 1)
+                    y = trial.suggest_float("y", 0, 1)
+                    return x ** 2 + y ** 2
+
+
+                study = optuna.create_study()
+
+                study.set_user_attr("objective function", "quadratic function")
+                study.set_user_attr("dimensions", 2)
+                study.set_user_attr("contributors", ["Akiba", "Sano"])
+
+                assert study.user_attrs == {
+                    "objective function": "quadratic function",
+                    "dimensions": 2,
+                    "contributors": ["Akiba", "Sano"],
+                }
 
         Returns:
-            A boolean value indicates if `self.directions` has more than 1 element or not.
+            A dictionary containing all user attributes.
         """
 
-        return len(self.directions) > 1
+        return copy.deepcopy(self._storage.get_study_user_attrs(self._study_id))
 
     def get_trials(
         self,
@@ -204,98 +281,6 @@ class BaseStudy(object):
 
         self._storage.read_trials_from_remote_storage(self._study_id)
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
-
-
-class Study(BaseStudy):
-    """A study corresponds to an optimization task, i.e., a set of trials.
-
-    This object provides interfaces to run a new :class:`~optuna.trial.Trial`, access trials'
-    history, set/get user-defined attributes of the study itself.
-
-    Note that the direct use of this constructor is not recommended.
-    To create and load a study, please refer to the documentation of
-    :func:`~optuna.study.create_study` and :func:`~optuna.study.load_study` respectively.
-
-    """
-
-    def __init__(
-        self,
-        study_name: str,
-        storage: Union[str, storages.BaseStorage],
-        sampler: Optional["samplers.BaseSampler"] = None,
-        pruner: Optional[pruners.BasePruner] = None,
-    ) -> None:
-
-        self.study_name = study_name
-        storage = storages.get_storage(storage)
-        study_id = storage.get_study_id_from_name(study_name)
-        super().__init__(study_id, storage)
-
-        self.sampler = sampler or samplers.TPESampler()
-        self.pruner = pruner or pruners.MedianPruner()
-
-        self._optimize_lock = threading.Lock()
-        self._stop_flag = False
-
-    def __getstate__(self) -> Dict[Any, Any]:
-
-        state = self.__dict__.copy()
-        del state["_optimize_lock"]
-        return state
-
-    def __setstate__(self, state: Dict[Any, Any]) -> None:
-
-        self.__dict__.update(state)
-        self._optimize_lock = threading.Lock()
-
-    @property
-    def user_attrs(self) -> Dict[str, Any]:
-        """Return user attributes.
-
-        .. seealso::
-
-            See :func:`~optuna.study.Study.set_user_attr` for related method.
-
-        Example:
-
-            .. testcode::
-
-                import optuna
-
-
-                def objective(trial):
-                    x = trial.suggest_float("x", 0, 1)
-                    y = trial.suggest_float("y", 0, 1)
-                    return x ** 2 + y ** 2
-
-
-                study = optuna.create_study()
-
-                study.set_user_attr("objective function", "quadratic function")
-                study.set_user_attr("dimensions", 2)
-                study.set_user_attr("contributors", ["Akiba", "Sano"])
-
-                assert study.user_attrs == {
-                    "objective function": "quadratic function",
-                    "dimensions": 2,
-                    "contributors": ["Akiba", "Sano"],
-                }
-
-        Returns:
-            A dictionary containing all user attributes.
-        """
-
-        return copy.deepcopy(self._storage.get_study_user_attrs(self._study_id))
-
-    @property
-    def system_attrs(self) -> Dict[str, Any]:
-        """Return system attributes.
-
-        Returns:
-            A dictionary containing all system attributes.
-        """
-
-        return copy.deepcopy(self._storage.get_study_system_attrs(self._study_id))
 
     def optimize(
         self,
@@ -967,6 +952,15 @@ class Study(BaseStudy):
 
         for trial in trials:
             self.add_trial(trial)
+
+    def _is_multi_objective(self) -> bool:
+        """Return :obj:`True` if the study has multiple objectives.
+
+        Returns:
+            A boolean value indicates if `self.directions` has more than 1 element or not.
+        """
+
+        return len(self.directions) > 1
 
     def _pop_waiting_trial_id(self) -> Optional[int]:
 
