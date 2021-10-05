@@ -5,6 +5,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+import warnings
 
 import optuna
 from optuna._experimental import experimental
@@ -158,22 +159,20 @@ class AllenNLPExecutor(object):
             url = ""
 
         target_pid = psutil.Process().ppid()
-        self.variable_manager = _VariableManager(target_pid)
+        variable_manager = _VariableManager(target_pid)
 
         pruner_params = _fetch_pruner_config(trial)
         pruner_params = {key: repr(value) for key, value in pruner_params.items()}
 
-        self.variable_manager.set_value("study_name", trial.study.study_name)
-        self.variable_manager.set_value("trial_id", str(trial._trial_id))
-        self.variable_manager.set_value("storage_name", url)
-        self.variable_manager.set_value("monitor", metrics)
+        variable_manager.set_value("study_name", trial.study.study_name)
+        variable_manager.set_value("trial_id", str(trial._trial_id))
+        variable_manager.set_value("storage_name", url)
+        variable_manager.set_value("monitor", metrics)
 
         if trial.study.pruner is not None:
-            self.variable_manager.set_value("pruner_class", type(trial.study.pruner).__name__)
-            self.variable_manager.set_value("pruner_keys", DELIMITER.join(pruner_params.keys()))
-            self.variable_manager.set_value(
-                "pruner_values", DELIMITER.join(pruner_params.values())
-            )
+            variable_manager.set_value("pruner_class", type(trial.study.pruner).__name__)
+            variable_manager.set_value("pruner_keys", DELIMITER.join(pruner_params.keys()))
+            variable_manager.set_value("pruner_values", DELIMITER.join(pruner_params.values()))
 
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.
@@ -212,13 +211,17 @@ class AllenNLPExecutor(object):
         self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
 
-        trainer_params = params["trainer"]
-        if "callbacks" in trainer_params:
-            with_pruner = any([c["type"] == "optuna_pruner" for c in trainer_params["callbacks"]])
+        if "distributed" in params:
 
-            if with_pruner:
-                is_distributed = "distributed" in params
-                self.variable_manager.acquire_lock(is_distributed)
+            if "OPTUNA_ALLENNLP_USE_DISTRIBUTED" in os.environ:
+                warnings.warn(
+                    "Other process may already exists."
+                    " If you have some trouble, please unsed an environment"
+                    " variable `OPTUNA_ALLENNLP_USE_DISTRIBUTED`"
+                    " and try it again."
+                )
+
+            os.environ["OPTUNA_ALLENNLP_USE_DISTRIBUTED"] = "1"
 
         allennlp.commands.train.train_model(
             params=params,

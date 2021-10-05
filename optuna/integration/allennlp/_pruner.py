@@ -1,3 +1,4 @@
+import os
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -24,6 +25,7 @@ with try_import() as _imports:
 if _imports.is_successful():
     from allennlp.training import GradientDescentTrainer
     from allennlp.training import TrainerCallback
+    import psutil
 
 else:
     # I disable mypy here since `allennlp.training.TrainerCallback` is a subclass of `Registrable`
@@ -160,7 +162,17 @@ class AllenNLPPruningCallback(TrainerCallback):
         # `trial` and `monitor` would be None. `AllenNLPExecutor` sets information
         # for a study name, trial id, monitor, and storage in environment variables.
         else:
-            variable_manager = _VariableManager.check_and_release_lock()
+            current_process = psutil.Process()
+
+            if os.getenv("OPTUNA_ALLENNLP_USE_DISTRIBUTED") == "1":
+                os.environ.pop("OPTUNA_ALLENNLP_USE_DISTRIBUTED")
+                parent_process = current_process.parent()
+                target_pid = parent_process.ppid()
+
+            else:
+                target_pid = current_process.ppid()
+
+            variable_manager = _VariableManager(target_pid)
 
             study_name = variable_manager.get_value("study_name")
             trial_id = variable_manager.get_value("trial_id")
