@@ -170,13 +170,18 @@ class Trial(BaseTrial):
             if log:
                 raise ValueError("The parameter `step` is not supported when `log` is True.")
             else:
-                return self.suggest_discrete_uniform(name, low, high, step)
+                distribution: Union[
+                    DiscreteUniformDistribution, LogUniformDistribution, UniformDistribution
+                ] = DiscreteUniformDistribution(low=low, high=high, q=step)
         else:
             if log:
-                return self.suggest_loguniform(name, low, high)
+                distribution = LogUniformDistribution(low=low, high=high)
             else:
-                return self.suggest_uniform(name, low, high)
+                distribution = UniformDistribution(low=low, high=high)
 
+        self._check_distribution(name, distribution)
+
+        return self._suggest(name, distribution)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
