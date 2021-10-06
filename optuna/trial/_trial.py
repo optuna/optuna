@@ -520,7 +520,7 @@ class Trial(BaseTrial):
 
         .. note::
             If this method is called multiple times at the same ``step`` in a trial,
-            reported ``value`` only the first time is stored and the reported values
+            the reported ``value`` only the first time is stored and the reported values
             from the second time are ignored.
 
         Example:
