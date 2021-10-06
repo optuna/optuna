@@ -139,9 +139,9 @@ class AllenNLPExecutor(object):
         if include_package is None:
             include_package = []
         if isinstance(include_package, str):
-            self._include_package = [include_package]
-        else:
-            self._include_package = include_package
+            include_package = [include_package]
+
+        self._include_package = include_package + ["optuna.integration.allennlp"]
 
         storage = trial.study._storage
 
