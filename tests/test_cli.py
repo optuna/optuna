@@ -1270,6 +1270,73 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
         assert "`--sampler_kwargs` is set without `--sampler`." in error_message
 
 
+@pytest.mark.parametrize(
+    "direction,directions,sampler,sampler_kwargs",
+    [
+        (None, None, None, None),
+        ("minimize", None, None, None),
+        (None, "minimize maximize", None, None),
+        (None, None, "RandomSampler", None),
+        (None, None, "TPESampler", '{"multivariate": true}'),
+        (None, None, None, None),
+        (None, None, None, None),
+    ],
+)
+def test_create_study_and_ask(
+    direction: Optional[str],
+    directions: Optional[str],
+    sampler: Optional[str],
+    sampler_kwargs: Optional[str],
+) -> None:
+
+    study_name = "test_study"
+    search_space = (
+        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
+    )
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        create_study_args = [
+            "optuna",
+            "create-study",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+        ]
+
+        if direction is not None:
+            create_study_args += ["--direction", direction]
+        if directions is not None:
+            create_study_args += ["--directions"] + directions.split()
+        subprocess.check_call(create_study_args)
+
+        args = [
+            "optuna",
+            "ask",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+            "--search-space",
+            search_space,
+        ]
+
+        if sampler is not None:
+            args += ["--sampler", sampler]
+        if sampler_kwargs is not None:
+            args += ["--sampler-kwargs", sampler_kwargs]
+
+        output = str(subprocess.check_output(args).decode().strip())
+        trial = _parse_output(output, "json")
+
+        assert trial["number"] == 0
+        assert 0 <= trial["params"]["x"] <= 1
+        assert trial["params"]["y"] == "foo"
+
+
 def test_tell() -> None:
     study_name = "test_study"
 

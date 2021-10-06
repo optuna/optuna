@@ -833,7 +833,14 @@ class _Ask(_BaseCommand):
         else:
             search_space = {}
 
-        study = optuna.create_study(**create_study_kwargs)
+        try:
+            study = optuna.load_study(
+                create_study_kwargs["study_name"],
+                create_study_kwargs["storage"],
+                create_study_kwargs.get("sampler"),
+            )
+        except KeyError:
+            study = optuna.create_study(**create_study_kwargs)
         trial = study.ask(fixed_distributions=search_space)
 
         self.logger.info(f"Asked trial {trial.number} with parameters {trial.params}.")
