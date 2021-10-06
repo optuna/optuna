@@ -80,7 +80,8 @@ def test_check_distribution_suggest_uniform(storage_mode: str) -> None:
             trial.suggest_uniform("x", 10, 20)
             trial.suggest_uniform("x", 10, 30)
 
-        # we expect exactly one warning
+        # we expect exactly one warning (not counting ones caused by deprecation)
+        record = [r for r in record if r.category != FutureWarning]
         assert len(record) == 1
 
         with pytest.raises(ValueError):
@@ -104,7 +105,8 @@ def test_check_distribution_suggest_loguniform(storage_mode: str) -> None:
             trial.suggest_loguniform("x", 10, 20)
             trial.suggest_loguniform("x", 10, 30)
 
-        # we expect exactly one warning
+        # we expect exactly one warning (not counting ones caused by deprecation)
+        record = [r for r in record if r.category != FutureWarning]
         assert len(record) == 1
 
         with pytest.raises(ValueError):
@@ -128,7 +130,8 @@ def test_check_distribution_suggest_discrete_uniform(storage_mode: str) -> None:
             trial.suggest_discrete_uniform("x", 10, 20, 2)
             trial.suggest_discrete_uniform("x", 10, 22, 2)
 
-        # we expect exactly one warning
+        # we expect exactly one warning (not counting ones caused by deprecation)
+        record = [r for r in record if r.category != FutureWarning]
         assert len(record) == 1
 
         with pytest.raises(ValueError):
