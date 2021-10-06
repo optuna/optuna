@@ -361,13 +361,18 @@ def test_allennlp_pruning_callback_with_invalid_storage() -> None:
         ),
     ],
 )
+@pytest.mark.parametrize(
+    "input_config_file",
+    [
+        "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet",
+        "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner_distributed.jsonnet",  # noqa: E501
+    ],
+)
 def test_allennlp_pruning_callback_with_executor(
-    pruner_class: Type[optuna.pruners.BasePruner], pruner_kwargs: Dict[str, Union[int, float]]
+    pruner_class: Type[optuna.pruners.BasePruner],
+    pruner_kwargs: Dict[str, Union[int, float]],
+    input_config_file: str,
 ) -> None:
-    input_config_file = (
-        "tests/integration_tests/allennlp_tests/example_with_executor_and_pruner.jsonnet"
-    )
-
     def run_allennlp_executor(pruner: optuna.pruners.BasePruner) -> None:
         study = optuna.create_study(direction="maximize", pruner=pruner, storage=storage)
         trial = optuna.trial.Trial(study, study._storage.create_new_trial(study._study_id))
