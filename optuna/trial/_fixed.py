@@ -6,6 +6,7 @@ from typing import Sequence
 from typing import Union
 
 from optuna import distributions
+from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -15,6 +16,9 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
+
+
+_suggest_deprecated_msg = "Use `suggest_float` instead."
 
 
 class FixedTrial(BaseTrial):
@@ -86,17 +90,20 @@ class FixedTrial(BaseTrial):
             else:
                 return self._suggest(name, UniformDistribution(low=low, high=high))
 
+    @deprecated("2.11.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
-        return self._suggest(name, UniformDistribution(low=low, high=high))
+        return self.suggest_float(name, low, high)
 
+    @deprecated("2.11.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
-        return self._suggest(name, LogUniformDistribution(low=low, high=high))
+        return self.suggest_float(name, low, high, log=True)
 
+    @deprecated("2.11.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
-        discrete = DiscreteUniformDistribution(low=low, high=high, q=q)
-        return self._suggest(name, discrete)
+
+        return self.suggest_float(name, low, high, step=q)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         if step != 1:

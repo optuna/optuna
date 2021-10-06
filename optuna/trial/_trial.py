@@ -11,6 +11,7 @@ import optuna
 from optuna import distributions
 from optuna import logging
 from optuna import pruners
+from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
@@ -23,6 +24,7 @@ from optuna.trial._base import BaseTrial
 
 
 _logger = logging.get_logger(__name__)
+_suggest_deprecated_msg = "Use `suggest_float` instead."
 
 
 class Trial(BaseTrial):
@@ -182,6 +184,8 @@ class Trial(BaseTrial):
         self._check_distribution(name, distribution)
 
         return self._suggest(name, distribution)
+
+    @deprecated("2.11.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -235,12 +239,9 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = UniformDistribution(low=low, high=high)
+        return self.suggest_float(name, low, high)
 
-        self._check_distribution(name, distribution)
-
-        return self._suggest(name, distribution)
-
+    @deprecated("2.11.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -289,12 +290,9 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = LogUniformDistribution(low=low, high=high)
+        return self.suggest_float(name, low, high, log=True)
 
-        self._check_distribution(name, distribution)
-
-        return self._suggest(name, distribution)
-
+    @deprecated("2.11.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         """Suggest a value for the discrete parameter.
 
@@ -350,11 +348,7 @@ class Trial(BaseTrial):
             A suggested float value.
         """
 
-        distribution = DiscreteUniformDistribution(low=low, high=high, q=q)
-
-        self._check_distribution(name, distribution)
-
-        return self._suggest(name, distribution)
+        return self.suggest_float(name, low, high, step=q)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         """Suggest a value for the integer parameter.
