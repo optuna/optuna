@@ -229,6 +229,7 @@ class NSGAIISampler(BaseSampler):
             raise ValueError(
                 f"Using {crossover},"
                 f" the population size should be greater than or equal to {n_parents}."
+                f"The specified `population_size` is {population_size}."
             )
 
         self._population_size = population_size
