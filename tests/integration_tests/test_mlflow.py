@@ -7,7 +7,6 @@ from typing import Union
 import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
-import numpy as np
 import py
 import pytest
 
@@ -422,9 +421,7 @@ def test_initialize_experiment(tmpdir: py.path.local) -> None:
 @pytest.mark.parametrize(
     "names,values", [(["metric"], [3.17]), (["metric1", "metric2"], [3.17, 3.18])]
 )
-def test_log_metric(
-    tmpdir: py.path.local, names: List[str], values: List[float]
-) -> None:
+def test_log_metric(tmpdir: py.path.local, names: List[str], values: List[float]) -> None:
 
     tracking_file_name = "file:{}".format(tmpdir)
     study_name = "my_study"
