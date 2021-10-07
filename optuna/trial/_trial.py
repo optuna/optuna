@@ -24,7 +24,7 @@ from optuna.trial._base import BaseTrial
 
 
 _logger = logging.get_logger(__name__)
-_suggest_deprecated_msg = "Use `suggest_float` instead."
+_suggest_deprecated_msg = "Use :func:`~optuna.trial.Trial.suggest_float` instead."
 
 
 class Trial(BaseTrial):

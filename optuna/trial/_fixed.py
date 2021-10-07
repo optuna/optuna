@@ -18,7 +18,7 @@ from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
 
 
-_suggest_deprecated_msg = "Use `suggest_float` instead."
+_suggest_deprecated_msg = "Use :func:`~optuna.trial.FixedTrial.suggest_float` instead."
 
 
 class FixedTrial(BaseTrial):

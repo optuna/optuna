@@ -19,7 +19,9 @@ with try_import() as _imports:
     import torch.distributed as dist
 
 
-_suggest_deprecated_msg = "Use `suggest_float` instead."
+_suggest_deprecated_msg = (
+    "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
+)
 
 
 @experimental("2.6.0")

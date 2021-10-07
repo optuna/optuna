@@ -22,7 +22,7 @@ from optuna.trial._state import TrialState
 
 
 _logger = logging.get_logger(__name__)
-_suggest_deprecated_msg = "Use `suggest_float` instead."
+_suggest_deprecated_msg = "Use :func:`~optuna.trial.FrozenTrial.suggest_float` instead."
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
 

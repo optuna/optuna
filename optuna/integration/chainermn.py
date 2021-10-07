@@ -24,7 +24,7 @@ with try_import() as _imports:
     from chainermn.communicators.communicator_base import CommunicatorBase  # NOQA
 
 
-_suggest_deprecated_msg = "Use `suggest_float` instead."
+_suggest_deprecated_msg = "Use :func:`~optuna.integration.ChainerMNTrial.suggest_float` instead."
 
 
 class _ChainerMNObjectiveFunc(object):
