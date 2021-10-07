@@ -280,12 +280,14 @@ class MLflowCallback(object):
         # This sets the tags for MLflow.
         mlflow.set_tags(tags)
 
-    def _log_metrics(self, values: List[Union[float, None]]) -> None:
+    def _log_metrics(self, values: Optional[List[float]]) -> None:
         """Log the trial results as metrics to MLflow.
 
         Args:
             values: Results of a trial.
         """
+        if values is None:
+            return
 
         if isinstance(self._metric_name, str):
             if len(values) > 1:
@@ -308,7 +310,6 @@ class MLflowCallback(object):
             else:
                 names = [*self._metric_name]
 
-        values = [val if val is not None else float("nan") for val in values]
         metrics = {name: val for name, val in zip(names, values)}
         mlflow.log_metrics(metrics)
 
