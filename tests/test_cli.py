@@ -1278,8 +1278,6 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
         (None, "minimize maximize", None, None),
         (None, None, "RandomSampler", None),
         (None, None, "TPESampler", '{"multivariate": true}'),
-        (None, None, None, None),
-        (None, None, None, None),
     ],
 )
 def test_create_study_and_ask(
