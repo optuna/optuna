@@ -179,16 +179,6 @@ class Study:
         return self._storage.get_study_directions(self._study_id)
 
     @property
-    def system_attrs(self) -> Dict[str, Any]:
-        """Return system attributes.
-
-        Returns:
-            A dictionary containing all system attributes.
-        """
-
-        return copy.deepcopy(self._storage.get_study_system_attrs(self._study_id))
-
-    @property
     def trials(self) -> List[FrozenTrial]:
         """Return all trials in the study.
 
@@ -201,45 +191,6 @@ class Study:
         """
 
         return self.get_trials(deepcopy=True, states=None)
-
-    @property
-    def user_attrs(self) -> Dict[str, Any]:
-        """Return user attributes.
-
-        .. seealso::
-
-            See :func:`~optuna.study.Study.set_user_attr` for related method.
-
-        Example:
-
-            .. testcode::
-
-                import optuna
-
-
-                def objective(trial):
-                    x = trial.suggest_float("x", 0, 1)
-                    y = trial.suggest_float("y", 0, 1)
-                    return x ** 2 + y ** 2
-
-
-                study = optuna.create_study()
-
-                study.set_user_attr("objective function", "quadratic function")
-                study.set_user_attr("dimensions", 2)
-                study.set_user_attr("contributors", ["Akiba", "Sano"])
-
-                assert study.user_attrs == {
-                    "objective function": "quadratic function",
-                    "dimensions": 2,
-                    "contributors": ["Akiba", "Sano"],
-                }
-
-        Returns:
-            A dictionary containing all user attributes.
-        """
-
-        return copy.deepcopy(self._storage.get_study_user_attrs(self._study_id))
 
     def get_trials(
         self,
@@ -281,6 +232,55 @@ class Study:
 
         self._storage.read_trials_from_remote_storage(self._study_id)
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
+
+    @property
+    def user_attrs(self) -> Dict[str, Any]:
+        """Return user attributes.
+
+        .. seealso::
+
+            See :func:`~optuna.study.Study.set_user_attr` for related method.
+
+        Example:
+
+            .. testcode::
+
+                import optuna
+
+
+                def objective(trial):
+                    x = trial.suggest_float("x", 0, 1)
+                    y = trial.suggest_float("y", 0, 1)
+                    return x ** 2 + y ** 2
+
+
+                study = optuna.create_study()
+
+                study.set_user_attr("objective function", "quadratic function")
+                study.set_user_attr("dimensions", 2)
+                study.set_user_attr("contributors", ["Akiba", "Sano"])
+
+                assert study.user_attrs == {
+                    "objective function": "quadratic function",
+                    "dimensions": 2,
+                    "contributors": ["Akiba", "Sano"],
+                }
+
+        Returns:
+            A dictionary containing all user attributes.
+        """
+
+        return copy.deepcopy(self._storage.get_study_user_attrs(self._study_id))
+
+    @property
+    def system_attrs(self) -> Dict[str, Any]:
+        """Return system attributes.
+
+        Returns:
+            A dictionary containing all system attributes.
+        """
+
+        return copy.deepcopy(self._storage.get_study_system_attrs(self._study_id))
 
     def optimize(
         self,
