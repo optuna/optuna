@@ -197,11 +197,12 @@ def test_allennlp_executor_with_options() -> None:
         with open(os.path.join(executor._serialization_dir, "metrics.json"), "w") as fout:
             json.dump({executor._metrics: 1.0}, fout)
 
+        expected_include_packages = [package_name, "optuna.integration.allennlp"]
         with mock.patch("allennlp.commands.train.train_model", return_value=None) as mock_obj:
             executor.run()
             assert mock_obj.call_args[1]["force"]
             assert mock_obj.call_args[1]["file_friendly_logging"]
-            assert mock_obj.call_args[1]["include_package"] == [package_name]
+            assert mock_obj.call_args[1]["include_package"] == expected_include_packages
 
 
 def test_dump_best_config() -> None:
