@@ -294,13 +294,6 @@ class InMemoryStorage(BaseStorage):
 
             return trial._trial_id
 
-    def get_trial_number_from_id(self, trial_id: int) -> int:
-
-        with self._lock:
-            self._check_trial_id(trial_id)
-
-            return self._trial_id_to_study_id_and_number[trial_id][1]
-
     def get_best_trial(self, study_id: int) -> FrozenTrial:
 
         with self._lock:
@@ -314,14 +307,6 @@ class InMemoryStorage(BaseStorage):
                     "Best trial can be obtained only for single-objective optimization."
                 )
             return self.get_trial(best_trial_id)
-
-    def get_trial_param(self, trial_id: int, param_name: str) -> float:
-
-        with self._lock:
-            trial = self._get_trial(trial_id)
-
-            distribution = trial.distributions[param_name]
-            return distribution.to_internal_repr(trial.params[param_name])
 
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
