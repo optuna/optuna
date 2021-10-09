@@ -65,10 +65,10 @@ class LightGBMPruningCallback(object):
             `cv method <https://lightgbm.readthedocs.io/en/latest/Python-API.html#lightgbm.cv>`_
             instead of train method.
         report_interval:
-            Check if the trial should report intermediate values for pruning every n-th boosting iteration.
-            By default ``report_interval=1`` and reporting is performed after every iteration.
-            Note that the pruning itself is performed according to the interval definition
-            of the pruner.
+            Check if the trial should report intermediate values for pruning every n-th boosting
+            iteration. By default ``report_interval=1`` and reporting is performed after every
+            iteration. Note that the pruning itself is performed according to the interval
+            definition of the pruner.
     """
 
     def __init__(
