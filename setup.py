@@ -80,7 +80,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn<1.0.0",
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
-            "lightgbm",
+            # TODO(himkt) remove the constraint after resolving the issue #2995
+            # https://github.com/optuna/optuna/issues/2995
+            "lightgbm<3.3.0",
             "torch==1.8.0",
             "torchvision==0.9.0",
             "torchaudio==0.8.0",
@@ -94,7 +96,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
-            "lightgbm",
+            # TODO(himkt) remove the constraint after resolving the issue #2995
+            # https://github.com/optuna/optuna/issues/2995
+            "lightgbm<3.3.0",
             "matplotlib>=3.0.0",
             "mlflow",
             "mpi4py",
@@ -142,7 +146,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
-            "lightgbm",
+            # TODO(himkt) remove the constraint after resolving the issue #2995
+            # https://github.com/optuna/optuna/issues/2995
+            "lightgbm<3.3.0",
             "mlflow",
             "wandb",
             "mpi4py",
