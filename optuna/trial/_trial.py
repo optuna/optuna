@@ -81,11 +81,6 @@ class Trial(BaseTrial):
 
         .. versionadded:: 1.3.0
 
-        .. seealso::
-            Please see also :func:`~optuna.trial.Trial.suggest_uniform`,
-            :func:`~optuna.trial.Trial.suggest_loguniform` and
-            :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
-
         Example:
 
             Suggest a momentum, learning rate and scaling factor of learning rate
@@ -136,8 +131,7 @@ class Trial(BaseTrial):
                 range.
 
                 .. note::
-                    If ``step`` is specified, ``high`` is included as well as ``low`` because
-                    this method falls back to :func:`~optuna.trial.Trial.suggest_discrete_uniform`.
+                    If ``step`` is specified, ``high`` is included as well as ``low``.
 
             step:
                 A step of discretization.
@@ -150,7 +144,6 @@ class Trial(BaseTrial):
                 A flag to sample the value from the log domain or not.
                 If ``log`` is true, the value is sampled from the range in the log domain.
                 Otherwise, the value is sampled from the range in the linear domain.
-                See also :func:`suggest_uniform` and :func:`suggest_loguniform`.
 
                 .. note::
                     The ``step`` and ``log`` arguments cannot be used at the same time. To set
@@ -207,7 +200,7 @@ class Trial(BaseTrial):
 
 
                 def objective(trial):
-                    momentum = trial.suggest_uniform("momentum", 0.0, 1.0)
+                    momentum = trial.suggest_float("momentum", 0.0, 1.0)
                     clf = MLPClassifier(
                         hidden_layer_sizes=(100, 50),
                         momentum=momentum,
@@ -264,7 +257,7 @@ class Trial(BaseTrial):
 
 
                 def objective(trial):
-                    c = trial.suggest_loguniform("c", 1e-5, 1e2)
+                    c = trial.suggest_float("c", 1e-5, 1e2, log=True)
                     clf = SVC(C=c, gamma="scale", random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_valid, y_valid)
@@ -321,7 +314,7 @@ class Trial(BaseTrial):
 
 
                 def objective(trial):
-                    subsample = trial.suggest_discrete_uniform("subsample", 0.1, 1.0, 0.1)
+                    subsample = trial.suggest_float("subsample", 0.1, 1.0, step=0.1)
                     clf = GradientBoostingClassifier(subsample=subsample, random_state=0)
                     clf.fit(X_train, y_train)
                     return clf.score(X_valid, y_valid)
@@ -647,7 +640,7 @@ class Trial(BaseTrial):
 
                 def objective(trial):
                     trial.set_user_attr("BATCHSIZE", 128)
-                    momentum = trial.suggest_uniform("momentum", 0, 1.0)
+                    momentum = trial.suggest_float("momentum", 0, 1.0)
                     clf = MLPClassifier(
                         hidden_layer_sizes=(100, 50),
                         batch_size=trial.user_attrs["BATCHSIZE"],
