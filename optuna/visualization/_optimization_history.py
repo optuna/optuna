@@ -122,12 +122,12 @@ def _get_optimization_history_plot(
         return go.Figure(data=[], layout=layout)
 
     if error_bar:
-        return _get_optimization_history_with_error_bar(studies, target, target_name, layout)
+        return _get_optimization_histories_with_error_bar(studies, target, target_name, layout)
     else:
         return _get_optimization_histories(studies, target, target_name, layout)
 
 
-def _get_optimization_history_with_error_bar(
+def _get_optimization_histories_with_error_bar(
     studies: List[Study],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
@@ -152,7 +152,7 @@ def _get_optimization_history_with_error_bar(
 
     target_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
     for study in studies:
-        trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+        trials = study.get_trials(states=(TrialState.COMPLETE,))
         for t in trials:
             target_values[t.number].append(_target(t))
 
@@ -178,7 +178,7 @@ def _get_optimization_history_with_error_bar(
     if target is None:
         best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
         for study in studies:
-            trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+            trials = study.get_trials(states=(TrialState.COMPLETE,))
 
             if study.direction == StudyDirection.MINIMIZE:
                 best_vs = np.minimum.accumulate([cast(float, t.value) for t in trials])
@@ -227,7 +227,7 @@ def _get_optimization_histories(
 
     traces = []
     for study in studies:
-        trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+        trials = study.get_trials(states=(TrialState.COMPLETE,))
         if target is None:
             if study.direction == StudyDirection.MINIMIZE:
                 best_values = np.minimum.accumulate([cast(float, t.value) for t in trials])
