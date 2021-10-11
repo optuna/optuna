@@ -24,6 +24,9 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 ## News
 
 Help us create the next version of Optuna!
+
+Optuna 3.0 Roadmap published for review. Please take a look at the [planned improvements to Optuna](https://github.com/optuna/optuna/wiki/Optuna-V3-Roadmap), and share your feedback in the github issues. PR contributions also welcome!
+
 Please take a few minutes to fill in this survey, and let us know how you use Optuna now and what improvements you'd like.🤔
 
 All questions optional. 🙇‍♂️
