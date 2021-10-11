@@ -451,6 +451,35 @@ def test_log_metric(tmpdir: py.path.local, names: List[str], values: List[float]
     )
 
 
+def test_log_metric_none(tmpdir: py.path.local) -> None:
+    tracking_file_name = "file:{}".format(tmpdir)
+    metric_name = "my_metric_name"
+    study_name = "my_study"
+    metric_value = None
+
+    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
+    study = optuna.create_study(study_name=study_name)
+    mlflc._initialize_experiment(study)
+
+    with mlflow.start_run():
+        mlflc._log_metrics(metric_value)
+
+    mlfl_client = MlflowClient(tracking_file_name)
+    experiments = mlfl_client.list_experiments()
+    experiment = experiments[0]
+    experiment_id = experiment.experiment_id
+
+    run_infos = mlfl_client.list_run_infos(experiment_id)
+    assert len(run_infos) == 1
+
+    first_run_id = run_infos[0].run_id
+    first_run = mlfl_client.get_run(first_run_id)
+    first_run_dict = first_run.to_dictionary()
+
+    # when `values` is `None`, do not save values with metric names
+    assert metric_name not in first_run_dict["data"]["metrics"]
+
+
 def test_log_params(tmpdir: py.path.local) -> None:
     tracking_file_name = "file:{}".format(tmpdir)
     metric_name = "my_metric_name"
