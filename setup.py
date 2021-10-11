@@ -59,7 +59,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
-            "scikit-learn>=0.24.2",
+            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
+            # after skopt supports sklearn >= 1.0.0
+            "scikit-learn>=0.24.2,<1.0.0",
             "scikit-optimize",
             "mlflow",
         ],
@@ -73,7 +75,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "sphinx-plotly-directive",
             "pillow",
             "matplotlib",
-            "scikit-learn",
+            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
+            # after skopt supports sklearn >= 1.0.0
+            "scikit-learn<1.0.0",
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
             "lightgbm",
@@ -98,7 +102,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "plotly>=4.0.0",
             "pytest",
-            "scikit-learn>=0.24.2",
+            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
+            # after skopt supports sklearn >= 1.0.0
+            "scikit-learn>=0.24.2,<1.0.0",
             "scikit-optimize",
             "xgboost",
             "tensorflow",
@@ -112,7 +118,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0 ; sys_platform=='darwin'",
             "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
             "torchaudio==0.8.0",
-            "allennlp>=2.2.0",
+            "allennlp>=2.2.0,<2.7.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
@@ -126,7 +132,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
-            "scikit-learn>=0.24.2",
+            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
+            # after skopt supports sklearn >= 1.0.0
+            "scikit-learn>=0.24.2,<1.0.0",
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
@@ -140,7 +148,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "pandas",
-            "scikit-learn>=0.24.2",
+            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
+            # after skopt supports sklearn >= 1.0.0
+            "scikit-learn>=0.24.2,<1.0.0",
             "scikit-optimize",
             "xgboost",
             "tensorflow",
@@ -154,7 +164,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.9.0 ; sys_platform=='darwin'",
             "torchvision==0.9.0+cpu ; sys_platform!='darwin'",
             "torchaudio==0.8.0",
-            "allennlp>=2.2.0",
+            "allennlp>=2.2.0,<2.7.0",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
         ],
@@ -206,6 +216,9 @@ setup(
             "delete-study = optuna.cli:_DeleteStudy",
             "study set-user-attr = optuna.cli:_StudySetUserAttribute",
             "studies = optuna.cli:_Studies",
+            "trials = optuna.cli:_Trials",
+            "best-trial = optuna.cli:_BestTrial",
+            "best-trials = optuna.cli:_BestTrials",
             "dashboard = optuna.cli:_Dashboard",
             "study optimize = optuna.cli:_StudyOptimize",
             "storage upgrade = optuna.cli:_StorageUpgrade",

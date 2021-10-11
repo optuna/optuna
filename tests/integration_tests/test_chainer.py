@@ -80,8 +80,8 @@ def test_chainer_pruning_extension_observation_nan() -> None:
     trial = create_running_trial(study, 1.0)
     extension = ChainerPruningExtension(trial, "main/loss", (1, "epoch"))
 
-    MockTrainer = namedtuple("_MockTrainer", ("observation", "updater"))
-    MockUpdater = namedtuple("_MockUpdater", ("epoch"))
+    MockTrainer = namedtuple("MockTrainer", ("observation", "updater"))
+    MockUpdater = namedtuple("MockUpdater", ("epoch"))
     trainer = MockTrainer(observation={"main/loss": float("nan")}, updater=MockUpdater(1))
 
     with patch.object(extension, "_observation_exists", Mock(return_value=True)) as mock:
@@ -94,7 +94,7 @@ def test_observation_exists() -> None:
 
     study = optuna.create_study()
     trial = create_running_trial(study, 1.0)
-    MockTrainer = namedtuple("_MockTrainer", ("observation",))
+    MockTrainer = namedtuple("MockTrainer", ("observation",))
     trainer = MockTrainer(observation={"OK": 0})
 
     # Trigger is deactivated. Return False whether trainer has observation or not.

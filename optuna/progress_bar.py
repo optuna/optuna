@@ -25,11 +25,11 @@ class _TqdmLoggingHandler(logging.StreamHandler):
 
 
 class _ProgressBar(object):
-    """Progress Bar implementation for `Study.optimize` on the top of `tqdm`.
+    """Progress Bar implementation for :func:`~optuna.study.Study.optimize` on the top of `tqdm`.
 
     Args:
         is_valid:
-            Whether to show progress bars in `Study.optimize`.
+            Whether to show progress bars in :func:`~optuna.study.Study.optimize`.
         n_trials:
             The number of trials.
         timeout:
@@ -60,11 +60,11 @@ class _ProgressBar(object):
         optuna_logging._get_library_root_logger().addHandler(_tqdm_handler)
 
     def update(self, elapsed_seconds: Optional[float]) -> None:
-        """Update the progress bars if ``is_valid`` is ``True``.
+        """Update the progress bars if ``is_valid`` is :obj:`True`.
 
         Args:
             elapsed_seconds:
-                The time past since `Study.optimize` started.
+                The time past since :func:`~optuna.study.Study.optimize` started.
         """
         if self._is_valid:
             self._progress_bar.update(1)

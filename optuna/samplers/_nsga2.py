@@ -68,10 +68,10 @@ class NSGAIISampler(BaseSampler):
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
             be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
             constraints is violated. A value equal to or smaller than 0 is considered feasible.
-            If constraints_func returns more than one value for a trial, that trial is considered
-            feasible if and only if all values are equal to 0 or smaller.
+            If ``constraints_func`` returns more than one value for a trial, that trial is
+            considered feasible if and only if all values are equal to 0 or smaller.
 
-            The constraint_func will be evaluated after each successful trial.
+            The ``constraints_func`` will be evaluated after each successful trial.
             The function won't be called when trials fail or they are pruned, but this behavior is
             subject to change in the future releases.
 

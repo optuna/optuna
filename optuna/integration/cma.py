@@ -459,6 +459,9 @@ class _Optimizer(object):
     ) -> Any:
 
         dist = search_space[param_name]
+        if isinstance(dist, UniformDistribution):
+            # Type of cma_param_value is np.floating, so cast it to Python's built-in float.
+            return float(cma_param_value)
         if isinstance(dist, LogUniformDistribution):
             return math.exp(cma_param_value)
         if isinstance(dist, DiscreteUniformDistribution):

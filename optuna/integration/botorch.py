@@ -34,7 +34,7 @@ with try_import() as _imports:
     from botorch.models.transforms.outcome import Standardize
     from botorch.optim import optimize_acqf
     from botorch.sampling.samplers import SobolQMCNormalSampler
-    from botorch.utils.multi_objective.box_decomposition import NondominatedPartitioning
+    from botorch.utils.multi_objective.box_decompositions import NondominatedPartitioning
     from botorch.utils.multi_objective.scalarization import get_chebyshev_scalarization
     from botorch.utils.sampling import sample_simplex
     from botorch.utils.transforms import normalize
@@ -420,7 +420,16 @@ class BoTorchSampler(BaseSampler):
             # because `InMemoryStorage.create_new_study` always returns the same study ID.
             raise RuntimeError("BoTorchSampler cannot handle multiple studies.")
 
-        return self._search_space.calculate(study, ordered_dict=True)  # type: ignore
+        search_space: Dict[str, BaseDistribution] = OrderedDict()
+        for name, distribution in self._search_space.calculate(study, ordered_dict=True).items():
+            if distribution.single():
+                # built-in `candidates_func` cannot handle distributions that contain just a
+                # single value, so we skip them. Note that the parameter values for such
+                # distributions are sampled in `Trial`.
+                continue
+            search_space[name] = distribution
+
+        return search_space
 
     def sample_relative(
         self,

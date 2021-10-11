@@ -687,6 +687,39 @@ def test_optimize_without_gc(collect_mock: Mock) -> None:
     assert collect_mock.call_count == 0
 
 
+def test_optimize_with_progbar(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    study.optimize(lambda _: 1.0, n_trials=10, show_progress_bar=True)
+    _, err = capsys.readouterr()
+
+    # search for progress bar elements in stderr
+    assert "10/10" in err
+    assert "100%" in err
+
+
+def test_optimize_without_progbar(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    study.optimize(lambda _: 1.0, n_trials=10)
+    _, err = capsys.readouterr()
+
+    assert "10/10" not in err
+    assert "100%" not in err
+
+
+def test_optimize_with_progbar_parallel(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    with pytest.warns(UserWarning, match="Progress bar only supports serial execution"):
+        study.optimize(lambda _: 1.0, n_trials=10, show_progress_bar=True, n_jobs=-1)
+
+    _, err = capsys.readouterr()
+
+    assert "10/10" not in err
+    assert "100%" not in err
+
+
 @pytest.mark.parametrize("n_jobs", [1, 4])
 def test_callbacks(n_jobs: int) -> None:
 
