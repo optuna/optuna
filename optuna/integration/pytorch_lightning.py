@@ -40,6 +40,11 @@ class PyTorchLightningPruningCallback(Callback):
             ``pytorch_lightning.LightningModule.training_step`` or
             ``pytorch_lightning.LightningModule.validation_epoch_end`` and the names thus depend on
             how this dictionary is formatted.
+
+    .. note::
+        For the distributed data parallel training, the version of PyTorchLightning needs to be
+        higher than or equal to v1.4.0. In addition, :class:`~optuna.study.Study` should be
+        instantiated with RDB storage.
     """
 
     def __init__(self, trial: optuna.trial.Trial, monitor: str) -> None:
