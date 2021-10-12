@@ -67,6 +67,14 @@ class PyTorchLightningPruningCallback(Callback):
                 )
 
     def on_validation_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
+
+        # When the trainer calls `on_validation_end` for sanity check,
+        # do not call `trial.report` to avoid calling `trial.report` multiple times
+        # at epoch 0. The related page is
+        # https://github.com/PyTorchLightning/pytorch-lightning/issues/1391.
+        if trainer.sanity_checking:
+            return
+
         epoch = pl_module.current_epoch
 
         current_score = trainer.callback_metrics.get(self.monitor)
