@@ -207,6 +207,8 @@ class DiscreteUniformDistribution(BaseDistribution):
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}, q={}).".format(low, high, q)
             )
+        if q <= 0:
+            raise ValueError("The `q` value must be non-zero positive value, but q={}.".format(q))
 
         high = _adjust_discrete_uniform_high(low, high, q)
 
