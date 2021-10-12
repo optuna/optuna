@@ -174,7 +174,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    @deprecated("2.11.0", text=_suggest_deprecated_msg)
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -230,7 +230,7 @@ class Trial(BaseTrial):
 
         return self.suggest_float(name, low, high)
 
-    @deprecated("2.11.0", text=_suggest_deprecated_msg)
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -281,7 +281,7 @@ class Trial(BaseTrial):
 
         return self.suggest_float(name, low, high, log=True)
 
-    @deprecated("2.11.0", text=_suggest_deprecated_msg)
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         """Suggest a value for the discrete parameter.
 
