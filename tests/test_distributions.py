@@ -162,7 +162,7 @@ def test_contains() -> None:
     assert c._contains(1.5)
     assert not c._contains(3)
 
-    ilu = distributions.IntUniformDistribution(low=2, high=12)
+    ilu = distributions.IntLogUniformDistribution(low=2, high=12)
     assert not ilu._contains(0.9)
     assert ilu._contains(2)
     assert ilu._contains(4)
@@ -171,12 +171,14 @@ def test_contains() -> None:
     assert not ilu._contains(12.1)
     assert not ilu._contains(13)
 
-    iluq = distributions.IntLogUniformDistribution(low=2, high=7)
+    # `step` is ignored and assumed to be 1.
+    iluq = distributions.IntLogUniformDistribution(low=2, high=7, step=2)
     assert not iluq._contains(0.9)
     assert iluq._contains(2)
     assert iluq._contains(4)
     assert iluq._contains(5)
     assert iluq._contains(6)
+    assert iluq._contains(7)
     assert not iluq._contains(7.1)
     assert not iluq._contains(8)
 
@@ -208,12 +210,12 @@ def test_empty_range_contains() -> None:
     assert iuq._contains(1)
     assert not iuq._contains(2)
 
-    ilu = distributions.IntUniformDistribution(low=1, high=1)
+    ilu = distributions.IntLogUniformDistribution(low=1, high=1)
     assert not ilu._contains(0)
     assert ilu._contains(1)
     assert not ilu._contains(2)
 
-    iluq = distributions.IntUniformDistribution(low=1, high=1, step=2)
+    iluq = distributions.IntLogUniformDistribution(low=1, high=1, step=2)
     assert not iluq._contains(0)
     assert iluq._contains(1)
     assert not iluq._contains(2)
