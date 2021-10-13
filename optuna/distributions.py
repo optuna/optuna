@@ -198,7 +198,8 @@ class DiscreteUniformDistribution(BaseDistribution):
 
     Raises:
         ValueError:
-            If ``low`` value is larger than ``high`` value.
+            If ``low`` value is larger than ``high`` value, or ``q`` value is smaller or
+            equal to 0.
     """
 
     def __init__(self, low: float, high: float, q: float) -> None:
