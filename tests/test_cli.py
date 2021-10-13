@@ -1092,7 +1092,8 @@ def test_ask(
         if output_format is not None:
             args += ["--format", output_format]
 
-        output = str(subprocess.check_output(args).decode().strip())
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output = str(result.stdout.decode().strip())
         trial = _parse_output(output, output_format or "json")
 
         if output_format == "table":
@@ -1108,6 +1109,9 @@ def test_ask(
             assert 0 <= trial["params"]["x"] <= 1
             assert trial["params"]["y"] == "foo"
 
+        if direction is not None or directions is not None:
+            warning_message = result.stderr.decode()
+            assert "FutureWarning" in warning_message
 
 @pytest.mark.parametrize(
     "direction,directions,sampler,sampler_kwargs,output_format",
@@ -1161,7 +1165,8 @@ def test_ask_flatten(
         if output_format is not None:
             args += ["--format", output_format]
 
-        output = str(subprocess.check_output(args).decode().strip())
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output = str(result.stdout.decode().strip())
         trial = _parse_output(output, output_format or "json")
 
         if output_format == "table":
@@ -1175,6 +1180,9 @@ def test_ask_flatten(
             assert 0 <= trial["params_x"] <= 1
             assert trial["params_y"] == "foo"
 
+        if direction is not None or directions is not None:
+            warning_message = result.stderr.decode()
+            assert "FutureWarning" in warning_message
 
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_ask_empty_search_space(output_format: str) -> None:
