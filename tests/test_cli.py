@@ -1113,6 +1113,7 @@ def test_ask(
             warning_message = result.stderr.decode()
             assert "FutureWarning" in warning_message
 
+
 @pytest.mark.parametrize(
     "direction,directions,sampler,sampler_kwargs,output_format",
     [
@@ -1183,6 +1184,7 @@ def test_ask_flatten(
         if direction is not None or directions is not None:
             warning_message = result.stderr.decode()
             assert "FutureWarning" in warning_message
+
 
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_ask_empty_search_space(output_format: str) -> None:
