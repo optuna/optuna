@@ -754,7 +754,7 @@ class _Ask(_BaseCommand):
             choices=("minimize", "maximize"),
             help=(
                 "Direction of optimization. This argument is deprecated."
-                " Please create a study in advance.",
+                " Please create a study in advance."
             ),
         )
         parser.add_argument(
@@ -764,7 +764,7 @@ class _Ask(_BaseCommand):
             choices=("minimize", "maximize"),
             help=(
                 "Directions of optimization, if there are multiple objectives."
-                " This argument is deprecated. Please create a study in advance.",
+                " This argument is deprecated. Please create a study in advance."
             ),
         )
         parser.add_argument("--sampler", type=str, help="Class name of sampler object to create.")
