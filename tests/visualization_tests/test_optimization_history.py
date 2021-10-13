@@ -39,9 +39,9 @@ def test_plot_optimization_history(direction: str) -> None:
     assert figure.data[0].y == (1.0, 2.0, 0.0)
     assert figure.data[1].x == (0, 1, 2)
     if direction == "minimize":
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 1.0, 0.0], dtype=np.float64))
+        assert np.array_equal(figure.data[1].y, np.array([1.0, 1.0, 0.0]))
     else:
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 2.0, 2.0], dtype=np.float64))
+        assert np.array_equal(figure.data[1].y, np.array([1.0, 2.0, 2.0]))
     assert figure.data[0].name == "Objective Value"
     assert figure.layout.yaxis.title.text == "Objective Value"
 
@@ -97,9 +97,9 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     assert figure.data[0].y == (1.0, 2.0, 0.0)
     assert figure.data[1].x == (0, 1, 2)
     if direction == "minimize":
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 1.0, 0.0], dtype=np.float64))
+        assert np.array_equal(figure.data[1].y, np.array([1.0, 1.0, 0.0]))
     else:
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 2.0, 2.0], dtype=np.float64))
+        assert np.array_equal(figure.data[1].y, np.array([1.0, 2.0, 2.0]))
     assert figure.data[0].name == f"Objective Value of {studies[0].study_name}"
     assert figure.layout.yaxis.title.text == "Objective Value"
 
@@ -156,9 +156,9 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     assert np.array_equal(figure.data[0].y, (1.0, 2.0, 0.0))
     assert np.array_equal(figure.data[1].x, (0, 1, 2))
     if direction == "minimize":
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 1.0, 0.0], dtype=np.float64))
+        assert np.array_equal(figure.data[1].y, np.array([1.0, 1.0, 0.0]))
     else:
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 2.0, 2.0], dtype=np.float64))
+        assert np.array_equal(figure.data[1].y, np.array([1.0, 2.0, 2.0]))
     assert figure.data[0].name == "Objective Value"
     assert figure.layout.yaxis.title.text == "Objective Value"
 
