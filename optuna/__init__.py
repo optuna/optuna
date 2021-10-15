@@ -11,7 +11,7 @@ from optuna import storages
 from optuna import study
 from optuna import trial
 from optuna import version
-import optuna._imports
+from optuna._imports import _LazyImport
 from optuna.exceptions import TrialPruned
 from optuna.study import copy_study
 from optuna.study import create_study
@@ -52,8 +52,8 @@ __all__ = [
 ]
 
 
-dashboard = optuna._imports._LazyImport("optuna.dashboard")
-importance = optuna._imports._LazyImport("optuna.importance")
-structs = optuna._imports._LazyImport("optuna.structs")
-type_checking = optuna._imports._LazyImport("optuna.type_checking")
-visualization = optuna._imports._LazyImport("optuna.visualization")
+dashboard = _LazyImport("optuna.dashboard")
+importance = _LazyImport("optuna.importance")
+structs = _LazyImport("optuna.structs")
+type_checking = _LazyImport("optuna.type_checking")
+visualization = _LazyImport("optuna.visualization")
