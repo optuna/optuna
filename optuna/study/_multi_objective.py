@@ -8,7 +8,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-def _get_pareto_front_trials_2d(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
+def _get_pareto_front_trials_2d(study: "optuna.study.Study") -> List[FrozenTrial]:
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
     n_trials = len(trials)
@@ -35,7 +35,7 @@ def _get_pareto_front_trials_2d(study: "optuna.study.BaseStudy") -> List[FrozenT
     return pareto_front
 
 
-def _get_pareto_front_trials_nd(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
+def _get_pareto_front_trials_nd(study: "optuna.study.Study") -> List[FrozenTrial]:
     pareto_front = []
     trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
 
@@ -53,7 +53,7 @@ def _get_pareto_front_trials_nd(study: "optuna.study.BaseStudy") -> List[FrozenT
     return pareto_front
 
 
-def _get_pareto_front_trials(study: "optuna.study.BaseStudy") -> List[FrozenTrial]:
+def _get_pareto_front_trials(study: "optuna.study.Study") -> List[FrozenTrial]:
     if len(study.directions) == 2:
         return _get_pareto_front_trials_2d(study)  # Log-linear in number of trials.
     return _get_pareto_front_trials_nd(study)  # Quadratic in number of trials.
