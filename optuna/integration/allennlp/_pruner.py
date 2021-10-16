@@ -1,8 +1,12 @@
-import os
+from inspect import signature as signature_func
+from inspect import Signature
+from os import environ
+from os import getenv
 from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Optional
+from typing import Type
 from typing import Union
 
 from packaging import version
@@ -69,18 +73,49 @@ def _create_pruner(
     if pruner_class is None:
         return None
 
-    pruner_params = _construct_pruner_kwargs(pruner_keys, pruner_values)
     pruner = getattr(optuna.pruners, pruner_class, None)
-
     if pruner is None:
         return None
 
+    pruner_params = _construct_pruner_kwargs(
+        pruner_keys,
+        pruner_values,
+        signature_func(pruner),
+    )
     return pruner(**pruner_params)
+
+
+def _infer_value(value: str, _type: Type) -> Any:
+    origin = getattr(_type, "__origin__", None)
+
+    if origin is None:
+        return _type(value)
+
+    if origin == Union:
+        args = set(_type.__args__)
+
+        # `optuna.pruners.HyperbandPruner`
+        if args == {str, int}:
+            try:
+                return int(value)
+            except ValueError:
+                return value
+        # `optuna.pruners.ThresholdPruner`
+        elif args == {type(None), float}:
+            try:
+                return float(value)
+            except TypeError:
+                return None
+
+        else:
+            # should not reach at this line
+            assert False
 
 
 def _construct_pruner_kwargs(
     keys_str: Optional[str],
     values_str: Optional[str],
+    signature: Signature,
 ) -> Dict[str, Optional[Union[str, int, float, bool]]]:
 
     # keys would be empty when `_PRUNER_CLASS` is `NopPruner`
@@ -94,7 +129,8 @@ def _construct_pruner_kwargs(
 
     kwargs = {}
     for key, value in zip(keys, values):
-        kwargs[key] = eval(value)
+        annotation = signature.parameters[key].annotation
+        kwargs[key] = _infer_value(value, annotation)
 
     return kwargs
 
@@ -164,8 +200,8 @@ class AllenNLPPruningCallback(TrainerCallback):
         else:
             current_process = psutil.Process()
 
-            if os.getenv("OPTUNA_ALLENNLP_USE_DISTRIBUTED") == "1":
-                os.environ.pop("OPTUNA_ALLENNLP_USE_DISTRIBUTED")
+            if getenv("OPTUNA_ALLENNLP_USE_DISTRIBUTED") == "1":
+                environ.pop("OPTUNA_ALLENNLP_USE_DISTRIBUTED")
                 parent_process = current_process.parent()
                 target_pid = parent_process.ppid()
 
