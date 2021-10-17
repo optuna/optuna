@@ -182,39 +182,6 @@ class Trial(BaseTrial):
         in the linear domain. When :math:`\\mathsf{low} = \\mathsf{high}`, the value of
         :math:`\\mathsf{low}` will be returned.
 
-        Example:
-
-            Suggest a momentum for neural network training.
-
-            .. testcode::
-
-                import numpy as np
-                from sklearn.datasets import load_iris
-                from sklearn.model_selection import train_test_split
-                from sklearn.neural_network import MLPClassifier
-
-                import optuna
-
-                X, y = load_iris(return_X_y=True)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
-
-
-                def objective(trial):
-                    momentum = trial.suggest_float("momentum", 0.0, 1.0)
-                    clf = MLPClassifier(
-                        hidden_layer_sizes=(100, 50),
-                        momentum=momentum,
-                        solver="sgd",
-                        random_state=0,
-                    )
-                    clf.fit(X_train, y_train)
-
-                    return clf.score(X_valid, y_valid)
-
-
-                study = optuna.create_study(direction="maximize")
-                study.optimize(objective, n_trials=3)
-
         Args:
             name:
                 A parameter name.
@@ -237,34 +204,6 @@ class Trial(BaseTrial):
         The value is sampled from the range :math:`[\\mathsf{low}, \\mathsf{high})`
         in the log domain. When :math:`\\mathsf{low} = \\mathsf{high}`, the value of
         :math:`\\mathsf{low}` will be returned.
-
-        Example:
-
-            Suggest penalty parameter ``C`` of `SVC <https://scikit-learn.org/stable/modules/
-            generated/sklearn.svm.SVC.html>`_.
-
-            .. testcode::
-
-                import numpy as np
-                from sklearn.datasets import load_iris
-                from sklearn.model_selection import train_test_split
-                from sklearn.svm import SVC
-
-                import optuna
-
-                X, y = load_iris(return_X_y=True)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
-
-
-                def objective(trial):
-                    c = trial.suggest_float("c", 1e-5, 1e2, log=True)
-                    clf = SVC(C=c, gamma="scale", random_state=0)
-                    clf.fit(X_train, y_train)
-                    return clf.score(X_valid, y_valid)
-
-
-                study = optuna.create_study(direction="maximize")
-                study.optimize(objective, n_trials=3)
 
         Args:
             name:
@@ -293,35 +232,6 @@ class Trial(BaseTrial):
         where :math:`k` denotes an integer. Note that :math:`high` may be changed due to round-off
         errors if :math:`q` is not an integer. Please check warning messages to find the changed
         values.
-
-        Example:
-
-            Suggest a fraction of samples used for fitting the individual learners of
-            `GradientBoostingClassifier <https://scikit-learn.org/stable/modules/generated/
-            sklearn.ensemble.GradientBoostingClassifier.html>`_.
-
-            .. testcode::
-
-                import numpy as np
-                from sklearn.datasets import load_iris
-                from sklearn.ensemble import GradientBoostingClassifier
-                from sklearn.model_selection import train_test_split
-
-                import optuna
-
-                X, y = load_iris(return_X_y=True)
-                X_train, X_valid, y_train, y_valid = train_test_split(X, y)
-
-
-                def objective(trial):
-                    subsample = trial.suggest_float("subsample", 0.1, 1.0, step=0.1)
-                    clf = GradientBoostingClassifier(subsample=subsample, random_state=0)
-                    clf.fit(X_train, y_train)
-                    return clf.score(X_valid, y_valid)
-
-
-                study = optuna.create_study(direction="maximize")
-                study.optimize(objective, n_trials=3)
 
         Args:
             name:
