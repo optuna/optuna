@@ -80,6 +80,9 @@ Process 2 (the same command as process 1):
     ...
 
 .. note::
+    n_trials is the total number of trials across all processes, not the number of trials each process will run. For example, the script given above runs a total of 100 trials across two processes, not 100 trials * 2 processes = 200 trials.
+
+.. note::
     We do not recommend SQLite for distributed optimizations at scale because it may cause deadlocks and serious performance issues. Please consider to use another database engine like PostgreSQL or MySQL.
 
 .. note::
