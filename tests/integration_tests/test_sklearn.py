@@ -275,7 +275,6 @@ def test_objective_y_None() -> None:
 
     with pytest.raises(
         ValueError,
-        match="This SGDClassifier estimator requires y to be passed, but the target y is None.",
     ):
         optuna_search.fit(X)
 
