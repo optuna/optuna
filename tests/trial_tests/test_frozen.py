@@ -311,6 +311,120 @@ def test_suggest_categorical() -> None:
             trial.suggest_categorical("x", [{"foo": "bar"}])  # type: ignore
 
 
+def test_not_contained_param() -> None:
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 1.0},
+        distributions={"x": UniformDistribution(1.0, 10.0)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    with pytest.warns(UserWarning):
+        assert trial.suggest_float("x", 10.0, 100.0) == 1.0
+
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 1.0},
+        distributions={"x": UniformDistribution(1.0, 10.0)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    with pytest.warns(UserWarning):
+        assert trial.suggest_uniform("x", 10.0, 100.0) == 1.0
+
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 1.0},
+        distributions={"x": LogUniformDistribution(1.0, 10.0)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    with pytest.warns(UserWarning):
+        assert trial.suggest_loguniform("x", 10.0, 100.0) == 1.0
+
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 1.0},
+        distributions={"x": DiscreteUniformDistribution(1.0, 10.0, 1.0)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    with pytest.warns(UserWarning):
+        assert trial.suggest_discrete_uniform("x", 10.0, 100.0, 1.0) == 1.0
+
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 1.0},
+        distributions={"x": IntUniformDistribution(1, 10)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    with pytest.warns(UserWarning):
+        assert trial.suggest_int("x", 10, 100) == 1
+
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 1},
+        distributions={"x": IntUniformDistribution(1, 10, 1)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    with pytest.warns(UserWarning):
+        assert trial.suggest_int("x", 10, 100, 1) == 1
+
+    trial = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 1},
+        distributions={"x": IntLogUniformDistribution(1, 10)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    with pytest.warns(UserWarning):
+        assert trial.suggest_int("x", 10, 100, log=True) == 1
+
+
 def test_report() -> None:
 
     # FrozenTrial ignores reported values.
