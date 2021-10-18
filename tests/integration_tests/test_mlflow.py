@@ -7,7 +7,6 @@ from typing import Union
 import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
-import numpy as np
 import py
 import pytest
 
@@ -422,9 +421,7 @@ def test_initialize_experiment(tmpdir: py.path.local) -> None:
 @pytest.mark.parametrize(
     "names,values", [(["metric"], [3.17]), (["metric1", "metric2"], [3.17, 3.18])]
 )
-def test_log_metric(
-    tmpdir: py.path.local, names: List[str], values: List[Optional[float]]
-) -> None:
+def test_log_metric(tmpdir: py.path.local, names: List[str], values: List[float]) -> None:
 
     tracking_file_name = "file:{}".format(tmpdir)
     study_name = "my_study"
@@ -465,7 +462,7 @@ def test_log_metric_none(tmpdir: py.path.local) -> None:
     mlflc._initialize_experiment(study)
 
     with mlflow.start_run():
-        mlflc._log_metrics([metric_value])
+        mlflc._log_metrics(metric_value)
 
     mlfl_client = MlflowClient(tracking_file_name)
     experiments = mlfl_client.list_experiments()
@@ -479,8 +476,8 @@ def test_log_metric_none(tmpdir: py.path.local) -> None:
     first_run = mlfl_client.get_run(first_run_id)
     first_run_dict = first_run.to_dictionary()
 
-    assert metric_name in first_run_dict["data"]["metrics"]
-    assert np.isnan(first_run_dict["data"]["metrics"][metric_name])
+    # when `values` is `None`, do not save values with metric names
+    assert metric_name not in first_run_dict["data"]["metrics"]
 
 
 def test_log_params(tmpdir: py.path.local) -> None:
