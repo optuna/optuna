@@ -814,7 +814,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         categorical_feature: str = "auto",
         early_stopping_rounds: Optional[int] = None,
         evals_result: Optional[Dict[Any, Any]] = None,
-        verbose_eval: Optional[Union[bool, int, str]] = None,
+        verbose_eval: Optional[Union[bool, int, str]] = "warn",
         learning_rates: Optional[List[float]] = None,
         keep_training_booster: bool = False,
         callbacks: Optional[List[Callable[..., Any]]] = None,
