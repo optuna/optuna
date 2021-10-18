@@ -84,7 +84,10 @@ def test_switch_label_when_param_insignificant() -> None:
         return x ** 2
 
     study = create_study()
-    study.optimize(_objective, n_trials=100)
+    for x in range(1, 3):
+        study.enqueue_trial({"x": x, "y": 0})
+
+    study.optimize(_objective, n_trials=2)
     ax = plot_param_importances(study)
 
     # Test if label for `y` param has been switched to `<0.01`.
