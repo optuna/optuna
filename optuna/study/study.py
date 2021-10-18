@@ -302,7 +302,7 @@ class Study:
         See also :class:`~optuna.samplers.TPESampler` for more details on 'TPE'.
 
         .. note::
-            When using :ref:`process-based parallelization<distributed>`, ``n_trials`` is
+            ``n_trials`` is
                         the number of trials each process will run, not the total number of trials
                         across all processes.
 
