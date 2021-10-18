@@ -152,7 +152,7 @@ def _get_param_importance_plot(
         bbox = text.get_window_extent(renderer)
         bbox = bbox.transformed(ax.transData.inverted())
         _, plot_xmax = ax.get_xlim()
-        bbox_xmax = bbox.x1
+        bbox_xmax = bbox.xmax
 
         if bbox_xmax > plot_xmax:
             ax.set_xlim(xmax=AXES_PADDING_RATIO * bbox_xmax)
