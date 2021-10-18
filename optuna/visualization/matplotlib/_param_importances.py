@@ -144,7 +144,7 @@ def _get_param_importance_plot(
 
     renderer = fig.canvas.get_renderer()
     for idx, val in enumerate(importance_values):
-        label = str(round(val, 2)) if val >= 0.01 else "<0.01"
+        label = f" {val:.2f}" if val >= 0.01 else " <0.01"
         text = ax.text(val, idx, label, va="center")
 
         # Sometimes horizontal axis needs to be re-scaled
