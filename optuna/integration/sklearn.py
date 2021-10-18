@@ -503,6 +503,11 @@ class OptunaSearchCV(BaseEstimator):
             X, y = load_iris(return_X_y=True)
             optuna_search.fit(X, y)
             y_pred = optuna_search.predict(X)
+
+    .. note::
+        By following the scikit-learn convention for scorers, the direction of optimization is
+        ``maximize``. See https://scikit-learn.org/stable/modules/model_evaluation.html.
+        For the minimization problem, please multiply ``-1``.
     """
 
     _required_parameters = ["estimator", "param_distributions"]
