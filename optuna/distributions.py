@@ -502,25 +502,25 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
 
             if json_dict["type"] == "float":
                 if log:
-                    if step:
+                    if step is not None:
                         raise ValueError(
                             "The parameter `step` is not supported when `log` is true."
                         )
                     else:
                         return LogUniformDistribution(low, high)
                 else:
-                    if step:
+                    if step is not None:
                         return DiscreteUniformDistribution(low, high, step)
                     else:
                         return UniformDistribution(low, high)
             else:
                 if log:
-                    if step:
+                    if step is not None:
                         return IntLogUniformDistribution(low, high, step)
                     else:
                         return IntLogUniformDistribution(low, high)
                 else:
-                    if step:
+                    if step is not None:
                         return IntUniformDistribution(low, high, step)
                     else:
                         return IntUniformDistribution(low, high)
