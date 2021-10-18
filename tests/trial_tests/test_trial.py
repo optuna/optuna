@@ -361,6 +361,18 @@ def test_suggest_discrete_uniform_range(storage_mode: str, range_config: Dict[st
         assert mock_object.call_count == 1
 
 
+def test_suggest_float_invalid_step() -> None:
+
+    study = create_study()
+    trial = study.ask()
+
+    with pytest.raises(ValueError):
+        trial.suggest_float("x1", 10, 20, step=0)
+
+    with pytest.raises(ValueError):
+        trial.suggest_float("x2", 10, 20, step=-1)
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_suggest_int(storage_mode: str) -> None:
 
@@ -427,6 +439,18 @@ def test_suggest_int_range(storage_mode: str, range_config: Dict[str, int]) -> N
             )
         assert x == range_config["low"]
         assert mock_object.call_count == 1
+
+
+def test_suggest_int_invalid_step() -> None:
+
+    study = create_study()
+    trial = study.ask()
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("x1", 10, 20, step=0)
+
+    with pytest.raises(ValueError):
+        trial.suggest_int("x2", 10, 20, step=-1)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
