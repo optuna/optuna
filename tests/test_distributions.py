@@ -375,6 +375,24 @@ def test_int_log_uniform_distribution_asdict() -> None:
     assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12, "step": 2}
 
 
+def test_discrete_uniform_distribution_invalid_q() -> None:
+
+    with pytest.raises(ValueError):
+        distributions.DiscreteUniformDistribution(low=1, high=100, q=0)
+
+    with pytest.raises(ValueError):
+        distributions.DiscreteUniformDistribution(low=1, high=100, q=-1)
+
+
+def test_int_uniform_distribution_invalid_step() -> None:
+
+    with pytest.raises(ValueError):
+        distributions.IntUniformDistribution(low=1, high=100, step=0)
+
+    with pytest.raises(ValueError):
+        distributions.IntUniformDistribution(low=1, high=100, step=-1)
+
+
 def test_int_log_uniform_distribution_deprecation() -> None:
 
     # step != 1 is deprecated

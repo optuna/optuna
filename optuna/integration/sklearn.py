@@ -838,7 +838,7 @@ class OptunaSearchCV(BaseEstimator):
             fit_params_res = _check_fit_params(X, fit_params, self.sample_indices_)
 
         classifier = is_classifier(self.estimator)
-        cv = check_cv(self.cv, y_res, classifier)
+        cv = check_cv(self.cv, y_res, classifier=classifier)
 
         self.n_splits_ = cv.get_n_splits(X_res, y_res, groups=groups_res)
         self.scorer_ = check_scoring(self.estimator, scoring=self.scoring)

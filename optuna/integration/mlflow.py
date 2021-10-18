@@ -23,8 +23,7 @@ class MLflowCallback(object):
     """Callback to track Optuna trials with MLflow.
 
     This callback adds relevant information that is
-    tracked by Optuna to MLflow. The MLflow experiment
-    will be named after the Optuna study name.
+    tracked by Optuna to MLflow.
 
     Example:
 
@@ -117,22 +116,44 @@ class MLflowCallback(object):
             it will be broadcasted to each objective with a number suffix in order
             returned by objective function e.g. two objectives and default metric name
             will be logged as ``value_0`` and ``value_1``.
-        nest_trials:
-            Flag indicating whether or not trials should be logged as
-            nested runs. This is often helpful for aggregating trials
-            to a particular study, under a given experiment.
+        create_experiment:
+            When :obj:`True`, new MLflow experiment will be created for each optimization run,
+            named after the Optuna study. Setting this argument to :obj:`False` lets user run
+            optimization under existing experiment, set via `mlflow.set_experiment
+            <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.get_tracking_uri>`_,
+            by passing ``experiment_id`` as one of ``mlflow_kwargs`` or under default MLflow
+            experiment, when no additional arguments are passed. Note that this argument
+            must be set to :obj:`False` when using Optuna with this callback within
+            Databricks Notebook.
+        mlflow_kwargs:
+            Set of arguments passed when initializing MLflow run.
+            Please refer to `MLflow API documentation
+            <https://www.mlflow.org/docs/latest/python_api/mlflow.html#mlflow.start_run>`_
+            for more details.
         tag_study_user_attrs:
             Flag indicating whether or not to add the study's user attrs
             to the mlflow trial as tags. Please note that when this flag is
             set, key value pairs in :attr:`~optuna.study.Study.user_attrs`
             will supersede existing tags.
+
+    .. note::
+        ``nest_trials`` argument added in v2.3.0 is a part of ``mlflow_kwargs`` since v3.0.0a1.
+        Anyone using ``nest_trials=True`` should migrate to ``mlflow_kwargs={"nested": True}``
+        to avoid raising :exc:`TypeError`.
+
+    Raises:
+        :exc:`ValueError`:
+            If there are missing or extra metric names in multi-objective optimization.
+        :exc:`TypeError`:
+            When metric names are not passed as sequence.
     """
 
     def __init__(
         self,
         tracking_uri: Optional[str] = None,
         metric_name: Union[str, Sequence[str]] = "value",
-        nest_trials: bool = False,
+        create_experiment: bool = True,
+        mlflow_kwargs: Optional[Dict[str, Any]] = None,
         tag_study_user_attrs: bool = False,
     ) -> None:
 
@@ -147,7 +168,8 @@ class MLflowCallback(object):
 
         self._tracking_uri = tracking_uri
         self._metric_name = metric_name
-        self._nest_trials = nest_trials
+        self._create_experiment = create_experiment
+        self._mlflow_kwargs = mlflow_kwargs or {}
         self._tag_study_user_attrs = tag_study_user_attrs
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
@@ -156,8 +178,10 @@ class MLflowCallback(object):
 
         with mlflow.start_run(
             run_id=trial.system_attrs.get(RUN_ID_ATTRIBUTE_KEY),
-            run_name=str(trial.number),
-            nested=self._nest_trials,
+            experiment_id=self._mlflow_kwargs.get("experiment_id"),
+            run_name=self._mlflow_kwargs.get("run_name") or str(trial.number),
+            nested=self._mlflow_kwargs.get("nested") or False,
+            tags=self._mlflow_kwargs.get("tags"),
         ):
 
             # This sets the metrics for MLflow.
@@ -186,8 +210,9 @@ class MLflowCallback(object):
             def wrapper(trial: optuna.trial.Trial) -> Union[float, Sequence[float]]:
                 study = trial.study
                 self._initialize_experiment(study)
+                nested = self._mlflow_kwargs.get("nested")
 
-                with mlflow.start_run(run_name=str(trial.number), nested=self._nest_trials) as run:
+                with mlflow.start_run(run_name=str(trial.number), nested=nested) as run:
                     trial.set_system_attr(RUN_ID_ATTRIBUTE_KEY, run.info.run_id)
 
                     return func(trial)
@@ -209,8 +234,8 @@ class MLflowCallback(object):
         if self._tracking_uri is not None:
             mlflow.set_tracking_uri(self._tracking_uri)
 
-        # This sets the experiment of MLflow.
-        mlflow.set_experiment(study.study_name)
+        if self._create_experiment:
+            mlflow.set_experiment(study.study_name)
 
     def _set_tags(self, trial: optuna.trial.FrozenTrial, study: optuna.study.Study) -> None:
         """Sets the Optuna tags for the current MLflow run.

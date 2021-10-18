@@ -66,7 +66,7 @@ optimization *studies*.
             rf_max_depth = trial.suggest_int('rf_max_depth', 2, 32)
             regressor_obj = sklearn.ensemble.RandomForestRegressor(max_depth=rf_max_depth)
 
-        X, y = sklearn.datasets.load_boston(return_X_y=True)
+        X, y = sklearn.datasets.fetch_california_housing(return_X_y=True)
         X_train, X_val, y_train, y_val = sklearn.model_selection.train_test_split(X, y, random_state=0)
 
         regressor_obj.fit(X_train, y_train)

@@ -284,12 +284,14 @@ class HyperbandPruner(BasePruner):
                 "_study",
             )
 
-            def __init__(self, study: "optuna.study.Study", bracket_id: int) -> None:
+            def __init__(
+                self, study: "optuna.study.Study", pruner: HyperbandPruner, bracket_id: int
+            ) -> None:
                 super().__init__(
                     study_name=study.study_name,
                     storage=study._storage,
                     sampler=study.sampler,
-                    pruner=study.pruner,
+                    pruner=pruner,
                 )
                 self._study = study
                 self._bracket_id = bracket_id
@@ -317,4 +319,4 @@ class HyperbandPruner(BasePruner):
                 else:
                     return object.__getattribute__(self, attr_name)
 
-        return _BracketStudy(study, bracket_id)
+        return _BracketStudy(study, self, bracket_id)

@@ -7,11 +7,9 @@ from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Sequence
 
 import numpy as np
 
-from optuna.distributions import CategoricalChoiceType
 from optuna.logging import get_logger
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
@@ -132,8 +130,8 @@ def _get_parallel_coordinate_plot(
         }
     ]
 
-    numeric_cat_params: Dict[str, Sequence[CategoricalChoiceType]] = {}
-    for p_name in sorted_params:
+    numeric_cat_params_indices: List[int] = []
+    for dim_index, p_name in enumerate(sorted_params, start=1):
         values = []
         for t in trials:
             if p_name in t.params:
@@ -161,8 +159,8 @@ def _get_parallel_coordinate_plot(
             if _is_numerical(trials, p_name):
                 _ = [vocab[v] for v in sorted(values)]
                 values = [vocab[v] for v in values]
-                numeric_cat_params[p_name] = values
                 ticktext = list(sorted(vocab.keys()))
+                numeric_cat_params_indices.append(dim_index)
             else:
                 values = [vocab[v] for v in values]
                 ticktext = list(sorted(vocab.keys(), key=lambda x: vocab[x]))
@@ -183,10 +181,10 @@ def _get_parallel_coordinate_plot(
 
         dims.append(dim)
 
-    if numeric_cat_params:
+    if numeric_cat_params_indices:
         # np.lexsort consumes the sort keys the order from back to front.
         # So the values of parameters have to be reversed the order.
-        idx = np.lexsort(list(numeric_cat_params.values())[::-1])
+        idx = np.lexsort([dims[index]["values"] for index in numeric_cat_params_indices][::-1])
         for dim in dims:
             # Since the values are mapped to other categories by the index,
             # the index will be swapped according to the sorted index of numeric params.

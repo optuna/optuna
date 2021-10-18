@@ -20,7 +20,6 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
-from optuna.trial._state import TrialState
 
 
 _logger = logging.get_logger(__name__)
@@ -147,7 +146,8 @@ class Trial(BaseTrial):
 
                 .. note::
                     The ``step`` and ``log`` arguments cannot be used at the same time. To set
-                    the ``step`` argument to a float number, set the ``log`` argument to ``False``.
+                    the ``step`` argument to a float number, set the ``log`` argument to
+                    :obj:`False`.
             log:
                 A flag to sample the value from the log domain or not.
                 If ``log`` is true, the value is sampled from the range in the log domain.
@@ -156,7 +156,7 @@ class Trial(BaseTrial):
 
                 .. note::
                     The ``step`` and ``log`` arguments cannot be used at the same time. To set
-                    the ``log`` argument to ``True``, set the ``step`` argument to ``None``.
+                    the ``log`` argument to :obj:`True`, set the ``step`` argument to :obj:`None`.
 
         Raises:
             :exc:`ValueError`:
@@ -408,7 +408,7 @@ class Trial(BaseTrial):
                 .. note::
                     The ``step != 1`` and ``log`` arguments cannot be used at the same time.
                     To set the ``step`` argument :math:`\\mathsf{step} \\ge 2`, set the
-                    ``log`` argument to ``False``.
+                    ``log`` argument to :obj:`False`.
             log:
                 A flag to sample the value from the log domain or not.
 
@@ -424,7 +424,7 @@ class Trial(BaseTrial):
 
                 .. note::
                     The ``step != 1`` and ``log`` arguments cannot be used at the same time.
-                    To set the ``log`` argument to ``True``, set the ``step`` argument to 1.
+                    To set the ``log`` argument to :obj:`True`, set the ``step`` argument to 1.
 
         Raises:
             :exc:`ValueError`:
@@ -517,6 +517,11 @@ class Trial(BaseTrial):
             The reported value is converted to ``float`` type by applying ``float()``
             function internally. Thus, it accepts all float-like types (e.g., ``numpy.float32``).
             If the conversion fails, a ``TypeError`` is raised.
+
+        .. note::
+            If this method is called multiple times at the same ``step`` in a trial,
+            the reported ``value`` only the first time is stored and the reported values
+            from the second time are ignored.
 
         Example:
 
@@ -773,22 +778,12 @@ class Trial(BaseTrial):
                 'Inconsistent parameter values for distribution with name "{}"! '
                 "This might be a configuration mistake. "
                 "Optuna allows to call the same distribution with the same "
-                "name more then once in a trial. "
+                "name more than once in a trial. "
                 "When the parameter values are inconsistent optuna only "
                 "uses the values of the first call and ignores all following. "
                 "Using these values: {}".format(name, old_distribution._asdict()),
                 RuntimeWarning,
             )
-
-    def _after_func(self, state: TrialState, values: Optional[Sequence[float]]) -> None:
-        # This method is called right before `Study._tell`.
-        storage = self.storage
-        trial_id = self._trial_id
-
-        trial = storage.get_trial(trial_id)
-
-        study = pruners._filter_study(self.study, trial)
-        self.study.sampler.after_trial(study, trial, state, values)
 
     @property
     def params(self) -> Dict[str, Any]:
