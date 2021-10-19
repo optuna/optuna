@@ -480,14 +480,52 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
 
     json_dict = json.loads(json_str)
 
-    if json_dict["name"] == CategoricalDistribution.__name__:
-        json_dict["attributes"]["choices"] = tuple(json_dict["attributes"]["choices"])
+    if "name" in json_dict:
+        if json_dict["name"] == CategoricalDistribution.__name__:
+            json_dict["attributes"]["choices"] = tuple(json_dict["attributes"]["choices"])
 
-    for cls in DISTRIBUTION_CLASSES:
-        if json_dict["name"] == cls.__name__:
-            return cls(**json_dict["attributes"])
+        for cls in DISTRIBUTION_CLASSES:
+            if json_dict["name"] == cls.__name__:
+                return cls(**json_dict["attributes"])
 
-    raise ValueError("Unknown distribution class: {}".format(json_dict["name"]))
+        raise ValueError("Unknown distribution class: {}".format(json_dict["name"]))
+
+    else:
+        # Deserialize a distribution from an abbreviated format.
+        if json_dict["type"] == "categorical":
+            return CategoricalDistribution(json_dict["choices"])
+        elif json_dict["type"] in ("float", "int"):
+            low = json_dict["low"]
+            high = json_dict["high"]
+            step = json_dict.get("step")
+            log = json_dict.get("log")
+
+            if json_dict["type"] == "float":
+                if log:
+                    if step is not None:
+                        raise ValueError(
+                            "The parameter `step` is not supported when `log` is true."
+                        )
+                    else:
+                        return LogUniformDistribution(low, high)
+                else:
+                    if step is not None:
+                        return DiscreteUniformDistribution(low, high, step)
+                    else:
+                        return UniformDistribution(low, high)
+            else:
+                if log:
+                    if step is not None:
+                        return IntLogUniformDistribution(low, high, step)
+                    else:
+                        return IntLogUniformDistribution(low, high)
+                else:
+                    if step is not None:
+                        return IntUniformDistribution(low, high, step)
+                    else:
+                        return IntUniformDistribution(low, high)
+
+        raise ValueError("Unknown distribution type: {}".format(json_dict["type"]))
 
 
 def distribution_to_json(dist: BaseDistribution) -> str:
