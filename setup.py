@@ -59,9 +59,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
-            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
-            # after skopt supports sklearn >= 1.0.0
-            "scikit-learn>=0.24.2,<1.0.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "mlflow",
         ],
@@ -75,9 +73,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "sphinx-plotly-directive",
             "pillow",
             "matplotlib",
-            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
-            # after skopt supports sklearn >= 1.0.0
-            "scikit-learn<1.0.0",
+            "scikit-learn",
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
             "lightgbm",
@@ -102,9 +98,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "plotly>=4.0.0",
             "pytest",
-            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
-            # after skopt supports sklearn >= 1.0.0
-            "scikit-learn>=0.24.2,<1.0.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
             "tensorflow",
@@ -132,9 +126,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
-            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
-            # after skopt supports sklearn >= 1.0.0
-            "scikit-learn>=0.24.2,<1.0.0",
+            "scikit-learn>=0.24.2",
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
@@ -148,9 +140,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "pandas",
-            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
-            # after skopt supports sklearn >= 1.0.0
-            "scikit-learn>=0.24.2,<1.0.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
             "tensorflow",

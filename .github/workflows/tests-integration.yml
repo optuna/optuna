@@ -12,8 +12,6 @@ jobs:
   tests-integration:
     runs-on: ubuntu-latest
 
-    # TODO (crcrpar): Add 3.9 to python-version matrix once libraries support it.
-    # ref: https://github.com/optuna/optuna/issues/2034
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
