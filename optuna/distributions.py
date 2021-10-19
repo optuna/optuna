@@ -378,7 +378,7 @@ class IntLogUniformDistribution(BaseDistribution):
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
         value = param_value_in_internal_repr
-        return self.low <= value <= self.high and (value - self.low) % self.step == 0
+        return self.low <= value <= self.high and (value - self.low) % self._step == 0
 
     @property
     def step(self) -> int:
