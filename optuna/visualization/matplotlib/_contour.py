@@ -428,6 +428,7 @@ def _generate_contour_subplot(
                 c="black",
                 s=20,
                 edgecolors="grey",
+                linewidth=2.0,
             )
     if x_cat_param_pos:
         ax.set_xticks(x_cat_param_pos)
