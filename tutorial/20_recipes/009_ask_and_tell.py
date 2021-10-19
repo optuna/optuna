@@ -46,7 +46,7 @@ def objective(trial):
     X, y = make_classification(n_features=10)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
 
-    C = trial.suggest_loguniform("C", 1e-7, 10.0)
+    C = trial.suggest_float("C", 1e-7, 10.0, log=True)
     solver = trial.suggest_categorical("solver", ("lbfgs", "saga"))
 
     clf = LogisticRegression(C=C, solver=solver)
@@ -73,7 +73,7 @@ n_trials = 10
 for _ in range(n_trials):
     trial = study.ask()  # `trial` is a `Trial` and not a `FrozenTrial`.
 
-    C = trial.suggest_loguniform("C", 1e-7, 10.0)
+    C = trial.suggest_float("C", 1e-7, 10.0, log=True)
     solver = trial.suggest_categorical("solver", ("lbfgs", "saga"))
 
     clf = LogisticRegression(C=C, solver=solver)
@@ -119,7 +119,7 @@ for _ in range(n_trials):
 #    for _ in range(20):
 #        trial = study.ask()
 #
-#        alpha = trial.suggest_uniform("alpha", 0.0, 1.0)
+#        alpha = trial.suggest_float("alpha", 0.0, 1.0)
 #
 #        clf = SGDClassifier(alpha=alpha)
 #        pruned_trial = False
