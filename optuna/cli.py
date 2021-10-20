@@ -853,18 +853,21 @@ class _Ask(_BaseCommand):
                 create_study_kwargs["storage"],
                 create_study_kwargs.get("sampler"),
             )
+            directions = None
             if create_study_kwargs["direction"] is not None:
-                message = (
-                    "The direction argument of the optuna ask command was ignored when the"
-                    " existing study was loaded."
-                )
-                warnings.warn(message)
+                directions = [
+                    optuna.study.StudyDirection[create_study_kwargs["direction"].upper()]
+                ]
             if create_study_kwargs["directions"] is not None:
-                message = (
-                    "The directions argument of the optuna ask command was ignored when the"
-                    " existing study was loaded."
+                directions = [
+                    optuna.study.StudyDirection[d.upper()]
+                    for d in create_study_kwargs["directions"]
+                ]
+            if directions is not None and study.directions != directions:
+                raise ValueError(
+                    f"Cannot overwrite study direction from {study.directions} to {directions}."
                 )
-                warnings.warn(message)
+
         except KeyError:
             study = optuna.create_study(**create_study_kwargs)
         trial = study.ask(fixed_distributions=search_space)

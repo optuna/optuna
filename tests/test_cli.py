@@ -1345,6 +1345,68 @@ def test_create_study_and_ask(
         assert trial["params"]["y"] == "foo"
 
 
+@pytest.mark.parametrize(
+    "direction,directions,ask_direction,ask_directions",
+    [
+        (None, None, "maximize", None),
+        ("minimize", None, "maximize", None),
+        ("minimize", None, None, "minimize minimize"),
+        (None, "minimize maximize", None, "maximize minimize"),
+        (None, "minimize maximize", "minimize", None),
+    ],
+)
+def test_create_study_and_ask_with_inconsistent_directions(
+    direction: Optional[str],
+    directions: Optional[str],
+    ask_direction: Optional[str],
+    ask_directions: Optional[str],
+) -> None:
+
+    study_name = "test_study"
+    search_space = (
+        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
+    )
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        create_study_args = [
+            "optuna",
+            "create-study",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+        ]
+
+        if direction is not None:
+            create_study_args += ["--direction", direction]
+        if directions is not None:
+            create_study_args += ["--directions"] + directions.split()
+        subprocess.check_call(create_study_args)
+
+        args = [
+            "optuna",
+            "ask",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+            "--search-space",
+            search_space,
+        ]
+        if ask_direction is not None:
+            args += ["--direction", ask_direction]
+        if ask_directions is not None:
+            args += ["--directions"] + ask_directions.split()
+
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        error_message = result.stderr.decode()
+        print(error_message)
+        assert "Cannot overwrite study direction" in error_message
+
+
 def test_tell() -> None:
     study_name = "test_study"
 
