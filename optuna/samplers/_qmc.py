@@ -184,21 +184,20 @@ class QMCSampler(BaseSampler):
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
 
+        if self._initial_search_space is not None:
+            return self._initial_search_space
+
         past_trials = study._storage.get_all_trials(
             study._study_id, states=_SUGGESTED_STATES, deepcopy=False
         )
-
-        if self._initial_search_space is not None:
-            return self._initial_search_space
         # The initial trial is sampled by the independent sampler.
-        elif len(past_trials) == 0:
+        if len(past_trials) == 0:
             return {}
         # If an initial trial was already made,
         # construct search_space of this sampler from the initial trial.
         else:
             first_trial = min(past_trials, key=lambda t: t.number)
-            self._initial_search_space = self._infer_initial_search_space(first_trial)
-            return self._initial_search_space
+            return self._infer_initial_search_space(first_trial)
 
     def _infer_initial_search_space(self, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
 
