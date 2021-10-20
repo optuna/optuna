@@ -1403,7 +1403,6 @@ def test_create_study_and_ask_with_inconsistent_directions(
 
         result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         error_message = result.stderr.decode()
-        print(error_message)
         assert "Cannot overwrite study direction" in error_message
 
 
