@@ -55,6 +55,21 @@ class QMCSampler(BaseSampler):
         If your search space contains categorical parameters, it samples the catagorical
         parameters by its `independent_sampler` without using QMC algorithm.
 
+    .. note::
+        The search space of the sampler is determined by either previous trials in the study or
+        the first trial that this sampler samples.
+
+        If there are previous trials in the study, :class:`~optuna.samplers.QMCSamper` infers its
+        search space using the earliest trial of the study.
+
+        Otherwise (if the study has no previous trials), :class:`~optuna.samplers.QMCSampler`
+        samples the first trial using its `_independent_sampler` and then infers the search space
+        in the second trial.
+
+        As mentioned above, the search space of the :class:`~optuna.sampler.QMCSampler` is
+        determined by the first trial of the study. Once the search space is determined, it cannot
+        be changed afterwards.
+
     Args:
         qmc_type:
             The type of QMC sequence to be sampled. This must be one of
@@ -80,22 +95,6 @@ class QMCSampler(BaseSampler):
                 distributed optimization, all the samplers must share the same seed when the
                 `scrambling` is enabled. Otherwise, the low-discrepancy property of the samples
                 will be degraded.
-
-        search_space:
-            The search space of the sampler.
-
-            If this argument is not provided and there are prior
-            trials in the study, :class:`~optuna.samplers.QMCSamper` infers its search space using
-            the first trial of the study.
-
-            If this argument if not provided and the study has no
-            prior trials, :class:`~optuna.samplers.QMCSampler` samples the first trial using its
-            `_independent_sampler` and then infers the search space in the second trial.
-
-            .. note::
-                As mentioned above, the search space of the :class:`~optuna.sampler.QMCSampler` is
-                determined by argument ``search_space`` or the first trial of the study. Once
-                the search space is determined, it cannot be changed afterwards.
 
         independent_sampler:
             A :class:`~optuna.samplers.BaseSampler` instance that is used for independent
@@ -152,7 +151,6 @@ class QMCSampler(BaseSampler):
         qmc_type: str = "halton",
         scramble: bool = False,  # default is False for simplicity in distributed environment.
         seed: Optional[int] = None,
-        search_space: Optional[Dict[str, BaseDistribution]] = None,
         independent_sampler: Optional[BaseSampler] = None,
         warn_asyncronous_seeding: bool = True,
         warn_incomplete_reseeding: bool = True,
@@ -164,9 +162,7 @@ class QMCSampler(BaseSampler):
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._qmc_type = qmc_type
         self._cached_qmc_engine = None
-        # TODO(kstoneriv3): make sure that search_space is either None or valid search space.
-        # also make sure that it is OrderedDict
-        self._initial_search_space = search_space
+        self._initial_search_space = None
         self._warn_incomplete_reseeding = warn_incomplete_reseeding
         self._warn_independent_sampling = warn_independent_sampling
 
@@ -188,15 +184,14 @@ class QMCSampler(BaseSampler):
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
 
-        if self._initial_search_space is not None:
-            return self._initial_search_space
-
         past_trials = study._storage.get_all_trials(
             study._study_id, states=_SUGGESTED_STATES, deepcopy=False
         )
 
+        if self._initial_search_space is not None:
+            return self._initial_search_space
         # The initial trial is sampled by the independent sampler.
-        if len(past_trials) == 0:
+        elif len(past_trials) == 0:
             return {}
         # If an initial trial was already made,
         # construct search_space of this sampler from the initial trial.
