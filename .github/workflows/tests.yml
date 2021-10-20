@@ -25,9 +25,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    # Not intended for forks.
-    if: github.repository == 'optuna/optuna'
-
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -69,6 +66,7 @@ jobs:
         # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
         pip install scikit-optimize
         pip install cma
+        pip install botorch torch==1.8.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
     - name: Tests
       run: |

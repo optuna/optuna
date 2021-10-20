@@ -12,14 +12,9 @@ jobs:
   tests-integration:
     runs-on: ubuntu-latest
 
-    # TODO (crcrpar): Add 3.9 to python-version matrix once libraries support it.
-    # ref: https://github.com/optuna/optuna/issues/2034
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
-
-    # Not intended for forks.
-    if: github.repository == 'optuna/optuna'
 
     steps:
     - name: Checkout
@@ -63,12 +58,6 @@ jobs:
         if [ ${{ matrix.python-version }} = 3.6 ]; then
           pytest tests/integration_tests \
             --ignore tests/integration_tests/test_botorch.py
-        elif  [ ${{ matrix.python-version }} = 3.9 ]; then
-          pytest tests/integration_tests \
-            --ignore tests/integration_tests/test_keras.py \
-            --ignore tests/integration_tests/test_tensorflow.py \
-            --ignore tests/integration_tests/test_tfkeras.py \
-            --ignore tests/integration_tests/test_tensorboard.py
         else
           pytest -s tests/integration_tests
         fi

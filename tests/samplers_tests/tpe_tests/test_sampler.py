@@ -890,7 +890,11 @@ def test_split_observation_pairs() -> None:
 
 def test_build_observation_dict() -> None:
     observation_dict = _tpe.sampler._build_observation_dict(
-        {"x": [1.0, 2.0, 3.0, 4.0], "y": [10.0, None, 20.0, None]}, np.asarray([0, 3])
+        {
+            "x": np.asarray([1.0, 2.0, 3.0, 4.0], dtype=float),
+            "y": np.asarray([10.0, None, 20.0, None], dtype=float),
+        },
+        np.asarray([0, 3]),
     )
 
     np.testing.assert_array_equal(observation_dict["x"], np.asarray([1.0, 4.0]))

@@ -7,6 +7,7 @@ from typing import Optional
 from typing import Sequence
 
 import optuna
+from optuna._deprecated import deprecated
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
@@ -16,6 +17,11 @@ from optuna.distributions import CategoricalChoiceType
 with try_import() as _imports:
     import torch
     import torch.distributed as dist
+
+
+_suggest_deprecated_msg = (
+    "Use :func:`~optuna.integration.TorchDistributedTrial.suggest_float` instead."
+)
 
 
 @experimental("2.6.0")
@@ -84,29 +90,20 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
         return self._call_and_communicate(func, torch.float)
 
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
-        def func() -> float:
 
-            assert self._delegate is not None
-            return self._delegate.suggest_uniform(name, low, high)
+        return self.suggest_float(name, low, high)
 
-        return self._call_and_communicate(func, torch.float)
-
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
-        def func() -> float:
 
-            assert self._delegate is not None
-            return self._delegate.suggest_loguniform(name, low, high)
+        return self.suggest_float(name, low, high, log=True)
 
-        return self._call_and_communicate(func, torch.float)
-
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
-        def func() -> float:
 
-            assert self._delegate is not None
-            return self._delegate.suggest_discrete_uniform(name, low, high, q=q)
-
-        return self._call_and_communicate(func, torch.float)
+        return self.suggest_float(name, low, high, step=q)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         def func() -> float:

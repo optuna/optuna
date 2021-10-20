@@ -32,7 +32,7 @@ _NUMERICAL_DISTRIBUTIONS = (
 )
 
 
-@experimental("2.x.0")  # TODO(kstoneriv3)
+@experimental("3.x.0")  # TODO(kstoneriv3)
 class QMCSampler(BaseSampler):
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 
@@ -122,7 +122,7 @@ class QMCSampler(BaseSampler):
             If ``qmc_type`` is not one of 'halton' an 'sobol`.
 
     .. note::
-        Added in v2.x.0 TODO(kstoneriv3)as an experimental feature. The interface may change in
+        Added in v2.x.0 as an experimental feature. The interface may change in
         newer versions without prior notice.
 
     Example:

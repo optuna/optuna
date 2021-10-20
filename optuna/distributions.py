@@ -198,7 +198,8 @@ class DiscreteUniformDistribution(BaseDistribution):
 
     Raises:
         ValueError:
-            If ``low`` value is larger than ``high`` value.
+            If ``low`` value is larger than ``high`` value, or ``q`` value is smaller or
+            equal to 0.
     """
 
     def __init__(self, low: float, high: float, q: float) -> None:
@@ -207,6 +208,8 @@ class DiscreteUniformDistribution(BaseDistribution):
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}, q={}).".format(low, high, q)
             )
+        if q <= 0:
+            raise ValueError("The `q` value must be non-zero positive value, but q={}.".format(q))
 
         high = _adjust_discrete_uniform_high(low, high, q)
 
@@ -375,7 +378,8 @@ class IntLogUniformDistribution(BaseDistribution):
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
         value = param_value_in_internal_repr
-        return self.low <= value <= self.high and (value - self.low) % self.step == 0
+        # `step` is ignored and assumed to be 1.
+        return self.low <= value <= self.high
 
     @property
     def step(self) -> int:
@@ -477,14 +481,52 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
 
     json_dict = json.loads(json_str)
 
-    if json_dict["name"] == CategoricalDistribution.__name__:
-        json_dict["attributes"]["choices"] = tuple(json_dict["attributes"]["choices"])
+    if "name" in json_dict:
+        if json_dict["name"] == CategoricalDistribution.__name__:
+            json_dict["attributes"]["choices"] = tuple(json_dict["attributes"]["choices"])
 
-    for cls in DISTRIBUTION_CLASSES:
-        if json_dict["name"] == cls.__name__:
-            return cls(**json_dict["attributes"])
+        for cls in DISTRIBUTION_CLASSES:
+            if json_dict["name"] == cls.__name__:
+                return cls(**json_dict["attributes"])
 
-    raise ValueError("Unknown distribution class: {}".format(json_dict["name"]))
+        raise ValueError("Unknown distribution class: {}".format(json_dict["name"]))
+
+    else:
+        # Deserialize a distribution from an abbreviated format.
+        if json_dict["type"] == "categorical":
+            return CategoricalDistribution(json_dict["choices"])
+        elif json_dict["type"] in ("float", "int"):
+            low = json_dict["low"]
+            high = json_dict["high"]
+            step = json_dict.get("step")
+            log = json_dict.get("log")
+
+            if json_dict["type"] == "float":
+                if log:
+                    if step is not None:
+                        raise ValueError(
+                            "The parameter `step` is not supported when `log` is true."
+                        )
+                    else:
+                        return LogUniformDistribution(low, high)
+                else:
+                    if step is not None:
+                        return DiscreteUniformDistribution(low, high, step)
+                    else:
+                        return UniformDistribution(low, high)
+            else:
+                if log:
+                    if step is not None:
+                        return IntLogUniformDistribution(low, high, step)
+                    else:
+                        return IntLogUniformDistribution(low, high)
+                else:
+                    if step is not None:
+                        return IntUniformDistribution(low, high, step)
+                    else:
+                        return IntUniformDistribution(low, high)
+
+        raise ValueError("Unknown distribution type: {}".format(json_dict["type"]))
 
 
 def distribution_to_json(dist: BaseDistribution) -> str:

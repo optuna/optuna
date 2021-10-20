@@ -34,7 +34,7 @@ with try_import() as _imports:
     from botorch.models.transforms.outcome import Standardize
     from botorch.optim import optimize_acqf
     from botorch.sampling.samplers import SobolQMCNormalSampler
-    from botorch.utils.multi_objective.box_decomposition import NondominatedPartitioning
+    from botorch.utils.multi_objective.box_decompositions import NondominatedPartitioning
     from botorch.utils.multi_objective.scalarization import get_chebyshev_scalarization
     from botorch.utils.sampling import sample_simplex
     from botorch.utils.transforms import normalize
@@ -76,8 +76,8 @@ def qei_candidates_func(
             constraints. A constraint is violated if strictly larger than 0. If no constraints are
             involved in the optimization, this argument will be :obj:`None`.
         bounds:
-            Search space bounds. A ``torch.Tensor`` of shape ``(n_params, 2)``. ``n_params`` is
-            identical to that of ``train_x``. The first and the second column correspond to the
+            Search space bounds. A ``torch.Tensor`` of shape ``(2, n_params)``. ``n_params`` is
+            identical to that of ``train_x``. The first and the second rows correspond to the
             lower and upper bounds for each parameter respectively.
 
     Returns:
@@ -420,7 +420,16 @@ class BoTorchSampler(BaseSampler):
             # because `InMemoryStorage.create_new_study` always returns the same study ID.
             raise RuntimeError("BoTorchSampler cannot handle multiple studies.")
 
-        return self._search_space.calculate(study, ordered_dict=True)  # type: ignore
+        search_space: Dict[str, BaseDistribution] = OrderedDict()
+        for name, distribution in self._search_space.calculate(study, ordered_dict=True).items():
+            if distribution.single():
+                # built-in `candidates_func` cannot handle distributions that contain just a
+                # single value, so we skip them. Note that the parameter values for such
+                # distributions are sampled in `Trial`.
+                continue
+            search_space[name] = distribution
+
+        return search_space
 
     def sample_relative(
         self,

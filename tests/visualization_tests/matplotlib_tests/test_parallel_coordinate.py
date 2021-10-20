@@ -86,6 +86,45 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
     assert len(figure.get_lines()) == 0
 
 
+def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
+    # Test with categorical params that can be interpreted as numeric params.
+    study_categorical_params = create_study()
+    study_categorical_params.add_trial(
+        create_trial(
+            value=0.0,
+            params={"category_a": 2, "category_b": 20},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+
+    study_categorical_params.add_trial(
+        create_trial(
+            value=1.0,
+            params={"category_a": 1, "category_b": 30},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+
+    study_categorical_params.add_trial(
+        create_trial(
+            value=2.0,
+            params={"category_a": 2, "category_b": 10},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+    figure = plot_parallel_coordinate(study_categorical_params)
+    assert len(figure.get_lines()) == 0
+
+
 def test_plot_parallel_coordinate_log_params() -> None:
     # Test with log params
     study_log_params = create_study()

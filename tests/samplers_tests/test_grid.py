@@ -13,6 +13,7 @@ import pytest
 import optuna
 from optuna import samplers
 from optuna.samplers._grid import GridValueType
+from optuna.storages import RetryFailedTrialCallback
 from optuna.trial import Trial
 
 
@@ -166,3 +167,40 @@ def test_has_same_search_space() -> None:
 
     assert not sampler._same_search_space({"x": [3, 2, 1, 0], "y": ["a", "b", "c"]})
     assert not sampler._same_search_space({"x": [3, 2], "y": ["a", "b", "c"]})
+
+
+def test_retried_trial() -> None:
+    sampler = samplers.GridSampler({"a": [0, 50]})
+    study = optuna.create_study(sampler=sampler)
+    trial = study.ask()
+    trial.suggest_int("a", 0, 100)
+
+    callback = RetryFailedTrialCallback()
+    callback(study, study.trials[0])
+
+    study.optimize(lambda trial: trial.suggest_int("a", 0, 100))
+
+    assert len(study.trials) == 3
+    assert study.trials[0].params["a"] == study.trials[1].params["a"]
+    assert study.trials[0].system_attrs["grid_id"] == study.trials[1].system_attrs["grid_id"]
+
+
+def test_enqueued_trial() -> None:
+    sampler = samplers.GridSampler({"a": [0, 50]})
+    study = optuna.create_study(sampler=sampler)
+    study.enqueue_trial({"a": 100})
+
+    study.optimize(lambda trial: trial.suggest_int("a", 0, 100))
+
+    assert len(study.trials) == 3
+    assert study.trials[0].params["a"] == 100
+    assert sorted([study.trials[1].params["a"], study.trials[2].params["a"]]) == [0, 50]
+
+
+def test_enqueued_insufficient_trial() -> None:
+    sampler = samplers.GridSampler({"a": [0, 50]})
+    study = optuna.create_study(sampler=sampler)
+    study.enqueue_trial({})
+
+    with pytest.raises(ValueError):
+        study.optimize(lambda trial: trial.suggest_int("a", 0, 100))

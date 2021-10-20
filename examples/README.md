@@ -86,6 +86,10 @@ In addition, integration modules are available for the following libraries, prov
 
 * [Tracking optimization process with MLflow](https://github.com/optuna/optuna-examples/blob/main/mlflow/keras_mlflow.py)
 
+### Examples of Weights & Biases
+
+* [Tracking optimization process with Weights & Biases](https://github.com/optuna/optuna-examples/blob/main/wandb/wandb_simple.py)
+
 ### Examples of Hydra
 
 * [Optimization with Hydra](https://github.com/optuna/optuna-examples/blob/main/hydra/simple.py)

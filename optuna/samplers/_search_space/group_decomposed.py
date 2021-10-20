@@ -5,7 +5,7 @@ from typing import Optional
 from typing import Tuple
 
 from optuna.distributions import BaseDistribution
-from optuna.study import BaseStudy
+from optuna.study import Study
 from optuna.trial import TrialState
 
 
@@ -41,7 +41,7 @@ class _GroupDecomposedSearchSpace(object):
         self._study_id: Optional[int] = None
         self._include_pruned = include_pruned
 
-    def calculate(self, study: BaseStudy) -> _SearchSpaceGroup:
+    def calculate(self, study: Study) -> _SearchSpaceGroup:
         if self._study_id is None:
             self._study_id = study._study_id
         else:

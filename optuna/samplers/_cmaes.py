@@ -38,7 +38,7 @@ CmaClass = Union[CMA, SepCMA]
 
 
 class CmaEsSampler(BaseSampler):
-    """A sampler using `cmaes <https://github.com/CyberAgent/cmaes>`_ as the backend.
+    """A sampler using `cmaes <https://github.com/CyberAgentAILab/cmaes>`_ as the backend.
 
     Example:
 

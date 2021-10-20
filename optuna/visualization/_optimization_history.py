@@ -1,6 +1,10 @@
+import itertools
 from typing import Callable
 from typing import cast
+from typing import List
 from typing import Optional
+from typing import Sequence
+from typing import Union
 
 import numpy as np
 
@@ -20,10 +24,11 @@ _logger = get_logger(__name__)
 
 
 def plot_optimization_history(
-    study: Study,
+    study: Union[Study, Sequence[Study]],
     *,
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
+    error_bar: bool = False,
 ) -> "go.Figure":
     """Plot optimization history of all trials in a study.
 
@@ -52,6 +57,7 @@ def plot_optimization_history(
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
+            You can pass multiple studies if you want to compare those optimization histories.
         target:
             A function to specify the value to display. If it is :obj:`None` and ``study`` is being
             used for single-objective optimization, the objective values are plotted.
@@ -60,6 +66,8 @@ def plot_optimization_history(
                 Specify this argument if ``study`` is being used for multi-objective optimization.
         target_name:
             Target's name to display on the axis label and the legend.
+        error_bar:
+            A flag to show the error bar.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
@@ -71,14 +79,21 @@ def plot_optimization_history(
     """
 
     _imports.check()
-    _check_plot_args(study, target, target_name)
-    return _get_optimization_history_plot(study, target, target_name)
+
+    if isinstance(study, Study):
+        studies = [study]
+    else:
+        studies = list(study)
+
+    _check_plot_args(studies, target, target_name)
+    return _get_optimization_history_plot(studies, target, target_name, error_bar)
 
 
 def _get_optimization_history_plot(
-    study: Study,
+    studies: List[Study],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
+    error_bar: bool,
 ) -> "go.Figure":
 
     layout = go.Layout(
@@ -87,36 +102,169 @@ def _get_optimization_history_plot(
         yaxis={"title": target_name},
     )
 
-    trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
-
-    if len(trials) == 0:
-        _logger.warning("Study instance does not contain trials.")
+    if len(studies) == 0:
+        _logger.warning("There are no studies.")
         return go.Figure(data=[], layout=layout)
 
-    if target is None:
-        if study.direction == StudyDirection.MINIMIZE:
-            best_values = np.minimum.accumulate([cast(float, t.value) for t in trials])
-        else:
-            best_values = np.maximum.accumulate([cast(float, t.value) for t in trials])
-        traces = [
-            go.Scatter(
-                x=[t.number for t in trials],
-                y=[t.value for t in trials],
-                mode="markers",
-                name=target_name,
-            ),
-            go.Scatter(x=[t.number for t in trials], y=best_values, name="Best Value"),
-        ]
+    all_trials = list(
+        itertools.chain.from_iterable(
+            (
+                trial
+                for trial in study.get_trials(deepcopy=False)
+                if trial.state == TrialState.COMPLETE
+            )
+            for study in studies
+        )
+    )
+
+    if len(all_trials) == 0:
+        _logger.warning("There are no complete trials.")
+        return go.Figure(data=[], layout=layout)
+
+    if error_bar:
+        return _get_optimization_histories_with_error_bar(studies, target, target_name, layout)
     else:
-        traces = [
-            go.Scatter(
-                x=[t.number for t in trials],
-                y=[target(t) for t in trials],
-                mode="markers",
-                name=target_name,
-            ),
+        return _get_optimization_histories(studies, target, target_name, layout)
+
+
+def _get_optimization_histories_with_error_bar(
+    studies: List[Study],
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
+    layout: "go.Layout",
+) -> "go.Figure":
+    max_trial_number = np.max(
+        [
+            trial.number
+            for study in studies
+            for trial in study.get_trials(states=(TrialState.COMPLETE,))
         ]
+    )
+
+    _target: Callable[[FrozenTrial], float]
+    if target is None:
+
+        def _target(t: FrozenTrial) -> float:
+            return cast(float, t.value)
+
+    else:
+        _target = target
+
+    target_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
+    for study in studies:
+        trials = study.get_trials(states=(TrialState.COMPLETE,))
+        for t in trials:
+            target_values[t.number].append(_target(t))
+
+    mean_of_target_values = [np.mean(v) if len(v) > 0 else None for v in target_values]
+    std_of_target_values = [np.std(v) if len(v) > 0 else None for v in target_values]
+    trial_numbers = np.arange(max_trial_number + 2)[[v is not None for v in mean_of_target_values]]
+    means = np.asarray(mean_of_target_values)[trial_numbers]
+    stds = np.asarray(std_of_target_values)[trial_numbers]
+    traces = [
+        go.Scatter(
+            x=trial_numbers,
+            y=means,
+            error_y={
+                "type": "data",
+                "array": stds,
+                "visible": True,
+            },
+            mode="markers",
+            name=target_name,
+        )
+    ]
+
+    if target is None:
+        best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
+        for study in studies:
+            trials = study.get_trials(states=(TrialState.COMPLETE,))
+
+            if study.direction == StudyDirection.MINIMIZE:
+                best_vs = np.minimum.accumulate([cast(float, t.value) for t in trials])
+            else:
+                best_vs = np.maximum.accumulate([cast(float, t.value) for t in trials])
+
+            for i, t in enumerate(trials):
+                best_values[t.number].append(best_vs[i])
+
+        mean_of_best_values = [np.mean(v) if len(v) > 0 else None for v in best_values]
+        std_of_best_values = [np.std(v) if len(v) > 0 else None for v in best_values]
+        means = np.asarray(mean_of_best_values)[trial_numbers]
+        stds = np.asarray(std_of_best_values)[trial_numbers]
+        traces.append(go.Scatter(x=trial_numbers, y=means, name="Best Value"))
+        traces.append(
+            go.Scatter(
+                x=trial_numbers,
+                y=means + stds,
+                mode="lines",
+                line=dict(width=0.01),
+                showlegend=False,
+            )
+        )
+        traces.append(
+            go.Scatter(
+                x=trial_numbers,
+                y=means - stds,
+                mode="none",
+                showlegend=False,
+                fill="tonexty",
+                fillcolor="rgba(255,0,0,0.2)",
+            )
+        )
 
     figure = go.Figure(data=traces, layout=layout)
+
+    return figure
+
+
+def _get_optimization_histories(
+    studies: List[Study],
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
+    layout: "go.Layout",
+) -> "go.Figure":
+
+    traces = []
+    for study in studies:
+        trials = study.get_trials(states=(TrialState.COMPLETE,))
+        if target is None:
+            if study.direction == StudyDirection.MINIMIZE:
+                best_values = np.minimum.accumulate([cast(float, t.value) for t in trials])
+            else:
+                best_values = np.maximum.accumulate([cast(float, t.value) for t in trials])
+            traces.append(
+                go.Scatter(
+                    x=[t.number for t in trials],
+                    y=[t.value for t in trials],
+                    mode="markers",
+                    name=target_name
+                    if len(studies) == 1
+                    else f"{target_name} of {study.study_name}",
+                )
+            )
+            traces.append(
+                go.Scatter(
+                    x=[t.number for t in trials],
+                    y=best_values,
+                    name="Best Value"
+                    if len(studies) == 1
+                    else f"Best Value of {study.study_name}",
+                )
+            )
+        else:
+            traces.append(
+                go.Scatter(
+                    x=[t.number for t in trials],
+                    y=[target(t) for t in trials],
+                    mode="markers",
+                    name=target_name
+                    if len(studies) == 1
+                    else f"{target_name} of {study.study_name}",
+                )
+            )
+
+    figure = go.Figure(data=traces, layout=layout)
+    figure.update_layout(width=1000, height=400)
 
     return figure

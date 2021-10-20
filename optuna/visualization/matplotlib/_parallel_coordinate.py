@@ -18,6 +18,7 @@ from optuna.visualization._utils import _check_plot_args
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 from optuna.visualization.matplotlib._utils import _is_categorical
 from optuna.visualization.matplotlib._utils import _is_log_scale
+from optuna.visualization.matplotlib._utils import _is_numerical
 
 
 if _imports.is_successful():
@@ -140,7 +141,9 @@ def _get_parallel_coordinate_plot(
     log_param_names = []
     param_values = []
     var_names = [target_name]
-    for p_name in sorted_params:
+    numeric_cat_params_indices: List[int] = []
+
+    for param_index, p_name in enumerate(sorted_params):
         values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
 
         if _is_log_scale(trials, p_name):
@@ -148,7 +151,13 @@ def _get_parallel_coordinate_plot(
             log_param_names.append(p_name)
         elif _is_categorical(trials, p_name):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
+
+            if _is_numerical(trials, p_name):
+                _ = [vocab[v] for v in sorted(values)]
+                numeric_cat_params_indices.append(param_index)
+
             values = [vocab[v] for v in values]
+
             cat_param_names.append(p_name)
             vocab_item_sorted = sorted(vocab.items(), key=lambda x: x[1])
             cat_param_values.append([v[0] for v in vocab_item_sorted])
@@ -169,6 +178,16 @@ def _get_parallel_coordinate_plot(
         var_names.append(p_name if len(p_name) < 20 else "{}...".format(p_name[:17]))
         param_values.append(values)
 
+    if numeric_cat_params_indices:
+        # np.lexsort consumes the sort keys the order from back to front.
+        # So the values of parameters have to be reversed the order.
+        sorted_idx = np.lexsort(
+            [param_values[index] for index in numeric_cat_params_indices][::-1]
+        )
+        # Since the values are mapped to other categories by the index,
+        # the index will be swapped according to the sorted index of numeric params.
+        param_values = [list(np.array(v)[sorted_idx]) for v in param_values]
+
     # Draw multiple line plots and axes.
     # Ref: https://stackoverflow.com/a/50029441
     ax.set_xlim(0, len(sorted_params))
@@ -188,7 +207,7 @@ def _get_parallel_coordinate_plot(
             ax2.set_yscale("log")
         ax2.spines["top"].set_visible(False)
         ax2.spines["bottom"].set_visible(False)
-        ax2.get_xaxis().set_visible(False)
+        ax2.xaxis.set_visible(False)
         ax2.plot([1] * len(param_values[i]), param_values[i], visible=False)
         ax2.spines["right"].set_position(("axes", (i + 1) / len(sorted_params)))
         if p_name in cat_param_names:

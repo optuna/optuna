@@ -34,6 +34,17 @@ EXAMPLE_JSONS = {
     '"attributes": {"low": 2, "high": 12, "step": 2}}',
 }
 
+EXAMPLE_ABBREVIATED_JSONS = {
+    "u": '{"type": "float", "low": 1.0, "high": 2.0}',
+    "l": '{"type": "float", "low": 0.001, "high": 100, "log": true}',
+    "du": '{"type": "float", "low": 1.0, "high": 9.0, "step": 2.0}',
+    "iu": '{"type": "int", "low": 1, "high": 9, "step": 2}',
+    "c1": '{"type": "categorical", "choices": [2.71, -Infinity]}',
+    "c2": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
+    "c3": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
+    "ilu": '{"type": "int", "low": 2, "high": 12, "step": 2, "log": true}',
+}
+
 
 def test_json_to_distribution() -> None:
 
@@ -43,6 +54,32 @@ def test_json_to_distribution() -> None:
 
     unknown_json = '{"name": "UnknownDistribution", "attributes": {"low": 1.0, "high": 2.0}}'
     pytest.raises(ValueError, lambda: distributions.json_to_distribution(unknown_json))
+
+
+def test_abbreviated_json_to_distribution() -> None:
+
+    for key in EXAMPLE_ABBREVIATED_JSONS:
+        distribution_actual = distributions.json_to_distribution(EXAMPLE_ABBREVIATED_JSONS[key])
+        assert distribution_actual == EXAMPLE_DISTRIBUTIONS[key]
+
+    unknown_json = '{"type": "unknown", "low": 1.0, "high": 2.0}'
+    pytest.raises(ValueError, lambda: distributions.json_to_distribution(unknown_json))
+
+    invalid_distribution = (
+        '{"type": "float", "low": 0.0, "high": -100.0}',
+        '{"type": "float", "low": 7.3, "high": 7.2, "log": true}',
+        '{"type": "float", "low": -30.0, "high": -40.0, "step": 3.0}',
+        '{"type": "float", "low": 1.0, "high": 100.0, "step": 0.0}',
+        '{"type": "float", "low": 1.0, "high": 100.0, "step": -1.0}',
+        '{"type": "int", "low": 123, "high": 100}',
+        '{"type": "int", "low": 123, "high": 100, "step": 2}',
+        '{"type": "int", "low": 123, "high": 100, "log": true}',
+        '{"type": "int", "low": 1, "high": 100, "step": 0}',
+        '{"type": "int", "low": 1, "high": 100, "step": -1}',
+        '{"type": "categorical", "choices": []}',
+    )
+    for distribution in invalid_distribution:
+        pytest.raises(ValueError, lambda: distributions.json_to_distribution(distribution))
 
 
 def test_backward_compatibility_int_uniform_distribution() -> None:
@@ -162,7 +199,7 @@ def test_contains() -> None:
     assert c._contains(1.5)
     assert not c._contains(3)
 
-    ilu = distributions.IntUniformDistribution(low=2, high=12)
+    ilu = distributions.IntLogUniformDistribution(low=2, high=12)
     assert not ilu._contains(0.9)
     assert ilu._contains(2)
     assert ilu._contains(4)
@@ -171,12 +208,14 @@ def test_contains() -> None:
     assert not ilu._contains(12.1)
     assert not ilu._contains(13)
 
-    iluq = distributions.IntLogUniformDistribution(low=2, high=7)
+    # `step` is ignored and assumed to be 1.
+    iluq = distributions.IntLogUniformDistribution(low=2, high=7, step=2)
     assert not iluq._contains(0.9)
     assert iluq._contains(2)
     assert iluq._contains(4)
     assert iluq._contains(5)
     assert iluq._contains(6)
+    assert iluq._contains(7)
     assert not iluq._contains(7.1)
     assert not iluq._contains(8)
 
@@ -208,12 +247,12 @@ def test_empty_range_contains() -> None:
     assert iuq._contains(1)
     assert not iuq._contains(2)
 
-    ilu = distributions.IntUniformDistribution(low=1, high=1)
+    ilu = distributions.IntLogUniformDistribution(low=1, high=1)
     assert not ilu._contains(0)
     assert ilu._contains(1)
     assert not ilu._contains(2)
 
-    iluq = distributions.IntUniformDistribution(low=1, high=1, step=2)
+    iluq = distributions.IntLogUniformDistribution(low=1, high=1, step=2)
     assert not iluq._contains(0)
     assert iluq._contains(1)
     assert not iluq._contains(2)
@@ -347,6 +386,24 @@ def test_int_uniform_distribution_asdict() -> None:
 def test_int_log_uniform_distribution_asdict() -> None:
 
     assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12, "step": 2}
+
+
+def test_discrete_uniform_distribution_invalid_q() -> None:
+
+    with pytest.raises(ValueError):
+        distributions.DiscreteUniformDistribution(low=1, high=100, q=0)
+
+    with pytest.raises(ValueError):
+        distributions.DiscreteUniformDistribution(low=1, high=100, q=-1)
+
+
+def test_int_uniform_distribution_invalid_step() -> None:
+
+    with pytest.raises(ValueError):
+        distributions.IntUniformDistribution(low=1, high=100, step=0)
+
+    with pytest.raises(ValueError):
+        distributions.IntUniformDistribution(low=1, high=100, step=-1)
 
 
 def test_int_log_uniform_distribution_deprecation() -> None:
