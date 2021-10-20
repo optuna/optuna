@@ -24,6 +24,9 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 ## News
 
 Help us create the next version of Optuna!
+
+Optuna 3.0 Roadmap published for review. Please take a look at the [planned improvements to Optuna](https://github.com/optuna/optuna/wiki/Optuna-V3-Roadmap), and share your feedback in the github issues. PR contributions also welcome!
+
 Please take a few minutes to fill in this survey, and let us know how you use Optuna now and what improvements you'd like.🤔
 
 All questions optional. 🙇‍♂️
@@ -74,7 +77,7 @@ def objective(trial):
         rf_max_depth = trial.suggest_int('rf_max_depth', 2, 32)
         regressor_obj = sklearn.ensemble.RandomForestRegressor(max_depth=rf_max_depth)
 
-    X, y = sklearn.datasets.load_boston(return_X_y=True)
+    X, y = sklearn.datasets.fetch_california_housing(return_X_y=True)
     X_train, X_val, y_train, y_val = sklearn.model_selection.train_test_split(X, y, random_state=0)
 
     regressor_obj.fit(X_train, y_train)

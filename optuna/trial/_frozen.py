@@ -8,6 +8,7 @@ from typing import Union
 
 from optuna import distributions
 from optuna import logging
+from optuna._deprecated import deprecated
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
@@ -21,6 +22,7 @@ from optuna.trial._state import TrialState
 
 
 _logger = logging.get_logger(__name__)
+_suggest_deprecated_msg = "Use :func:`~optuna.trial.FrozenTrial.suggest_float` instead."
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
 
@@ -233,18 +235,20 @@ class FrozenTrial(BaseTrial):
             else:
                 return self._suggest(name, UniformDistribution(low=low, high=high))
 
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
-        return self._suggest(name, UniformDistribution(low=low, high=high))
+        return self.suggest_float(name, low, high)
 
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
-        return self._suggest(name, LogUniformDistribution(low=low, high=high))
+        return self.suggest_float(name, low, high, log=True)
 
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
 
-        discrete = DiscreteUniformDistribution(low=low, high=high, q=q)
-        return self._suggest(name, discrete)
+        return self.suggest_float(name, low, high, step=q)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
 
@@ -548,8 +552,9 @@ def create_trial(
         functions are created inside :func:`~optuna.study.Study.optimize`.
 
     .. note::
-        When ``state`` is ``TrialState.COMPLETE``, the following parameters are
+        When ``state`` is :class:`TrialState.COMPLETE`, the following parameters are
         required:
+
         * ``params``
         * ``distributions``
         * ``value`` or ``values``
@@ -558,12 +563,11 @@ def create_trial(
         state:
             Trial state.
         value:
-            Trial objective value. Must be specified if ``state`` is ``None``
-            or :class:`TrialState.COMPLETE`.
+            Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
         values:
             Sequence of the trial objective values. The length is greater than 1 if the problem is
             multi-objective optimization.
-            Must be specified if ``state`` is ``None`` or :class:`TrialState.COMPLETE`.
+            Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
         params:
             Dictionary with suggested parameters of the trial.
         distributions:

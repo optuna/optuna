@@ -198,7 +198,8 @@ class DiscreteUniformDistribution(BaseDistribution):
 
     Raises:
         ValueError:
-            If ``low`` value is larger than ``high`` value.
+            If ``low`` value is larger than ``high`` value, or ``q`` value is smaller or
+            equal to 0.
     """
 
     def __init__(self, low: float, high: float, q: float) -> None:
@@ -207,6 +208,8 @@ class DiscreteUniformDistribution(BaseDistribution):
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}, q={}).".format(low, high, q)
             )
+        if q <= 0:
+            raise ValueError("The `q` value must be non-zero positive value, but q={}.".format(q))
 
         high = _adjust_discrete_uniform_high(low, high, q)
 
@@ -499,25 +502,25 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
 
             if json_dict["type"] == "float":
                 if log:
-                    if step:
+                    if step is not None:
                         raise ValueError(
                             "The parameter `step` is not supported when `log` is true."
                         )
                     else:
                         return LogUniformDistribution(low, high)
                 else:
-                    if step:
+                    if step is not None:
                         return DiscreteUniformDistribution(low, high, step)
                     else:
                         return UniformDistribution(low, high)
             else:
                 if log:
-                    if step:
+                    if step is not None:
                         return IntLogUniformDistribution(low, high, step)
                     else:
                         return IntLogUniformDistribution(low, high)
                 else:
-                    if step:
+                    if step is not None:
                         return IntUniformDistribution(low, high, step)
                     else:
                         return IntUniformDistribution(low, high)

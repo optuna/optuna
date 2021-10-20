@@ -1,11 +1,17 @@
+from collections import OrderedDict
 import pickle
+import sys
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Union
 import warnings
 
+from _pytest.mark.structures import MarkDecorator
 import numpy as np
 import pytest
 
@@ -34,25 +40,60 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.samplers.TPESampler(n_startup_trials=0),
         lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
+        lambda: optuna.integration.SkoptSampler(
+            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        ),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
         optuna.samplers.NSGAIISampler,
+    ]
+    + []
+    if sys.version_info < (3, 7, 0)
+    else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)],
+)
+parametrize_relative_sampler = pytest.mark.parametrize(
+    "relative_sampler_class",
+    [
+        lambda: optuna.samplers.TPESampler(n_startup_trials=0, multivariate=True),
+        lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
+        lambda: optuna.integration.SkoptSampler(
+            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        ),
+        lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
     ],
 )
 parametrize_multi_objective_sampler = pytest.mark.parametrize(
     "multi_objective_sampler_class",
     [
         optuna.samplers.NSGAIISampler,
-        optuna.samplers.MOTPESampler,
-    ],
+        lambda: optuna.samplers.MOTPESampler(n_startup_trials=0),
+    ]
+    + []
+    if sys.version_info < (3, 7, 0)
+    else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)],
 )
+
+
+def parametrize_suggest_method(name: str) -> MarkDecorator:
+    return pytest.mark.parametrize(
+        f"suggest_method_{name}",
+        [
+            lambda t: t.suggest_float(name, 0, 10),
+            lambda t: t.suggest_int(name, 0, 10),
+            lambda t: cast(float, t.suggest_categorical(name, [0, 1, 2])),
+            lambda t: t.suggest_float(name, 0, 10, step=0.5),
+            lambda t: t.suggest_float(name, 1e-7, 10, log=True),
+            lambda t: t.suggest_int(name, 1, 10, log=True),
+        ],
+    )
 
 
 @pytest.mark.parametrize(
     "sampler_class",
     [
         lambda: optuna.samplers.CmaEsSampler(n_startup_trials=0),
-        lambda: optuna.integration.SkoptSampler(skopt_kwargs={"n_initial_points": 1}),
+        lambda: optuna.integration.SkoptSampler(
+            skopt_kwargs={"base_estimator": "dummy", "n_initial_points": 1}
+        ),
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
     ],
 )
@@ -223,6 +264,142 @@ def test_categorical(
     assert np.all(points <= len(distribution.choices) - 1)
     round_points = np.round(points)
     np.testing.assert_almost_equal(round_points, points)
+
+
+@parametrize_relative_sampler
+@pytest.mark.parametrize(
+    "x_distribution",
+    [
+        UniformDistribution(-1.0, 1.0),
+        LogUniformDistribution(1e-7, 1.0),
+        DiscreteUniformDistribution(-10, 10, 0.5),
+        IntUniformDistribution(1, 10),
+        IntLogUniformDistribution(1, 100),
+    ],
+)
+@pytest.mark.parametrize(
+    "y_distribution",
+    [
+        UniformDistribution(-1.0, 1.0),
+        LogUniformDistribution(1e-7, 1.0),
+        DiscreteUniformDistribution(-10, 10, 0.5),
+        IntUniformDistribution(1, 10),
+        IntLogUniformDistribution(1, 100),
+    ],
+)
+def test_sample_relative_numerical(
+    relative_sampler_class: Callable[[], BaseSampler],
+    x_distribution: BaseDistribution,
+    y_distribution: BaseDistribution,
+) -> None:
+
+    search_space: Dict[str, BaseDistribution] = OrderedDict(x=x_distribution, y=y_distribution)
+    study = optuna.study.create_study(sampler=relative_sampler_class())
+    trial = study.ask(search_space)
+    study.tell(trial, sum(trial.params.values()))
+
+    def sample() -> List[Union[int, float]]:
+        params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
+        return [params[name] for name in search_space]
+
+    points = np.array([sample() for _ in range(10)])
+    for i, distribution in enumerate(search_space.values()):
+        assert isinstance(
+            distribution,
+            (
+                UniformDistribution,
+                LogUniformDistribution,
+                DiscreteUniformDistribution,
+                IntUniformDistribution,
+                IntLogUniformDistribution,
+            ),
+        )
+        assert np.all(points[:, i] >= distribution.low)
+        assert np.all(points[:, i] <= distribution.high)
+    for param_value, distribution in zip(sample(), search_space.values()):
+        assert not isinstance(param_value, np.floating)
+        assert not isinstance(param_value, np.integer)
+        if isinstance(distribution, (IntUniformDistribution, IntLogUniformDistribution)):
+            assert isinstance(param_value, int)
+        else:
+            assert isinstance(param_value, float)
+
+
+@parametrize_relative_sampler
+def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSampler]) -> None:
+
+    search_space: Dict[str, BaseDistribution] = OrderedDict(
+        x=CategoricalDistribution([1, 10, 100]), y=CategoricalDistribution([-1, -10, -100])
+    )
+    study = optuna.study.create_study(sampler=relative_sampler_class())
+    trial = study.ask(search_space)
+    study.tell(trial, sum(trial.params.values()))
+
+    def sample() -> List[float]:
+        params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
+        return [params[name] for name in search_space]
+
+    points = np.array([sample() for _ in range(10)])
+    for i, distribution in enumerate(search_space.values()):
+        assert isinstance(distribution, CategoricalDistribution)
+        assert np.all([v in distribution.choices for v in points[:, i]])
+    for param_value in sample():
+        assert not isinstance(param_value, np.floating)
+        assert not isinstance(param_value, np.integer)
+        assert isinstance(param_value, int)
+
+
+@parametrize_relative_sampler
+@pytest.mark.parametrize(
+    "x_distribution",
+    [
+        UniformDistribution(-1.0, 1.0),
+        LogUniformDistribution(1e-7, 1.0),
+        DiscreteUniformDistribution(-10, 10, 0.5),
+        IntUniformDistribution(1, 10),
+        IntLogUniformDistribution(1, 100),
+    ],
+)
+def test_sample_relative_mixed(
+    relative_sampler_class: Callable[[], BaseSampler], x_distribution: BaseDistribution
+) -> None:
+
+    search_space: Dict[str, BaseDistribution] = OrderedDict(
+        x=x_distribution, y=CategoricalDistribution([-1, -10, -100])
+    )
+    study = optuna.study.create_study(sampler=relative_sampler_class())
+    trial = study.ask(search_space)
+    study.tell(trial, sum(trial.params.values()))
+
+    def sample() -> List[float]:
+        params = study.sampler.sample_relative(study, _create_new_trial(study), search_space)
+        return [params[name] for name in search_space]
+
+    points = np.array([sample() for _ in range(10)])
+    assert isinstance(
+        search_space["x"],
+        (
+            UniformDistribution,
+            LogUniformDistribution,
+            DiscreteUniformDistribution,
+            IntUniformDistribution,
+            IntLogUniformDistribution,
+        ),
+    )
+    assert np.all(points[:, 0] >= search_space["x"].low)
+    assert np.all(points[:, 0] <= search_space["x"].high)
+    assert isinstance(search_space["y"], CategoricalDistribution)
+    assert np.all([v in search_space["y"].choices for v in points[:, 1]])
+    for param_value, distribution in zip(sample(), search_space.values()):
+        assert not isinstance(param_value, np.floating)
+        assert not isinstance(param_value, np.integer)
+        if isinstance(
+            distribution,
+            (IntUniformDistribution, IntLogUniformDistribution, CategoricalDistribution),
+        ):
+            assert isinstance(param_value, int)
+        else:
+            assert isinstance(param_value, float)
 
 
 def _create_new_trial(study: Study) -> FrozenTrial:
@@ -573,3 +750,92 @@ def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) ->
         study.tell(trial, 1.0)
         for param_name in relative_search_space.keys():
             assert trial.params[param_name] == 1
+
+
+@parametrize_sampler
+@parametrize_suggest_method("x")
+def test_single_parameter_objective(
+    sampler_class: Callable[[], BaseSampler], suggest_method_x: Callable[[Trial], float]
+) -> None:
+    def objective(trial: Trial) -> float:
+        return suggest_method_x(trial)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = sampler_class()
+
+    study = optuna.study.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
+
+    assert len(study.trials) == 10
+    assert all(t.state == TrialState.COMPLETE for t in study.trials)
+
+
+@parametrize_sampler
+def test_conditional_parameter_objective(sampler_class: Callable[[], BaseSampler]) -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_categorical("x", [True, False])
+        if x:
+            return trial.suggest_float("y", 0, 1)
+        return trial.suggest_float("z", 0, 1)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = sampler_class()
+
+    study = optuna.study.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
+
+    assert len(study.trials) == 10
+    assert all(t.state == TrialState.COMPLETE for t in study.trials)
+
+
+@parametrize_sampler
+@parametrize_suggest_method("x")
+@parametrize_suggest_method("y")
+def test_combination_of_different_distributions_objective(
+    sampler_class: Callable[[], BaseSampler],
+    suggest_method_x: Callable[[Trial], float],
+    suggest_method_y: Callable[[Trial], float],
+) -> None:
+    def objective(trial: Trial) -> float:
+        return suggest_method_x(trial) + suggest_method_y(trial)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = sampler_class()
+
+    study = optuna.study.create_study(sampler=sampler)
+    study.optimize(objective, n_trials=10)
+
+    assert len(study.trials) == 10
+    assert all(t.state == TrialState.COMPLETE for t in study.trials)
+
+
+@parametrize_sampler
+@pytest.mark.parametrize(
+    "second_low,second_high",
+    [
+        (0, 5),  # Narrow range.
+        (0, 20),  # Expand range.
+        (20, 30),  # Set non-overlapping range.
+    ],
+)
+def test_dynamic_range_objective(
+    sampler_class: Callable[[], BaseSampler], second_low: int, second_high: int
+) -> None:
+    def objective(trial: Trial, low: int, high: int) -> float:
+        v = trial.suggest_float("x", low, high)
+        v += trial.suggest_int("y", low, high)
+        return v
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
+        sampler = sampler_class()
+
+    study = optuna.study.create_study(sampler=sampler)
+    study.optimize(lambda t: objective(t, 0, 10), n_trials=10)
+    study.optimize(lambda t: objective(t, second_low, second_high), n_trials=10)
+
+    assert len(study.trials) == 20
+    assert all(t.state == TrialState.COMPLETE for t in study.trials)

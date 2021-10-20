@@ -273,7 +273,7 @@ def test_objective_y_None() -> None:
         return_train_score=True,
     )
 
-    with pytest.raises(ValueError, match="y cannot be None"):
+    with pytest.raises(ValueError):
         optuna_search.fit(X)
 
 
