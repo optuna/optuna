@@ -816,8 +816,9 @@ class _Ask(_BaseCommand):
 
         if parsed_args.direction is not None or parsed_args.directions is not None:
             message = (
-                "The `direction` and `directions` arguments of the `study ask` command is"
-                " deprecated. Please create a study in advance."
+                "The `direction` and `directions` arguments of the `study ask` command are"
+                " deprecated because the command will no longer create a study when you specify"
+                " the arguments. Please create a study in advance."
             )
             warnings.warn(message, FutureWarning)
 
