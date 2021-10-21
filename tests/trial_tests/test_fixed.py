@@ -97,15 +97,11 @@ def test_not_contained_param() -> None:
 
     trial = FixedTrial({"x": 1.0})
     with pytest.warns(UserWarning):
-        assert trial.suggest_uniform("x", 10.0, 100.0) == 1.0
+        assert trial.suggest_float("x", 10.0, 100.0, log=True) == 1.0
 
     trial = FixedTrial({"x": 1.0})
     with pytest.warns(UserWarning):
-        assert trial.suggest_loguniform("x", 10.0, 100.0) == 1.0
-
-    trial = FixedTrial({"x": 1.0})
-    with pytest.warns(UserWarning):
-        assert trial.suggest_discrete_uniform("x", 10.0, 100.0, 1.0) == 1.0
+        assert trial.suggest_float("x", 10.0, 100.0, step=1.0) == 1.0
 
     trial = FixedTrial({"x": 1})
     with pytest.warns(UserWarning):
