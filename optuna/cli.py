@@ -815,6 +815,12 @@ class _Ask(_BaseCommand):
             sampler_cls = getattr(optuna.samplers, parsed_args.sampler)
             sampler = sampler_cls(**sampler_kwargs)
             create_study_kwargs["sampler"] = sampler
+        else:
+            if parsed_args.sampler_kwargs is not None:
+                raise ValueError(
+                    "`--sampler_kwargs` is set without `--sampler`. Please specify `--sampler` as"
+                    " well or omit `--sampler-kwargs`."
+                )
 
         if parsed_args.search_space is not None:
             # The search space is expected to be a JSON serialized string, e.g.

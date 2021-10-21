@@ -1241,6 +1241,35 @@ def test_ask_empty_search_space_flatten(output_format: str) -> None:
             assert "params" not in trial
 
 
+def test_ask_sampler_kwargs_without_sampler() -> None:
+
+    study_name = "test_study"
+    search_space = (
+        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
+    )
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        args = [
+            "optuna",
+            "ask",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+            "--search-space",
+            search_space,
+            "--sampler-kwargs",
+            '{"multivariate": true}',
+        ]
+
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        error_message = result.stderr.decode()
+        assert "`--sampler_kwargs` is set without `--sampler`." in error_message
+
+
 def test_tell() -> None:
     study_name = "test_study"
 
