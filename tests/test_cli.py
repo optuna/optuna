@@ -1267,7 +1267,7 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
 
         result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         error_message = result.stderr.decode()
-        assert "`sampler_kwargs` is set without `sampler`." in error_message
+        assert "`--sampler_kwargs` is set without `--sampler`." in error_message
 
 
 def test_tell() -> None:

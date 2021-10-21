@@ -818,7 +818,8 @@ class _Ask(_BaseCommand):
         else:
             if parsed_args.sampler_kwargs is not None:
                 raise ValueError(
-                    "`--sampler_kwargs` is set without `--sampler`. Please specify `--sampler` as well."
+                    "`--sampler_kwargs` is set without `--sampler`. Please specify `--sampler` as"
+                    " well or omit `--sampler-kwargs`."
                 )
 
         if parsed_args.search_space is not None:
