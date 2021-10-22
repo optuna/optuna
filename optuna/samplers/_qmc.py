@@ -162,7 +162,7 @@ class QMCSampler(BaseSampler):
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._qmc_type = qmc_type
         self._cached_qmc_engine = None
-        self._initial_search_space = None
+        self._initial_search_space: Optional[Dict[str, BaseDistribution]] = None
         self._warn_incomplete_reseeding = warn_incomplete_reseeding
         self._warn_independent_sampling = warn_independent_sampling
 
@@ -175,8 +175,9 @@ class QMCSampler(BaseSampler):
         self._independent_sampler.reseed_rng()
 
         # We must not reseed the `self._seed` like below. Otherwise, workers will have different
-        # seed under multiprocess execution because reseed_rng is called when forking process.
-        # self._seed = numpy.random.MT19937().random_raw()
+        # seed under parallel execution because `self.reseed_rng()` is called when starting each
+        # parallel executor.
+        # >>> self._seed = numpy.random.MT19937().random_raw()
         if self._warn_incomplete_reseeding:
             self._log_incomplete_reseeding()
 
@@ -197,7 +198,8 @@ class QMCSampler(BaseSampler):
         # construct search_space of this sampler from the initial trial.
         else:
             first_trial = min(past_trials, key=lambda t: t.number)
-            return self._infer_initial_search_space(first_trial)
+            self._initial_search_space = self._infer_initial_search_space(first_trial)
+            return self._initial_search_space
 
     def _infer_initial_search_space(self, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
 
@@ -208,6 +210,26 @@ class QMCSampler(BaseSampler):
             search_space[param_name] = distribution
 
         return search_space
+
+    @staticmethod
+    def _log_asyncronous_seeding() -> None:
+        _logger.warning(
+            "No seed is provided for `QMCSampler` and the seed is set randomly. "
+            "If you are running multiple `QMCSampler`s in parallel and/or distributed "
+            " environment, the same seed must be used in all samplers to ensure that resulting "
+            "samples are taken from the same QMC sequence. "
+        )
+
+    @staticmethod
+    def _log_incomplete_reseeding() -> None:
+        _logger.warning(
+            "The seed of QMC seqeunce is not reseeded and only the seed of `independent_sampler` "
+            "is reseeded. This is to ensure that each workers samples from the same QMC sequence "
+            "in the parallel and/or distributed environment."
+            "You can suppress this warning by setting `warn_reseeding` "
+            "to `False` in the constructor of `QMCSampler`, "
+            "if this random seeding is intended behavior."
+        )
 
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
         _logger.warning(
@@ -220,29 +242,6 @@ class QMCSampler(BaseSampler):
             "if this independent sampling is intended behavior.".format(
                 param_name, trial.number, self._independent_sampler.__class__.__name__
             )
-        )
-
-    @staticmethod
-    def _log_asyncronous_seeding() -> None:
-        _logger.warning(
-            "No seed is provided for `QMCSampler` and the seed is set randomly. "
-            "If you are running multiple `QMCSampler`s in parallel and/or distributed "
-            " environment, the same seed must be used in all samplers to ensure that resulting "
-            "samples are taken from the same QMC sequence. "
-            "You can suppress this warning by setting `warn_asyncronous_seeding` "
-            "to `False` in the constructor of `QMCSampler`, "
-            "if this random seeding is intended behavior."
-        )
-
-    @staticmethod
-    def _log_incomplete_reseeding() -> None:
-        _logger.warning(
-            "The seed of QMC seqeunce is not reseeded and only the seed of `independent_sampler` "
-            "is reseeded. This is to ensure that each workers samples from the same QMC sequence "
-            "in the parallel and/or distributed environment."
-            "You can suppress this warning by setting `warn_reseeding` "
-            "to `False` in the constructor of `QMCSampler`, "
-            "if this random seeding is intended behavior."
         )
 
     def sample_independent(

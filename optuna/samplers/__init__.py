@@ -26,7 +26,7 @@ __all__ = [
     "intersection_search_space",
 ]
 
-if sys.version[:3] != "3.6":
+if sys.version_info >= (3, 7, 0):
     from optuna.samplers._qmc import QMCSampler  # NOQA
 
     __all__.append("QMCSampler")
