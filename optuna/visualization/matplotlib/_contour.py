@@ -184,7 +184,7 @@ def _get_contour_plot(
 
 
 def _set_cmap(study: Study, target: Optional[Callable[[FrozenTrial], float]]) -> "Colormap":
-    cmap = "Blues_r" if target is None and study.direction == StudyDirection.MINIMIZE else "Blues"
+    cmap = "Blues_r" if target is None and study.direction == StudyDirection.MAXIMIZE else "Blues"
     return plt.get_cmap(cmap)
 
 
@@ -428,6 +428,7 @@ def _generate_contour_subplot(
                 c="black",
                 s=20,
                 edgecolors="grey",
+                linewidth=2.0,
             )
     if x_cat_param_pos:
         ax.set_xticks(x_cat_param_pos)
