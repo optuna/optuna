@@ -53,8 +53,9 @@ class _VariableManager:
 
         """
         key = self.get_key(name)
-        if key is None:
-            return
+        name_of_path = "optuna.integration.allennlp._variables._VariableManager.NAME_OF_KEY"
+        assert key is not None, f"{name} is not found in `{name_of_path}`."
+
         key = key.format(self.target_pid)
         os.environ[key] = value
 
@@ -64,11 +65,12 @@ class _VariableManager:
         `get_value` is only called in `optuna.integration.allennlp.AllenNLPPruningCallback`.
 
         """
-
         key = self.get_key(name)
         name_of_path = "optuna.integration.allennlp._variables._VariableManager.NAME_OF_KEY"
         assert key is not None, f"{name} is not found in `{name_of_path}`."
+
         key = key.format(self.target_pid)
         value = os.environ.get(key)
         assert value is not None, f"{key} is not found in environment variables."
+
         return value
