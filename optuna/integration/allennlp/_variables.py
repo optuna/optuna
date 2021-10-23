@@ -17,6 +17,13 @@ class _VariableManager:
     To avoid this hazard, we add ID of a parent process to each key of
     environment variables.
 
+    Note that you must invoke `set_value` only in `AllenNLPExecutor`.
+    Methods in `AllenNLPPruingCallback` could be called in multiple
+    processes when enabling distributed optimization. If `set_value`
+    is invoked in the pruning callback, a consistency would break.
+    So, after initializing `AllenNLPExecutor`, `_VariableManager` provides
+    an interface to access environment variables in a readonly manner.
+
     """
 
     NAME_OF_KEY = {
@@ -40,6 +47,11 @@ class _VariableManager:
         return self.NAME_OF_KEY.get(name)
 
     def set_value(self, name: str, value: str) -> None:
+        """Set values to environment variables.
+
+        `set_value` is only invoked in `optuna.integration.allennlp.AllenNLPExecutor`.
+
+        """
         key = self.get_key(name)
         if key is None:
             return
@@ -47,6 +59,12 @@ class _VariableManager:
         os.environ[key] = value
 
     def get_value(self, name: str) -> Optional[str]:
+        """Fetch parameters from environment variables.
+
+        `get_value` is only called in `optuna.integration.allennlp.AllenNLPPruningCallback`.
+
+        """
+
         key = self.get_key(name)
         name_of_path = "optuna.integration.allennlp._variables._VariableManager.NAME_OF_KEY"
         assert key is not None, f"{name} is not found in `{name_of_path}`."
