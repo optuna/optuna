@@ -321,7 +321,7 @@ class Study:
                 A callable that implements objective function.
             n_trials:
                 The number of trials for each process. If this argument is set to :obj:`None`,
-                there is no limitation on the number of trials. If :obj:`timeout` is also set to
+                there is no limitation on the number of trials. If ``timeout`` is also set to
                 :obj:`None`, the study continues to create trials until it receives a termination
                 signal such as Ctrl+C or SIGTERM. :class:`optuna.study.MaxTrialsCallback` can
                 ensure how many times trials will be performed across all process.
