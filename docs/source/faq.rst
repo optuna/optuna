@@ -114,7 +114,7 @@ And to resume the study:
     for key, value in study.best_trial.params.items():
         print(f"    {key}: {value}")
 
-Note that Optuna does not support saving/reloading across different optuna
+Note that Optuna does not support saving/reloading across different Optuna
 versions with ``pickle``. To save/reload a study across different Optuna versions,
 please use RDBs and `upgrade storage schema <reference/cli.html#storage-upgrade>`_
 if necessary. If you are using RDBs, see :ref:`rdb` for more details.
