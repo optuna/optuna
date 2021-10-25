@@ -86,7 +86,7 @@ def test_infer_relative_search_space() -> None:
         ret += trial.suggest_int("x2", 1, 10, log=True)
         ret += trial.suggest_float("x3", 0, 10)
         ret += trial.suggest_float("x4", 1, 10, log=True)
-        ret += trial.suggest_discrete_uniform("x5", 1, 10, q=3)
+        ret += trial.suggest_float("x5", 1, 10, step=3)
         _ = trial.suggest_categorical("x6", [1, 4, 7, 10])
         return ret
 

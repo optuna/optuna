@@ -32,7 +32,7 @@ _NUMERICAL_DISTRIBUTIONS = (
 )
 
 
-@experimental("3.x.0")  # TODO(kstoneriv3)
+@experimental("3.0.0a1")
 class QMCSampler(BaseSampler):
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 
@@ -63,7 +63,7 @@ class QMCSampler(BaseSampler):
         search space using the earliest trial of the study.
 
         Otherwise (if the study has no previous trials), :class:`~optuna.samplers.QMCSampler`
-        samples the first trial using its `_independent_sampler` and then infers the search space
+        samples the first trial using its `independent_sampler` and then infers the search space
         in the second trial.
 
         As mentioned above, the search space of the :class:`~optuna.sampler.QMCSampler` is
@@ -77,9 +77,9 @@ class QMCSampler(BaseSampler):
 
             .. note:
                Sobol' sequence is designed to have low-discrepancy property when the number of
-                samples is :math:`n=2^m` for each positive integer :math:`m`. When it is possible
-                to pre-specify the number of trials suggested by `QMCSampler`, it is recommended
-                that the number of trials should be set as power of two.
+               samples is :math:`n=2^m` for each positive integer :math:`m`. When it is possible
+               to pre-specify the number of trials suggested by `QMCSampler`, it is recommended
+               that the number of trials should be set as power of two.
 
         scramble:
             In cases ``qmc_type`` is `"halton"` or `"sobol"`, if this option is :obj:`True`,
@@ -118,11 +118,8 @@ class QMCSampler(BaseSampler):
 
     Raises:
         ValueError:
-            If ``qmc_type`` is not one of 'halton' an 'sobol`.
+            If ``qmc_type`` is not one of 'halton' and 'sobol`.
 
-    .. note::
-        Added in v2.x.0 as an experimental feature. The interface may change in
-        newer versions without prior notice.
 
     Example:
 
@@ -188,18 +185,15 @@ class QMCSampler(BaseSampler):
         if self._initial_search_space is not None:
             return self._initial_search_space
 
-        past_trials = study._storage.get_all_trials(
-            study._study_id, states=_SUGGESTED_STATES, deepcopy=False
-        )
+        past_trials = study.get_trials(deepcopy=False, states=SUGGESTED_STATES)
         # The initial trial is sampled by the independent sampler.
         if len(past_trials) == 0:
             return {}
         # If an initial trial was already made,
         # construct search_space of this sampler from the initial trial.
-        else:
-            first_trial = min(past_trials, key=lambda t: t.number)
-            self._initial_search_space = self._infer_initial_search_space(first_trial)
-            return self._initial_search_space
+        first_trial = min(past_trials, key=lambda t: t.number)
+        self._initial_search_space = self._infer_initial_search_space(first_trial)
+        return self._initial_search_space
 
     def _infer_initial_search_space(self, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
 
