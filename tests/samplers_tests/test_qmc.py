@@ -190,13 +190,11 @@ def test_log_independent_sampling() -> None:
 
     with patch.object(optuna.samplers.QMCSampler, "_log_independent_sampling") as mock_log_indep:
 
-        """
         sampler = _init_QMCSampler_without_exp_warning(warn_independent_sampling=False)
         study = optuna.create_study(sampler=sampler)
         study.optimize(objective, n_trials=2)
 
         assert mock_log_indep.call_count == 0
-        """
 
         sampler = _init_QMCSampler_without_exp_warning()
         study = optuna.create_study(sampler=sampler)
