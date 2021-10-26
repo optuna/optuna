@@ -4,6 +4,7 @@ from typing import Dict
 from typing import Optional
 from typing import Sequence
 from typing import Union
+import warnings
 
 from optuna import distributions
 from optuna._deprecated import deprecated
@@ -156,7 +157,7 @@ class FixedTrial(BaseTrial):
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
-            raise ValueError(
+            warnings.warn(
                 "The value {} of the parameter '{}' is out of "
                 "the range of the distribution {}.".format(value, name, distribution)
             )
