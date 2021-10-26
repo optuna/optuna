@@ -401,7 +401,6 @@ def _generate_contour_subplot(
     ax.set(xlabel=x_param, ylabel=y_param)
     ax.set_xlim(x_values_range[0], x_values_range[1])
     ax.set_ylim(y_values_range[0], y_values_range[1])
-    ax.set(xlabel=x_param, ylabel=y_param)
     if len(zi) > 0:
         if _is_log_scale(trials, x_param):
             ax.set_xscale("log")
