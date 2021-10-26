@@ -60,7 +60,7 @@ class QMCSampler(BaseSampler):
         the first trial that this sampler samples.
 
         If there are previous trials in the study, :class:`~optuna.samplers.QMCSamper` infers its
-        search space using the earliest trial of the study.
+        search space using the trial which was created first in the study.
 
         Otherwise (if the study has no previous trials), :class:`~optuna.samplers.QMCSampler`
         samples the first trial using its `independent_sampler` and then infers the search space
@@ -116,6 +116,21 @@ class QMCSampler(BaseSampler):
             Note that the parameters of the first trial in a study are sampled via an
             independent sampler in most cases, so no warning messages are emitted in such cases.
 
+        warn_asyncronous_seeding:
+            If this is :obj:`True`, a warning message is emitted when the scrambling
+            (randomization) is applied to the QMC sequence and the random seed of the sampler is
+            not set manually.
+
+            .. note::
+                When using parallel and/or distributed optimization without manually
+                setting the seed, the seed is set randomly for each instances of
+                :class:`~optuna.samplers.QMCSampler` for different workers, which ends up
+                asyncronous seeding for multiple samplers used in the optimization.
+
+            .. seealso::
+                See parameter ``seed`` in :class:`~optuna.samplers.QMCSampler`.
+
+
     Raises:
         ValueError:
             If ``qmc_type`` is not one of 'halton' and 'sobol`.
@@ -138,7 +153,7 @@ class QMCSampler(BaseSampler):
 
             sampler = optuna.samplers.QMCSampler()
             study = optuna.create_study(sampler=sampler)
-            study.optimize(objective, n_trials=20)
+            study.optimize(objective, n_trials=8)
 
     """
 
@@ -150,7 +165,6 @@ class QMCSampler(BaseSampler):
         seed: Optional[int] = None,
         independent_sampler: Optional[BaseSampler] = None,
         warn_asyncronous_seeding: bool = True,
-        warn_incomplete_reseeding: bool = True,
         warn_independent_sampling: bool = True,
     ) -> None:
 
@@ -160,7 +174,6 @@ class QMCSampler(BaseSampler):
         self._qmc_type = qmc_type
         self._cached_qmc_engine = None
         self._initial_search_space: Optional[Dict[str, BaseDistribution]] = None
-        self._warn_incomplete_reseeding = warn_incomplete_reseeding
         self._warn_independent_sampling = warn_independent_sampling
 
         if (seed is None) and scramble and warn_asyncronous_seeding:
@@ -169,14 +182,12 @@ class QMCSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
 
-        self._independent_sampler.reseed_rng()
-
         # We must not reseed the `self._seed` like below. Otherwise, workers will have different
         # seed under parallel execution because `self.reseed_rng()` is called when starting each
         # parallel executor.
         # >>> self._seed = numpy.random.MT19937().random_raw()
-        if self._warn_incomplete_reseeding:
-            self._log_incomplete_reseeding()
+
+        self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
@@ -185,7 +196,7 @@ class QMCSampler(BaseSampler):
         if self._initial_search_space is not None:
             return self._initial_search_space
 
-        past_trials = study.get_trials(deepcopy=False, states=SUGGESTED_STATES)
+        past_trials = study.get_trials(deepcopy=False, states=_SUGGESTED_STATES)
         # The initial trial is sampled by the independent sampler.
         if len(past_trials) == 0:
             return {}
@@ -197,6 +208,8 @@ class QMCSampler(BaseSampler):
 
     def _infer_initial_search_space(self, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
 
+        # TODO(kstoneriv3): Replace `OrderedDict` to `Dict` after
+        # the support for Python 3.6 is stopped.
         search_space: OrderedDict[str, BaseDistribution] = OrderedDict()
         for param_name, distribution in trial.distributions.items():
             if not isinstance(distribution, _NUMERICAL_DISTRIBUTIONS):
@@ -214,28 +227,15 @@ class QMCSampler(BaseSampler):
             "samples are taken from the same QMC sequence. "
         )
 
-    @staticmethod
-    def _log_incomplete_reseeding() -> None:
-        _logger.warning(
-            "The seed of QMC seqeunce is not reseeded and only the seed of `independent_sampler` "
-            "is reseeded. This is to ensure that each workers samples from the same QMC sequence "
-            "in the parallel and/or distributed environment."
-            "You can suppress this warning by setting `warn_reseeding` "
-            "to `False` in the constructor of `QMCSampler`, "
-            "if this random seeding is intended behavior."
-        )
-
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
         _logger.warning(
-            "The parameter '{}' in trial#{} is sampled independently "
-            "by using `{}` instead of `QMCSampler` "
+            f"The parameter '{param_name}' in trial#{trial.number} is sampled independently "
+            "by using `{self._independent_sampler.__class__.__name__}` instead of `QMCSampler` "
             "(optimization performance may be degraded). "
             "`QMCSampler` does not support dynamic search space or `CategoricalDistribution`. "
             "You can suppress this warning by setting `warn_independent_sampling` "
             "to `False` in the constructor of `QMCSampler`, "
-            "if this independent sampling is intended behavior.".format(
-                param_name, trial.number, self._independent_sampler.__class__.__name__
-            )
+            "if this independent sampling is intended behavior."
         )
 
     def sample_independent(

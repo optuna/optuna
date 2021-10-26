@@ -68,12 +68,9 @@ def test_initial_seeding() -> None:
 )
 def test_reseed_rng() -> None:
     sampler = _init_QMCSampler_without_exp_warning()
-    with patch.object(sampler._independent_sampler, "reseed_rng") as mock_reseed_rng, patch.object(
-        sampler, "_log_incomplete_reseeding"
-    ) as mock_log_reseed:
+    with patch.object(sampler._independent_sampler, "reseed_rng") as mock_reseed_rng:
         sampler.reseed_rng()
     mock_reseed_rng.assert_called_once()
-    mock_log_reseed.assert_called_once()
 
 
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
