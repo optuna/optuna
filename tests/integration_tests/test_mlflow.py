@@ -339,17 +339,15 @@ def test_tag_study_user_attrs(tmpdir: py.path.local, tag_study_user_attrs: bool)
 
 @pytest.mark.parametrize("tag_trial_user_attrs", [True, False])
 def test_tag_trial_user_attrs(tmpdir: py.path.local, tag_trial_user_attrs: bool) -> None:
-    tracking_file_name = "file:{}".format(tmpdir)
+    tracking_uri = "file:{}".format(tmpdir)
     study_name = "my_study"
     n_trials = 3
 
-    mlflc = MLflowCallback(
-        tracking_uri=tracking_file_name, tag_trial_user_attrs=tag_trial_user_attrs
-    )
+    mlflc = MLflowCallback(tracking_uri=tracking_uri, tag_trial_user_attrs=tag_trial_user_attrs)
     study = optuna.create_study(study_name=study_name)
     study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
 
-    mlfl_client = MlflowClient(tracking_file_name)
+    mlfl_client = MlflowClient(tracking_uri)
     experiment = mlfl_client.list_experiments()[0]
     runs = mlfl_client.search_runs([experiment.experiment_id])
 
