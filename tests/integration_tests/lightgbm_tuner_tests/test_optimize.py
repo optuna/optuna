@@ -283,7 +283,7 @@ class TestLightGBMTuner(object):
         dummy_dataset = lgb.Dataset(None)
 
         kwargs = dict(
-            num_boost_round=5, early_stopping_rounds=2, valid_sets=dummy_dataset, study=study
+            num_boost_round=5, callbacks=[early_stopping(2)], valid_sets=dummy_dataset, study=study
         )
         kwargs.update(kwargs_options)
 
@@ -301,7 +301,7 @@ class TestLightGBMTuner(object):
         params: Dict[str, Any] = {}
         train_set = lgb.Dataset(None)
         with pytest.raises(ValueError) as excinfo:
-            lgb.LightGBMTuner(params, train_set, num_boost_round=5, early_stopping_rounds=2)
+            lgb.LightGBMTuner(params, train_set, num_boost_round=5, callbacks=[early_stopping(2)])
 
         assert excinfo.type == ValueError
         assert str(excinfo.value) == "`valid_sets` is required."
@@ -328,7 +328,7 @@ class TestLightGBMTuner(object):
                 train_set,
                 valid_sets=[train_set, valid_set],
                 num_boost_round=5,
-                early_stopping_rounds=2,
+                callbacks=[early_stopping(2)],
                 study=study,
             )
 
@@ -349,7 +349,7 @@ class TestLightGBMTuner(object):
         val_set = lgb.Dataset(None)
         kwargs = dict(
             num_boost_round=12,
-            early_stopping_rounds=10,
+            callbacks=[early_stopping(10)],
             valid_sets=val_set,
             time_budget=600,
             sample_size=1000,
@@ -462,7 +462,7 @@ class TestLightGBMTuner(object):
             params,
             train_dataset,
             num_boost_round=3,
-            early_stopping_rounds=2,
+            callbacks=[early_stopping(2)],
             valid_sets=valid_dataset,
         )
         runner.tune_num_leaves()
@@ -756,7 +756,7 @@ class TestLightGBMTuner(object):
             params,
             train,
             valid_sets=valid,
-            early_stopping_rounds=3,
+            callbacks=[early_stopping(3)],
             optuna_seed=10,
         )
         tuner_first_try.run()
@@ -766,7 +766,7 @@ class TestLightGBMTuner(object):
             params,
             train,
             valid_sets=valid,
-            early_stopping_rounds=3,
+            callbacks=[early_stopping(3)],
             optuna_seed=10,
         )
         tuner_second_try.run()
@@ -776,7 +776,7 @@ class TestLightGBMTuner(object):
 
 
 class TestLightGBMTunerCV(object):
-    def _get_tunercv_object(
+        def _get_tunercv_object(
         self,
         params: Dict[str, Any] = {},
         train_set: Optional[lgb.Dataset] = None,
@@ -785,10 +785,13 @@ class TestLightGBMTunerCV(object):
     ) -> LightGBMTunerCV:
 
         # Required keyword arguments.
-        kwargs: Dict[str, Any] = dict(num_boost_round=5, early_stopping_rounds=2, study=study)
+        kwargs: Dict[str, Any] = dict(num_boost_round=5, study=study)
         kwargs.update(kwargs_options)
+        
+        # Callback arguments (for lightgbm>=3.3.0)
+        callbacks = [early_stopping(2)]
 
-        runner = LightGBMTunerCV(params, train_set, **kwargs)
+        runner = LightGBMTunerCV(params, train_set, callbacks=callbacks, **kwargs)
         return runner
 
     def test_deprecated_args(self) -> None:
@@ -812,9 +815,12 @@ class TestLightGBMTunerCV(object):
             params["metric"] = metric
         train_set = lgb.Dataset(None)
         study = optuna.create_study(direction=study_direction)
+        # Callback arguments (for lightgbm>=3.3.0)
+        callbacks = [early_stopping(2)]
+        
         with pytest.raises(ValueError) as excinfo:
             LightGBMTunerCV(
-                params, train_set, num_boost_round=5, early_stopping_rounds=2, study=study
+                params, train_set, num_boost_round=5, callbacks=callbacks, study=study
             )
 
         assert excinfo.type == ValueError
@@ -1074,7 +1080,7 @@ class TestLightGBMTunerCV(object):
         tuner_first_try = lgb.LightGBMTunerCV(
             params,
             train,
-            early_stopping_rounds=3,
+            callbacks=[early_stopping(3)],
             folds=KFold(n_splits=3),
             optuna_seed=10,
         )
@@ -1084,7 +1090,7 @@ class TestLightGBMTunerCV(object):
         tuner_second_try = lgb.LightGBMTunerCV(
             params,
             train,
-            early_stopping_rounds=3,
+            callbacks=[early_stopping(3)],
             folds=KFold(n_splits=3),
             optuna_seed=10,
         )
