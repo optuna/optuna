@@ -327,7 +327,7 @@ class Study:
 
                 .. seealso::
                     :class:`optuna.study.MaxTrialsCallback` can ensure how many times trials
-                    will be performed across all process.
+                    will be performed across all processes.
             timeout:
                 Stop study after the given number of second(s). If this argument is set to
                 :obj:`None`, the study is executed without time limitation. If :obj:`n_trials` is
