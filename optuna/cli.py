@@ -855,6 +855,8 @@ class _Ask(_BaseCommand):
                 create_study_kwargs.get("sampler"),
             )
             directions = None
+            if create_study_kwargs["direction"] is not None and create_study_kwargs["directions"] is not None:
+                raise ValueError("Specify only one of `direction` and `directions`.")
             if create_study_kwargs["direction"] is not None:
                 directions = [
                     optuna.study.StudyDirection[create_study_kwargs["direction"].upper()]

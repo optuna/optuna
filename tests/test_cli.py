@@ -1406,6 +1406,47 @@ def test_create_study_and_ask_with_inconsistent_directions(
         assert "Cannot overwrite study direction" in error_message
 
 
+def test_ask_with_both_direction_and_directions() -> None:
+
+    study_name = "test_study"
+    search_space = (
+        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
+    )
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        create_study_args = [
+            "optuna",
+            "create-study",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+        ]
+        subprocess.check_call(create_study_args)
+
+        args = [
+            "optuna",
+            "ask",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+            "--search-space",
+            search_space,
+            "--direction",
+            "minimize",
+            "--directions",
+            "minimize",
+        ]
+
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        error_message = result.stderr.decode()
+        assert "Specify only one of `direction` and `directions`." in error_message
+
+
 def test_tell() -> None:
     study_name = "test_study"
 
