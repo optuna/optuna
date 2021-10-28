@@ -339,7 +339,7 @@ Note that the above examples are similar to running the garbage collector inside
 How can I output a log only when the best value is updated?
 -----------------------------------------------------------
 
-Here's how to replace the logging feature of optuna and with your own logging callback function.
+Here's how to replace the logging feature of optuna with your own logging callback function.
 The implemented callback can be passed to :func:`~optuna.study.Study.optimize`.
 Here's an example:
 
