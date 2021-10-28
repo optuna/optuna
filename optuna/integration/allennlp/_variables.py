@@ -22,7 +22,7 @@ class _VariableManager:
     processes when enabling distributed optimization. If `set_value`
     is invoked in the pruning callback, a consistency would break.
     So, after initializing `AllenNLPExecutor`, `_VariableManager` provides
-    an interface to access environment variables in a readonly manner.
+    an interface to access environment variables in a read-only manner.
 
     """
 
