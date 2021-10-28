@@ -847,7 +847,7 @@ class _Ask(_BaseCommand):
 
 
 class _Tell(_BaseCommand):
-    """Finish a trial created with the ask command."""
+    """Finish a trial, which was created by the ask command."""
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
