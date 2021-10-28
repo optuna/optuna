@@ -216,7 +216,7 @@ class AllenNLPExecutor(object):
             if "OPTUNA_ALLENNLP_USE_DISTRIBUTED" in os.environ:
                 warnings.warn(
                     "Other process may already exists."
-                    " If you have some trouble, please unsed an environment"
+                    " If you have trouble, please unset the environment"
                     " variable `OPTUNA_ALLENNLP_USE_DISTRIBUTED`"
                     " and try it again."
                 )
