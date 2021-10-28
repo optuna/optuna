@@ -13,6 +13,7 @@ from optuna import Trial
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.integration.allennlp._variables import _VariableManager
+from optuna.integration.allennlp._variables import OPTUNA_ALLENNLP_DISTRIBUTED_FLAG
 from optuna.integration.allennlp._variables import SPECIAL_DELIMITER as DELIMITER
 
 
@@ -164,8 +165,8 @@ class AllenNLPPruningCallback(TrainerCallback):
         else:
             current_process = psutil.Process()
 
-            if os.getenv("OPTUNA_ALLENNLP_USE_DISTRIBUTED") == "1":
-                os.environ.pop("OPTUNA_ALLENNLP_USE_DISTRIBUTED")
+            if os.getenv(OPTUNA_ALLENNLP_DISTRIBUTED_FLAG) == "1":
+                os.environ.pop(OPTUNA_ALLENNLP_DISTRIBUTED_FLAG)
                 parent_process = current_process.parent()
                 target_pid = parent_process.ppid()
 

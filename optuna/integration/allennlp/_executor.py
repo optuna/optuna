@@ -12,6 +12,7 @@ from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.integration.allennlp._environment import _environment_variables
 from optuna.integration.allennlp._variables import _VariableManager
+from optuna.integration.allennlp._variables import OPTUNA_ALLENNLP_DISTRIBUTED_FLAG
 from optuna.integration.allennlp._variables import SPECIAL_DELIMITER as DELIMITER
 
 
@@ -213,7 +214,7 @@ class AllenNLPExecutor(object):
 
         if "distributed" in params:
 
-            if "OPTUNA_ALLENNLP_USE_DISTRIBUTED" in os.environ:
+            if OPTUNA_ALLENNLP_DISTRIBUTED_FLAG in os.environ:
                 warnings.warn(
                     "Other process may already exists."
                     " If you have trouble, please unset the environment"
@@ -221,7 +222,7 @@ class AllenNLPExecutor(object):
                     " and try it again."
                 )
 
-            os.environ["OPTUNA_ALLENNLP_USE_DISTRIBUTED"] = "1"
+            os.environ[OPTUNA_ALLENNLP_DISTRIBUTED_FLAG] = "1"
 
         allennlp.commands.train.train_model(
             params=params,
