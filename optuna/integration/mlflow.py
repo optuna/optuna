@@ -135,6 +135,11 @@ class MLflowCallback(object):
             to the mlflow trial as tags. Please note that when this flag is
             set, key value pairs in :attr:`~optuna.study.Study.user_attrs`
             will supersede existing tags.
+        tag_trial_user_attrs:
+            Flag indicating whether or not to add the trial's user attrs
+            to the mlflow trial as tags. Please note that when both trial and
+            study user attributes are logged, the latter will supersede the former
+            in case of a collison.
 
     .. note::
         ``nest_trials`` argument added in v2.3.0 is a part of ``mlflow_kwargs`` since v3.0.0a1.
@@ -155,6 +160,7 @@ class MLflowCallback(object):
         create_experiment: bool = True,
         mlflow_kwargs: Optional[Dict[str, Any]] = None,
         tag_study_user_attrs: bool = False,
+        tag_trial_user_attrs: bool = True,
     ) -> None:
 
         _imports.check()
@@ -171,6 +177,7 @@ class MLflowCallback(object):
         self._create_experiment = create_experiment
         self._mlflow_kwargs = mlflow_kwargs or {}
         self._tag_study_user_attrs = tag_study_user_attrs
+        self._tag_trial_user_attrs = tag_trial_user_attrs
 
     def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
 
@@ -259,9 +266,11 @@ class MLflowCallback(object):
         directions = [d.name for d in study.directions]
         tags["direction"] = directions if len(directions) != 1 else directions[0]
 
-        tags.update(trial.user_attrs)
         distributions = {(k + "_distribution"): str(v) for (k, v) in trial.distributions.items()}
         tags.update(distributions)
+
+        if self._tag_trial_user_attrs:
+            tags.update(trial.user_attrs)
 
         if self._tag_study_user_attrs:
             tags.update(study.user_attrs)
