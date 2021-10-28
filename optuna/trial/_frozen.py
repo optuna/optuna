@@ -46,7 +46,7 @@ class FrozenTrial(BaseTrial):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -1, 1)
+                x = trial.suggest_float("x", -1, 1)
                 return x ** 2
 
 
@@ -74,7 +74,7 @@ class FrozenTrial(BaseTrial):
 
 
                 def objective(trial):
-                    x = trial.suggest_uniform("x", -1, 1)
+                    x = trial.suggest_float("x", -1, 1)
 
                     # this user attribute always differs
                     trial.set_user_attr("evaluation time", datetime.datetime.now())

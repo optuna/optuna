@@ -36,7 +36,7 @@ def objective(trial):
     X, y = make_classification(n_features=10, random_state=1)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1)
 
-    C = trial.suggest_loguniform("C", 1e-7, 10.0)
+    C = trial.suggest_float("C", 1e-7, 10.0, log=True)
 
     clf = LogisticRegression(C=C)
     clf.fit(X_train, y_train)
@@ -61,7 +61,7 @@ def detailed_objective(trial):
     X, y = make_classification(n_features=10, random_state=1)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1)
 
-    C = trial.suggest_loguniform("C", 1e-7, 10.0)
+    C = trial.suggest_float("C", 1e-7, 10.0, log=True)
 
     clf = LogisticRegression(C=C)
     clf.fit(X_train, y_train)

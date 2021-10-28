@@ -61,7 +61,7 @@ class CmaEsSampler(BaseSampler):
 
     Please note that this sampler does not support CategoricalDistribution.
     However, :class:`~optuna.distributions.DiscreteUniformDistribution`
-    (:func:`~optuna.trial.Trial.suggest_discrete_uniform`) and
+    (:func:`~optuna.trial.Trial.suggest_float`) and
     Int(Log)Distribution (:func:`~optuna.trial.Trial.suggest_int`) are supported.
 
     If your search space contains categorical parameters, I recommend you
