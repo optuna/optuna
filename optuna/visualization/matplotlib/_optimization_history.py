@@ -102,7 +102,6 @@ def _get_optimization_history_plot(
     ax.set_title("Optimization History Plot")
     ax.set_xlabel("#Trials")
     ax.set_ylabel(target_name)
-    cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
     # Prepare data for plotting.
     all_trials = list(
@@ -120,7 +119,7 @@ def _get_optimization_history_plot(
         _logger.warning("Study instance does not contain trials.")
         return ax
 
-    ax = _get_optimization_histories(studies, target, target_name, ax, cmap)
+    ax = _get_optimization_histories(studies, target, target_name, ax)
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
     return ax
 
@@ -130,8 +129,8 @@ def _get_optimization_histories(
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
     ax: "Axes",
-    cmap: "Colormap",
 ) -> "Axes":
+    cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
     # Draw a scatter plot and a line plot.
     for i, study in enumerate(studies):
