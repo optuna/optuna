@@ -61,6 +61,8 @@ def plot_optimization_history(
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
+            You can pass multiple studies if you want to compare those optimization histories.
+
         target:
             A function to specify the value to display. If it is :obj:`None` and ``study`` is being
             used for single-objective optimization, the objective values are plotted.
@@ -117,6 +119,7 @@ def _get_optimization_history_plot(
 
     if len(all_trials) == 0:
         _logger.warning("Study instance does not contain trials.")
+        ax.plot()
         return ax
 
     ax = _get_optimization_histories(studies, target, target_name, ax)
