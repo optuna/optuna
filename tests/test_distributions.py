@@ -530,12 +530,22 @@ def test_int_distribution_log_asdict() -> None:
 
 def test_float_distribution_asdict() -> None:
 
-    assert EXAMPLE_DISTRIBUTIONS["f"]._asdict() == {"low": 1.0, "high": 2.0, "log": False}
+    assert EXAMPLE_DISTRIBUTIONS["f"]._asdict() == {
+        "low": 1.0,
+        "high": 2.0,
+        "log": False,
+        "step": None,
+    }
 
 
 def test_float_distribution_log_asdict() -> None:
 
-    assert EXAMPLE_DISTRIBUTIONS["fl"]._asdict() == {"low": 0.001, "high": 100.0, "log": True}
+    assert EXAMPLE_DISTRIBUTIONS["fl"]._asdict() == {
+        "low": 0.001,
+        "high": 100.0,
+        "log": True,
+        "step": None,
+    }
 
 
 def test_float_distribution_discrete_asdict() -> None:
