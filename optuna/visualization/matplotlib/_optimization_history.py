@@ -1,6 +1,10 @@
+import itertools
 from typing import Callable
 from typing import cast
+from typing import List
 from typing import Optional
+from typing import Sequence
+from typing import Union 
 
 import numpy as np
 
@@ -17,13 +21,14 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import plt
+    from optuna.visualization.matplotlib._matplotlib_imports import Colormap
 
 _logger = get_logger(__name__)
 
 
 @experimental("2.2.0")
 def plot_optimization_history(
-    study: Study,
+    study: Union[Study, Sequence[Study]],
     *,
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
@@ -75,12 +80,17 @@ def plot_optimization_history(
     """
 
     _imports.check()
+
+    if isinstance(study, Study):
+        studies = [study]
+    else:
+        studies = list(study)
     _check_plot_args(study, target, target_name)
-    return _get_optimization_history_plot(study, target, target_name)
+    return _get_optimization_history_plot(studies, target, target_name)
 
 
 def _get_optimization_history_plot(
-    study: Study,
+    studies: List[Study],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
 ) -> "Axes":
@@ -94,42 +104,65 @@ def _get_optimization_history_plot(
     cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
     # Prepare data for plotting.
-    trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    # trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    all_trials = list(
+        itertools.chain.from_iterable(
+            (
+                trial
+                for trial in study.get_trials(deepcopy=False)
+                if trial.state == TrialState.COMPLETE
+            )
+            for study in studies
+        )
+    )
 
-    if len(trials) == 0:
+    if len(all_trials) == 0:
         _logger.warning("Study instance does not contain trials.")
         return ax
 
-    # Draw a scatter plot and a line plot.
-    if target is None:
-        if study.direction == StudyDirection.MINIMIZE:
-            best_values = np.minimum.accumulate([cast(float, t.value) for t in trials])
-        else:
-            best_values = np.maximum.accumulate([cast(float, t.value) for t in trials])
-        ax.scatter(
-            x=[t.number for t in trials],
-            y=[t.value for t in trials],
-            color=cmap(0),
-            alpha=1,
-            label=target_name,
-        )
-        ax.plot(
-            [t.number for t in trials],
-            best_values,
-            marker="o",
-            color=cmap(3),
-            alpha=0.5,
-            label="Best Value",
-        )
+    return _get_optimization_histories(studies, target, target_name, ax, cmap)
+    
+def _get_optimization_histories(
+    studies: List[Study],
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
+    ax: "Axes",
+    cmap: "Colormap" 
+) -> "Axes":
 
-        ax.legend()
-    else:
-        ax.scatter(
-            x=[t.number for t in trials],
-            y=[target(t) for t in trials],
-            color=cmap(0),
-            alpha=1,
-            label=target_name,
-        )
+    # Draw a scatter plot and a line plot.
+    for study in studies:
+        trials = study.get_trials(states=(TrialState.COMPLETE,))
+        if target is None:
+            if study.direction == StudyDirection.MINIMIZE:
+                best_values = np.minimum.accumulate([cast(float, t.value) for t in trials])
+            else:
+                best_values = np.maximum.accumulate([cast(float, t.value) for t in trials])
+            ax.scatter(
+                x=[t.number for t in trials],
+                y=[t.value for t in trials],
+                color=cmap(0),
+                alpha=1,
+                label=target_name,
+            )
+            ax.plot(
+                [t.number for t in trials],
+                best_values,
+                marker="o",
+                color=cmap(3),
+                alpha=0.5,
+                label="Best Value",
+            )
+
+            ax.legend()
+        else:
+            ax.scatter(
+                x=[t.number for t in trials],
+                y=[target(t) for t in trials],
+                color=cmap(0),
+                alpha=1,
+                label=target_name,
+            )
 
     return ax
+
