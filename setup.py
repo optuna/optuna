@@ -130,8 +130,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
-            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-            # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
             "lightgbm",
