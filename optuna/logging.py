@@ -104,7 +104,7 @@ def set_verbosity(verbosity: int) -> None:
 
     Example:
 
-        Set the logging level ``optuna.logging.INFO``.
+        Set the logging level ``optuna.logging.WARNING``.
 
         .. testsetup::
 
@@ -116,17 +116,18 @@ def set_verbosity(verbosity: int) -> None:
 
             import optuna
 
-            # set the logging level
-            optuna.logging.set_verbosity(optuna.logging.INFO)
-            # print(optuna.logging.get_verbosity()) 30
-
+            # There are INFO level logs.
             study = optuna.create_study()
             study.optimize(objective, n_trials=10)
             # [I 2021-10-31 02:59:35,088] Trial 0 finished with value: 16.0 ...
             # [I 2021-10-31 02:59:35,091] Trial 1 finished with value: 1.0 ...
             # [I 2021-10-31 02:59:35,096] Trial 2 finished with value: 1.0 ...
 
-
+            # Set the logging level WARNING.
+            # There are INFO level logs.
+            optuna.logging.set_verbosity(optuna.logging.WARNING)
+            study.optimize(objective, n_trials=10)
+ 
     Args:
         verbosity:
             Logging level, e.g., ``optuna.logging.DEBUG`` and ``optuna.logging.INFO``.
