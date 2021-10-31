@@ -127,7 +127,12 @@ def set_verbosity(verbosity: int) -> None:
             # There are INFO level logs.
             optuna.logging.set_verbosity(optuna.logging.WARNING)
             study.optimize(objective, n_trials=10)
- 
+
+        .. testcleanup::
+
+            optuna.logging.set_verbosity(optuna.logging.INFO)
+
+
     Args:
         verbosity:
             Logging level, e.g., ``optuna.logging.DEBUG`` and ``optuna.logging.INFO``.
