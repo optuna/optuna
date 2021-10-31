@@ -657,7 +657,7 @@ class Study:
 
         .. seealso::
 
-            Please refer to :attr:`~optuna.trial.Trial.user_attrs` for related attribute.
+            See :attr:`~optuna.study.Study.user_attrs` for related attribute.
 
         Example:
 
