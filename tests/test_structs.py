@@ -8,4 +8,3 @@ from optuna.structs import StudyDirection
 from optuna.structs import StudySummary
 from optuna.structs import TrialPruned
 from optuna.structs import TrialState
-

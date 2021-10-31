@@ -24,4 +24,3 @@ StudyDirection = _study_direction.StudyDirection
 # The use of the structs.TrialState is deprecated and it is recommended that you use
 # trial.TrialState instead. See the API reference for more details.
 TrialState = trial.TrialState
-
