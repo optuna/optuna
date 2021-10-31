@@ -11,11 +11,11 @@ from optuna import distributions
 
 
 EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
-    "i": distributions.IntDistribution(low=1, high=9, log=False),
-    "il": distributions.IntDistribution(low=2, high=12, log=True),
+    "i": distributions.IntDistribution(low=1, high=9, log=False, step=2),
+    "il": distributions.IntDistribution(low=2, high=12, log=True, step=2),
     "f": distributions.FloatDistribution(low=1.0, high=2.0, log=False),
     "fl": distributions.FloatDistribution(low=0.001, high=100.0, log=True),
-    "fd": distributions.FloatDistribution(low=1.0, high=9.0, step=2.0, log=False),
+    "fd": distributions.FloatDistribution(low=1.0, high=9.0, log=False, step=2.0),
     "u": distributions.UniformDistribution(low=1.0, high=2.0),
     "l": distributions.LogUniformDistribution(low=0.001, high=100),
     "du": distributions.DiscreteUniformDistribution(low=1.0, high=9.0, q=2.0),
@@ -27,8 +27,8 @@ EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
 }
 
 EXAMPLE_JSONS = {
-    "i": '{"name": "IntDistribution", "attributes": {"low": 1, "high": 9, "log": false}}',
-    "il": '{"name": "IntDistribution", "attributes": {"low": 2, "high": 12, "log": true}}',
+    "i": '{"name": "IntDistribution", "attributes": {"low": 1, "high": 9, "log": false, "step": 2}}',
+    "il": '{"name": "IntDistribution", "attributes": {"low": 2, "high": 12, "log": true, "step": 2}}',
     "f": '{"name": "FloatDistribution", '
     '"attributes": {"low": 1.0, "high": 2.0, "log": false, "step": null}}',
     "fl": '{"name": "FloatDistribution", '
@@ -48,16 +48,14 @@ EXAMPLE_JSONS = {
 }
 
 EXAMPLE_ABBREVIATED_JSONS = {
-    "i": '{"type": "int", "low": 1, "high": 9, "log": false}',
-    "il": '{"type": "int", "low": 2, "high": 12, "log": true}',
+    "i": '{"type": "int", "low": 1, "high": 9, "log": false, "step": 2}',
+    "il": '{"type": "int", "low": 2, "high": 12, "log": true, "step": 2}',
     "f": '{"type": "float", "low": 1.0, "high": 2.0, "log": false}',
     "fl": '{"type": "float", "low": 0.001, "high": 100.0, "log": true}',
     "fd": '{"type": "float", "low": 1.0, "high": 9.0, "step": 2.0, "log": false}',
-    "iu": '{"type": "int", "low": 1, "high": 9, "step": 2}',
     "c1": '{"type": "categorical", "choices": [2.71, -Infinity]}',
     "c2": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
     "c3": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
-    "ilu": '{"type": "int", "low": 2, "high": 12, "step": 2, "log": true}',
 }
 
 
@@ -393,6 +391,7 @@ def test_single() -> None:
 
     nonsingle_distributions: List[distributions.BaseDistribution] = [
         distributions.IntDistribution(low=-123, high=0),
+        distributions.IntDistribution(low=-123, high=0, step=123),
         distributions.IntDistribution(low=2, high=4, log=True),
         distributions.FloatDistribution(low=1.0, high=1.001),
         distributions.FloatDistribution(low=7.3, high=10, log=True),
@@ -520,12 +519,12 @@ def test_repr() -> None:
 
 def test_int_distribution_asdict() -> None:
 
-    assert EXAMPLE_DISTRIBUTIONS["i"]._asdict() == {"low": 1, "high": 9, "log": False}
+    assert EXAMPLE_DISTRIBUTIONS["i"]._asdict() == {"low": 1, "high": 9, "log": False, 'step': 2}
 
 
 def test_int_distribution_log_asdict() -> None:
 
-    assert EXAMPLE_DISTRIBUTIONS["il"]._asdict() == {"low": 2, "high": 12, "log": True}
+    assert EXAMPLE_DISTRIBUTIONS["il"]._asdict() == {"low": 2, "high": 12, "log": True, 'step': 2}
 
 
 def test_float_distribution_asdict() -> None:
@@ -612,28 +611,45 @@ def test_int_log_uniform_distribution_deprecation() -> None:
     # step != 1 is deprecated
 
     d = distributions.IntLogUniformDistribution(low=1, high=100)
+    di = distributions.IntDistribution(low=1, high=100, log=True)
 
     with pytest.warns(FutureWarning):
         # `step` should always be assumed to be 1 and samplers and other components should never
         # have to get/set the attribute.
         assert d.step == 1
+    with pytest.warns(FutureWarning):
+        # `step` should always be assumed to be 1 and samplers and other components should never
+        # have to get/set the attribute.
+        assert di.step == 1
 
     with pytest.warns(FutureWarning):
         d.step = 2
+    with pytest.warns(FutureWarning):
+        di.step = 2
 
     with pytest.warns(FutureWarning):
         d = distributions.IntLogUniformDistribution(low=1, high=100, step=2)
+    with pytest.warns(FutureWarning):
+        di = distributions.IntDistribution(low=1, high=100, log=True, step=2)
 
     with pytest.warns(FutureWarning):
         assert d.step == 2
+    with pytest.warns(FutureWarning):
+        assert di.step == 2
 
     with pytest.warns(FutureWarning):
         d.step = 1
         assert d.step == 1
+    with pytest.warns(FutureWarning):
+        di.step = 1
+        assert di.step == 1
 
     with pytest.warns(FutureWarning):
         d.step = 2
         assert d.step == 2
+    with pytest.warns(FutureWarning):
+        di.step = 2
+        assert di.step == 2
 
 
 def test_categorical_distribution_different_sequence_types() -> None:

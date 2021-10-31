@@ -91,7 +91,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
 
     def __repr__(self) -> str:
 
-        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self.__dict__.items()))
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
         return "{}({})".format(self.__class__.__name__, kwargs)
 
 
@@ -132,9 +132,9 @@ class FloatDistribution(BaseDistribution):
         if log and step is not None:
             raise ValueError("The parameter `step` is not supported when `log` is true.")
 
-        if log and low < 0.0:
+        if log and low <= 0.0:
             raise ValueError(
-                "The `low` value must be equal to or greater than 1 for a log distribution "
+                "The `low` value must be larger than 0 for a log distribution "
                 "(low={}, high={}).".format(low, high)
             )
 
@@ -329,19 +329,27 @@ class IntDistribution(BaseDistribution):
             Upper endpoint of the range of the distribution. ``high`` is included from the range.
         log:
             If ``log`` is True, this distribution is in log-scaled domain.
+        step:
+            A step for spacing between values. When ``log`` is True, ``step`` is assumed to be 1.
 
     Raises:
         ValueError:
             If ``low`` value is larger than ``high`` value,
-            or ``low`` value is less than 1 when ``log`` is :obj:`True.
+            or ``low`` value is less than 1 when ``log`` is :obj:`True`.
+            If ``step`` is not positive value.
     """
 
-    def __init__(self, low: int, high: int, log: bool = False) -> None:
+    def __init__(self, low: int, high: int, log: Union[None, bool] = False, step: int = 1) -> None:
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}).".format(low, high)
             )
+
+        # For backward compatibility, an abbreviated json for IntUniformDistribution
+        # may not have `log` attribute.
+        if log is None:
+            log = False
 
         if log and low < 1:
             raise ValueError(
@@ -349,9 +357,34 @@ class IntDistribution(BaseDistribution):
                 "(low={}, high={}).".format(low, high)
             )
 
-        self.low = low
-        self.high = high
+        if step <= 0:
+            raise ValueError(
+                "The `step` value must be non-zero positive value, but step={}.".format(step)
+            )
+
+        if log and step != 1:
+            self._warn_step()
+
         self.log = log
+        self._step = int(step)
+        self.low = int(low)
+        high = int(high)
+        self.high = _adjust_int_uniform_high(self.low, high, self._step)
+
+    def _warn_step(self) -> None:
+        warnings.warn(
+            "Samplers and other components in Optuna will assume that `step` is 1. "
+            "When `log` argument is True, `step` argument is deprecated "
+            "and will be removed in the future. "
+            "The removal of this feature is currently scheduled for v4.0.0, "
+            "but this schedule is subject to change.",
+            FutureWarning,
+        )
+
+    def _asdict(self) -> Dict:
+        d = copy.copy(self.__dict__)
+        d["step"] = d.pop("_step")
+        return d
 
     def to_external_repr(self, param_value_in_internal_repr: float) -> int:
 
@@ -362,13 +395,33 @@ class IntDistribution(BaseDistribution):
         return float(param_value_in_external_repr)
 
     def single(self) -> bool:
+        if self.log:
+            return self.low == self.high
 
-        return self.low == self.high
+        if self.low == self.high:
+            return True
+        return (self.high - self.low) < self._step
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
 
+        _step = self._step
+        if self.log:  # `step` is ignored and assumed to be 1 when `log` is True.
+            _step = 1
+
         value = param_value_in_internal_repr
-        return self.low <= value <= self.high
+        return self.low <= value <= self.high and (value - self.low) % _step == 0
+
+    @property
+    def step(self) -> int:
+        if self.log:
+            self._warn_step()
+        return self._step
+
+    @step.setter
+    def step(self, value: int) -> None:
+        if self.log:
+            self._warn_step()
+        self._step = value
 
 
 class IntUniformDistribution(BaseDistribution):
@@ -482,12 +535,6 @@ class IntLogUniformDistribution(BaseDistribution):
         self.low = low
         self.high = high
         self._step = step
-
-    def __repr__(self) -> str:
-        # TODO(hvy): `BaseDistribution.__repr__` could rely on `_asdict` instead of `__dict__`.
-        # `IntLogUniformDistribution` would not have to override `__repr__`.
-        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
-        return "{}({})".format(self.__class__.__name__, kwargs)
 
     def _asdict(self) -> Dict:
         d = copy.copy(self.__dict__)
@@ -640,14 +687,9 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
             log = json_dict.get("log")
 
             if json_dict["type"] == "float":
-                return FloatDistribution(low=low, high=high, step=step, log=log)
+                return FloatDistribution(low=low, high=high, log=log, step=step)
             else:
-                if step is not None:
-                    if log:
-                        return IntLogUniformDistribution(low, high, step)
-                    else:
-                        return IntUniformDistribution(low, high, step)
-                return IntDistribution(low=low, high=high, log=log)
+                return IntDistribution(low=low, high=high, log=log, step=step)
 
         raise ValueError("Unknown distribution type: {}".format(json_dict["type"]))
 
