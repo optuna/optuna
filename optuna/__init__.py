@@ -82,10 +82,5 @@ class _LazyImport(types.ModuleType):
         return getattr(self._load(), item)
 
 
-if TYPE_CHECKING:
-    from optuna import dashboard  # NOQA
-else:
-    dashboard = _LazyImport("optuna.dashboard")
-
 structs = _LazyImport("optuna.structs")
 type_checking = _LazyImport("optuna.type_checking")
