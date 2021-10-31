@@ -81,6 +81,12 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
         study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(studies)
     assert len(figure.get_lines()) ==  n_studies
+    
+    for i, legend in enumerate(figure.legend().get_texts()):
+        if i < n_studies:
+            assert legend.get_text() == f'Best Values of {studies[i].study_name}'
+        else:
+            assert legend.get_text() == f'Objective Value of {studies[i-n_studies].study_name}'
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
