@@ -143,7 +143,7 @@ def _get_optimization_histories(
             ax.scatter(
                 x=[t.number for t in trials],
                 y=[t.value for t in trials],
-                color=cmap(3) if len(studies) == 1 else cmap(2 * i),
+                color=cmap(0) if len(studies) == 1 else cmap(2 * i),
                 alpha=1,
                 label=target_name if len(studies) == 1 else f"{target_name} of {study.study_name}",
             )
@@ -151,7 +151,7 @@ def _get_optimization_histories(
                 [t.number for t in trials],
                 best_values,
                 marker="o",
-                color=cmap(0) if len(studies) == 1 else cmap(2 * i + 1),
+                color=cmap(3) if len(studies) == 1 else cmap(2 * i + 1),
                 alpha=0.5,
                 label="Best Value" if len(studies) == 1 else f"Best Values of {study.study_name}",
             )
