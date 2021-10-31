@@ -20,7 +20,6 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
-    from optuna.visualization.matplotlib._matplotlib_imports import Colormap
     from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 _logger = get_logger(__name__)
