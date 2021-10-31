@@ -107,11 +107,13 @@ def set_verbosity(verbosity: int) -> None:
         Set the logging level ``optuna.logging.INFO``.
 
         .. testsetup::
+
             def objective(trial):
                 x = trial.suggest_int("x", -10, 10)
                 return x ** 2
 
         .. testcode::
+
             # set the logging level
             optuna.logging.set_verbosity(optuna.logging.INFO)
             # print(optuna.logging.get_verbosity()) 30
