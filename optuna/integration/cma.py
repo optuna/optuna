@@ -35,7 +35,7 @@ _logger = logging.get_logger(__name__)
 
 _EPS = 1e-10
 
-_suggest_deprecated_msg = "This class is renamed to :class:`~optuna.integration.PyCmaSampler`."
+_cma_deprecated_msg = "This class is renamed to :class:`~optuna.integration.PyCmaSampler`."
 
 
 class PyCmaSampler(BaseSampler):
