@@ -20,8 +20,8 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
-    from optuna.visualization.matplotlib._matplotlib_imports import plt
     from optuna.visualization.matplotlib._matplotlib_imports import Colormap
+    from optuna.visualization.matplotlib._matplotlib_imports import plt
 
 _logger = get_logger(__name__)
 
@@ -97,6 +97,7 @@ def _get_optimization_history_plot(
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
+
     _, ax = plt.subplots()
     ax.set_title("Optimization History Plot")
     ax.set_xlabel("#Trials")
@@ -104,7 +105,6 @@ def _get_optimization_history_plot(
     cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
     # Prepare data for plotting.
-    # trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
     all_trials = list(
         itertools.chain.from_iterable(
             (
@@ -120,18 +120,21 @@ def _get_optimization_history_plot(
         _logger.warning("Study instance does not contain trials.")
         return ax
 
-    return _get_optimization_histories(studies, target, target_name, ax, cmap)
-    
+    ax = _get_optimization_histories(studies, target, target_name, ax, cmap)
+    plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
+    return ax
+
+
 def _get_optimization_histories(
     studies: List[Study],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
     ax: "Axes",
-    cmap: "Colormap" 
+    cmap: "Colormap",
 ) -> "Axes":
 
     # Draw a scatter plot and a line plot.
-    for study in studies:
+    for i, study in enumerate(studies):
         trials = study.get_trials(states=(TrialState.COMPLETE,))
         if target is None:
             if study.direction == StudyDirection.MINIMIZE:
@@ -141,21 +144,17 @@ def _get_optimization_histories(
             ax.scatter(
                 x=[t.number for t in trials],
                 y=[t.value for t in trials],
-                color=cmap(0),
+                color=cmap(2 * i),
                 alpha=1,
-                label=target_name
-                if len(studies) == 1
-                else f"{target_name} of {study.study_name}",
+                label=target_name if len(studies) == 1 else f"{target_name} of {study.study_name}",
             )
             ax.plot(
                 [t.number for t in trials],
                 best_values,
                 marker="o",
-                color=cmap(3),
+                color=cmap(2 * i + 1),
                 alpha=0.5,
-                label="Best Value"
-                if len(studies) == 1
-                else f"Best Values of {study.study_name}",
+                label="Best Value" if len(studies) == 1 else f"Best Values of {study.study_name}",
             )
 
             ax.legend()
@@ -163,12 +162,9 @@ def _get_optimization_histories(
             ax.scatter(
                 x=[t.number for t in trials],
                 y=[target(t) for t in trials],
-                color=cmap(0),
+                color=cmap(2 * i),
                 alpha=1,
-                label=target_name
-                if len(studies) == 1
-                else f"{target_name} of {study.study_name}",
+                label=target_name if len(studies) == 1 else f"{target_name} of {study.study_name}",
             )
 
     return ax
-
