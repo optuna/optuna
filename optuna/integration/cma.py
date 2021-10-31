@@ -485,7 +485,7 @@ class _Optimizer(object):
         return cma_param_value
 
 
-@deprecated("2.0.0", "4.0.0", text=_suggest_deprecated_msg)
+@deprecated("2.0.0", "4.0.0", text=_cma_deprecated_msg)
 class CmaEsSampler(PyCmaSampler):
     """Wrapper class of PyCmaSampler for backward compatibility."""
 
