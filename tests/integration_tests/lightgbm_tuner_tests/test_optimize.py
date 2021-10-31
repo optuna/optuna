@@ -1,4 +1,5 @@
 import contextlib
+from inspect import signature
 from tempfile import TemporaryDirectory
 from typing import Any
 from typing import Dict
@@ -10,13 +11,12 @@ from typing import Union
 from unittest import mock
 import warnings
 
-import numpy as np
 import lightgbm
+import numpy as np
 import pytest
 import sklearn.datasets
 from sklearn.model_selection import KFold
 from sklearn.model_selection import train_test_split
-from inspect import signature
 
 import optuna
 from optuna.integration._lightgbm_tuner.optimize import _BaseTuner
@@ -363,12 +363,12 @@ class TestLightGBMTuner(object):
             assert new_arg in runner.auto_options
 
     def test_default_arguments(self) -> None:
-        
-        for lgbmtuner_arg, lgbmtuner_val in signature(optuna.integration.lightgbm.LightGBMTuner).parameters.items():
+        for lgbmtuner_arg, lgbmtuner_val in signature(LightGBMTuner).parameters.items():
             for lgbm_arg, lgbm_val in signature(lightgbm.train).parameters.items():
                 if lgbmtuner_arg == lgbm_arg:
-                    assert lgbmtuner_val.default == lgbm_val.default, (
-                    f"LightGBMTuner '{lgbmtuner_arg}' default argument is not consistent with original LightGBM 'train' method default argument.")
+                    assert (
+                        lgbmtuner_val.default == lgbm_val.default
+                    ), f"LightGBMTuner '{lgbmtuner_arg}' default argument is not consistent with original LightGBM 'train' method default argument."
 
     @pytest.mark.parametrize(
         "metric, study_direction, expected",
@@ -834,13 +834,13 @@ class TestLightGBMTunerCV(object):
         assert runner.lgbm_kwargs["num_boost_round"] == 5
 
     def test_default_arguments(self) -> None:
-
-        for lgbmtunercv_arg, lgbmtunercv_val in signature(optuna.integration.lightgbm.LightGBMTunerCV).parameters.items():
+        for lgbmtunercv_arg, lgbmtunercv_val in signature(LightGBMTunerCV).parameters.items():
             for lgbmcv_arg, lgbmcv_val in signature(lightgbm.cv).parameters.items():
                 if lgbmtunercv_arg == lgbmcv_arg:
-                    assert lgbmtunercv_val.default == lgbmcv_val.default, (
-                        f"LightGBMTunerCV '{lgbmtunercv_arg}' default argument is not consistent with original LightGBM 'cv' method default argument.")
-                        
+                    assert (
+                        lgbmtunercv_val.default == lgbmcv_val.default
+                    ), f"LightGBMTunerCV '{lgbmtunercv_arg}' default argument is not consistent with original LightGBM 'cv' method default argument."
+
     def test_tune_feature_fraction(self) -> None:
         unexpected_value = 1.1  # out of scope.
 
