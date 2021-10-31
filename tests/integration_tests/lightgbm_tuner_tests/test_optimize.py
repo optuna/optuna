@@ -640,10 +640,6 @@ class TestLightGBMTuner(object):
         best_booster = tuner.get_best_booster()
         assert best_booster.params["lambda_l1"] != unexpected_value
 
-        # TODO(toshihikoyanase): Remove this check when LightGBMTuner.best_booster is removed.
-        with pytest.warns(FutureWarning):
-            tuner.best_booster
-
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
         # Resumed study does not have the best booster.
