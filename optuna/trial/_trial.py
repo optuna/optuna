@@ -156,8 +156,9 @@ class Trial(BaseTrial):
         Returns:
             A suggested float value.
 
-        .. seealso::
+        See also:
             Please refer to [this tutorial](https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html)
+            
         """
 
         if step is not None:
@@ -331,8 +332,9 @@ class Trial(BaseTrial):
             :exc:`ValueError`:
                 If ``step != 1`` and ``log = True`` are specified.
         
-        .. seealso::
+        See also:
             Please refer to [this tutorial](https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html)
+
         """
 
         if step != 1:
@@ -403,8 +405,9 @@ class Trial(BaseTrial):
         Returns:
             A suggested value.
         
-        .. seealso::
+        See also:
             Please refer to [this tutorial](https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html)
+
         """
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
