@@ -41,12 +41,6 @@ def _format_text(text: str) -> str:
     return "\n\n" + textwrap.indent(text.strip(), "    ") + "\n"
 
 
-def _get_removed_version_from_deprecated_version(deprecated_version: str) -> str:
-    parsed_deprecated_version = version.parse(deprecated_version)
-    assert isinstance(parsed_deprecated_version, version.Version)  # Required for mypy.
-    return "{}.0.0".format(parsed_deprecated_version.major + 2)
-
-
 def deprecated(
     deprecated_version: str,
     removed_version: Optional[str] = None,
@@ -81,8 +75,6 @@ def deprecated(
     """
 
     _validate_version(deprecated_version)
-    if removed_version is None:
-        removed_version = _get_removed_version_from_deprecated_version(deprecated_version)
     _validate_version(removed_version)
     _validate_two_version(deprecated_version, removed_version)
 
