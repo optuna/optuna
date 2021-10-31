@@ -114,6 +114,8 @@ def set_verbosity(verbosity: int) -> None:
 
         .. testcode::
 
+            import optuna
+
             # set the logging level
             optuna.logging.set_verbosity(optuna.logging.INFO)
             # print(optuna.logging.get_verbosity()) 30
