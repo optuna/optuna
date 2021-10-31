@@ -368,7 +368,7 @@ class TestLightGBMTuner(object):
             for lgbm_arg, lgbm_val in signature(lightgbm.train).parameters.items():
                 if lgbmtuner_arg == lgbm_arg:
                     assert lgbmtuner_val.default == lgbm_val.default, (
-                    f"LightGBMTuner '{lgbmtuner_arg}' default argument is not consistent with original LightGBM default argument.")
+                    f"LightGBMTuner '{lgbmtuner_arg}' default argument is not consistent with original LightGBM train method default argument.")
 
     @pytest.mark.parametrize(
         "metric, study_direction, expected",
