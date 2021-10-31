@@ -11,10 +11,12 @@ from unittest import mock
 import warnings
 
 import numpy as np
+import lightgbm
 import pytest
 import sklearn.datasets
 from sklearn.model_selection import KFold
 from sklearn.model_selection import train_test_split
+from inspect import signature
 
 import optuna
 from optuna.integration._lightgbm_tuner.optimize import _BaseTuner
@@ -359,6 +361,14 @@ class TestLightGBMTuner(object):
         for new_arg in new_args:
             assert new_arg not in runner.lgbm_kwargs
             assert new_arg in runner.auto_options
+
+    def test_default_arguments(self) -> None:
+        
+        for lgbmtuner_arg, lgbmtuner_val in signature(optuna.integration.lightgbm.LightGBMTuner).parameters.items():
+            for lgbm_arg, lgbm_val in signature(lightgbm.train).parameters.items():
+                if lgbmtuner_arg == lgbm_arg:
+                    assert lgbmtuner_val.default == lgbm_val.default, (
+                    f"LightGBMTuner '{lgbmtuner_arg}' default argument is not consistent with original LightGBM default argument.")
 
     @pytest.mark.parametrize(
         "metric, study_direction, expected",
