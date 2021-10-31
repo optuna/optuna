@@ -88,6 +88,18 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
         else:
             assert legend.get_text() == f'Objective Value of {studies[i-n_studies].study_name}'
 
+
+    # Test customized target.
+    with pytest.warns(UserWarning):
+        figure = plot_optimization_history(studies, target=lambda t: t.number)
+    assert len(figure.get_lines()) == 0
+    assert len(figure.get_legend().get_texts()) == n_studies
+
+    # # Test customized target name.
+    figure = plot_optimization_history(studies, target_name="Target Name")
+    assert figure.legend().get_texts()[n_studies].get_text() == f"Target Name of {studies[0].study_name}"
+    assert figure.get_ylabel() == "Target Name"
+
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
         raise ValueError

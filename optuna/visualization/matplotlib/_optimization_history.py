@@ -105,6 +105,9 @@ def _get_optimization_history_plot(
     ax.set_xlabel("#Trials")
     ax.set_ylabel(target_name)
 
+    if len(studies) == 0:
+        _logger.warning("There are no studies.")
+        return ax
     # Prepare data for plotting.
     all_trials = list(
         itertools.chain.from_iterable(
@@ -119,7 +122,6 @@ def _get_optimization_history_plot(
 
     if len(all_trials) == 0:
         _logger.warning("Study instance does not contain trials.")
-        ax.plot()
         return ax
 
     ax = _get_optimization_histories(studies, target, target_name, ax)
