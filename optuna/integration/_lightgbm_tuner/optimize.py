@@ -21,7 +21,6 @@ from packaging import version
 import tqdm
 
 import optuna
-from optuna._deprecated import deprecated
 from optuna._imports import try_import
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters

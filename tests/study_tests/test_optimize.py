@@ -7,7 +7,6 @@ from optuna import create_study
 from optuna import Trial
 from optuna import TrialPruned
 from optuna.exceptions import TrialPruned as TrialPruned_in_exceptions
-from optuna.structs import TrialPruned as TrialPruned_in_structs
 from optuna.study import _optimize
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
@@ -58,7 +57,7 @@ def test_run_trial(storage_mode: str) -> None:
 # TODO(Yanase): Remove this test function after removing `optuna.structs.TrialPruned`.
 @pytest.mark.parametrize(
     "trial_pruned_class",
-    [TrialPruned, TrialPruned_in_exceptions, TrialPruned_in_structs],
+    [TrialPruned, TrialPruned_in_exceptions],
 )
 @pytest.mark.parametrize("report_value", [None, 1.2])
 def test_run_trial_with_trial_pruned(
