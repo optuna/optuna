@@ -833,6 +833,14 @@ class TestLightGBMTunerCV(object):
         assert "num_boost_round" not in runner.auto_options
         assert runner.lgbm_kwargs["num_boost_round"] == 5
 
+    def test_default_arguments(self) -> None:
+
+        for lgbmtunercv_arg, lgbmtunercv_val in signature(optuna.integration.lightgbm.LightGBMTunerCV).parameters.items():
+            for lgbmcv_arg, lgbmcv_val in signature(lightgbm.cv).parameters.items():
+                if lgbmtunercv_arg == lgbmcv_arg:
+                    assert lgbmtunercv_val.default == lgbmcv_val.default, (
+                        f"LightGBMTunerCV '{lgbmtunercv_arg}' default argument is not consistent with original LightGBM 'cv' method default argument.")
+                        
     def test_tune_feature_fraction(self) -> None:
         unexpected_value = 1.1  # out of scope.
 
