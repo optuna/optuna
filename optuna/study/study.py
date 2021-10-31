@@ -981,11 +981,11 @@ class Study:
 
         return None
 
-    @deprecated("2.5.0")
+    @deprecated("2.5.0", "4.0.0")
     def _ask(self) -> trial_module.Trial:
         return self.ask()
 
-    @deprecated("2.5.0")
+    @deprecated("2.5.0", "4.0.0")
     def _tell(
         self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
     ) -> None:
