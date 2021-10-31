@@ -213,7 +213,6 @@ setup(
             "trials = optuna.cli:_Trials",
             "best-trial = optuna.cli:_BestTrial",
             "best-trials = optuna.cli:_BestTrials",
-            "dashboard = optuna.cli:_Dashboard",
             "study optimize = optuna.cli:_StudyOptimize",
             "storage upgrade = optuna.cli:_StorageUpgrade",
             "ask = optuna.cli:_Ask",
