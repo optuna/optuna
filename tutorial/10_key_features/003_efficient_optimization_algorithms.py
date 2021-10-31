@@ -27,6 +27,9 @@ Optuna provides the following sampling algorithms:
 
 The default sampler is :class:`optuna.samplers.TPESampler`.
 
+.. seealso::
+    Please refer to :class:`~optuna.samplers`.
+
 Switching Samplers
 ------------------
 
