@@ -155,10 +155,6 @@ class Trial(BaseTrial):
 
         Returns:
             A suggested float value.
-
-        See also:
-            Please refer to [this tutorial](https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html)
-
         """
 
         if step is not None:
@@ -331,10 +327,6 @@ class Trial(BaseTrial):
         Raises:
             :exc:`ValueError`:
                 If ``step != 1`` and ``log = True`` are specified.
-        
-        See also:
-            Please refer to [this tutorial](https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html)
-
         """
 
         if step != 1:
@@ -409,7 +401,6 @@ class Trial(BaseTrial):
             Please refer to `PythonicSearchSpace` tutorial
         
         .. _PythonicSearchSpace: https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html
-
 
         """
         # There is no need to call self._check_distribution because
