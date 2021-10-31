@@ -86,7 +86,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         "testing": [
             # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
             # https://github.com/optuna/optuna/issues/1000.
-            "bokeh<2.0.0",
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
@@ -123,7 +122,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytest",
         ],
         "optional": [
-            "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
