@@ -659,6 +659,10 @@ class Study:
 
             See :attr:`~optuna.study.Study.user_attrs` for related attribute.
 
+        .. seealso::
+
+            See :attr:ref:`attributes`.
+
         Example:
 
             .. testcode::
