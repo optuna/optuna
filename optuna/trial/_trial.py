@@ -158,7 +158,7 @@ class Trial(BaseTrial):
 
         See also:
             Please refer to [this tutorial](https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html)
-            
+
         """
 
         if step is not None:
@@ -405,8 +405,11 @@ class Trial(BaseTrial):
         Returns:
             A suggested value.
         
-        See also:
-            Please refer to [this tutorial](https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html)
+        .. seealso::
+            Please refer to `PythonicSearchSpace` tutorial
+        
+        .. _PythonicSearchSpace: https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html
+
 
         """
         # There is no need to call self._check_distribution because
