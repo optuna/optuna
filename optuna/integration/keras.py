@@ -12,14 +12,16 @@ with optuna._imports.try_import() as _imports:
 if not _imports.is_successful():
     Callback = object  # NOQA
 
-_keras_pruning_callback_deprecated_msg = "Recent Keras release (2.4.0) simply redirects "
-"all APIs in the standalone keras package to point to tf.keras. "
-"There is now only one Keras: tf.keras. "
-"There may be some breaking changes for some workflows by upgrading to keras 2.4.0. "
-"Test before upgrading. "
-"REF: https://github.com/keras-team/keras/releases/tag/2.4.0. "
-"There is an alternative callback function that can be used instead: "
-":class:`~optuna.integration.TFKerasPruningCallback`"
+_keras_pruning_callback_deprecated_msg = (
+    "Recent Keras release (2.4.0) simply redirects "
+    "all APIs in the standalone keras package to point to tf.keras. "
+    "There is now only one Keras: tf.keras. "
+    "There may be some breaking changes for some workflows by upgrading to keras 2.4.0. "
+    "Test before upgrading. "
+    "REF: https://github.com/keras-team/keras/releases/tag/2.4.0. "
+    "There is an alternative callback function that can be used instead: "
+    ":class:`~optuna.integration.TFKerasPruningCallback`"
+)
 
 
 @deprecated("2.1.0", "4.0.0", text=_keras_pruning_callback_deprecated_msg)
