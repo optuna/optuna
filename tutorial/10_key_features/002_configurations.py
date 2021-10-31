@@ -12,6 +12,9 @@ For hyperparameter sampling, Optuna provides the following features:
 
 With optional arguments of ``step`` and ``log``, we can discretize or take the logarithm of
 integer and floating point parameters.
+
+.. seealso::
+    Please refer to :class:`~optuna.trial.Trial`.
 """
 
 
