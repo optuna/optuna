@@ -75,7 +75,8 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 # though basically it is outperformed by :class:`optuna.pruners.SuccessiveHalvingPruner` and
 # :class:`optuna.pruners.HyperbandPruner` as in `this benchmark result <https://github.com/optuna/optuna/wiki/Benchmarks-with-Kurobako>`_.
 #
-#
+#.. seealso::
+#    Please refer to :class:`~optuna.pruners`.
 # Activating Pruners
 # ------------------
 # To turn on the pruning feature, you need to call :func:`~optuna.trial.Trial.report` and :func:`~optuna.trial.Trial.should_prune` after each step of the iterative training.
