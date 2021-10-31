@@ -56,6 +56,7 @@ def test_plot_optimization_history(direction: str) -> None:
     figure = plot_optimization_history(study)
     assert len(figure.get_lines()) == 0
 
+
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_plot_optimization_history_with_multiple_studies(direction: str) -> None:
     n_studies = 10
@@ -80,14 +81,13 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     for study in studies:
         study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(studies)
-    assert len(figure.get_lines()) ==  n_studies
-    
+    assert len(figure.get_lines()) == n_studies
+
     for i, legend in enumerate(figure.legend().get_texts()):
         if i < n_studies:
-            assert legend.get_text() == f'Best Values of {studies[i].study_name}'
+            assert legend.get_text() == f"Best Values of {studies[i].study_name}"
         else:
-            assert legend.get_text() == f'Objective Value of {studies[i-n_studies].study_name}'
-
+            assert legend.get_text() == f"Objective Value of {studies[i-n_studies].study_name}"
 
     # Test customized target.
     with pytest.warns(UserWarning):
@@ -95,9 +95,12 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     assert len(figure.get_lines()) == 0
     assert len(figure.get_legend().get_texts()) == n_studies
 
-    # # Test customized target name.
+    # Test customized target name.
     figure = plot_optimization_history(studies, target_name="Target Name")
-    assert figure.legend().get_texts()[n_studies].get_text() == f"Target Name of {studies[0].study_name}"
+    assert (
+        figure.legend().get_texts()[n_studies].get_text()
+        == f"Target Name of {studies[0].study_name}"
+    )
     assert figure.get_ylabel() == "Target Name"
 
     # Ignore failed trials.
@@ -110,4 +113,3 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
 
     figure = plot_optimization_history(studies)
     assert len(figure.get_lines()) == 0
-
