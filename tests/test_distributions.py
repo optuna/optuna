@@ -27,8 +27,10 @@ EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
 }
 
 EXAMPLE_JSONS = {
-    "i": '{"name": "IntDistribution", "attributes": {"low": 1, "high": 9, "log": false, "step": 2}}',
-    "il": '{"name": "IntDistribution", "attributes": {"low": 2, "high": 12, "log": true, "step": 2}}',
+    "i": '{"name": "IntDistribution", '
+    '"attributes": {"low": 1, "high": 9, "log": false, "step": 2}}',
+    "il": '{"name": "IntDistribution", '
+    '"attributes": {"low": 2, "high": 12, "log": true, "step": 2}}',
     "f": '{"name": "FloatDistribution", '
     '"attributes": {"low": 1.0, "high": 2.0, "log": false, "step": null}}',
     "fl": '{"name": "FloatDistribution", '
@@ -519,12 +521,12 @@ def test_repr() -> None:
 
 def test_int_distribution_asdict() -> None:
 
-    assert EXAMPLE_DISTRIBUTIONS["i"]._asdict() == {"low": 1, "high": 9, "log": False, 'step': 2}
+    assert EXAMPLE_DISTRIBUTIONS["i"]._asdict() == {"low": 1, "high": 9, "log": False, "step": 2}
 
 
 def test_int_distribution_log_asdict() -> None:
 
-    assert EXAMPLE_DISTRIBUTIONS["il"]._asdict() == {"low": 2, "high": 12, "log": True, 'step': 2}
+    assert EXAMPLE_DISTRIBUTIONS["il"]._asdict() == {"low": 2, "high": 12, "log": True, "step": 2}
 
 
 def test_float_distribution_asdict() -> None:
