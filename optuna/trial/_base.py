@@ -29,19 +29,19 @@ class BaseTrial(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
-    @deprecated("3.0.0a1", "6.0.0")
+    @deprecated("3.0.0", "6.0.0")
     @abc.abstractmethod
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
         raise NotImplementedError
 
-    @deprecated("3.0.0a1", "6.0.0")
+    @deprecated("3.0.0", "6.0.0")
     @abc.abstractmethod
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
         raise NotImplementedError
 
-    @deprecated("3.0.0a1", "6.0.0")
+    @deprecated("3.0.0", "6.0.0")
     @abc.abstractmethod
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
 
