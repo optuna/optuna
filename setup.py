@@ -101,7 +101,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            "tensorflow",
+            # TODO(toshihikoyanase): Remove the constraints when tensorflow==2.7.0 is released.
+            "tensorflow-estimator<2.7.0",
+            "tensorflow<2.7.0",
             "tensorflow-datasets",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
@@ -143,7 +145,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            "tensorflow",
+            # TODO(toshihikoyanase): Remove the constraints when tensorflow==2.7.0 is released.
+            "tensorflow-estimator<2.7.0",
+            "tensorflow<2.7.0",
             "tensorflow-datasets",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
