@@ -4,7 +4,7 @@ from typing import cast
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Union 
+from typing import Union
 
 import numpy as np
 
@@ -143,7 +143,9 @@ def _get_optimization_histories(
                 y=[t.value for t in trials],
                 color=cmap(0),
                 alpha=1,
-                label=target_name,
+                label=target_name
+                if len(studies) == 1
+                else f"{target_name} of {study.study_name}",
             )
             ax.plot(
                 [t.number for t in trials],
@@ -151,7 +153,9 @@ def _get_optimization_histories(
                 marker="o",
                 color=cmap(3),
                 alpha=0.5,
-                label="Best Value",
+                label="Best Value"
+                if len(studies) == 1
+                else f"Best Values of {study.study_name}",
             )
 
             ax.legend()
@@ -161,7 +165,9 @@ def _get_optimization_histories(
                 y=[target(t) for t in trials],
                 color=cmap(0),
                 alpha=1,
-                label=target_name,
+                label=target_name
+                if len(studies) == 1
+                else f"{target_name} of {study.study_name}",
             )
 
     return ax
