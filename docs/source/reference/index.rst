@@ -15,7 +15,6 @@ API Reference
     pruners
     samplers
     storages
-    structs
     study
     trial
     visualization/index
