@@ -366,13 +366,12 @@ class TestLightGBMTuner(object):
         for lgbmtuner_arg, lgbmtuner_val in signature(LightGBMTuner).parameters.items():
             for lgbm_arg, lgbm_val in signature(lightgbm.train).parameters.items():
                 if lgbmtuner_arg == lgbm_arg:
-                    assert (
-                        lgbmtuner_val.default == lgbm_val.default
-                    ), (
+                    assert lgbmtuner_val.default == lgbm_val.default, (
                         f"LightGBMTuner '{lgbmtuner_arg}' default "
                         "argument is not consistent with original "
                         "LightGBM 'train' method default argument."
                     )
+
     @pytest.mark.parametrize(
         "metric, study_direction, expected",
         [("auc", "maximize", -np.inf), ("l2", "minimize", np.inf)],
@@ -840,9 +839,7 @@ class TestLightGBMTunerCV(object):
         for lgbmtunercv_arg, lgbmtunercv_val in signature(LightGBMTunerCV).parameters.items():
             for lgbmcv_arg, lgbmcv_val in signature(lightgbm.cv).parameters.items():
                 if lgbmtunercv_arg == lgbmcv_arg:
-                    assert (
-                        lgbmtunercv_val.default == lgbmcv_val.default
-                    ), (
+                    assert lgbmtunercv_val.default == lgbmcv_val.default, (
                         f"LightGBMTunerCV '{lgbmtunercv_arg}' default "
                         "argument is not consistent with original "
                         "LightGBM 'cv' method default argument."
