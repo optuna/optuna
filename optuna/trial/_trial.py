@@ -330,6 +330,9 @@ class Trial(BaseTrial):
         Raises:
             :exc:`ValueError`:
                 If ``step != 1`` and ``log = True`` are specified.
+        
+        .. seealso::
+            Please refer to [this tutorial](https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html)
         """
 
         if step != 1:
