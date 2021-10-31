@@ -8,8 +8,11 @@ from typing import Sequence
 from typing import Union
 import warnings
 
+from optuna._deprecated import deprecated
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
+_int_distribution_deprecated_msg = "Use :class:`~optuna.distribution.IntDistribution` instead."
+_float_distribution_deprecated_msg = "Use :class:`~optuna.distribution.FloatDistribution` instead."
 
 
 class BaseDistribution(object, metaclass=abc.ABCMeta):
@@ -91,6 +94,87 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
 
         kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self.__dict__.items()))
         return "{}({})".format(self.__class__.__name__, kwargs)
+
+
+class FloatDistribution(BaseDistribution):
+    """A continuous uniform distribution in a linear domain.
+
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_float`, and passed to
+    :mod:`~optuna.samplers` in general.
+
+    Attributes:
+        low:
+            Lower endpoint of the range of the distribution. ``low`` is included in the range.
+        high:
+            Upper endpoint of the range of the distribution. ``high`` is included from the range.
+        log:
+            If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
+        step:
+            A discretization step. This parameter must be None when the parameter ``log`` is :obj:`True`.
+
+    Raises:
+        ValueError:
+            If ``low`` value is larger than ``high`` value.
+            If both ``log`` is :obj:`True` and ``step`` is not None.
+            If ``log`` is :obj:`True` and ``low`` value is smaller than 0.0.
+    """
+
+    def __init__(
+        self, low: float, high: float, log: bool = False, step: Union[None, float] = None
+    ) -> None:
+
+        if low > high:
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
+
+        if log and step is not None:
+            raise ValueError("The parameter `step` is not supported when `log` is true.")
+
+        if log and low < 0.0:
+            raise ValueError(
+                "The `low` value must be equal to or greater than 1 for a log distribution "
+                "(low={}, high={}).".format(low, high)
+            )
+
+        if step is not None and step <= 0:
+            raise ValueError(
+                "The `step` value must be non-zero positive value, " "but step={}.".format(step)
+            )
+
+        if step is not None:
+            high = _adjust_discrete_uniform_high(low, high, step)
+            self.step = float(step)
+        else:
+            self.step = None
+
+        self.low = float(low)
+        self.high = float(high)
+        self.log = log
+
+    def single(self) -> bool:
+
+        if self.step is None:
+            return self.low == self.high
+        else:
+            if self.low == self.high:
+                return True
+            high = decimal.Decimal(str(self.high))
+            low = decimal.Decimal(str(self.low))
+            step = decimal.Decimal(str(self.step))
+            if (high - low) < step:
+                return True
+            return False
+
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
+
+        value = param_value_in_internal_repr
+        if self.step is None:
+            return self.low <= value <= self.high
+        else:
+            k = (value - self.low) / self.step
+            return self.low <= value <= self.high and abs(k - round(k)) < 1.0e-8
 
 
 class UniformDistribution(BaseDistribution):
@@ -231,6 +315,61 @@ class DiscreteUniformDistribution(BaseDistribution):
         value = param_value_in_internal_repr
         k = (value - self.low) / self.q
         return self.low <= value <= self.high and abs(k - round(k)) < 1.0e-8
+
+
+class IntDistribution(BaseDistribution):
+    """A discrete uniform distribution on integers.
+
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_float`, and passed to
+    :mod:`~optuna.samplers` in general.
+
+    Attributes:
+        low:
+            Lower endpoint of the range of the distribution. ``low`` is included in the range.
+        high:
+            Upper endpoint of the range of the distribution. ``high`` is included from the range.
+        log:
+            If ``log`` is True, this distribution is in log-scaled domain.
+
+    Raises:
+        ValueError:
+            If ``low`` value is larger than ``high`` value,
+            or ``low`` value is less than 1 when ``log`` is :obj:`True.
+    """
+
+    def __init__(self, low: int, high: int, log: bool = False) -> None:
+        if low > high:
+            raise ValueError(
+                "The `low` value must be smaller than or equal to the `high` value "
+                "(low={}, high={}).".format(low, high)
+            )
+
+        if log and low < 1:
+            raise ValueError(
+                "The `low` value must be equal to or greater than 1 for a log distribution "
+                "(low={}, high={}).".format(low, high)
+            )
+
+        self.low = low
+        self.high = high
+        self.log = log
+
+    def to_external_repr(self, param_value_in_internal_repr: float) -> int:
+
+        return int(param_value_in_internal_repr)
+
+    def to_internal_repr(self, param_value_in_external_repr: int) -> float:
+
+        return float(param_value_in_external_repr)
+
+    def single(self) -> bool:
+
+        return self.low == self.high
+
+    def _contains(self, param_value_in_internal_repr: float) -> bool:
+
+        value = param_value_in_internal_repr
+        return self.low <= value <= self.high
 
 
 class IntUniformDistribution(BaseDistribution):
@@ -454,6 +593,8 @@ class CategoricalDistribution(BaseDistribution):
 
 
 DISTRIBUTION_CLASSES = (
+    IntDistribution,
+    FloatDistribution,
     UniformDistribution,
     LogUniformDistribution,
     DiscreteUniformDistribution,
@@ -500,29 +641,16 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
             log = json_dict.get("log")
 
             if json_dict["type"] == "float":
-                if log:
-                    if step is not None:
-                        raise ValueError(
-                            "The parameter `step` is not supported when `log` is true."
-                        )
-                    else:
-                        return LogUniformDistribution(low, high)
-                else:
-                    if step is not None:
-                        return DiscreteUniformDistribution(low, high, step)
-                    else:
-                        return UniformDistribution(low, high)
+                return FloatDistribution(low=low, high=high, step=step, log=log)
             else:
-                if log:
-                    if step is not None:
+                if step is not None:
+                    if log:
+                        # todo(nyanhi): Once `IntLogUniformDistribution` is decommissioned, raise ValueError instead.
                         return IntLogUniformDistribution(low, high, step)
                     else:
-                        return IntLogUniformDistribution(low, high)
-                else:
-                    if step is not None:
+                        # todo(nyanhi): Once `IntUniformDistribution` is decommissioned, raise ValueError instead.
                         return IntUniformDistribution(low, high, step)
-                    else:
-                        return IntUniformDistribution(low, high)
+                return IntDistribution(low=low, high=high, log=log)
 
         raise ValueError("Unknown distribution type: {}".format(json_dict["type"]))
 
@@ -613,6 +741,8 @@ def _get_single_value(distribution: BaseDistribution) -> Union[int, float, Categ
     if isinstance(
         distribution,
         (
+            FloatDistribution,
+            IntDistribution,
             UniformDistribution,
             LogUniformDistribution,
             DiscreteUniformDistribution,
