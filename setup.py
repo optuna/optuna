@@ -103,6 +103,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "xgboost",
             "tensorflow",
             "tensorflow-datasets",
+            # TODO(nzw): Remove the version constraint after tensorflow 2.7.0 is released.
+            "tensorflow-estimator<=2.7.0",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
             "skorch",
@@ -145,6 +147,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "xgboost",
             "tensorflow",
             "tensorflow-datasets",
+            # TODO(nzw): Remove the version constraint after tensorflow 2.7.0 is released.
+            "tensorflow-estimator<=2.7.0",
             "pytorch-ignite",
             "pytorch-lightning>=1.0.2",
             "skorch",
