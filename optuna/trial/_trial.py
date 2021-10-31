@@ -155,6 +155,9 @@ class Trial(BaseTrial):
 
         Returns:
             A suggested float value.
+
+        .. seealso::
+            Please refer to [this tutorial](https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html)
         """
 
         if step is not None:
