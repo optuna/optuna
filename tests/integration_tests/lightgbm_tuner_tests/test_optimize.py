@@ -368,8 +368,11 @@ class TestLightGBMTuner(object):
                 if lgbmtuner_arg == lgbm_arg:
                     assert (
                         lgbmtuner_val.default == lgbm_val.default
-                    ), f"LightGBMTuner '{lgbmtuner_arg}' default argument is not consistent with original LightGBM 'train' method default argument."
-
+                    ), (
+                        f"LightGBMTuner '{lgbmtuner_arg}' default "
+                        "argument is not consistent with original "
+                        "LightGBM 'train' method default argument."
+                    )
     @pytest.mark.parametrize(
         "metric, study_direction, expected",
         [("auc", "maximize", -np.inf), ("l2", "minimize", np.inf)],
@@ -839,7 +842,11 @@ class TestLightGBMTunerCV(object):
                 if lgbmtunercv_arg == lgbmcv_arg:
                     assert (
                         lgbmtunercv_val.default == lgbmcv_val.default
-                    ), f"LightGBMTunerCV '{lgbmtunercv_arg}' default argument is not consistent with original LightGBM 'cv' method default argument."
+                    ), (
+                        f"LightGBMTunerCV '{lgbmtunercv_arg}' default "
+                        "argument is not consistent with original "
+                        "LightGBM 'cv' method default argument."
+                    )
 
     def test_tune_feature_fraction(self) -> None:
         unexpected_value = 1.1  # out of scope.
