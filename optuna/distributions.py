@@ -8,7 +8,6 @@ from typing import Sequence
 from typing import Union
 import warnings
 
-from optuna._deprecated import deprecated
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
 _int_distribution_deprecated_msg = "Use :class:`~optuna.distribution.IntDistribution` instead."
@@ -110,7 +109,8 @@ class FloatDistribution(BaseDistribution):
         log:
             If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
         step:
-            A discretization step. This parameter must be None when the parameter ``log`` is :obj:`True`.
+            A discretization step. This parameter must be None
+            when the parameter ``log`` is :obj:`True`.
 
     Raises:
         ValueError:
@@ -143,11 +143,10 @@ class FloatDistribution(BaseDistribution):
                 "The `step` value must be non-zero positive value, " "but step={}.".format(step)
             )
 
+        self.step = None
         if step is not None:
             high = _adjust_discrete_uniform_high(low, high, step)
             self.step = float(step)
-        else:
-            self.step = None
 
         self.low = float(low)
         self.high = float(high)
@@ -645,10 +644,8 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
             else:
                 if step is not None:
                     if log:
-                        # todo(nyanhi): Once `IntLogUniformDistribution` is decommissioned, raise ValueError instead.
                         return IntLogUniformDistribution(low, high, step)
                     else:
-                        # todo(nyanhi): Once `IntUniformDistribution` is decommissioned, raise ValueError instead.
                         return IntUniformDistribution(low, high, step)
                 return IntDistribution(low=low, high=high, log=log)
 

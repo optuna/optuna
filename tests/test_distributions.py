@@ -29,9 +29,12 @@ EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
 EXAMPLE_JSONS = {
     "i": '{"name": "IntDistribution", "attributes": {"low": 1, "high": 9, "log": false}}',
     "il": '{"name": "IntDistribution", "attributes": {"low": 2, "high": 12, "log": true}}',
-    "f": '{"name": "FloatDistribution", "attributes": {"low": 1.0, "high": 2.0, "log": false, "step": null}}',
-    "fl": '{"name": "FloatDistribution", "attributes": {"low": 0.001, "high": 100.0, "log": true, "step": null}}',
-    "fd": '{"name": "FloatDistribution", "attributes": {"low": 1.0, "high": 9.0, "step": 2.0, "log": false}}',
+    "f": '{"name": "FloatDistribution", '
+    '"attributes": {"low": 1.0, "high": 2.0, "log": false, "step": null}}',
+    "fl": '{"name": "FloatDistribution", '
+    '"attributes": {"low": 0.001, "high": 100.0, "log": true, "step": null}}',
+    "fd": '{"name": "FloatDistribution", '
+    '"attributes": {"low": 1.0, "high": 9.0, "step": 2.0, "log": false}}',
     "u": '{"name": "UniformDistribution", "attributes": {"low": 1.0, "high": 2.0}}',
     "l": '{"name": "LogUniformDistribution", "attributes": {"low": 0.001, "high": 100}}',
     "du": '{"name": "DiscreteUniformDistribution",'
