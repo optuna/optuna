@@ -30,7 +30,6 @@ from cliff.commandmanager import CommandManager
 import yaml
 
 import optuna
-from optuna._deprecated import deprecated
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
@@ -553,73 +552,6 @@ class _BestTrials(_BaseCommand):
         records, columns = _dataframe._create_records_and_aggregate_column(study, attrs)
         best_records = list(filter(lambda record: record[("number", "")] in best_trials, records))
         print(_format_output(best_records, columns, parsed_args.format, parsed_args.flatten))
-
-
-class _Dashboard(_BaseCommand):
-    """Launch web dashboard (beta).
-
-    This feature is deprecated since version 2.7.0. Please use `optuna-dashboard
-    <https://github.com/optuna/optuna-dashboard>`_ instead.
-    """
-
-    def get_parser(self, prog_name: str) -> ArgumentParser:
-
-        parser = super(_Dashboard, self).get_parser(prog_name)
-        parser.add_argument(
-            "--study", default=None, help="This argument is deprecated. Use --study-name instead."
-        )
-        parser.add_argument(
-            "--study-name", default=None, help="The name of the study to show on the dashboard."
-        )
-        parser.add_argument(
-            "--out",
-            "-o",
-            help="Output HTML file path. If it is not given, a HTTP server starts "
-            "and the dashboard is served.",
-        )
-        parser.add_argument(
-            "--allow-websocket-origin",
-            dest="bokeh_allow_websocket_origins",
-            action="append",
-            default=[],
-            help="Allow websocket access from the specified host(s)."
-            "Internally, it is used as the value of bokeh's "
-            "--allow-websocket-origin option. Please refer to "
-            "https://bokeh.pydata.org/en/latest/docs/"
-            "reference/command/subcommands/serve.html "
-            "for more details.",
-        )
-        return parser
-
-    @deprecated(
-        "2.7.0",
-        "3.0.0",
-        name="dashboard",
-        text="Please use optuna-dashboard (https://github.com/optuna/optuna-dashboard) instead.",
-    )
-    def take_action(self, parsed_args: Namespace) -> None:
-
-        storage_url = _check_storage_url(self.app_args.storage)
-
-        if parsed_args.study and parsed_args.study_name:
-            raise ValueError(
-                "Both `--study-name` and the deprecated `--study` was specified. "
-                "Please remove the `--study` flag."
-            )
-        elif parsed_args.study:
-            message = "The use of `--study` is deprecated. Please use `--study-name` instead."
-            warnings.warn(message, FutureWarning)
-            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study)
-        elif parsed_args.study_name:
-            study = optuna.load_study(storage=storage_url, study_name=parsed_args.study_name)
-        else:
-            raise ValueError("Missing study name. Please use `--study-name`.")
-
-        if parsed_args.out is None:
-            optuna.dashboard._serve(study, parsed_args.bokeh_allow_websocket_origins)
-        else:
-            optuna.dashboard._write(study, parsed_args.out)
-            self.logger.info("Report successfully written to: {}".format(parsed_args.out))
 
 
 class _StudyOptimize(_BaseCommand):

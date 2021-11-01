@@ -84,9 +84,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "experimental": ["redis"],
         "testing": [
-            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-            # https://github.com/optuna/optuna/issues/1000.
-            "bokeh<2.0.0",
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
@@ -123,7 +120,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytest",
         ],
         "optional": [
-            "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
@@ -132,8 +128,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
-            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-            # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
             "lightgbm",
@@ -213,7 +207,6 @@ setup(
             "trials = optuna.cli:_Trials",
             "best-trial = optuna.cli:_BestTrial",
             "best-trials = optuna.cli:_BestTrials",
-            "dashboard = optuna.cli:_Dashboard",
             "study optimize = optuna.cli:_StudyOptimize",
             "storage upgrade = optuna.cli:_StorageUpgrade",
             "ask = optuna.cli:_Ask",

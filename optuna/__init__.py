@@ -61,7 +61,7 @@ class _LazyImport(types.ModuleType):
 
     This class wraps specified module and lazily import it when they are actually accessed.
     Otherwise, `import optuna` becomes slower because it imports all submodules and
-    their dependencies (e.g., bokeh) all at once.
+    their dependencies all at once.
     Within this project's usage, importlib override this module's attribute on the first
     access and the imported submodule is directly accessed from the second access.
 
@@ -81,10 +81,5 @@ class _LazyImport(types.ModuleType):
     def __getattr__(self, item: str) -> Any:
         return getattr(self._load(), item)
 
-
-if TYPE_CHECKING:
-    from optuna import dashboard  # NOQA
-else:
-    dashboard = _LazyImport("optuna.dashboard")
 
 type_checking = _LazyImport("optuna.type_checking")
