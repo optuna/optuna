@@ -8,13 +8,13 @@ from typing import Union
 import warnings
 
 import optuna
+from optuna import TrialPruned
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.integration.allennlp._environment import _environment_variables
 from optuna.integration.allennlp._variables import _VariableManager
 from optuna.integration.allennlp._variables import OPTUNA_ALLENNLP_DISTRIBUTED_FLAG
 from optuna.integration.allennlp._variables import SPECIAL_DELIMITER as DELIMITER
-from optuna import TrialPruned
 
 
 with try_import() as _imports:
