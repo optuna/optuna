@@ -17,7 +17,6 @@ from typing import Union
 import warnings
 
 import numpy as np
-from packaging import version
 import tqdm
 
 import optuna
