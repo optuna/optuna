@@ -71,7 +71,7 @@ class _FanovaTree(object):
             sample[features] = numpy.array(midpoints)
 
             value, weight = self._get_marginalized_statistics(sample)
-            weight *= float(numpy.prod(sizes))
+            weight *= float(numpy.prod(sizes)) + 1e-100  # Epsilon for numerical stability.
 
             values = numpy.append(values, value)
             weights = numpy.append(weights, weight)
@@ -299,7 +299,8 @@ class _FanovaTree(object):
 
 
 def _get_cardinality(search_spaces: numpy.ndarray) -> float:
-    return numpy.prod(search_spaces[:, 1] - search_spaces[:, 0])
+    c = numpy.prod(search_spaces[:, 1] - search_spaces[:, 0])
+    return c if c > 0 else numpy.prod(search_spaces.shape)
 
 
 def _get_subspaces(
