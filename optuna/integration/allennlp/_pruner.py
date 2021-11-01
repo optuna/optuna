@@ -7,9 +7,10 @@ from typing import Union
 
 from packaging import version
 
-import optuna
 from optuna import load_study
+from optuna import pruners
 from optuna import Trial
+from optuna import TrialPruned
 from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.integration.allennlp._variables import _VariableManager
@@ -55,7 +56,7 @@ def _create_pruner(
     pruner_class: Optional[str],
     pruner_keys: Optional[str],
     pruner_values: Optional[str],
-) -> Optional[optuna.pruners.BasePruner]:
+) -> Optional[pruners.BasePruner]:
 
     """Restore a pruner which is defined in `create_study`.
 
@@ -71,7 +72,7 @@ def _create_pruner(
         return None
 
     pruner_params = _construct_pruner_kwargs(pruner_keys, pruner_values)
-    pruner = getattr(optuna.pruners, pruner_class, None)
+    pruner = getattr(pruners, pruner_class, None)
 
     if pruner is None:
         return None
@@ -125,7 +126,7 @@ class AllenNLPPruningCallback(TrainerCallback):
 
     .. note::
         Currently, build-in pruners are supported except for
-        :class:`~optuna.pruners.PatientPruner`.
+        :class:`~pruners.PatientPruner`.
 
     Args:
         trial:
@@ -139,7 +140,7 @@ class AllenNLPPruningCallback(TrainerCallback):
 
     def __init__(
         self,
-        trial: Optional[optuna.trial.Trial] = None,
+        trial: Optional[Trial] = None,
         monitor: Optional[str] = None,
     ):
         _imports.check()
@@ -222,7 +223,7 @@ class AllenNLPPruningCallback(TrainerCallback):
         metrics: Dict[str, Any],
         epoch: int,
         is_primary: bool = True,
-        **kwargs: Any,
+        **_: Any,
     ) -> None:
         """Check if a training reaches saturation.
 
@@ -246,16 +247,4 @@ class AllenNLPPruningCallback(TrainerCallback):
 
         self._trial.report(float(value), epoch)
         if self._trial.should_prune():
-            trainer._metric_tracker.should_stop_early = lambda: True  # type: ignore
-            self.pruned = True
-
-    def on_end(
-        self,
-        trainer: "GradientDescentTrainer",
-        metrics: Dict[str, Any] = None,
-        epoch: int = None,
-        is_primary: bool = True,
-        **kwargs: Any,
-    ) -> None:
-        if self.pruned:
-            raise optuna.TrialPruned()
+            raise TrialPruned()
