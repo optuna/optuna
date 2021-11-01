@@ -534,6 +534,10 @@ class Trial(BaseTrial):
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set user attributes to the trial.
 
+        .. seealso::
+
+            See :ref:`attributes`.
+
         The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
 
         Example:
