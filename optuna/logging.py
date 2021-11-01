@@ -123,8 +123,7 @@ def set_verbosity(verbosity: int) -> None:
             # [I 2021-10-31 02:59:35,091] Trial 1 finished with value: 1.0 ...
             # [I 2021-10-31 02:59:35,096] Trial 2 finished with value: 1.0 ...
 
-            # Set the logging level WARNING.
-            # There are INFO level logs.
+            # Setting the logging level WARNING, the INFO logs are suppressed.
             optuna.logging.set_verbosity(optuna.logging.WARNING)
             study.optimize(objective, n_trials=10)
 
