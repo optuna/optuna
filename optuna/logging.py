@@ -111,6 +111,10 @@ def get_verbosity() -> int:
             # [I 2021-10-31 05:35:17,245] Trial 1 finished with value: ...
             # ...
 
+        .. testoutput::
+
+           20
+           20           
     Returns:
         Logging level, e.g., ``optuna.logging.DEBUG`` and ``optuna.logging.INFO``.
 
