@@ -116,14 +116,14 @@ def plot_param_importances(
     importances = OrderedDict(reversed(list(importances.items())))
     importance_values = list(importances.values())
     param_names = list(importances.keys())
+    importance_labels = [f"{val:.2f}" if val >= 0.01 else "<0.01" for val in importance_values]
 
     fig = go.Figure(
         data=[
             go.Bar(
                 x=importance_values,
                 y=param_names,
-                text=importance_values,
-                texttemplate="%{text:.2f}",
+                text=importance_labels,
                 textposition="outside",
                 cliponaxis=False,  # Ensure text is not clipped.
                 hovertemplate=[
