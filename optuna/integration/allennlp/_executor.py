@@ -14,6 +14,7 @@ from optuna.integration.allennlp._environment import _environment_variables
 from optuna.integration.allennlp._variables import _VariableManager
 from optuna.integration.allennlp._variables import OPTUNA_ALLENNLP_DISTRIBUTED_FLAG
 from optuna.integration.allennlp._variables import SPECIAL_DELIMITER as DELIMITER
+from optuna import TrialPruned
 
 
 with try_import() as _imports:
@@ -27,6 +28,7 @@ with try_import() as _imports:
 if _imports.is_successful():
     import _jsonnet
     import psutil
+    from torch.multiprocessing.spawn import ProcessRaisedException
 
 
 def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
@@ -224,12 +226,17 @@ class AllenNLPExecutor(object):
 
             os.environ[OPTUNA_ALLENNLP_DISTRIBUTED_FLAG] = "1"
 
-        allennlp.commands.train.train_model(
-            params=params,
-            serialization_dir=self._serialization_dir,
-            file_friendly_logging=self._file_friendly_logging,
-            force=self._force,
-            include_package=self._include_package,
-        )
+        try:
+            allennlp.commands.train.train_model(
+                params=params,
+                serialization_dir=self._serialization_dir,
+                file_friendly_logging=self._file_friendly_logging,
+                force=self._force,
+                include_package=self._include_package,
+            )
+        except ProcessRaisedException as e:
+            if "raise TrialPruned()" in str(e):
+                raise TrialPruned()
+
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]
