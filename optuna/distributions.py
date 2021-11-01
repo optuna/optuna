@@ -10,8 +10,10 @@ import warnings
 
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
-_int_distribution_deprecated_msg = "Use :class:`~optuna.distribution.IntDistribution` instead."
-_float_distribution_deprecated_msg = "Use :class:`~optuna.distribution.FloatDistribution` instead."
+_int_distribution_deprecated_msg = "Use :class:`~optuna.distributions.IntDistribution` instead."
+_float_distribution_deprecated_msg = (
+    "Use :class:`~optuna.distributions.FloatDistribution` instead."
+)
 
 
 class BaseDistribution(object, metaclass=abc.ABCMeta):
@@ -96,7 +98,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
 
 
 class FloatDistribution(BaseDistribution):
-    """A continuous uniform distribution in a linear domain.
+    """A distribution on floats.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_float`, and passed to
     :mod:`~optuna.samplers` in general.
@@ -109,13 +111,13 @@ class FloatDistribution(BaseDistribution):
         log:
             If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
         step:
-            A discretization step. This parameter must be None
+            A discretization step. This parameter must be :obj:`None`
             when the parameter ``log`` is :obj:`True`.
 
     Raises:
         ValueError:
             If ``low`` value is larger than ``high`` value.
-            If both ``log`` is :obj:`True` and ``step`` is not None.
+            If ``log`` is :obj:`True` and ``step`` is not :obj:`None`.
             If ``log`` is :obj:`True` and ``low`` value is smaller than 0.0.
     """
 
@@ -162,9 +164,7 @@ class FloatDistribution(BaseDistribution):
             high = decimal.Decimal(str(self.high))
             low = decimal.Decimal(str(self.low))
             step = decimal.Decimal(str(self.step))
-            if (high - low) < step:
-                return True
-            return False
+            return (high - low) < step
 
     def _contains(self, param_value_in_internal_repr: float) -> bool:
 
@@ -317,9 +317,9 @@ class DiscreteUniformDistribution(BaseDistribution):
 
 
 class IntDistribution(BaseDistribution):
-    """A discrete uniform distribution on integers.
+    """A distribution on integers.
 
-    This object is instantiated by :func:`~optuna.trial.Trial.suggest_float`, and passed to
+    This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
     :mod:`~optuna.samplers` in general.
 
     Attributes:
