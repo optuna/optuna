@@ -661,7 +661,7 @@ class Study:
 
         .. seealso::
 
-            See :attr:ref:`attributes`.
+            See :ref:`attributes`.
 
         Example:
 
