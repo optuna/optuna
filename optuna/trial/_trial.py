@@ -398,10 +398,9 @@ class Trial(BaseTrial):
             A suggested value.
         
         .. seealso::
-            Please refer to `PythonicSearchSpace` tutorial
+            See an `tutorial <https://optuna.readthedocs.io/en/latest/
+            tutorial/10_key_features/002_configurations.html>`_how to use the trial.
         
-        .. _PythonicSearchSpace: https://optuna.readthedocs.io/en/latest/tutorial/10_key_features/002_configurations.html
-
         """
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
