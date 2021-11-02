@@ -58,7 +58,7 @@ class NSGAIISampler(BaseSampler):
         crossover:
             Crossover to be applied when creating child individuals.
             The available crossovers are
-            `uniform` (default), `blxalpha`, `sbx`, `vsbx`, `undx`, `undxm`, and `spx`.
+            `uniform` (default), `blxalpha`, `sbx`, `vsbx`, `undx`, and `spx`.
 
             For :class:`~optuna.distributions.CategoricalDistribution`,
             uniform crossover will be applied,
@@ -101,17 +101,6 @@ class NSGAIISampler(BaseSampler):
 
             - undx: Generate child individuals from the three parents
               using a multivariate normal distribution.
-
-                - `H. Kita, I. Ono and S. Kobayashi,
-                  Multi-parental extension of the unimodal normal distribution crossover
-                  for real-coded genetic algorithms,
-                  Proceedings of the 1999 Congress on Evolutionary Computation-CEC99
-                  (Cat. No. 99TH8406), 1999, pp. 1581-1588 Vol. 2
-                  <https://ieeexplore.ieee.org/document/782672>`_
-
-            - undxm: In UNDX, the child is generated only in a limited area of the search range;
-              in UNDX-m, the child are generated in a distribution
-              that covers the search range more densely.
 
                 - `H. Kita, I. Ono and S. Kobayashi,
                   Multi-parental extension of the unimodal normal distribution crossover
@@ -167,13 +156,6 @@ class NSGAIISampler(BaseSampler):
         ValueError:
             If ``crossover`` is `undx` or `spx` and `population_size` is less than or equal to two
             (To use three parental individuals during crossover applied).
-            If ``crossover`` is `undxm` and `population_size` is less than or equal to three
-            (To use four parental individuals during crossover applied).
-
-        RuntimeError:
-            If ``crossover`` is `undxm` and
-            the dimensionality of the number of parameters of the individuals
-            is less than or equal to two
     """
 
     def __init__(
@@ -212,11 +194,11 @@ class NSGAIISampler(BaseSampler):
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
-        if crossover not in ["uniform", "blxalpha", "sbx", "vsbx", "undx", "undxm", "spx"]:
+        if crossover not in ["uniform", "blxalpha", "sbx", "vsbx", "undx", "spx"]:
             raise ValueError(
                 f"'{crossover}' is not a valid crossover name."
                 " The available crossovers are"
-                " `uniform` (default), `blxalpha`, `sbx`, `vsbx`, `undx`, `undxm`, and `spx`."
+                " `uniform` (default), `blxalpha`, `sbx`, `vsbx`, `undx`, and `spx`."
             )
         if crossover != "uniform":
             warnings.warn(

@@ -123,26 +123,6 @@ def crossover(
                 sigma_xi,
                 sigma_eta,
             )
-        elif crossover_name == "undxm":
-            m = len(parents_numerical_params_array) - 2
-            assert m == 2
-            n_params = len(parents_numerical_params_array[0])
-            if n_params - m <= 0:
-                raise RuntimeError(
-                    "'undxm' crossover requires that the number of non-categorical parameters"
-                    f" in the intersection search space is at least 3. Actual: {n_params}"
-                )
-
-            sigma_xi = 1 / np.sqrt(m)
-            sigma_eta = (
-                0.35
-                * np.sqrt(m + 1)
-                * np.sqrt(3)
-                / np.sqrt(n_params - m)
-                / np.sqrt(m + 2)
-                / np.sqrt(2)
-            )
-            child_params_array = _undxm(parents_numerical_params_array, rng, sigma_xi, sigma_eta)
         elif crossover_name == "spx":
             epsilon = np.sqrt(len(parents_numerical_params_array[0]) + 2)
             child_params_array = _spx(parents_numerical_params_array, rng, epsilon)
@@ -164,8 +144,6 @@ def get_n_parents(crossover_name: str) -> int:
         n_parents = 2
     elif crossover_name in ["undx", "spx"]:
         n_parents = 3
-    elif crossover_name in ["undxm"]:
-        n_parents = 4
     else:
         assert False
     return n_parents
@@ -422,104 +400,6 @@ def _undx(
         child_params_array = one + two + three
     else:
         child_params_array = one + two
-    return child_params_array
-
-
-def _undxm(
-    xs: np.ndarray, rng: np.random.RandomState, sigma_xi: float, sigma_eta: float
-) -> np.ndarray:
-    # https://ieeexplore.ieee.org/document/782672
-    # Section 4.2 Prototype Algorithm for UNDX-m
-
-    def _orthonormal_basis_vector(A: np.ndarray) -> np.ndarray:
-        # Compute the orthogonal basis vectors of the subspace bounded by the vector sequence ds.
-        # If a vector sequence A has four linearly independent columns,
-        # then when A is QR-decomposed, the first n columns of the resulting orthogonal matrix Q
-        # are the orthonormal basis of the column space of A.
-
-        Q, _ = np.linalg.qr(A.T)
-        return Q.T
-
-    def _orthogonal_vector_to_subspace_from_vector(
-        subspace: np.ndarray, vector: np.ndarray
-    ) -> np.ndarray:
-        # Compute the vector orthogonal to subspace from the v.
-
-        n = len(subspace[0])
-
-        # Let projection_vector be the vector that projects the vector v onto subspace.
-        projection_vector = np.zeros(n)
-        for i in range(len(subspace)):
-            projection_vector += np.dot(vector, subspace[i]) * subspace[i]
-
-        # Compute the projection_vector from v to get a vector orthogonal to subspace.
-        orthogonal_vector = vector - projection_vector
-        return orthogonal_vector
-
-    def orthonormal_basis_of_the_subspace_orthogonal_to_ds(
-        rng: np.random.RandomState, ds: np.ndarray
-    ) -> List[np.ndarray]:
-        # Compute the orthonormal basis of the subspace orthogonal to ds.
-
-        n = ds[0].shape[0]
-        m = len(ds)
-
-        # Let plane be the subspace bounded by ds.
-        orthonormal_basis_vector_from_ds_e = _orthonormal_basis_vector(ds)
-        es = []
-        for _ in range(n - m):
-            rand_vec = rng.normal(0, 1, n)
-            # Let orthogonal_vec be the vector orthogonal to Subspace.
-            orthogonal_vector = _orthogonal_vector_to_subspace_from_vector(
-                orthonormal_basis_vector_from_ds_e, rand_vec
-            )
-            # The normalized version will be one element
-            # of the orthonormal basis of the subspace orthogonal to ds.
-            e = orthogonal_vector / np.linalg.norm(orthogonal_vector)
-
-            # Orthonormal bases need to be orthogonal to each other,
-            # so add e to subspace and then find the next element.
-            orthonormal_basis_vector_from_ds_e = np.vstack((orthonormal_basis_vector_from_ds_e, e))
-            es.append(e)
-        return es
-
-    assert xs.ndim == 2
-    # In this case, `len(xs)==4` because `n_select` is fixed at 4.
-
-    m = len(xs) - 2
-    n = len(xs[0])
-    x_mp2, xs = xs[-1], xs[:-1]  # Section 4.2 (1), (3).
-
-    p = np.sum(xs, axis=0) / (m + 1)  # Section 4.2 (2).
-    ds = xs - p  # Section 4.2 (2).
-    assert ds.shape == (n, m + 1)
-
-    one = p  # Section 4.2 (6).
-
-    ws = rng.normal(0, sigma_xi ** 2, size=m)
-    two = np.zeros(n)  # Section 4.2 (6).
-    for i in range(m):
-        two += ws[i] * ds[i]
-
-    three = np.zeros(n)  # Section 4.2 (6).
-    orthonormal_basis_vector_from_d1m = _orthonormal_basis_vector(ds[:-1])
-    assert orthonormal_basis_vector_from_d1m.shape == (m, n)
-
-    d_mp2 = x_mp2 - p  # Section 4.2 (4).
-    orthogonal_vector = _orthogonal_vector_to_subspace_from_vector(
-        orthonormal_basis_vector_from_d1m, d_mp2
-    )  # Section 4.2 (4).
-    assert len(orthogonal_vector) == n
-    D = np.linalg.norm(orthogonal_vector)  # Section 4.2 (4).
-    es = orthonormal_basis_of_the_subspace_orthogonal_to_ds(
-        rng, ds[:-1]
-    )  # Orthonormal basis of the subspace orthogonal to d_i(1,..,m) section 4.2 (5).
-    assert len(es) == n - m and len(es[0]) == n
-    vs = rng.normal(0, sigma_eta ** 2, size=n - m)
-    for i in range(n - m):
-        three += vs[i] * es[i]
-    three *= D
-    child_params_array = one + two + three
     return child_params_array
 
 

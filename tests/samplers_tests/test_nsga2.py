@@ -488,16 +488,12 @@ def test_crossover() -> None:
     NSGAIISampler(crossover="sbx")
     NSGAIISampler(crossover="vsbx")
     NSGAIISampler(crossover="undx")
-    NSGAIISampler(crossover="undxm")
     NSGAIISampler(crossover="spx")
 
     with pytest.raises(ValueError):
         NSGAIISampler(crossover="no_imp_crossover")
 
 
-# Unlike other crossover operators,
-# undxm will cause errors depending on the number of dimensions of the search space.
-# Therefore, to test for ValueError, we remove undxm  and test it separately.
 parametrize_nsga2_sampler = pytest.mark.parametrize(
     "sampler_class",
     [
@@ -540,52 +536,7 @@ def test_crossover_dims(n_params: int, sampler_class: Callable[[], BaseSampler])
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize("n_objectives", [1, 2, 3])
-def test_undxm_objective(n_objectives: int) -> None:
-    def objective(trial: optuna.Trial) -> List[float]:
-        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(3)]
-        return xs[:n_objectives]
-
-    n_trials = 8
-
-    sampler = NSGAIISampler(population_size=4, crossover="undxm")
-    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
-    study.optimize(objective, n_trials=n_trials)
-
-    assert len(study.trials) == n_trials
-
-
-def test_undxm_dim() -> None:
-    def objective(trial: optuna.Trial) -> float:
-        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(3)]
-        return sum(xs)
-
-    n_objectives = 1
-    n_trials = 8
-
-    sampler = NSGAIISampler(population_size=4, crossover="undxm")
-    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
-    study.optimize(objective, n_trials=n_trials)
-
-    assert len(study.trials) == n_trials
-
-
-@pytest.mark.parametrize("n_params", [1, 2])
-def test_undxm_invalid_dim(n_params: int) -> None:
-    def objective(trial: optuna.Trial) -> float:
-        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(n_params)]
-        return sum(xs)
-
-    n_objectives = 1
-    n_trials = 8
-
-    with pytest.raises(ValueError):
-        sampler = NSGAIISampler(population_size=2, crossover="undxm")
-        study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
-        study.optimize(objective, n_trials=n_trials)
-
-
-@pytest.mark.parametrize("crossover_name", ["undx", "undxm", "spx"])
+@pytest.mark.parametrize("crossover_name", ["undx", "spx"])
 def test_crossover_invalid_population(crossover_name: str) -> None:
     n_objectives = 2
     n_trials = 8
