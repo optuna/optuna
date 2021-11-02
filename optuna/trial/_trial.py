@@ -538,7 +538,7 @@ class Trial(BaseTrial):
 
         .. seealso::
 
-            See :ref:`attributes`.
+            See the recipe on :ref:`attributes`.
 
         Example:
 
