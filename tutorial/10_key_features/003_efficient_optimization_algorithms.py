@@ -25,6 +25,10 @@ Optuna provides the following sampling algorithms:
 
 - Random Search implemented in :class:`optuna.samplers.RandomSampler`
 
+- Partially fixed parameters implemented in :class:`optuna.samplers.PartialFixedSampler`
+
+- Non dominated Sorting Genetic Algorithm II(NSGA-II) implemented in :class:`optuna.samplers.NSGAIISampler`
+
 The default sampler is :class:`optuna.samplers.TPESampler`.
 
 Switching Samplers
@@ -67,6 +71,10 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 # - Median pruning algorithm implemented in :class:`optuna.pruners.MedianPruner`
 #
 # - Threshold pruning algorithm implemented in :class:`optuna.pruners.ThresholdPruner`
+#
+# - Wraps another pruner with tolerance implemented in :class:`optuna.pruners.PatientPruner`
+#
+# - To keep the specified percentile of the trials implemented in :class:`optuna.pruners.PercentilePruner`
 #
 # We use :class:`optuna.pruners.MedianPruner` in most examples,
 # though basically it is outperformed by :class:`optuna.pruners.SuccessiveHalvingPruner` and
