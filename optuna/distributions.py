@@ -663,7 +663,12 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
                 return FloatDistribution(low=low, high=high, log=log, step=step)
             else:
                 if log and step != 1:
-                    return IntLogUniformDistribution(low=low, high=high, step=step)
+                    step = 1
+                    warnings.warn(
+                        "Samplers and other components in Optuna will assume that `step` is 1 "
+                        "when `log` argument is True.",
+                        FutureWarning,
+                    )
                 return IntDistribution(low=low, high=high, log=log, step=step)
 
         raise ValueError("Unknown distribution type: {}".format(json_dict["type"]))

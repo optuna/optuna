@@ -3,6 +3,7 @@ import json
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 import warnings
 
 import pytest
@@ -58,7 +59,6 @@ EXAMPLE_ABBREVIATED_JSONS = {
     "c1": '{"type": "categorical", "choices": [2.71, -Infinity]}',
     "c2": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
     "c3": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
-    "ilu": '{"type": "int", "low": 2, "high": 12, "step": 2, "log": true}',
 }
 
 
@@ -96,6 +96,17 @@ def test_abbreviated_json_to_distribution() -> None:
     )
     for distribution in invalid_distribution:
         pytest.raises(ValueError, lambda: distributions.json_to_distribution(distribution))
+
+
+def test_backward_compatibility_int_log_with_step() -> None:
+
+    abbreviated_json = '{"type": "int", "low": 2, "high": 12, "step": 2, "log": true}'
+    with warnings.catch_warnings():
+        # `step` is assumed to be 1 when `log` argument is True.
+        warnings.simplefilter("ignore", category=UserWarning)
+        actual = distributions.json_to_distribution(abbreviated_json)
+    expected = distributions.IntDistribution(low=2, high=12, log=True, step=1)
+    assert actual == expected
 
 
 def test_backward_compatibility_int_uniform_distribution() -> None:
@@ -179,53 +190,45 @@ def test_check_distribution_compatibility() -> None:
     )
 
 
-def test_contains() -> None:
+@pytest.mark.parametrize(("expected", "value", "step"), [
+    (False, 0.9, 1),
+    (True, 1, 1),
+    (False, 1.5, 1),
+    (True, 4, 1),
+    (True, 10, 1),
+    (False, 11, 1),
+    (False, 10, 2),
+    (True, 1, 3),
+    (False, 5, 3),
+    (True, 10, 3),
+])
+def test_int_contains(expected: bool, value: float, step: int) -> None:
+    i = distributions.IntDistribution(low=1, high=10, step=step)
+    assert i._contains(value) == expected
 
-    i = distributions.IntDistribution(low=1, high=10)
-    assert not i._contains(0.9)
-    assert i._contains(1)
-    assert i._contains(4)
-    assert i._contains(6)
-    assert i._contains(10)
-    assert not i._contains(10.1)
-    assert not i._contains(11)
 
-    il = distributions.IntDistribution(low=2, high=12, log=True)
-    assert not il._contains(0.9)
-    assert il._contains(2)
-    assert il._contains(4)
-    assert il._contains(6)
-    assert il._contains(12)
-    assert not il._contains(12.1)
-    assert not il._contains(13)
-
-    f = distributions.FloatDistribution(low=1.0, high=2.0)
-    assert not f._contains(0.9)
-    assert f._contains(1)
-    assert f._contains(1)
-    assert f._contains(1.5)
-    assert f._contains(2)
-    assert not f._contains(2.1)
-
-    fl = distributions.FloatDistribution(low=0.001, high=100, log=True)
-    assert not fl._contains(0.0)
-    assert fl._contains(0.001)
-    assert fl._contains(12.3)
-    assert fl._contains(100)
-    assert not fl._contains(1000)
-
+@pytest.mark.parametrize(("expected", "value", "step"), [
+    (False, 1.99, None),
+    (True, 2.0, None),
+    (True, 2.5, None),
+    (True, 7, None),
+    (False, 7.1, None),
+    (False, 0.99, 2.0),
+    (True, 2.0, 2.0),
+    (False, 3.0, 2.0),
+    (True, 6, 2.0),
+    (False, 6.1, 2.0),
+])
+def test_float_contains(expected: bool, value: float, step: Optional[float]) -> None:
     with warnings.catch_warnings():
-        # UserWarning will be raised since the range is not divisible by 2.
-        # The range will be replaced with [1.0, 9.0].
+        # When `step` is 2.0, UserWarning will be raised since the range is not divisible by 2.
+        # The range will be replaced with [2.0, 6.0].
         warnings.simplefilter("ignore", category=UserWarning)
-        fd = distributions.FloatDistribution(low=1.0, high=10.0, step=2.0)
-    assert not fd._contains(0.9)
-    assert fd._contains(1.0)
-    assert not fd._contains(3.5)
-    assert not fd._contains(6)
-    assert fd._contains(9)
-    assert not fd._contains(9.1)
-    assert not fd._contains(10)
+        f = distributions.FloatDistribution(low=2.0, high=7.0, step=step)
+    assert f._contains(value) == expected
+
+
+def test_contains() -> None:
 
     u = distributions.UniformDistribution(low=1.0, high=2.0)
     assert not u._contains(0.9)
@@ -312,20 +315,10 @@ def test_empty_range_contains() -> None:
     assert i._contains(1)
     assert not i._contains(2)
 
-    il = distributions.IntDistribution(low=1, high=1, log=True)
-    assert not il._contains(0)
-    assert il._contains(1)
-    assert not il._contains(2)
-
     f = distributions.FloatDistribution(low=1.0, high=1.0)
     assert not f._contains(0.9)
     assert f._contains(1.0)
     assert not f._contains(1.1)
-
-    fl = distributions.FloatDistribution(low=1.0, high=1.0, log=True)
-    assert not fl._contains(0.9)
-    assert fl._contains(1.0)
-    assert not fl._contains(1.1)
 
     fd = distributions.FloatDistribution(low=1.0, high=1.0, step=2.0)
     assert not fd._contains(0.9)
@@ -368,18 +361,43 @@ def test_empty_range_contains() -> None:
     assert not iluq._contains(2)
 
 
+@pytest.mark.parametrize(('expected', 'low', 'high', 'log', 'step'), [
+    (True, 1, 1, False, 1),
+    (True, 3, 3, False, 2),
+    (True, 2, 2, True, 1),
+    (False, -123, 0, False, 1),
+    (False, -123, 0, False, 123),
+    (False, 2, 4, True, 1),
+])
+def test_int_single(expected: bool, low: int, high: int, log: bool, step: int) -> None:
+    distribution = distributions.IntDistribution(low=low, high=high, log=log, step=step)
+    assert distribution.single() == expected
+
+
+@pytest.mark.parametrize(('expected', 'low', 'high', 'log', 'step'), [
+    (True, 2.0, 2.0, False, None),
+    (True, 2.0, 2.0, True, None),
+    (True, 2.22, 2.22, False, 0.1),
+    (True, 2.22, 2.24, False, 0.3),
+    (False, 1.0, 1.001, False, None),
+    (False, 7.3, 10.0, True, None),
+    (False, -30, -20, False, 2),
+    (False, -30, -20, False, 10),
+    # In Python, "0.3 - 0.2 != 0.1" is True.
+    (False, 0.2, 0.3, False, 0.1),
+    (False, 0.7, 0.8, False, 0.1),
+])
+def test_float_single(expected: bool, low: float, high: float, log: bool, step: Optional[float]) -> None:
+    distribution = distributions.FloatDistribution(low=low, high=high, log=log, step=step)
+    assert distribution.single() == expected
+
+
 def test_single() -> None:
 
     with warnings.catch_warnings():
         # UserWarning will be raised since the range is not divisible by step.
         warnings.simplefilter("ignore", category=UserWarning)
         single_distributions: List[distributions.BaseDistribution] = [
-            distributions.IntDistribution(low=1, high=1),
-            distributions.IntDistribution(low=2, high=2, log=True),
-            distributions.FloatDistribution(low=2.0, high=2.0),
-            distributions.FloatDistribution(low=2.0, high=2.0, log=True),
-            distributions.FloatDistribution(low=2.22, high=2.22, step=0.1),
-            distributions.FloatDistribution(low=2.22, high=2.24, step=0.3),
             distributions.UniformDistribution(low=1.0, high=1.0),
             distributions.LogUniformDistribution(low=7.3, high=7.3),
             distributions.DiscreteUniformDistribution(low=2.22, high=2.22, q=0.1),
@@ -393,16 +411,6 @@ def test_single() -> None:
         assert distribution.single()
 
     nonsingle_distributions: List[distributions.BaseDistribution] = [
-        distributions.IntDistribution(low=-123, high=0),
-        distributions.IntDistribution(low=-123, high=0, step=123),
-        distributions.IntDistribution(low=2, high=4, log=True),
-        distributions.FloatDistribution(low=1.0, high=1.001),
-        distributions.FloatDistribution(low=7.3, high=10, log=True),
-        distributions.FloatDistribution(low=-30, high=-20, step=2),
-        distributions.FloatDistribution(low=-30, high=-20, step=10),
-        # In Python, "0.3 - 0.2 != 0.1" is True.
-        distributions.FloatDistribution(low=0.2, high=0.3, step=0.1),
-        distributions.FloatDistribution(low=0.7, high=0.8, step=0.1),
         distributions.UniformDistribution(low=1.0, high=1.001),
         distributions.LogUniformDistribution(low=7.3, high=10),
         distributions.DiscreteUniformDistribution(low=-30, high=-20, q=2),
@@ -520,44 +528,23 @@ def test_repr() -> None:
         assert d == eval("distributions." + repr(d))
 
 
-def test_int_distribution_asdict() -> None:
-
-    assert EXAMPLE_DISTRIBUTIONS["i"]._asdict() == {"low": 1, "high": 9, "log": False, "step": 2}
-
-
-def test_int_distribution_log_asdict() -> None:
-
-    assert EXAMPLE_DISTRIBUTIONS["il"]._asdict() == {"low": 2, "high": 12, "log": True, "step": 1}
-
-
-def test_float_distribution_asdict() -> None:
-
-    assert EXAMPLE_DISTRIBUTIONS["f"]._asdict() == {
-        "low": 1.0,
-        "high": 2.0,
-        "log": False,
-        "step": None,
-    }
+@pytest.mark.parametrize(("key", "low", "high", "log", "step"), [
+    ("i", 1, 9, False, 2),
+    ("il", 2, 12, True, 1),
+])
+def test_int_distribution_asdict(key: str, low: int, high: int, log: bool, step: int) -> None:
+    expected_dict = {"low": low, "high": high, "log": log, "step": step}
+    assert EXAMPLE_DISTRIBUTIONS[key]._asdict() == expected_dict
 
 
-def test_float_distribution_log_asdict() -> None:
-
-    assert EXAMPLE_DISTRIBUTIONS["fl"]._asdict() == {
-        "low": 0.001,
-        "high": 100.0,
-        "log": True,
-        "step": None,
-    }
-
-
-def test_float_distribution_discrete_asdict() -> None:
-
-    assert EXAMPLE_DISTRIBUTIONS["fd"]._asdict() == {
-        "low": 1.0,
-        "high": 9.0,
-        "step": 2.0,
-        "log": False,
-    }
+@pytest.mark.parametrize(("key", "low", "high", "log", "step"), [
+    ("f", 1.0, 2.0, False, None),
+    ("fl", 0.001, 100.0, True, None),
+    ("fd", 1.0, 9.0, False, 2.0),
+])
+def test_float_distribution_asdict(key: str, low: float, high: float, log: bool, step: Optional[float]) -> None:
+    expected_dict = {"low": low, "high": high, "log": log, "step": step}
+    assert EXAMPLE_DISTRIBUTIONS[key]._asdict() == expected_dict
 
 
 def test_uniform_distribution_asdict() -> None:
@@ -585,13 +572,25 @@ def test_int_log_uniform_distribution_asdict() -> None:
     assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12, "step": 2}
 
 
-def test_discrete_uniform_distribution_invalid_q() -> None:
+def test_int_invalid_step() -> None:
 
     with pytest.raises(ValueError):
-        distributions.FloatDistribution(low=1.0, high=100.0, step=0)
+        distributions.IntDistribution(low=1, high=100, step=0)
+
+    with pytest.raises(ValueError):
+        distributions.IntDistribution(low=1, high=10, step=-1)
+
+
+def test_float_invalid_step() -> None:
+
+    with pytest.raises(ValueError):
+        distributions.FloatDistribution(low=1.0, high=10.0, step=0)
 
     with pytest.raises(ValueError):
         distributions.FloatDistribution(low=1.0, high=100.0, step=-1)
+
+
+def test_discrete_uniform_distribution_invalid_q() -> None:
 
     with pytest.raises(ValueError):
         distributions.DiscreteUniformDistribution(low=1, high=100, q=0)
@@ -601,8 +600,6 @@ def test_discrete_uniform_distribution_invalid_q() -> None:
 
 
 def test_int_uniform_distribution_invalid_step() -> None:
-
-    # todo - should IntDistribution be in this test?
 
     with pytest.raises(ValueError):
         distributions.IntUniformDistribution(low=1, high=100, step=0)
