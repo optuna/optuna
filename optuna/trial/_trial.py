@@ -398,8 +398,7 @@ class Trial(BaseTrial):
             A suggested value.
         
         .. seealso::
-            See an `tutorial <https://optuna.readthedocs.io/en/latest/tutorial/
-            10_key_features/002_configurations.html>`_how to use the trial.
+            :ref:`configurations` tutorial describes more details and flexible usages.
         
         """
         # There is no need to call self._check_distribution because
