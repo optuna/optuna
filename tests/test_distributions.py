@@ -190,35 +190,41 @@ def test_check_distribution_compatibility() -> None:
     )
 
 
-@pytest.mark.parametrize(("expected", "value", "step"), [
-    (False, 0.9, 1),
-    (True, 1, 1),
-    (False, 1.5, 1),
-    (True, 4, 1),
-    (True, 10, 1),
-    (False, 11, 1),
-    (False, 10, 2),
-    (True, 1, 3),
-    (False, 5, 3),
-    (True, 10, 3),
-])
+@pytest.mark.parametrize(
+    ("expected", "value", "step"),
+    [
+        (False, 0.9, 1),
+        (True, 1, 1),
+        (False, 1.5, 1),
+        (True, 4, 1),
+        (True, 10, 1),
+        (False, 11, 1),
+        (False, 10, 2),
+        (True, 1, 3),
+        (False, 5, 3),
+        (True, 10, 3),
+    ],
+)
 def test_int_contains(expected: bool, value: float, step: int) -> None:
     i = distributions.IntDistribution(low=1, high=10, step=step)
     assert i._contains(value) == expected
 
 
-@pytest.mark.parametrize(("expected", "value", "step"), [
-    (False, 1.99, None),
-    (True, 2.0, None),
-    (True, 2.5, None),
-    (True, 7, None),
-    (False, 7.1, None),
-    (False, 0.99, 2.0),
-    (True, 2.0, 2.0),
-    (False, 3.0, 2.0),
-    (True, 6, 2.0),
-    (False, 6.1, 2.0),
-])
+@pytest.mark.parametrize(
+    ("expected", "value", "step"),
+    [
+        (False, 1.99, None),
+        (True, 2.0, None),
+        (True, 2.5, None),
+        (True, 7, None),
+        (False, 7.1, None),
+        (False, 0.99, 2.0),
+        (True, 2.0, 2.0),
+        (False, 3.0, 2.0),
+        (True, 6, 2.0),
+        (False, 6.1, 2.0),
+    ],
+)
 def test_float_contains(expected: bool, value: float, step: Optional[float]) -> None:
     with warnings.catch_warnings():
         # When `step` is 2.0, UserWarning will be raised since the range is not divisible by 2.
@@ -361,33 +367,41 @@ def test_empty_range_contains() -> None:
     assert not iluq._contains(2)
 
 
-@pytest.mark.parametrize(('expected', 'low', 'high', 'log', 'step'), [
-    (True, 1, 1, False, 1),
-    (True, 3, 3, False, 2),
-    (True, 2, 2, True, 1),
-    (False, -123, 0, False, 1),
-    (False, -123, 0, False, 123),
-    (False, 2, 4, True, 1),
-])
+@pytest.mark.parametrize(
+    ("expected", "low", "high", "log", "step"),
+    [
+        (True, 1, 1, False, 1),
+        (True, 3, 3, False, 2),
+        (True, 2, 2, True, 1),
+        (False, -123, 0, False, 1),
+        (False, -123, 0, False, 123),
+        (False, 2, 4, True, 1),
+    ],
+)
 def test_int_single(expected: bool, low: int, high: int, log: bool, step: int) -> None:
     distribution = distributions.IntDistribution(low=low, high=high, log=log, step=step)
     assert distribution.single() == expected
 
 
-@pytest.mark.parametrize(('expected', 'low', 'high', 'log', 'step'), [
-    (True, 2.0, 2.0, False, None),
-    (True, 2.0, 2.0, True, None),
-    (True, 2.22, 2.22, False, 0.1),
-    (True, 2.22, 2.24, False, 0.3),
-    (False, 1.0, 1.001, False, None),
-    (False, 7.3, 10.0, True, None),
-    (False, -30, -20, False, 2),
-    (False, -30, -20, False, 10),
-    # In Python, "0.3 - 0.2 != 0.1" is True.
-    (False, 0.2, 0.3, False, 0.1),
-    (False, 0.7, 0.8, False, 0.1),
-])
-def test_float_single(expected: bool, low: float, high: float, log: bool, step: Optional[float]) -> None:
+@pytest.mark.parametrize(
+    ("expected", "low", "high", "log", "step"),
+    [
+        (True, 2.0, 2.0, False, None),
+        (True, 2.0, 2.0, True, None),
+        (True, 2.22, 2.22, False, 0.1),
+        (True, 2.22, 2.24, False, 0.3),
+        (False, 1.0, 1.001, False, None),
+        (False, 7.3, 10.0, True, None),
+        (False, -30, -20, False, 2),
+        (False, -30, -20, False, 10),
+        # In Python, "0.3 - 0.2 != 0.1" is True.
+        (False, 0.2, 0.3, False, 0.1),
+        (False, 0.7, 0.8, False, 0.1),
+    ],
+)
+def test_float_single(
+    expected: bool, low: float, high: float, log: bool, step: Optional[float]
+) -> None:
     distribution = distributions.FloatDistribution(low=low, high=high, log=log, step=step)
     assert distribution.single() == expected
 
@@ -528,21 +542,29 @@ def test_repr() -> None:
         assert d == eval("distributions." + repr(d))
 
 
-@pytest.mark.parametrize(("key", "low", "high", "log", "step"), [
-    ("i", 1, 9, False, 2),
-    ("il", 2, 12, True, 1),
-])
+@pytest.mark.parametrize(
+    ("key", "low", "high", "log", "step"),
+    [
+        ("i", 1, 9, False, 2),
+        ("il", 2, 12, True, 1),
+    ],
+)
 def test_int_distribution_asdict(key: str, low: int, high: int, log: bool, step: int) -> None:
     expected_dict = {"low": low, "high": high, "log": log, "step": step}
     assert EXAMPLE_DISTRIBUTIONS[key]._asdict() == expected_dict
 
 
-@pytest.mark.parametrize(("key", "low", "high", "log", "step"), [
-    ("f", 1.0, 2.0, False, None),
-    ("fl", 0.001, 100.0, True, None),
-    ("fd", 1.0, 9.0, False, 2.0),
-])
-def test_float_distribution_asdict(key: str, low: float, high: float, log: bool, step: Optional[float]) -> None:
+@pytest.mark.parametrize(
+    ("key", "low", "high", "log", "step"),
+    [
+        ("f", 1.0, 2.0, False, None),
+        ("fl", 0.001, 100.0, True, None),
+        ("fd", 1.0, 9.0, False, 2.0),
+    ],
+)
+def test_float_distribution_asdict(
+    key: str, low: float, high: float, log: bool, step: Optional[float]
+) -> None:
     expected_dict = {"low": low, "high": high, "log": log, "step": step}
     assert EXAMPLE_DISTRIBUTIONS[key]._asdict() == expected_dict
 
