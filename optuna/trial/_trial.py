@@ -396,10 +396,8 @@ class Trial(BaseTrial):
 
         Returns:
             A suggested value.
-        
         .. seealso::
             :ref:`configurations` tutorial describes more details and flexible usages.
-        
         """
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
