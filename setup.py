@@ -84,9 +84,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "experimental": ["redis"],
         "testing": [
-            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-            # https://github.com/optuna/optuna/issues/1000.
-            "bokeh<2.0.0",
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
@@ -102,11 +99,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-optimize",
             "xgboost",
             # TODO(toshihikoyanase): Remove the constraints when tensorflow==2.7.0 is released.
+            "keras<2.7.0",
             "tensorflow-estimator<2.7.0",
             "tensorflow<2.7.0",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=1.0.2",
+            # TODO(nzw0301): remove the upper version constraint when the callback supports
+            # pytorch-lightning==1.5.0.
+            "pytorch-lightning>=1.0.2,<1.5.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.8.0 ; sys_platform=='darwin'",
@@ -123,7 +123,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytest",
         ],
         "optional": [
-            "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
@@ -132,8 +131,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
-            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-            # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
             "lightgbm",
@@ -146,11 +143,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-optimize",
             "xgboost",
             # TODO(toshihikoyanase): Remove the constraints when tensorflow==2.7.0 is released.
+            "keras<2.7.0",
             "tensorflow-estimator<2.7.0",
             "tensorflow<2.7.0",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=1.0.2",
+            # TODO(nzw0301): remove the upper version constraint when the callback supports
+            # pytorch-lightning==1.5.0.
+            "pytorch-lightning>=1.0.2,<1.5.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.8.0 ; sys_platform=='darwin'",
@@ -213,7 +213,6 @@ setup(
             "trials = optuna.cli:_Trials",
             "best-trial = optuna.cli:_BestTrial",
             "best-trials = optuna.cli:_BestTrials",
-            "dashboard = optuna.cli:_Dashboard",
             "study optimize = optuna.cli:_StudyOptimize",
             "storage upgrade = optuna.cli:_StorageUpgrade",
             "ask = optuna.cli:_Ask",
