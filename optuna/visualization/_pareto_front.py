@@ -269,6 +269,12 @@ def _make_hovertext(trial: FrozenTrial) -> str:
     user_attrs = trial.user_attrs
     user_attrs_dict = {"user_attrs": user_attrs} if user_attrs else {}
     text = json.dumps(
-        {"number": trial.number, "values": trial.values, "params": trial.params, **user_attrs_dict}, indent=2
+        {
+            "number": trial.number,
+            "values": trial.values,
+            "params": trial.params,
+            **user_attrs_dict
+        },
+        indent=2
     )
     return text.replace("\n", "<br>")
