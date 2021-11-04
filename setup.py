@@ -59,9 +59,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "matplotlib>=3.0.0",
             "pandas",
             "plotly>=4.0.0",
-            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
-            # after skopt supports sklearn >= 1.0.0
-            "scikit-learn>=0.24.2,<1.0.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "mlflow",
         ],
@@ -75,9 +73,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "sphinx-plotly-directive",
             "pillow",
             "matplotlib",
-            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
-            # after skopt supports sklearn >= 1.0.0
-            "scikit-learn<1.0.0",
+            "scikit-learn",
             "plotly>=4.0.0",  # optuna/visualization.
             "pandas",
             "lightgbm",
@@ -88,9 +84,6 @@ def get_extras_require() -> Dict[str, List[str]]:
         ],
         "experimental": ["redis"],
         "testing": [
-            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-            # https://github.com/optuna/optuna/issues/1000.
-            "bokeh<2.0.0",
             "chainer>=5.0.0",
             "cma",
             "fakeredis",
@@ -102,15 +95,18 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pandas",
             "plotly>=4.0.0",
             "pytest",
-            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
-            # after skopt supports sklearn >= 1.0.0
-            "scikit-learn>=0.24.2,<1.0.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            "tensorflow",
+            # TODO(toshihikoyanase): Remove the constraints when tensorflow==2.7.0 is released.
+            "keras<2.7.0",
+            "tensorflow-estimator<2.7.0",
+            "tensorflow<2.7.0",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=1.0.2",
+            # TODO(nzw0301): remove the upper version constraint when the callback supports
+            # pytorch-lightning==1.5.0.
+            "pytorch-lightning>=1.0.2,<1.5.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.8.0 ; sys_platform=='darwin'",
@@ -127,19 +123,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytest",
         ],
         "optional": [
-            "bokeh<2.0.0",  # optuna/cli.py, optuna/dashboard.py.
             "matplotlib>=3.0.0",  # optuna/visualization/matplotlib
             "pandas",  # optuna/study.py
             "plotly>=4.0.0",  # optuna/visualization.
             "redis",  # optuna/storages/redis.py.
-            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
-            # after skopt supports sklearn >= 1.0.0
-            "scikit-learn>=0.24.2,<1.0.0",
+            "scikit-learn>=0.24.2",
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
-            # TODO(toshihikoyanase): Remove the version constraint after resolving the issue
-            # https://github.com/optuna/optuna/issues/1000.
             "chainer>=5.0.0",
             "cma",
             "lightgbm",
@@ -148,15 +139,18 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mpi4py",
             "mxnet",
             "pandas",
-            # TODO(nzw0301) remove the constraint of sklearn `1.0.0`
-            # after skopt supports sklearn >= 1.0.0
-            "scikit-learn>=0.24.2,<1.0.0",
+            "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            "tensorflow",
+            # TODO(toshihikoyanase): Remove the constraints when tensorflow==2.7.0 is released.
+            "keras<2.7.0",
+            "tensorflow-estimator<2.7.0",
+            "tensorflow<2.7.0",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=1.0.2",
+            # TODO(nzw0301): remove the upper version constraint when the callback supports
+            # pytorch-lightning==1.5.0.
+            "pytorch-lightning>=1.0.2,<1.5.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.8.0 ; sys_platform=='darwin'",
@@ -219,7 +213,6 @@ setup(
             "trials = optuna.cli:_Trials",
             "best-trial = optuna.cli:_BestTrial",
             "best-trials = optuna.cli:_BestTrials",
-            "dashboard = optuna.cli:_Dashboard",
             "study optimize = optuna.cli:_StudyOptimize",
             "storage upgrade = optuna.cli:_StorageUpgrade",
             "ask = optuna.cli:_Ask",

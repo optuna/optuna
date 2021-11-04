@@ -93,7 +93,7 @@ Please see :ref:`rdb` for more details.
 How can I save and resume studies?
 ----------------------------------------------------
 
-There are two ways of persisting studies, which depends if you are using
+There are two ways of persisting studies, which depend if you are using
 in-memory storage (default) or remote databases (RDB). In-memory studies can be
 saved and loaded like usual Python objects using ``pickle`` or ``joblib``. For
 example, using ``joblib``:
@@ -114,7 +114,10 @@ And to resume the study:
     for key, value in study.best_trial.params.items():
         print(f"    {key}: {value}")
 
-If you are using RDBs, see :ref:`rdb` for more details.
+Note that Optuna does not support saving/reloading across different Optuna
+versions with ``pickle``. To save/reload a study across different Optuna versions,
+please use RDBs and `upgrade storage schema <reference/cli.html#storage-upgrade>`_
+if necessary. If you are using RDBs, see :ref:`rdb` for more details.
 
 How to suppress log messages of Optuna?
 ---------------------------------------
@@ -336,7 +339,7 @@ Note that the above examples are similar to running the garbage collector inside
 How can I output a log only when the best value is updated?
 -----------------------------------------------------------
 
-Here's how to replace the logging feature of optuna and with your own logging callback function.
+Here's how to replace the logging feature of optuna with your own logging callback function.
 The implemented callback can be passed to :func:`~optuna.study.Study.optimize`.
 Here's an example:
 

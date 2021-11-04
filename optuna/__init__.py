@@ -52,8 +52,6 @@ __all__ = [
 ]
 
 
-dashboard = _LazyImport("optuna.dashboard")
 importance = _LazyImport("optuna.importance")
-structs = _LazyImport("optuna.structs")
 type_checking = _LazyImport("optuna.type_checking")
 visualization = _LazyImport("optuna.visualization")

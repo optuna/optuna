@@ -423,5 +423,11 @@ def test_record_heartbeat() -> None:
                 trial_heartbeats.append(heartbeat_model.heartbeat)
 
         assert len(trial_heartbeats) == n_trials
+        trials = study.trials
         for i in range(n_trials - 1):
-            assert (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds - sleep_sec <= 1
+            datetime_start = trials[i + 1].datetime_start
+            prev_datetime_complete = trials[i].datetime_complete
+            assert datetime_start is not None and prev_datetime_complete is not None
+            trial_prep = (datetime_start - prev_datetime_complete).seconds
+            heartbeats_interval = (trial_heartbeats[i + 1] - trial_heartbeats[i]).seconds
+            assert heartbeats_interval - sleep_sec - trial_prep <= 1

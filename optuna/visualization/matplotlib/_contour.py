@@ -184,7 +184,7 @@ def _get_contour_plot(
 
 
 def _set_cmap(study: Study, target: Optional[Callable[[FrozenTrial], float]]) -> "Colormap":
-    cmap = "Blues_r" if target is None and study.direction == StudyDirection.MINIMIZE else "Blues"
+    cmap = "Blues_r" if target is None and study.direction == StudyDirection.MAXIMIZE else "Blues"
     return plt.get_cmap(cmap)
 
 
@@ -311,35 +311,36 @@ def _calculate_griddata(
     xi = np.array([])
     yi = np.array([])
     zi = np.array([])
+
+    if _is_log_scale(trials, x_param):
+        padding_x = (np.log10(x_values_max) - np.log10(x_values_min)) * AXES_PADDING_RATIO
+        x_values_min = np.power(np.log10(x_values_min) - padding_x, 10)
+        x_values_max = np.power(np.log10(x_values_max) + padding_x, 10)
+        xi = np.logspace(np.log10(x_values_min), np.log10(x_values_max), contour_point_num)
+        x_array = np.log10(x_values)
+    else:
+        padding_x = (x_values_max - x_values_min) * AXES_PADDING_RATIO
+        x_values_min -= padding_x
+        x_values_max += padding_x
+        xi = np.linspace(x_values_min, x_values_max, contour_point_num)
+        x_array = np.array(x_values)
+
+    if _is_log_scale(trials, y_param):
+        padding_y = (np.log10(y_values_max) - np.log10(y_values_min)) * AXES_PADDING_RATIO
+        y_values_min = np.power(np.log10(y_values_min) - padding_y, 10)
+        y_values_max = np.power(np.log10(y_values_max) + padding_y, 10)
+        yi = np.logspace(np.log10(y_values_min), np.log10(y_values_max), contour_point_num)
+        y_array = np.log10(y_values)
+    else:
+        padding_y = (y_values_max - y_values_min) * AXES_PADDING_RATIO
+        y_values_min -= padding_y
+        y_values_max += padding_y
+        yi = np.linspace(y_values_min, y_values_max, contour_point_num)
+        y_array = np.array(y_values)
+
+    # create irregularly spaced map of trial values
+    # and interpolate it with Plotly algorithm
     if x_param != y_param:
-        if _is_log_scale(trials, x_param):
-            padding_x = (np.log10(x_values_max) - np.log10(x_values_min)) * AXES_PADDING_RATIO
-            x_values_min = np.power(np.log10(x_values_min) - padding_x, 10)
-            x_values_max = np.power(np.log10(x_values_max) + padding_x, 10)
-            xi = np.logspace(np.log10(x_values_min), np.log10(x_values_max), contour_point_num)
-            x_array = np.log10(x_values)
-        else:
-            padding_x = (x_values_max - x_values_min) * AXES_PADDING_RATIO
-            x_values_min -= padding_x
-            x_values_max += padding_x
-            xi = np.linspace(x_values_min, x_values_max, contour_point_num)
-            x_array = np.array(x_values)
-
-        if _is_log_scale(trials, y_param):
-            padding_y = (np.log10(y_values_max) - np.log10(y_values_min)) * AXES_PADDING_RATIO
-            y_values_min = np.power(np.log10(y_values_min) - padding_y, 10)
-            y_values_max = np.power(np.log10(y_values_max) + padding_y, 10)
-            yi = np.logspace(np.log10(y_values_min), np.log10(y_values_max), contour_point_num)
-            y_array = np.log10(y_values)
-        else:
-            padding_y = (y_values_max - y_values_min) * AXES_PADDING_RATIO
-            y_values_min -= padding_y
-            y_values_max += padding_y
-            yi = np.linspace(y_values_min, y_values_max, contour_point_num)
-            y_array = np.array(y_values)
-
-        # create irregularly spaced map of trial values
-        # and interpolate it with Plotly algorithm
         zmap = _create_zmap(x_array, y_array, z_values, xi, yi)
         _interpolate_zmap(zmap, contour_point_num)
         zi = _create_zmatrix_from_zmap(zmap, contour_point_num)
@@ -399,10 +400,9 @@ def _generate_contour_subplot(
     )
     cs = None
     ax.set(xlabel=x_param, ylabel=y_param)
+    ax.set_xlim(x_values_range[0], x_values_range[1])
+    ax.set_ylim(y_values_range[0], y_values_range[1])
     if len(zi) > 0:
-        ax.set_xlim(x_values_range[0], x_values_range[1])
-        ax.set_ylim(y_values_range[0], y_values_range[1])
-        ax.set(xlabel=x_param, ylabel=y_param)
         if _is_log_scale(trials, x_param):
             ax.set_xscale("log")
         if _is_log_scale(trials, y_param):
@@ -428,6 +428,7 @@ def _generate_contour_subplot(
                 c="black",
                 s=20,
                 edgecolors="grey",
+                linewidth=2.0,
             )
     if x_cat_param_pos:
         ax.set_xticks(x_cat_param_pos)

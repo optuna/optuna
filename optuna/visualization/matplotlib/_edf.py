@@ -33,6 +33,8 @@ def plot_edf(
 ) -> "Axes":
     """Plot the objective value EDF (empirical distribution function) of a study with Matplotlib.
 
+    Note that only the complete trials are considered when plotting the EDF.
+
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_edf` for an example,
         where this function can be replaced with it.

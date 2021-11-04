@@ -640,10 +640,6 @@ class TestLightGBMTuner(object):
         best_booster = tuner.get_best_booster()
         assert best_booster.params["lambda_l1"] != unexpected_value
 
-        # TODO(toshihikoyanase): Remove this check when LightGBMTuner.best_booster is removed.
-        with pytest.warns(FutureWarning):
-            tuner.best_booster
-
         tuner2 = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
 
         # Resumed study does not have the best booster.
@@ -736,9 +732,9 @@ class TestLightGBMTuner(object):
         assert callback_mock.call_count == 10
 
     def test_tune_best_score_reproducibility(self) -> None:
-        boston = sklearn.datasets.load_boston()
+        california = sklearn.datasets.fetch_california_housing()
         X_trainval, X_test, y_trainval, y_test = train_test_split(
-            boston.data, boston.target, random_state=0
+            california.data, california.target, random_state=0
         )
 
         train = lgb.Dataset(X_trainval, y_trainval)
@@ -1056,9 +1052,9 @@ class TestLightGBMTunerCV(object):
                 tuner3.get_best_booster()
 
     def test_tune_best_score_reproducibility(self) -> None:
-        boston = sklearn.datasets.load_boston()
+        california = sklearn.datasets.fetch_california_housing()
         X_trainval, X_test, y_trainval, y_test = train_test_split(
-            boston.data, boston.target, random_state=0
+            california.data, california.target, random_state=0
         )
 
         train = lgb.Dataset(X_trainval, y_trainval)

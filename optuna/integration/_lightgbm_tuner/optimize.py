@@ -21,7 +21,6 @@ from packaging import version
 import tqdm
 
 import optuna
-from optuna._deprecated import deprecated
 from optuna._imports import try_import
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
@@ -361,7 +360,7 @@ class _LightGBMBaseTuner(_BaseTuner):
         feature_name: str = "auto",
         categorical_feature: str = "auto",
         early_stopping_rounds: Optional[int] = None,
-        verbose_eval: Optional[Union[bool, int]] = True,
+        verbose_eval: Optional[Union[bool, int, str]] = None,
         callbacks: Optional[List[Callable[..., Any]]] = None,
         time_budget: Optional[int] = None,
         sample_size: Optional[int] = None,
@@ -814,7 +813,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         categorical_feature: str = "auto",
         early_stopping_rounds: Optional[int] = None,
         evals_result: Optional[Dict[Any, Any]] = None,
-        verbose_eval: Optional[Union[bool, int]] = True,
+        verbose_eval: Optional[Union[bool, int, str]] = "warn",
         learning_rates: Optional[List[float]] = None,
         keep_training_booster: bool = False,
         callbacks: Optional[List[Callable[..., Any]]] = None,
@@ -860,19 +859,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
 
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
-
-    @property  # type: ignore
-    @deprecated(
-        "1.4.0",
-        text=(
-            "Please get the best booster via "
-            ":class:`~optuna.integration.lightgbm.LightGBMTuner.get_best_booster` instead."
-        ),
-    )
-    def best_booster(self) -> "lgb.Booster":
-        """Return the best booster."""
-
-        return self.get_best_booster()
 
     def _create_objective(
         self,
@@ -993,7 +979,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         categorical_feature: str = "auto",
         early_stopping_rounds: Optional[int] = None,
         fpreproc: Optional[Callable[..., Any]] = None,
-        verbose_eval: Optional[Union[bool, int]] = True,
+        verbose_eval: Optional[Union[bool, int]] = None,
         show_stdv: bool = True,
         seed: int = 0,
         callbacks: Optional[List[Callable[..., Any]]] = None,

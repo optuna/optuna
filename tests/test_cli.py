@@ -6,7 +6,6 @@ from subprocess import CalledProcessError
 import tempfile
 from typing import Any
 from typing import Callable
-from typing import List
 from typing import Optional
 from typing import Tuple
 
@@ -899,60 +898,6 @@ def test_create_study_command_with_skip_if_exists() -> None:
         assert study_id == new_study_id  # The existing study instance is reused.
 
 
-def test_dashboard_command() -> None:
-
-    with StorageSupplier("sqlite") as storage, tempfile.NamedTemporaryFile("r") as tf_report:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
-
-        study_name = storage.get_study_name_from_id(storage.create_new_study())
-
-        command = [
-            "optuna",
-            "dashboard",
-            "--study-name",
-            study_name,
-            "--out",
-            tf_report.name,
-            "--storage",
-            storage_url,
-        ]
-        subprocess.check_call(command)
-
-        html = tf_report.read()
-        assert "<body>" in html
-        assert "bokeh" in html
-
-
-@pytest.mark.parametrize(
-    "origins", [["192.168.111.1:5006"], ["192.168.111.1:5006", "192.168.111.2:5006"]]
-)
-def test_dashboard_command_with_allow_websocket_origin(origins: List[str]) -> None:
-
-    with StorageSupplier("sqlite") as storage, tempfile.NamedTemporaryFile("r") as tf_report:
-        assert isinstance(storage, RDBStorage)
-        storage_url = str(storage.engine.url)
-
-        study_name = storage.get_study_name_from_id(storage.create_new_study())
-        command = [
-            "optuna",
-            "dashboard",
-            "--study-name",
-            study_name,
-            "--out",
-            tf_report.name,
-            "--storage",
-            storage_url,
-        ]
-        for origin in origins:
-            command.extend(["--allow-websocket-origin", origin])
-        subprocess.check_call(command)
-
-        html = tf_report.read()
-        assert "<body>" in html
-        assert "bokeh" in html
-
-
 def test_study_optimize_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -1239,6 +1184,35 @@ def test_ask_empty_search_space_flatten(output_format: str) -> None:
         else:
             assert trial["number"] == 0
             assert "params" not in trial
+
+
+def test_ask_sampler_kwargs_without_sampler() -> None:
+
+    study_name = "test_study"
+    search_space = (
+        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
+    )
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        args = [
+            "optuna",
+            "ask",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+            "--search-space",
+            search_space,
+            "--sampler-kwargs",
+            '{"multivariate": true}',
+        ]
+
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        error_message = result.stderr.decode()
+        assert "`--sampler_kwargs` is set without `--sampler`." in error_message
 
 
 def test_tell() -> None:
