@@ -46,9 +46,11 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
         optuna.samplers.NSGAIISampler,
     ]
-    + []
-    if sys.version_info < (3, 7, 0)
-    else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)],
+    + (
+        []
+        if sys.version_info < (3, 7, 0)
+        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
+    ),
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
     "relative_sampler_class",
@@ -67,9 +69,11 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIISampler,
         lambda: optuna.samplers.MOTPESampler(n_startup_trials=0),
     ]
-    + []
-    if sys.version_info < (3, 7, 0)
-    else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)],
+    + (
+        []
+        if sys.version_info < (3, 7, 0)
+        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
+    ),
 )
 
 
