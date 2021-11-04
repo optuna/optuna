@@ -273,8 +273,8 @@ def _make_hovertext(trial: FrozenTrial) -> str:
             "number": trial.number,
             "values": trial.values,
             "params": trial.params,
-            **user_attrs_dict
+            **user_attrs_dict,
         },
-        indent=2
+        indent=2,
     )
     return text.replace("\n", "<br>")
