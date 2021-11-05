@@ -1,11 +1,17 @@
 import itertools
+import datetime
+from textwrap import dedent
 from typing import List
 from typing import Optional
 
 import numpy as np
 import pytest
+from optuna.visualization._pareto_front import _make_hovertext
+
+from optuna.distributions import UniformDistribution
 
 import optuna
+from optuna.trial import FrozenTrial, TrialState
 from optuna.visualization import plot_pareto_front
 
 
