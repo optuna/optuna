@@ -271,7 +271,7 @@ def _make_json_compatible(value: Any) -> Any:
         json.dumps(value)
         return value
     except TypeError:
-        # looks like the value can't be converted to JSON directly, so return a string representation
+        # the value can't be converted to JSON directly, so return a string representation
         return str(value)
 
 
