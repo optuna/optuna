@@ -1,19 +1,18 @@
-import itertools
 import datetime
+import itertools
 from textwrap import dedent
 from typing import List
 from typing import Optional
 
 import numpy as np
 import pytest
-from optuna.visualization._pareto_front import _make_hovertext
-
-from optuna.distributions import UniformDistribution
 
 import optuna
+from optuna.distributions import UniformDistribution
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization import plot_pareto_front
+from optuna.visualization._pareto_front import _make_hovertext
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
