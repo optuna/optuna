@@ -11,7 +11,8 @@ from optuna.visualization._pareto_front import _make_hovertext
 from optuna.distributions import UniformDistribution
 
 import optuna
-from optuna.trial import FrozenTrial, TrialState
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 from optuna.visualization import plot_pareto_front
 
 
