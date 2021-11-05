@@ -328,7 +328,7 @@ def test_make_hovertext() -> None:
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
         distributions={"x": UniformDistribution(5, 12)},
-        user_attrs={'a': 42, 'b': 3.14},
+        user_attrs={"a": 42, "b": 3.14},
         system_attrs={},
         intermediate_values={},
     )
@@ -364,7 +364,7 @@ def test_make_hovertext() -> None:
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
         distributions={"x": UniformDistribution(5, 12)},
-        user_attrs={'a': 42, 'b': 3.14, 'c': np.zeros(1), "d": np.nan},
+        user_attrs={"a": 42, "b": 3.14, "c": np.zeros(1), "d": np.nan},
         system_attrs={},
         intermediate_values={},
     )
