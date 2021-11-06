@@ -326,7 +326,6 @@ class QMCSampler(BaseSampler):
             sample_id = study._storage.get_study_system_attrs(study._study_id)[key_qmc_id]
             sample_id += 1
             study._storage.set_study_system_attr(study._study_id, key_qmc_id, sample_id)
-            print(sample_id)
         except KeyError:
             study._storage.set_study_system_attr(study._study_id, key_qmc_id, 0)
             sample_id = 0

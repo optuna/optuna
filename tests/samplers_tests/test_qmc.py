@@ -55,9 +55,9 @@ def test_experimental_warning() -> None:
 def test_invalid_qmc_type(qmc_type: str) -> None:
     if qmc_type == "non-qmc":
         with pytest.raises(ValueError):
-            sampler = _init_QMCSampler_without_exp_warning(qmc_type=qmc_type)
+            _init_QMCSampler_without_exp_warning(qmc_type=qmc_type)
     else:
-        sampler = _init_QMCSampler_without_exp_warning(qmc_type=qmc_type)
+        _init_QMCSampler_without_exp_warning(qmc_type=qmc_type)
 
 
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
