@@ -51,6 +51,15 @@ def test_experimental_warning() -> None:
         optuna.samplers.QMCSampler()
 
 
+@pytest.mark.parametrize("qmc_type", ["sobol", "halton", "non-qmc"])
+def test_invalid_qmc_type(qmc_type: str) -> None:
+    if qmc_type == "non-qmc":
+        with pytest.raises(ValueError):
+            sampler = _init_QMCSampler_without_exp_warning(qmc_type=qmc_type)
+    else:
+        sampler = _init_QMCSampler_without_exp_warning(qmc_type=qmc_type)
+
+
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
 @pytest.mark.skipif(
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
@@ -155,7 +164,7 @@ def test_sample_independent() -> None:
 @pytest.mark.skipif(
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
 )
-def test_warnl_asyncronous_seeding() -> None:
+def test_warn_asyncronous_seeding() -> None:
     # Relative sampling of `QMCSampler` does not support categorical distribution.
     # Thus, `independent_sampler.sample_independent` is called twice.
     # '_log_independent_sampling is not called in the first trial so called once in total.
@@ -300,7 +309,7 @@ def test_sample_relative_sobol() -> None:
 
 
 # TODO(kstoneriv3): Need to add this test.
-#@pytest.mark.skip
+@pytest.mark.skip
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
 @pytest.mark.skipif(
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
@@ -346,7 +355,9 @@ def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
     past_trials_parallel = [t for t in past_trials_parallel if t.number > 0]
     values_parallel = [t.params["x"] for t in past_trials_parallel]
     for v in values:
-        assert any(np.isclose(v, values_parallel, rtol=1e-6)), f"v: {v} of values: {values} is not included in values_parallel: {values_parallel}."
+        assert any(
+            np.isclose(v, values_parallel, rtol=1e-6)
+        ), f"v: {v} of values: {values} is not included in values_parallel: {values_parallel}."
 
 
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
@@ -367,20 +378,13 @@ def test_call_after_trial() -> None:
 @pytest.mark.skipif(
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
 )
-@pytest.mark.parametrize("qmc_type", ["sobol", "halton", "non-qmc"])
+@pytest.mark.parametrize("qmc_type", ["sobol", "halton"])
 def test_sample_qmc(qmc_type: str) -> None:
 
     sampler = _init_QMCSampler_without_exp_warning(qmc_type=qmc_type)
     study = Mock()
     search_space = _SEARCH_SPACE.copy()
     search_space.pop("x6")
-
-    # Make sure that ValueError is raised when `qmc_type` is inappropriate
-    if qmc_type == "non-qmc":
-        with patch.object(sampler, "_find_sample_id", return_value=0) as _:
-            with pytest.raises(ValueError):
-                sample = sampler._sample_qmc(study, search_space)
-        return
 
     with patch.object(sampler, "_find_sample_id", side_effect=[0, 1, 2, 4, 9]) as _:
         # Make sure that the shape of sample is correct

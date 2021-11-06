@@ -20,7 +20,6 @@ __all__ = [
     "MOTPESampler",
     "NSGAIISampler",
     "PartialFixedSampler",
-    "QMCSampler",
     "RandomSampler",
     "TPESampler",
     "intersection_search_space",

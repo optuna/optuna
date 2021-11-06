@@ -82,13 +82,12 @@ class QMCSampler(BaseSampler):
                that the number of trials should be set as power of two.
 
         scramble:
-            In cases ``qmc_type`` is `"halton"` or `"sobol"`, if this option is :obj:`True`,
-            scrambling (randomization) is applied to the QMC sequences.
+            If this option is :obj:`True`, scrambling (randomization) is applied to the QMC
+            sequences.
 
         seed:
-            A seed for `QMCSampler`. When the ``qmc_type`` is `"halton"` or `"sobol"`,
-            this argument is used only when `scramble` is :obj:`True`. If this is :obj:`None`,
-            the seed is initialized randomly. Default is :obj:`None`.
+            A seed for `QMCSampler`. This argument is used only when `scramble` is :obj:`True`.
+            If this is :obj:`None`, the seed is initialized randomly. Default is :obj:`None`.
 
             .. note::
                 When using multiple :class:`~optuna.samplers.QMCSampler`'s in parallel and/or
@@ -171,10 +170,18 @@ class QMCSampler(BaseSampler):
         self._scramble = scramble
         self._seed = seed or np.random.PCG64().random_raw()
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
-        self._qmc_type = qmc_type
         self._cached_qmc_engine = None
         self._initial_search_space: Optional[Dict[str, BaseDistribution]] = None
         self._warn_independent_sampling = warn_independent_sampling
+
+        if qmc_type in ("halton", "sobol"):
+            self._qmc_type = qmc_type
+        else:
+            message = (
+                f"The `qmc_type`, {qmc_type}, is not a valid. "
+                'It must be one of "halton" and "sobol".'
+            )
+            raise ValueError(message)
 
         if (seed is None) and scramble and warn_asyncronous_seeding:
             # Sobol/Halton sequences without scrambling do not use seed.
@@ -275,9 +282,7 @@ class QMCSampler(BaseSampler):
     ) -> None:
         self._independent_sampler.after_trial(study, trial, state, values)
 
-    def _sample_qmc(
-        self, study: Study, search_space: Dict[str, BaseDistribution]
-    ) -> np.ndarray:
+    def _sample_qmc(self, study: Study, search_space: Dict[str, BaseDistribution]) -> np.ndarray:
 
         # Lazy import because the `scipy.stats.qmc` is slow to import.
         import scipy.stats.qmc
@@ -294,11 +299,7 @@ class QMCSampler(BaseSampler):
             elif self._qmc_type == "sobol":
                 qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
             else:
-                message = (
-                    f"The `qmc_type`, {self._qmc_type}, is not a valid. "
-                    'It must be one of "halton" and "sobol".'
-                )
-                raise ValueError(message)
+                raise ValueError("Invalid `qmc_type`")
 
         forward_size = sample_id - qmc_engine.num_generated  # `sample_id` starts from 0.
         qmc_engine.fast_forward(forward_size)
