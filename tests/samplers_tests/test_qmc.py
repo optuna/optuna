@@ -7,7 +7,7 @@ from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
 
-import numpy
+import numpy as np
 import pytest
 import scipy
 
@@ -155,7 +155,7 @@ def test_sample_independent() -> None:
 @pytest.mark.skipif(
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
 )
-def test_log_asyncronous_seeding() -> None:
+def test_warnl_asyncronous_seeding() -> None:
     # Relative sampling of `QMCSampler` does not support categorical distribution.
     # Thus, `independent_sampler.sample_independent` is called twice.
     # '_log_independent_sampling is not called in the first trial so called once in total.
@@ -182,7 +182,7 @@ def test_log_asyncronous_seeding() -> None:
 @pytest.mark.skipif(
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
 )
-def test_log_independent_sampling() -> None:
+def test_warn_independent_sampling() -> None:
     # Relative sampling of `QMCSampler` does not support categorical distribution.
     # Thus, `independent_sampler.sample_independent` is called twice.
     # '_log_independent_sampling is not called in the first trial so called once in total.
@@ -201,14 +201,6 @@ def test_log_independent_sampling() -> None:
         study.optimize(objective, n_trials=2)
 
         assert mock_log_indep.call_count == 1
-
-
-# TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
-@pytest.mark.skipif(
-    sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
-)
-def test_warn_independent_sampling() -> None:
-    pass
 
 
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
@@ -251,12 +243,12 @@ def test_sample_relative_halton() -> None:
     study = optuna.create_study(sampler=sampler)
     trial = Mock()
     # Make sure that sample type, shape is OK.
-    samples = numpy.zeros((n, d))
+    samples = np.zeros((n, d))
     for i in range(n):
         sample = sampler.sample_relative(study, trial, search_space)
         for j in range(d):
             samples[i, j] = sample[f"x{j}"]
-    ref_samples = numpy.array(
+    ref_samples = np.array(
         [
             [0.0, 0.0, 0.0, 0.0, 0.0],
             [0.5, 0.33333333, 0.2, 0.14285714, 0.09090909],
@@ -269,7 +261,7 @@ def test_sample_relative_halton() -> None:
         ]
     )
     # If empty search_space, return {}
-    numpy.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
+    np.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
 
 
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
@@ -285,12 +277,12 @@ def test_sample_relative_sobol() -> None:
     study = optuna.create_study(sampler=sampler)
     trial = Mock()
     # Make sure that sample type, shape is OK.
-    samples = numpy.zeros((n, d))
+    samples = np.zeros((n, d))
     for i in range(n):
         sample = sampler.sample_relative(study, trial, search_space)
         for j in range(d):
             samples[i, j] = sample[f"x{j}"]
-    ref_samples = numpy.array(
+    ref_samples = np.array(
         [
             [0.0, 0.0, 0.0, 0.0, 0.0],
             [0.5, 0.5, 0.5, 0.5, 0.5],
@@ -304,11 +296,11 @@ def test_sample_relative_sobol() -> None:
     )
 
     # If empty search_space, return {}
-    numpy.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
+    np.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
 
 
 # TODO(kstoneriv3): Need to add this test.
-@pytest.mark.skip
+#@pytest.mark.skip
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
 @pytest.mark.skipif(
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
@@ -339,7 +331,7 @@ def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
     )
     past_trials_sequential = [t for t in past_trials_sequential if t.number > 0]
     values_sequential = [t.params["x"] for t in past_trials_sequential]
-    numpy.testing.assert_allclose(values[1:], values_sequential[1:], rtol=1e-6)
+    np.testing.assert_allclose(values, values_sequential, rtol=1e-6)
 
     # Parallel case (n_jobs=3)
     # Same parameters might be evalueated multiple times.
@@ -353,8 +345,8 @@ def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
     )
     past_trials_parallel = [t for t in past_trials_parallel if t.number > 0]
     values_parallel = [t.params["x"] for t in past_trials_parallel]
-    for v in values[1:]:
-        assert any(numpy.isclose(v, values_parallel[1:], rtol=1e-6))
+    for v in values:
+        assert any(np.isclose(v, values_parallel, rtol=1e-6)), f"v: {v} of values: {values} is not included in values_parallel: {values_parallel}."
 
 
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
