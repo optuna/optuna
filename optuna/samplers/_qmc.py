@@ -4,7 +4,7 @@ from typing import Dict
 from typing import Optional
 from typing import Sequence
 
-import numpy
+import numpy as np
 import scipy
 
 import optuna
@@ -169,7 +169,7 @@ class QMCSampler(BaseSampler):
     ) -> None:
 
         self._scramble = scramble
-        self._seed = seed or numpy.random.PCG64().random_raw()
+        self._seed = seed or np.random.PCG64().random_raw()
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
         self._qmc_type = qmc_type
         self._cached_qmc_engine = None
@@ -185,7 +185,7 @@ class QMCSampler(BaseSampler):
         # We must not reseed the `self._seed` like below. Otherwise, workers will have different
         # seed under parallel execution because `self.reseed_rng()` is called when starting each
         # parallel executor.
-        # >>> self._seed = numpy.random.MT19937().random_raw()
+        # >>> self._seed = np.random.MT19937().random_raw()
 
         self._independent_sampler.reseed_rng()
 
@@ -277,7 +277,7 @@ class QMCSampler(BaseSampler):
 
     def _sample_qmc(
         self, study: Study, search_space: Dict[str, BaseDistribution]
-    ) -> numpy.ndarray:
+    ) -> np.ndarray:
 
         # Lazy import because the `scipy.stats.qmc` is slow to import.
         import scipy.stats.qmc
@@ -325,6 +325,7 @@ class QMCSampler(BaseSampler):
             sample_id = study._storage.get_study_system_attrs(study._study_id)[key_qmc_id]
             sample_id += 1
             study._storage.set_study_system_attr(study._study_id, key_qmc_id, sample_id)
+            print(sample_id)
         except KeyError:
             study._storage.set_study_system_attr(study._study_id, key_qmc_id, 0)
             sample_id = 0
