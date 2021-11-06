@@ -930,7 +930,7 @@ def test_optimize_with_multi_objectives(n_objectives: int) -> None:
     study = create_study(directions=directions)
 
     def objective(trial: Trial) -> List[float]:
-        return [trial.suggest_uniform("v{}".format(i), 0, 5) for i in range(n_objectives)]
+        return [trial.suggest_float("v{}".format(i), 0, 5) for i in range(n_objectives)]
 
     study.optimize(objective, n_trials=10)
 
@@ -955,7 +955,7 @@ def test_wrong_n_objectives() -> None:
     study = create_study(directions=directions)
 
     def objective(trial: Trial) -> List[float]:
-        return [trial.suggest_uniform("v{}".format(i), 0, 5) for i in range(n_objectives + 1)]
+        return [trial.suggest_float("v{}".format(i), 0, 5) for i in range(n_objectives + 1)]
 
     study.optimize(objective, n_trials=10)
 

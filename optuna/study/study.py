@@ -320,10 +320,14 @@ class Study:
             func:
                 A callable that implements objective function.
             n_trials:
-                The number of trials. If this argument is set to :obj:`None`, there is no
-                limitation on the number of trials. If :obj:`timeout` is also set to :obj:`None`,
-                the study continues to create trials until it receives a termination signal such
-                as Ctrl+C or SIGTERM.
+                The number of trials for each process. If this argument is set to :obj:`None`,
+                there is no limitation on the number of trials. If ``timeout`` is also set to
+                :obj:`None`, the study continues to create trials until it receives a termination
+                signal such as Ctrl+C or SIGTERM.
+
+                .. seealso::
+                    :class:`optuna.study.MaxTrialsCallback` can ensure how many times trials
+                    will be performed across all processes.
             timeout:
                 Stop study after the given number of second(s). If this argument is set to
                 :obj:`None`, the study is executed without time limitation. If :obj:`n_trials` is

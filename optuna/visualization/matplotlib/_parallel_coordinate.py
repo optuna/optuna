@@ -39,6 +39,8 @@ def plot_parallel_coordinate(
 ) -> "Axes":
     """Plot the high-dimensional parameter relationships in a study with Matplotlib.
 
+    Note that, if a parameter contains missing values, a trial with missing values is not plotted.
+
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_parallel_coordinate` for an example.
 

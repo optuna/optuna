@@ -6,7 +6,7 @@ import optuna
 
 
 def objective_test_upgrade(trial: optuna.trial.Trial) -> float:
-    x = trial.suggest_uniform("x", -5, 5)  # optuna==0.9.0 does not have suggest_float.
+    x = trial.suggest_float("x", -5, 5)  # optuna==0.9.0 does not have suggest_float.
     y = trial.suggest_int("y", 0, 10)
     z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
     trial.set_system_attr("a", 0)

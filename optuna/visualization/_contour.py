@@ -298,13 +298,13 @@ def _generate_contour_subplot(
         contours_coloring="heatmap",
         hoverinfo="none",
         line_smoothing=1.3,
-        reversescale=target is None and direction == StudyDirection.MINIMIZE,
+        reversescale=target is None and direction == StudyDirection.MAXIMIZE,
     )
 
     scatter = go.Scatter(
         x=x_values,
         y=y_values,
-        marker={"line": {"width": 0.5, "color": "Grey"}, "color": "black"},
+        marker={"line": {"width": 2.0, "color": "Grey"}, "color": "black"},
         mode="markers",
         showlegend=False,
     )

@@ -5,6 +5,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
+import warnings
 
 from optuna import distributions
 from optuna import logging
@@ -45,7 +46,7 @@ class FrozenTrial(BaseTrial):
 
 
             def objective(trial):
-                x = trial.suggest_uniform("x", -1, 1)
+                x = trial.suggest_float("x", -1, 1)
                 return x ** 2
 
 
@@ -73,7 +74,7 @@ class FrozenTrial(BaseTrial):
 
 
                 def objective(trial):
-                    x = trial.suggest_uniform("x", -1, 1)
+                    x = trial.suggest_float("x", -1, 1)
 
                     # this user attribute always differs
                     trial.set_user_attr("evaluation time", datetime.datetime.now())
@@ -235,17 +236,17 @@ class FrozenTrial(BaseTrial):
             else:
                 return self._suggest(name, UniformDistribution(low=low, high=high))
 
-    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high)
 
-    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high, log=True)
 
-    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
 
         return self.suggest_float(name, low, high, step=q)
@@ -365,7 +366,7 @@ class FrozenTrial(BaseTrial):
         value = self._params[name]
         param_value_in_internal_repr = distribution.to_internal_repr(value)
         if not distribution._contains(param_value_in_internal_repr):
-            raise ValueError(
+            warnings.warn(
                 "The value {} of the parameter '{}' is out of "
                 "the range of the distribution {}.".format(value, name, distribution)
             )

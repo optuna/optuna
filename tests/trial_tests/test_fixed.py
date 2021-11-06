@@ -90,6 +90,32 @@ def test_suggest_categorical() -> None:
             trial.suggest_categorical("x", [{"foo": "bar"}])  # type: ignore
 
 
+def test_not_contained_param() -> None:
+    trial = FixedTrial({"x": 1.0})
+    with pytest.warns(UserWarning):
+        assert trial.suggest_float("x", 10.0, 100.0) == 1.0
+
+    trial = FixedTrial({"x": 1.0})
+    with pytest.warns(UserWarning):
+        assert trial.suggest_float("x", 10.0, 100.0, log=True) == 1.0
+
+    trial = FixedTrial({"x": 1.0})
+    with pytest.warns(UserWarning):
+        assert trial.suggest_float("x", 10.0, 100.0, step=1.0) == 1.0
+
+    trial = FixedTrial({"x": 1})
+    with pytest.warns(UserWarning):
+        assert trial.suggest_int("x", 10, 100) == 1
+
+    trial = FixedTrial({"x": 1})
+    with pytest.warns(UserWarning):
+        assert trial.suggest_int("x", 10, 100, 1) == 1
+
+    trial = FixedTrial({"x": 1})
+    with pytest.warns(UserWarning):
+        assert trial.suggest_int("x", 10, 100, log=True) == 1
+
+
 def test_user_attrs() -> None:
 
     trial = FixedTrial({"x": 1})

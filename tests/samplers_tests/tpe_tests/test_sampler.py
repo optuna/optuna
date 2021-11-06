@@ -965,11 +965,11 @@ def test_call_after_trial_of_random_sampler() -> None:
 def test_mixed_relative_search_space_pruned_and_completed_trials() -> None:
     def objective(trial: Trial) -> float:
         if trial.number == 0:
-            trial.suggest_uniform("param1", 0, 1)
+            trial.suggest_float("param1", 0, 1)
             raise optuna.exceptions.TrialPruned()
 
         if trial.number == 1:
-            trial.suggest_uniform("param2", 0, 1)
+            trial.suggest_float("param2", 0, 1)
             return 0
 
         return 0
