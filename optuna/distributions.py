@@ -93,7 +93,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
 
     def __repr__(self) -> str:
 
-        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self.__dict__.items()))
         return "{}({})".format(self.__class__.__name__, kwargs)
 
 
@@ -508,6 +508,12 @@ class IntLogUniformDistribution(BaseDistribution):
         self.low = low
         self.high = high
         self._step = step
+
+    def __repr__(self) -> str:
+        # TODO(hvy): `BaseDistribution.__repr__` could rely on `_asdict` instead of `__dict__`.
+        # `IntLogUniformDistribution` would not have to override `__repr__`.
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
 
     def _asdict(self) -> Dict:
         d = copy.copy(self.__dict__)
