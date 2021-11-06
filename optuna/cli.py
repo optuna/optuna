@@ -684,14 +684,20 @@ class _Ask(_BaseCommand):
             "--direction",
             type=str,
             choices=("minimize", "maximize"),
-            help="Direction of optimization.",
+            help=(
+                "Direction of optimization. This argument is deprecated."
+                " Please create a study in advance."
+            ),
         )
         parser.add_argument(
             "--directions",
             type=str,
             nargs="+",
             choices=("minimize", "maximize"),
-            help="Directions of optimization, if there are multiple objectives.",
+            help=(
+                "Directions of optimization, if there are multiple objectives."
+                " This argument is deprecated. Please create a study in advance."
+            ),
         )
         parser.add_argument("--sampler", type=str, help="Class name of sampler object to create.")
         parser.add_argument(
@@ -739,6 +745,15 @@ class _Ask(_BaseCommand):
             "directions": parsed_args.directions,
             "load_if_exists": True,
         }
+
+        if parsed_args.direction is not None or parsed_args.directions is not None:
+            message = (
+                "The `direction` and `directions` arguments of the `study ask` command are"
+                " deprecated because the command will no longer create a study when you specify"
+                " the arguments. Please create a study in advance."
+            )
+            warnings.warn(message, FutureWarning)
+
         if parsed_args.sampler is not None:
             if parsed_args.sampler_kwargs is not None:
                 sampler_kwargs = json.loads(parsed_args.sampler_kwargs)
@@ -765,7 +780,34 @@ class _Ask(_BaseCommand):
         else:
             search_space = {}
 
-        study = optuna.create_study(**create_study_kwargs)
+        try:
+            study = optuna.load_study(
+                create_study_kwargs["study_name"],
+                create_study_kwargs["storage"],
+                create_study_kwargs.get("sampler"),
+            )
+            directions = None
+            if (
+                create_study_kwargs["direction"] is not None
+                and create_study_kwargs["directions"] is not None
+            ):
+                raise ValueError("Specify only one of `direction` and `directions`.")
+            if create_study_kwargs["direction"] is not None:
+                directions = [
+                    optuna.study.StudyDirection[create_study_kwargs["direction"].upper()]
+                ]
+            if create_study_kwargs["directions"] is not None:
+                directions = [
+                    optuna.study.StudyDirection[d.upper()]
+                    for d in create_study_kwargs["directions"]
+                ]
+            if directions is not None and study.directions != directions:
+                raise ValueError(
+                    f"Cannot overwrite study direction from {study.directions} to {directions}."
+                )
+
+        except KeyError:
+            study = optuna.create_study(**create_study_kwargs)
         trial = study.ask(fixed_distributions=search_space)
 
         self.logger.info(f"Asked trial {trial.number} with parameters {trial.params}.")
