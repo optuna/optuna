@@ -328,9 +328,10 @@ class IntDistribution(BaseDistribution):
         high:
             Upper endpoint of the range of the distribution. ``high`` is included from the range.
         log:
-            If ``log`` is True, this distribution is in log-scaled domain.
+            If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
         step:
-            A step for spacing between values. When ``log`` is True, ``step`` is assumed to be 1.
+            A step for spacing between values. When ``log`` is :obj:`True`,
+            ``step`` is assumed to be 1.
 
     Raises:
         ValueError:
