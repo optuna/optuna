@@ -327,6 +327,8 @@ class Trial(BaseTrial):
         Raises:
             :exc:`ValueError`:
                 If ``step != 1`` and ``log = True`` are specified.
+        .. seealso::
+            :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
         if step != 1:
