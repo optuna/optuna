@@ -73,7 +73,7 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 # - Algorithm to operate pruner with tolerance implemented in :class:`optuna.pruners.PatientPruner`
 #
 # - Algorithm to prune specified number of trials implemented in :class:`optuna.pruners.PercentilePruner`
-# 
+#
 # - Asynchronous Successive Halving algorithm implemented in :class:`optuna.pruners.SuccessiveHalvingPruner`
 #
 # - Threshold pruning algorithm implemented in :class:`optuna.pruners.ThresholdPruner`
