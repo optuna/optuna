@@ -155,6 +155,8 @@ class Trial(BaseTrial):
 
         Returns:
             A suggested float value.
+        .. seealso::
+            :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
         if step is not None:
