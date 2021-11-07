@@ -21,9 +21,9 @@ Optuna provides the following sampling algorithms:
 
 - Grid Search implemented in :class:`optuna.samplers.GridSampler`
 
-- Nondominated Sorting Genetic Algorithm II implemented in :class: `optuna.samplers.NSGAIISampler`
+- Nondominated Sorting Genetic Algorithm II implemented in :class:`optuna.samplers.NSGAIISampler`
 
-- Algorithm to enable Partial Fixed parameters implemented in :class: `optuna.samplers.PartialFixedSampler`
+- Algorithm to enable Partial Fixed parameters implemented in :class:`optuna.samplers.PartialFixedSampler`
 
 - Tree-structured Parzen Estimator algorithm implemented in :class:`optuna.samplers.TPESampler`
 
@@ -70,9 +70,9 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 #
 # - Non-pruning algorithm implementd in :class:`optuna.pruners.NopPruner`
 #
-# - Algorithm to operate pruner with tolerance implemented in :class: `optuna.pruners.PatientPruner`
+# - Algorithm to operate pruner with tolerance implemented in :class:`optuna.pruners.PatientPruner`
 #
-# - Algorithm to prune specified number of trials implemented in :class: `optuna.pruners.PercentilePruner
+# - Algorithm to prune specified number of trials implemented in :class:`optuna.pruners.PercentilePruner
 # 
 # - `Asynchronous Successive Halving algorithm implemented in :class:`optuna.pruners.SuccessiveHalvingPruner`
 #
