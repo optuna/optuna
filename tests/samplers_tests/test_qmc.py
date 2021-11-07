@@ -51,6 +51,10 @@ def test_experimental_warning() -> None:
         optuna.samplers.QMCSampler()
 
 
+# TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
+@pytest.mark.skipif(
+    sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
+)
 @pytest.mark.parametrize("qmc_type", ["sobol", "halton", "non-qmc"])
 def test_invalid_qmc_type(qmc_type: str) -> None:
     if qmc_type == "non-qmc":
