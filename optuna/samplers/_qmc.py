@@ -32,7 +32,7 @@ _NUMERICAL_DISTRIBUTIONS = (
 )
 
 
-@experimental("3.0.0a1")
+@experimental("3.0.0")
 class QMCSampler(BaseSampler):
     """A Quasi Monte Carlo Sampler that generates low-discrepancy sequences.
 
