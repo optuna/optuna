@@ -35,6 +35,8 @@ _logger = logging.get_logger(__name__)
 
 _EPS = 1e-10
 
+_cma_deprecated_msg = "This class is renamed to :class:`~optuna.integration.PyCmaSampler`."
+
 
 class PyCmaSampler(BaseSampler):
     """A Sampler using cma library as the backend.
@@ -483,7 +485,7 @@ class _Optimizer(object):
         return cma_param_value
 
 
-@deprecated("2.0.0", text="This class is renamed to :class:`~optuna.integration.PyCmaSampler`.")
+@deprecated("2.0.0", "4.0.0", text=_cma_deprecated_msg)
 class CmaEsSampler(PyCmaSampler):
     """Wrapper class of PyCmaSampler for backward compatibility."""
 

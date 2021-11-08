@@ -22,7 +22,7 @@ if not _imports.is_successful():
     TrackerCallback = object  # NOQA
 
 
-@deprecated("2.4.0")
+@deprecated("2.4.0", "4.0.0")
 class FastAIV1PruningCallback(TrackerCallback):
     """FastAI callback to prune unpromising trials for fastai.
 

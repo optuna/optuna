@@ -17,7 +17,7 @@ if not _imports.is_successful():
     OptunaPruningCallback = object  # NOQA
 
 
-@deprecated("2.7.0")
+@deprecated("2.7.0", "4.0.0")
 class CatalystPruningCallback(OptunaPruningCallback):  # type: ignore
     """Catalyst callback to prune unpromising trials.
 
