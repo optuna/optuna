@@ -230,11 +230,7 @@ def _run_trial(
             state = TrialState.COMPLETE
 
     # add pruned check for catboost
-    if trial.user_attrs.get("pruned") is True:
-        step = trial.user_attrs.get("step")
-        state = TrialState.PRUNED
-        func_err = optuna.TrialPruned("Trial was pruned at epoch {}.".format(step))
-        values = None
+    values, state, func_err = trial.modify_result(trial, values, state, func_err)
 
     if study._storage.is_heartbeat_enabled():
         assert stop_event is not None

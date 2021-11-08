@@ -4,6 +4,7 @@ from packaging import version
 
 import optuna
 from optuna._imports import try_import
+from optuna.trial import TrialState
 
 
 with try_import() as _imports:
@@ -11,6 +12,16 @@ with try_import() as _imports:
 
     if version.parse(cb.__version__) < version.parse("0.26"):
         raise ImportError(f"You don't have CatBoost installed! CatBoost version: {cb.__version__}")
+
+
+def modify_result(trial, values, state, func_err):
+    if trial.user_attrs.get("pruned") is True:
+        step = trial.user_attrs.get("step")
+        state = TrialState.PRUNED
+        func_err = optuna.TrialPruned("Trial was pruned at epoch {}.".format(step))
+        values = None
+
+    return values, state, func_err
 
 
 class CatBoostPruningCallback(object):
@@ -41,6 +52,7 @@ class CatBoostPruningCallback(object):
     def __init__(
         self, trial: optuna.trial.Trial, metric: str, valid_name: str = "validation"
     ) -> None:
+        trial.modify_result = modify_result
         self._trial = trial
         self._metric = metric
         self._valid_name = valid_name
