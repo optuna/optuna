@@ -155,6 +155,9 @@ class Trial(BaseTrial):
 
         Returns:
             A suggested float value.
+
+        .. seealso::
+            :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
         if step is not None:
@@ -327,6 +330,9 @@ class Trial(BaseTrial):
         Raises:
             :exc:`ValueError`:
                 If ``step != 1`` and ``log = True`` are specified.
+
+        .. seealso::
+            :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
         if step != 1:
@@ -396,6 +402,9 @@ class Trial(BaseTrial):
 
         Returns:
             A suggested value.
+
+        .. seealso::
+            :ref:`configurations` tutorial describes more details and flexible usages.
         """
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
