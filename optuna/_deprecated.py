@@ -43,7 +43,7 @@ def _format_text(text: str) -> str:
 
 def deprecated(
     deprecated_version: str,
-    removed_version: str = None,
+    removed_version: str,
     name: Optional[str] = None,
     text: Optional[str] = None,
 ) -> Any:
@@ -53,10 +53,7 @@ def deprecated(
         deprecated_version:
             The version in which the target feature is deprecated.
         removed_version:
-            The version in which the target feature will be removed. If :obj:`None`, determined
-            based on the deprecated version. In this case, it will become the next next major
-            version after the deprecated version. E.g. if ``deprecated_version`` is ``1.5.0``,
-            this version becomes ``3.0.0``.
+            The version in which the target feature will be removed.
         name:
             The name of the feature. Defaults to the function or class name. Optional.
         text:
