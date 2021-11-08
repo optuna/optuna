@@ -196,8 +196,3 @@ def test_deprecation_decorator_default_removed_version() -> None:
 
     with pytest.warns(FutureWarning):
         decorated_func()
-
-
-def test_get_removed_version_from_deprecated_version() -> None:
-    assert _deprecated._get_removed_version_from_deprecated_version("1.0.0") == "3.0.0"
-    assert _deprecated._get_removed_version_from_deprecated_version("1.5.0") == "3.0.0"

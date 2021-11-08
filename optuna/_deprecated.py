@@ -43,7 +43,7 @@ def _format_text(text: str) -> str:
 
 def deprecated(
     deprecated_version: str,
-    removed_version: Optional[str] = None,
+    removed_version: str = None,
     name: Optional[str] = None,
     text: Optional[str] = None,
 ) -> Any:
