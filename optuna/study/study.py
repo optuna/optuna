@@ -477,6 +477,8 @@ class Study:
         for name, param in fixed_distributions.items():
             trial._suggest(name, param)
 
+        self.sampler.before_trial(self, trial)
+
         return trial
 
     def tell(

@@ -143,6 +143,14 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
 
         raise NotImplementedError
 
+    def before_trial(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+    ) -> None:
+
+        pass
+
     def after_trial(
         self,
         study: Study,

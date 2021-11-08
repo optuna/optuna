@@ -142,12 +142,11 @@ class NSGAIISampler(BaseSampler):
     ) -> Dict[str, BaseDistribution]:
         return {}
 
-    def sample_relative(
+    def before_trial(
         self,
         study: Study,
         trial: FrozenTrial,
-        search_space: Dict[str, BaseDistribution],
-    ) -> Dict[str, Any]:
+    ) -> None:
         parent_generation, parent_population = self._collect_parent_population(study)
         trial_id = trial._trial_id
 
@@ -166,6 +165,13 @@ class NSGAIISampler(BaseSampler):
             study._storage.set_trial_system_attr(
                 trial_id, _PARENTS_KEY, [p0._trial_id, p1._trial_id]
             )
+
+    def sample_relative(
+        self,
+        study: Study,
+        trial: FrozenTrial,
+        search_space: Dict[str, BaseDistribution],
+    ) -> Dict[str, Any]:
 
         return {}
 
