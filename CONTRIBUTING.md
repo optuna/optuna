@@ -133,6 +133,15 @@ When adding a new feature or fixing a bug, you also need to write sufficient tes
 We use [pytest](https://pytest.org/) as the testing framework and
 unit tests are stored under the [tests directory](./tests).
 
+Please install some required packages at first.
+```bash
+# Install required packages to test all modules without visualization and integration modules.
+pip install ".[tests]"
+
+# Install required packages to test all modules including visualization and integration modules.
+pip install ".[testing]"
+```
+
 You can run all your tests as follows:
 
 ```bash
@@ -141,6 +150,9 @@ pytest
 
 # Run all the unit tests defined in the specified test file.
 pytest tests/${TARGET_TEST_FILE_NAME}
+
+# Run the unit test function with the specified name defined in the specified test file.
+pytest tests/${TARGET_TEST_FILE_NAME} -k ${TARGET_TEST_FUNCTION_NAME}
 ```
 
 ## Continuous Integration and Local Verification
@@ -149,27 +161,6 @@ Optuna repository uses GitHub Actions and CircleCI.
 
 Currently, we are migrating to GitHub Actions but still we use CircleCI for testing `document`
 because it makes it much easier to check built documentation.
-
-### Local Verification
-
-By installing [`act`](https://github.com/nektos/act#installation) and Docker, you can run
-tests written for GitHub Actions locally.
-
-```bash
-JOB_NAME=checks
-act -j $JOB_NAME
-```
-
-Currently, you can run the following jobs: `documentation` and `doctest` may not be executable depending on your choice of docker image of act.
-
-- `checks`
-  - Checking the format, coding style, and type hints
-- `tests`
-  - Runs unit tests
-- `documentation`
-  - Builds documentation including tutorial
-- `doctest`
-  - Runs doctest
 
 ## Creating a Pull Request
 
