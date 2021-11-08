@@ -44,6 +44,7 @@ def plot_optimization_history(
         .. plot::
 
             import optuna
+            import matplotlib.pyplot as plt
 
 
             def objective(trial):
@@ -55,8 +56,11 @@ def plot_optimization_history(
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=10)
 
+            plt.tight_layout()
             optuna.visualization.matplotlib.plot_optimization_history(study)
 
+        .. note::
+            You need  to adjust the size of the plot by yourself using `plt.tight_layout()` or `plt.savefig(IMAGE_NAME, bbox_inches='tight')`.
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
