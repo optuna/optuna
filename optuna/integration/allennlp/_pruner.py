@@ -152,7 +152,6 @@ class AllenNLPPruningCallback(TrainerCallback):
                 "please install Optuna v2.5.0 by executing `pip install 'optuna==2.5.0'`."
             )
 
-        self.pruned = False
 
         # When `AllenNLPPruningCallback` is instantiated in Python script,
         # trial and monitor should not be `None`.
