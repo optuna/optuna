@@ -7,6 +7,7 @@ from typing import Sequence
 from optuna.distributions import BaseDistribution
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -146,7 +147,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
     def before_trial(
         self,
         study: Study,
-        trial: FrozenTrial,
+        trial: Trial,
     ) -> None:
 
         pass

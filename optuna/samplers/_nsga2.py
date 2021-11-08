@@ -23,6 +23,7 @@ from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -145,7 +146,7 @@ class NSGAIISampler(BaseSampler):
     def before_trial(
         self,
         study: Study,
-        trial: FrozenTrial,
+        trial: Trial,
     ) -> None:
         parent_generation, parent_population = self._collect_parent_population(study)
         trial_id = trial._trial_id

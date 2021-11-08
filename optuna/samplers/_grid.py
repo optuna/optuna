@@ -16,6 +16,7 @@ from optuna.logging import get_logger
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
+from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
@@ -124,12 +125,12 @@ class GridSampler(BaseSampler):
     def before_trial(
         self,
         study: Study,
-        trial: FrozenTrial,
+        trial: Trial,
     ) -> None:
         # When the trial is created by RetryFailedTrialCallback or enqueue_trial, we should not
         # assign a new grid_id.
         if "grid_id" in trial.system_attrs or "fixed_params" in trial.system_attrs:
-            return {}
+            return
 
         target_grids = self._get_unvisited_grid_ids(study)
 
