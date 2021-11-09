@@ -1,5 +1,4 @@
 import contextlib
-from inspect import signature
 from tempfile import TemporaryDirectory
 from typing import Any
 from typing import Dict
