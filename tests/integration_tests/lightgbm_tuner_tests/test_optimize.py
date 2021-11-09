@@ -362,16 +362,6 @@ class TestLightGBMTuner(object):
             assert new_arg not in runner.lgbm_kwargs
             assert new_arg in runner.auto_options
 
-    def test_default_arguments(self) -> None:
-        tuner_kwargs = signature(LightGBMTuner).parameters
-        for lgb_train_arg, lgb_train_val in signature(lightgbm.train).parameters.items():
-            if lgb_train_arg in tuner_kwargs:
-                assert tuner_kwargs[lgb_train_arg].default == lgb_train_val.default, (
-                    f"LightGBMTuner '{lgb_train_arg}' default "
-                    "argument is not consistent with original "
-                    "LightGBM 'train' method default argument."
-                )
-
     @pytest.mark.parametrize(
         "metric, study_direction, expected",
         [("auc", "maximize", -np.inf), ("l2", "minimize", np.inf)],
@@ -834,16 +824,6 @@ class TestLightGBMTunerCV(object):
         assert "num_boost_round" in runner.lgbm_kwargs
         assert "num_boost_round" not in runner.auto_options
         assert runner.lgbm_kwargs["num_boost_round"] == 5
-
-    def test_default_arguments(self) -> None:
-        tunercv_kwargs = signature(LightGBMTunerCV).parameters
-        for lgb_cv_arg, lgb_cv_val in signature(lightgbm.cv).parameters.items():
-            if lgb_cv_arg in tunercv_kwargs:
-                assert tunercv_kwargs[lgb_cv_arg].default == lgb_cv_val.default, (
-                    f"LightGBMTunerCV '{lgb_cv_arg}' default "
-                    "argument is not consistent with original "
-                    "LightGBM 'cv' method default argument."
-                )
 
     def test_tune_feature_fraction(self) -> None:
         unexpected_value = 1.1  # out of scope.
