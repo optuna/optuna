@@ -17,13 +17,17 @@ More detailed explanation of how samplers suggest parameters is in :class:`optun
 
 Optuna provides the following sampling algorithms:
 
+- Grid Search implemented in :class:`optuna.samplers.GridSampler`
+
+- Random Search implemented in :class:`optuna.samplers.RandomSampler`
+
 - Tree-structured Parzen Estimator algorithm implemented in :class:`optuna.samplers.TPESampler`
 
 - CMA-ES based algorithm implemented in :class:`optuna.samplers.CmaEsSampler`
 
-- Grid Search implemented in :class:`optuna.samplers.GridSampler`
+- Algorithm to enable partial fixed parameters implemented in :class:`optuna.samplers.PartialFixedSampler`
 
-- Random Search implemented in :class:`optuna.samplers.RandomSampler`
+- Nondominated Sorting Genetic Algorithm II implemented in :class:`optuna.samplers.NSGAIISampler`
 
 The default sampler is :class:`optuna.samplers.TPESampler`.
 
@@ -60,11 +64,17 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 #
 # Optuna provides the following pruning algorithms:
 #
+# - Median pruning algorithm implemented in :class:`optuna.pruners.MedianPruner`
+#
+# - Non-pruning algorithm implementd in :class:`optuna.pruners.NopPruner`
+#
+# - Algorithm to operate pruner with tolerance implemented in :class:`optuna.pruners.PatientPruner`
+#
+# - Algorithm to prune specified percentile of trials implemented in :class:`optuna.pruners.PercentilePruner`
+#
 # - Asynchronous Successive Halving algorithm implemented in :class:`optuna.pruners.SuccessiveHalvingPruner`
 #
 # - Hyperband algorithm implemented in :class:`optuna.pruners.HyperbandPruner`
-#
-# - Median pruning algorithm implemented in :class:`optuna.pruners.MedianPruner`
 #
 # - Threshold pruning algorithm implemented in :class:`optuna.pruners.ThresholdPruner`
 #
