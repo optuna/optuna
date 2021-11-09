@@ -10,7 +10,6 @@ from typing import Union
 from unittest import mock
 import warnings
 
-import lightgbm
 import numpy as np
 import pytest
 import sklearn.datasets
