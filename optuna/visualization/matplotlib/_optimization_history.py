@@ -60,7 +60,7 @@ def plot_optimization_history(
             optuna.visualization.matplotlib.plot_optimization_history(study)
 
         .. note::
-            You need  to adjust the size of the plot by yourself using ``plt.tight_layout()`` or
+            You need to adjust the size of the plot by yourself using ``plt.tight_layout()`` or
             ``plt.savefig(IMAGE_NAME, bbox_inches='tight')``.
     Args:
         study:
