@@ -155,8 +155,7 @@ class NSGAIISampler(BaseSampler):
     Raises:
         ValueError:
             If ``crossover`` is not in `[uniform, blxalpha, sbx, vsbx, undx, spx]`.
-        ValueError:
-            If ``population_size <= n_parents``.
+            Or, if ``population_size <= n_parents``.
             The `n_parents` is determined by each crossover.
             For `undx` and `spx`, ``n_parents=3``, and for the other algorithms, ``n_parents=2``.
     """
