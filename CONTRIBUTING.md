@@ -142,7 +142,7 @@ pip install ".[tests]"
 pip install ".[testing]"
 ```
 
-You can run all your tests as follows:
+You can run your tests as follows:
 
 ```bash
 # Run all the unit tests.
