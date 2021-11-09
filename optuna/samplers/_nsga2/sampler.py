@@ -154,8 +154,11 @@ class NSGAIISampler(BaseSampler):
 
     Raises:
         ValueError:
-            If ``crossover`` is `undx` or `spx` and `population_size` is less than or equal to two
-            (To use three parental individuals during crossover applied).
+            If ``crossover`` is not in `[uniform, blxalpha, sbx, vsbx, undx, spx]`.
+        ValueError:
+            If ``population_size <= n_parents``.
+            The `n_parents` is determined by each crossover.
+            For `undx` and `spx`, ``n_parents=3``, and for the other algorithms, ``n_parents=2``.
     """
 
     def __init__(
