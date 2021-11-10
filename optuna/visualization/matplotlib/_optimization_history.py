@@ -56,8 +56,8 @@ def plot_optimization_history(
             study = optuna.create_study(sampler=sampler)
             study.optimize(objective, n_trials=10)
 
-            plt.tight_layout()
             optuna.visualization.matplotlib.plot_optimization_history(study)
+            plt.tight_layout()
 
         .. note::
             You need to adjust the size of the plot by yourself using ``plt.tight_layout()`` or
