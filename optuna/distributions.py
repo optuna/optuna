@@ -330,8 +330,8 @@ class IntDistribution(BaseDistribution):
         log:
             If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
         step:
-            A step for spacing between values. When ``log`` is :obj:`True`,
-            ``step`` is assumed to be 1.
+            A discretization step. This parameter must be 1
+            when the parameter ``log`` is :obj:`True`.
 
     Raises:
         ValueError:
@@ -347,11 +347,6 @@ class IntDistribution(BaseDistribution):
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}).".format(low, high)
             )
-
-        # For backward compatibility, an abbreviated json for IntUniformDistribution
-        # may not have `log` attribute.
-        if log is None:
-            log = False
 
         if log and low < 1:
             raise ValueError(
@@ -632,13 +627,10 @@ DISTRIBUTION_CLASSES = (
 
 def json_to_distribution(json_str: str) -> BaseDistribution:
     """Deserialize a distribution in JSON format.
-
     Args:
         json_str: A JSON-serialized distribution.
-
     Returns:
         A deserialized distribution.
-
     Raises:
         ValueError:
             If the unknown class is specified.
@@ -667,16 +659,29 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
             log = json_dict.get("log")
 
             if json_dict["type"] == "float":
-                return FloatDistribution(low=low, high=high, log=log, step=step)
+                if log:
+                    if step is not None:
+                        raise ValueError(
+                            "The parameter `step` is not supported when `log` is true."
+                        )
+                    else:
+                        return LogUniformDistribution(low, high)
+                else:
+                    if step is not None:
+                        return DiscreteUniformDistribution(low, high, step)
+                    else:
+                        return UniformDistribution(low, high)
             else:
-                if log and step != 1:
-                    step = 1
-                    warnings.warn(
-                        "Samplers and other components in Optuna will assume that `step` is 1 "
-                        "when `log` argument is True.",
-                        FutureWarning,
-                    )
-                return IntDistribution(low=low, high=high, log=log, step=step)
+                if log:
+                    if step is not None:
+                        return IntLogUniformDistribution(low, high, step)
+                    else:
+                        return IntLogUniformDistribution(low, high)
+                else:
+                    if step is not None:
+                        return IntUniformDistribution(low, high, step)
+                    else:
+                        return IntUniformDistribution(low, high)
 
         raise ValueError("Unknown distribution type: {}".format(json_dict["type"]))
 

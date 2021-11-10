@@ -12,8 +12,9 @@ from optuna import distributions
 
 
 EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
-    "i": distributions.IntDistribution(low=1, high=9, log=False, step=2),
+    "i": distributions.IntDistribution(low=1, high=9, log=False),
     "il": distributions.IntDistribution(low=2, high=12, log=True),
+    "id": distributions.IntDistribution(low=1, high=9, log=False, step=2),
     "f": distributions.FloatDistribution(low=1.0, high=2.0, log=False),
     "fl": distributions.FloatDistribution(low=0.001, high=100.0, log=True),
     "fd": distributions.FloatDistribution(low=1.0, high=9.0, log=False, step=2.0),
@@ -29,9 +30,11 @@ EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
 
 EXAMPLE_JSONS = {
     "i": '{"name": "IntDistribution", '
-    '"attributes": {"low": 1, "high": 9, "log": false, "step": 2}}',
+    '"attributes": {"low": 1, "high": 9, "log": false, "step": 1}}',
     "il": '{"name": "IntDistribution", '
     '"attributes": {"low": 2, "high": 12, "log": true, "step": 1}}',
+    "id": '{"name": "IntDistribution", '
+    '"attributes": {"low": 1, "high": 9, "log": false, "step": 2}}',
     "f": '{"name": "FloatDistribution", '
     '"attributes": {"low": 1.0, "high": 2.0, "log": false, "step": null}}',
     "fl": '{"name": "FloatDistribution", '
@@ -51,14 +54,14 @@ EXAMPLE_JSONS = {
 }
 
 EXAMPLE_ABBREVIATED_JSONS = {
-    "i": '{"type": "int", "low": 1, "high": 9, "log": false, "step": 2}',
-    "il": '{"type": "int", "low": 2, "high": 12, "log": true, "step": 1}',
-    "f": '{"type": "float", "low": 1.0, "high": 2.0, "log": false}',
-    "fl": '{"type": "float", "low": 0.001, "high": 100.0, "log": true}',
-    "fd": '{"type": "float", "low": 1.0, "high": 9.0, "step": 2.0, "log": false}',
+    "u": '{"type": "float", "low": 1.0, "high": 2.0}',
+    "l": '{"type": "float", "low": 0.001, "high": 100, "log": true}',
+    "du": '{"type": "float", "low": 1.0, "high": 9.0, "step": 2.0}',
+    "iu": '{"type": "int", "low": 1, "high": 9, "step": 2}',
     "c1": '{"type": "categorical", "choices": [2.71, -Infinity]}',
     "c2": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
     "c3": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
+    "ilu": '{"type": "int", "low": 2, "high": 12, "step": 2, "log": true}',
 }
 
 
@@ -96,17 +99,6 @@ def test_abbreviated_json_to_distribution() -> None:
     )
     for distribution in invalid_distribution:
         pytest.raises(ValueError, lambda: distributions.json_to_distribution(distribution))
-
-
-def test_backward_compatibility_int_log_with_step() -> None:
-
-    abbreviated_json = '{"type": "int", "low": 2, "high": 12, "step": 2, "log": true}'
-    with warnings.catch_warnings():
-        # `step` is assumed to be 1 when `log` argument is True.
-        warnings.simplefilter("ignore", category=UserWarning)
-        actual = distributions.json_to_distribution(abbreviated_json)
-    expected = distributions.IntDistribution(low=2, high=12, log=True, step=1)
-    assert actual == expected
 
 
 def test_backward_compatibility_int_uniform_distribution() -> None:
@@ -147,6 +139,28 @@ def test_check_distribution_compatibility() -> None:
         ),
     )
 
+    # test compatibility between IntDistributions.
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS["i"], EXAMPLE_DISTRIBUTIONS["il"]
+    )
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS["il"], EXAMPLE_DISTRIBUTIONS["id"]
+    )
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS["id"], EXAMPLE_DISTRIBUTIONS["i"]
+    )
+
+    # test compatibility between FloatDistributions.
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS["f"], EXAMPLE_DISTRIBUTIONS["fl"]
+    )
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS["fl"], EXAMPLE_DISTRIBUTIONS["fd"]
+    )
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS["fd"], EXAMPLE_DISTRIBUTIONS["f"]
+    )
+
     # test dynamic value range (CategoricalDistribution)
     pytest.raises(
         ValueError,
@@ -162,6 +176,9 @@ def test_check_distribution_compatibility() -> None:
     )
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["il"], distributions.IntDistribution(low=1, high=13, log=True)
+    )
+    distributions.check_distribution_compatibility(
+        EXAMPLE_DISTRIBUTIONS["id"], distributions.IntDistribution(low=-3, high=2, step=2)
     )
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["f"], distributions.FloatDistribution(low=-3.0, high=-2.0)
@@ -445,18 +462,6 @@ def test_empty_distribution() -> None:
 
     # Empty distributions cannot be instantiated.
     with pytest.raises(ValueError):
-        distributions.FloatDistribution(low=0.0, high=-100.0)
-
-    with pytest.raises(ValueError):
-        distributions.FloatDistribution(low=7.3, high=7.2, log=True)
-
-    with pytest.raises(ValueError):
-        distributions.FloatDistribution(low=-30.0, high=-40.0, step=2.5)
-
-    with pytest.raises(ValueError):
-        distributions.IntDistribution(low=123, high=100)
-
-    with pytest.raises(ValueError):
         distributions.UniformDistribution(low=0.0, high=-100.0)
 
     with pytest.raises(ValueError):
@@ -545,8 +550,9 @@ def test_repr() -> None:
 @pytest.mark.parametrize(
     ("key", "low", "high", "log", "step"),
     [
-        ("i", 1, 9, False, 2),
+        ("i", 1, 9, False, 1),
         ("il", 2, 12, True, 1),
+        ("id", 1, 9, False, 2),
     ],
 )
 def test_int_distribution_asdict(key: str, low: int, high: int, log: bool, step: int) -> None:
@@ -594,8 +600,23 @@ def test_int_log_uniform_distribution_asdict() -> None:
     assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12, "step": 2}
 
 
-def test_int_invalid_step() -> None:
+def test_int_init_error() -> None:
 
+    # Empty distributions cannot be instantiated.
+    with pytest.raises(ValueError):
+        distributions.IntDistribution(low=123, high=100)
+
+    with pytest.raises(ValueError):
+        distributions.IntDistribution(low=100, high=10, log=True)
+
+    with pytest.raises(ValueError):
+        distributions.IntDistribution(low=123, high=100, step=2)
+
+    # 'step' must be 1 when 'log' is True.
+    with pytest.raises(ValueError):
+        distributions.IntDistribution(low=1, high=100, log=True, step=2)
+
+    # 'step' should be positive.
     with pytest.raises(ValueError):
         distributions.IntDistribution(low=1, high=100, step=0)
 
@@ -603,8 +624,23 @@ def test_int_invalid_step() -> None:
         distributions.IntDistribution(low=1, high=10, step=-1)
 
 
-def test_float_invalid_step() -> None:
+def test_float_init_error() -> None:
 
+    # Empty distributions cannot be instantiated.
+    with pytest.raises(ValueError):
+        distributions.FloatDistribution(low=0.0, high=-100.0)
+
+    with pytest.raises(ValueError):
+        distributions.FloatDistribution(low=7.3, high=7.2, log=True)
+
+    with pytest.raises(ValueError):
+        distributions.FloatDistribution(low=-30.0, high=-40.0, step=2.5)
+
+    # 'step' must be None when 'log' is True.
+    with pytest.raises(ValueError):
+        distributions.FloatDistribution(low=1.0, high=100.0, log=True, step=0.5)
+
+    # 'step' should be positive.
     with pytest.raises(ValueError):
         distributions.FloatDistribution(low=1.0, high=10.0, step=0)
 
