@@ -627,10 +627,13 @@ DISTRIBUTION_CLASSES = (
 
 def json_to_distribution(json_str: str) -> BaseDistribution:
     """Deserialize a distribution in JSON format.
+
     Args:
         json_str: A JSON-serialized distribution.
+
     Returns:
         A deserialized distribution.
+
     Raises:
         ValueError:
             If the unknown class is specified.
