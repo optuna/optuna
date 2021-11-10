@@ -36,6 +36,9 @@ class RandomSampler(BaseSampler):
 
     Args:
         seed: Seed for random number generator.
+
+    .. seealso::
+        :ref:`pruning` tutorial describes more details and flexible usages.
     """
 
     def __init__(self, seed: Optional[int] = None) -> None:
