@@ -107,6 +107,9 @@ class SuccessiveHalvingPruner(BasePruner):
         bootstrap_count:
             Minimum number of trials that need to complete a rung before any trial
             is considered for promotion into the next rung.
+
+    .. seealso::
+        :ref:`pruning` tutorial describes more details and flexible usages.
     """
 
     def __init__(
