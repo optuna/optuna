@@ -97,6 +97,9 @@ class GridSampler(BaseSampler):
         search_space:
             A dictionary whose key and value are a parameter name and the corresponding candidates
             of values, respectively.
+
+    .. seealso::
+        :ref:`pruning` tutorial describes more details and flexible usages.
     """
 
     def __init__(self, search_space: Mapping[str, Sequence[GridValueType]]) -> None:
