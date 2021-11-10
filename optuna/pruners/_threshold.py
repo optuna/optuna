@@ -75,6 +75,8 @@ class ThresholdPruner(BasePruner):
             If no value has been reported at the time of a pruning check, that particular check
             will be postponed until a value is reported. Value must be at least 1.
 
+    .. seealso::
+        :ref:`pruning` tutorial describes more details and flexible usages.
     """
 
     def __init__(
