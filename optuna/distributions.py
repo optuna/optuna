@@ -341,7 +341,7 @@ class IntDistribution(BaseDistribution):
             If ``log`` is :obj:`True` and ``step``!= 1.
     """
 
-    def __init__(self, low: int, high: int, log: Union[None, bool] = False, step: int = 1) -> None:
+    def __init__(self, low: int, high: int, log: bool = False, step: int = 1) -> None:
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
