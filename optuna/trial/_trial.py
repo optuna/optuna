@@ -127,12 +127,7 @@ class Trial(BaseTrial):
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is excluded from the
-                range.
-
-                .. note::
-                    If ``step`` is specified, ``high`` is included as well as ``low``.
-
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
             step:
                 A step of discretization.
 
@@ -191,8 +186,7 @@ class Trial(BaseTrial):
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is excluded from the
-                range.
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
 
         Returns:
             A suggested float value.
@@ -214,8 +208,7 @@ class Trial(BaseTrial):
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is excluded from the
-                range.
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
 
         Returns:
             A suggested float value.
