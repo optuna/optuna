@@ -86,4 +86,6 @@ def test_fanova_importance_evaluator_single_distribution() -> None:
     evaluator = FanovaImportanceEvaluator()
     importances = evaluator.evaluate(study)
 
+    assert all([param in importances for param in ["x", "y"]])
+    assert importances["x"] == 1.0
     assert importances["y"] == 0.0
