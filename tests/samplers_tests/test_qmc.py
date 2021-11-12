@@ -9,7 +9,6 @@ import warnings
 
 import numpy as np
 import pytest
-import scipy
 
 import optuna
 from optuna.distributions import BaseDistribution
@@ -312,8 +311,6 @@ def test_sample_relative_sobol() -> None:
     np.testing.assert_allclose(samples, ref_samples, rtol=1e-6)
 
 
-# TODO(kstoneriv3): Need to add this test.
-@pytest.mark.skip
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
 @pytest.mark.skipif(
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
@@ -394,20 +391,6 @@ def test_sample_qmc(qmc_type: str) -> None:
         # Make sure that the shape of sample is correct
         sample = sampler._sample_qmc(study, search_space)
         assert sample.shape == (1, 5)
-        # Make sure that the qmc_engine._num_generated is consistent
-        assert sampler._cached_qmc_engine.num_generated == 1
-        engine_id = id(sampler._cached_qmc_engine)
-        for ref in [2, 3, 5, 10]:
-            sampler._sample_qmc(study, search_space)
-            assert sampler._cached_qmc_engine.num_generated == ref
-            assert id(sampler._cached_qmc_engine) == engine_id
-
-    # For new search space, a new QMCEngine is instanciated and cached
-    with patch.object(sampler, "_find_sample_id", return_value=0) as _:
-        new_search_space: Dict[str, BaseDistribution] = {"x": Mock()}
-        sampler._sample_qmc(study, new_search_space)
-        assert sampler._cached_qmc_engine.num_generated == 1
-        assert id(sampler._cached_qmc_engine) != engine_id
 
 
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
@@ -437,39 +420,3 @@ def test_find_sample_id() -> None:
     # Change search_space
     search_space.pop("x6")
     assert sampler._find_sample_id(study, search_space) == 0
-
-
-# TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
-@pytest.mark.skipif(
-    sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
-)
-def test_is_engine_cached() -> None:
-    sampler = _init_QMCSampler_without_exp_warning(seed=12345)
-    d = 2
-    sample_id = 5
-    # Without any preceeding trials, no engine is cached
-    assert not sampler._is_engine_cached(d, sample_id)
-
-    mock_engine = Mock(spec=scipy.stats.qmc.QMCEngine)
-    mock_engine.rng_seed = 12345
-    mock_engine.d = d
-    mock_engine.num_generated = 5
-    sampler._cached_qmc_engine = mock_engine
-    assert sampler._is_engine_cached(d, sample_id)
-
-    # Change rng_seed
-    for _sample_id in range(10):
-        assert (_sample_id < 5) ^ sampler._is_engine_cached(d, _sample_id)
-
-    # Change rng_seed
-    with patch.object(mock_engine, "rng_seed", 0):
-        assert not sampler._is_engine_cached(d, sample_id)
-
-    # Change d
-    with patch.object(mock_engine, "d", 1):
-        assert not sampler._is_engine_cached(d, sample_id)
-
-    # Change num_generated
-    for num_generated in range(10):
-        with patch.object(mock_engine, "num_generated", num_generated):
-            assert (num_generated > 5) ^ sampler._is_engine_cached(d, sample_id)

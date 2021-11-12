@@ -5,7 +5,9 @@ from typing import Optional
 from typing import Sequence
 
 import numpy as np
-import scipy
+
+# We want to lazy import scipy.stats.qmc as it is slow to import.
+import scipy  # NOQA
 
 import optuna
 from optuna import distributions
@@ -170,7 +172,6 @@ class QMCSampler(BaseSampler):
         self._scramble = scramble
         self._seed = seed or np.random.PCG64().random_raw()
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
-        self._cached_qmc_engine = None
         self._initial_search_space: Optional[Dict[str, BaseDistribution]] = None
         self._warn_independent_sampling = warn_independent_sampling
 
@@ -290,21 +291,16 @@ class QMCSampler(BaseSampler):
         sample_id = self._find_sample_id(study, search_space)
         d = len(search_space)
 
-        # Use cached `qmc_engine` or construct a new one.
-        if self._is_engine_cached(d, sample_id):
-            qmc_engine: scipy.stats.qmc.QMCEngine = self._cached_qmc_engine
+        if self._qmc_type == "halton":
+            qmc_engine = scipy.stats.qmc.Halton(d, seed=self._seed, scramble=self._scramble)
+        elif self._qmc_type == "sobol":
+            qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
         else:
-            if self._qmc_type == "halton":
-                qmc_engine = scipy.stats.qmc.Halton(d, seed=self._seed, scramble=self._scramble)
-            elif self._qmc_type == "sobol":
-                qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
-            else:
-                raise ValueError("Invalid `qmc_type`")
+            raise ValueError("Invalid `qmc_type`")
 
         forward_size = sample_id - qmc_engine.num_generated  # `sample_id` starts from 0.
         qmc_engine.fast_forward(forward_size)
         sample = qmc_engine.random(1)
-        self._cached_qmc_engine = qmc_engine
 
         return sample
 
@@ -331,15 +327,3 @@ class QMCSampler(BaseSampler):
             sample_id = 0
 
         return sample_id
-
-    def _is_engine_cached(self, d: int, sample_id: int) -> bool:
-
-        if not isinstance(self._cached_qmc_engine, scipy.stats.qmc.QMCEngine):
-            return False
-        else:
-            # We assume that `_qmc_type` does not change after initialization for simplicity.
-            is_cached = True
-            is_cached &= self._cached_qmc_engine.rng_seed == self._seed
-            is_cached &= self._cached_qmc_engine.d == d
-            is_cached &= self._cached_qmc_engine.num_generated <= sample_id
-            return is_cached
