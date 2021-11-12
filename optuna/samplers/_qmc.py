@@ -298,7 +298,7 @@ class QMCSampler(BaseSampler):
         else:
             raise ValueError("Invalid `qmc_type`")
 
-        forward_size = sample_id - qmc_engine.num_generated  # `sample_id` starts from 0.
+        forward_size = sample_id  # `sample_id` starts from 0.
         qmc_engine.fast_forward(forward_size)
         sample = qmc_engine.random(1)
 
