@@ -308,12 +308,12 @@ class QMCSampler(BaseSampler):
 
         qmc_id = ""
         qmc_id += self._qmc_type
-        qmc_id += str(search_space)
         # Sobol/Halton sequences without scrambling do not use seed.
         if self._scramble:
-            qmc_id += str(self._seed)
-        hashed_qmc_id = hash(qmc_id)
-        key_qmc_id = f"qmc ({hashed_qmc_id})'s last sample id"
+            qmc_id += f" (scramble=True, seed={self._seed})"
+        else:
+            qmc_id += " (scramble=False)"
+        key_qmc_id = qmc_id + "'s last sample id"
 
         # TODO(kstoneriv3): Following try-except block assumes that the block is
         # an atomic transaction. Without this assumption, current implementation

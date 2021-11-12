@@ -416,7 +416,3 @@ def test_find_sample_id() -> None:
     # Change qmc_type
     with patch.object(sampler, "_qmc_type", "sobol") as _:
         assert sampler._find_sample_id(study, search_space) == 0
-
-    # Change search_space
-    search_space.pop("x6")
-    assert sampler._find_sample_id(study, search_space) == 0
