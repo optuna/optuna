@@ -50,6 +50,11 @@ def plot_contour(
     .. seealso::
         Please refer to :func:`optuna.visualization.plot_contour` for an example.
 
+    Warnings:
+        Output figures of this Matplotlib-based
+        :func:`~optuna.visualization.matplotlib.plot_contour` function would be different from
+        those of the Plotly-based :func:`~optuna.visualization.plot_contour`.
+
     Example:
 
         The following code snippet shows how to plot the parameter relationship as contour plot.
@@ -96,6 +101,10 @@ def plot_contour(
 
     _imports.check()
     _check_plot_args(study, target, target_name)
+    _logger.warning(
+        "Output figures of this Matplotlib-based `plot_contour` function would be different from "
+        "those of the Plotly-based `plot_contour`."
+    )
     return _get_contour_plot(study, params, target, target_name)
 
 
