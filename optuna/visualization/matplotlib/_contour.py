@@ -1,6 +1,5 @@
 from collections import defaultdict
 from typing import Callable
-from typing import cast
 from typing import DefaultDict
 from typing import Dict
 from typing import List
@@ -458,9 +457,9 @@ def _create_zmap(
     # so we are going with close approximations of trial value positions
     zmap = dict()
     for x, y, z in zip(x_values, y_values, z_values):
-        xindex = np.argmin(np.abs(xi - x))
-        yindex = np.argmin(np.abs(yi - y))
-        zmap[(cast(int, xindex), cast(int, yindex))] = z
+        xindex = int(np.argmin(np.abs(xi - x)))
+        yindex = int(np.argmin(np.abs(yi - y)))
+        zmap[(xindex, yindex)] = z
 
     return zmap
 
