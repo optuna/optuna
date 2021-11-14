@@ -495,7 +495,6 @@ def test_eq_ne_hash() -> None:
     for d in EXAMPLE_DISTRIBUTIONS.values():
         d_copy = copy.deepcopy(d)
         assert d == d_copy
-        assert not d != d_copy
         assert hash(d) == hash(d_copy)
 
     # Different field values.
@@ -511,20 +510,10 @@ def test_eq_ne_hash() -> None:
     d0 = distributions.UniformDistribution(low=1, high=2)
     d1 = distributions.UniformDistribution(low=1, high=3)
     assert d0 != d1
-    assert not d0 == d1
-    assert hash(d0) != hash(d1)
 
     # Different distribution classes.
     d2 = distributions.IntUniformDistribution(low=1, high=2)
     assert d0 != d2
-    assert not d0 == d2
-    assert hash(d0) != hash(d2)
-
-    # Different types.
-    assert d0 != 1
-    assert not d0 == 1
-    assert d0 != "foo"
-    assert not d0 == "foo"
 
 
 def test_repr() -> None:
