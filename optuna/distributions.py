@@ -10,10 +10,6 @@ import warnings
 
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
-_int_distribution_deprecated_msg = "Use :class:`~optuna.distributions.IntDistribution` instead."
-_float_distribution_deprecated_msg = (
-    "Use :class:`~optuna.distributions.FloatDistribution` instead."
-)
 
 
 class BaseDistribution(object, metaclass=abc.ABCMeta):
