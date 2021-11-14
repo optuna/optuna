@@ -279,3 +279,23 @@ def test_get_param_importances_invalid_params_type(
 
     with pytest.raises(TypeError):
         get_param_importances(study, evaluator=evaluator_init_func(), params=[0])  # type: ignore
+
+
+@parametrize_evaluator
+def test_get_param_importances_empty_search_space(
+    evaluator_init_func: Callable[[], BaseImportanceEvaluator]
+) -> None:
+    def objective(trial: Trial) -> float:
+        x = trial.suggest_float("x", 0, 5)
+        y = trial.suggest_float("y", 1, 1)
+        return 4 * x ** 2 + 4 * y ** 2
+
+    study = create_study()
+    study.optimize(objective, n_trials=3)
+
+    param_importance = get_param_importances(study, evaluator=evaluator_init_func())
+
+    assert len(param_importance) == 2
+    assert all([param in param_importance for param in ["x", "y"]])
+    assert param_importance["x"] == 1.0
+    assert param_importance["y"] == 0.0

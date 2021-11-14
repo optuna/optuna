@@ -71,21 +71,3 @@ def test_fanova_importance_evaluator_with_target() -> None:
     )
 
     assert param_importance != param_importance_with_target
-
-
-def test_fanova_importance_evaluator_single_distribution() -> None:
-    def _objective(trial: Trial) -> float:
-        x = trial.suggest_float("x", 0, 5)
-        y = trial.suggest_float("y", 1, 1)
-        v0 = 4 * x ** 2 + 4 * y ** 2
-        return v0
-
-    study = create_study()
-    study.optimize(_objective, n_trials=3)
-
-    evaluator = FanovaImportanceEvaluator()
-    importances = evaluator.evaluate(study)
-
-    assert all([param in importances for param in ["x", "y"]])
-    assert importances["x"] == 1.0
-    assert importances["y"] == 0.0
