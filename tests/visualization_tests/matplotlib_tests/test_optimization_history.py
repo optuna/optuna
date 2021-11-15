@@ -55,3 +55,61 @@ def test_plot_optimization_history(direction: str) -> None:
 
     figure = plot_optimization_history(study)
     assert len(figure.get_lines()) == 0
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_plot_optimization_history_with_multiple_studies(direction: str) -> None:
+    n_studies = 10
+
+    # Test with no trial.
+    studies = [create_study(direction=direction) for _ in range(n_studies)]
+    figure = plot_optimization_history(studies)
+    assert len(figure.get_lines()) == 0
+
+    def objective(trial: Trial) -> float:
+
+        if trial.number == 0:
+            return 1.0
+        elif trial.number == 1:
+            return 2.0
+        elif trial.number == 2:
+            return 0.0
+        return 0.0
+
+    # Test with trials.
+    studies = [create_study(direction=direction) for _ in range(n_studies)]
+    for study in studies:
+        study.optimize(objective, n_trials=3)
+    figure = plot_optimization_history(studies)
+    assert len(figure.get_lines()) == n_studies
+
+    for i, legend in enumerate(figure.legend().get_texts()):
+        if i < n_studies:
+            assert legend.get_text() == f"Best Values of {studies[i].study_name}"
+        else:
+            assert legend.get_text() == f"Objective Value of {studies[i-n_studies].study_name}"
+
+    # Test customized target.
+    with pytest.warns(UserWarning):
+        figure = plot_optimization_history(studies, target=lambda t: t.number)
+    assert len(figure.get_lines()) == 0
+    assert len(figure.get_legend().get_texts()) == n_studies
+
+    # Test customized target name.
+    figure = plot_optimization_history(studies, target_name="Target Name")
+    assert (
+        figure.legend().get_texts()[n_studies].get_text()
+        == f"Target Name of {studies[0].study_name}"
+    )
+    assert figure.get_ylabel() == "Target Name"
+
+    # Ignore failed trials.
+    def fail_objective(_: Trial) -> float:
+        raise ValueError
+
+    studies = [create_study(direction=direction) for _ in range(n_studies)]
+    for study in studies:
+        study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
+
+    figure = plot_optimization_history(studies)
+    assert len(figure.get_lines()) == 0
