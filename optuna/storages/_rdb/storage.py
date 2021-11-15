@@ -1277,6 +1277,16 @@ class _VersionManager(object):
 
         logging.getLogger("alembic").setLevel(logging.WARN)
 
+        # as per https://docs.snowflake.com/en/user-guide/sqlalchemy.html#alembic-support
+        # If here, assume that sqlalchemy-snowflake exists and add it to the
+        # alembic _impls dictionary. self.engine.dialect.driver will return
+        # the sqlalchemy driver name that the engine creates.
+        if self.engine.dialect.driver == "snowflake":
+            from alembic.ddl.impl import DefaultImpl
+
+            class SnowflakeImpl(DefaultImpl):
+                __dialect__ = 'snowflake'
+
         context = alembic.migration.MigrationContext.configure(self.engine.connect())
         is_initialized = context.get_current_revision() is not None
 
