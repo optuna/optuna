@@ -65,9 +65,6 @@ class MedianPruner(PercentilePruner):
             If the number of reported intermediate values from all trials at the current step
             is less than ``n_min_trials``, the trial will not be pruned. This can be used to ensure
             that a minimum number of trials are run to completion without being pruned.
-
-    .. seealso::
-        :ref:`pruning` tutorial describes more details and flexible usages.
     """
 
     def __init__(

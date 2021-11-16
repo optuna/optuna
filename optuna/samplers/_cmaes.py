@@ -187,9 +187,6 @@ class CmaEsSampler(BaseSampler):
     Raises:
         ValueError:
             If ``restart_strategy`` is not 'ipop' or :obj:`None`.
-
-    .. seealso::
-        :ref:`pruning` tutorial describes more details and flexible usages.
     """
 
     def __init__(

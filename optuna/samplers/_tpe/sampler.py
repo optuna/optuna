@@ -214,9 +214,6 @@ class TPESampler(BaseSampler):
     Raises:
         ValueError:
             If ``multivariate`` is :obj:`False` and ``group`` is :obj:`True`.
-
-    .. seealso::
-        :ref:`pruning` tutorial describes more details and flexible usages.
     """
 
     def __init__(

@@ -134,9 +134,6 @@ class HyperbandPruner(BasePruner):
             Parameter specifying the number of trials required in a rung before any trial can be
             promoted. Incompatible with ``max_resouce`` is ``"auto"``.
             See the details for :class:`~optuna.pruners.SuccessiveHalvingPruner`.
-
-    .. seealso::
-        :ref:`pruning` tutorial describes more details and flexible usages.
     """
 
     def __init__(
