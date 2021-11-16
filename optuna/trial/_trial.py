@@ -538,6 +538,10 @@ class Trial(BaseTrial):
 
         The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
 
+        .. seealso::
+
+            See the recipe on :ref:`attributes`.
+
         Example:
 
             Save fixed hyperparameters of neural network training.
