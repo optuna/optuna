@@ -113,7 +113,9 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
         if i < n_studies:
             expected_legend_texts.append(f"Best Values of {studies[i].study_name}")
         else:
-            expected_legend_texts.append(f"{custom_target_name} of {studies[i-n_studies].study_name}")
+            expected_legend_texts.append(
+                f"{custom_target_name} of {studies[i-n_studies].study_name}"
+            )
 
     assert sorted(legend_texts) == sorted(expected_legend_texts)
     assert figure.get_ylabel() == custom_target_name
