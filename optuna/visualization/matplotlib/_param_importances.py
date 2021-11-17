@@ -25,6 +25,9 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
+AXES_PADDING_RATIO = 1.05
+
+
 @experimental("2.2.0")
 def plot_param_importances(
     study: Study,
@@ -107,8 +110,8 @@ def _get_param_importance_plot(
 ) -> "Axes":
 
     # Set up the graph style.
-    _, ax = plt.subplots()
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
+    fig, ax = plt.subplots()
     ax.set_title("Hyperparameter Importances")
     ax.set_xlabel(f"Importance for {target_name}")
     ax.set_ylabel("Hyperparameter")
@@ -138,5 +141,20 @@ def _get_param_importance_plot(
         color=cm.get_cmap("tab20c")(0),
         tick_label=param_names,
     )
+
+    renderer = fig.canvas.get_renderer()
+    for idx, val in enumerate(importance_values):
+        label = f" {val:.2f}" if val >= 0.01 else " <0.01"
+        text = ax.text(val, idx, label, va="center")
+
+        # Sometimes horizontal axis needs to be re-scaled
+        # to avoid text going over plot area.
+        bbox = text.get_window_extent(renderer)
+        bbox = bbox.transformed(ax.transData.inverted())
+        _, plot_xmax = ax.get_xlim()
+        bbox_xmax = bbox.xmax
+
+        if bbox_xmax > plot_xmax:
+            ax.set_xlim(xmax=AXES_PADDING_RATIO * bbox_xmax)
 
     return ax

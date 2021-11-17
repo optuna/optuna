@@ -63,3 +63,33 @@ def test_plot_param_importances() -> None:
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_param_importances(study)
     assert len(figure.get_lines()) == 0
+
+
+def test_importance_scores_rendering() -> None:
+
+    study = prepare_study_with_trials()
+    ax = plot_param_importances(study)
+
+    # Test if importance scores are rendered.
+    text_objects = ax.figure.findobj(lambda obj: "Text" in str(obj))
+    importances = [patch.get_width() for patch in ax.patches]
+    labels = [obj for obj in text_objects if obj.get_position()[0] in importances]
+    assert len(labels) == 2
+
+
+def test_switch_label_when_param_insignificant() -> None:
+    def _objective(trial: Trial) -> int:
+        x = trial.suggest_int("x", 0, 2)
+        _ = trial.suggest_int("y", -1, 1)
+        return x ** 2
+
+    study = create_study()
+    for x in range(1, 3):
+        study.enqueue_trial({"x": x, "y": 0})
+
+    study.optimize(_objective, n_trials=2)
+    ax = plot_param_importances(study)
+
+    # Test if label for `y` param has been switched to `<0.01`.
+    labels = ax.figure.findobj(lambda obj: "<0.01" in str(obj))
+    assert len(labels) == 1
