@@ -408,6 +408,8 @@ def test_sample_relative_mixed(
 
 @parametrize_sampler
 def test_conditional_sample_independent(sampler_class: Callable[[], BaseSampler]) -> None:
+    # This test case reproduces the error reported in #2734.
+    # See https://github.com/optuna/optuna/pull/2734#issuecomment-857649769.
 
     study = optuna.study.create_study(sampler=sampler_class())
     categorical_distribution = CategoricalDistribution(choices=["x", "y"])
