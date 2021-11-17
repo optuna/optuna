@@ -17,11 +17,9 @@ from typing import Union
 import warnings
 
 import numpy as np
-from packaging import version
 import tqdm
 
 import optuna
-from optuna._deprecated import deprecated
 from optuna._imports import try_import
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_metrics
 from optuna.integration._lightgbm_tuner.alias import _handling_alias_parameters
@@ -861,19 +859,6 @@ class LightGBMTuner(_LightGBMBaseTuner):
         if valid_sets is None:
             raise ValueError("`valid_sets` is required.")
 
-    @property  # type: ignore
-    @deprecated(
-        "1.4.0",
-        text=(
-            "Please get the best booster via "
-            ":class:`~optuna.integration.lightgbm.LightGBMTuner.get_best_booster` instead."
-        ),
-    )
-    def best_booster(self) -> "lgb.Booster":
-        """Return the best booster."""
-
-        return self.get_best_booster()
-
     def _create_objective(
         self,
         target_param_names: List[str],
@@ -1004,7 +989,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
         model_dir: Optional[str] = None,
-        return_cvbooster: Optional[bool] = None,
+        return_cvbooster: bool = False,
         *,
         optuna_seed: Optional[int] = None,
     ) -> None:
@@ -1037,10 +1022,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         self.lgbm_kwargs["show_stdv"] = show_stdv
         self.lgbm_kwargs["seed"] = seed
         self.lgbm_kwargs["fpreproc"] = fpreproc
-        if return_cvbooster is not None:
-            if version.parse(lgb.__version__) < version.parse("3.0.0"):
-                raise ValueError("return_cvbooster requires lightgbm>=3.0.0.")
-            self.lgbm_kwargs["return_cvbooster"] = return_cvbooster
+        self.lgbm_kwargs["return_cvbooster"] = return_cvbooster
 
     def _create_objective(
         self,

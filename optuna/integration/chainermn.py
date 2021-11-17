@@ -182,17 +182,17 @@ class ChainerMNTrial(BaseTrial):
 
         return self._call_with_mpi(func)
 
-    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high)
 
-    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
 
         return self.suggest_float(name, low, high, log=True)
 
-    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
 
         return self.suggest_float(name, low, high, step=q)

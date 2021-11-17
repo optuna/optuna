@@ -10,7 +10,6 @@ Command-Line Interface
 
     create-study, Create a new study.
     delete-study, Delete a specified study.
-    dashboard, Launch web dashboard (beta).
     storage upgrade, Upgrade the schema of a storage.
     studies, Show a list of studies.
     study optimize, Start optimization of a study.

@@ -1,4 +1,5 @@
 import json
+from typing import Any
 from typing import List
 from typing import Optional
 
@@ -265,8 +266,25 @@ def _get_pareto_front_3d(
     return go.Figure(data=data, layout=layout)
 
 
+def _make_json_compatible(value: Any) -> Any:
+    try:
+        json.dumps(value)
+        return value
+    except TypeError:
+        # the value can't be converted to JSON directly, so return a string representation
+        return str(value)
+
+
 def _make_hovertext(trial: FrozenTrial) -> str:
+    user_attrs = {key: _make_json_compatible(value) for key, value in trial.user_attrs.items()}
+    user_attrs_dict = {"user_attrs": user_attrs} if user_attrs else {}
     text = json.dumps(
-        {"number": trial.number, "values": trial.values, "params": trial.params}, indent=2
+        {
+            "number": trial.number,
+            "values": trial.values,
+            "params": trial.params,
+            **user_attrs_dict,
+        },
+        indent=2,
     )
     return text.replace("\n", "<br>")
