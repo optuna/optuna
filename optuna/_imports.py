@@ -102,9 +102,9 @@ def try_import() -> _DeferredImportExceptionContextManager:
 class _LazyImport(types.ModuleType):
     """Module wrapper for lazy import.
 
-    This class wraps specified module and lazily import it when they are actually accessed.
-    Otherwise, `import optuna` becomes slower because it imports all submodules and
-    their dependencies all at once.
+    This class wraps the specified modules and lazily imports them only when accessed.
+    Otherwise, `import optuna` is slowed down by importing all submodules and
+    dependencies even if not required.
     Within this project's usage, importlib override this module's attribute on the first
     access and the imported submodule is directly accessed from the second access.
 
