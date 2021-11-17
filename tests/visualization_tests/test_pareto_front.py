@@ -1,4 +1,6 @@
+import datetime
 import itertools
+from textwrap import dedent
 from typing import List
 from typing import Optional
 
@@ -6,7 +8,11 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna.distributions import UniformDistribution
+from optuna.trial import FrozenTrial
+from optuna.trial import TrialState
 from optuna.visualization import plot_pareto_front
+from optuna.visualization._pareto_front import _make_hovertext
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
@@ -278,3 +284,111 @@ def test_plot_pareto_front_invalid_axis_order(
             include_dominated_trials=include_dominated_trials,
             axis_order=invalid_axis_order,
         )
+
+
+def test_make_hovertext() -> None:
+    trial_no_user_attrs = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 10},
+        distributions={"x": UniformDistribution(5, 12)},
+        user_attrs={},
+        system_attrs={},
+        intermediate_values={},
+    )
+    assert (
+        _make_hovertext(trial_no_user_attrs)
+        == dedent(
+            """
+        {
+          "number": 0,
+          "values": [
+            0.2
+          ],
+          "params": {
+            "x": 10
+          }
+        }
+        """
+        )
+        .strip()
+        .replace("\n", "<br>")
+    )
+
+    trial_user_attrs_valid_json = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 10},
+        distributions={"x": UniformDistribution(5, 12)},
+        user_attrs={"a": 42, "b": 3.14},
+        system_attrs={},
+        intermediate_values={},
+    )
+    assert (
+        _make_hovertext(trial_user_attrs_valid_json)
+        == dedent(
+            """
+        {
+          "number": 0,
+          "values": [
+            0.2
+          ],
+          "params": {
+            "x": 10
+          },
+          "user_attrs": {
+            "a": 42,
+            "b": 3.14
+          }
+        }
+        """
+        )
+        .strip()
+        .replace("\n", "<br>")
+    )
+
+    trial_user_attrs_invalid_json = FrozenTrial(
+        number=0,
+        trial_id=0,
+        state=TrialState.COMPLETE,
+        value=0.2,
+        datetime_start=datetime.datetime.now(),
+        datetime_complete=datetime.datetime.now(),
+        params={"x": 10},
+        distributions={"x": UniformDistribution(5, 12)},
+        user_attrs={"a": 42, "b": 3.14, "c": np.zeros(1), "d": np.nan},
+        system_attrs={},
+        intermediate_values={},
+    )
+    assert (
+        _make_hovertext(trial_user_attrs_invalid_json)
+        == dedent(
+            """
+        {
+          "number": 0,
+          "values": [
+            0.2
+          ],
+          "params": {
+            "x": 10
+          },
+          "user_attrs": {
+            "a": 42,
+            "b": 3.14,
+            "c": "[0.]",
+            "d": NaN
+          }
+        }
+        """
+        )
+        .strip()
+        .replace("\n", "<br>")
+    )

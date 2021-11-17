@@ -665,6 +665,10 @@ class Study:
 
             See :attr:`~optuna.study.Study.user_attrs` for related attribute.
 
+        .. seealso::
+
+            See the recipe on :ref:`attributes`.
+
         Example:
 
             .. testcode::
@@ -987,11 +991,11 @@ class Study:
 
         return None
 
-    @deprecated("2.5.0")
+    @deprecated("2.5.0", "4.0.0")
     def _ask(self) -> trial_module.Trial:
         return self.ask()
 
-    @deprecated("2.5.0")
+    @deprecated("2.5.0", "4.0.0")
     def _tell(
         self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
     ) -> None:

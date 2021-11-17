@@ -1,6 +1,10 @@
+import itertools
 from typing import Callable
 from typing import cast
+from typing import List
 from typing import Optional
+from typing import Sequence
+from typing import Union
 
 import numpy as np
 
@@ -23,7 +27,7 @@ _logger = get_logger(__name__)
 
 @experimental("2.2.0")
 def plot_optimization_history(
-    study: Study,
+    study: Union[Study, Sequence[Study]],
     *,
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
@@ -40,6 +44,7 @@ def plot_optimization_history(
         .. plot::
 
             import optuna
+            import matplotlib.pyplot as plt
 
 
             def objective(trial):
@@ -52,10 +57,16 @@ def plot_optimization_history(
             study.optimize(objective, n_trials=10)
 
             optuna.visualization.matplotlib.plot_optimization_history(study)
+            plt.tight_layout()
 
+        .. note::
+            You need to adjust the size of the plot by yourself using ``plt.tight_layout()`` or
+            ``plt.savefig(IMAGE_NAME, bbox_inches='tight')``.
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
+            You can pass multiple studies if you want to compare those optimization histories.
+
         target:
             A function to specify the value to display. If it is :obj:`None` and ``study`` is being
             used for single-objective optimization, the objective values are plotted.
@@ -75,61 +86,93 @@ def plot_optimization_history(
     """
 
     _imports.check()
+
+    if isinstance(study, Study):
+        studies = [study]
+    else:
+        studies = list(study)
     _check_plot_args(study, target, target_name)
-    return _get_optimization_history_plot(study, target, target_name)
+    return _get_optimization_history_plot(studies, target, target_name)
 
 
 def _get_optimization_history_plot(
-    study: Study,
+    studies: List[Study],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
 ) -> "Axes":
 
     # Set up the graph style.
     plt.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
+
     _, ax = plt.subplots()
     ax.set_title("Optimization History Plot")
     ax.set_xlabel("#Trials")
     ax.set_ylabel(target_name)
-    cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
 
+    if len(studies) == 0:
+        _logger.warning("There are no studies.")
+        return ax
     # Prepare data for plotting.
-    trials = [t for t in study.trials if t.state == TrialState.COMPLETE]
+    all_trials = list(
+        itertools.chain.from_iterable(
+            (
+                trial
+                for trial in study.get_trials(deepcopy=False)
+                if trial.state == TrialState.COMPLETE
+            )
+            for study in studies
+        )
+    )
 
-    if len(trials) == 0:
+    if len(all_trials) == 0:
         _logger.warning("Study instance does not contain trials.")
         return ax
 
-    # Draw a scatter plot and a line plot.
-    if target is None:
-        if study.direction == StudyDirection.MINIMIZE:
-            best_values = np.minimum.accumulate([cast(float, t.value) for t in trials])
-        else:
-            best_values = np.maximum.accumulate([cast(float, t.value) for t in trials])
-        ax.scatter(
-            x=[t.number for t in trials],
-            y=[t.value for t in trials],
-            color=cmap(0),
-            alpha=1,
-            label=target_name,
-        )
-        ax.plot(
-            [t.number for t in trials],
-            best_values,
-            marker="o",
-            color=cmap(3),
-            alpha=0.5,
-            label="Best Value",
-        )
+    ax = _get_optimization_histories(studies, target, target_name, ax)
+    plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
+    return ax
 
-        ax.legend()
-    else:
-        ax.scatter(
-            x=[t.number for t in trials],
-            y=[target(t) for t in trials],
-            color=cmap(0),
-            alpha=1,
-            label=target_name,
-        )
+
+def _get_optimization_histories(
+    studies: List[Study],
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
+    ax: "Axes",
+) -> "Axes":
+    cmap = plt.get_cmap("tab10")  # Use tab10 colormap for similar outputs to plotly.
+
+    # Draw a scatter plot and a line plot.
+    for i, study in enumerate(studies):
+        trials = study.get_trials(states=(TrialState.COMPLETE,))
+        if target is None:
+            if study.direction == StudyDirection.MINIMIZE:
+                best_values = np.minimum.accumulate([cast(float, t.value) for t in trials])
+            else:
+                best_values = np.maximum.accumulate([cast(float, t.value) for t in trials])
+            ax.scatter(
+                x=[t.number for t in trials],
+                y=[t.value for t in trials],
+                color=cmap(0) if len(studies) == 1 else cmap(2 * i),
+                alpha=1,
+                label=target_name if len(studies) == 1 else f"{target_name} of {study.study_name}",
+            )
+            ax.plot(
+                [t.number for t in trials],
+                best_values,
+                marker="o",
+                color=cmap(3) if len(studies) == 1 else cmap(2 * i + 1),
+                alpha=0.5,
+                label="Best Value" if len(studies) == 1 else f"Best Values of {study.study_name}",
+            )
+
+            ax.legend()
+        else:
+            ax.scatter(
+                x=[t.number for t in trials],
+                y=[target(t) for t in trials],
+                color=cmap(0) if len(studies) == 0 else cmap(2 * i),
+                alpha=1,
+                label=target_name if len(studies) == 1 else f"{target_name} of {study.study_name}",
+            )
 
     return ax

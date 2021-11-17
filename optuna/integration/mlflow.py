@@ -142,7 +142,7 @@ class MLflowCallback(object):
             in case of a collison.
 
     .. note::
-        ``nest_trials`` argument added in v2.3.0 is a part of ``mlflow_kwargs`` since v3.0.0a1.
+        ``nest_trials`` argument added in v2.3.0 is a part of ``mlflow_kwargs`` since v3.0.0.
         Anyone using ``nest_trials=True`` should migrate to ``mlflow_kwargs={"nested": True}``
         to avoid raising :exc:`TypeError`.
 

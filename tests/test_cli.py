@@ -1037,7 +1037,8 @@ def test_ask(
         if output_format is not None:
             args += ["--format", output_format]
 
-        output = str(subprocess.check_output(args).decode().strip())
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output = str(result.stdout.decode().strip())
         trial = _parse_output(output, output_format or "json")
 
         if output_format == "table":
@@ -1052,6 +1053,10 @@ def test_ask(
             assert trial["number"] == 0
             assert 0 <= trial["params"]["x"] <= 1
             assert trial["params"]["y"] == "foo"
+
+        if direction is not None or directions is not None:
+            warning_message = result.stderr.decode()
+            assert "FutureWarning" in warning_message
 
 
 @pytest.mark.parametrize(
@@ -1106,7 +1111,8 @@ def test_ask_flatten(
         if output_format is not None:
             args += ["--format", output_format]
 
-        output = str(subprocess.check_output(args).decode().strip())
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output = str(result.stdout.decode().strip())
         trial = _parse_output(output, output_format or "json")
 
         if output_format == "table":
@@ -1119,6 +1125,10 @@ def test_ask_flatten(
             assert trial["number"] == 0
             assert 0 <= trial["params_x"] <= 1
             assert trial["params_y"] == "foo"
+
+        if direction is not None or directions is not None:
+            warning_message = result.stderr.decode()
+            assert "FutureWarning" in warning_message
 
 
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
@@ -1213,6 +1223,173 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
         result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         error_message = result.stderr.decode()
         assert "`--sampler_kwargs` is set without `--sampler`." in error_message
+
+
+@pytest.mark.parametrize(
+    "direction,directions,sampler,sampler_kwargs",
+    [
+        (None, None, None, None),
+        ("minimize", None, None, None),
+        (None, "minimize maximize", None, None),
+        (None, None, "RandomSampler", None),
+        (None, None, "TPESampler", '{"multivariate": true}'),
+    ],
+)
+def test_create_study_and_ask(
+    direction: Optional[str],
+    directions: Optional[str],
+    sampler: Optional[str],
+    sampler_kwargs: Optional[str],
+) -> None:
+
+    study_name = "test_study"
+    search_space = (
+        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
+    )
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        create_study_args = [
+            "optuna",
+            "create-study",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+        ]
+
+        if direction is not None:
+            create_study_args += ["--direction", direction]
+        if directions is not None:
+            create_study_args += ["--directions"] + directions.split()
+        subprocess.check_call(create_study_args)
+
+        args = [
+            "optuna",
+            "ask",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+            "--search-space",
+            search_space,
+        ]
+
+        if sampler is not None:
+            args += ["--sampler", sampler]
+        if sampler_kwargs is not None:
+            args += ["--sampler-kwargs", sampler_kwargs]
+
+        output = str(subprocess.check_output(args).decode().strip())
+        trial = _parse_output(output, "json")
+
+        assert trial["number"] == 0
+        assert 0 <= trial["params"]["x"] <= 1
+        assert trial["params"]["y"] == "foo"
+
+
+@pytest.mark.parametrize(
+    "direction,directions,ask_direction,ask_directions",
+    [
+        (None, None, "maximize", None),
+        ("minimize", None, "maximize", None),
+        ("minimize", None, None, "minimize minimize"),
+        (None, "minimize maximize", None, "maximize minimize"),
+        (None, "minimize maximize", "minimize", None),
+    ],
+)
+def test_create_study_and_ask_with_inconsistent_directions(
+    direction: Optional[str],
+    directions: Optional[str],
+    ask_direction: Optional[str],
+    ask_directions: Optional[str],
+) -> None:
+
+    study_name = "test_study"
+    search_space = (
+        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
+    )
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        create_study_args = [
+            "optuna",
+            "create-study",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+        ]
+
+        if direction is not None:
+            create_study_args += ["--direction", direction]
+        if directions is not None:
+            create_study_args += ["--directions"] + directions.split()
+        subprocess.check_call(create_study_args)
+
+        args = [
+            "optuna",
+            "ask",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+            "--search-space",
+            search_space,
+        ]
+        if ask_direction is not None:
+            args += ["--direction", ask_direction]
+        if ask_directions is not None:
+            args += ["--directions"] + ask_directions.split()
+
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        error_message = result.stderr.decode()
+        assert "Cannot overwrite study direction" in error_message
+
+
+def test_ask_with_both_direction_and_directions() -> None:
+
+    study_name = "test_study"
+    search_space = (
+        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
+    )
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        create_study_args = [
+            "optuna",
+            "create-study",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+        ]
+        subprocess.check_call(create_study_args)
+
+        args = [
+            "optuna",
+            "ask",
+            "--storage",
+            db_url,
+            "--study-name",
+            study_name,
+            "--search-space",
+            search_space,
+            "--direction",
+            "minimize",
+            "--directions",
+            "minimize",
+        ]
+
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        error_message = result.stderr.decode()
+        assert "Specify only one of `direction` and `directions`." in error_message
 
 
 def test_tell() -> None:

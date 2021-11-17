@@ -181,7 +181,8 @@ def test_deprecation_class_text_specified(text: Optional[str]) -> None:
 
 def test_deprecation_decorator_default_removed_version() -> None:
     deprecated_version = "1.1.0"
-    decorator_deprecation = _deprecated.deprecated(deprecated_version)
+    removed_version = "3.0.0"
+    decorator_deprecation = _deprecated.deprecated(deprecated_version, removed_version)
     assert callable(decorator_deprecation)
 
     def _func() -> int:
@@ -191,13 +192,8 @@ def test_deprecation_decorator_default_removed_version() -> None:
     decorated_func = decorator_deprecation(_func)
     assert decorated_func.__name__ == _func.__name__
     assert decorated_func.__doc__ == _deprecated._DEPRECATION_NOTE_TEMPLATE.format(
-        d_ver=deprecated_version, r_ver="3.0.0"
+        d_ver=deprecated_version, r_ver=removed_version
     )
 
     with pytest.warns(FutureWarning):
         decorated_func()
-
-
-def test_get_removed_version_from_deprecated_version() -> None:
-    assert _deprecated._get_removed_version_from_deprecated_version("1.0.0") == "3.0.0"
-    assert _deprecated._get_removed_version_from_deprecated_version("1.5.0") == "3.0.0"
