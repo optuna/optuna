@@ -98,10 +98,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            # TODO(toshihikoyanase): Remove the constraints when tensorflow==2.7.0 is released.
-            "keras<2.7.0",
-            "tensorflow-estimator<2.7.0",
-            "tensorflow<2.7.0",
+            "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
             # TODO(nzw0301): remove the upper version constraint when the callback supports
@@ -142,10 +139,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            # TODO(toshihikoyanase): Remove the constraints when tensorflow==2.7.0 is released.
-            "keras<2.7.0",
-            "tensorflow-estimator<2.7.0",
-            "tensorflow<2.7.0",
+            "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
             # TODO(nzw0301): remove the upper version constraint when the callback supports
