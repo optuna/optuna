@@ -83,16 +83,11 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     figure = plot_optimization_history(studies)
     assert len(figure.get_lines()) == n_studies
 
-    legend_texts = []
     expected_legend_texts = []
-    for i, legend in enumerate(figure.legend().get_texts()):
-        legend_texts.append(legend.get_text())
-
-        if i < n_studies:
-            expected_legend_texts.append(f"Best Values of {studies[i].study_name}")
-        else:
-            expected_legend_texts.append(f"Objective Value of {studies[i-n_studies].study_name}")
-
+    for i in range(n_studies):
+        expected_legend_texts.append(f"Best Values of {studies[i].study_name}")
+        expected_legend_texts.append(f"Objective Value of {studies[i].study_name}")
+    legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == sorted(expected_legend_texts)
 
     # Test customized target.
@@ -105,18 +100,11 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     custom_target_name = "Target Name"
     figure = plot_optimization_history(studies, target_name=custom_target_name)
 
-    legend_texts = []
     expected_legend_texts = []
-    for i, legend in enumerate(figure.legend().get_texts()):
-        legend_texts.append(legend.get_text())
-
-        if i < n_studies:
-            expected_legend_texts.append(f"Best Values of {studies[i].study_name}")
-        else:
-            expected_legend_texts.append(
-                f"{custom_target_name} of {studies[i-n_studies].study_name}"
-            )
-
+    for i in range(n_studies):
+        expected_legend_texts.append(f"Best Values of {studies[i].study_name}")
+        expected_legend_texts.append(f"{custom_target_name} of {studies[i].study_name}")
+    legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == sorted(expected_legend_texts)
     assert figure.get_ylabel() == custom_target_name
 
