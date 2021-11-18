@@ -174,6 +174,7 @@ If you already have contributed to Optuna, we recommend the other [contribution-
 
 For general guidelines how to contribute to the project, take a look at [CONTRIBUTING.md](./CONTRIBUTING.md).
 
+
 ## Reference
 
 Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, and Masanori Koyama. 2019.
