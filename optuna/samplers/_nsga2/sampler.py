@@ -74,7 +74,7 @@ class NSGAIISampler(BaseSampler):
                   Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, 2–9.
                   <https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms>`_
 
-            - blxalpha: Uniformly sample child individuals from the hyper-rectangles created
+            - blxalpha: It uniformly samples child individuals from the hyper-rectangles created
               by the two parent individuals.
 
                 - `Eshelman, L. and J. D. Schaffer.
@@ -109,7 +109,7 @@ class NSGAIISampler(BaseSampler):
                   (Cat. No. 99TH8406), 1999, pp. 1581-1588 Vol. 2
                   <https://ieeexplore.ieee.org/document/782672>`_
 
-            - spx: It uniformly sample child individuals from within a single simplex
+            - spx: It uniformly samples child individuals from within a single simplex
               that is similar to the simplex produced by the parent individual.
 
                 - `Shigeyoshi Tsutsui and Shigeyoshi Tsutsui and David E. Goldberg and
@@ -273,9 +273,7 @@ class NSGAIISampler(BaseSampler):
             else:
                 parent_population_size = len(parent_population)
                 parent_params = parent_population[self._rng.choice(parent_population_size)].params
-                child_params = {}
-                for param_name in search_space.keys():
-                    child_params[param_name] = parent_params[param_name]
+                child_params = {name: parent_params[name] for name in search_space.keys()}
 
             n_params = len(child_params)
             if self._mutation_prob is None:

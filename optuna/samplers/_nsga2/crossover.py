@@ -28,6 +28,101 @@ _NUMERICAL_DISTRIBUTIONS = (
 )
 
 
+def try_crossover(
+    crossover_name: str,
+    study: Study,
+    parent_population: Sequence[FrozenTrial],
+    search_space: Dict[str, BaseDistribution],
+    rng: np.random.RandomState,
+    swapping_prob: float,
+    dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
+    numerical_search_space: Dict[str, BaseDistribution],
+    numerical_distributions: List[BaseDistribution],
+    numerical_transform: _SearchSpaceTransform,
+) -> Dict[str, Any]:
+
+    parents = _select_parents(crossover_name, study, parent_population, rng, dominates)
+    child_params: Dict[str, Any] = {}
+
+    for param_name in search_space.keys():
+        # Categorical parameters always use uniform crossover.
+        if isinstance(search_space[param_name], CategoricalDistribution):
+            param = (
+                parents[0].params[param_name]
+                if rng.rand() < swapping_prob
+                else parents[-1].params[param_name]
+            )
+            child_params[param_name] = param
+
+    if len(numerical_distributions) == 0:
+        return child_params
+
+    # The following is applied only for numerical parameters.
+    parents_numerical_params_array = np.stack(
+        [
+            numerical_transform.transform(
+                {
+                    param_key: parent.params[param_key]
+                    for param_key in numerical_search_space.keys()
+                }
+            )
+            for parent in parents
+        ]
+    )  # Parent individual with NUMERICAL_DISTRIBUTIONS parameter.
+    if crossover_name == "uniform":
+        child_params_array = _uniform(
+            parents_numerical_params_array[0],
+            parents_numerical_params_array[1],
+            rng,
+            swapping_prob,
+        )
+    elif crossover_name == "blxalpha":
+        alpha = 0.5
+        child_params_array = _blxalpha(
+            parents_numerical_params_array[0], parents_numerical_params_array[1], rng, alpha
+        )
+    elif crossover_name == "sbx":
+        if len(study.directions) == 1:
+            eta = 2
+        else:
+            eta = 20
+        child_params_array = _sbx(
+            parents_numerical_params_array[0],
+            parents_numerical_params_array[1],
+            rng,
+            numerical_distributions,
+            eta,
+        )
+    elif crossover_name == "vsbx":
+        if len(study.directions) == 1:
+            eta = 2
+        else:
+            eta = 20
+        child_params_array = _vsbx(
+            parents_numerical_params_array[0], parents_numerical_params_array[1], rng, eta
+        )
+    elif crossover_name == "undx":
+        sigma_xi = 0.5
+        sigma_eta = 0.35 / np.sqrt(len(parents_numerical_params_array[0]))
+        child_params_array = _undx(
+            parents_numerical_params_array[0],
+            parents_numerical_params_array[1],
+            parents_numerical_params_array[2],
+            rng,
+            sigma_xi,
+            sigma_eta,
+        )
+    elif crossover_name == "spx":
+        epsilon = np.sqrt(len(parents_numerical_params_array[0]) + 2)
+        child_params_array = _spx(parents_numerical_params_array, rng, epsilon)
+    else:
+        assert False
+
+    child_numerical_params = numerical_transform.untransform(child_params_array)
+    child_params.update(child_numerical_params)
+    return child_params
+
+
 def crossover(
     crossover_name: str,
     study: Study,
@@ -50,87 +145,18 @@ def crossover(
         numerical_transform = _SearchSpaceTransform(numerical_search_space)
 
     while True:  # Repeat while parameters lie outside search space boundaries.
-        parents = _select_parents(crossover_name, study, parent_population, rng, dominates)
-        child_params: Dict[str, Any] = {}
-
-        for param_name in search_space.keys():
-            # Categorical parameters always use uniform crossover.
-            if isinstance(search_space[param_name], CategoricalDistribution):
-                param = (
-                    parents[0].params[param_name]
-                    if rng.rand() < swapping_prob
-                    else parents[-1].params[param_name]
-                )
-                child_params[param_name] = param
-
-        if len(numerical_distributions) == 0:
-            if _is_contained(child_params, search_space):
-                break
-            continue
-
-        # The following is applied only for numerical parameters.
-        parents_numerical_params_array = np.stack(
-            [
-                numerical_transform.transform(
-                    {
-                        param_key: parent.params[param_key]
-                        for param_key in numerical_search_space.keys()
-                    }
-                )
-                for parent in parents
-            ]
-        )  # Parent individual with NUMERICAL_DISTRIBUTIONS parameter.
-        if crossover_name == "uniform":
-            child_params_array = _uniform(
-                parents_numerical_params_array[0],
-                parents_numerical_params_array[1],
-                rng,
-                swapping_prob,
-            )
-        elif crossover_name == "blxalpha":
-            alpha = 0.5
-            child_params_array = _blxalpha(
-                parents_numerical_params_array[0], parents_numerical_params_array[1], rng, alpha
-            )
-        elif crossover_name == "sbx":
-            if len(study.directions) == 1:
-                eta = 2
-            else:
-                eta = 20
-            child_params_array = _sbx(
-                parents_numerical_params_array[0],
-                parents_numerical_params_array[1],
-                rng,
-                numerical_distributions,
-                eta,
-            )
-        elif crossover_name == "vsbx":
-            if len(study.directions) == 1:
-                eta = 2
-            else:
-                eta = 20
-            child_params_array = _vsbx(
-                parents_numerical_params_array[0], parents_numerical_params_array[1], rng, eta
-            )
-        elif crossover_name == "undx":
-            sigma_xi = 0.5
-            sigma_eta = 0.35 / np.sqrt(len(parents_numerical_params_array[0]))
-            child_params_array = _undx(
-                parents_numerical_params_array[0],
-                parents_numerical_params_array[1],
-                parents_numerical_params_array[2],
-                rng,
-                sigma_xi,
-                sigma_eta,
-            )
-        elif crossover_name == "spx":
-            epsilon = np.sqrt(len(parents_numerical_params_array[0]) + 2)
-            child_params_array = _spx(parents_numerical_params_array, rng, epsilon)
-        else:
-            assert False
-
-        child_numerical_params = numerical_transform.untransform(child_params_array)
-        child_params.update(child_numerical_params)
+        child_params = try_crossover(
+            crossover_name,
+            study,
+            parent_population,
+            search_space,
+            rng,
+            swapping_prob,
+            dominates,
+            numerical_search_space,
+            numerical_distributions,
+            numerical_transform,
+        )
 
         if _is_contained(child_params, search_space):
             break
