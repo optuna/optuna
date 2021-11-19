@@ -218,6 +218,7 @@ setup(
             "storage upgrade = optuna.cli:_StorageUpgrade",
             "ask = optuna.cli:_Ask",
             "tell = optuna.cli:_Tell",
+            "trial suggest = optuna.cli:_TrialSuggest",
         ],
     },
     classifiers=[

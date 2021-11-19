@@ -338,6 +338,71 @@ class _StudySetUserAttribute(_BaseCommand):
         self.logger.info("Attribute successfully written.")
 
 
+class _TrialSuggest(_BaseCommand):
+    """Suggest a parameter."""
+
+    @staticmethod
+    def _int_or_float(v: str) -> Union[int, float]:
+        try:
+            return int(v)
+        except ValueError:
+            return float(v)
+
+    def get_parser(self, prog_name: str) -> ArgumentParser:
+
+        parser = super(_TrialSuggest, self).get_parser(prog_name)
+        parser.add_argument("param_name")
+        parser.add_argument("--study-name", required=True)
+        parser.add_argument("--trial-number", required=True, type=int)
+        parser.add_argument("--distribution", choices=("float", "int", "categorical"))
+        parser.add_argument("--choices", nargs="+")
+        parser.add_argument("--high", type=self._int_or_float)
+        parser.add_argument("--low", type=self._int_or_float)
+        parser.add_argument("--step", type=self._int_or_float)
+        parser.add_argument("--log-domain", action="store_true", default=False)
+        parser.add_argument("--show-all-params", action="store_true", default=False)
+        return parser
+
+    def take_action(self, parsed_args: Namespace) -> None:
+
+        storage_url = _check_storage_url(self.app_args.storage)
+        study = optuna.load_study(parsed_args.study_name, storage=storage_url)
+        trial_id = study._storage.get_trial_id_from_study_id_trial_number(
+            study._study_id,
+            parsed_args.trial_number,
+        )
+        trial = optuna.Trial(study, trial_id)
+
+        if parsed_args.distribution == "float":
+            param = trial.suggest_float(
+                parsed_args.param_name,
+                parsed_args.low,
+                parsed_args.high,
+                log=parsed_args.log_domain,
+                step=parsed_args.step,
+            )
+
+        elif parsed_args.distribution == "int":
+            param = trial.suggest_int(
+                parsed_args.param_name,
+                parsed_args.low,
+                parsed_args.high,
+                log=parsed_args.log_domain,
+                step=parsed_args.step,
+            )
+
+        else:
+            param = trial.suggest_categorical(
+                parsed_args.param_name,
+                parsed_args.choices,
+            )
+
+        if parsed_args.show_all_params:
+            print(trial.params)
+        else:
+            print({parsed_args.param_name: param})
+
+
 class _Studies(_BaseCommand):
     """Show a list of studies."""
 
