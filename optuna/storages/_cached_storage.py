@@ -169,9 +169,9 @@ class _CachedStorage(BaseStorage):
 
         return self._backend.get_study_system_attrs(study_id)
 
-    def get_all_study_summaries(self) -> List[StudySummary]:
+    def get_all_study_summaries(self, regex: str = None) -> List[StudySummary]:
 
-        return self._backend.get_all_study_summaries()
+        return self._backend.get_all_study_summaries(regex=regex)
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 

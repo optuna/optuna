@@ -1,6 +1,7 @@
 import copy
 from datetime import datetime
 import pickle
+import re
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -309,10 +310,20 @@ class RedisStorage(BaseStorage):
             self._key_study_param_distribution(study_id), pickle.dumps(param_distribution)
         )
 
-    def get_all_study_summaries(self) -> List[StudySummary]:
-
+    def get_all_study_summaries(self, regex: str = None) -> List[StudySummary]:
         study_summaries = []
         study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]
+
+        if regex is not None:
+            pattern = re.compile(regex)
+            study_ids = [
+                study_id
+                for study_id in study_ids
+                if pattern.match(
+                    pickle.loads(self._redis.get("study_id:{:010d}:study_name".format(study_id)))
+                )
+            ]
+
         for study_id in study_ids:
             study_summary = self._get_study_summary(study_id)
             study_summaries.append(study_summary)

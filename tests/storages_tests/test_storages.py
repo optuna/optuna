@@ -2,6 +2,7 @@ import copy
 from datetime import datetime
 import itertools
 import random
+import re
 import time
 from typing import Any
 from typing import Dict
@@ -770,23 +771,45 @@ def test_get_all_study_summaries(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         expected_summaries, _ = _setup_studies(storage, n_study=10, n_trial=10, seed=46)
         summaries = storage.get_all_study_summaries()
-        assert len(summaries) == len(expected_summaries)
-        for _, expected_summary in expected_summaries.items():
-            summary: Optional[StudySummary] = None
-            for s in summaries:
-                if s.study_name == expected_summary.study_name:
-                    summary = s
-                    break
-            assert summary is not None
-            assert summary.direction == expected_summary.direction
-            assert summary.datetime_start == expected_summary.datetime_start
-            assert summary.study_name == expected_summary.study_name
-            assert summary.n_trials == expected_summary.n_trials
-            assert summary.user_attrs == expected_summary.user_attrs
-            assert summary.system_attrs == expected_summary.system_attrs
-            if expected_summary.best_trial is not None:
-                assert summary.best_trial is not None
-                assert summary.best_trial == expected_summary.best_trial
+        _check_summaries(expected_summaries, summaries)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_get_all_study_summaries_regex(storage_mode: str) -> None:
+    regex = "test-study-name-[045]"
+    pattern = re.compile(regex)
+
+    with StorageSupplier(storage_mode) as storage:
+        all_summaries, _ = _setup_studies(storage, n_study=10, n_trial=10, seed=46)
+        expected_summaries = {
+            study_id: summary
+            for study_id, summary in all_summaries.items()
+            if pattern.match(summary.study_name)
+        }
+        summaries = storage.get_all_study_summaries(regex=regex)
+        _check_summaries(expected_summaries, summaries)
+
+
+def _check_summaries(
+    expected_summaries: Dict[int, StudySummary], summaries: List[StudySummary]
+) -> None:
+    assert len(summaries) == len(expected_summaries)
+    for _, expected_summary in expected_summaries.items():
+        summary: Optional[StudySummary] = None
+        for s in summaries:
+            if s.study_name == expected_summary.study_name:
+                summary = s
+                break
+        assert summary is not None
+        assert summary.direction == expected_summary.direction
+        assert summary.datetime_start == expected_summary.datetime_start
+        assert summary.study_name == expected_summary.study_name
+        assert summary.n_trials == expected_summary.n_trials
+        assert summary.user_attrs == expected_summary.user_attrs
+        assert summary.system_attrs == expected_summary.system_attrs
+        if expected_summary.best_trial is not None:
+            assert summary.best_trial is not None
+            assert summary.best_trial == expected_summary.best_trial
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

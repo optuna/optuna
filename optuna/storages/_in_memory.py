@@ -1,5 +1,6 @@
 import copy
 from datetime import datetime
+import re
 import threading
 from typing import Any
 from typing import cast
@@ -150,10 +151,19 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].system_attrs
 
-    def get_all_study_summaries(self) -> List[StudySummary]:
+    def get_all_study_summaries(self, regex: str = None) -> List[StudySummary]:
 
         with self._lock:
-            return [self._build_study_summary(study_id) for study_id in self._studies]
+            if regex is not None:
+                pattern = re.compile(regex)
+                studies = [
+                    study_id
+                    for study_id, study in self._studies.items()
+                    if pattern.match(study.name)
+                ]
+            else:
+                studies = list(self._studies.keys())
+            return [self._build_study_summary(study_id) for study_id in studies]
 
     def _build_study_summary(self, study_id: int) -> StudySummary:
         study = self._studies[study_id]

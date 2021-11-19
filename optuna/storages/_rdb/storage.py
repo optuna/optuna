@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 import logging
 import os
+import re
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -385,9 +386,10 @@ class RDBStorage(BaseStorage):
 
         return system_attrs
 
-    def get_all_study_summaries(self) -> List[StudySummary]:
+    def get_all_study_summaries(self, regex: str = None) -> List[StudySummary]:
 
         with _create_scoped_session(self.scoped_session) as session:
+
             summarized_trial = (
                 session.query(
                     models.TrialModel.study_id,
@@ -404,6 +406,19 @@ class RDBStorage(BaseStorage):
                 summarized_trial.c.datetime_start,
                 functions.coalesce(summarized_trial.c.n_trial, 0).label("n_trial"),
             ).select_from(orm.outerjoin(models.StudyModel, summarized_trial))
+
+            if regex is not None:
+                pattern = re.compile(regex)
+                study_names_stmt = session.query(
+                    models.StudyModel.study_id, models.StudyModel.study_name
+                )
+                study_ids = []
+                for study in study_names_stmt.all():
+                    if pattern.match(study.study_name):
+                        study_ids.append(study.study_id)
+                study_summary_stmt = study_summary_stmt.filter(
+                    models.StudyModel.study_id.in_(study_ids)
+                )
 
             study_summary = study_summary_stmt.all()
             study_summaries = []
