@@ -9,6 +9,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Type
+from typing import TYPE_CHECKING
 from typing import Union
 import warnings
 
@@ -20,9 +21,8 @@ from optuna import storages
 from optuna import trial as trial_module
 from optuna._deprecated import deprecated
 from optuna._experimental import experimental
+from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
-from optuna.study._dataframe import _trials_dataframe
-from optuna.study._dataframe import pd
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _check_and_convert_to_values
 from optuna.study._optimize import _optimize
@@ -31,6 +31,12 @@ from optuna.study._study_summary import StudySummary  # NOQA
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+_dataframe = _LazyImport("optuna.study._dataframe")
+
+if TYPE_CHECKING:
+    from optuna.study._dataframe import pd
 
 
 ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]]
@@ -771,7 +777,7 @@ class Study:
             If ``value`` is in ``attrs`` during multi-objective optimization, it is implicitly
             replaced with ``values``.
         """
-        return _trials_dataframe(self, attrs, multi_index)
+        return _dataframe._trials_dataframe(self, attrs, multi_index)
 
     def stop(self) -> None:
 
