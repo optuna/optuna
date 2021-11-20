@@ -376,7 +376,7 @@ class _TrialSuggest(_BaseCommand):
         trial = optuna.Trial(study, trial_id)
 
         if parsed_args.distribution == "float":
-            param = trial.suggest_float(
+            trial.suggest_float(
                 parsed_args.param_name,
                 parsed_args.low,
                 parsed_args.high,
@@ -385,7 +385,7 @@ class _TrialSuggest(_BaseCommand):
             )
 
         elif parsed_args.distribution == "int":
-            param = trial.suggest_int(
+            trial.suggest_int(
                 parsed_args.param_name,
                 parsed_args.low,
                 parsed_args.high,
@@ -394,7 +394,7 @@ class _TrialSuggest(_BaseCommand):
             )
 
         else:
-            param = trial.suggest_categorical(
+            trial.suggest_categorical(
                 parsed_args.param_name,
                 parsed_args.choices,
             )
