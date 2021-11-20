@@ -361,6 +361,8 @@ class _TrialSuggest(_BaseCommand):
         parser.add_argument("--step", type=self._int_or_float)
         parser.add_argument("--log-domain", action="store_true", default=False)
         parser.add_argument("--show-all-params", action="store_true", default=False)
+        parser.add_argument("--format", choices=("json", "yaml"), default="json")
+        parser.add_argument("--flatten", action="store_true")
         return parser
 
     def take_action(self, parsed_args: Namespace) -> None:
@@ -388,7 +390,7 @@ class _TrialSuggest(_BaseCommand):
                 parsed_args.low,
                 parsed_args.high,
                 log=parsed_args.log_domain,
-                step=parsed_args.step,
+                step=parsed_args.step or 1,
             )
 
         else:
@@ -397,10 +399,18 @@ class _TrialSuggest(_BaseCommand):
                 parsed_args.choices,
             )
 
-        if parsed_args.show_all_params:
-            print(trial.params)
+        record: Dict[Tuple[str, str], Any] = {("number", ""): trial.number}
+        columns = [("number", "")]
+
+        if len(trial.params) == 0 and not parsed_args.flatten:
+            record[("params", "")] = {}
+            columns.append(("params", ""))
         else:
-            print({parsed_args.param_name: param})
+            for param_name, param_value in trial.params.items():
+                record[("params", param_name)] = param_value
+                columns.append(("params", param_name))
+
+        print(_format_output(record, columns, parsed_args.format, parsed_args.flatten))
 
 
 class _Studies(_BaseCommand):

@@ -1498,6 +1498,7 @@ def test_tell() -> None:
         assert study.trials[0].state == TrialState.COMPLETE
         assert study.trials[0].values == [1.2]
 
+
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize(
     "distribution,low,high",
@@ -1546,7 +1547,7 @@ def test_trial_suggest_numerical(
                 str(trial_number),
                 "--study-name",
                 study_name,
-                *args
+                *args,
             ]
         )
         output = output.decode("utf-8")
