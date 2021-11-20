@@ -402,13 +402,9 @@ class _TrialSuggest(_BaseCommand):
         record: Dict[Tuple[str, str], Any] = {("number", ""): trial.number}
         columns = [("number", "")]
 
-        if len(trial.params) == 0 and not parsed_args.flatten:
-            record[("params", "")] = {}
-            columns.append(("params", ""))
-        else:
-            for param_name, param_value in trial.params.items():
-                record[("params", param_name)] = param_value
-                columns.append(("params", param_name))
+        for param_name, param_value in trial.params.items():
+            record[("params", param_name)] = param_value
+            columns.append(("params", param_name))
 
         print(_format_output(record, columns, parsed_args.format, parsed_args.flatten))
 
