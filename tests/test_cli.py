@@ -8,6 +8,7 @@ from typing import Any
 from typing import Callable
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 import numpy as np
 from pandas import Timedelta
@@ -1496,3 +1497,113 @@ def test_tell() -> None:
         assert len(study.trials) == 1
         assert study.trials[0].state == TrialState.COMPLETE
         assert study.trials[0].values == [1.2]
+
+@pytest.mark.skip_coverage
+@pytest.mark.parametrize(
+    "distribution,low,high",
+    [
+        ("float", 0.0, 1.0),
+        ("int", 0, 10),
+    ],
+)
+def test_trial_suggest_numerical(
+    distribution: str,
+    low: Union[float, int],
+    high: Union[float, int],
+) -> None:
+    study_name = f"test_trial_suggest_{distribution}"
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        output: Any = subprocess.check_output(
+            [
+                "optuna",
+                "ask",
+                "--storage",
+                db_url,
+                "--study-name",
+                study_name,
+                "--format",
+                "json",
+            ]
+        )
+        output = output.decode("utf-8")
+        output = json.loads(output)
+        trial_number = output["number"]
+
+        param_name = "param"
+        args = ("--distribution", distribution, "--low", str(low), "--high", str(high))
+        output = subprocess.check_output(
+            [
+                "optuna",
+                "trial",
+                "suggest",
+                param_name,
+                "--storage",
+                db_url,
+                "--trial-number",
+                str(trial_number),
+                "--study-name",
+                study_name,
+                *args
+            ]
+        )
+        output = output.decode("utf-8")
+        output = json.loads(output)
+
+        study = optuna.load_study(storage=db_url, study_name=study_name)
+        assert len(study.trials) == 1
+        param = output["params"][param_name]
+        assert low <= param <= high
+
+
+@pytest.mark.skip_coverage
+def test_trial_suggest_categorical() -> None:
+    study_name = "test_trial_suggest_categorical"
+
+    with tempfile.NamedTemporaryFile() as tf:
+        db_url = "sqlite:///{}".format(tf.name)
+
+        output: Any = subprocess.check_output(
+            [
+                "optuna",
+                "ask",
+                "--storage",
+                db_url,
+                "--study-name",
+                study_name,
+                "--format",
+                "json",
+            ]
+        )
+        output = output.decode("utf-8")
+        output = json.loads(output)
+        trial_number = output["number"]
+
+        param_name = "param"
+        args = ("--distribution", "categorical", "--choices")
+        choices = ("param1", "param2", "param3")
+        output = subprocess.check_output(
+            [
+                "optuna",
+                "trial",
+                "suggest",
+                param_name,
+                "--storage",
+                db_url,
+                "--trial-number",
+                str(trial_number),
+                "--study-name",
+                study_name,
+                *args,
+                *choices,
+            ]
+        )
+        output = output.decode("utf-8")
+        output = json.loads(output)
+
+        study = optuna.load_study(storage=db_url, study_name=study_name)
+        assert len(study.trials) == 1
+        param = output["params"][param_name]
+        assert param in choices
