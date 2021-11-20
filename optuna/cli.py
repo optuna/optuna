@@ -367,6 +367,11 @@ class _TrialSuggest(_BaseCommand):
 
     def take_action(self, parsed_args: Namespace) -> None:
 
+        warnings.warn(
+            "'trials' is an experimental CLI command. The interface can change in the future.",
+            ExperimentalWarning,
+        )
+
         storage_url = _check_storage_url(self.app_args.storage)
         study = optuna.load_study(parsed_args.study_name, storage=storage_url)
         trial_id = study._storage.get_trial_id_from_study_id_trial_number(
