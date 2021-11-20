@@ -114,7 +114,7 @@ def get_verbosity() -> int:
         .. testoutput::
 
            20
-           20           
+           20
     Returns:
         Logging level, e.g., ``optuna.logging.DEBUG`` and ``optuna.logging.INFO``.
 
