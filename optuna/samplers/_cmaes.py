@@ -291,6 +291,7 @@ class CmaEsSampler(BaseSampler):
                     optuna.distributions.DiscreteUniformDistribution,
                     optuna.distributions.IntUniformDistribution,
                     optuna.distributions.IntLogUniformDistribution,
+                    optuna.distributions.FloatDistribution,
                 ),
             ):
                 # Categorical distribution is unsupported.
