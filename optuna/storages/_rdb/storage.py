@@ -481,8 +481,8 @@ class RDBStorage(BaseStorage):
                         {value.step: value.intermediate_value for value in intermediate},
                         best_trial.trial_id,
                     )
-                user_attrs = _user_attrs.get(study.study_id, {})
-                system_attrs = _system_attrs.get(study.study_id, {})
+                user_attrs = _user_attrs.get(study.study_id, [])
+                system_attrs = _system_attrs.get(study.study_id, [])
                 study_summaries.append(
                     StudySummary(
                         study_name=study.study_name,
