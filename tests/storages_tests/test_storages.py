@@ -759,11 +759,12 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_all_study_summaries(storage_mode: str) -> None:
+@pytest.mark.parametrize("include_best_trial", [True, False])
+def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         expected_summaries, _ = _setup_studies(storage, n_study=10, n_trial=10, seed=46)
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=include_best_trial)
         assert len(summaries) == len(expected_summaries)
         for _, expected_summary in expected_summaries.items():
             summary: Optional[StudySummary] = None
@@ -778,9 +779,12 @@ def test_get_all_study_summaries(storage_mode: str) -> None:
             assert summary.n_trials == expected_summary.n_trials
             assert summary.user_attrs == expected_summary.user_attrs
             assert summary.system_attrs == expected_summary.system_attrs
-            if expected_summary.best_trial is not None:
-                assert summary.best_trial is not None
-                assert summary.best_trial == expected_summary.best_trial
+            if include_best_trial:
+                if expected_summary.best_trial is not None:
+                    assert summary.best_trial is not None
+                    assert summary.best_trial == expected_summary.best_trial
+            else:
+                assert summary.best_trial is None
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

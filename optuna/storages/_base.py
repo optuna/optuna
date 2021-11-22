@@ -294,7 +294,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_all_study_summaries(self) -> List[StudySummary]:
+    def get_all_study_summaries(self, include_best_trial: bool = True) -> List[StudySummary]:
         """Read a list of :class:`~optuna.study.StudySummary` objects.
 
         Returns:

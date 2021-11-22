@@ -1406,7 +1406,9 @@ def copy_study(
     to_study.add_trials(from_study.get_trials(deepcopy=False))
 
 
-def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[StudySummary]:
+def get_all_study_summaries(
+    storage: Union[str, storages.BaseStorage], include_best_trial: bool = True
+) -> List[StudySummary]:
     """Get all history of studies stored in a specified storage.
 
     Example:
@@ -1445,6 +1447,9 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
         storage:
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
             :func:`~optuna.study.create_study` for further details.
+        include_best_trial:
+            Include the best trials if exist. It potentially increases the number of queries and
+            may take longer to fetch summaries depending on the storage.
 
     Returns:
         List of study history summarized as :class:`~optuna.study.StudySummary` objects.
@@ -1456,4 +1461,4 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
     """
 
     storage = storages.get_storage(storage)
-    return storage.get_all_study_summaries()
+    return storage.get_all_study_summaries(include_best_trial=include_best_trial)

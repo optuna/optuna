@@ -188,11 +188,14 @@ class RedisStorage(BaseStorage):
 
         self._redis.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
 
-    def _get_study_summary(self, study_id: int) -> StudySummary:
+    def _get_study_summary(self, study_id: int, include_best_trial: bool = True) -> StudySummary:
 
         summary_pkl = self._redis.get(self._key_study_summary(study_id))
         assert summary_pkl is not None
-        return pickle.loads(summary_pkl)
+        summary = pickle.loads(summary_pkl)
+        if not include_best_trial:
+            summary.best_trial = None
+        return summary
 
     def _del_study_summary(self, study_id: int) -> None:
 
@@ -310,7 +313,7 @@ class RedisStorage(BaseStorage):
             self._key_study_param_distribution(study_id), pickle.dumps(param_distribution)
         )
 
-    def get_all_study_summaries(self) -> List[StudySummary]:
+    def get_all_study_summaries(self, include_best_trial: bool = True) -> List[StudySummary]:
 
         queries = []
         study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]
@@ -321,7 +324,10 @@ class RedisStorage(BaseStorage):
         summary_pkls = self._redis.mget(queries)
         for summary_pkl in summary_pkls:
             assert summary_pkl is not None
-            study_summaries.append(pickle.loads(summary_pkl))
+            summary = pickle.loads(summary_pkl)
+            if not include_best_trial:
+                summary.best_trial = None
+            study_summaries.append(summary)
 
         return study_summaries
 
