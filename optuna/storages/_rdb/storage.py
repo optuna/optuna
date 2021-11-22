@@ -1,3 +1,4 @@
+from collections import defaultdict
 from contextlib import contextmanager
 import copy
 from datetime import datetime
@@ -406,12 +407,22 @@ class RDBStorage(BaseStorage):
             ).select_from(orm.outerjoin(models.StudyModel, summarized_trial))
 
             study_summary = study_summary_stmt.all()
+
+            _directions = defaultdict(list)
+            for d in session.query(models.StudyDirectionModel).all():
+                _directions[d.study_id].append(d.direction)
+
+            _user_attrs = defaultdict(list)
+            for a in session.query(models.StudyUserAttributeModel).all():
+                _user_attrs[d.study_id].append(a)
+
+            _system_attrs = defaultdict(list)
+            for a in session.query(models.StudySystemAttributeModel).all():
+                _system_attrs[d.study_id].append(a)
+
             study_summaries = []
             for study in study_summary:
-                directions = [
-                    d.direction
-                    for d in models.StudyDirectionModel.where_study_id(study.study_id, session)
-                ]
+                directions = _directions[study.study_id]
                 best_trial: Optional[models.TrialModel] = None
                 try:
                     if len(directions) > 1:
@@ -470,10 +481,8 @@ class RDBStorage(BaseStorage):
                         {value.step: value.intermediate_value for value in intermediate},
                         best_trial.trial_id,
                     )
-                user_attrs = models.StudyUserAttributeModel.where_study_id(study.study_id, session)
-                system_attrs = models.StudySystemAttributeModel.where_study_id(
-                    study.study_id, session
-                )
+                user_attrs = _user_attrs.get(study.study_id, {})
+                system_attrs = _system_attrs.get(study.study_id, {})
                 study_summaries.append(
                     StudySummary(
                         study_name=study.study_name,
