@@ -69,7 +69,9 @@ class Trial(BaseTrial):
         if "relative_search_space" in trial_system_attrs:
             self._load_relative_params(study, trial, trial_system_attrs)
         else:
-            self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
+            self.relative_search_space = self.study.sampler.infer_relative_search_space(
+                study, trial
+            )
             self.relative_params = self.study.sampler.sample_relative(
                 study, trial, self.relative_search_space
             )
