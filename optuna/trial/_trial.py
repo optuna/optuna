@@ -13,6 +13,8 @@ from optuna import logging
 from optuna import pruners
 from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
+from optuna.distributions import distribution_to_json
+from optuna.distributions import json_to_distribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -63,10 +65,38 @@ class Trial(BaseTrial):
 
         study = pruners._filter_study(self.study, trial)
 
-        self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
-        self.relative_params = self.study.sampler.sample_relative(
-            study, trial, self.relative_search_space
-        )
+        trial_system_attrs = self.system_attrs
+        if "relative_search_space" in trial_system_attrs:
+            self._load_relative_params(study, trial, trial_system_attrs)
+        else:
+            self.relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
+            self.relative_params = self.study.sampler.sample_relative(
+                study, trial, self.relative_search_space
+            )
+            self._write_relative_search_space_and_params()
+
+    def _write_relative_search_space_and_params(self) -> None:
+        relative_search_space_dict = {
+            k: distribution_to_json(d) for k, d in self.relative_search_space.items()
+        }
+        self.set_system_attr("relative_search_space", relative_search_space_dict)
+        self.set_system_attr("relative_params", self.relative_params)
+
+    def _load_relative_params(
+        self,
+        study: "optuna.study.Study",
+        trial: "optuna.trial.FrozenTrial",
+        trial_system_attrs: Dict[str, Any],
+    ) -> None:
+        relative_search_space = self.study.sampler.infer_relative_search_space(study, trial)
+        relative_search_space_cache_key = "relative_search_space"
+        relative_search_space_from_cache = {
+            k: json_to_distribution(d)
+            for k, d in trial_system_attrs[relative_search_space_cache_key].items()
+        }
+        assert relative_search_space == relative_search_space_from_cache, "search space mismatch"
+        self.relative_search_space = relative_search_space
+        self.relative_params = trial_system_attrs["relative_params"]
 
     def suggest_float(
         self,
