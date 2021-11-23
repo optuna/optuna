@@ -20,8 +20,6 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
-from optuna.distributions import FloatDistribution
-
 
 with try_import() as _imports:
     import skopt
@@ -360,7 +358,7 @@ class _Optimizer(object):
 
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 param_value = (param_value - distribution.low) // distribution.q
-            if isinstance(distribution, FloatDistribution):
+            if isinstance(distribution, distributions.FloatDistribution):
                 if distribution.step is not None:
                     param_value = (param_value - distribution.low) // distribution.step
             if isinstance(distribution, distributions.IntUniformDistribution):
