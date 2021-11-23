@@ -298,6 +298,10 @@ class _ParzenEstimator:
             ):
                 samples = np.log(samples)
 
+            if isinstance(distribution, distributions.FloatDistribution):
+                if distribution.log:
+                    samples = np.log(samples)
+
             transformed[param_name] = samples
         return transformed
 
