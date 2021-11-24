@@ -126,7 +126,7 @@ class AllenNLPPruningCallback(TrainerCallback):
 
     .. note::
         Currently, build-in pruners are supported except for
-        :class:`~pruners.PatientPruner`.
+        :class:`~optuna.pruners.PatientPruner`.
 
     Args:
         trial:
