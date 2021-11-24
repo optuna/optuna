@@ -44,7 +44,7 @@ class _VariableManager:
     def prefix(self) -> str:
         return "{}_OPTUNA_ALLENNLP".format(self.target_pid)
 
-    def get_key(self, name: str) -> Optional[str]:
+    def _get_key(self, name: str) -> Optional[str]:
         return self.NAME_OF_KEY.get(name)
 
     def set_value(self, name: str, value: str) -> None:
@@ -53,7 +53,7 @@ class _VariableManager:
         `set_value` is only invoked in `optuna.integration.allennlp.AllenNLPExecutor`.
 
         """
-        key = self.get_key(name)
+        key = self._get_key(name)
         name_of_path = "optuna.integration.allennlp._variables._VariableManager.NAME_OF_KEY"
         assert key is not None, f"{name} is not found in `{name_of_path}`."
 
@@ -66,7 +66,7 @@ class _VariableManager:
         `get_value` is only called in `optuna.integration.allennlp.AllenNLPPruningCallback`.
 
         """
-        key = self.get_key(name)
+        key = self._get_key(name)
         name_of_path = "optuna.integration.allennlp._variables._VariableManager.NAME_OF_KEY"
         assert key is not None, f"{name} is not found in `{name_of_path}`."
 
