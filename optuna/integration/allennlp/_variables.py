@@ -47,7 +47,8 @@ class _VariableManager:
 
     def _get_key(self, name: str) -> str:
         key = self.NAME_OF_KEY.get(name)
-        assert key is not None, f"{name} is not found in `{self.NAME_OF_PATH}`."
+        if key is None:
+            raise KeyError(f"{name} is not found in `{self.NAME_OF_PATH}`.")
         return key
 
     def set_value(self, name: str, value: str) -> None:
