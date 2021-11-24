@@ -10,6 +10,7 @@ from typing import Union
 from unittest import mock
 import warnings
 
+from lightgbm import log_evaluation
 import numpy as np
 import pytest
 import sklearn.datasets
@@ -449,10 +450,7 @@ class TestLightGBMTuner(object):
 
     def test_tune_num_leaves_negative_max_depth(self) -> None:
 
-        params: Dict[str, Any] = {
-            "metric": "binary_logloss",
-            "max_depth": -1,
-        }
+        params: Dict[str, Any] = {"metric": "binary_logloss", "max_depth": -1, "verbose": -1}
         X_trn = np.random.uniform(10, size=(10, 5))
         y_trn = np.random.randint(2, size=10)
         train_dataset = lgb.Dataset(X_trn, label=y_trn)
@@ -464,6 +462,7 @@ class TestLightGBMTuner(object):
             num_boost_round=3,
             early_stopping_rounds=2,
             valid_sets=valid_dataset,
+            callbacks=[log_evaluation(-1)],
         )
         runner.tune_num_leaves()
         assert len(runner.study.trials) == 20
@@ -550,7 +549,9 @@ class TestLightGBMTuner(object):
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
-        tuner = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
+        tuner = LightGBMTuner(
+            params, dataset, valid_sets=dataset, study=study, callbacks=[log_evaluation(-1)]
+        )
 
         with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=1.0):
             tuner.tune_regularization_factors()
@@ -591,6 +592,7 @@ class TestLightGBMTuner(object):
                 valid_sets=dataset,
                 study=study,
                 verbosity=verbosity,
+                callbacks=[log_evaluation(-1)],
                 time_budget=1,
             )
 
@@ -611,6 +613,7 @@ class TestLightGBMTuner(object):
             dataset,
             valid_sets=dataset,
             study=study,
+            callbacks=[log_evaluation(-1)],
             time_budget=1,
             show_progress_bar=show_progress_bar,
         )
@@ -629,7 +632,9 @@ class TestLightGBMTuner(object):
         dataset = lgb.Dataset(np.zeros((10, 10)))
 
         study = optuna.create_study()
-        tuner = LightGBMTuner(params, dataset, valid_sets=dataset, study=study)
+        tuner = LightGBMTuner(
+            params, dataset, valid_sets=dataset, study=study, callbacks=[log_evaluation(-1)]
+        )
 
         with pytest.raises(ValueError):
             tuner.get_best_booster()
@@ -663,7 +668,12 @@ class TestLightGBMTuner(object):
         study = optuna.create_study()
         with TemporaryDirectory() as tmpdir:
             tuner = LightGBMTuner(
-                params, dataset, valid_sets=dataset, study=study, model_dir=tmpdir
+                params,
+                dataset,
+                valid_sets=dataset,
+                study=study,
+                model_dir=tmpdir,
+                callbacks=[log_evaluation(-1)],
             )
 
             with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=0.0):
@@ -723,7 +733,12 @@ class TestLightGBMTuner(object):
 
         study = optuna.create_study()
         tuner = LightGBMTuner(
-            params, dataset, valid_sets=dataset, study=study, optuna_callbacks=[callback_mock]
+            params,
+            dataset,
+            valid_sets=dataset,
+            study=study,
+            callbacks=[log_evaluation(-1)],
+            optuna_callbacks=[callback_mock],
         )
 
         with mock.patch.object(_BaseTuner, "_get_booster_best_score", return_value=1.0):
@@ -754,6 +769,7 @@ class TestLightGBMTuner(object):
             valid_sets=valid,
             early_stopping_rounds=3,
             optuna_seed=10,
+            callbacks=[log_evaluation(-1)],
         )
         tuner_first_try.run()
         best_score_first_try = tuner_first_try.best_score
@@ -764,6 +780,7 @@ class TestLightGBMTuner(object):
             valid_sets=valid,
             early_stopping_rounds=3,
             optuna_seed=10,
+            callbacks=[log_evaluation(-1)],
         )
         tuner_second_try.run()
         best_score_second_try = tuner_second_try.best_score
