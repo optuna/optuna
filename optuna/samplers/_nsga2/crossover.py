@@ -2,6 +2,7 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Sequence
 
 import numpy as np
@@ -38,7 +39,7 @@ def try_crossover(
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
     numerical_search_space: Dict[str, BaseDistribution],
     numerical_distributions: List[BaseDistribution],
-    numerical_transform: _SearchSpaceTransform,
+    numerical_transform: Optional[_SearchSpaceTransform],
 ) -> Dict[str, Any]:
 
     parents = _select_parents(crossover_name, study, parent_population, rng, dominates)
@@ -54,7 +55,7 @@ def try_crossover(
             )
             child_params[param_name] = param
 
-    if len(numerical_distributions) == 0:
+    if numerical_transform is None:
         return child_params
 
     # The following is applied only for numerical parameters.
@@ -141,6 +142,7 @@ def crossover(
             numerical_search_space[key] = value
             numerical_distributions.append(value)
 
+    numerical_transform: Optional[_SearchSpaceTransform] = None
     if len(numerical_distributions) != 0:
         numerical_transform = _SearchSpaceTransform(numerical_search_space)
 

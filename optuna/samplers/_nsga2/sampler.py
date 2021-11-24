@@ -239,7 +239,7 @@ class NSGAIISampler(BaseSampler):
                 # The `untransform` method of `optuna._transform._SearchSpaceTransform`
                 # does not assume a single value,
                 # so single value objects are not sampled with the `sample_relative` method,
-                # but with the `sample_ independent` method.
+                # but with the `sample_independent` method.
                 continue
             search_space[name] = distribution
         return search_space
