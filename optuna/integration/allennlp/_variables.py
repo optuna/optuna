@@ -68,6 +68,6 @@ class _VariableManager:
         """
         key = self._get_key(name).format(self.target_pid)
         value = os.environ.get(key)
-        assert value is not None, f"{key} is not found in environment variables."
-
-        return value
+        if value is None:
+            raise KeyError(f"{key} is not found in environment variables.")
+        return json.loads(value)
