@@ -75,18 +75,20 @@ def test_trials_dataframe(storage_mode: str, attrs: Tuple[str, ...], multi_index
             df.set_index("number", inplace=True, drop=False)
         assert len(df) == 3
 
-        # Number columns are as follows (total of 13):
+        # Number columns are as follows (total of 15):
         #   non-nested: 6 (number, value, state, datetime_start, datetime_complete, duration)
         #   params: 2
         #   distributions: 2
         #   user_attrs: 1
-        #   system_attrs: 1
+        #   system_attrs: 3
         #   intermediate_values: 1
         expected_n_columns = len(attrs)
         if "params" in attrs:
             expected_n_columns += 1
         if "distributions" in attrs:
             expected_n_columns += 1
+        if "system_attrs" in attrs:
+            expected_n_columns += 2
         assert len(df.columns) == expected_n_columns
 
         for i in range(3):
@@ -141,8 +143,8 @@ def test_trials_dataframe_with_failure(storage_mode: str) -> None:
         # Change index to access rows via trial number.
         df.set_index("number", inplace=True, drop=False)
         assert len(df) == 3
-        # non-nested: 6, params: 2, user_attrs: 1 system_attrs: 0
-        assert len(df.columns) == 9
+        # non-nested: 6, params: 2, user_attrs: 1 system_attrs: 2
+        assert len(df.columns) == 11
         for i in range(3):
             assert df.number[i] == i
             assert df.state[i] == "FAIL"
