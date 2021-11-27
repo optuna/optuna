@@ -13,13 +13,13 @@ from optuna import logging
 from optuna import pruners
 from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
-from optuna.distributions import distribution_to_json
-from optuna.distributions import json_to_distribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import distribution_to_json
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
+from optuna.distributions import json_to_distribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
