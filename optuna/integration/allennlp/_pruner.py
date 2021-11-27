@@ -2,8 +2,8 @@ import os
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
-from typing import Union
 
 from packaging import version
 
@@ -15,7 +15,6 @@ from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.integration.allennlp._variables import _VariableManager
 from optuna.integration.allennlp._variables import OPTUNA_ALLENNLP_DISTRIBUTED_FLAG
-from optuna.integration.allennlp._variables import SPECIAL_DELIMITER as DELIMITER
 
 
 with try_import() as _imports:
@@ -53,9 +52,9 @@ else:
 
 
 def _create_pruner(
-    pruner_class: Optional[str],
-    pruner_keys: Optional[str],
-    pruner_values: Optional[str],
+    pruner_class: str,
+    pruner_keys: List[str],
+    pruner_values: List[Any],
 ) -> Optional[pruners.BasePruner]:
 
     """Restore a pruner which is defined in `create_study`.
@@ -68,37 +67,9 @@ def _create_pruner(
     re-create the same pruner in `AllenNLPPruningCallback`.
 
     """
-    if pruner_class is None:
-        return None
-
-    pruner_params = _construct_pruner_kwargs(pruner_keys, pruner_values)
+    pruner_params = {k: v for k, v in zip(pruner_keys, pruner_values)}
     pruner = getattr(pruners, pruner_class, None)
-
-    if pruner is None:
-        return None
-
     return pruner(**pruner_params)
-
-
-def _construct_pruner_kwargs(
-    keys_str: Optional[str],
-    values_str: Optional[str],
-) -> Dict[str, Optional[Union[str, int, float, bool]]]:
-
-    # keys would be empty when `_PRUNER_CLASS` is `NopPruner`
-    if keys_str is None or keys_str == "":
-        return {}
-
-    assert values_str is not None
-
-    keys = keys_str.split(DELIMITER)
-    values = values_str.split(DELIMITER)
-
-    kwargs = {}
-    for key, value in zip(keys, values):
-        kwargs[key] = eval(value)
-
-    return kwargs
 
 
 @experimental("2.0.0")
@@ -212,7 +183,7 @@ class AllenNLPPruningCallback(TrainerCallback):
                     storage,
                     pruner=pruner,
                 )
-                self._trial = Trial(study, int(trial_id))
+                self._trial = Trial(study, trial_id)
                 self._monitor = monitor
 
     def on_epoch(

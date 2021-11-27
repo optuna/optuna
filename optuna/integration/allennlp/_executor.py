@@ -14,7 +14,6 @@ from optuna._imports import try_import
 from optuna.integration.allennlp._environment import _environment_variables
 from optuna.integration.allennlp._variables import _VariableManager
 from optuna.integration.allennlp._variables import OPTUNA_ALLENNLP_DISTRIBUTED_FLAG
-from optuna.integration.allennlp._variables import SPECIAL_DELIMITER as DELIMITER
 
 
 with try_import() as _imports:
@@ -165,17 +164,15 @@ class AllenNLPExecutor(object):
         variable_manager = _VariableManager(target_pid)
 
         pruner_params = _fetch_pruner_config(trial)
-        pruner_params = {key: repr(value) for key, value in pruner_params.items()}
-
         variable_manager.set_value("study_name", trial.study.study_name)
-        variable_manager.set_value("trial_id", str(trial._trial_id))
+        variable_manager.set_value("trial_id", trial._trial_id)
         variable_manager.set_value("storage_name", url)
         variable_manager.set_value("monitor", metrics)
 
         if trial.study.pruner is not None:
             variable_manager.set_value("pruner_class", type(trial.study.pruner).__name__)
-            variable_manager.set_value("pruner_keys", DELIMITER.join(pruner_params.keys()))
-            variable_manager.set_value("pruner_values", DELIMITER.join(pruner_params.values()))
+            variable_manager.set_value("pruner_keys", list(pruner_params.keys()))
+            variable_manager.set_value("pruner_values", list(pruner_params.values()))
 
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.
