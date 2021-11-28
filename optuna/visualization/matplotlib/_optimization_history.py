@@ -77,6 +77,9 @@ def plot_optimization_history(
         target_name:
             Target's name to display on the axis label and the legend.
 
+        error_bar:
+            A flag to show the error bar.
+
     Returns:
         A :class:`matplotlib.axes.Axes` object.
 
@@ -154,7 +157,7 @@ def _get_optimization_histories_with_error_bar(
         ]
     )
 
-    _target: Callable[[FrozenTrial,], float]
+    _target: Callable[[FrozenTrial], float]
     if target is None:
 
         def _target(t: FrozenTrial) -> float:
@@ -184,7 +187,6 @@ def _get_optimization_histories_with_error_bar(
         color="tab:blue",
     )
     ax.scatter(trial_numbers, means, color="tab:blue", label=target_name)
-
 
     if target is None:
         best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
