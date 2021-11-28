@@ -112,7 +112,7 @@ def get_verbosity() -> int:
             # ...
 
         .. testoutput::
-            :hide:
+           :hide:
 
            20
            20
