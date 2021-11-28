@@ -352,7 +352,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 If the trial is already finished.
         """
         now = datetime.now()
-        return self.set_trial_state(trial_id, state, now)
+        return self._set_trial_state(trial_id, state, now)
 
     @abc.abstractmethod
     def _set_trial_state(self, trial_id: int, state: TrialState, now: datetime) -> bool:
