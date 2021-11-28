@@ -35,6 +35,8 @@ jobs:
     - name: isort
       run: isort . --check --diff
     - name: mypy
-      run: mypy .
+      run: |
+        mypy --install-types --non-interactive
+        mypy .
     - name: blackdoc
       run: blackdoc . --check --diff
