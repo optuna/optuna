@@ -50,9 +50,7 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
-        # tutorials.
-        "checking": ["black", "hacking", "isort", "mypy==0.790", "blackdoc"],
+        "checking": ["black", "hacking", "isort", "mypy", "blackdoc"],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
