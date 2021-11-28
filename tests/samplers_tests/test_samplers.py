@@ -20,7 +20,6 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
@@ -403,7 +402,6 @@ def test_sample_relative_mixed(
             (
                 IntUniformDistribution,
                 IntLogUniformDistribution,
-                IntDistribution,
                 CategoricalDistribution,
             ),
         ):

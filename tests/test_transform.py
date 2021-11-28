@@ -8,7 +8,6 @@ from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
@@ -116,14 +115,6 @@ def test_search_space_transform_numerical(
             expected_low -= half_step
             expected_high += half_step
         if transform_log:
-            expected_low = math.log(expected_low)
-            expected_high = math.log(expected_high)
-    elif isinstance(distribution, IntDistribution):
-        if transform_step:
-            half_step = 0.5 * distribution.step
-            expected_low -= half_step
-            expected_high += half_step
-        if distribution.log and transform_step:
             expected_low = math.log(expected_low)
             expected_high = math.log(expected_high)
 
