@@ -216,7 +216,7 @@ class InMemoryStorage(BaseStorage):
             datetime_complete=None,
         )
 
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
+    def _set_trial_state(self, trial_id: int, state: TrialState, now: datetime) -> bool:
 
         with self._lock:
             trial = self._get_trial(trial_id)
@@ -231,10 +231,10 @@ class InMemoryStorage(BaseStorage):
             trial.state = state
 
             if state == TrialState.RUNNING:
-                trial.datetime_start = datetime.now()
+                trial.datetime_start = now
 
             if state.is_finished():
-                trial.datetime_complete = datetime.now()
+                trial.datetime_complete = now
                 self._set_trial(trial_id, trial)
                 study_id = self._trial_id_to_study_id_and_number[trial_id][0]
                 self._update_cache(trial_id, study_id)

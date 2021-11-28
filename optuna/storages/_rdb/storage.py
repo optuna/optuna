@@ -769,7 +769,7 @@ class RDBStorage(BaseStorage):
 
         return True
 
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
+    def _set_trial_state(self, trial_id: int, state: TrialState, now: datetime) -> bool:
 
         try:
             with _create_scoped_session(self.scoped_session) as session:
@@ -782,10 +782,10 @@ class RDBStorage(BaseStorage):
                 trial.state = state
 
                 if state == TrialState.RUNNING:
-                    trial.datetime_start = datetime.now()
+                    trial.datetime_start = now
 
                 if state.is_finished():
-                    trial.datetime_complete = datetime.now()
+                    trial.datetime_complete = now
         except IntegrityError:
             return False
         return True

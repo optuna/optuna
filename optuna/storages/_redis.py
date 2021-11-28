@@ -380,7 +380,7 @@ class RedisStorage(BaseStorage):
             datetime_complete=None,
         )
 
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
+    def _set_trial_state(self, trial_id: int, state: TrialState, now: datetime) -> bool:
 
         self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
@@ -392,10 +392,10 @@ class RedisStorage(BaseStorage):
         trial.state = state
 
         if state == TrialState.RUNNING:
-            trial.datetime_start = datetime.now()
+            trial.datetime_start = now
 
         if state.is_finished():
-            trial.datetime_complete = datetime.now()
+            trial.datetime_complete = now
             self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
             self._update_cache(trial_id)
 

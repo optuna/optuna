@@ -1,4 +1,5 @@
 import abc
+from datetime import datetime
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -336,6 +337,34 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 ID of the trial.
             state:
                 New state of the trial.
+
+        Returns:
+            :obj:`True` if the state is successfully updated.
+            :obj:`False` if the state is kept the same.
+            The latter happens when this method tries to update the state of
+            :obj:`~optuna.trial.TrialState.RUNNING` trial to
+            :obj:`~optuna.trial.TrialState.RUNNING`.
+
+        Raises:
+            :exc:`KeyError`:
+                If no trial with the matching ``trial_id`` exists.
+            :exc:`RuntimeError`:
+                If the trial is already finished.
+        """
+        now = datetime.now()
+        return self.set_trial_state(trial_id, state, now)
+
+    @abc.abstractmethod
+    def _set_trial_state(self, trial_id: int, state: TrialState, now: datetime) -> bool:
+        """Update the state of a trial.
+
+        Args:
+            trial_id:
+                ID of the trial.
+            state:
+                New state of the trial.
+            now:
+                Current time to set trial state
 
         Returns:
             :obj:`True` if the state is successfully updated.
