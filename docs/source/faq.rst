@@ -429,5 +429,6 @@ You can verify the transformation by calculating the elements of the Jacobian.
 How can I optimize a model with some constraints?
 -------------------------------------------------
 
-When you want to optimize a model with constraints :math:`c0` and :math:`c1`, you can use the following classes, :class:`~optuna.integration.BoTorchSampler` or :class:`~optuna.samplers.NSGAIISampler`.
-An example using the former class is `this <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`.
+When you want to optimize a model with constraints, you can use the following classes, :class:`~optuna.integration.BoTorchSampler` or :class:`~optuna.samplers.NSGAIISampler`.
+An example using the former class is `this <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`. This example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints. This one has two constraints :math:`c0 = (x-5)^2 + y^2 - 25` and :math:`c1 = -((x - 8)^2) - (y + 3)^2 + 7.7` and find the optimal solution satisfying these conditions.
+
