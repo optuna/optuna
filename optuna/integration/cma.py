@@ -17,6 +17,7 @@ from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
@@ -250,6 +251,14 @@ class PyCmaSampler(BaseSampler):
             elif isinstance(distribution, CategoricalDistribution):
                 index = (len(distribution.choices) - 1) // 2
                 x0[name] = distribution.choices[index]
+            elif isinstance(distribution, IntDistribution):
+                if distribution.log:
+                    log_high = math.log(distribution.high)
+                    log_low = math.log(distribution.low)
+                    x0[name] = math.exp(numpy.mean([log_high, log_low]))
+                else:
+                    x0[name] = int(numpy.mean([distribution.high, distribution.low]))
+
             else:
                 raise NotImplementedError(
                     "The distribution {} is not implemented.".format(distribution)
@@ -271,6 +280,13 @@ class PyCmaSampler(BaseSampler):
                 log_high = math.log(distribution.high)
                 log_low = math.log(distribution.low)
                 sigma0s.append((log_high - log_low) / 6)
+            elif isinstance(distribution, IntDistribution):
+                if distribution.log:
+                    log_high = math.log(distribution.high)
+                    log_low = math.log(distribution.low)
+                    sigma0s.append((log_high - log_low) / 6)
+                else:
+                    sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, CategoricalDistribution):
                 sigma0s.append((len(distribution.choices) - 1) / 6)
             else:
@@ -339,6 +355,13 @@ class _Optimizer(object):
             elif isinstance(dist, IntLogUniformDistribution):
                 lows.append(self._to_cma_params(search_space, param_name, dist.low - 0.5))
                 highs.append(self._to_cma_params(search_space, param_name, dist.high + 0.5))
+            elif isinstance(dist, IntDistribution):
+                if dist.log:
+                    lows.append(self._to_cma_params(search_space, param_name, dist.low - 0.5))
+                    highs.append(self._to_cma_params(search_space, param_name, dist.high + 0.5))
+                else:
+                    lows.append(dist.low - 0.5 * dist.step)
+                    highs.append(dist.high + 0.5 * dist.step)
             else:
                 raise NotImplementedError("The distribution {} is not implemented.".format(dist))
 
@@ -478,6 +501,15 @@ class _Optimizer(object):
             exp_value = math.exp(cma_param_value)
             v = numpy.round(exp_value)
             return int(min(max(v, dist.low), dist.high))
+        if isinstance(dist, IntDistribution):
+            if dist.log:
+                exp_value = math.exp(cma_param_value)
+                v = numpy.round(exp_value)
+                return int(min(max(v, dist.low), dist.high))
+            else:
+                r = numpy.round((cma_param_value - dist.low) / dist.step)
+                v = r * dist.step + dist.low
+                return int(v)
 
         if isinstance(dist, CategoricalDistribution):
             v = int(numpy.round(cma_param_value))

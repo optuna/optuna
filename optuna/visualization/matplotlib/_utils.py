@@ -2,6 +2,7 @@ from typing import List
 
 from optuna._experimental import experimental
 from optuna.distributions import CategoricalDistribution
+from optuna.distributions import IntDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.trial import FrozenTrial
 from optuna.visualization.matplotlib import _matplotlib_imports
@@ -30,11 +31,18 @@ def is_available() -> bool:
 
 def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
 
-    return any(
-        isinstance(t.distributions[param], LogUniformDistribution)
-        for t in trials
-        if param in t.params
-    )
+    for trial in trials:
+        if param in trial.params:
+            dist = trial.distributions[param]
+
+            if isinstance(dist, LogUniformDistribution):
+                return True
+
+            elif isinstance(dist, IntDistribution):
+                if dist.log:
+                    return True
+
+    return False
 
 
 def _is_categorical(trials: List[FrozenTrial], param: str) -> bool:

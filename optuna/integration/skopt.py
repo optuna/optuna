@@ -258,6 +258,14 @@ class _Optimizer(object):
                 low = distribution.low - 0.5
                 high = distribution.high + 0.5
                 dimension = space.Real(low, high, prior="log-uniform")
+            elif isinstance(distribution, distributions.IntDistribution):
+                if distribution.log:
+                    low = distribution.low - 0.5
+                    high = distribution.high + 0.5
+                    dimension = space.Real(low, high, prior="log-uniform")
+                else:
+                    count = (distribution.high - distribution.low) // distribution.step
+                    dimension = space.Integer(0, count)
             elif isinstance(distribution, distributions.DiscreteUniformDistribution):
                 count = int((distribution.high - distribution.low) // distribution.q)
                 dimension = space.Integer(0, count)
@@ -346,6 +354,9 @@ class _Optimizer(object):
                 param_value = (param_value - distribution.low) // distribution.q
             if isinstance(distribution, distributions.IntUniformDistribution):
                 param_value = (param_value - distribution.low) // distribution.step
+            if isinstance(distribution, distributions.IntDistribution):
+                if not distribution.log:
+                    param_value = param_value - distribution.low
 
             param_values.append(param_value)
 
