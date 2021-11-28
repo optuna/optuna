@@ -31,6 +31,7 @@ def plot_optimization_history(
     *,
     target: Optional[Callable[[FrozenTrial], float]] = None,
     target_name: str = "Objective Value",
+    error_bar: bool = False,
 ) -> "Axes":
     """Plot optimization history of all trials in a study with Matplotlib.
 
@@ -92,13 +93,14 @@ def plot_optimization_history(
     else:
         studies = list(study)
     _check_plot_args(study, target, target_name)
-    return _get_optimization_history_plot(studies, target, target_name)
+    return _get_optimization_history_plot(studies, target, target_name, error_bar)
 
 
 def _get_optimization_history_plot(
     studies: List[Study],
     target: Optional[Callable[[FrozenTrial], float]],
     target_name: str,
+    error_bar: bool = False,
 ) -> "Axes":
 
     # Set up the graph style.
@@ -128,8 +130,94 @@ def _get_optimization_history_plot(
         _logger.warning("Study instance does not contain trials.")
         return ax
 
-    ax = _get_optimization_histories(studies, target, target_name, ax)
-    plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
+    if error_bar:
+        ax = _get_optimization_histories_with_error_bar(studies, target, target_name, ax)
+    else:
+        ax = _get_optimization_histories(studies, target, target_name, ax)
+        plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
+    return ax
+
+
+def _get_optimization_histories_with_error_bar(
+    studies: List[Study],
+    target: Optional[Callable[[FrozenTrial], float]],
+    target_name: str,
+    ax: "Axes",
+) -> "Axes":
+
+    max_trial_number = np.max(
+        [
+            trial.number
+            for study in studies
+            for trial in study.get_trials(states=(TrialState.COMPLETE,))
+        ]
+    )
+
+    _target: Callable[
+        [
+            FrozenTrial,
+        ],
+        float,
+    ]
+    if target is None:
+
+        def _target(t: FrozenTrial) -> float:
+            return cast(float, t.value)
+
+    else:
+        _target = target
+
+    target_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
+    for study in studies:
+        trials = study.get_trials(states=(TrialState.COMPLETE,))
+        for t in trials:
+            target_values[t.number].append(_target(t))
+
+    mean_of_target_values = [np.mean(v) if len(v) > 0 else None for v in target_values]
+    std_of_target_values = [np.std(v) if len(v) > 0 else None for v in target_values]
+    trial_numbers = np.arange(max_trial_number + 2)[[v is not None for v in mean_of_target_values]]
+    means = np.asarray(mean_of_target_values)[trial_numbers]
+    stds = np.asarray(std_of_target_values)[trial_numbers]
+
+    plt.errorbar(
+        x=trial_numbers,
+        y=means,
+        yerr=stds,
+        capsize=5,
+        fmt="o",
+        color="tab:blue",
+    )
+    plt.scatter(trial_numbers, means, color="tab:blue", label="Object Value")
+
+    if target is None:
+        best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
+
+        for study in studies:
+            trials = study.get_trials(states=(TrialState.COMPLETE,))
+            if study.direction == StudyDirection.MINIMIZE:
+                best_vs = np.minimum.accumulate([cast(float, t.values) for t in trials])
+            else:
+                best_vs = np.miximum.accumulate([cast(float, t.values) for t in trials])
+
+            for i, t in enumerate(trials):
+                best_values[t.number].append(best_vs[i])
+
+        mean_of_best_values = [np.mean(v) if len(v) > 0 else None for v in best_values]
+        std_of_best_values = [np.std(v) if len(v) > 0 else None for v in best_values]
+        means = np.asarray(mean_of_best_values)[trial_numbers]
+        stds = np.asarray(std_of_best_values)[trial_numbers]
+
+        ax.plot(trial_numbers, means, color="tab:red", label="Best Value")
+        ax.fill_between(
+            x=trial_numbers,
+            y1=np.array(means - stds, float),
+            y2=np.array(means + stds, float),
+            color="tab:red",
+            alpha=0.4,
+        )
+
+        ax.legend()
+
     return ax
 
 
