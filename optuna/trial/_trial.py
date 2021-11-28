@@ -127,7 +127,12 @@ class Trial(BaseTrial):
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is included in the range.
+                Upper endpoint of the range of suggested values. ``high`` is excluded from the
+                range.
+
+                .. note::
+                    If ``step`` is specified, ``high`` is included as well as ``low``.
+
             step:
                 A step of discretization.
 
@@ -150,9 +155,6 @@ class Trial(BaseTrial):
 
         Returns:
             A suggested float value.
-
-        .. seealso::
-            :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
         if step is not None:
@@ -172,7 +174,7 @@ class Trial(BaseTrial):
 
         return self._suggest(name, distribution)
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -186,7 +188,8 @@ class Trial(BaseTrial):
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is included in the range.
+                Upper endpoint of the range of suggested values. ``high`` is excluded from the
+                range.
 
         Returns:
             A suggested float value.
@@ -194,7 +197,7 @@ class Trial(BaseTrial):
 
         return self.suggest_float(name, low, high)
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
@@ -208,7 +211,8 @@ class Trial(BaseTrial):
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is included in the range.
+                Upper endpoint of the range of suggested values. ``high`` is excluded from the
+                range.
 
         Returns:
             A suggested float value.
@@ -216,7 +220,7 @@ class Trial(BaseTrial):
 
         return self.suggest_float(name, low, high, log=True)
 
-    @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
+    @deprecated("2.11.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         """Suggest a value for the discrete parameter.
 
@@ -323,9 +327,6 @@ class Trial(BaseTrial):
         Raises:
             :exc:`ValueError`:
                 If ``step != 1`` and ``log = True`` are specified.
-
-        .. seealso::
-            :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
         if step != 1:
@@ -395,9 +396,6 @@ class Trial(BaseTrial):
 
         Returns:
             A suggested value.
-
-        .. seealso::
-            :ref:`configurations` tutorial describes more details and flexible usages.
         """
         # There is no need to call self._check_distribution because
         # CategoricalDistribution does not support dynamic value space.
@@ -469,6 +467,10 @@ class Trial(BaseTrial):
         Raises:
             :exc:`NotImplementedError`:
                 If trial is being used for multi-objective optimization.
+            :exe:`ValueError`:
+                If ``step is not None`` is specified.
+            :exe:`TypeError`:
+                If ``value of type but a float`` is specified.
         """
 
         if len(self.study.directions) > 1:
@@ -537,10 +539,6 @@ class Trial(BaseTrial):
         """Set user attributes to the trial.
 
         The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
-
-        .. seealso::
-
-            See the recipe on :ref:`attributes`.
 
         Example:
 
