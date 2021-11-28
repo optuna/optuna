@@ -188,11 +188,11 @@ def _get_optimization_histories_with_error_bar(
         fmt="o",
         color="tab:blue",
     )
-    plt.scatter(trial_numbers, means, color="tab:blue", label="Object Value")
+    ax.scatter(trial_numbers, means, color="tab:blue", label=target_name)
+
+    best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
 
     if target is None:
-        best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
-
         for study in studies:
             trials = study.get_trials(states=(TrialState.COMPLETE,))
             if study.direction == StudyDirection.MINIMIZE:
