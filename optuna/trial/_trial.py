@@ -470,7 +470,7 @@ class Trial(BaseTrial):
             :exc:`NotImplementedError`:
                 If trial is being used for multi-objective optimization.
             :exe:`ValueError`:
-                If ``step is negative`` is specified.
+                If ``step`` is negative.
             :exe:`TypeError`:
                 If the type of ``value`` is not obj:`float`.
         """
