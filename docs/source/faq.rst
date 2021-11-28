@@ -486,8 +486,6 @@ The following example is a benchmark of Binh and Korn function, a multi-objectiv
 
 If you are interested in the exmaple for :class:`~optuna.integration.BoTorchSampler`, please refer to `this sample code <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_.
 
-How can I prevent sampling of certain hyperparameters?
-------------------------------------------------------
 
 There are two kinds of constrained optimizations, one with soft constraints and the other with hard constraints.
 Soft constraints do not have to be satisfied, but an objective function is penalized if they are unsatisfied. On the other hand, hard constraints must be satisfied.
