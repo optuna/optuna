@@ -438,6 +438,7 @@ This is the example that uses the latter one.
 
     import optuna
 
+
     def objective(trial):
         # Binh and Korn function with constraints.
         x = trial.suggest_float("x", -15, 30)
@@ -462,30 +463,27 @@ This is the example that uses the latter one.
         return trial.user_attrs["constraint"]
 
 
-    if __name__ == "__main__":
-        sampler = optuna.samplers.NSGAIISampler(
-            constraints_func=constraints,
-        )
-        study = optuna.create_study(
-            directions=["minimize", "minimize"],
-            sampler=sampler,
-        )
-        study.optimize(objective, n_trials=32, timeout=600)
+    sampler = optuna.samplers.NSGAIISampler(constraints_func=constraints)
+    study = optuna.create_study(
+        directions=["minimize", "minimize"],
+        sampler=sampler,
+    )
+    study.optimize(objective, n_trials=32, timeout=600)
 
-        print("Number of finished trials: ", len(study.trials))
+    print("Number of finished trials: ", len(study.trials))
 
-        print("Pareto front:")
+    print("Pareto front:")
 
-        trials = sorted(study.best_trials, key=lambda t: t.values)
+    trials = sorted(study.best_trials, key=lambda t: t.values)
 
-        for trial in trials:
-            print("  Trial#{}".format(trial.number))
-            print(
-                "    Values: Values={}, Constraint={}".format(
-                    trial.values, trial.user_attrs["constraint"][0]
-                )
+    for trial in trials:
+        print("  Trial#{}".format(trial.number))
+        print(
+            "    Values: Values={}, Constraint={}".format(
+                trial.values, trial.user_attrs["constraint"][0]
             )
-            print("    Params: {}".format(trial.params))
+        )
+        print("    Params: {}".format(trial.params))
 
 How can I prevent sampling of certain hyperparameters?
 ------------------------------------------------------
