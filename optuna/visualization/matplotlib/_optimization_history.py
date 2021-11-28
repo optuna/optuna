@@ -198,7 +198,7 @@ def _get_optimization_histories_with_error_bar(
             if study.direction == StudyDirection.MINIMIZE:
                 best_vs = np.minimum.accumulate([cast(float, t.values) for t in trials])
             else:
-                best_vs = np.miximum.accumulate([cast(float, t.values) for t in trials])
+                best_vs = np.maximum.accumulate([cast(float, t.values) for t in trials])
 
             for i, t in enumerate(trials):
                 best_values[t.number].append(best_vs[i])
