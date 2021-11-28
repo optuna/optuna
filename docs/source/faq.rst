@@ -485,7 +485,7 @@ This is the example that uses the former one.
         )
         print("    Params: {}".format(trial.params))
 
-If you are interested in the former one, please refer to `this sample code <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_.
+If you are interested in the latter one, please refer to `this sample code <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_.
 
 How can I prevent sampling of certain hyperparameters?
 ------------------------------------------------------
