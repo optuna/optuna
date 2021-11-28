@@ -145,7 +145,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
         study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.get_lines()) == 4
-    
+
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert legend_texts[0] == "Best Value"
     assert legend_texts[1] == "Objective Value"
