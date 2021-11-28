@@ -740,7 +740,6 @@ def test_optimize_progbar_n_trials_prioritized(capsys: _pytest.capture.CaptureFi
 
 
 def test_optimize_progbar_no_constraints(capsys: _pytest.capture.CaptureFixture) -> None:
-
     def _objective(trial: Trial) -> float:
         if trial.number == 5:
             trial.study.stop()
