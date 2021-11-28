@@ -154,12 +154,7 @@ def _get_optimization_histories_with_error_bar(
         ]
     )
 
-    _target: Callable[
-        [
-            FrozenTrial,
-        ],
-        float,
-    ]
+    _target: Callable[[FrozenTrial,], float]
     if target is None:
 
         def _target(t: FrozenTrial) -> float:
@@ -190,9 +185,9 @@ def _get_optimization_histories_with_error_bar(
     )
     ax.scatter(trial_numbers, means, color="tab:blue", label=target_name)
 
-    best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
 
     if target is None:
+        best_values: List[List[float]] = [[] for _ in range(max_trial_number + 2)]
         for study in studies:
             trials = study.get_trials(states=(TrialState.COMPLETE,))
             if study.direction == StudyDirection.MINIMIZE:
