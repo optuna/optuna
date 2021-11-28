@@ -20,6 +20,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import IntDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
@@ -224,6 +225,12 @@ def test_discrete_uniform(
         IntUniformDistribution(-10, 10, 2),
         IntUniformDistribution(0, 10, 2),
         IntUniformDistribution(-10, 0, 2),
+        IntDistribution(-10, 10),
+        IntDistribution(0, 10),
+        IntDistribution(-10, 0),
+        IntDistribution(-10, 10, step=2),
+        IntDistribution(0, 10, step=2),
+        IntDistribution(-10, 0, step=2),
     ],
 )
 def test_int(
@@ -279,6 +286,7 @@ def test_categorical(
         DiscreteUniformDistribution(-10, 10, 0.5),
         IntUniformDistribution(1, 10),
         IntLogUniformDistribution(1, 100),
+        IntDistribution(1, 10),
     ],
 )
 @pytest.mark.parametrize(
@@ -289,6 +297,7 @@ def test_categorical(
         DiscreteUniformDistribution(-10, 10, 0.5),
         IntUniformDistribution(1, 10),
         IntLogUniformDistribution(1, 100),
+        IntDistribution(1, 10),
     ],
 )
 def test_sample_relative_numerical(
@@ -316,6 +325,7 @@ def test_sample_relative_numerical(
                 DiscreteUniformDistribution,
                 IntUniformDistribution,
                 IntLogUniformDistribution,
+                IntDistribution,
             ),
         )
         assert np.all(points[:, i] >= distribution.low)
@@ -323,7 +333,7 @@ def test_sample_relative_numerical(
     for param_value, distribution in zip(sample(), search_space.values()):
         assert not isinstance(param_value, np.floating)
         assert not isinstance(param_value, np.integer)
-        if isinstance(distribution, (IntUniformDistribution, IntLogUniformDistribution)):
+        if isinstance(distribution, (IntUniformDistribution, IntLogUniformDistribution, IntDistribution)):
             assert isinstance(param_value, int)
         else:
             assert isinstance(param_value, float)
@@ -402,6 +412,7 @@ def test_sample_relative_mixed(
             (
                 IntUniformDistribution,
                 IntLogUniformDistribution,
+                IntDistribution,
                 CategoricalDistribution,
             ),
         ):
