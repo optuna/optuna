@@ -430,10 +430,65 @@ How can I optimize a model with some constraints?
 -------------------------------------------------
 
 When you want to optimize a model with constraints, you can use the following classes, :class:`~optuna.integration.BoTorchSampler` or :class:`~optuna.samplers.NSGAIISampler`.
-An example using the former class is `this <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`. This example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints. This one has two constraints :math:`c0 = (x-5)^2 + y^2 - 25` and :math:`c1 = -((x - 8)^2) - (y + 3)^2 + 7.7` and find the optimal solution satisfying these conditions.
+An example using the former class is `this <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_. This example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints. This one has two constraints :math:`c0 = (x-5)^2 + y^2 - 25` and :math:`c1 = -((x - 8)^2) - (y + 3)^2 + 7.7` and find the optimal solution satisfying these conditions.
+
+This is the example that uses the latter one.
+
+.. code-block:: python
+
+    import optuna
+
+    def objective(trial):
+        # Binh and Korn function with constraints.
+        x = trial.suggest_float("x", -15, 30)
+        y = trial.suggest_float("y", -15, 30)
+
+        # Constraints which are considered feasible if less than or equal to zero.
+        # The feasible region is basically the intersection of a circle centered at (x=5, y=0)
+        # and the complement to a circle centered at (x=8, y=-3).
+        c0 = (x - 5) ** 2 + y ** 2 - 25
+        c1 = -((x - 8) ** 2) - (y + 3) ** 2 + 7.7
+
+        # Store the constraints as user attributes so that they can be restored after optimization.
+        trial.set_user_attr("constraint", (c0, c1))
+
+        v0 = 4 * x ** 2 + 4 * y ** 2
+        v1 = (x - 5) ** 2 + (y - 5) ** 2
+
+        return v0, v1
+
+
+    def constraints(trial):
+        return trial.user_attrs["constraint"]
+
+
+    if __name__ == "__main__":
+        sampler = optuna.samplers.NSGAIISampler(
+            constraints_func=constraints,
+        )
+        study = optuna.create_study(
+            directions=["minimize", "minimize"],
+            sampler=sampler,
+        )
+        study.optimize(objective, n_trials=32, timeout=600)
+
+        print("Number of finished trials: ", len(study.trials))
+
+        print("Pareto front:")
+
+        trials = sorted(study.best_trials, key=lambda t: t.values)
+
+        for trial in trials:
+            print("  Trial#{}".format(trial.number))
+            print(
+                "    Values: Values={}, Constraint={}".format(
+                    trial.values, trial.user_attrs["constraint"][0]
+                )
+            )
+            print("    Params: {}".format(trial.params))
 
 How can I prevent sampling of certain hyperparameters?
------------------------------------------------------
+------------------------------------------------------
 
 There are two kinds of constraints optimizations, one with soft constraints and the other with hard constraints. Optuna is adopting the soft one.
 Soft constraints do not have to be satisfied, but an objective function is penalized if they are unsatisfied. On the other hand, hard constraints must be satisfied.
