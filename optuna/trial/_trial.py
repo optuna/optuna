@@ -472,7 +472,7 @@ class Trial(BaseTrial):
             :exe:`ValueError`:
                 If ``step is negative`` is specified.
             :exe:`TypeError`:
-                If ``value of type but a float`` is specified.
+                If the type of ``value`` is not obj:`float`.
         """
 
         if len(self.study.directions) > 1:
