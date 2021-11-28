@@ -490,6 +490,7 @@ If you are interested in the former one, please refer to `this sample code <http
 How can I prevent sampling of certain hyperparameters?
 ------------------------------------------------------
 
-There are two kinds of constraints optimizations, one with soft constraints and the other with hard constraints. Optuna is adopting the soft one.
+There are two kinds of constraints optimizations, one with soft constraints and the other with hard constraints.
 Soft constraints do not have to be satisfied, but an objective function is penalized if they are unsatisfied. On the other hand, hard constraints must be satisfied.
-If you want to prevent sampling of certain hyperparameters, you have to write an objective function with hard constraints for your own.
+
+Optuna is adopting the soft one and **DOES NOT** support the hard one. In other words, Optuna **DOES NOT** have built-in samplers for the hard constraints.
