@@ -430,7 +430,7 @@ How can I optimize a model with some constraints?
 -------------------------------------------------
 
 When you want to optimize a model with constraints, you can use the following classes, :class:`~optuna.samplers.NSGAIISampler` or :class:`~optuna.integration.BoTorchSampler`.
-This example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints. This one has two constraints :math:`c_0 = (x-5)^2 + y^2 - 25 \le 0` and :math:`c_1 = -(x - 8)^2 - (y + 3)^2 + 7.7 \le 0` and find the optimal solution satisfying these constraints.
+The following example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints using :class:`~optuna.samplers.NSGAIISampler`. This one has two constraints :math:`c_0 = (x-5)^2 + y^2 - 25 \le 0` and :math:`c_1 = -(x - 8)^2 - (y + 3)^2 + 7.7 \le 0` and find the optimal solution satisfying these constraints.
 
 This is the example that uses the former one.
 
