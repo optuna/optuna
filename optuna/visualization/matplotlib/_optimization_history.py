@@ -134,7 +134,8 @@ def _get_optimization_history_plot(
         ax = _get_optimization_histories_with_error_bar(studies, target, target_name, ax)
     else:
         ax = _get_optimization_histories(studies, target, target_name, ax)
-        plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
+
+    plt.legend(bbox_to_anchor=(1.05, 1.0), loc="upper left")
     return ax
 
 
