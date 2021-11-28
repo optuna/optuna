@@ -429,10 +429,10 @@ You can verify the transformation by calculating the elements of the Jacobian.
 How can I optimize a model with some constraints?
 -------------------------------------------------
 
-When you want to optimize a model with constraints, you can use the following classes, :class:`~optuna.integration.BoTorchSampler` or :class:`~optuna.samplers.NSGAIISampler`.
-An example using the former class is `this <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_. This example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints. This one has two constraints :math:`c_0 = (x-5)^2 + y^2 - 25` and :math:`c_1 = -(x - 8)^2 - (y + 3)^2 + 7.7` and find the optimal solution satisfying these conditions.
+When you want to optimize a model with constraints, you can use the following classes, :class:`~optuna.samplers.NSGAIISampler` or :class:`~optuna.integration.BoTorchSampler`.
+This example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints. This one has two constraints :math:`c_0 = (x-5)^2 + y^2 - 25` and :math:`c_1 = -(x - 8)^2 - (y + 3)^2 + 7.7` and find the optimal solution satisfying these conditions.
 
-This is the example that uses the latter one.
+This is the example that uses the former one.
 
 .. code-block:: python
 
@@ -484,6 +484,8 @@ This is the example that uses the latter one.
             )
         )
         print("    Params: {}".format(trial.params))
+
+If you are interested in the former one, please refer to `this sample code <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_.
 
 How can I prevent sampling of certain hyperparameters?
 ------------------------------------------------------
