@@ -84,7 +84,7 @@ def get_verbosity() -> int:
 
     Example:
 
-        Get the default verbosity level:
+        Get the default verbosity level.
 
         .. testsetup::
 
@@ -112,6 +112,7 @@ def get_verbosity() -> int:
             # ...
 
         .. testoutput::
+            :hide:
 
            20
            20
