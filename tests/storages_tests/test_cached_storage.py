@@ -41,29 +41,6 @@ def test_set_trial_state() -> None:
     assert cached_trial == base_trial
 
 
-def test_cached_set() -> None:
-
-    """Test CachedStorage does not flush to persistent storages.
-
-    The CachedStorage does not flush when it modifies trial updates of values.
-
-    """
-
-    base_storage = RDBStorage("sqlite:///:memory:")
-    storage = _CachedStorage(base_storage)
-    study_id = storage.create_new_study("test-study")
-
-    trial_id = storage.create_new_trial(study_id)
-    with patch.object(
-        base_storage, "_update_trial", return_value=True
-    ) as update_mock, patch.object(
-        base_storage, "set_trial_values", return_value=None
-    ) as set_mock:
-        storage.set_trial_values(trial_id, (0.3,))
-        assert update_mock.call_count == 0
-        assert set_mock.call_count == 0
-
-
 def test_uncached_set() -> None:
 
     """Test CachedStorage does flush to persistent storages.
@@ -78,64 +55,43 @@ def test_uncached_set() -> None:
     study_id = storage.create_new_study("test-study")
 
     trial_id = storage.create_new_trial(study_id)
+    with patch.object(base_storage, "set_trial_values", return_value=True) as set_mock:
+        storage.set_trial_values(trial_id, (0.3,))
+        assert set_mock.call_count == 1
+
+    trial_id = storage.create_new_trial(study_id)
     with patch.object(
-        base_storage, "_update_trial", return_value=True
-    ) as update_mock, patch.object(
         base_storage, "_check_and_set_param_distribution", return_value=True
     ) as set_mock:
         storage.set_trial_param(
             trial_id, "paramA", 1.2, optuna.distributions.UniformDistribution(-0.2, 2.3)
         )
-        assert update_mock.call_count == 0
         assert set_mock.call_count == 1
 
     trial_id = storage.create_new_trial(study_id)
-    with patch.object(
-        base_storage, "_update_trial", return_value=True
-    ) as update_mock, patch.object(base_storage, "set_trial_param", return_value=True) as set_mock:
+    with patch.object(base_storage, "set_trial_param", return_value=True) as set_mock:
         storage.set_trial_param(
             trial_id, "paramA", 1.2, optuna.distributions.UniformDistribution(-0.2, 2.3)
         )
-        assert update_mock.call_count == 1
-        assert set_mock.call_count == 0
+        assert set_mock.call_count == 1
 
     for state in [TrialState.COMPLETE, TrialState.PRUNED, TrialState.FAIL, TrialState.WAITING]:
         trial_id = storage.create_new_trial(study_id)
-        with patch.object(
-            base_storage, "_update_trial", return_value=True
-        ) as update_mock, patch.object(
-            base_storage, "set_trial_state", return_value=True
-        ) as set_mock:
+        with patch.object(base_storage, "set_trial_state", return_value=True) as set_mock:
             storage.set_trial_state(trial_id, state)
-            assert update_mock.call_count == 1
-            assert set_mock.call_count == 0
+            assert set_mock.call_count == 1
 
     trial_id = storage.create_new_trial(study_id)
-    with patch.object(
-        base_storage, "_update_trial", return_value=True
-    ) as update_mock, patch.object(
-        base_storage, "set_trial_intermediate_value", return_value=None
-    ) as set_mock:
+    with patch.object(base_storage, "set_trial_intermediate_value", return_value=None) as set_mock:
         storage.set_trial_intermediate_value(trial_id, 3, 0.3)
-        assert update_mock.call_count == 1
-        assert set_mock.call_count == 0
+        assert set_mock.call_count == 1
 
     trial_id = storage.create_new_trial(study_id)
-    with patch.object(
-        base_storage, "_update_trial", return_value=True
-    ) as update_mock, patch.object(
-        base_storage, "set_trial_system_attr", return_value=None
-    ) as set_mock:
+    with patch.object(base_storage, "set_trial_system_attr", return_value=None) as set_mock:
         storage.set_trial_system_attr(trial_id, "attrA", "foo")
-        assert update_mock.call_count == 1
-        assert set_mock.call_count == 0
+        assert set_mock.call_count == 1
 
     trial_id = storage.create_new_trial(study_id)
-    with patch.object(
-        base_storage, "_update_trial", return_value=True
-    ) as update_mock, patch.object(
-        base_storage, "set_trial_user_attr", return_value=None
-    ) as set_mock:
+    with patch.object(base_storage, "set_trial_user_attr", return_value=None) as set_mock:
         storage.set_trial_user_attr(trial_id, "attrB", "bar")
-        assert update_mock.call_count == 1
-        assert set_mock.call_count == 0
+        assert set_mock.call_count == 1

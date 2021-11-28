@@ -1,5 +1,4 @@
 import copy
-import datetime
 import threading
 from typing import Any
 from typing import Callable
@@ -21,27 +20,12 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-class _TrialUpdate:
-    def __init__(self) -> None:
-        self.state: Optional[TrialState] = None
-        self.values: Optional[Sequence[float]] = None
-        self.intermediate_values: Dict[int, float] = {}
-        self.user_attrs: Dict[str, Any] = {}
-        self.system_attrs: Dict[str, Any] = {}
-        self.params: Dict[str, Any] = {}
-        self.distributions: Dict[str, distributions.BaseDistribution] = {}
-        self.datetime_complete: Optional[datetime.datetime] = None
-        self.datetime_start: Optional[datetime.datetime] = None
-
-
 class _StudyInfo:
     def __init__(self) -> None:
         # Trial number to corresponding FrozenTrial.
         self.trials: Dict[int, FrozenTrial] = {}
         # A list of trials which do not require storage access to read latest attributes.
         self.owned_or_finished_trial_ids: Set[int] = set()
-        # Cache any writes which are not reflected to the actual storage yet in updates.
-        self.updates: Dict[int, _TrialUpdate] = {}
         # Cache distributions to avoid storage access on distribution consistency check.
         self.param_distribution: Dict[str, distributions.BaseDistribution] = {}
         self.directions: List[StudyDirection] = [StudyDirection.NOT_SET]
@@ -204,15 +188,13 @@ class _CachedStorage(BaseStorage):
                 assert cached_trial.state != TrialState.WAITING
 
                 self._check_trial_is_updatable(cached_trial)
-                updates = self._get_updates(trial_id)
-                cached_trial.state = state
-                updates.state = state
+                ret = self._backend.set_trial_state(trial_id, state)
 
+                cached_trial.state = state
                 if cached_trial.state.is_finished():
-                    now = datetime.datetime.now()
-                    updates.datetime_complete = now
-                    cached_trial.datetime_complete = now
-                return self._flush_trial(trial_id)
+                    backend_trial = self._backend.get_trial(trial_id)
+                    cached_trial.datetime_complete = backend_trial.datetime_complete
+                return ret
 
         ret = self._backend.set_trial_state(trial_id, state)
         if (
@@ -263,10 +245,9 @@ class _CachedStorage(BaseStorage):
                 cached_trial.distributions = dists
 
                 if cached_dist:  # Already persisted in case of cache miss so no need to update.
-                    updates = self._get_updates(trial_id)
-                    updates.params[param_name] = param_value_internal
-                    updates.distributions[param_name] = distribution
-                    self._flush_trial(trial_id)
+                    self._backend.set_trial_param(
+                        trial_id, param_name, param_value_internal, distribution
+                    )
                 return
 
         self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
@@ -295,12 +276,11 @@ class _CachedStorage(BaseStorage):
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
-                updates = self._get_updates(trial_id)
                 cached_trial.values = values
-                updates.values = values
+                self._backend.set_trial_values(trial_id, values=values)
                 return
 
-        self._backend._update_trial(trial_id, values=values)
+        self._backend.set_trial_values(trial_id, values=values)
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
@@ -310,12 +290,12 @@ class _CachedStorage(BaseStorage):
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
-                updates = self._get_updates(trial_id)
                 intermediate_values = copy.copy(cached_trial.intermediate_values)
                 intermediate_values[step] = intermediate_value
                 cached_trial.intermediate_values = intermediate_values
-                updates.intermediate_values[step] = intermediate_value
-                self._flush_trial(trial_id)
+                self._backend.set_trial_intermediate_value(
+                    trial_id=trial_id, step=step, intermediate_value=intermediate_value
+                )
                 return
 
         self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
@@ -326,15 +306,13 @@ class _CachedStorage(BaseStorage):
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
-                updates = self._get_updates(trial_id)
                 attrs = copy.copy(cached_trial.user_attrs)
                 attrs[key] = value
                 cached_trial.user_attrs = attrs
-                updates.user_attrs[key] = value
-                self._flush_trial(trial_id)
+                self._backend.set_trial_user_attr(trial_id, key=key, value=value)
                 return
 
-        self._backend._update_trial(trial_id, user_attrs={key: value})
+        self._backend.set_trial_user_attr(trial_id, key=key, value=value)
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
 
@@ -342,15 +320,13 @@ class _CachedStorage(BaseStorage):
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
-                updates = self._get_updates(trial_id)
                 attrs = copy.copy(cached_trial.system_attrs)
                 attrs[key] = value
                 cached_trial.system_attrs = attrs
-                updates.system_attrs[key] = value
-                self._flush_trial(trial_id)
+                self._backend.set_trial_system_attr(trial_id, key=key, value=value)
                 return
 
-        self._backend._update_trial(trial_id, system_attrs={key: value})
+        self._backend.set_trial_system_attr(trial_id, key=key, value=value)
 
     def _get_cached_trial(self, trial_id: int) -> Optional[FrozenTrial]:
         if trial_id not in self._trial_id_to_study_id_and_number:
@@ -358,15 +334,6 @@ class _CachedStorage(BaseStorage):
         study_id, number = self._trial_id_to_study_id_and_number[trial_id]
         study = self._studies[study_id]
         return study.trials[number] if trial_id in study.owned_or_finished_trial_ids else None
-
-    def _get_updates(self, trial_id: int) -> _TrialUpdate:
-        study_id, number = self._trial_id_to_study_id_and_number[trial_id]
-        updates = self._studies[study_id].updates.get(number, None)
-        if updates is not None:
-            return updates
-        updates = _TrialUpdate()
-        self._studies[study_id].updates[number] = updates
-        return updates
 
     def get_trial(self, trial_id: int) -> FrozenTrial:
 
@@ -413,30 +380,6 @@ class _CachedStorage(BaseStorage):
                 for trial in trials:
                     if trial.state.is_finished():
                         study.owned_or_finished_trial_ids.add(trial._trial_id)
-
-    def _flush_trial(self, trial_id: int) -> bool:
-        if trial_id not in self._trial_id_to_study_id_and_number:
-            # The trial has not been managed by this class.
-            return True
-        study_id, number = self._trial_id_to_study_id_and_number[trial_id]
-        study = self._studies[study_id]
-        updates = study.updates.get(number, None)
-        if updates is None:
-            # The trial is up-to-date.
-            return True
-        del study.updates[number]
-        return self._backend._update_trial(
-            trial_id=trial_id,
-            values=updates.values,
-            intermediate_values=updates.intermediate_values,
-            state=updates.state,
-            params=updates.params,
-            distributions_=updates.distributions,
-            user_attrs=updates.user_attrs,
-            system_attrs=updates.system_attrs,
-            datetime_start=updates.datetime_start,
-            datetime_complete=updates.datetime_complete,
-        )
 
     def _add_trials_to_cache(self, study_id: int, trials: List[FrozenTrial]) -> None:
         study = self._studies[study_id]
