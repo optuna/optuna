@@ -425,3 +425,9 @@ This method is justified in the following way:
 First, if we apply the transformation :math:`x = - \log (u)` to the variable :math:`u` sampled from the uniform distribution :math:`Uni(0, 1)` in the interval :math:`[0, 1]`, the variable :math:`x` will follow the exponential distribution :math:`Exp(1)` with scale parameter :math:`1`.
 Furthermore, for :math:`n` variables :math:`x[0], ..., x[n-1]` that follow the exponential distribution of scale parameter :math:`1` independently, normalizing them with :math:`p[i] = x[i] / \sum_i x[i]`, the vector :math:`p` follows the Dirichlet distribution :math:`Dir(\alpha)` of scale parameter :math:`\alpha = (1, ..., 1)`.
 You can verify the transformation by calculating the elements of the Jacobian.
+
+How can I optimize a model with some constraints?
+-------------------------------------------------
+
+When you want to optimize a model with constraints :math:`c0` and :math:`c1`, you can use the following classes, :class:`~optuna.integration.BoTorchSampler` or :class:`~optuna.samplers.NSGAIISampler`.
+An example using the former class is `this <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`.
