@@ -432,3 +432,10 @@ How can I optimize a model with some constraints?
 When you want to optimize a model with constraints, you can use the following classes, :class:`~optuna.integration.BoTorchSampler` or :class:`~optuna.samplers.NSGAIISampler`.
 An example using the former class is `this <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`. This example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints. This one has two constraints :math:`c0 = (x-5)^2 + y^2 - 25` and :math:`c1 = -((x - 8)^2) - (y + 3)^2 + 7.7` and find the optimal solution satisfying these conditions.
 
+How can I prevent sampling of certain hyperparameters?
+-----------------------------------------------------
+
+There are two kinds of constraints optimizations, one with soft constraints and the other with hard constraints. Optuna is adopting the soft one.
+Soft constraints do not have to be satisfied, but an objective function is penalized if they are unsatisfied. On the other hand, hard constraints must be satisfied.
+If you want to prevent sampling of certain hyperparameters, you have to write an objective function with hard constraints for your own.
+
