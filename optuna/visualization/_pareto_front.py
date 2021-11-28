@@ -6,6 +6,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Union
 
 import optuna
 from optuna._experimental import experimental
@@ -89,16 +90,120 @@ def plot_pareto_front(
 
     _imports.check()
 
-    if len(study.directions) == 2:
-        return _get_pareto_front_2d(
-            study, target_names, include_dominated_trials, axis_order, constraints_func
+    n_dim = len(study.directions)
+    if n_dim not in (2, 3):
+        raise ValueError("`plot_pareto_front` function only supports 2 or 3 objective studies.")
+
+    if target_names is None:
+        target_names = [f"Objective {i}" for i in range(n_dim)]
+    elif len(target_names) != n_dim:
+        raise ValueError(f"The length of `target_names` is supposed to be {n_dim}.")
+
+    trials = study.best_trials
+    n_best_trials = len(trials)
+    if len(trials) == 0:
+        _logger.warning("Your study does not have any completed trials.")
+
+    if include_dominated_trials:
+        non_pareto_trials = _get_non_pareto_front_trials(study, trials)
+        trials += non_pareto_trials
+
+    if axis_order is None:
+        axis_order = list(range(n_dim))
+    else:
+        if len(axis_order) != n_dim:
+            raise ValueError(
+                f"Size of `axis_order` {axis_order}. Expect: {n_dim}, Actual: {len(axis_order)}."
+            )
+        if len(set(axis_order)) != n_dim:
+            raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!.")
+        if max(axis_order) > n_dim - 1:
+            raise ValueError(
+                f"Given `axis_order` {axis_order} contains invalid index {max(axis_order)} "
+                f"higher than {n_dim - 1}."
+            )
+        if min(axis_order) < 0:
+            raise ValueError(
+                f"Given `axis_order` {axis_order} contains invalid index {min(axis_order)} "
+                "lower than 0."
+            )
+
+    def _make_scatter_object(
+        trials: List[FrozenTrial],
+        hovertemplate: str,
+        name: Optional[str] = None,
+        color: Optional[str] = None,
+        dominated_samples: bool = False,
+    ) -> Union["go.Scatter", "go.Scatter3d"]:
+        return _make_scatter_object_base(
+            n_dim,
+            trials,
+            axis_order,  # type: ignore
+            include_dominated_trials,
+            hovertemplate=hovertemplate,
+            name=name,
+            color=color,
+            dominated_samples=dominated_samples,
         )
-    elif len(study.directions) == 3:
-        return _get_pareto_front_3d(
-            study, target_names, include_dominated_trials, axis_order, constraints_func
+
+    if constraints_func is None:
+        best_trials = trials[:n_best_trials]
+        non_best_trials = trials[n_best_trials:]
+        data = [
+            _make_scatter_object(
+                non_best_trials,
+                hovertemplate="%{text}<extra>Trial</extra>",
+                dominated_samples=True,
+            ),
+            _make_scatter_object(
+                best_trials,
+                hovertemplate="%{text}<extra>Best Trial</extra>",
+                dominated_samples=False,
+            ),
+        ]
+    else:
+        (
+            best_feasible_trials,
+            non_best_feasible_trials,
+            infeasible_trials,
+        ) = _split_trials_by_constraints(trials, n_best_trials, constraints_func)
+        data = [
+            _make_scatter_object(
+                infeasible_trials,
+                hovertemplate="%{text}<extra>Trial</extra>",
+                name="infeasible",
+                color="grey",
+            ),
+            _make_scatter_object(
+                non_best_feasible_trials,
+                hovertemplate="%{text}<extra>Non-best feasible</extra>",
+                name="non-best feasible",
+                color="blue",
+            ),
+            _make_scatter_object(
+                best_feasible_trials,
+                hovertemplate="%{text}<extra>Best feasible</extra>",
+                name="best feasible",
+                color="red",
+            ),
+        ]
+
+    if n_dim == 2:
+        layout = go.Layout(
+            title="Pareto-front Plot",
+            xaxis_title=target_names[axis_order[0]],
+            yaxis_title=target_names[axis_order[1]],
         )
     else:
-        raise ValueError("`plot_pareto_front` function only supports 2 or 3 objective studies.")
+        layout = go.Layout(
+            title="Pareto-front Plot",
+            scene={
+                "xaxis_title": target_names[axis_order[0]],
+                "yaxis_title": target_names[axis_order[1]],
+                "zaxis_title": target_names[axis_order[2]],
+            },
+        )
+    return go.Figure(data=data, layout=layout)
 
 
 def _get_non_pareto_front_trials(
@@ -112,280 +217,6 @@ def _get_non_pareto_front_trials(
     return non_pareto_trials
 
 
-def _get_pareto_front_2d(
-    study: Study,
-    target_names: Optional[List[str]],
-    include_dominated_trials: bool = False,
-    axis_order: Optional[List[int]] = None,
-    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
-) -> "go.Figure":
-    if target_names is None:
-        target_names = ["Objective 0", "Objective 1"]
-    elif len(target_names) != 2:
-        raise ValueError("The length of `target_names` is supposed to be 2.")
-
-    trials = study.best_trials
-    n_best_trials = len(trials)
-    if len(trials) == 0:
-        _logger.warning("Your study does not have any completed trials.")
-
-    if include_dominated_trials:
-        non_pareto_trials = _get_non_pareto_front_trials(study, trials)
-        trials += non_pareto_trials
-
-    if axis_order is None:
-        axis_order = list(range(2))
-    else:
-        if len(axis_order) != 2:
-            raise ValueError(
-                f"Size of `axis_order` {axis_order}. Expect: 2, Actual: {len(axis_order)}."
-            )
-        if len(set(axis_order)) != 2:
-            raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!")
-        if max(axis_order) > 1:
-            raise ValueError(
-                f"Given `axis_order` {axis_order} contains invalid index {max(axis_order)} "
-                "higher than 1."
-            )
-        if min(axis_order) < 0:
-            raise ValueError(
-                f"Given `axis_order` {axis_order} contains invalid index {min(axis_order)} "
-                "lower than 0."
-            )
-
-    if constraints_func is None:
-        data = [
-            go.Scatter(
-                x=[t.values[axis_order[0]] for t in trials[n_best_trials:]],
-                y=[t.values[axis_order[1]] for t in trials[n_best_trials:]],
-                text=[_make_hovertext(t) for t in trials[n_best_trials:]],
-                mode="markers",
-                hovertemplate="%{text}<extra>Trial</extra>",
-                marker=_make_marker(
-                    trials[n_best_trials:],
-                    include_dominated_trials,
-                    use_constraints_func=False,
-                    dominated_samples=True,
-                ),
-            ),
-            go.Scatter(
-                x=[t.values[axis_order[0]] for t in trials[:n_best_trials]],
-                y=[t.values[axis_order[1]] for t in trials[:n_best_trials]],
-                text=[_make_hovertext(t) for t in trials[:n_best_trials]],
-                mode="markers",
-                hovertemplate="%{text}<extra>Best Trial</extra>",
-                marker=_make_marker(
-                    trials[:n_best_trials],
-                    include_dominated_trials,
-                    use_constraints_func=False,
-                    dominated_samples=False,
-                ),
-            ),
-        ]
-    else:
-        (
-            best_feasible_trials,
-            non_best_feasible_trials,
-            infeasible_trials,
-        ) = _split_trials_by_constraints(trials, n_best_trials, constraints_func)
-        data = [
-            go.Scatter(
-                x=[t.values[axis_order[0]] for t in infeasible_trials],
-                y=[t.values[axis_order[1]] for t in infeasible_trials],
-                text=[_make_hovertext(t) for t in infeasible_trials],
-                mode="markers",
-                hovertemplate="%{text}<extra>Infeasible</extra>",
-                marker=_make_marker(
-                    infeasible_trials,
-                    include_dominated_trials,
-                    use_constraints_func=True,
-                    color="grey",
-                ),
-                showlegend=True,
-                name="infeasible",
-            ),
-            go.Scatter(
-                x=[t.values[axis_order[0]] for t in non_best_feasible_trials],
-                y=[t.values[axis_order[1]] for t in non_best_feasible_trials],
-                text=[_make_hovertext(t) for t in non_best_feasible_trials],
-                mode="markers",
-                hovertemplate="%{text}<extra>Non-best feasible</extra>",
-                marker=_make_marker(
-                    non_best_feasible_trials,
-                    include_dominated_trials,
-                    use_constraints_func=True,
-                    color="blue",
-                ),
-                showlegend=True,
-                name="non-best feasible",
-            ),
-            go.Scatter(
-                x=[t.values[axis_order[0]] for t in best_feasible_trials],
-                y=[t.values[axis_order[1]] for t in best_feasible_trials],
-                text=[_make_hovertext(t) for t in best_feasible_trials],
-                mode="markers",
-                hovertemplate="%{text}<extra>Best feasible</extra>",
-                marker=_make_marker(
-                    best_feasible_trials,
-                    include_dominated_trials,
-                    use_constraints_func=True,
-                    color="red",
-                ),
-                showlegend=True,
-                name="best feasible",
-            ),
-        ]
-
-    layout = go.Layout(
-        title="Pareto-front Plot",
-        xaxis_title=target_names[axis_order[0]],
-        yaxis_title=target_names[axis_order[1]],
-    )
-    return go.Figure(data=data, layout=layout)
-
-
-def _get_pareto_front_3d(
-    study: Study,
-    target_names: Optional[List[str]],
-    include_dominated_trials: bool = False,
-    axis_order: Optional[List[int]] = None,
-    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
-) -> "go.Figure":
-    if target_names is None:
-        target_names = ["Objective 0", "Objective 1", "Objective 2"]
-    elif len(target_names) != 3:
-        raise ValueError("The length of `target_names` is supposed to be 3.")
-
-    trials = study.best_trials
-    n_best_trials = len(trials)
-    if len(trials) == 0:
-        _logger.warning("Your study does not have any completed trials.")
-
-    if include_dominated_trials:
-        non_pareto_trials = _get_non_pareto_front_trials(study, trials)
-        trials += non_pareto_trials
-
-    if axis_order is None:
-        axis_order = list(range(3))
-    else:
-        if len(axis_order) != 3:
-            raise ValueError(
-                f"Size of `axis_order` {axis_order}. Expect: 3, Actual: {len(axis_order)}."
-            )
-        if len(set(axis_order)) != 3:
-            raise ValueError(f"Elements of given `axis_order` {axis_order} are not unique!.")
-        if max(axis_order) > 2:
-            raise ValueError(
-                f"Given `axis_order` {axis_order} contains invalid index {max(axis_order)} "
-                "higher than 2."
-            )
-        if min(axis_order) < 0:
-            raise ValueError(
-                f"Given `axis_order` {axis_order} contains invalid index {min(axis_order)} "
-                "lower than 0."
-            )
-
-    if constraints_func is None:
-        data = [
-            go.Scatter3d(
-                x=[t.values[axis_order[0]] for t in trials[n_best_trials:]],
-                y=[t.values[axis_order[1]] for t in trials[n_best_trials:]],
-                z=[t.values[axis_order[2]] for t in trials[n_best_trials:]],
-                text=[_make_hovertext(t) for t in trials[n_best_trials:]],
-                hovertemplate="%{text}<extra>Trial</extra>",
-                mode="markers",
-                marker=_make_marker(
-                    trials[n_best_trials:],
-                    include_dominated_trials,
-                    use_constraints_func=False,
-                    dominated_samples=True,
-                ),
-                showlegend=False,
-            ),
-            go.Scatter3d(
-                x=[t.values[axis_order[0]] for t in trials[:n_best_trials]],
-                y=[t.values[axis_order[1]] for t in trials[:n_best_trials]],
-                z=[t.values[axis_order[2]] for t in trials[:n_best_trials]],
-                text=[_make_hovertext(t) for t in trials[:n_best_trials]],
-                hovertemplate="%{text}<extra>Best Trial</extra>",
-                mode="markers",
-                marker=_make_marker(
-                    trials[:n_best_trials],
-                    include_dominated_trials,
-                    use_constraints_func=False,
-                    dominated_samples=False,
-                ),
-                showlegend=False,
-            ),
-        ]
-    else:
-        (
-            best_feasible_trials,
-            non_best_feasible_trials,
-            infeasible_trials,
-        ) = _split_trials_by_constraints(trials, n_best_trials, constraints_func)
-        data = [
-            go.Scatter3d(
-                x=[t.values[axis_order[0]] for t in infeasible_trials],
-                y=[t.values[axis_order[1]] for t in infeasible_trials],
-                z=[t.values[axis_order[2]] for t in infeasible_trials],
-                text=[_make_hovertext(t) for t in infeasible_trials],
-                mode="markers",
-                hovertemplate="%{text}<extra>Infeasible</extra>",
-                marker=_make_marker(
-                    infeasible_trials,
-                    include_dominated_trials,
-                    use_constraints_func=True,
-                    color="grey",
-                ),
-                showlegend=True,
-                name="infeasible",
-            ),
-            go.Scatter3d(
-                x=[t.values[axis_order[0]] for t in non_best_feasible_trials],
-                y=[t.values[axis_order[1]] for t in non_best_feasible_trials],
-                z=[t.values[axis_order[2]] for t in non_best_feasible_trials],
-                text=[_make_hovertext(t) for t in non_best_feasible_trials],
-                mode="markers",
-                hovertemplate="%{text}<extra>Non-best feasible</extra>",
-                marker=_make_marker(
-                    non_best_feasible_trials,
-                    include_dominated_trials,
-                    use_constraints_func=True,
-                    color="blue",
-                ),
-                showlegend=True,
-                name="non-best feasible",
-            ),
-            go.Scatter3d(
-                x=[t.values[axis_order[0]] for t in best_feasible_trials],
-                y=[t.values[axis_order[1]] for t in best_feasible_trials],
-                z=[t.values[axis_order[2]] for t in best_feasible_trials],
-                text=[_make_hovertext(t) for t in best_feasible_trials],
-                mode="markers",
-                hovertemplate="%{text}<extra>Best feasible</extra>",
-                marker=_make_marker(
-                    best_feasible_trials,
-                    include_dominated_trials,
-                    use_constraints_func=True,
-                    color="red",
-                ),
-                showlegend=True,
-                name="best feasible",
-            ),
-        ]
-
-    layout = go.Layout(
-        title="Pareto-front Plot",
-        scene={
-            "xaxis_title": target_names[axis_order[0]],
-            "yaxis_title": target_names[axis_order[1]],
-            "zaxis_title": target_names[axis_order[2]],
-        },
-    )
-    return go.Figure(data=data, layout=layout)
-
-
 def _make_json_compatible(value: Any) -> Any:
     try:
         json.dumps(value)
@@ -393,6 +224,50 @@ def _make_json_compatible(value: Any) -> Any:
     except TypeError:
         # the value can't be converted to JSON directly, so return a string representation
         return str(value)
+
+
+def _make_scatter_object_base(
+    n_dim: int,
+    trials: List[FrozenTrial],
+    axis_order: List[int],
+    include_dominated_trials: bool,
+    hovertemplate: str,
+    name: Optional[str] = None,
+    color: Optional[str] = None,
+    dominated_samples: bool = False,
+) -> Union["go.Scatter", "go.Scatter3d"]:
+    assert n_dim in (2, 3)
+    marker = _make_marker(
+        trials,
+        include_dominated_trials,
+        use_constraints_func=name is not None,
+        dominated_samples=dominated_samples,
+        color=color,
+    )
+    if n_dim == 2:
+        return go.Scatter(
+            x=[t.values[axis_order[0]] for t in trials],
+            y=[t.values[axis_order[1]] for t in trials],
+            text=[_make_hovertext(t) for t in trials],
+            mode="markers",
+            hovertemplate=hovertemplate,
+            marker=marker,
+            showlegend=name is not None,
+            name=name,
+        )
+    else:
+        assert n_dim == 3
+        return go.Scatter3d(
+            x=[t.values[axis_order[0]] for t in trials],
+            y=[t.values[axis_order[1]] for t in trials],
+            z=[t.values[axis_order[2]] for t in trials],
+            text=[_make_hovertext(t) for t in trials],
+            mode="markers",
+            hovertemplate=hovertemplate,
+            marker=marker,
+            showlegend=name is not None,
+            name=name,
+        )
 
 
 def _make_hovertext(trial: FrozenTrial) -> str:
