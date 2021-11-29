@@ -45,9 +45,7 @@ def test_uncached_set() -> None:
 
     """Test CachedStorage does flush to persistent storages.
 
-    The CachedStorage flushes modifications of trials to a persistent storage when
-    it modifies either trial_values, params, intermediate_values, state, user_attrs,
-    or system_attrs.
+    The CachedStorage flushes any modification of trials to a persistent storage immediately.
 
     """
 
