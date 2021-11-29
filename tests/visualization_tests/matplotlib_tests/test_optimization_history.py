@@ -147,7 +147,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     assert len(figure.get_lines()) == 4
 
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
-    assert sorted(legend_texts) == sorted(["Best Value", "Objective Value"])
+    assert sorted(legend_texts) == ["Best Value", "Objective Value"]
 
     # Test customized target.
     with pytest.warns(UserWarning):
@@ -157,7 +157,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     # Test customized target name.
     figure = plot_optimization_history(studies, target_name="Target Name", error_bar=True)
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
-    assert sorted(legend_texts) == sorted(["Best Value", "Target Name"])
+    assert sorted(legend_texts) == ["Best Value", "Target Name"]
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:

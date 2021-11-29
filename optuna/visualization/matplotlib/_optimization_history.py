@@ -172,9 +172,9 @@ def _get_optimization_histories_with_error_bar(
         for t in trials:
             target_values[t.number].append(_target(t))
 
-    mean_of_target_values = [np.mean(v) if len(v) > 0 else None for v in target_values]
-    std_of_target_values = [np.std(v) if len(v) > 0 else None for v in target_values]
-    trial_numbers = np.arange(max_trial_number + 2)[[v is not None for v in mean_of_target_values]]
+    mean_of_target_values = [np.mean(v) if len(v) > 0 else np.nan for v in target_values]
+    std_of_target_values = [np.std(v) if len(v) > 0 else np.nan for v in target_values]
+    trial_numbers = np.arange(max_trial_number + 2)[[v is not np.nan for v in mean_of_target_values]]
     means = np.asarray(mean_of_target_values)[trial_numbers]
     stds = np.asarray(std_of_target_values)[trial_numbers]
 
@@ -200,16 +200,16 @@ def _get_optimization_histories_with_error_bar(
             for i, t in enumerate(trials):
                 best_values[t.number].append(best_vs[i])
 
-        mean_of_best_values = [np.mean(v) if len(v) > 0 else None for v in best_values]
-        std_of_best_values = [np.std(v) if len(v) > 0 else None for v in best_values]
+        mean_of_best_values = [np.mean(v) if len(v) > 0 else np.nan for v in best_values]
+        std_of_best_values = [np.std(v) if len(v) > 0 else np.nan for v in best_values]
         means = np.asarray(mean_of_best_values)[trial_numbers]
         stds = np.asarray(std_of_best_values)[trial_numbers]
 
         ax.plot(trial_numbers, means, color="tab:red", label="Best Value")
         ax.fill_between(
             x=trial_numbers,
-            y1=np.array(means - stds, float),
-            y2=np.array(means + stds, float),
+            y1=means - stds,
+            y2=means + stds,
             color="tab:red",
             alpha=0.4,
         )
