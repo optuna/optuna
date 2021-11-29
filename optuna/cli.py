@@ -875,7 +875,8 @@ class _Tell(_BaseCommand):
             if trial.state.is_finished():
                 self.logger.info(
                     f"Skipped telling trial {trial_number} with values "
-                    f"{values} and state {state} since trial was already finished."
+                    f"{values} and state {state} since trial was already finished. "
+                    f"Finished trial has values {trial.values} and state {trial.state}."
                 )
                 return 0
 
