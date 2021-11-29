@@ -87,7 +87,7 @@ class _ProgressBar(object):
         if self._is_valid:
             if self._n_trials is not None:
                 self._progress_bar.update(1)
-                if self._timeout is not None and elapsed_seconds is not None:
+                if self._timeout is not None:
                     self._progress_bar.set_postfix_str(
                         "{:.02f}/{} seconds".format(elapsed_seconds, self._timeout)
                     )
