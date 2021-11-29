@@ -277,9 +277,6 @@ class _CachedStorage(BaseStorage):
             if cached_trial is not None:
                 self._check_trial_is_updatable(cached_trial)
                 cached_trial.values = values
-                self._backend.set_trial_values(trial_id, values=values)
-                return
-
         self._backend.set_trial_values(trial_id, values=values)
 
     def set_trial_intermediate_value(
@@ -293,11 +290,6 @@ class _CachedStorage(BaseStorage):
                 intermediate_values = copy.copy(cached_trial.intermediate_values)
                 intermediate_values[step] = intermediate_value
                 cached_trial.intermediate_values = intermediate_values
-                self._backend.set_trial_intermediate_value(
-                    trial_id=trial_id, step=step, intermediate_value=intermediate_value
-                )
-                return
-
         self._backend.set_trial_intermediate_value(trial_id, step, intermediate_value)
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
@@ -309,9 +301,6 @@ class _CachedStorage(BaseStorage):
                 attrs = copy.copy(cached_trial.user_attrs)
                 attrs[key] = value
                 cached_trial.user_attrs = attrs
-                self._backend.set_trial_user_attr(trial_id, key=key, value=value)
-                return
-
         self._backend.set_trial_user_attr(trial_id, key=key, value=value)
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
@@ -323,9 +312,6 @@ class _CachedStorage(BaseStorage):
                 attrs = copy.copy(cached_trial.system_attrs)
                 attrs[key] = value
                 cached_trial.system_attrs = attrs
-                self._backend.set_trial_system_attr(trial_id, key=key, value=value)
-                return
-
         self._backend.set_trial_system_attr(trial_id, key=key, value=value)
 
     def _get_cached_trial(self, trial_id: int) -> Optional[FrozenTrial]:
