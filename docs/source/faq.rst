@@ -425,3 +425,69 @@ This method is justified in the following way:
 First, if we apply the transformation :math:`x = - \log (u)` to the variable :math:`u` sampled from the uniform distribution :math:`Uni(0, 1)` in the interval :math:`[0, 1]`, the variable :math:`x` will follow the exponential distribution :math:`Exp(1)` with scale parameter :math:`1`.
 Furthermore, for :math:`n` variables :math:`x[0], ..., x[n-1]` that follow the exponential distribution of scale parameter :math:`1` independently, normalizing them with :math:`p[i] = x[i] / \sum_i x[i]`, the vector :math:`p` follows the Dirichlet distribution :math:`Dir(\alpha)` of scale parameter :math:`\alpha = (1, ..., 1)`.
 You can verify the transformation by calculating the elements of the Jacobian.
+
+How can I optimize a model with some constraints?
+-------------------------------------------------
+
+When you want to optimize a model with constraints, you can use the following classes, :class:`~optuna.samplers.NSGAIISampler` or :class:`~optuna.integration.BoTorchSampler`.
+The following example is a benchmark of Binh and Korn function, a multi-objective optimization, with constraints using :class:`~optuna.samplers.NSGAIISampler`. This one has two constraints :math:`c_0 = (x-5)^2 + y^2 - 25 \le 0` and :math:`c_1 = -(x - 8)^2 - (y + 3)^2 + 7.7 \le 0` and finds the optimal solution satisfying these constraints.
+
+
+.. code-block:: python
+
+    import optuna
+
+
+    def objective(trial):
+        # Binh and Korn function with constraints.
+        x = trial.suggest_float("x", -15, 30)
+        y = trial.suggest_float("y", -15, 30)
+
+        # Constraints which are considered feasible if less than or equal to zero.
+        # The feasible region is basically the intersection of a circle centered at (x=5, y=0)
+        # and the complement to a circle centered at (x=8, y=-3).
+        c0 = (x - 5) ** 2 + y ** 2 - 25
+        c1 = -((x - 8) ** 2) - (y + 3) ** 2 + 7.7
+
+        # Store the constraints as user attributes so that they can be restored after optimization.
+        trial.set_user_attr("constraint", (c0, c1))
+
+        v0 = 4 * x ** 2 + 4 * y ** 2
+        v1 = (x - 5) ** 2 + (y - 5) ** 2
+
+        return v0, v1
+
+
+    def constraints(trial):
+        return trial.user_attrs["constraint"]
+
+
+    sampler = optuna.samplers.NSGAIISampler(constraints_func=constraints)
+    study = optuna.create_study(
+        directions=["minimize", "minimize"],
+        sampler=sampler,
+    )
+    study.optimize(objective, n_trials=32, timeout=600)
+
+    print("Number of finished trials: ", len(study.trials))
+
+    print("Pareto front:")
+
+    trials = sorted(study.best_trials, key=lambda t: t.values)
+
+    for trial in trials:
+        print("  Trial#{}".format(trial.number))
+        print(
+            "    Values: Values={}, Constraint={}".format(
+                trial.values, trial.user_attrs["constraint"][0]
+            )
+        )
+        print("    Params: {}".format(trial.params))
+
+If you are interested in the exmaple for :class:`~optuna.integration.BoTorchSampler`, please refer to `this sample code <https://github.com/optuna/optuna-examples/blob/main/multi_objective/botorch_simple.py>`_.
+
+
+There are two kinds of constrained optimizations, one with soft constraints and the other with hard constraints.
+Soft constraints do not have to be satisfied, but an objective function is penalized if they are unsatisfied. On the other hand, hard constraints must be satisfied.
+
+Optuna is adopting the soft one and **DOES NOT** support the hard one. In other words, Optuna **DOES NOT** have built-in samplers for the hard constraints.
