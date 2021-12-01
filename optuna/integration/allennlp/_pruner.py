@@ -2,7 +2,6 @@ import os
 from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Optional
 
 from packaging import version
@@ -53,8 +52,7 @@ else:
 
 def _create_pruner(
     pruner_class: str,
-    pruner_keys: List[str],
-    pruner_values: List[Any],
+    pruner_params: Dict[str, Any],
 ) -> Optional[pruners.BasePruner]:
 
     """Restore a pruner which is defined in `create_study`.
@@ -67,7 +65,6 @@ def _create_pruner(
     re-create the same pruner in `AllenNLPPruningCallback`.
 
     """
-    pruner_params = {k: v for k, v in zip(pruner_keys, pruner_values)}
     pruner = getattr(pruners, pruner_class, None)
     return pruner(**pruner_params)
 
@@ -174,8 +171,7 @@ class AllenNLPPruningCallback(TrainerCallback):
 
                 pruner = _create_pruner(
                     variable_manager.get_value("pruner_class"),
-                    variable_manager.get_value("pruner_keys"),
-                    variable_manager.get_value("pruner_values"),
+                    variable_manager.get_value("pruner_params"),
                 )
 
                 study = load_study(

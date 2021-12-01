@@ -171,8 +171,7 @@ class AllenNLPExecutor(object):
 
         if trial.study.pruner is not None:
             variable_manager.set_value("pruner_class", type(trial.study.pruner).__name__)
-            variable_manager.set_value("pruner_keys", list(pruner_params.keys()))
-            variable_manager.set_value("pruner_values", list(pruner_params.values()))
+            variable_manager.set_value("pruner_params", pruner_params)
 
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.
