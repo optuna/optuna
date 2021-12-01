@@ -838,6 +838,13 @@ class _Tell(_BaseCommand):
         parser.add_argument("--trial-number", type=int, help="Trial number.")
         parser.add_argument("--values", type=float, nargs="+", help="Objective values.")
         parser.add_argument("--state", type=str, default="complete", help="Trial state.")
+        parser.add_argument(
+            "--skip-if-finished",
+            default=False,
+            action="store_true",
+            help="If specified, tell is skipped without any error when the trial is already"
+            "finished.",
+        )
         return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
@@ -855,16 +862,27 @@ class _Tell(_BaseCommand):
         )
 
         state = TrialState[parsed_args.state.upper()]
-        study.tell(
-            trial=parsed_args.trial_number,
-            values=parsed_args.values,
-            state=state,
-        )
+        trial_number = parsed_args.trial_number
+        values = parsed_args.values
 
-        self.logger.info(
-            f"Told trial {parsed_args.trial_number} with values {parsed_args.values} and state "
-            f"{state}."
-        )
+        # TODO(hvy): Consider introducing `skip_if_finished` to `Study.tell` and let the method
+        # do all error handling, such as invalid trial numbers.
+        if parsed_args.skip_if_finished:
+            trials = study.get_trials(deepcopy=False)
+            trial = trials[trial_number]
+            assert trial.number == trial_number
+
+            if trial.state.is_finished():
+                self.logger.info(
+                    f"Skipped telling trial {trial_number} with values "
+                    f"{values} and state {state} since trial was already finished. "
+                    f"Finished trial has values {trial.values} and state {trial.state}."
+                )
+                return 0
+
+        study.tell(trial=trial_number, values=values, state=state)
+
+        self.logger.info(f"Told trial {trial_number} with values {values} and state " f"{state}.")
 
         return 0
 
