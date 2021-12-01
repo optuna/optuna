@@ -1,4 +1,5 @@
 from collections import Counter
+from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -9,8 +10,9 @@ import warnings
 import pytest
 
 import optuna
+from optuna.samplers import BaseSampler
 from optuna.samplers import NSGAIISampler
-from optuna.samplers._nsga2 import _CONSTRAINTS_KEY
+from optuna.samplers._nsga2.sampler import _CONSTRAINTS_KEY
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 
@@ -23,7 +25,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers._nsga2._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers._nsga2.sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
@@ -34,7 +36,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers._nsga2._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers._nsga2.sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {i: 2 for i in range(20)}
 
@@ -396,7 +398,7 @@ def test_crowding_distance_sort() -> None:
         _create_frozen_trial(2, [9]),
         _create_frozen_trial(3, [0]),
     ]
-    optuna.samplers._nsga2._crowding_distance_sort(trials)
+    optuna.samplers._nsga2.sampler._crowding_distance_sort(trials)
     assert [t.number for t in trials] == [2, 3, 0, 1]
 
     trials = [
@@ -405,7 +407,7 @@ def test_crowding_distance_sort() -> None:
         _create_frozen_trial(2, [9, 0]),
         _create_frozen_trial(3, [0, 0]),
     ]
-    optuna.samplers._nsga2._crowding_distance_sort(trials)
+    optuna.samplers._nsga2.sampler._crowding_distance_sort(trials)
     assert [t.number for t in trials] == [2, 3, 0, 1]
 
 
@@ -419,7 +421,7 @@ def test_study_system_attr_for_population_cache() -> None:
         return [
             v
             for k, v in study.system_attrs.items()
-            if k.startswith(optuna.samplers._nsga2._POPULATION_CACHE_KEY_PREFIX)
+            if k.startswith(optuna.samplers._nsga2.sampler._POPULATION_CACHE_KEY_PREFIX)
         ]
 
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)
@@ -477,3 +479,72 @@ def test_call_after_trial_of_random_sampler() -> None:
     ) as mock_object:
         study.optimize(lambda _: 1.0, n_trials=1)
         assert mock_object.call_count == 1
+
+
+def test_crossover() -> None:
+    NSGAIISampler()
+    NSGAIISampler(crossover="uniform")
+    NSGAIISampler(crossover="blxalpha")
+    NSGAIISampler(crossover="sbx")
+    NSGAIISampler(crossover="vsbx")
+    NSGAIISampler(crossover="undx")
+    NSGAIISampler(crossover="spx")
+
+    with pytest.raises(ValueError):
+        NSGAIISampler(crossover="no_imp_crossover")
+
+
+parametrize_nsga2_sampler = pytest.mark.parametrize(
+    "sampler_class",
+    [
+        lambda: NSGAIISampler(population_size=2, crossover="uniform"),
+        lambda: NSGAIISampler(population_size=2, crossover="blxalpha"),
+        lambda: NSGAIISampler(population_size=2, crossover="sbx"),
+        lambda: NSGAIISampler(population_size=2, crossover="vsbx"),
+        lambda: NSGAIISampler(population_size=3, crossover="undx"),
+        lambda: NSGAIISampler(population_size=3, crossover="spx"),
+    ],
+)
+
+
+@parametrize_nsga2_sampler
+@pytest.mark.parametrize("n_objectives", [1, 2, 3])
+def test_crossover_objectives(n_objectives: int, sampler_class: Callable[[], BaseSampler]) -> None:
+    n_trials = 8
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler_class())
+    study.optimize(
+        lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)], n_trials=n_trials
+    )
+
+    assert len(study.trials) == n_trials
+
+
+@parametrize_nsga2_sampler
+@pytest.mark.parametrize("n_params", [1, 2, 3])
+def test_crossover_dims(n_params: int, sampler_class: Callable[[], BaseSampler]) -> None:
+    def objective(trial: optuna.Trial) -> float:
+        xs = [trial.suggest_float(f"x{dim}", -10, 10) for dim in range(n_params)]
+        return sum(xs)
+
+    n_objectives = 1
+    n_trials = 8
+
+    study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler_class())
+    study.optimize(objective, n_trials=n_trials)
+
+    assert len(study.trials) == n_trials
+
+
+@pytest.mark.parametrize("crossover_name", ["undx", "spx"])
+def test_crossover_invalid_population(crossover_name: str) -> None:
+    n_objectives = 2
+    n_trials = 8
+
+    with pytest.raises(ValueError):
+        sampler = NSGAIISampler(population_size=2, crossover=crossover_name)
+        study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
+        study.optimize(
+            lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
+            n_trials=n_trials,
+        )
