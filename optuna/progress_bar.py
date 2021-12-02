@@ -92,8 +92,7 @@ class _ProgressBar(object):
                         "{:.02f}/{} seconds".format(elapsed_seconds, self._timeout)
                     )
 
-            else:
-                assert self._timeout is not None
+            elif self._timeout is not None:
                 time_diff = elapsed_seconds - self._last_elapsed_seconds
                 if elapsed_seconds > self._timeout:
                     # Clip elapsed time to avoid tqdm warnings.
@@ -101,6 +100,9 @@ class _ProgressBar(object):
 
                 self._progress_bar.update(time_diff)
                 self._last_elapsed_seconds = elapsed_seconds
+
+            else:
+                assert False
 
     def close(self) -> None:
         """Close progress bars."""
