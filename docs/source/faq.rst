@@ -373,6 +373,8 @@ Here's an example:
     study = optuna.create_study()
     study.optimize(objective, n_trials=100, callbacks=[logging_callback])
 
+Note that this callback would not work as expected when you try to optimize a objective function with `n_jobs>1`.
+
 How do I suggest variables which represent the proportion, that is, are in accordance with Dirichlet distribution?
 ------------------------------------------------------------------------------------------------------------------
 
