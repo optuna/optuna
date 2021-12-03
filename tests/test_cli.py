@@ -1444,7 +1444,7 @@ def test_tell() -> None:
         output = json.loads(output)
         trial_number = output["number"]
 
-        output = subprocess.check_output(
+        subprocess.check_output(
             [
                 "optuna",
                 "tell",
@@ -1454,6 +1454,41 @@ def test_tell() -> None:
                 str(trial_number),
                 "--values",
                 "1.2",
+            ]
+        )
+
+        study = optuna.load_study(storage=db_url, study_name=study_name)
+        assert len(study.trials) == 1
+        assert study.trials[0].state == TrialState.COMPLETE
+        assert study.trials[0].values == [1.2]
+
+        # Error when updating a finished trial.
+        ret = subprocess.run(
+            [
+                "optuna",
+                "tell",
+                "--storage",
+                db_url,
+                "--trial-number",
+                str(trial_number),
+                "--values",
+                "1.2",
+            ]
+        )
+        assert ret.returncode != 0
+
+        # Passing `--skip-if-finished` to a finished trial for a noop.
+        subprocess.check_output(
+            [
+                "optuna",
+                "tell",
+                "--storage",
+                db_url,
+                "--trial-number",
+                str(trial_number),
+                "--values",
+                "1.3",  # Setting a different value and make sure it's not persisted.
+                "--skip-if-finished",
             ]
         )
 

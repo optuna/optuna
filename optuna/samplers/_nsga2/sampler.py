@@ -18,7 +18,10 @@ import optuna
 from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
+from optuna.samplers._nsga2.crossover import crossover
+from optuna.samplers._nsga2.crossover import get_n_parents
 from optuna.samplers._random import RandomSampler
+from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
@@ -29,7 +32,6 @@ from optuna.trial import TrialState
 # Define key names of `Trial.system_attrs`.
 _CONSTRAINTS_KEY = "nsga2:constraints"
 _GENERATION_KEY = "nsga2:generation"
-_PARENTS_KEY = "nsga2:parents"
 _POPULATION_CACHE_KEY_PREFIX = "nsga2:population"
 
 
@@ -52,6 +54,69 @@ class NSGAIISampler(BaseSampler):
             Probability of mutating each parameter when creating a new individual.
             If :obj:`None` is specified, the value ``1.0 / len(parent_trial.params)`` is used
             where ``parent_trial`` is the parent trial of the target individual.
+
+        crossover:
+            Crossover to be applied when creating child individuals.
+            The available crossovers are
+            `uniform` (default), `blxalpha`, `sbx`, `vsbx`, `undx`, and `spx`.
+
+            For :class:`~optuna.distributions.CategoricalDistribution`,
+            uniform crossover will be applied,
+            and for other distributions, the specified crossover will be applied.
+
+            For more information on each of the crossover method, please refer to the following.
+
+            - uniform: Select each parameter with equal probability
+              from the two parent individuals.
+
+                - `Gilbert Syswerda. 1989. Uniform Crossover in Genetic Algorithms.
+                  In Proceedings of the 3rd International Conference on Genetic Algorithms.
+                  Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, 2–9.
+                  <https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms>`_
+
+            - blxalpha: It uniformly samples child individuals from the hyper-rectangles created
+              by the two parent individuals.
+
+                - `Eshelman, L. and J. D. Schaffer.
+                  Real-Coded Genetic Algorithms and Interval-Schemata. FOGA (1992).
+                  <https://www.sciencedirect.com/science/article/abs/pii/B9780080948324500180>`_
+
+            - sbx: Generate a child from two parent individuals
+              according to the polynomial probability distribution.
+
+                - `Deb, K. and R. Agrawal.
+                  “Simulated Binary Crossover for Continuous Search Space.”
+                  Complex Syst. 9 (1995): n. pag.
+                  <https://www.complex-systems.com/abstracts/v09_i02_a02/>`_
+
+            - vsbx: In SBX, the probability of occurrence of child individuals
+              becomes zero in some parameter regions.
+              vSBX generates child individuals without excluding any region of the parameter space,
+              while maintaining the excellent properties of SBX.
+
+                - `Pedro J. Ballester, Jonathan N. Carter.
+                  Real-Parameter Genetic Algorithms for Finding Multiple Optimal Solutions
+                  in Multi-modal Optimization. GECCO 2003: 706-717
+                  <https://link.springer.com/chapter/10.1007/3-540-45105-6_86>`_
+
+            - undx: Generate child individuals from the three parents
+              using a multivariate normal distribution.
+
+                - `H. Kita, I. Ono and S. Kobayashi,
+                  Multi-parental extension of the unimodal normal distribution crossover
+                  for real-coded genetic algorithms,
+                  Proceedings of the 1999 Congress on Evolutionary Computation-CEC99
+                  (Cat. No. 99TH8406), 1999, pp. 1581-1588 Vol. 2
+                  <https://ieeexplore.ieee.org/document/782672>`_
+
+            - spx: It uniformly samples child individuals from within a single simplex
+              that is similar to the simplex produced by the parent individual.
+
+                - `Shigeyoshi Tsutsui and Shigeyoshi Tsutsui and David E. Goldberg and
+                  David E. Goldberg and Kumara Sastry and Kumara Sastry
+                  Progress Toward Linkage Learning in Real-Coded GAs with Simplex Crossover.
+                  IlliGAL Report. 2000.
+                  <https://www.researchgate.net/publication/2388486_Progress_Toward_Linkage_Learning_in_Real-Coded_GAs_with_Simplex_Crossover>`_
 
         crossover_prob:
             Probability that a crossover (parameters swapping between parents) will occur
@@ -87,6 +152,12 @@ class NSGAIISampler(BaseSampler):
                 versions without prior notice. See
                 https://github.com/optuna/optuna/releases/tag/v2.5.0.
 
+    Raises:
+        ValueError:
+            If ``crossover`` is not in `[uniform, blxalpha, sbx, vsbx, undx, spx]`.
+            Or, if ``population_size <= n_parents``.
+            The `n_parents` is determined by each crossover.
+            For `undx` and `spx`, ``n_parents=3``, and for the other algorithms, ``n_parents=2``.
     """
 
     def __init__(
@@ -94,6 +165,7 @@ class NSGAIISampler(BaseSampler):
         *,
         population_size: int = 50,
         mutation_prob: Optional[float] = None,
+        crossover: str = "uniform",
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
@@ -124,14 +196,35 @@ class NSGAIISampler(BaseSampler):
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
+        if crossover not in ["uniform", "blxalpha", "sbx", "vsbx", "undx", "spx"]:
+            raise ValueError(
+                f"'{crossover}' is not a valid crossover name."
+                " The available crossovers are"
+                " `uniform` (default), `blxalpha`, `sbx`, `vsbx`, `undx`, and `spx`."
+            )
+        if crossover != "uniform":
+            warnings.warn(
+                "``crossover`` option is an experimental feature."
+                " The interface can change in the future.",
+                ExperimentalWarning,
+            )
+        n_parents = get_n_parents(crossover)
+        if population_size < n_parents:
+            raise ValueError(
+                f"Using {crossover},"
+                f" the population size should be greater than or equal to {n_parents}."
+                f" The specified `population_size` is {population_size}."
+            )
 
         self._population_size = population_size
         self._mutation_prob = mutation_prob
+        self._crossover = crossover
         self._crossover_prob = crossover_prob
         self._swapping_prob = swapping_prob
         self._random_sampler = RandomSampler(seed=seed)
         self._rng = np.random.RandomState(seed)
         self._constraints_func = constraints_func
+        self._search_space = IntersectionSearchSpace()
 
     def reseed_rng(self) -> None:
         self._random_sampler.reseed_rng()
@@ -140,7 +233,16 @@ class NSGAIISampler(BaseSampler):
     def infer_relative_search_space(
         self, study: Study, trial: FrozenTrial
     ) -> Dict[str, BaseDistribution]:
-        return {}
+        search_space: Dict[str, BaseDistribution] = {}
+        for name, distribution in self._search_space.calculate(study).items():
+            if distribution.single():
+                # The `untransform` method of `optuna._transform._SearchSpaceTransform`
+                # does not assume a single value,
+                # so single value objects are not sampled with the `sample_relative` method,
+                # but with the `sample_independent` method.
+                continue
+            search_space[name] = distribution
+        return search_space
 
     def sample_relative(
         self,
@@ -154,18 +256,36 @@ class NSGAIISampler(BaseSampler):
         generation = parent_generation + 1
         study._storage.set_trial_system_attr(trial_id, _GENERATION_KEY, generation)
 
+        dominates_func = _dominates if self._constraints_func is None else _constrained_dominates
+
         if parent_generation >= 0:
-            p0 = self._select_parent(study, parent_population)
+            # We choose a child based on the specified crossover method.
             if self._rng.rand() < self._crossover_prob:
-                p1 = self._select_parent(
-                    study, [t for t in parent_population if t._trial_id != p0._trial_id]
+                child_params = crossover(
+                    self._crossover,
+                    study,
+                    parent_population,
+                    search_space,
+                    self._rng,
+                    self._swapping_prob,
+                    dominates_func,
                 )
             else:
-                p1 = p0
+                parent_population_size = len(parent_population)
+                parent_params = parent_population[self._rng.choice(parent_population_size)].params
+                child_params = {name: parent_params[name] for name in search_space.keys()}
 
-            study._storage.set_trial_system_attr(
-                trial_id, _PARENTS_KEY, [p0._trial_id, p1._trial_id]
-            )
+            n_params = len(child_params)
+            if self._mutation_prob is None:
+                mutation_prob = 1.0 / max(1.0, n_params)
+            else:
+                mutation_prob = self._mutation_prob
+
+            params = {}
+            for param_name in child_params.keys():
+                if self._rng.rand() >= mutation_prob:
+                    params[param_name] = child_params[param_name]
+            return params
 
         return {}
 
@@ -176,31 +296,14 @@ class NSGAIISampler(BaseSampler):
         param_name: str,
         param_distribution: BaseDistribution,
     ) -> Any:
-        if _PARENTS_KEY not in trial.system_attrs:
-            return self._random_sampler.sample_independent(
-                study, trial, param_name, param_distribution
-            )
+        # Following parameters are randomly sampled here.
+        # 1. A parameter in the initial population/first generation.
+        # 2. A parameter to mutate.
+        # 3. A parameter excluded from the intersection search space.
 
-        p0_id, p1_id = trial.system_attrs[_PARENTS_KEY]
-        p0 = study._storage.get_trial(p0_id)
-        p1 = study._storage.get_trial(p1_id)
-
-        param = p0.params.get(param_name, None)
-        parent_params_len = len(p0.params)
-        if param is None or self._rng.rand() < self._swapping_prob:
-            param = p1.params.get(param_name, None)
-            parent_params_len = len(p1.params)
-
-        mutation_prob = self._mutation_prob
-        if mutation_prob is None:
-            mutation_prob = 1.0 / max(1.0, parent_params_len)
-
-        if param is None or self._rng.rand() < mutation_prob:
-            return self._random_sampler.sample_independent(
-                study, trial, param_name, param_distribution
-            )
-
-        return param
+        return self._random_sampler.sample_independent(
+            study, trial, param_name, param_distribution
+        )
 
     def _collect_parent_population(self, study: Study) -> Tuple[int, List[FrozenTrial]]:
         trials = study.get_trials(deepcopy=False)
@@ -289,20 +392,6 @@ class NSGAIISampler(BaseSampler):
                 break
 
         return elite_population
-
-    def _select_parent(self, study: Study, population: Sequence[FrozenTrial]) -> FrozenTrial:
-        # TODO(ohta): Consider to allow users to specify the number of parent candidates.
-        population_size = len(population)
-        candidate0 = population[self._rng.choice(population_size)]
-        candidate1 = population[self._rng.choice(population_size)]
-
-        dominates = _dominates if self._constraints_func is None else _constrained_dominates
-
-        # TODO(ohta): Consider crowding distance.
-        if dominates(candidate0, candidate1, study.directions):
-            return candidate0
-        else:
-            return candidate1
 
     def _fast_non_dominated_sort(
         self,
