@@ -231,6 +231,7 @@ def test_discrete_uniform(
         IntDistribution(-10, 10, step=2),
         IntDistribution(0, 10, step=2),
         IntDistribution(-10, 0, step=2),
+        IntDistribution(1, 100, log=True),
     ],
 )
 def test_int(
@@ -286,7 +287,9 @@ def test_categorical(
         DiscreteUniformDistribution(-10, 10, 0.5),
         IntUniformDistribution(1, 10),
         IntLogUniformDistribution(1, 100),
-        IntDistribution(1, 10),
+        IntDistribution(3, 10),
+        IntDistribution(1, 100, log=True),
+        IntDistribution(3, 10, step=2),
     ],
 )
 @pytest.mark.parametrize(
@@ -297,7 +300,9 @@ def test_categorical(
         DiscreteUniformDistribution(-10, 10, 0.5),
         IntUniformDistribution(1, 10),
         IntLogUniformDistribution(1, 100),
-        IntDistribution(1, 10),
+        IntDistribution(3, 10),
+        IntDistribution(1, 100, log=True),
+        IntDistribution(3, 10, step=2),
     ],
 )
 def test_sample_relative_numerical(
@@ -595,6 +600,13 @@ def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> Non
         IntUniformDistribution(-10, 10, 2),
         IntUniformDistribution(0, 10, 2),
         IntUniformDistribution(-10, 0, 2),
+        IntDistribution(-10, 10),
+        IntDistribution(0, 10),
+        IntDistribution(-10, 0),
+        IntDistribution(-10, 10, step=2),
+        IntDistribution(0, 10, step=2),
+        IntDistribution(-10, 0, step=2),
+        IntDistribution(1, 100, log=True),
         CategoricalDistribution((1, 2, 3)),
         CategoricalDistribution(("a", "b", "c")),
         CategoricalDistribution((1, "a")),
@@ -790,6 +802,8 @@ def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) ->
         "d": IntUniformDistribution(low=1, high=1),
         "e": IntLogUniformDistribution(low=1, high=1),
         "f": CategoricalDistribution([1]),
+        "j": IntDistribution(low=1, high=1),
+        "k": IntDistribution(low=1, high=1, log=True),
     }
 
     with warnings.catch_warnings():

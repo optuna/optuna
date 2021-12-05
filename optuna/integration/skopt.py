@@ -317,6 +317,12 @@ class _Optimizer(object):
             if isinstance(distribution, distributions.IntLogUniformDistribution):
                 value = int(np.round(value))
                 value = min(max(value, distribution.low), distribution.high)
+            if isinstance(distribution, distributions.IntDistribution):
+                if distribution.log:
+                    value = int(np.round(value))
+                    value = min(max(value, distribution.low), distribution.high)
+                else:
+                    value = int(value * distribution.step + distribution.low)
 
             params[name] = value
 
@@ -356,7 +362,7 @@ class _Optimizer(object):
                 param_value = (param_value - distribution.low) // distribution.step
             if isinstance(distribution, distributions.IntDistribution):
                 if not distribution.log:
-                    param_value = param_value - distribution.low
+                    param_value = (param_value - distribution.low) // distribution.step
 
             param_values.append(param_value)
 

@@ -21,6 +21,9 @@ from optuna.distributions import UniformDistribution
         (0, IntUniformDistribution(0, 3)),
         (1, IntLogUniformDistribution(1, 10)),
         (2, IntUniformDistribution(0, 10, step=2)),
+        (0, IntDistribution(0, 3)),
+        (1, IntDistribution(1, 10)),
+        (2, IntDistribution(0, 10, step=2)),
         (0.0, UniformDistribution(0, 3)),
         (1.0, LogUniformDistribution(1, 10)),
         (0.2, DiscreteUniformDistribution(0, 1, q=0.2)),
@@ -80,6 +83,9 @@ def test_search_space_transform_encoding() -> None:
         (0, IntUniformDistribution(0, 3)),
         (1, IntLogUniformDistribution(1, 10)),
         (2, IntUniformDistribution(0, 10, step=2)),
+        (0, IntDistribution(0, 3)),
+        (1, IntDistribution(1, 10, log=True)),
+        (2, IntDistribution(0, 10, step=2)),
         (0.0, UniformDistribution(0, 3)),
         (1.0, LogUniformDistribution(1, 10)),
         (0.2, DiscreteUniformDistribution(0, 1, q=0.2)),
@@ -177,6 +183,9 @@ def test_search_space_transform_untransform_params() -> None:
         "x7": CategoricalDistribution(["corge"]),
         "x8": UniformDistribution(-2, -2),
         "x9": LogUniformDistribution(1, 1),
+        "x15": IntDistribution(2, 4),
+        "x16": IntDistribution(1, 10, log=True),
+        "x17": IntDistribution(1, 9, step=2),
     }
 
     params = {
@@ -190,6 +199,9 @@ def test_search_space_transform_untransform_params() -> None:
         "x7": "corge",
         "x8": -2.0,
         "x9": 1.0,
+        "x15": 2,
+        "x16": 1,
+        "x17": 3,
     }
 
     trans = _SearchSpaceTransform(search_space)
