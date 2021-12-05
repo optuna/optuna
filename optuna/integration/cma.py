@@ -258,7 +258,6 @@ class PyCmaSampler(BaseSampler):
                     x0[name] = math.exp(numpy.mean([log_high, log_low]))
                 else:
                     x0[name] = int(numpy.mean([distribution.high, distribution.low]))
-
             else:
                 raise NotImplementedError(
                     "The distribution {} is not implemented.".format(distribution)
@@ -474,6 +473,9 @@ class _Optimizer(object):
             return math.log(optuna_param_value)
         elif isinstance(dist, DiscreteUniformDistribution):
             return optuna_param_value - dist.low
+        elif isinstance(dist, IntDistribution):
+            if dist.log:
+                return math.log(optuna_param_value)
         elif isinstance(dist, CategoricalDistribution):
             return dist.choices.index(optuna_param_value)
         return optuna_param_value
