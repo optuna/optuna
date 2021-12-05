@@ -50,9 +50,16 @@ def get_tests_require() -> List[str]:
 def get_extras_require() -> Dict[str, List[str]]:
 
     requirements = {
-        # TODO(HideakiImamura) Unpin mypy version after fixing "Duplicate modules" error in
-        # tutorials.
-        "checking": ["black", "hacking", "isort", "mypy==0.790", "blackdoc"],
+        "checking": [
+            "black",
+            "hacking",
+            "isort",
+            "blackdoc",
+            "mypy",
+            "types-setuptools",
+            "types-redis",
+            "types-PyYAML",
+        ],
         "codecov": ["codecov", "pytest-cov"],
         "doctest": [
             "cma",
@@ -61,7 +68,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "plotly>=4.0.0",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
-            "mlflow",
+            "mlflow<1.22.0",
         ],
         "document": [
             # TODO(nzw): Remove the version constraint after resolving the issue
@@ -89,7 +96,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fakeredis",
             "lightgbm",
             "matplotlib>=3.0.0",
-            "mlflow",
+            "mlflow<1.22.0",
             "mpi4py",
             "mxnet",
             "pandas",
@@ -131,7 +138,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "lightgbm",
-            "mlflow",
+            "mlflow<1.22.0",
             "wandb",
             "mpi4py",
             "mxnet",

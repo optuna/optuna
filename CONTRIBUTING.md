@@ -139,7 +139,7 @@ Please install some required packages at first.
 pip install ".[tests]"
 
 # Install required packages to test all modules including visualization and integration modules.
-pip install ".[testing]"
+pip install ".[testing]" -f https://download.pytorch.org/whl/torch_stable.html
 ```
 
 You can run your tests as follows:

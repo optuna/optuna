@@ -81,12 +81,13 @@ def test_plot_slice_log_scale() -> None:
 
     # Plot a parameter.
     figure = plot_slice(study, params=["y_log"])
-
     assert len(figure.get_lines()) == 0
     assert figure.xaxis.label.get_text() == "y_log"
+    assert figure.xaxis.get_scale() == "log"
     figure = plot_slice(study, params=["x_linear"])
     assert len(figure.get_lines()) == 0
     assert figure.xaxis.label.get_text() == "x_linear"
+    assert figure.xaxis.get_scale() == "linear"
 
     # Plot multiple parameters.
     figure = plot_slice(study)
@@ -95,3 +96,5 @@ def test_plot_slice_log_scale() -> None:
     assert len(figure[1].get_lines()) == 0
     assert figure[0].xaxis.label.get_text() == "x_linear"
     assert figure[1].xaxis.label.get_text() == "y_log"
+    assert figure[0].xaxis.get_scale() == "linear"
+    assert figure[1].xaxis.get_scale() == "log"
