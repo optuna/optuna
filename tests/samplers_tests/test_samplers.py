@@ -235,7 +235,8 @@ def test_discrete_uniform(
     ],
 )
 def test_int(
-    sampler_class: Callable[[], BaseSampler], distribution: IntUniformDistribution
+    sampler_class: Callable[[], BaseSampler],
+    distribution: Union[IntDistribution, IntUniformDistribution],
 ) -> None:
 
     study = optuna.study.create_study(sampler=sampler_class())
@@ -379,6 +380,8 @@ def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSa
         DiscreteUniformDistribution(-10, 10, 0.5),
         IntUniformDistribution(1, 10),
         IntLogUniformDistribution(1, 100),
+        IntDistribution(1, 10),
+        IntDistribution(1, 100, log=True),
     ],
 )
 def test_sample_relative_mixed(
@@ -405,6 +408,7 @@ def test_sample_relative_mixed(
             DiscreteUniformDistribution,
             IntUniformDistribution,
             IntLogUniformDistribution,
+            IntDistribution,
         ),
     )
     assert np.all(points[:, 0] >= search_space["x"].low)
