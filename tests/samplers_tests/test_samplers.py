@@ -338,7 +338,9 @@ def test_sample_relative_numerical(
     for param_value, distribution in zip(sample(), search_space.values()):
         assert not isinstance(param_value, np.floating)
         assert not isinstance(param_value, np.integer)
-        if isinstance(distribution, (IntUniformDistribution, IntLogUniformDistribution, IntDistribution)):
+        if isinstance(
+            distribution, (IntUniformDistribution, IntLogUniformDistribution, IntDistribution)
+        ):
             assert isinstance(param_value, int)
         else:
             assert isinstance(param_value, float)
