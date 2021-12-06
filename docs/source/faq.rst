@@ -373,7 +373,7 @@ Here's an example:
     study = optuna.create_study()
     study.optimize(objective, n_trials=100, callbacks=[logging_callback])
 
-Note that this callback may show incorrect values when you try to optimize an objective function with `n_jobs!=1`
+Note that this callback may show incorrect values when you try to optimize an objective function with ``n_jobs!=1``
 (or other forms of distributed optimization) due to its reads and writes to storage that are prone to race conditions.
 
 How do I suggest variables which represent the proportion, that is, are in accordance with Dirichlet distribution?
