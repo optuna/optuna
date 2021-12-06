@@ -74,7 +74,6 @@ if _imports.is_successful() and use_callback_cls:
             # The training should not stop.
             return False
 
-
 elif _imports.is_successful():
 
     def _get_callback_context(env: "xgb.core.CallbackEnv") -> str:
@@ -113,7 +112,6 @@ elif _imports.is_successful():
             if self._trial.should_prune():
                 message = "Trial was pruned at iteration {}.".format(env.iteration)
                 raise optuna.TrialPruned(message)
-
 
 else:
 
