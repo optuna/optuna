@@ -8,7 +8,6 @@ from typing import Any, Dict
 from typing import Callable
 from typing import Optional
 from typing import Tuple
-from typing import Union
 
 import numpy as np
 from pandas import Timedelta
@@ -1608,4 +1607,4 @@ def test_trial_suggest_categorical() -> None:
         study = optuna.load_study(storage=db_url, study_name=study_name)
         assert len(study.trials) == 1
         param = output["params"][param_name]
-        assert param in distribution_dict[param_name]["attributes"]["choices"]
+        assert param in distribution_dict[param_name]["attributes"]["choices"]  # type: ignore

@@ -31,7 +31,6 @@ import yaml
 
 import optuna
 from optuna._imports import _LazyImport
-from optuna.distributions import CategoricalDistribution, IntUniformDistribution
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
@@ -375,7 +374,7 @@ class _TrialSuggest(_BaseCommand):
         trial = optuna.Trial(study, trial_id)
         for name, dist in json.loads(parsed_args.search_space).items():
             distribution = optuna.distributions.json_to_distribution(json.dumps(dist))
-            if isinstance(distribution, CategoricalDistribution):
+            if isinstance(distribution, optuna.distributions.CategoricalDistribution):
                 trial.suggest_categorical(name, distribution.choices)
             elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
                 trial.suggest_float(
