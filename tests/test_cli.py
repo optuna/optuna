@@ -4,7 +4,7 @@ import re
 import subprocess
 from subprocess import CalledProcessError
 import tempfile
-from typing import Any
+from typing import Any, Dict
 from typing import Callable
 from typing import Optional
 from typing import Tuple
@@ -1501,18 +1501,14 @@ def test_tell() -> None:
 
 @pytest.mark.skip_coverage
 @pytest.mark.parametrize(
-    "distribution,low,high",
+    "param_name,distribution_param",
     [
-        ("float", 0.0, 1.0),
-        ("int", 0, 10),
+        ("x", {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}),
+        ("y", {"name": "IntDistribution", "attributes": {"low": 0, "high": 10}}),
     ],
 )
-def test_trial_suggest_numerical(
-    distribution: str,
-    low: Union[float, int],
-    high: Union[float, int],
-) -> None:
-    study_name = f"test_trial_suggest_{distribution}"
+def test_trial_suggest_numerical(param_name: str, distribution_param: Dict[str, Any]) -> None:
+    study_name = f"test_trial_suggest_{param_name}"
 
     with tempfile.NamedTemporaryFile() as tf:
         db_url = "sqlite:///{}".format(tf.name)
@@ -1533,21 +1529,20 @@ def test_trial_suggest_numerical(
         output = json.loads(output)
         trial_number = output["number"]
 
-        param_name = "param"
-        args = ("--distribution", distribution, "--low", str(low), "--high", str(high))
+        distribution_dict = {param_name: distribution_param}
         output = subprocess.check_output(
             [
                 "optuna",
                 "trial",
                 "suggest",
-                param_name,
                 "--storage",
                 db_url,
                 "--trial-number",
                 str(trial_number),
                 "--study-name",
                 study_name,
-                *args,
+                "--search-space",
+                json.dumps(distribution_dict),
             ]
         )
         output = output.decode("utf-8")
@@ -1556,7 +1551,9 @@ def test_trial_suggest_numerical(
         study = optuna.load_study(storage=db_url, study_name=study_name)
         assert len(study.trials) == 1
         param = output["params"][param_name]
-        assert low <= param <= high
+        expected_low = distribution_dict[param_name]["attributes"]["low"]
+        expected_high = distribution_dict[param_name]["attributes"]["high"]
+        assert expected_low <= param <= expected_high
 
 
 @pytest.mark.skip_coverage
@@ -1583,22 +1580,26 @@ def test_trial_suggest_categorical() -> None:
         trial_number = output["number"]
 
         param_name = "param"
-        args = ("--distribution", "categorical", "--choices")
-        choices = ("param1", "param2", "param3")
+        distribution_dict = {
+            param_name: {
+                "name": "CategoricalDistribution",
+                "attributes": {"choices": ("param1", "param2", "param3")},
+            },
+        }
+
         output = subprocess.check_output(
             [
                 "optuna",
                 "trial",
                 "suggest",
-                param_name,
                 "--storage",
                 db_url,
                 "--trial-number",
                 str(trial_number),
                 "--study-name",
                 study_name,
-                *args,
-                *choices,
+                "--search-space",
+                json.dumps(distribution_dict),
             ]
         )
         output = output.decode("utf-8")
@@ -1607,4 +1608,4 @@ def test_trial_suggest_categorical() -> None:
         study = optuna.load_study(storage=db_url, study_name=study_name)
         assert len(study.trials) == 1
         param = output["params"][param_name]
-        assert param in choices
+        assert param in distribution_dict[param_name]["attributes"]["choices"]

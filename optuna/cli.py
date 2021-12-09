@@ -31,6 +31,7 @@ import yaml
 
 import optuna
 from optuna._imports import _LazyImport
+from optuna.distributions import CategoricalDistribution, IntUniformDistribution
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
@@ -351,15 +352,9 @@ class _TrialSuggest(_BaseCommand):
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
         parser = super(_TrialSuggest, self).get_parser(prog_name)
-        parser.add_argument("param_name")
         parser.add_argument("--study-name", required=True)
         parser.add_argument("--trial-number", required=True, type=int)
-        parser.add_argument("--distribution", choices=("float", "int", "categorical"))
-        parser.add_argument("--choices", nargs="+")
-        parser.add_argument("--high", type=self._int_or_float)
-        parser.add_argument("--low", type=self._int_or_float)
-        parser.add_argument("--step", type=self._int_or_float)
-        parser.add_argument("--log-domain", action="store_true", default=False)
+        parser.add_argument("--search-space", type=str, required=True)
         parser.add_argument("--format", choices=("json", "yaml"), default="json")
         parser.add_argument("--flatten", action="store_true")
         return parser
@@ -378,30 +373,66 @@ class _TrialSuggest(_BaseCommand):
             parsed_args.trial_number,
         )
         trial = optuna.Trial(study, trial_id)
-
-        if parsed_args.distribution == "float":
-            trial.suggest_float(
-                parsed_args.param_name,
-                parsed_args.low,
-                parsed_args.high,
-                log=parsed_args.log_domain,
-                step=parsed_args.step,
-            )
-
-        elif parsed_args.distribution == "int":
-            trial.suggest_int(
-                parsed_args.param_name,
-                parsed_args.low,
-                parsed_args.high,
-                log=parsed_args.log_domain,
-                step=parsed_args.step or 1,
-            )
-
-        else:
-            trial.suggest_categorical(
-                parsed_args.param_name,
-                parsed_args.choices,
-            )
+        for name, dist in json.loads(parsed_args.search_space).items():
+            distribution = optuna.distributions.json_to_distribution(json.dumps(dist))
+            if isinstance(distribution, CategoricalDistribution):
+                trial.suggest_categorical(name, distribution.choices)
+            elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
+                trial.suggest_float(
+                    name,
+                    distribution.low,
+                    distribution.high,
+                    step=distribution.q,
+                )
+            elif isinstance(distribution, optuna.distributions.FloatDistribution):
+                trial.suggest_float(
+                    name,
+                    distribution.low,
+                    distribution.high,
+                    log=distribution.log,
+                    step=distribution.step,
+                )
+            elif isinstance(distribution, optuna.distributions.LogUniformDistribution):
+                trial.suggest_float(
+                    name,
+                    distribution.low,
+                    distribution.high,
+                    log=True,
+                )
+            elif isinstance(distribution, optuna.distributions.UniformDistribution):
+                trial.suggest_float(
+                    name,
+                    distribution.low,
+                    distribution.high,
+                )
+            elif isinstance(distribution, optuna.distributions.DiscreteUniformDistribution):
+                trial.suggest_float(
+                    name,
+                    distribution.low,
+                    distribution.high,
+                    step=distribution.q,
+                )
+            elif isinstance(distribution, optuna.distributions.IntDistribution):
+                trial.suggest_int(
+                    name,
+                    distribution.low,
+                    distribution.high,
+                    log=distribution.log,
+                    step=distribution.step,
+                )
+            elif isinstance(distribution, optuna.distributions.IntLogUniformDistribution):
+                trial.suggest_int(
+                    name,
+                    distribution.low,
+                    distribution.high,
+                    step=True,
+                )
+            elif isinstance(distribution, optuna.distributions.IntUniformDistribution):
+                trial.suggest_int(
+                    name,
+                    distribution.low,
+                    distribution.high,
+                )
 
         record: Dict[Tuple[str, str], Any] = {("number", ""): trial.number}
         columns = [("number", "")]
