@@ -22,7 +22,7 @@ from optuna.distributions import UniformDistribution
         (1, IntLogUniformDistribution(1, 10)),
         (2, IntUniformDistribution(0, 10, step=2)),
         (0, IntDistribution(0, 3)),
-        (1, IntDistribution(1, 10)),
+        (1, IntDistribution(1, 10, log=True)),
         (2, IntDistribution(0, 10, step=2)),
         (0.0, UniformDistribution(0, 3)),
         (1.0, LogUniformDistribution(1, 10)),
