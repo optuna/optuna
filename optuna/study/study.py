@@ -1168,8 +1168,9 @@ def create_study(
 
 
 def load_study(
-    study_name: Optional[str],
     storage: Union[str, storages.BaseStorage],
+    *,
+    study_name: Optional[str] = None,
     sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
 ) -> Study:
@@ -1197,7 +1198,7 @@ def load_study(
             study = optuna.create_study(storage="sqlite:///example.db", study_name="my_study")
             study.optimize(objective, n_trials=3)
 
-            loaded_study = optuna.load_study(study_name="my_study", storage="sqlite:///example.db")
+            loaded_study = optuna.load_study(storage="sqlite:///example.db", study_name="my_study")
             assert len(loaded_study.trials) == len(study.trials)
 
         .. testcleanup::
@@ -1205,12 +1206,12 @@ def load_study(
             os.remove("example.db")
 
     Args:
-        study_name:
-            Study's name. Each study has a unique name as an identifier. If :obj:`None`, checks
-            whether the storage contains a single study, and if so loads that study.
         storage:
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
             :func:`~optuna.study.create_study` for further details.
+        study_name:
+            Study's name. Each study has a unique name as an identifier. If :obj:`None`, checks
+            whether the storage contains a single study, and if so loads that study.
         sampler:
             A sampler object that implements background algorithm for value suggestion.
             If :obj:`None` is specified, :class:`~optuna.samplers.TPESampler` is used
@@ -1341,8 +1342,8 @@ def copy_study(
             )
 
             study = optuna.load_study(
-                study_name=None,
                 storage="sqlite:///example_copy.db",
+                study_name=None,
             )
 
         .. testcleanup::
@@ -1367,7 +1368,7 @@ def copy_study(
 
     """
 
-    from_study = load_study(study_name=from_study_name, storage=from_storage)
+    from_study = load_study(storage=from_storage, study_name=from_study_name)
     to_study = create_study(
         study_name=to_study_name or from_study_name,
         storage=to_storage,

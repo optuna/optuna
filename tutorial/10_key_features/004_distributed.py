@@ -49,7 +49,7 @@ Then, write an optimization script. Let's assume that ``foo.py`` contains the fo
 
     if __name__ == "__main__":
         study = optuna.load_study(
-            study_name="distributed-example", storage="mysql://root@localhost/example"
+            storage="mysql://root@localhost/example", study_name="distributed-example"
         )
         study.optimize(objective, n_trials=100)
 

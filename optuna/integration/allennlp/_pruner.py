@@ -208,8 +208,8 @@ class AllenNLPPruningCallback(TrainerCallback):
                 )
 
                 study = load_study(
-                    study_name,
-                    storage,
+                    storage=storage,
+                    study_name=study_name,
                     pruner=pruner,
                 )
                 self._trial = Trial(study, int(trial_id))

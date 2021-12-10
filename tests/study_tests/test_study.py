@@ -377,13 +377,13 @@ def test_load_study(storage_mode: str) -> None:
 
         with pytest.raises(KeyError):
             # Test loading an unexisting study.
-            load_study(study_name=study_name, storage=storage)
+            load_study(storage=storage, study_name=study_name)
 
         # Create a new study.
-        created_study = create_study(study_name=study_name, storage=storage)
+        created_study = create_study(storage=storage, study_name=study_name)
 
         # Test loading an existing study.
-        loaded_study = load_study(study_name=study_name, storage=storage)
+        loaded_study = load_study(storage=storage, study_name=study_name)
         assert created_study._study_id == loaded_study._study_id
 
 
@@ -397,19 +397,19 @@ def test_load_study_study_name_none(storage_mode: str) -> None:
 
         study_name = str(uuid.uuid4())
 
-        _ = create_study(study_name=study_name, storage=storage)
+        _ = create_study(storage=storage, study_name=study_name)
 
-        loaded_study = load_study(study_name=None, storage=storage)
+        loaded_study = load_study(storage=storage, study_name=None)
 
         assert loaded_study.study_name == study_name
 
         study_name = str(uuid.uuid4())
 
-        _ = create_study(study_name=study_name, storage=storage)
+        _ = create_study(storage=storage, study_name=study_name)
 
         # Ambiguous study.
         with pytest.raises(ValueError):
-            load_study(study_name=None, storage=storage)
+            load_study(storage=storage, study_name=None)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -452,7 +452,7 @@ def test_copy_study(from_storage_mode: str, to_storage_mode: str) -> None:
             to_storage=to_storage,
         )
 
-        to_study = load_study(study_name=from_study.study_name, storage=to_storage)
+        to_study = load_study(storage=to_storage, study_name=from_study.study_name)
 
         assert to_study.study_name == from_study.study_name
         assert to_study.directions == from_study.directions
@@ -484,7 +484,7 @@ def test_copy_study_to_study_name(from_storage_mode: str, to_storage_mode: str) 
             to_study_name="bar",
         )
 
-        _ = load_study(study_name="bar", storage=to_storage)
+        _ = load_study(storage=to_storage, study_name="bar")
 
 
 def test_nested_optimization() -> None:
