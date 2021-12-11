@@ -124,7 +124,7 @@ class Study:
         """Return the best trial in the study.
 
         Returns:
-            A :class:`~optuna.FrozenTrial` object of the best trial.
+            A :class:`~optuna.trial.FrozenTrial` object of the best trial.
 
         Raises:
             :exc:`RuntimeError`:
@@ -193,7 +193,7 @@ class Study:
         This is a short form of ``self.get_trials(deepcopy=True, states=None)``.
 
         Returns:
-            A list of :class:`~optuna.FrozenTrial` objects.
+            A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
 
         return self.get_trials(deepcopy=True, states=None)
@@ -233,7 +233,7 @@ class Study:
                 Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
-            A list of :class:`~optuna.FrozenTrial` objects.
+            A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
 
         self._storage.read_trials_from_remote_storage(self._study_id)
@@ -363,7 +363,7 @@ class Study:
             callbacks:
                 List of callback functions that are invoked at the end of each trial. Each function
                 must accept two parameters with the following types in this order:
-                :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+                :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
             gc_after_trial:
                 Flag to determine whether to automatically run garbage collection after each trial.
                 Set to :obj:`True` to run the garbage collection, :obj:`False` otherwise.
@@ -760,7 +760,7 @@ class Study:
 
         Args:
             attrs:
-                Specifies field names of :class:`~optuna.FrozenTrial` to include them to a
+                Specifies field names of :class:`~optuna.trial.FrozenTrial` to include them to a
                 DataFrame of trials.
             multi_index:
                 Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that
