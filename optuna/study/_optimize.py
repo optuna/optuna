@@ -195,8 +195,6 @@ def _run_trial(
     values: Optional[List[float]] = None
     func_err: Optional[Union[Exception, KeyboardInterrupt]] = None
     func_err_fail_exc_info: Optional[Any] = None
-    # Set to a string if `func` returns correctly but the return value violates assumptions.
-    values_conversion_failure_message: Optional[str] = None
     stop_event: Optional[Event] = None
     thread: Optional[Thread] = None
 
@@ -217,15 +215,6 @@ def _run_trial(
         state = TrialState.FAIL
         func_err = e
         func_err_fail_exc_info = sys.exc_info()
-    else:
-        # TODO(hvy): Avoid checking the values both here and inside `Study.tell`.
-        values, values_conversion_failure_message = _check_and_convert_to_values(
-            len(study.directions), value_or_values, trial.number
-        )
-        if values_conversion_failure_message is not None:
-            state = TrialState.FAIL
-        else:
-            state = TrialState.COMPLETE
 
     if study._storage.is_heartbeat_enabled():
         assert stop_event is not None
@@ -235,7 +224,7 @@ def _run_trial(
 
     # `Study.tell` may raise during trial post-processing.
     try:
-        study.tell(trial, values=values, state=state)
+        study.tell(trial, values=value_or_values, state=state)
     except Exception:
         raise
     finally:
@@ -251,8 +240,6 @@ def _run_trial(
                     ),
                     exc_info=func_err_fail_exc_info,
                 )
-            elif values_conversion_failure_message is not None:
-                _logger.warning(values_conversion_failure_message)
             else:
                 assert False, "Should not reach."
         else:

@@ -497,7 +497,7 @@ class Study:
         self,
         trial: Union[trial_module.Trial, int],
         values: Optional[Union[float, Sequence[float]]] = None,
-        state: TrialState = TrialState.COMPLETE,
+        state: Optional[TrialState] = TrialState.COMPLETE,
         skip_if_finished: bool = False,
     ) -> None:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
@@ -659,13 +659,17 @@ class Study:
 
         if values is not None:
             values, values_conversion_failure_message = _check_and_convert_to_values(
-                len(self.directions), values, trial_number
+                len(self.directions),
+                values,
+                trial_number,
             )
             # When called from `Study.optimize` and `state` is pruned, the given `values` contains
             # the intermediate value with the largest step so far. In this case, the value is
             # allowed to be NaN and errors should not be raised.
             if state != TrialState.PRUNED and values_conversion_failure_message is not None:
-                raise ValueError(values_conversion_failure_message)
+                self._storage.set_trial_state(trial_id, TrialState.FAIL)
+                _logger.warning(values_conversion_failure_message)
+                return
 
         try:
             # Sampler defined trial post-processing.
