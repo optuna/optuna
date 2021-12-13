@@ -145,21 +145,7 @@ def test_search_space_transform_numerical(
 
     trans_params = trans.transform({"x0": param})
     assert trans_params.size == 1
-
-    if isinstance(
-        distribution,
-        (DiscreteUniformDistribution, IntUniformDistribution, IntLogUniformDistribution),
-    ):
-        assert expected_low <= trans_params <= expected_high
-
-    elif isinstance(distribution, FloatDistribution):
-        if distribution.step is not None:
-            assert expected_low <= trans_params <= expected_high
-        else:
-            assert expected_low <= trans_params < expected_high
-
-    else:
-        assert expected_low <= trans_params < expected_high
+    assert expected_low <= trans_params <= expected_high
 
 
 @pytest.mark.parametrize(
