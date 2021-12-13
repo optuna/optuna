@@ -4,7 +4,8 @@ import re
 import subprocess
 from subprocess import CalledProcessError
 import tempfile
-from typing import Any, Dict
+from typing import Any
+from typing import Dict
 from typing import Callable
 from typing import Optional
 from typing import Tuple
