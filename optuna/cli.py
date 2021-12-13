@@ -34,7 +34,6 @@ from optuna._imports import _LazyImport
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
-from optuna.study._optimize import _check_and_convert_to_values
 from optuna.trial import TrialState
 
 
