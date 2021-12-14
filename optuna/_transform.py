@@ -11,6 +11,7 @@ import numpy
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
@@ -191,6 +192,7 @@ def _transform_search_space(
                 DiscreteUniformDistribution,
                 IntUniformDistribution,
                 IntLogUniformDistribution,
+                FloatDistribution,
             ),
         ):
             if isinstance(d, UniformDistribution):
@@ -209,6 +211,18 @@ def _transform_search_space(
                     _transform_numerical_param(d.low, d, transform_log) - half_step,
                     _transform_numerical_param(d.high, d, transform_log) + half_step,
                 )
+            elif isinstance(d, FloatDistribution):
+                if d.step is not None:
+                    half_step = 0.5 * d.step if transform_step else 0.0
+                    bds = (
+                        _transform_numerical_param(d.low, d, transform_log) - half_step,
+                        _transform_numerical_param(d.high, d, transform_log) + half_step,
+                    )
+                else:
+                    bds = (
+                        _transform_numerical_param(d.low, d, transform_log),
+                        _transform_numerical_param(d.high, d, transform_log),
+                    )
             elif isinstance(d, IntUniformDistribution):
                 half_step = 0.5 * d.step if transform_step else 0.0
                 bds = (
@@ -250,6 +264,11 @@ def _transform_numerical_param(
         trans_param = math.log(param) if transform_log else float(param)
     elif isinstance(d, DiscreteUniformDistribution):
         trans_param = float(param)
+    elif isinstance(d, FloatDistribution):
+        if d.log:
+            trans_param = math.log(param) if transform_log else float(param)
+        else:
+            trans_param = float(param)
     elif isinstance(d, IntUniformDistribution):
         trans_param = float(param)
     elif isinstance(d, IntLogUniformDistribution):
@@ -283,6 +302,25 @@ def _untransform_numerical_param(
         param = float(
             min(max(numpy.round((trans_param - d.low) / d.q) * d.q + d.low, d.low), d.high)
         )
+    elif isinstance(d, FloatDistribution):
+        if d.log:
+            param = math.exp(trans_param) if transform_log else trans_param
+            if d.single():
+                pass
+            else:
+                param = min(param, numpy.nextafter(d.high, d.high - 1))
+        elif d.step is not None:
+            param = float(
+                min(
+                    max(numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low),
+                    d.high,
+                )
+            )
+        else:
+            if d.single():
+                param = trans_param
+            else:
+                param = min(trans_param, numpy.nextafter(d.high, d.high - 1))
     elif isinstance(d, IntUniformDistribution):
         param = int(numpy.round((trans_param - d.low) / d.step) * d.step + d.low)
     elif isinstance(d, IntLogUniformDistribution):

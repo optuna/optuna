@@ -43,6 +43,8 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
             param_value = param_distribution.low
         elif isinstance(param_distribution, distributions.DiscreteUniformDistribution):
             param_value = param_distribution.low
+        elif isinstance(param_distribution, distributions.FloatDistribution):
+            param_value = param_distribution.low
         elif isinstance(param_distribution, distributions.IntUniformDistribution):
             param_value = param_distribution.low
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
