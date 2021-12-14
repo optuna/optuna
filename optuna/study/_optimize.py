@@ -192,7 +192,7 @@ def _run_trial(
     trial = study.ask()
 
     state: Optional[TrialState] = None
-    values: Optional[List[float]] = None
+    value_or_values: Optional[Union[float, List[float]]] = None
     func_err: Optional[Union[Exception, KeyboardInterrupt]] = None
     func_err_fail_exc_info: Optional[Any] = None
     stop_event: Optional[Event] = None
@@ -206,7 +206,10 @@ def _run_trial(
         thread.start()
 
     try:
-        value_or_values = func(trial)
+        value_or_values = cast(
+            Optional[Union[float, List[float]]],
+            func(trial),
+        )
     except exceptions.TrialPruned as e:
         # TODO(mamu): Handle multi-objective cases.
         state = TrialState.PRUNED
@@ -224,12 +227,15 @@ def _run_trial(
 
     # `Study.tell` may raise during trial post-processing.
     try:
-        study.tell(trial, values=value_or_values, state=state)
-    except Exception:
-        raise
+        # NOTE (himkt) study.tell returns state
+        value_or_values, state = study.tell(trial, values=value_or_values, state=state)
+    except Exception as e:
+        if not isinstance(e, catch):
+            raise
     finally:
         if state == TrialState.COMPLETE:
-            study._log_completed_trial(trial, cast(List[float], values))
+            assert isinstance(value_or_values, list)
+            study._log_completed_trial(trial, value_or_values)
         elif state == TrialState.PRUNED:
             _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
         elif state == TrialState.FAIL:
@@ -240,9 +246,8 @@ def _run_trial(
                     ),
                     exc_info=func_err_fail_exc_info,
                 )
-            else:
-                assert False, "Should not reach."
-        else:
+        # NOTE (himkt) state could be None
+        elif state is not None and func_err is not None:
             assert False, "Should not reach."
 
     if state == TrialState.FAIL and func_err is not None and not isinstance(func_err, catch):

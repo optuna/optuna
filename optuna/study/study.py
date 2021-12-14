@@ -497,9 +497,9 @@ class Study:
         self,
         trial: Union[trial_module.Trial, int],
         values: Optional[Union[float, Sequence[float]]] = None,
-        state: Optional[TrialState] = TrialState.COMPLETE,
+        state: Optional[TrialState] = None,
         skip_if_finished: bool = False,
-    ) -> TrialState:
+    ) -> Tuple[Optional[List[float]], Optional[TrialState]]:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
 
         .. seealso::
@@ -601,7 +601,7 @@ class Study:
                     "Values were told. Values cannot be specified when state is "
                     "TrialState.PRUNED or TrialState.FAIL."
                 )
-        else:
+        elif state is not None:
             raise ValueError(f"Cannot tell with state {state}.")
 
         if isinstance(trial, trial_module.Trial):
@@ -640,13 +640,17 @@ class Study:
 
         frozen_trial = self._storage.get_trial(trial_id)
 
+        if state is None and values is None:
+            self._storage.set_trial_state(trial_id, TrialState.FAIL)
+            raise ValueError("You must specify either state or values.")
+
         if frozen_trial.state.is_finished() and skip_if_finished:
             _logger.info(
                 f"Skipped telling trial {trial_number} with values "
                 f"{values} and state {state} since trial was already finished. "
                 f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
             )
-            return
+            return None, None
 
         if state == TrialState.PRUNED:
             # Register the last intermediate value if present as the value of the trial.
@@ -663,13 +667,21 @@ class Study:
                 values,
                 trial_number,
             )
+
+            if values_conversion_failure_message is None:
+                state = TrialState.COMPLETE
+            else:
+                state = TrialState.FAIL
+
             # When called from `Study.optimize` and `state` is pruned, the given `values` contains
             # the intermediate value with the largest step so far. In this case, the value is
             # allowed to be NaN and errors should not be raised.
             if state != TrialState.PRUNED and values_conversion_failure_message is not None:
                 self._storage.set_trial_state(trial_id, TrialState.FAIL)
                 _logger.warning(values_conversion_failure_message)
-                return TrialState.FAIL
+                return values, TrialState.FAIL
+
+        assert state is not None
 
         try:
             # Sampler defined trial post-processing.
@@ -679,7 +691,7 @@ class Study:
             raise
         finally:
             self._storage.set_trial_state_values(trial_id, state, values)
-            return state
+            return values, state
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.

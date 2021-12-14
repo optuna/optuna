@@ -873,6 +873,7 @@ class _Tell(_BaseCommand):
         )
 
         self.logger.info(f"Told trial {trial_number} with values {values} and state " f"{state}.")
+
         return 0
 
 
