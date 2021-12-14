@@ -12,11 +12,9 @@ from optuna import logging
 from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
 from optuna.trial._state import TrialState
 
@@ -228,12 +226,12 @@ class FrozenTrial(BaseTrial):
             if log:
                 raise ValueError("The parameter `step` is not supported when `log` is True.")
             else:
-                return self._suggest(name, DiscreteUniformDistribution(low=low, high=high, q=step))
+                return self._suggest(name, FloatDistribution(low=low, high=high, step=step))
         else:
             if log:
-                return self._suggest(name, LogUniformDistribution(low=low, high=high))
+                return self._suggest(name, FloatDistribution(low=low, high=high, log=True))
             else:
-                return self._suggest(name, UniformDistribution(low=low, high=high))
+                return self._suggest(name, FloatDistribution(low=low, high=high))
 
     @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
