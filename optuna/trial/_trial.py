@@ -15,11 +15,9 @@ from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.trial._base import BaseTrial
 
 
@@ -159,14 +157,12 @@ class Trial(BaseTrial):
             if log:
                 raise ValueError("The parameter `step` is not supported when `log` is True.")
             else:
-                distribution: Union[
-                    DiscreteUniformDistribution, LogUniformDistribution, UniformDistribution
-                ] = DiscreteUniformDistribution(low=low, high=high, q=step)
+                distribution = FloatDistribution(low=low, high=high, step=step)
         else:
             if log:
-                distribution = LogUniformDistribution(low=low, high=high)
+                distribution = FloatDistribution(low=low, high=high, log=True)
             else:
-                distribution = UniformDistribution(low=low, high=high)
+                distribution = FloatDistribution(low=low, high=high)
 
         self._check_distribution(name, distribution)
 
