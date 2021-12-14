@@ -551,12 +551,12 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
                             "The parameter `step` is not supported when `log` is true."
                         )
                     else:
-                        return LogUniformDistribution(low, high)
+                        return FloatDistribution(low, high, log=True)
                 else:
                     if step is not None:
-                        return DiscreteUniformDistribution(low, high, step)
+                        return FloatDistribution(low, high, step=step)
                     else:
-                        return UniformDistribution(low, high)
+                        return FloatDistribution(low, high)
             else:
                 if log:
                     if step is not None:
