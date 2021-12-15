@@ -222,16 +222,7 @@ class FrozenTrial(BaseTrial):
         log: bool = False,
     ) -> float:
 
-        if step is not None:
-            if log:
-                raise ValueError("The parameter `step` is not supported when `log` is True.")
-            else:
-                return self._suggest(name, FloatDistribution(low=low, high=high, step=step))
-        else:
-            if log:
-                return self._suggest(name, FloatDistribution(low=low, high=high, log=True))
-            else:
-                return self._suggest(name, FloatDistribution(low=low, high=high))
+        return self._suggest(name, FloatDistribution(low, high, log=log, step=step))
 
     @deprecated("3.0.0", "6.0.0", text=_suggest_deprecated_msg)
     def suggest_uniform(self, name: str, low: float, high: float) -> float:

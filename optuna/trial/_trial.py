@@ -153,17 +153,7 @@ class Trial(BaseTrial):
             :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
-        if step is not None:
-            if log:
-                raise ValueError("The parameter `step` is not supported when `log` is True.")
-            else:
-                distribution = FloatDistribution(low=low, high=high, step=step)
-        else:
-            if log:
-                distribution = FloatDistribution(low=low, high=high, log=True)
-            else:
-                distribution = FloatDistribution(low=low, high=high)
-
+        distribution = FloatDistribution(low, high, log=log, step=step)
         self._check_distribution(name, distribution)
 
         return self._suggest(name, distribution)

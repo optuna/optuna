@@ -561,18 +561,8 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
             log = json_dict.get("log")
 
             if json_dict["type"] == "float":
-                if log:
-                    if step is not None:
-                        raise ValueError(
-                            "The parameter `step` is not supported when `log` is true."
-                        )
-                    else:
-                        return FloatDistribution(low, high, log=True)
-                else:
-                    if step is not None:
-                        return FloatDistribution(low, high, step=step)
-                    else:
-                        return FloatDistribution(low, high)
+                return FloatDistribution(low, high, log=log, step=step)
+
             else:
                 if log:
                     if step is not None:
