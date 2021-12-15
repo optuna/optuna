@@ -27,7 +27,7 @@ class MockSystemAttr:
 
 def test_multi_objective_sample_independent_seed_fix() -> None:
     study = optuna.create_study(directions=["minimize", "maximize"])
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     random.seed(128)
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
@@ -78,7 +78,7 @@ def test_multi_objective_sample_independent_seed_fix() -> None:
 
 def test_multi_objective_sample_independent_prior() -> None:
     study = optuna.create_study(directions=["minimize", "maximize"])
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     random.seed(128)
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
@@ -130,7 +130,7 @@ def test_multi_objective_sample_independent_prior() -> None:
 
 def test_multi_objective_sample_independent_n_startup_trial() -> None:
     study = optuna.create_study(directions=["minimize", "maximize"])
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     random.seed(128)
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
 
@@ -180,7 +180,7 @@ def test_multi_objective_sample_independent_n_startup_trial() -> None:
 
 def test_multi_objective_sample_independent_misc_arguments() -> None:
     study = optuna.create_study(directions=["minimize", "maximize"])
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     random.seed(128)
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(32)]
 
@@ -250,7 +250,7 @@ def test_multi_objective_sample_independent_uniform_distributions() -> None:
     random.seed(128)
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
 
-    uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
     attrs = MockSystemAttr()
@@ -274,7 +274,7 @@ def test_multi_objective_sample_independent_log_uniform_distributions() -> None:
     study = optuna.create_study(directions=["minimize", "maximize"])
     random.seed(128)
 
-    uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
@@ -292,7 +292,7 @@ def test_multi_objective_sample_independent_log_uniform_distributions() -> None:
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
 
     # Test sample from log-uniform is different from uniform.
-    log_dist = optuna.distributions.LogUniformDistribution(1.0, 100.0)
+    log_dist = optuna.distributions.FloatDistribution(1.0, 100.0, log=True)
     past_trials = [
         frozen_trial_factory(i, [random.random(), random.random()], log_dist) for i in range(16)
     ]
@@ -320,7 +320,7 @@ def test_multi_objective_sample_independent_disrete_uniform_distributions() -> N
     study = optuna.create_study(directions=["minimize", "maximize"])
     random.seed(128)
 
-    disc_dist = optuna.distributions.DiscreteUniformDistribution(1.0, 100.0, 0.1)
+    disc_dist = optuna.distributions.FloatDistribution(1.0, 100.0, step=0.1)
 
     def value_fn(idx: int) -> float:
         return int(random.random() * 1000) * 0.1
@@ -436,7 +436,7 @@ def test_multi_objective_sample_independent_handle_unsuccessful_states(
     state: optuna.trial.TrialState,
 ) -> None:
     study = optuna.create_study(directions=["minimize", "maximize"])
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     random.seed(128)
 
     # Prepare sampling result for later tests.
@@ -484,7 +484,7 @@ def test_multi_objective_sample_independent_handle_unsuccessful_states(
 def test_multi_objective_sample_independent_ignored_states() -> None:
     """Tests FAIL, RUNNING, and WAITING states are equally."""
     study = optuna.create_study(directions=["minimize", "maximize"])
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     suggestions = []
     for state in [
@@ -634,7 +634,7 @@ def test_solve_hssp() -> None:
 def frozen_trial_factory(
     number: int,
     values: List[float],
-    dist: optuna.distributions.BaseDistribution = optuna.distributions.UniformDistribution(
+    dist: optuna.distributions.BaseDistribution = optuna.distributions.FloatDistribution(
         1.0, 100.0
     ),
     value_fn: Optional[Callable[[int], Union[int, float]]] = None,
