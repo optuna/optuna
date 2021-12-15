@@ -81,9 +81,9 @@ def test_warn_independent_sampling_group(capsys: _pytest.capture.CaptureFixture)
 def test_infer_relative_search_space() -> None:
     sampler = TPESampler()
     search_space = {
-        "a": distributions.UniformDistribution(1.0, 100.0),
-        "b": distributions.LogUniformDistribution(1.0, 100.0),
-        "c": distributions.DiscreteUniformDistribution(1.0, 100.0, 3.0),
+        "a": distributions.FloatDistribution(1.0, 100.0),
+        "b": distributions.FloatDistribution(1.0, 100.0, log=True),
+        "c": distributions.FloatDistribution(1.0, 100.0, step=3.0),
         "d": distributions.IntUniformDistribution(1, 100),
         "e": distributions.IntUniformDistribution(0, 100, step=2),
         "f": distributions.IntLogUniformDistribution(1, 100),
@@ -130,7 +130,7 @@ def test_sample_relative_empty_input(multivariate: bool) -> None:
 
 def test_sample_relative_seed_fix() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     # Prepare a trial and a sample for later checks.
@@ -156,7 +156,7 @@ def test_sample_relative_seed_fix() -> None:
 
 def test_sample_relative_prior() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     # Prepare a trial and a sample for later checks.
@@ -182,7 +182,7 @@ def test_sample_relative_prior() -> None:
 
 def test_sample_relative_n_startup_trial() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     trial = frozen_trial_factory(8)
@@ -199,7 +199,7 @@ def test_sample_relative_n_startup_trial() -> None:
 
 def test_sample_relative_misc_arguments() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 40)]
 
     # Prepare a trial and a sample for later checks.
@@ -239,7 +239,7 @@ def test_sample_relative_uniform_distributions() -> None:
     study = optuna.create_study()
 
     # Prepare sample from uniform distribution for cheking other distributions.
-    uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=uni_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
@@ -255,7 +255,7 @@ def test_sample_relative_log_uniform_distributions() -> None:
 
     study = optuna.create_study()
 
-    uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=uni_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
@@ -265,7 +265,7 @@ def test_sample_relative_log_uniform_distributions() -> None:
         uniform_suggestion = sampler.sample_relative(study, trial, {"param-a": uni_dist})
 
     # Test sample from log-uniform is different from uniform.
-    log_dist = optuna.distributions.LogUniformDistribution(1.0, 100.0)
+    log_dist = optuna.distributions.FloatDistribution(1.0, 100.0, log=True)
     past_trials = [frozen_trial_factory(i, dist=log_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     with warnings.catch_warnings():
@@ -281,7 +281,7 @@ def test_sample_relative_disrete_uniform_distributions() -> None:
     """Test samples from discrete have expected intervals."""
 
     study = optuna.create_study()
-    disc_dist = optuna.distributions.DiscreteUniformDistribution(1.0, 100.0, 0.1)
+    disc_dist = optuna.distributions.FloatDistribution(1.0, 100.0, step=0.1)
 
     def value_fn(idx: int) -> float:
         random.seed(idx)
@@ -384,7 +384,7 @@ def test_sample_relative_int_loguniform_distributions() -> None:
 def test_sample_relative_handle_unsuccessful_states(
     state: optuna.trial.TrialState,
 ) -> None:
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     # Prepare sampling result for later tests.
     study = optuna.create_study()
@@ -415,7 +415,7 @@ def test_sample_relative_handle_unsuccessful_states(
 def test_sample_relative_ignored_states() -> None:
     """Tests FAIL, RUNNING, and WAITING states are equally."""
 
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     suggestions = []
     for state in [
@@ -439,7 +439,7 @@ def test_sample_relative_ignored_states() -> None:
 def test_sample_relative_pruned_state() -> None:
     """Tests PRUNED state is treated differently from both FAIL and COMPLETE."""
 
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     suggestions = []
     for state in [
@@ -463,7 +463,7 @@ def test_sample_relative_pruned_state() -> None:
 
 def test_sample_independent_seed_fix() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     # Prepare a trial and a sample for later checks.
@@ -483,7 +483,7 @@ def test_sample_independent_seed_fix() -> None:
 
 def test_sample_independent_prior() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     # Prepare a trial and a sample for later checks.
@@ -503,7 +503,7 @@ def test_sample_independent_prior() -> None:
 
 def test_sample_independent_n_startup_trial() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     trial = frozen_trial_factory(8)
@@ -525,7 +525,7 @@ def test_sample_independent_n_startup_trial() -> None:
 
 def test_sample_independent_misc_arguments() -> None:
     study = optuna.create_study()
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=dist) for i in range(1, 8)]
 
     # Prepare a trial and a sample for later checks.
@@ -554,7 +554,7 @@ def test_sample_independent_uniform_distributions() -> None:
     study = optuna.create_study()
 
     # Prepare sample from uniform distribution for cheking other distributions.
-    uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=uni_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
@@ -568,7 +568,7 @@ def test_sample_independent_log_uniform_distributions() -> None:
 
     study = optuna.create_study()
 
-    uni_dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, dist=uni_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
@@ -576,7 +576,7 @@ def test_sample_independent_log_uniform_distributions() -> None:
         uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
 
     # Test sample from log-uniform is different from uniform.
-    log_dist = optuna.distributions.LogUniformDistribution(1.0, 100.0)
+    log_dist = optuna.distributions.FloatDistribution(1.0, 100.0, log=True)
     past_trials = [frozen_trial_factory(i, dist=log_dist) for i in range(1, 8)]
     trial = frozen_trial_factory(8)
     sampler = TPESampler(n_startup_trials=5, seed=0)
@@ -590,7 +590,7 @@ def test_sample_independent_disrete_uniform_distributions() -> None:
     """Test samples from discrete have expected intervals."""
 
     study = optuna.create_study()
-    disc_dist = optuna.distributions.DiscreteUniformDistribution(1.0, 100.0, 0.1)
+    disc_dist = optuna.distributions.FloatDistribution(1.0, 100.0, step=0.1)
 
     def value_fn(idx: int) -> float:
         random.seed(idx)
@@ -680,7 +680,7 @@ def test_sample_independent_int_loguniform_distributions() -> None:
     ],
 )
 def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.TrialState) -> None:
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     # Prepare sampling result for later tests.
     study = optuna.create_study()
@@ -707,7 +707,7 @@ def test_sample_independent_handle_unsuccessful_states(state: optuna.trial.Trial
 def test_sample_independent_ignored_states() -> None:
     """Tests FAIL, RUNNING, and WAITING states are equally."""
 
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     suggestions = []
     for state in [
@@ -730,7 +730,7 @@ def test_sample_independent_ignored_states() -> None:
 def test_sample_independent_pruned_state() -> None:
     """Tests PRUNED state is treated differently from both FAIL and COMPLETE."""
 
-    dist = optuna.distributions.UniformDistribution(1.0, 100.0)
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
 
     suggestions = []
     for state in [
@@ -903,7 +903,7 @@ def test_build_observation_dict() -> None:
 
 def frozen_trial_factory(
     idx: int,
-    dist: optuna.distributions.BaseDistribution = optuna.distributions.UniformDistribution(
+    dist: optuna.distributions.BaseDistribution = optuna.distributions.FloatDistribution(
         1.0, 100.0
     ),
     state_fn: Callable[
@@ -1000,7 +1000,7 @@ def test_group() -> None:
         assert mock.call_count == 1
     assert study.trials[-1].distributions == {
         "y": distributions.IntUniformDistribution(low=0, high=10),
-        "z": distributions.UniformDistribution(low=-3, high=3),
+        "z": distributions.FloatDistribution(low=-3, high=3),
     }
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
@@ -1013,17 +1013,17 @@ def test_group() -> None:
         )
         assert mock.call_count == 2
     assert study.trials[-1].distributions == {
-        "u": distributions.LogUniformDistribution(low=1e-2, high=1e2),
+        "u": distributions.FloatDistribution(low=1e-2, high=1e2, log=True),
         "v": distributions.CategoricalDistribution(choices=["A", "B", "C"]),
         "y": distributions.IntUniformDistribution(low=0, high=10),
-        "z": distributions.UniformDistribution(low=-3, high=3),
+        "z": distributions.FloatDistribution(low=-3, high=3),
     }
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(lambda t: t.suggest_float("u", 1e-2, 1e2, log=True), n_trials=1)
         assert mock.call_count == 3
     assert study.trials[-1].distributions == {
-        "u": distributions.LogUniformDistribution(low=1e-2, high=1e2)
+        "u": distributions.FloatDistribution(low=1e-2, high=1e2, log=True)
     }
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:

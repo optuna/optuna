@@ -387,7 +387,7 @@ def test_call_after_trial_of_base_sampler() -> None:
 def test_is_compatible_search_space() -> None:
     transform = _SearchSpaceTransform(
         {
-            "x0": optuna.distributions.UniformDistribution(2, 3),
+            "x0": optuna.distributions.FloatDistribution(2, 3),
             "x1": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
         }
     )
@@ -396,7 +396,7 @@ def test_is_compatible_search_space() -> None:
         transform,
         {
             "x1": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
-            "x0": optuna.distributions.UniformDistribution(2, 3),
+            "x0": optuna.distributions.FloatDistribution(2, 3),
         },
     )
 
@@ -404,7 +404,7 @@ def test_is_compatible_search_space() -> None:
     assert not optuna.samplers._cmaes._is_compatible_search_space(
         transform,
         {
-            "x0": optuna.distributions.UniformDistribution(2, 3),
+            "x0": optuna.distributions.FloatDistribution(2, 3),
             "foo": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
         },
     )
@@ -413,9 +413,9 @@ def test_is_compatible_search_space() -> None:
     assert not optuna.samplers._cmaes._is_compatible_search_space(
         transform,
         {
-            "x0": optuna.distributions.UniformDistribution(2, 3),
+            "x0": optuna.distributions.FloatDistribution(2, 3),
             "x1": optuna.distributions.CategoricalDistribution(["foo", "bar", "baz", "qux"]),
-            "x2": optuna.distributions.DiscreteUniformDistribution(2, 3, q=0.1),
+            "x2": optuna.distributions.FloatDistribution(2, 3, step=0.1),
         },
     )
 
