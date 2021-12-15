@@ -12,9 +12,9 @@ from optuna.samplers._tpe.sampler import default_weights
 
 
 SEARCH_SPACE = {
-    "a": distributions.UniformDistribution(1.0, 100.0),
-    "b": distributions.LogUniformDistribution(1.0, 100.0),
-    "c": distributions.DiscreteUniformDistribution(1.0, 100.0, 3.0),
+    "a": distributions.FloatDistribution(1.0, 100.0),
+    "b": distributions.FloatDistribution(1.0, 100.0, log=True),
+    "c": distributions.FloatDistribution(1.0, 100.0, step=3.0),
     "d": distributions.IntUniformDistribution(1, 100),
     "e": distributions.IntLogUniformDistribution(1, 100),
     "f": distributions.CategoricalDistribution(["x", "y", "z"]),
@@ -170,7 +170,7 @@ def test_suggest_with_step_parzen_estimator(multivariate: bool) -> None:
 
     # Define search space for distribution with step argument and true ranges
     search_space = {
-        "c": distributions.DiscreteUniformDistribution(low=1.0, high=7.0, q=3.0),
+        "c": distributions.FloatDistribution(low=1.0, high=7.0, step=3.0),
         "d": distributions.IntUniformDistribution(low=1, high=5, step=2),
     }
     multivariate_samples = {"c": np.array([4]), "d": np.array([3])}
@@ -226,7 +226,7 @@ def test_calculate_shape_check(
         multivariate=False,
     )
     mpe = _ParzenEstimator(
-        {"a": mus}, {"a": distributions.UniformDistribution(-1.0, 1.0)}, parameters
+        {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
     )
     s_weights, s_mus, s_sigmas = mpe._weights, mpe._mus["a"], mpe._sigmas["a"]
 
@@ -311,7 +311,7 @@ def test_calculate(
         multivariate=False,
     )
     mpe = _ParzenEstimator(
-        {"a": mus}, {"a": distributions.UniformDistribution(-1.0, 1.0)}, parameters
+        {"a": mus}, {"a": distributions.FloatDistribution(-1.0, 1.0)}, parameters
     )
     s_weights, s_mus, s_sigmas = mpe._weights, mpe._mus["a"], mpe._sigmas["a"]
 
