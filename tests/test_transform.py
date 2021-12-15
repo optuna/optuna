@@ -81,11 +81,17 @@ def test_search_space_transform_encoding() -> None:
     "param,distribution",
     [
         (0, IntUniformDistribution(0, 3)),
+        (3, IntUniformDistribution(0, 3)),
         (1, IntLogUniformDistribution(1, 10)),
+        (10, IntLogUniformDistribution(1, 10)),
         (2, IntUniformDistribution(0, 10, step=2)),
+        (10, IntUniformDistribution(0, 10, step=2)),
         (0.0, UniformDistribution(0, 3)),
+        (3.0, UniformDistribution(0, 3)),
         (1.0, LogUniformDistribution(1, 10)),
+        (10.0, LogUniformDistribution(1, 10)),
         (0.2, DiscreteUniformDistribution(0, 1, q=0.2)),
+        (1.0, DiscreteUniformDistribution(0, 1, q=0.2)),
         (0.0, FloatDistribution(0, 3)),
         (1.0, FloatDistribution(1, 10, log=True)),
         (0.2, FloatDistribution(0, 1, step=0.2)),
@@ -139,21 +145,7 @@ def test_search_space_transform_numerical(
 
     trans_params = trans.transform({"x0": param})
     assert trans_params.size == 1
-
-    if isinstance(
-        distribution,
-        (DiscreteUniformDistribution, IntUniformDistribution, IntLogUniformDistribution),
-    ):
-        assert expected_low <= trans_params <= expected_high
-
-    elif isinstance(distribution, FloatDistribution):
-        if distribution.step is not None:
-            assert expected_low <= trans_params <= expected_high
-        else:
-            assert expected_low <= trans_params < expected_high
-
-    else:
-        assert expected_low <= trans_params < expected_high
+    assert expected_low <= trans_params <= expected_high
 
 
 @pytest.mark.parametrize(
