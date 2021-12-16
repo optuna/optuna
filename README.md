@@ -23,7 +23,7 @@ Optuna can dynamically construct the search spaces for the hyperparameters.
 
 ## News
 
-Help us create the next version of Optuna!
+First alpha version of Optuna 3.0 is released! Early adopters may want to upgrade and provide feedback for a smoother transition to the coming major release. Try `pip install optuna==3.0.0a0`.
 
 Optuna 3.0 Roadmap published for review. Please take a look at the [planned improvements to Optuna](https://github.com/optuna/optuna/wiki/Optuna-V3-Roadmap), and share your feedback in the github issues. PR contributions also welcome!
 
