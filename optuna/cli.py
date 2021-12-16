@@ -865,22 +865,12 @@ class _Tell(_BaseCommand):
         trial_number = parsed_args.trial_number
         values = parsed_args.values
 
-        # TODO(hvy): Consider introducing `skip_if_finished` to `Study.tell` and let the method
-        # do all error handling, such as invalid trial numbers.
-        if parsed_args.skip_if_finished:
-            trials = study.get_trials(deepcopy=False)
-            trial = trials[trial_number]
-            assert trial.number == trial_number
-
-            if trial.state.is_finished():
-                self.logger.info(
-                    f"Skipped telling trial {trial_number} with values "
-                    f"{values} and state {state} since trial was already finished. "
-                    f"Finished trial has values {trial.values} and state {trial.state}."
-                )
-                return 0
-
-        study.tell(trial=trial_number, values=values, state=state)
+        study.tell(
+            trial=trial_number,
+            values=values,
+            state=state,
+            skip_if_finished=parsed_args.skip_if_finished,
+        )
 
         self.logger.info(f"Told trial {trial_number} with values {values} and state " f"{state}.")
 

@@ -490,6 +490,7 @@ class Study:
         trial: Union[trial_module.Trial, int],
         values: Optional[Union[float, Sequence[float]]] = None,
         state: TrialState = TrialState.COMPLETE,
+        skip_if_finished: bool = False,
     ) -> None:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
 
@@ -553,6 +554,10 @@ class Study:
                 State to be reported. Must be :class:`~optuna.trial.TrialState.COMPLETE`,
                 :class:`~optuna.trial.TrialState.FAIL` or
                 :class:`~optuna.trial.TrialState.PRUNED`.
+            skip_if_finished:
+                Flag to control whether exception should be raised when values for already
+                finished trial are told. If :obj:`True`, tell is skipped without any error
+                when the trial is already finished.
 
         Raises:
             TypeError:
@@ -626,6 +631,14 @@ class Study:
             assert False, "Should not reach."
 
         frozen_trial = self._storage.get_trial(trial_id)
+
+        if frozen_trial.state.is_finished() and skip_if_finished:
+            _logger.info(
+                f"Skipped telling trial {trial_number} with values "
+                f"{values} and state {state} since trial was already finished. "
+                f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
+            )
+            return
 
         if state == TrialState.PRUNED:
             # Register the last intermediate value if present as the value of the trial.
