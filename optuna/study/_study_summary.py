@@ -28,7 +28,8 @@ class StudySummary(object):
         directions:
             A sequence of :class:`~optuna.study.StudyDirection` objects.
         best_trial:
-            :class:`FrozenTrial` with best objective value in the :class:`~optuna.study.Study`.
+            :class:`optuna.trial.FrozenTrial` with best objective value in the
+            :class:`~optuna.study.Study`.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.study.Study` set with
             :func:`optuna.study.Study.set_user_attr`.

@@ -124,7 +124,7 @@ class Study:
         """Return the best trial in the study.
 
         Returns:
-            A :class:`~optuna.FrozenTrial` object of the best trial.
+            A :class:`~optuna.trial.FrozenTrial` object of the best trial.
 
         Raises:
             :exc:`RuntimeError`:
@@ -193,7 +193,7 @@ class Study:
         This is a short form of ``self.get_trials(deepcopy=True, states=None)``.
 
         Returns:
-            A list of :class:`~optuna.FrozenTrial` objects.
+            A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
 
         return self.get_trials(deepcopy=True, states=None)
@@ -233,7 +233,7 @@ class Study:
                 Trial states to filter on. If :obj:`None`, include all states.
 
         Returns:
-            A list of :class:`~optuna.FrozenTrial` objects.
+            A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
 
         self._storage.read_trials_from_remote_storage(self._study_id)
@@ -363,7 +363,7 @@ class Study:
             callbacks:
                 List of callback functions that are invoked at the end of each trial. Each function
                 must accept two parameters with the following types in this order:
-                :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+                :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
             gc_after_trial:
                 Flag to determine whether to automatically run garbage collection after each trial.
                 Set to :obj:`True` to run the garbage collection, :obj:`False` otherwise.
@@ -490,6 +490,7 @@ class Study:
         trial: Union[trial_module.Trial, int],
         values: Optional[Union[float, Sequence[float]]] = None,
         state: TrialState = TrialState.COMPLETE,
+        skip_if_finished: bool = False,
     ) -> None:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
 
@@ -553,6 +554,10 @@ class Study:
                 State to be reported. Must be :class:`~optuna.trial.TrialState.COMPLETE`,
                 :class:`~optuna.trial.TrialState.FAIL` or
                 :class:`~optuna.trial.TrialState.PRUNED`.
+            skip_if_finished:
+                Flag to control whether exception should be raised when values for already
+                finished trial are told. If :obj:`True`, tell is skipped without any error
+                when the trial is already finished.
 
         Raises:
             TypeError:
@@ -626,6 +631,14 @@ class Study:
             assert False, "Should not reach."
 
         frozen_trial = self._storage.get_trial(trial_id)
+
+        if frozen_trial.state.is_finished() and skip_if_finished:
+            _logger.info(
+                f"Skipped telling trial {trial_number} with values "
+                f"{values} and state {state} since trial was already finished. "
+                f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
+            )
+            return
 
         if state == TrialState.PRUNED:
             # Register the last intermediate value if present as the value of the trial.
@@ -760,7 +773,7 @@ class Study:
 
         Args:
             attrs:
-                Specifies field names of :class:`~optuna.FrozenTrial` to include them to a
+                Specifies field names of :class:`~optuna.trial.FrozenTrial` to include them to a
                 DataFrame of trials.
             multi_index:
                 Specifies whether the returned DataFrame_ employs MultiIndex_ or not. Columns that

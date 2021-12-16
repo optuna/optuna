@@ -56,7 +56,7 @@ jobs:
         # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional depenendencies and remove these installs.
         pip install scikit-optimize
         pip install cma
-        pip install botorch torch==1.8.0
+        pip install botorch torch==1.10.0
 
     - name: Tests
       run: |

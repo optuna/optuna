@@ -60,6 +60,7 @@ class TensorBoardCallback(object):
             optuna.distributions.UniformDistribution,
             optuna.distributions.LogUniformDistribution,
             optuna.distributions.DiscreteUniformDistribution,
+            optuna.distributions.FloatDistribution,
         )
         int_distributions = (
             optuna.distributions.IntUniformDistribution,

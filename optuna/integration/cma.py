@@ -17,6 +17,7 @@ from optuna._imports import try_import
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
@@ -242,6 +243,13 @@ class PyCmaSampler(BaseSampler):
                 x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, DiscreteUniformDistribution):
                 x0[name] = numpy.mean([distribution.high, distribution.low])
+            elif isinstance(distribution, FloatDistribution):
+                if distribution.log:
+                    log_high = math.log(distribution.high)
+                    log_low = math.log(distribution.low)
+                    x0[name] = math.exp(numpy.mean([log_high, log_low]))
+                else:
+                    x0[name] = numpy.mean([distribution.high, distribution.low])
             elif isinstance(distribution, IntUniformDistribution):
                 x0[name] = int(numpy.mean([distribution.high, distribution.low]))
             elif isinstance(distribution, (LogUniformDistribution, IntLogUniformDistribution)):
@@ -273,6 +281,13 @@ class PyCmaSampler(BaseSampler):
                 sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, DiscreteUniformDistribution):
                 sigma0s.append((distribution.high - distribution.low) / 6)
+            elif isinstance(distribution, FloatDistribution):
+                if distribution.log:
+                    log_high = math.log(distribution.high)
+                    log_low = math.log(distribution.low)
+                    sigma0s.append((log_high - log_low) / 6)
+                else:
+                    sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, IntUniformDistribution):
                 sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, (LogUniformDistribution, IntLogUniformDistribution)):
@@ -348,6 +363,14 @@ class _Optimizer(object):
                 r = dist.high - dist.low
                 lows.append(0 - 0.5 * dist.q)
                 highs.append(r + 0.5 * dist.q)
+            elif isinstance(dist, FloatDistribution):
+                if dist.step is not None:
+                    r = dist.high - dist.low
+                    lows.append(0 - 0.5 * dist.step)
+                    highs.append(r + 0.5 * dist.step)
+                else:
+                    lows.append(self._to_cma_params(search_space, param_name, dist.low))
+                    highs.append(self._to_cma_params(search_space, param_name, dist.high) - _EPS)
             elif isinstance(dist, IntUniformDistribution):
                 lows.append(dist.low - 0.5 * dist.step)
                 highs.append(dist.high + 0.5 * dist.step)
@@ -476,6 +499,11 @@ class _Optimizer(object):
         elif isinstance(dist, IntDistribution):
             if dist.log:
                 return math.log(optuna_param_value)
+        elif isinstance(dist, FloatDistribution):
+            if dist.log:
+                return math.log(optuna_param_value)
+            elif dist.step is not None:
+                return optuna_param_value - dist.low
         elif isinstance(dist, CategoricalDistribution):
             return dist.choices.index(optuna_param_value)
         return optuna_param_value
@@ -495,6 +523,14 @@ class _Optimizer(object):
             v = numpy.round(cma_param_value / dist.q) * dist.q + dist.low
             # v may slightly exceed range due to round-off errors.
             return float(min(max(v, dist.low), dist.high))
+        if isinstance(dist, FloatDistribution):
+            if dist.log:
+                return math.exp(cma_param_value)
+            elif dist.step is not None:
+                v = numpy.round(cma_param_value / dist.step) * dist.step + dist.low
+                return float(min(max(v, dist.low), dist.high))
+            else:
+                return float(cma_param_value)
         if isinstance(dist, IntUniformDistribution):
             r = numpy.round((cma_param_value - dist.low) / dist.step)
             v = r * dist.step + dist.low
