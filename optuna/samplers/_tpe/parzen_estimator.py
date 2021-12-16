@@ -310,8 +310,8 @@ class _ParzenEstimator:
                 samples = np.log(samples)
 
             if isinstance(
-                    distribution,
-                    (distributions.FloatDistribution, distributions.IntDistribution),
+                distribution,
+                (distributions.FloatDistribution, distributions.IntDistribution),
             ):
                 if distribution.log:
                     samples = np.log(samples)
