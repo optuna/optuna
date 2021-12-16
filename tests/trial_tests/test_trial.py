@@ -739,3 +739,28 @@ def test_persisted_param() -> None:
         study = load_study(storage=storage, study_name=study_name)
 
         assert all("x" in t.params for t in study.trials)
+
+
+def test_relative_params() -> None:
+    study_name = "my_study"
+
+    with tempfile.NamedTemporaryFile() as fp:
+        storage = f"sqlite:///{fp.name}"
+        study = create_study(
+            storage=storage,
+            study_name=study_name,
+            sampler=samplers.CmaEsSampler(),
+        )
+
+        trial = study.ask()
+        x = trial.suggest_float("x", 1e-5, 1e-3, log=True)
+        y = trial.suggest_float("y", 0, 256)
+        study.tell(trial, x * y)
+
+        trial = study.ask()
+        x = trial.suggest_float("x", 1e-5, 1e-3, log=True)
+        y = trial.suggest_float("y", 0, 256)
+
+        # check if `relative_params` are used
+        assert x == trial.system_attrs["relative_params"]["x"]
+        assert y == trial.system_attrs["relative_params"]["y"]
