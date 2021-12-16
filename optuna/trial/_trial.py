@@ -67,7 +67,7 @@ class Trial(BaseTrial):
 
         trial_system_attrs = self.system_attrs
         if "relative_search_space" in trial_system_attrs:
-            self._load_relative_params(study, trial, trial_system_attrs)
+            self._read_relative_params(study, trial, trial_system_attrs)
         else:
             self.relative_search_space = self.study.sampler.infer_relative_search_space(
                 study, trial
@@ -84,7 +84,7 @@ class Trial(BaseTrial):
         self.set_system_attr("relative_search_space", relative_search_space_dict)
         self.set_system_attr("relative_params", self.relative_params)
 
-    def _load_relative_params(
+    def _read_relative_params(
         self,
         study: "optuna.study.Study",
         trial: "optuna.trial.FrozenTrial",
