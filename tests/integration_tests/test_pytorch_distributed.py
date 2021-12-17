@@ -328,9 +328,9 @@ def test_distributions(storage_mode: str) -> None:
         trial.suggest_categorical("c", ("a", "b", "c"))
 
         distributions = trial.distributions
-        assert distributions["u"] == optuna.distributions.UniformDistribution(0, 1)
-        assert distributions["lu"] == optuna.distributions.LogUniformDistribution(1e-7, 1)
-        assert distributions["du"] == optuna.distributions.DiscreteUniformDistribution(0, 1, 0.5)
+        assert distributions["u"] == optuna.distributions.FloatDistribution(0, 1)
+        assert distributions["lu"] == optuna.distributions.FloatDistribution(1e-7, 1, log=True)
+        assert distributions["du"] == optuna.distributions.FloatDistribution(0, 1, step=0.5)
         assert distributions["i"] == optuna.distributions.IntUniformDistribution(0, 1)
         assert distributions["il"] == optuna.distributions.IntLogUniformDistribution(1, 128)
         assert distributions["c"] == optuna.distributions.CategoricalDistribution(("a", "b", "c"))
