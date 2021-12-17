@@ -87,19 +87,19 @@ def test_is_compatible() -> None:
 
     study.optimize(lambda t: t.suggest_float("p0", 0, 10), n_trials=1)
     search_space = optuna.samplers.intersection_search_space(study)
-    assert search_space == {"p0": distributions.UniformDistribution(low=0, high=10)}
+    assert search_space == {"p0": distributions.FloatDistribution(low=0, high=10)}
 
     optimizer = optuna.integration.skopt._Optimizer(search_space, {})
 
     # Compatible.
     trial = _create_frozen_trial(
-        {"p0": 5}, {"p0": distributions.UniformDistribution(low=0, high=10)}
+        {"p0": 5}, {"p0": distributions.FloatDistribution(low=0, high=10)}
     )
     assert optimizer._is_compatible(trial)
 
     # Compatible.
     trial = _create_frozen_trial(
-        {"p0": 5}, {"p0": distributions.UniformDistribution(low=0, high=100)}
+        {"p0": 5}, {"p0": distributions.FloatDistribution(low=0, high=100)}
     )
     assert optimizer._is_compatible(trial)
 
@@ -107,21 +107,21 @@ def test_is_compatible() -> None:
     trial = _create_frozen_trial(
         {"p0": 5, "p1": 7},
         {
-            "p0": distributions.UniformDistribution(low=0, high=10),
-            "p1": distributions.UniformDistribution(low=0, high=10),
+            "p0": distributions.FloatDistribution(low=0, high=10),
+            "p1": distributions.FloatDistribution(low=0, high=10),
         },
     )
     assert optimizer._is_compatible(trial)
 
     # Incompatible ('p0' doesn't exist).
     trial = _create_frozen_trial(
-        {"p1": 5}, {"p1": distributions.UniformDistribution(low=0, high=10)}
+        {"p1": 5}, {"p1": distributions.FloatDistribution(low=0, high=10)}
     )
     assert not optimizer._is_compatible(trial)
 
     # Incompatible (the value of 'p0' is out of range).
     trial = _create_frozen_trial(
-        {"p0": 20}, {"p0": distributions.UniformDistribution(low=0, high=100)}
+        {"p0": 20}, {"p0": distributions.FloatDistribution(low=0, high=100)}
     )
     assert not optimizer._is_compatible(trial)
 
