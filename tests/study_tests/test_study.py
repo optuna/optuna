@@ -1103,7 +1103,7 @@ def test_ask_enqueue_trial() -> None:
 
 def test_ask_fixed_search_space() -> None:
     fixed_distributions = {
-        "x": distributions.UniformDistribution(0, 1),
+        "x": distributions.FloatDistribution(0, 1),
         "y": distributions.CategoricalDistribution(["bacon", "spam"]),
     }
 
