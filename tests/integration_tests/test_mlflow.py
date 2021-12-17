@@ -82,11 +82,11 @@ def test_study_name(tmpdir: py.path.local) -> None:
     assert first_run_dict["data"]["tags"]["state"] == "COMPLETE"
     assert (
         first_run_dict["data"]["tags"]["x_distribution"]
-        == "UniformDistribution(high=1.0, low=-1.0)"
+        == "FloatDistribution(high=1.0, log=False, low=-1.0, step=None)"
     )
     assert (
         first_run_dict["data"]["tags"]["y_distribution"]
-        == "LogUniformDistribution(high=30.0, low=20.0)"
+        == "FloatDistribution(high=30.0, log=True, low=20.0, step=None)"
     )
     assert (
         first_run_dict["data"]["tags"]["z_distribution"]
@@ -527,7 +527,7 @@ def test_log_params(tmpdir: py.path.local) -> None:
             params=params,
             distributions={
                 param1_name: optuna.distributions.CategoricalDistribution(["a", "b"]),
-                param2_name: optuna.distributions.UniformDistribution(0, 10),
+                param2_name: optuna.distributions.FloatDistribution(0, 10),
             },
             value=5.0,
         )
