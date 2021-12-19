@@ -152,8 +152,7 @@ def plot_pareto_front(
     def _make_scatter_object(
         trials: Sequence[FrozenTrial],
         hovertemplate: str,
-        name: Optional[str] = None,
-        color: Optional[str] = None,
+        infeasible: bool = False,
         dominated_trials: bool = False,
     ) -> Union["go.Scatter", "go.Scatter3d"]:
         return _make_scatter_object_base(
@@ -162,8 +161,7 @@ def plot_pareto_front(
             axis_order,  # type: ignore
             include_dominated_trials,
             hovertemplate=hovertemplate,
-            name=name,
-            color=color,
+            infeasible=infeasible,
             dominated_trials=dominated_trials,
         )
 
@@ -185,20 +183,17 @@ def plot_pareto_front(
             _make_scatter_object(
                 infeasible_trials,
                 hovertemplate="%{text}<extra>Infeasible Trial</extra>",
-                name="Infeasible Trial",
-                color="grey",
+                infeasible=True,
             ),
             _make_scatter_object(
                 non_best_trials,
                 hovertemplate="%{text}<extra>Feasible Trial</extra>",
-                name="Feasible Trial",
-                color="blue",
+                dominated_trials=True,
             ),
             _make_scatter_object(
                 best_trials,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
-                name="Best Trial",
-                color="red",
+                dominated_trials=False,
             ),
         ]
 
@@ -246,17 +241,15 @@ def _make_scatter_object_base(
     axis_order: List[int],
     include_dominated_trials: bool,
     hovertemplate: str,
-    name: Optional[str] = None,
-    color: Optional[str] = None,
+    infeasible: bool = False,
     dominated_trials: bool = False,
 ) -> Union["go.Scatter", "go.Scatter3d"]:
     assert n_dim in (2, 3)
     marker = _make_marker(
         trials,
         include_dominated_trials,
-        use_constraints_func=name is not None,
         dominated_trials=dominated_trials,
-        color=color,
+        infeasible=infeasible,
     )
     if n_dim == 2:
         return go.Scatter(
@@ -266,8 +259,7 @@ def _make_scatter_object_base(
             mode="markers",
             hovertemplate=hovertemplate,
             marker=marker,
-            showlegend=name is not None,
-            name=name,
+            showlegend=False,
         )
     else:
         assert n_dim == 3
@@ -279,8 +271,7 @@ def _make_scatter_object_base(
             mode="markers",
             hovertemplate=hovertemplate,
             marker=marker,
-            showlegend=name is not None,
-            name=name,
+            showlegend=False,
         )
 
 
@@ -302,37 +293,33 @@ def _make_hovertext(trial: FrozenTrial) -> str:
 def _make_marker(
     trials: Sequence[FrozenTrial],
     include_dominated_trials: bool,
-    use_constraints_func: bool,
     dominated_trials: bool = False,
-    color: Optional[str] = None,
+    infeasible: bool = False,
 ) -> Dict[str, Any]:
     if dominated_trials and not include_dominated_trials:
         assert len(trials) == 0
 
-    if use_constraints_func:
-        assert color is not None
+    if infeasible:
+        return {
+            "color": "#cccccc",
+        }
+    elif dominated_trials:
         return {
             "line": {"width": 0.5, "color": "Grey"},
-            "color": color,
+            "color": [t.number for t in trials],
+            "colorscale": "Blues",
+            "colorbar": {
+                "title": "#Trials",
+            },
         }
     else:
-        if dominated_trials:
-            return {
-                "line": {"width": 0.5, "color": "Grey"},
-                "color": [t.number for t in trials],
-                "colorscale": "Blues",
-                "colorbar": {
-                    "title": "#Trials",
-                },
-            }
-        else:
-            return {
-                "line": {"width": 0.5, "color": "Grey"},
-                "color": [t.number for t in trials],
-                "colorscale": "Reds",
-                "colorbar": {
-                    "title": "#Best trials",
-                    "x": 1.1 if include_dominated_trials else 1,
-                    "xpad": 40,
-                },
-            }
+        return {
+            "line": {"width": 0.5, "color": "Grey"},
+            "color": [t.number for t in trials],
+            "colorscale": "Reds",
+            "colorbar": {
+                "title": "#Best trials",
+                "x": 1.1 if include_dominated_trials else 1,
+                "xpad": 40,
+            },
+        }
