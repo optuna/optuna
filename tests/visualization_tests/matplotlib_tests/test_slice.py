@@ -46,7 +46,7 @@ def test_plot_slice() -> None:
     assert figure.yaxis.label.get_text() == "Objective Value"
 
     data0 = figure.findobj(PathCollection)[0].get_offsets().data
-    np.allclose(data0, [[1.0, 2.0], [2.5, 1.0]])
+    assert np.allclose(data0, [[1.0, 0.0], [2.5, 1.0]])
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
@@ -55,7 +55,7 @@ def test_plot_slice() -> None:
     assert figure.yaxis.label.get_text() == "Objective Value"
 
     data0 = figure.findobj(PathCollection)[0].get_offsets().data
-    np.allclose(data0, [[1.0, 2.0], [2.5, 1.0]])
+    assert np.allclose(data0, [[1.0, 2.0], [2.5, 1.0]])
 
     # Test with a customized target name.
     figure = plot_slice(study, target_name="Target Name")
