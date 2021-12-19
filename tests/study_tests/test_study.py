@@ -1223,8 +1223,10 @@ def test_tell_values() -> None:
         study.tell(study.ask(), state=TrialState.COMPLETE)
 
     # Either state or values is required
-    with pytest.raises(ValueError):
-        study.tell(study.ask())
+    study.tell(study.ask())
+    assert len(study.trials) == 6
+    assert study.trials[-1].state == TrialState.FAIL
+    assert study.trials[-1].values is None
 
 
 def test_tell_storage_not_implemented_trial_number() -> None:
