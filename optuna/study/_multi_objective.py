@@ -9,9 +9,9 @@ from optuna.trial import TrialState
 
 
 def _get_pareto_front_trials_2d(
-    orig_trials: List[FrozenTrial], directions: List[StudyDirection]
+    trials: List[FrozenTrial], directions: List[StudyDirection]
 ) -> List[FrozenTrial]:
-    trials = [trial for trial in orig_trials if trial.state == TrialState.COMPLETE]
+    trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
 
     n_trials = len(trials)
     if n_trials == 0:
@@ -38,10 +38,10 @@ def _get_pareto_front_trials_2d(
 
 
 def _get_pareto_front_trials_nd(
-    orig_trials: List[FrozenTrial], directions: List[StudyDirection]
+    trials: List[FrozenTrial], directions: List[StudyDirection]
 ) -> List[FrozenTrial]:
     pareto_front = []
-    trials = [t for t in orig_trials if t.state == TrialState.COMPLETE]
+    trials = [t for t in trials if t.state == TrialState.COMPLETE]
 
     # TODO(vincent): Optimize (use the fast non dominated sort defined in the NSGA-II paper).
     for trial in trials:

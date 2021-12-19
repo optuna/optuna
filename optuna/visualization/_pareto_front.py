@@ -75,7 +75,7 @@ def plot_pareto_front(
             be a sequence of :obj:`float` s. A value strictly larger than 0 means that a
             constraint is violated. A value equal to or smaller than 0 is considered feasible.
             This specification is the same as in, for example,
-            :class:`~optuna.integration.BoTorchSampler`.
+            :class:`~optuna.integration.NSGAIISampler`.
 
             If given, trials are classified into three categories: feasible and best, feasible but
             non-best, and infeasible. Categories are shown in different colors. Here, whether a
@@ -103,12 +103,8 @@ def plot_pareto_front(
     if constraints_func is not None:
         feasible_trials = []
         infeasible_trials = []
-        for trial in study.trials:
-            if trial.state != TrialState.COMPLETE:
-                continue
-            constraint_score = constraints_func(trial)
-            is_feasible = all(map(lambda x: x <= 0.0, constraint_score))
-            if is_feasible:
+        for trial in study.get_trials(states=(TrialState.COMPLETE,)):
+            if all(map(lambda x: x <= 0.0, constraints_func(trial))):
                 feasible_trials.append(trial)
             else:
                 infeasible_trials.append(trial)
