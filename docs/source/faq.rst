@@ -519,7 +519,7 @@ For more information about 1., see APIReference_.
 For the case of 2
 ================================
 
-This can be achieved by using RDB or sqlite.
+This can be achieved by using RDB.
 However, if you cannot install RDB or sqlite, it is not supported, so if you have a request, please make an Issue.
 
 For more information about 2., see TutorialEasyParallelization_.
