@@ -1,7 +1,7 @@
 """
 .. _pruning:
 
-Efficient Optimization Algorithms
+3. Efficient Optimization Algorithms
 =================================
 
 Optuna enables efficient hyperparameter optimization by

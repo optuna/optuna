@@ -1,7 +1,7 @@
 """
 .. _visualization:
 
-Quick Visualization for Hyperparameter Optimization Analysis
+5. Quick Visualization for Hyperparameter Optimization Analysis
 ============================================================
 
 Optuna provides various visualization features in :mod:`optuna.visualization` to analyze optimization results visually.
