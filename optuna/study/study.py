@@ -367,7 +367,7 @@ class Study:
 
                 .. seealso::
 
-                    :ref:`optuna_callback`
+                    See the tutorial of :ref:`optuna_callback` for how to use and implement callback functions.
 
             gc_after_trial:
                 Flag to determine whether to automatically run garbage collection after each trial.
