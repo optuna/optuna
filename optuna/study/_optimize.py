@@ -225,30 +225,25 @@ def _run_trial(
         stop_event.set()
         thread.join()
 
-    # `Study.tell` may raise during trial post-processing.
-    try:
-        # NOTE (himkt) study.tell returns state
-        value_or_values, state = study.tell(trial, values=value_or_values, state=state)
-    except Exception as e:
-        if not isinstance(e, catch):
-            raise
-    finally:
-        if state == TrialState.COMPLETE:
-            assert isinstance(value_or_values, list)
-            study._log_completed_trial(trial, value_or_values)
-        elif state == TrialState.PRUNED:
-            _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
-        elif state == TrialState.FAIL:
-            if func_err is not None:
-                _logger.warning(
-                    "Trial {} failed because of the following error: {}".format(
-                        trial.number, repr(func_err)
-                    ),
-                    exc_info=func_err_fail_exc_info,
-                )
-        # NOTE (himkt) state could be None
-        elif state is not None and func_err is not None:
-            assert False, "Should not reach."
+    # NOTE (himkt) study.tell returns state
+    value_or_values, state = study.tell(trial, values=value_or_values, state=state)
+
+    if state == TrialState.COMPLETE:
+        assert isinstance(value_or_values, list)
+        study._log_completed_trial(trial, value_or_values)
+    elif state == TrialState.PRUNED:
+        _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
+    elif state == TrialState.FAIL:
+        if func_err is not None:
+            _logger.warning(
+                "Trial {} failed because of the following error: {}".format(
+                    trial.number, repr(func_err)
+                ),
+                exc_info=func_err_fail_exc_info,
+            )
+    # NOTE (himkt) state could be None
+    elif state is not None and func_err is not None:
+        assert False, "Should not reach."
 
     if state == TrialState.FAIL and func_err is not None and not isinstance(func_err, catch):
         raise func_err
