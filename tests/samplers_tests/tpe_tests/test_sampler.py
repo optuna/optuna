@@ -1,6 +1,7 @@
 import random
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Union
 from unittest.mock import Mock
@@ -16,6 +17,7 @@ from optuna import distributions
 from optuna import TrialPruned
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
+from optuna.study.study import create_study
 from optuna.trial import Trial
 
 
@@ -1052,6 +1054,37 @@ def test_invalid_multivariate_and_group() -> None:
 def test_group_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(multivariate=True, group=True)
+
+
+def run_tpe(k: int, sequence_dict: Dict[int, List[int]], hash_dict: Dict[int, int]) -> None:
+    hash_dict[k] = hash("nondeterministic hash")
+    sampler = TPESampler(n_startup_trials=1, seed=2, multivariate=True, group=True)
+    study = create_study(sampler=sampler)
+    sequence = []
+    for _ in range(10):
+        trial = study.ask()
+        picked = [i for i in range(10) if trial.suggest_int(str(i), 0, 1) == 1]
+        study.tell(trial, len(picked))
+        sequence.extend(picked)
+    sequence_dict[k] = sequence
+
+
+# Test deterministic iteration as discussed in https://github.com/optuna/optuna/issues/3137
+def test_group_deterministic_iteration() -> None:
+    from multiprocessing import Manager
+    from multiprocessing import Process
+
+    manager = Manager()
+    sequence_dict: Dict[int, List[int]] = manager.dict()
+    hash_dict: Dict[int, int] = manager.dict()
+    for i in range(3):
+        p = Process(target=run_tpe, args=(i, sequence_dict, hash_dict))
+        p.start()
+        p.join()
+    # Hashes are expected to be different because string hashing is nondeterministic per process.
+    assert not (hash_dict[0] == hash_dict[1] == hash_dict[2])
+    # But the sequences are expected to be the same.
+    assert sequence_dict[0] == sequence_dict[1] == sequence_dict[2]
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
