@@ -397,7 +397,7 @@ def test_multi_objective_sample_int_uniform_distributions() -> None:
     def int_value_fn(idx: int) -> float:
         return random.randint(0, 100)
 
-    int_dist = optuna.distributions.IntUniformDistribution(1, 100)
+    int_dist = optuna.distributions.IntDistribution(1, 100)
     past_trials = [
         frozen_trial_factory(
             i, [random.random(), random.random()], dist=int_dist, value_fn=int_value_fn

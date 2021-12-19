@@ -120,8 +120,8 @@ study.add_trial(
         },
         distributions={
             "bagging_fraction": optuna.distributions.FloatDistribution(0.4, 1.0 + 1e-12),
-            "bagging_freq": optuna.distributions.IntUniformDistribution(0, 7),
-            "min_child_samples": optuna.distributions.IntUniformDistribution(5, 100),
+            "bagging_freq": optuna.distributions.IntDistribution(0, 7),
+            "min_child_samples": optuna.distributions.IntDistribution(5, 100),
         },
         value=0.94,
     )
@@ -135,8 +135,8 @@ study.add_trial(
         },
         distributions={
             "bagging_fraction": optuna.distributions.FloatDistribution(0.4, 1.0 + 1e-12),
-            "bagging_freq": optuna.distributions.IntUniformDistribution(0, 7),
-            "min_child_samples": optuna.distributions.IntUniformDistribution(5, 100),
+            "bagging_freq": optuna.distributions.IntDistribution(0, 7),
+            "min_child_samples": optuna.distributions.IntDistribution(5, 100),
         },
         value=0.95,
     )
