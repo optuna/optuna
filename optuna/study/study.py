@@ -668,10 +668,11 @@ class Study:
                 trial_number,
             )
 
-            if values_conversion_failure_message is None:
-                state = TrialState.COMPLETE
-            else:
-                state = TrialState.FAIL
+            if state is None:
+                if values_conversion_failure_message is None:
+                    state = TrialState.COMPLETE
+                else:
+                    state = TrialState.FAIL
 
             # When called from `Study.optimize` and `state` is pruned, the given `values` contains
             # the intermediate value with the largest step so far. In this case, the value is
