@@ -1,4 +1,6 @@
 import pytest
+import numpy as np
+from matplotlib.collections import PathCollection
 
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
@@ -30,6 +32,16 @@ def test_plot_slice() -> None:
     assert len(figure) == 2
     assert len(figure[0].get_lines()) == 0
     assert len(figure[1].get_lines()) == 0
+    assert len(figure[0].findobj(PathCollection)) == 1
+    assert len(figure[1].findobj(PathCollection)) == 1
+
+    data0 = figure[0].findobj(PathCollection)[0].get_offsets().data
+    data1 = figure[1].findobj(PathCollection)[0].get_offsets().data
+    assert np.allclose(data0, [[1.0, 0.0],
+                               [2.5, 1.0]])
+    assert np.allclose(data1, [[2.0, 0.0],
+                               [0.0, 2.0],
+                               [1.0, 1.0]])
     assert figure[0].yaxis.label.get_text() == "Objective Value"
 
     # Test with a trial to select parameter.
