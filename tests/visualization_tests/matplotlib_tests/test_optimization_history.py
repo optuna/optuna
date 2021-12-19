@@ -153,6 +153,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
         study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.get_lines()) == 4
+    assert list(figure.get_lines()[-1].get_xdata()) == [0, 1, 2]
     if direction == "minimize":
         assert list(figure.get_lines()[-1].get_ydata()) == [1.0, 1.0, 0.0]
     else:
