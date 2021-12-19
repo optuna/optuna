@@ -1,4 +1,8 @@
+import decimal
 import pytest
+
+import numpy as np
+from numpy.testing import assert_almost_equal
 
 from optuna.study import create_study
 from optuna.trial import Trial
@@ -147,10 +151,14 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
             return 0.0
         return 0.0
 
+    def objective_for_bars(trial: Trial) -> float:
+        return trial.suggest_float('x', 0, 1)
+
     # Test with trials.
     studies = [create_study(direction=direction) for _ in range(n_studies)]
     for study in studies:
         study.optimize(objective, n_trials=3)
+
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.get_lines()) == 4
     assert list(figure.get_lines()[-1].get_xdata()) == [0, 1, 2]
@@ -158,6 +166,22 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
         assert list(figure.get_lines()[-1].get_ydata()) == [1.0, 1.0, 0.0]
     else:
         assert list(figure.get_lines()[-1].get_ydata()) == [1.0, 2.0, 2.0]
+
+    # Test for error_bar.
+    studies = [create_study(direction=direction) for _ in range(3)]
+    for idx, study in enumerate(studies):
+        if idx == 0:
+            study.enqueue_trial({"x": 0.10})
+        elif idx == 1:
+            study.enqueue_trial({"x": 0.30})
+        elif idx == 2:
+            study.enqueue_trial({"x": 0.20})
+        study.optimize(objective_for_bars, n_trials=1)
+    figure = plot_optimization_history(studies, error_bar=True)
+
+    assert_almost_equal(np.array(figure.get_lines()[0].get_ydata()), np.array([0.2000000000]), decimal=10)
+    assert_almost_equal(np.array(figure.get_lines()[1].get_ydata()), np.array([0.1183503419]), decimal=10)
+    assert_almost_equal(np.array(figure.get_lines()[2].get_ydata()), np.array([0.2816496580]), decimal=10)
 
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == ["Best Value", "Objective Value"]
