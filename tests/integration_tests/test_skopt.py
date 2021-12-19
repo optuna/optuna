@@ -127,7 +127,7 @@ def test_is_compatible() -> None:
 
     # Error (different distribution class).
     trial = _create_frozen_trial(
-        {"p0": 5}, {"p0": distributions.IntUniformDistribution(low=0, high=10)}
+        {"p0": 5}, {"p0": distributions.IntDistribution(low=0, high=10)}
     )
     with pytest.raises(ValueError):
         optimizer._is_compatible(trial)

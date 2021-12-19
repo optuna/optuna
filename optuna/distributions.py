@@ -518,8 +518,6 @@ DISTRIBUTION_CLASSES = (
     UniformDistribution,
     LogUniformDistribution,
     DiscreteUniformDistribution,
-    IntUniformDistribution,
-    IntLogUniformDistribution,
     CategoricalDistribution,
 )
 
@@ -564,16 +562,18 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
                 return FloatDistribution(low, high, log=log, step=step)
 
             else:
-                if log:
-                    if step is not None:
-                        return IntLogUniformDistribution(low, high, step)
-                    else:
-                        return IntLogUniformDistribution(low, high)
-                else:
-                    if step is not None:
-                        return IntUniformDistribution(low, high, step)
-                    else:
-                        return IntUniformDistribution(low, high)
+                if log and step != 1:
+                    step = 1
+                    warnings.warn(
+                        "Samplers and other components in Optuna will assume that `step` is 1 "
+                        "when `log` argument is True.",
+                        FutureWarning,
+                    )
+                if step is None:
+                    step = 1
+                if log is None:
+                    log = False
+                return IntDistribution(low=low, high=high, log=log, step=step)
 
         raise ValueError("Unknown distribution type: {}".format(json_dict["type"]))
 
@@ -669,8 +669,6 @@ def _get_single_value(distribution: BaseDistribution) -> Union[int, float, Categ
             UniformDistribution,
             LogUniformDistribution,
             DiscreteUniformDistribution,
-            IntUniformDistribution,
-            IntLogUniformDistribution,
         ),
     ):
         return distribution.low

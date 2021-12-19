@@ -331,6 +331,6 @@ def test_distributions(storage_mode: str) -> None:
         assert distributions["u"] == optuna.distributions.FloatDistribution(0, 1)
         assert distributions["lu"] == optuna.distributions.FloatDistribution(1e-7, 1, log=True)
         assert distributions["du"] == optuna.distributions.FloatDistribution(0, 1, step=0.5)
-        assert distributions["i"] == optuna.distributions.IntUniformDistribution(0, 1)
-        assert distributions["il"] == optuna.distributions.IntLogUniformDistribution(1, 128)
+        assert distributions["i"] == optuna.distributions.IntDistribution(0, 1)
+        assert distributions["il"] == optuna.distributions.IntDistribution(1, 128, log=True)
         assert distributions["c"] == optuna.distributions.CategoricalDistribution(("a", "b", "c"))
