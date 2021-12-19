@@ -2,7 +2,7 @@
 .. _distributed:
 
 4. Easy Parallelization
-====================
+=======================
 
 It's straightforward to parallelize :func:`optuna.study.Study.optimize`.
 
