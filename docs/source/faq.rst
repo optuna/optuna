@@ -494,3 +494,17 @@ There are two kinds of constrained optimizations, one with soft constraints and 
 Soft constraints do not have to be satisfied, but an objective function is penalized if they are unsatisfied. On the other hand, hard constraints must be satisfied.
 
 Optuna is adopting the soft one and **DOES NOT** support the hard one. In other words, Optuna **DOES NOT** have built-in samplers for the hard constraints.
+
+How can I parallelize optimization
+-------------------------------------------------
+
+Parallelization can be achieved by setting the argument n_jobs in the optimize method of the Study class.
+
+The variations that can be expected to be parallelized are in the following three cases.
+
+* one-node, multi-threading parallelization
+* one-node, multi-processing parallelization
+* multi-node, multi-processing parallelization
+
+For more information about 3., see TutorialEasyParallelization.
+.. TutorialEasyParallelization: https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html
