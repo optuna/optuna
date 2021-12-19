@@ -364,6 +364,11 @@ class Study:
                 List of callback functions that are invoked at the end of each trial. Each function
                 must accept two parameters with the following types in this order:
                 :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
+
+                .. seealso::
+
+                    :ref:`optuna_callback`
+
             gc_after_trial:
                 Flag to determine whether to automatically run garbage collection after each trial.
                 Set to :obj:`True` to run the garbage collection, :obj:`False` otherwise.
