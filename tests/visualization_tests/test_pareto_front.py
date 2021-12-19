@@ -25,9 +25,9 @@ def _check_data(figure: "go.Figure", axis: str, expected: Sequence[int]) -> None
     the `expected` result.
 
     Args:
-        figure (:class:`go.Figure`): A figure.
-        axis (str): The axis to be checked.
-        expected (Sequence[int]): The expected result.
+        figure: A figure.
+        axis: The axis to be checked.
+        expected: The expected result.
     """
 
     n_data = len(figure.data)
