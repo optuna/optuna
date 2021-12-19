@@ -10,8 +10,8 @@ from typing import Union
 from unittest import mock
 import warnings
 
-from lightgbm import log_evaluation
 from lightgbm import early_stopping
+from lightgbm import log_evaluation
 import numpy as np
 import pytest
 import sklearn.datasets
