@@ -13,7 +13,6 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_plot_optimization_history(direction: str) -> None:
-    print(direction)
     # Test with no studies.
     figure = plot_edf([])
     assert len(figure.data) == 0
