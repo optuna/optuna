@@ -863,6 +863,10 @@ class Study:
         Args:
             params:
                 Parameter values to pass your objective function.
+
+        .. seealso::
+            Please refer to :ref:`specify_params` for the tutorial of specifying hyperparameters
+            manually.
         """
 
         self.add_trial(
