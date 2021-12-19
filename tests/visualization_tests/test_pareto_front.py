@@ -15,6 +15,26 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization import plot_pareto_front
 from optuna.visualization._pareto_front import _make_hovertext
+from optuna.visualization._plotly_imports import go
+
+
+def _check_data(figure: "go.Figure", axis: str, expected: Sequence[int]) -> None:
+    """Compare `figure` against `expected`.
+
+    Concatenate `data` in `figure` in reverse order, pick the desired `axis`, and compare with
+    the `expected` result.
+
+    Args:
+        figure (:class:`go.Figure`): A figure.
+        axis (str): The axis to be checked.
+        expected (Sequence[int]): The expected result.
+    """
+
+    n_data = len(figure.data)
+    actual = tuple(
+        itertools.chain(*list(map(lambda i: figure.data[i][axis], reversed(range(n_data)))))
+    )
+    assert actual == expected
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
@@ -59,61 +79,29 @@ def test_plot_pareto_front_2d(
         axis_order=axis_order,
         constraints_func=constraints_func,
     )
+    actual_axis_order = axis_order or [0, 1]
     if use_constraints_func:
         assert len(figure.data) == 3
         if include_dominated_trials:
             # The enqueue order of trial is: infeasible, feasible non-best, then feasible best.
             data = [(1, 0, 1, 1), (1, 2, 2, 0)]  # type: ignore
-            if axis_order is None:
-                assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
-                assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
-            else:
-                assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[
-                    axis_order[0]
-                ]
-                assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[
-                    axis_order[1]
-                ]
         else:
             # The enqueue order of trial is: infeasible, feasible.
             data = [(1, 0, 1), (1, 2, 0)]  # type: ignore
-            if axis_order is None:
-                assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
-                assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
-            else:
-                assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[
-                    axis_order[0]
-                ]
-                assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[
-                    axis_order[1]
-                ]
     else:
         assert len(figure.data) == 2
         if include_dominated_trials:
             # The last elements come from dominated trial that is enqueued firstly.
             data = [(0, 1, 1, 1), (2, 0, 2, 1)]  # type: ignore
-            if axis_order is None:
-                assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
-                assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
-            else:
-                assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[axis_order[0]]
-                assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[axis_order[1]]
         else:
             data = [(0, 1), (2, 0)]  # type: ignore
-            if axis_order is None:
-                assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
-                assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
-            else:
-                assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[axis_order[0]]
-                assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[axis_order[1]]
+
+    _check_data(figure, "x", data[actual_axis_order[0]])
+    _check_data(figure, "y", data[actual_axis_order[1]])
 
     titles = ["Objective {}".format(i) for i in range(2)]
-    if axis_order is None:
-        assert figure.layout.xaxis.title.text == titles[0]
-        assert figure.layout.yaxis.title.text == titles[1]
-    else:
-        assert figure.layout.xaxis.title.text == titles[axis_order[0]]
-        assert figure.layout.yaxis.title.text == titles[axis_order[1]]
+    assert figure.layout.xaxis.title.text == titles[actual_axis_order[0]]
+    assert figure.layout.yaxis.title.text == titles[actual_axis_order[1]]
 
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
@@ -142,12 +130,8 @@ def test_plot_pareto_front_2d(
         axis_order=axis_order,
         constraints_func=constraints_func,
     )
-    if axis_order is None:
-        assert figure.layout.xaxis.title.text == target_names[0]
-        assert figure.layout.yaxis.title.text == target_names[1]
-    else:
-        assert figure.layout.xaxis.title.text == target_names[axis_order[0]]
-        assert figure.layout.yaxis.title.text == target_names[axis_order[1]]
+    assert figure.layout.xaxis.title.text == target_names[actual_axis_order[0]]
+    assert figure.layout.yaxis.title.text == target_names[actual_axis_order[1]]
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
@@ -198,75 +182,31 @@ def test_plot_pareto_front_3d(
         axis_order=axis_order,
         constraints_func=constraints_func,
     )
+    actual_axis_order = axis_order or [0, 1]
     if use_constraints_func:
         assert len(figure.data) == 3
         if include_dominated_trials:
             # The enqueue order of trial is: infeasible, feasible non-best, then feasible best.
             data = [(1, 1, 1, 1), (1, 0, 1, 1), (1, 2, 2, 0)]  # type: ignore
-            if axis_order is None:
-                assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
-                assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
-                assert (figure.data[2]["z"] + figure.data[1]["z"] + figure.data[0]["z"]) == data[2]
-            else:
-                assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[
-                    axis_order[0]
-                ]
-                assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[
-                    axis_order[1]
-                ]
-                assert (figure.data[2]["z"] + figure.data[1]["z"] + figure.data[0]["z"]) == data[
-                    axis_order[2]
-                ]
         else:
             # The enqueue order of trial is: infeasible, feasible.
             data = [(1, 1, 1), (1, 0, 1), (1, 2, 0)]  # type: ignore
-            if axis_order is None:
-                assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
-                assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
-                assert (figure.data[2]["z"] + figure.data[1]["z"] + figure.data[0]["z"]) == data[2]
-            else:
-                assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[
-                    axis_order[0]
-                ]
-                assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[
-                    axis_order[1]
-                ]
-                assert (figure.data[2]["z"] + figure.data[1]["z"] + figure.data[0]["z"]) == data[
-                    axis_order[2]
-                ]
     else:
         assert len(figure.data) == 2
         if include_dominated_trials:
             # The last elements come from dominated trial that is enqueued firstly.
             data = [(1, 1, 1, 1), (0, 1, 1, 1), (2, 0, 2, 1)]  # type: ignore
-            if axis_order is None:
-                assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
-                assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
-                assert (figure.data[1]["z"] + figure.data[0]["z"]) == data[2]
-            else:
-                assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[axis_order[0]]
-                assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[axis_order[1]]
-                assert (figure.data[1]["z"] + figure.data[0]["z"]) == data[axis_order[2]]
         else:
             data = [(1, 1), (0, 1), (2, 0)]  # type: ignore
-            if axis_order is None:
-                assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
-                assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
-                assert (figure.data[1]["z"] + figure.data[0]["z"]) == data[2]
-            else:
-                assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[axis_order[0]]
-                assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[axis_order[1]]
-                assert (figure.data[1]["z"] + figure.data[0]["z"]) == data[axis_order[2]]
+
+    _check_data(figure, "x", data[actual_axis_order[0]])
+    _check_data(figure, "y", data[actual_axis_order[1]])
+    _check_data(figure, "z", data[actual_axis_order[1]])
 
     titles = ["Objective {}".format(i) for i in range(3)]
-    if axis_order is None:
-        assert figure.layout.scene.xaxis.title.text == titles[0]
-        assert figure.layout.scene.yaxis.title.text == titles[1]
-        assert figure.layout.scene.zaxis.title.text == titles[2]
-    else:
-        assert figure.layout.scene.xaxis.title.text == titles[axis_order[0]]
-        assert figure.layout.scene.yaxis.title.text == titles[axis_order[1]]
-        assert figure.layout.scene.zaxis.title.text == titles[axis_order[2]]
+    assert figure.layout.scene.xaxis.title.text == titles[actual_axis_order[0]]
+    assert figure.layout.scene.yaxis.title.text == titles[actual_axis_order[1]]
+    assert figure.layout.scene.zaxis.title.text == titles[actual_axis_order[2]]
 
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
@@ -303,14 +243,9 @@ def test_plot_pareto_front_3d(
 
     target_names = ["Foo", "Bar", "Baz"]
     figure = plot_pareto_front(study=study, target_names=target_names, axis_order=axis_order)
-    if axis_order is None:
-        assert figure.layout.scene.xaxis.title.text == target_names[0]
-        assert figure.layout.scene.yaxis.title.text == target_names[1]
-        assert figure.layout.scene.zaxis.title.text == target_names[2]
-    else:
-        assert figure.layout.scene.xaxis.title.text == target_names[axis_order[0]]
-        assert figure.layout.scene.yaxis.title.text == target_names[axis_order[1]]
-        assert figure.layout.scene.zaxis.title.text == target_names[axis_order[2]]
+    assert figure.layout.scene.xaxis.title.text == target_names[actual_axis_order[0]]
+    assert figure.layout.scene.yaxis.title.text == target_names[actual_axis_order[1]]
+    assert figure.layout.scene.zaxis.title.text == target_names[actual_axis_order[2]]
 
 
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
