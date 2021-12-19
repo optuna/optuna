@@ -1179,37 +1179,50 @@ def test_tell_values() -> None:
     study = create_study()
 
     study.tell(study.ask(), 1.0)
-
     study.tell(study.ask(), [1.0])
+    assert len(study.trials) == 2
 
     # Check invalid values, e.g. ones that cannot be cast to float.
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), "a")  # type: ignore
+    study.tell(study.ask(), "a")  # type: ignore
+    assert len(study.trials) == 3
+    assert study.trials[-1].state == TrialState.FAIL
+    assert study.trials[-1].values is None
 
     # Check number of values.
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), [])
+    study.tell(study.ask(), [])
+    assert len(study.trials) == 4
+    assert study.trials[-1].state == TrialState.FAIL
+    assert study.trials[-1].values is None
 
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), [1.0, 2.0])
+    study.tell(study.ask(), [1.0, 2.0])
+    assert len(study.trials) == 5
+    assert study.trials[-1].state == TrialState.FAIL
+    assert study.trials[-1].values is None
 
     study = create_study(directions=["minimize", "maximize"])
     study.tell(study.ask(), [1.0, 2.0])
+    assert len(study.trials) == 1
 
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), [])
+    study.tell(study.ask(), [])
+    assert len(study.trials) == 2
+    assert study.trials[-1].state == TrialState.FAIL
+    assert study.trials[-1].values is None
 
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), [1.0])
+    study.tell(study.ask(), [1.0])
+    assert len(study.trials) == 3
+    assert study.trials[-1].state == TrialState.FAIL
+    assert study.trials[-1].values is None
 
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), [1.0, 2.0, 3.0])
+    study.tell(study.ask(), [1.0, 2.0, 3.0])
+    assert len(study.trials) == 4
+    assert study.trials[-1].state == TrialState.FAIL
+    assert study.trials[-1].values is None
 
     # Missing values for completions.
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.COMPLETE)
 
-    # Default state is `TrialState.COMPLETE` for which values are required.
+    # Either state or values is required
     with pytest.raises(ValueError):
         study.tell(study.ask())
 
