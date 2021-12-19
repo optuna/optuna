@@ -152,7 +152,7 @@ def plot_pareto_front(
         hovertemplate: str,
         name: Optional[str] = None,
         color: Optional[str] = None,
-        dominated_samples: bool = False,
+        dominated_trials: bool = False,
     ) -> Union["go.Scatter", "go.Scatter3d"]:
         return _make_scatter_object_base(
             n_dim,
@@ -162,7 +162,7 @@ def plot_pareto_front(
             hovertemplate=hovertemplate,
             name=name,
             color=color,
-            dominated_samples=dominated_samples,
+            dominated_trials=dominated_trials,
         )
 
     if constraints_func is None:
@@ -170,12 +170,12 @@ def plot_pareto_front(
             _make_scatter_object(
                 non_best_trials,
                 hovertemplate="%{text}<extra>Trial</extra>",
-                dominated_samples=True,
+                dominated_trials=True,
             ),
             _make_scatter_object(
                 best_trials,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
-                dominated_samples=False,
+                dominated_trials=False,
             ),
         ]
     else:
@@ -183,19 +183,19 @@ def plot_pareto_front(
             _make_scatter_object(
                 infeasible_trials,
                 hovertemplate="%{text}<extra>Infeasible</extra>",
-                name="infeasible",
+                name="Infeasible",
                 color="grey",
             ),
             _make_scatter_object(
                 non_best_trials,
                 hovertemplate="%{text}<extra>Non-best feasible</extra>",
-                name="non-best feasible",
+                name="Non-best feasible",
                 color="blue",
             ),
             _make_scatter_object(
                 best_trials,
                 hovertemplate="%{text}<extra>Best feasible</extra>",
-                name="best feasible",
+                name="Best feasible",
                 color="red",
             ),
         ]
@@ -246,14 +246,14 @@ def _make_scatter_object_base(
     hovertemplate: str,
     name: Optional[str] = None,
     color: Optional[str] = None,
-    dominated_samples: bool = False,
+    dominated_trials: bool = False,
 ) -> Union["go.Scatter", "go.Scatter3d"]:
     assert n_dim in (2, 3)
     marker = _make_marker(
         trials,
         include_dominated_trials,
         use_constraints_func=name is not None,
-        dominated_samples=dominated_samples,
+        dominated_trials=dominated_trials,
         color=color,
     )
     if n_dim == 2:
@@ -301,14 +301,20 @@ def _make_marker(
     trials: List[FrozenTrial],
     include_dominated_trials: bool,
     use_constraints_func: bool,
-    dominated_samples: bool = False,
+    dominated_trials: bool = False,
     color: Optional[str] = None,
 ) -> Dict[str, Any]:
-    if dominated_samples and not include_dominated_trials:
+    if dominated_trials and not include_dominated_trials:
         assert len(trials) == 0
 
-    if not use_constraints_func:
-        if dominated_samples:
+    if use_constraints_func:
+        assert color is not None
+        return {
+            "line": {"width": 0.5, "color": "Grey"},
+            "color": color,
+        }
+    else:
+        if dominated_trials:
             return {
                 "line": {"width": 0.5, "color": "Grey"},
                 "color": [t.number for t in trials],
@@ -328,9 +334,3 @@ def _make_marker(
                     "xpad": 40,
                 },
             }
-    else:
-        assert color is not None
-        return {
-            "line": {"width": 0.5, "color": "Grey"},
-            "color": color,
-        }
