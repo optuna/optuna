@@ -498,7 +498,7 @@ Optuna is adopting the soft one and **DOES NOT** support the hard one. In other 
 How can I parallelize optimization?
 -------------------------------------------------
 
-The variations that can be expected to be parallelized are in the following three cases.
+The variations of parallelization are in the following three cases.
 
 1. Multi-threading parallelization with single node
 2. Multi-processing parallelization with single node
