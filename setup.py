@@ -111,7 +111,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             # pytorch-lightning==1.5.0.
             "skorch",
             "catalyst>=21.3",
-            "allennlp>=2.2.0 ; python_version>'3.6'",
             "fastai",
         ],
         "tests": [
