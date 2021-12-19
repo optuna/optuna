@@ -1,7 +1,7 @@
 from typing import Sequence
 
-import pytest
 import numpy as np
+import pytest
 
 from optuna.study import create_study
 from optuna.visualization import plot_edf
