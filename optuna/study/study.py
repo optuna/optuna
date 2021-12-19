@@ -859,7 +859,7 @@ class Study:
             params:
                 Parameter values to pass your objective function.
             user_attrs:
-                A dictionary of user specific attributes other than params.
+                A dictionary of user-specific attributes other than ``params``.
 
         .. seealso::
             Please refer to :ref:`specify_params` for the tutorial of specifying hyperparameters
