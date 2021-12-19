@@ -826,7 +826,9 @@ class Study:
         self._stop_flag = True
 
     @experimental("1.2.0")
-    def enqueue_trial(self, params: Dict[str, Any]) -> None:
+    def enqueue_trial(
+        self, params: Dict[str, Any], user_attrs: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Enqueue a trial with given parameter values.
 
         You can fix the next sampling parameters which will be evaluated in your
@@ -846,15 +848,18 @@ class Study:
 
                 study = optuna.create_study()
                 study.enqueue_trial({"x": 5})
-                study.enqueue_trial({"x": 0})
+                study.enqueue_trial({"x": 0}, user_attrs={"memo": "optimal"})
                 study.optimize(objective, n_trials=2)
 
                 assert study.trials[0].params == {"x": 5}
                 assert study.trials[1].params == {"x": 0}
+                assert study.trials[1].user_attrs == {"memo": "optimal"}
 
         Args:
             params:
                 Parameter values to pass your objective function.
+            user_attrs:
+                A dictionary of user specific attributes other than params.
 
         .. seealso::
             Please refer to :ref:`specify_params` for the tutorial of specifying hyperparameters
@@ -862,7 +867,11 @@ class Study:
         """
 
         self.add_trial(
-            create_trial(state=TrialState.WAITING, system_attrs={"fixed_params": params})
+            create_trial(
+                state=TrialState.WAITING,
+                system_attrs={"fixed_params": params},
+                user_attrs=user_attrs,
+            )
         )
 
     @experimental("2.0.0")
