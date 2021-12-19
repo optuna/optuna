@@ -167,25 +167,18 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
 
     # Test for error_bar.
     studies = [create_study(direction=direction) for _ in range(3)]
-    for idx, study in enumerate(studies):
-        if idx == 0:
-            study.enqueue_trial({"x": 0.10})
-        elif idx == 1:
-            study.enqueue_trial({"x": 0.30})
-        elif idx == 2:
-            study.enqueue_trial({"x": 0.20})
+    suggested_params = [0.1, 0.3, 0.2]
+    for idx, (x, study) in enumerate(zip(suggested_params, studies)):
+        study.enqueue_trial({"x": x})
         study.optimize(objective_for_bars, n_trials=1)
     figure = plot_optimization_history(studies, error_bar=True)
 
-    assert_almost_equal(
-        np.array(figure.get_lines()[0].get_ydata()), np.array([0.2000000000]), decimal=10
-    )
-    assert_almost_equal(
-        np.array(figure.get_lines()[1].get_ydata()), np.array([0.1183503419]), decimal=10
-    )
-    assert_almost_equal(
-        np.array(figure.get_lines()[2].get_ydata()), np.array([0.2816496580]), decimal=10
-    )
+    mean = np.mean(suggested_params)
+    std = np.std(suggested_params)
+
+    assert_almost_equal(figure.get_lines()[0].get_ydata(), mean)
+    assert_almost_equal(figure.get_lines()[1].get_ydata(), mean - std)
+    assert_almost_equal(figure.get_lines()[2].get_ydata(), mean + std)
 
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == ["Best Value", "Objective Value"]
