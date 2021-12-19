@@ -152,7 +152,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
         return 0.0
 
     def objective_for_bars(trial: Trial) -> float:
-        return trial.suggest_float('x', 0, 1)
+        return trial.suggest_float("x", 0, 1)
 
     # Test with trials.
     studies = [create_study(direction=direction) for _ in range(n_studies)]
@@ -179,9 +179,15 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
         study.optimize(objective_for_bars, n_trials=1)
     figure = plot_optimization_history(studies, error_bar=True)
 
-    assert_almost_equal(np.array(figure.get_lines()[0].get_ydata()), np.array([0.2000000000]), decimal=10)
-    assert_almost_equal(np.array(figure.get_lines()[1].get_ydata()), np.array([0.1183503419]), decimal=10)
-    assert_almost_equal(np.array(figure.get_lines()[2].get_ydata()), np.array([0.2816496580]), decimal=10)
+    assert_almost_equal(
+        np.array(figure.get_lines()[0].get_ydata()), np.array([0.2000000000]), decimal=10
+    )
+    assert_almost_equal(
+        np.array(figure.get_lines()[1].get_ydata()), np.array([0.1183503419]), decimal=10
+    )
+    assert_almost_equal(
+        np.array(figure.get_lines()[2].get_ydata()), np.array([0.2816496580]), decimal=10
+    )
 
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == ["Best Value", "Objective Value"]
