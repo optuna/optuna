@@ -495,32 +495,35 @@ Soft constraints do not have to be satisfied, but an objective function is penal
 
 Optuna is adopting the soft one and **DOES NOT** support the hard one. In other words, Optuna **DOES NOT** have built-in samplers for the hard constraints.
 
-How can I parallelize optimization
+How can I parallelize optimization?
 -------------------------------------------------
 
 The variations that can be expected to be parallelized are in the following three cases.
 
-1. one-node, multi-threading parallelization
-2. one-node, multi-processing parallelization
-3. multi-node, multi-processing parallelization
+1. Multi-threading parallelization with single node
+2. Multi-processing parallelization with single node
+3. Multi-processing parallelization with multiple nodes
 
-## For the case of 1
-Parallelization can be achieved by setting the argument n_jobs in the optimize method of the Study class.
+For the case of 1
+================================
+Parallelization can be achieved by setting the argument `n_jobs` in the optimize method of the :class:`~optuna.study.Study` class.
 However, since it is multi-threading, the python code will not be faster due to GIL. 
 
-For more information about 1., see APIReference.
-.. APIReference: https://optuna.readthedocs.io/en/stable/reference/index.html
+For more information about 1., see APIReference_.
+.. _APIReference: https://optuna.readthedocs.io/en/stable/reference/index.html
 
-## For the case of 2
+For the case of 2
+================================
 This can be achieved by using RDB or sqlite.
 However, if you cannot install RDB or sqlite, it is not supported, so if you have a request, please make an Issue.
 
-For more information about 2., see TutorialEasyParallelization.
-.. TutorialEasyParallelization: https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html
+For more information about 2., see TutorialEasyParallelization_.
+.. _TutorialEasyParallelization: https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html
 
-## For the case of 3
+For the case of 3
+================================
 This can be achieved by using RDB.
 However, if you cannot install RDB, it is not supported, so if you have a request, please make an Issue.
 
-For more information about 3., see TutorialEasyParallelization.
-.. TutorialEasyParallelization: https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html
+For more information about 3., see TutorialEasyParallelization_.
+.. _TutorialEasyParallelization: https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html
