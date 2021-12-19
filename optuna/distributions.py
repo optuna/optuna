@@ -558,7 +558,7 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
             low = json_dict["low"]
             high = json_dict["high"]
             step = json_dict.get("step")
-            log = json_dict.get("log")
+            log = json_dict.get("log", False)
 
             if json_dict["type"] == "float":
                 return FloatDistribution(low, high, log=log, step=step)
