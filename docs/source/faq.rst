@@ -504,7 +504,7 @@ The variations of parallelization are in the following three cases.
 2. Multi-processing parallelization with single node
 3. Multi-processing parallelization with multiple nodes
 
-For the case of 1
+1. Multi-threading parallelization with a single node
 ================================
 
 Parallelization can be achieved by setting the argument ``n_jobs`` in :func:`~optuna.study.Study.optimize`.
