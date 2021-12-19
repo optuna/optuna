@@ -1,12 +1,13 @@
-import pytest
 import math
+
+from matplotlib.patches import Rectangle
+import pytest
 
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import Trial
 from optuna.visualization.matplotlib import plot_param_importances
-from matplotlib.patches import Rectangle
 
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
@@ -35,9 +36,7 @@ def test_plot_param_importances() -> None:
 
     assert len(figure.get_lines()) == 0
     assert len(bars) == 2
-    assert set(labels) == set(
-        ("param_b", "param_d")
-    )  # "param_a", "param_c" are conditional.
+    assert set(labels) == set(("param_b", "param_d"))  # "param_a", "param_c" are conditional.
     assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert figure.xaxis.label.get_text() == "Importance for Objective Value"
 
@@ -50,9 +49,7 @@ def test_plot_param_importances() -> None:
 
     assert len(figure.get_lines()) == 0
     assert len(bars) == 2
-    assert set(labels) == set(
-        ("param_b", "param_d")
-    )  # "param_a", "param_c" are conditional.
+    assert set(labels) == set(("param_b", "param_d"))  # "param_a", "param_c" are conditional.
     assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert figure.xaxis.label.get_text() == "Importance for Objective Value"
 
@@ -65,9 +62,7 @@ def test_plot_param_importances() -> None:
 
     assert len(figure.get_lines()) == 0
     assert len(bars) == 1
-    assert set(labels) == set(
-        ("param_b",)
-    )  # "param_a", "param_c" are conditional.
+    assert set(labels) == set(("param_b",))  # "param_a", "param_c" are conditional.
     assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert figure.xaxis.label.get_text() == "Importance for Objective Value"
 
@@ -81,9 +76,7 @@ def test_plot_param_importances() -> None:
     labels = [label.get_text() for label in figure.get_yticklabels()]
 
     assert len(bars) == 2
-    assert set(labels) == set(
-        ("param_b", "param_d")
-    )  # "param_a", "param_c" are conditional.
+    assert set(labels) == set(("param_b", "param_d"))  # "param_a", "param_c" are conditional.
     assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert len(figure.get_lines()) == 0
 
