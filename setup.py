@@ -108,9 +108,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            # TODO(nzw0301): remove the upper version constraint when the callback supports
-            # pytorch-lightning==1.5.0.
-            "pytorch-lightning>=1.0.2,<1.5.0",
+            "pytorch-lightning>=1.5.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.10.0 ; sys_platform=='darwin'",
@@ -149,9 +147,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            # TODO(nzw0301): remove the upper version constraint when the callback supports
-            # pytorch-lightning==1.5.0.
-            "pytorch-lightning>=1.0.2,<1.5.0",
+            "pytorch-lightning>=1.5.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.10.0 ; sys_platform=='darwin'",
