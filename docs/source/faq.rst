@@ -498,13 +498,29 @@ Optuna is adopting the soft one and **DOES NOT** support the hard one. In other 
 How can I parallelize optimization
 -------------------------------------------------
 
-Parallelization can be achieved by setting the argument n_jobs in the optimize method of the Study class.
-
 The variations that can be expected to be parallelized are in the following three cases.
 
-* one-node, multi-threading parallelization
-* one-node, multi-processing parallelization
-* multi-node, multi-processing parallelization
+1. one-node, multi-threading parallelization
+2. one-node, multi-processing parallelization
+3. multi-node, multi-processing parallelization
+
+## For the case of 1
+Parallelization can be achieved by setting the argument n_jobs in the optimize method of the Study class.
+However, since it is multi-threading, the python code will not be faster due to GIL. 
+
+For more information about 1., see APIReference.
+.. APIReference: https://optuna.readthedocs.io/en/stable/reference/index.html
+
+## For the case of 2
+This can be achieved by using RDB or sqlite.
+However, if you cannot install RDB or sqlite, it is not supported, so if you have a request, please make an Issue.
+
+For more information about 2., see TutorialEasyParallelization.
+.. TutorialEasyParallelization: https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html
+
+## For the case of 3
+This can be achieved by using RDB.
+However, if you cannot install RDB, it is not supported, so if you have a request, please make an Issue.
 
 For more information about 3., see TutorialEasyParallelization.
 .. TutorialEasyParallelization: https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html
