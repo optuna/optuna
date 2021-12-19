@@ -5,12 +5,12 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from typing import Union
 
 import optuna
 from optuna._experimental import experimental
 from optuna.study import Study
+from optuna.study._multi_objective import _get_pareto_front_trials_by_trials
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
@@ -78,7 +78,8 @@ def plot_pareto_front(
             :class:`~optuna.integration.BoTorchSampler`.
 
             If given, trials are classified into three categories: feasible and best, feasible but
-            non-best, and infeasible. Categories are shown in different colors.
+            non-best, and infeasible. Categories are shown in different colors. Here, whether a
+            trial is best (on pareto front) or not is determined ignoring all infeasible trials.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
@@ -99,14 +100,36 @@ def plot_pareto_front(
     elif len(target_names) != n_dim:
         raise ValueError(f"The length of `target_names` is supposed to be {n_dim}.")
 
-    trials = study.best_trials
-    n_best_trials = len(trials)
-    if len(trials) == 0:
-        _logger.warning("Your study does not have any completed trials.")
+    if constraints_func is not None:
+        feasible_trials = []
+        infeasible_trials = []
+        for trial in study.trials:
+            if trial.state != TrialState.COMPLETE:
+                continue
+            constraint_score = constraints_func(trial)
+            is_feasible = all(map(lambda x: x <= 0.0, constraint_score))
+            if is_feasible:
+                feasible_trials.append(trial)
+            else:
+                infeasible_trials.append(trial)
+        best_trials = _get_pareto_front_trials_by_trials(feasible_trials, study.directions)
+        if include_dominated_trials:
+            non_best_trials = _get_non_pareto_front_trials(feasible_trials, best_trials)
+        else:
+            non_best_trials = []
 
-    if include_dominated_trials:
-        non_pareto_trials = _get_non_pareto_front_trials(study, trials)
-        trials += non_pareto_trials
+        if len(best_trials) == 0:
+            _logger.warning("Your study does not have any completed and feasible trials.")
+    else:
+        best_trials = study.best_trials
+        if len(best_trials) == 0:
+            _logger.warning("Your study does not have any completed trials.")
+
+        if include_dominated_trials:
+            non_best_trials = _get_non_pareto_front_trials(study.get_trials(), best_trials)
+        else:
+            non_best_trials = []
+        infeasible_trials = []
 
     if axis_order is None:
         axis_order = list(range(n_dim))
@@ -147,8 +170,6 @@ def plot_pareto_front(
         )
 
     if constraints_func is None:
-        best_trials = trials[:n_best_trials]
-        non_best_trials = trials[n_best_trials:]
         data = [
             _make_scatter_object(
                 non_best_trials,
@@ -162,26 +183,21 @@ def plot_pareto_front(
             ),
         ]
     else:
-        (
-            best_feasible_trials,
-            non_best_feasible_trials,
-            infeasible_trials,
-        ) = _split_trials_by_constraints(trials, n_best_trials, constraints_func)
         data = [
             _make_scatter_object(
                 infeasible_trials,
-                hovertemplate="%{text}<extra>Trial</extra>",
+                hovertemplate="%{text}<extra>Infeasible</extra>",
                 name="infeasible",
                 color="grey",
             ),
             _make_scatter_object(
-                non_best_feasible_trials,
+                non_best_trials,
                 hovertemplate="%{text}<extra>Non-best feasible</extra>",
                 name="non-best feasible",
                 color="blue",
             ),
             _make_scatter_object(
-                best_feasible_trials,
+                best_trials,
                 hovertemplate="%{text}<extra>Best feasible</extra>",
                 name="best feasible",
                 color="red",
@@ -207,11 +223,11 @@ def plot_pareto_front(
 
 
 def _get_non_pareto_front_trials(
-    study: Study, pareto_trials: List[FrozenTrial]
+    trials: List[FrozenTrial], pareto_trials: List[FrozenTrial]
 ) -> List[FrozenTrial]:
 
     non_pareto_trials = []
-    for trial in study.get_trials():
+    for trial in trials:
         if trial.state == TrialState.COMPLETE and trial not in pareto_trials:
             non_pareto_trials.append(trial)
     return non_pareto_trials
@@ -283,29 +299,6 @@ def _make_hovertext(trial: FrozenTrial) -> str:
         indent=2,
     )
     return text.replace("\n", "<br>")
-
-
-def _split_trials_by_constraints(
-    trials: List[FrozenTrial],
-    n_best_trials: int,
-    constraints_func: Callable[[FrozenTrial], Sequence[float]],
-) -> Tuple[List[FrozenTrial], List[FrozenTrial], List[FrozenTrial]]:
-    best_feasible_trials = []
-    non_best_feasible_trials = []
-    infeasible_trials = []
-
-    for i, trial in enumerate(trials):
-        constraint_score = constraints_func(trial)
-        is_feasible = all(map(lambda x: x <= 0.0, constraint_score))
-        if is_feasible:
-            if i < n_best_trials:
-                best_feasible_trials.append(trial)
-            else:
-                non_best_feasible_trials.append(trial)
-        else:
-            infeasible_trials.append(trial)
-
-    return best_feasible_trials, non_best_feasible_trials, infeasible_trials
 
 
 def _make_marker(

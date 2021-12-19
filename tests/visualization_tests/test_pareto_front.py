@@ -34,11 +34,12 @@ def test_plot_pareto_front_2d(
     assert (figure.data[1]["x"] + figure.data[0]["x"]) == ()
     assert (figure.data[1]["y"] + figure.data[0]["y"]) == ()
 
-    # Test with three trials.
+    # Test with four trials.
+    study.enqueue_trial({"x": 1, "y": 2})
     study.enqueue_trial({"x": 1, "y": 1})
+    study.enqueue_trial({"x": 0, "y": 2})
     study.enqueue_trial({"x": 1, "y": 0})
-    study.enqueue_trial({"x": 0, "y": 1})
-    study.optimize(lambda t: [t.suggest_int("x", 0, 1), t.suggest_int("y", 0, 1)], n_trials=3)
+    study.optimize(lambda t: [t.suggest_int("x", 0, 2), t.suggest_int("y", 0, 2)], n_trials=4)
 
     constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]]
     if use_constraints_func:
@@ -62,7 +63,7 @@ def test_plot_pareto_front_2d(
         assert len(figure.data) == 3
         if include_dominated_trials:
             # The enqueue order of trial is: infeasible, feasible non-best, then feasible best.
-            data = [(0, 1, 1), (1, 1, 0)]  # type: ignore
+            data = [(1, 0, 1, 1), (1, 2, 2, 0)]  # type: ignore
             if axis_order is None:
                 assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
                 assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
@@ -75,7 +76,7 @@ def test_plot_pareto_front_2d(
                 ]
         else:
             # The enqueue order of trial is: infeasible, feasible.
-            data = [(0, 1), (1, 0)]  # type: ignore
+            data = [(1, 0, 1), (1, 2, 0)]  # type: ignore
             if axis_order is None:
                 assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
                 assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
@@ -90,7 +91,7 @@ def test_plot_pareto_front_2d(
         assert len(figure.data) == 2
         if include_dominated_trials:
             # The last elements come from dominated trial that is enqueued firstly.
-            data = [(1, 0, 1), (0, 1, 1)]  # type: ignore
+            data = [(0, 1, 1, 1), (2, 0, 2, 1)]  # type: ignore
             if axis_order is None:
                 assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
                 assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
@@ -98,7 +99,7 @@ def test_plot_pareto_front_2d(
                 assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[axis_order[0]]
                 assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[axis_order[1]]
         else:
-            data = [(1, 0), (0, 1)]  # type: ignore
+            data = [(0, 1), (2, 0)]  # type: ignore
             if axis_order is None:
                 assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
                 assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
@@ -170,19 +171,20 @@ def test_plot_pareto_front_3d(
     assert (figure.data[1]["z"] + figure.data[0]["z"]) == ()
 
     # Test with three trials.
+    study.enqueue_trial({"x": 1, "y": 1, "z": 2})
     study.enqueue_trial({"x": 1, "y": 1, "z": 1})
-    study.enqueue_trial({"x": 1, "y": 0, "z": 1})
+    study.enqueue_trial({"x": 1, "y": 0, "z": 2})
     study.enqueue_trial({"x": 1, "y": 1, "z": 0})
     study.optimize(
-        lambda t: [t.suggest_int("x", 0, 1), t.suggest_int("y", 0, 1), t.suggest_int("z", 0, 1)],
-        n_trials=3,
+        lambda t: [t.suggest_int("x", 0, 1), t.suggest_int("y", 0, 2), t.suggest_int("z", 0, 2)],
+        n_trials=4,
     )
 
     constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]]
     if use_constraints_func:
         # (x, y, z) = (1, 0, 1) is infeasible; others are feasible.
         def constraints_func(t: FrozenTrial) -> Sequence[float]:
-            if t.params["x"] == 1 and t.params["y"] == 0 and t.params["z"] == 1:
+            if t.params["x"] == 1 and t.params["y"] == 1 and t.params["z"] == 0:
                 return [1.0]
             else:
                 return [-1.0]
@@ -200,7 +202,7 @@ def test_plot_pareto_front_3d(
         assert len(figure.data) == 3
         if include_dominated_trials:
             # The enqueue order of trial is: infeasible, feasible non-best, then feasible best.
-            data = [(1, 1, 1), (1, 1, 0), (0, 1, 1)]  # type: ignore
+            data = [(1, 1, 1, 1), (1, 0, 1, 1), (1, 2, 2, 0)]  # type: ignore
             if axis_order is None:
                 assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
                 assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
@@ -217,7 +219,7 @@ def test_plot_pareto_front_3d(
                 ]
         else:
             # The enqueue order of trial is: infeasible, feasible.
-            data = [(1, 1), (1, 0), (0, 1)]  # type: ignore
+            data = [(1, 1, 1), (1, 0, 1), (1, 2, 0)]  # type: ignore
             if axis_order is None:
                 assert (figure.data[2]["x"] + figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
                 assert (figure.data[2]["y"] + figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
@@ -236,7 +238,7 @@ def test_plot_pareto_front_3d(
         assert len(figure.data) == 2
         if include_dominated_trials:
             # The last elements come from dominated trial that is enqueued firstly.
-            data = [(1, 1, 1), (0, 1, 1), (1, 0, 1)]  # type: ignore
+            data = [(1, 1, 1, 1), (0, 1, 1, 1), (2, 0, 2, 1)]  # type: ignore
             if axis_order is None:
                 assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
                 assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
@@ -246,7 +248,7 @@ def test_plot_pareto_front_3d(
                 assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[axis_order[1]]
                 assert (figure.data[1]["z"] + figure.data[0]["z"]) == data[axis_order[2]]
         else:
-            data = [(1, 1), (0, 1), (1, 0)]  # type: ignore
+            data = [(1, 1), (0, 1), (2, 0)]  # type: ignore
             if axis_order is None:
                 assert (figure.data[1]["x"] + figure.data[0]["x"]) == data[0]
                 assert (figure.data[1]["y"] + figure.data[0]["y"]) == data[1]
