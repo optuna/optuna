@@ -60,8 +60,6 @@ def test_plot_slice() -> None:
     # Test with a customized target name.
     figure = plot_slice(study, target_name="Target Name")
     assert len(figure) == 2
-    assert len(figure[0].get_lines()) == 0
-    assert len(figure[1].get_lines()) == 0
     assert len(figure[0].findobj(PathCollection)) == 1
     assert len(figure[1].findobj(PathCollection)) == 1
     assert figure[0].yaxis.label.get_text() == "Target Name"
