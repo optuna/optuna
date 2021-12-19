@@ -65,10 +65,7 @@ def test_plot_pareto_front_2d(
     if use_constraints_func:
         # (x, y) = (1, 0) is infeasible; others are feasible.
         def constraints_func(t: FrozenTrial) -> Sequence[float]:
-            if t.params["x"] == 1 and t.params["y"] == 0:
-                return [1.0]
-            else:
-                return [-1.0]
+            return [1.0] if t.params["x"] == 1 and t.params["y"] == 0 else [-1.0]
 
     else:
         constraints_func = None
@@ -166,12 +163,13 @@ def test_plot_pareto_front_3d(
 
     constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]]
     if use_constraints_func:
-        # (x, y, z) = (1, 0, 1) is infeasible; others are feasible.
+        # (x, y, z) = (1, 1, 0) is infeasible; others are feasible.
         def constraints_func(t: FrozenTrial) -> Sequence[float]:
-            if t.params["x"] == 1 and t.params["y"] == 1 and t.params["z"] == 0:
-                return [1.0]
-            else:
-                return [-1.0]
+            return (
+                [1.0]
+                if t.params["x"] == 1 and t.params["x"] == 1 and t.params["y"] == 0
+                else [-1.0]
+            )
 
     else:
         constraints_func = None
@@ -201,7 +199,7 @@ def test_plot_pareto_front_3d(
 
     _check_data(figure, "x", data[actual_axis_order[0]])
     _check_data(figure, "y", data[actual_axis_order[1]])
-    _check_data(figure, "z", data[actual_axis_order[1]])
+    _check_data(figure, "z", data[actual_axis_order[2]])
 
     titles = ["Objective {}".format(i) for i in range(3)]
     assert figure.layout.scene.xaxis.title.text == titles[actual_axis_order[0]]
