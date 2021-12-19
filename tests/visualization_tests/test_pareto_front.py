@@ -167,7 +167,7 @@ def test_plot_pareto_front_3d(
         def constraints_func(t: FrozenTrial) -> Sequence[float]:
             return (
                 [1.0]
-                if t.params["x"] == 1 and t.params["x"] == 1 and t.params["y"] == 0
+                if t.params["x"] == 1 and t.params["y"] == 1 and t.params["z"] == 0
                 else [-1.0]
             )
 
@@ -180,7 +180,7 @@ def test_plot_pareto_front_3d(
         axis_order=axis_order,
         constraints_func=constraints_func,
     )
-    actual_axis_order = axis_order or [0, 1]
+    actual_axis_order = axis_order or [0, 1, 2]
     if use_constraints_func:
         assert len(figure.data) == 3
         if include_dominated_trials:
