@@ -9,7 +9,7 @@ from optuna.trial import TrialState
 
 
 def _get_pareto_front_trials_2d(
-    trials: List[FrozenTrial], directions: List[StudyDirection]
+    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
 ) -> List[FrozenTrial]:
     trials = [trial for trial in trials if trial.state == TrialState.COMPLETE]
 
@@ -38,7 +38,7 @@ def _get_pareto_front_trials_2d(
 
 
 def _get_pareto_front_trials_nd(
-    trials: List[FrozenTrial], directions: List[StudyDirection]
+    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
 ) -> List[FrozenTrial]:
     pareto_front = []
     trials = [t for t in trials if t.state == TrialState.COMPLETE]
@@ -58,7 +58,7 @@ def _get_pareto_front_trials_nd(
 
 
 def _get_pareto_front_trials_by_trials(
-    trials: List[FrozenTrial], directions: List[StudyDirection]
+    trials: Sequence[FrozenTrial], directions: Sequence[StudyDirection]
 ) -> List[FrozenTrial]:
     if len(directions) == 2:
         return _get_pareto_front_trials_2d(trials, directions)  # Log-linear in number of trials.

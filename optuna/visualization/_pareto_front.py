@@ -79,7 +79,7 @@ def plot_pareto_front(
 
             If given, trials are classified into three categories: feasible and best, feasible but
             non-best, and infeasible. Categories are shown in different colors. Here, whether a
-            trial is best (on pareto front) or not is determined ignoring all infeasible trials.
+            trial is best (on Pareto front) or not is determined ignoring all infeasible trials.
 
     Returns:
         A :class:`plotly.graph_objs.Figure` object.
@@ -122,7 +122,9 @@ def plot_pareto_front(
             _logger.warning("Your study does not have any completed trials.")
 
         if include_dominated_trials:
-            non_best_trials = _get_non_pareto_front_trials(study.get_trials(), best_trials)
+            non_best_trials = _get_non_pareto_front_trials(
+                study.get_trials(deepcopy=False), best_trials
+            )
         else:
             non_best_trials = []
         infeasible_trials = []
@@ -148,7 +150,7 @@ def plot_pareto_front(
             )
 
     def _make_scatter_object(
-        trials: List[FrozenTrial],
+        trials: Sequence[FrozenTrial],
         hovertemplate: str,
         name: Optional[str] = None,
         color: Optional[str] = None,
@@ -182,20 +184,20 @@ def plot_pareto_front(
         data = [
             _make_scatter_object(
                 infeasible_trials,
-                hovertemplate="%{text}<extra>Infeasible</extra>",
-                name="Infeasible",
+                hovertemplate="%{text}<extra>Infeasible Trial</extra>",
+                name="Infeasible Trial",
                 color="grey",
             ),
             _make_scatter_object(
                 non_best_trials,
-                hovertemplate="%{text}<extra>Non-best feasible</extra>",
-                name="Non-best feasible",
+                hovertemplate="%{text}<extra>Feasible Trial</extra>",
+                name="Feasible Trial",
                 color="blue",
             ),
             _make_scatter_object(
                 best_trials,
-                hovertemplate="%{text}<extra>Best feasible</extra>",
-                name="Best feasible",
+                hovertemplate="%{text}<extra>Best Trial</extra>",
+                name="Best Trial",
                 color="red",
             ),
         ]
@@ -240,7 +242,7 @@ def _make_json_compatible(value: Any) -> Any:
 
 def _make_scatter_object_base(
     n_dim: int,
-    trials: List[FrozenTrial],
+    trials: Sequence[FrozenTrial],
     axis_order: List[int],
     include_dominated_trials: bool,
     hovertemplate: str,
@@ -298,7 +300,7 @@ def _make_hovertext(trial: FrozenTrial) -> str:
 
 
 def _make_marker(
-    trials: List[FrozenTrial],
+    trials: Sequence[FrozenTrial],
     include_dominated_trials: bool,
     use_constraints_func: bool,
     dominated_trials: bool = False,
