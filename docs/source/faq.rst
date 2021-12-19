@@ -506,6 +506,7 @@ The variations that can be expected to be parallelized are in the following thre
 
 For the case of 1
 ================================
+
 Parallelization can be achieved by setting the argument `n_jobs` in the optimize method of the :class:`~optuna.study.Study` class.
 However, since it is multi-threading, the python code will not be faster due to GIL. 
 
@@ -516,6 +517,7 @@ For more information about 1., see APIReference_.
 
 For the case of 2
 ================================
+
 This can be achieved by using RDB or sqlite.
 However, if you cannot install RDB or sqlite, it is not supported, so if you have a request, please make an Issue.
 
@@ -524,6 +526,7 @@ For more information about 2., see TutorialEasyParallelization_.
 
 For the case of 3
 ================================
+
 This can be achieved by using RDB.
 However, if you cannot install RDB, it is not supported, so if you have a request, please make an Issue.
 
