@@ -509,6 +509,8 @@ For the case of 1
 Parallelization can be achieved by setting the argument `n_jobs` in the optimize method of the :class:`~optuna.study.Study` class.
 However, since it is multi-threading, the python code will not be faster due to GIL. 
 
+While optimizing, it will be faster in limited situations, such as waiting for other server requests, or waiting for C/C++ processing with numpy, etc., but it is not expected to be faster in other cases.
+
 For more information about 1., see APIReference_.
 .. _APIReference: https://optuna.readthedocs.io/en/stable/reference/index.html
 
@@ -526,4 +528,3 @@ This can be achieved by using RDB.
 However, if you cannot install RDB, it is not supported, so if you have a request, please make an Issue.
 
 For more information about 3., see TutorialEasyParallelization_.
-.. _TutorialEasyParallelization: https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html
