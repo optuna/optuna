@@ -8,7 +8,8 @@ Optuna provides various visualization features in :mod:`optuna.visualization` to
 
 This tutorial walks you through this module by visualizing the history of lightgbm model for breast cancer dataset.
 
-For visualizing multi-objective optimization (i.e., pareto-front plot), please refer to the tutorial of :ref:`multi_objective`.
+For visualizing multi-objective optimization (i.e., the usage of :func:`optuna.visualization.plot_pareto_front`),
+please refer to the tutorial of :ref:`multi_objective`.
 """
 
 ###################################################################################################
