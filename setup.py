@@ -107,7 +107,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "xgboost",
             "tensorflow",
             "tensorflow-datasets",
-            "pytorch-ignite",
             # TODO(nzw0301): remove the upper version constraint when the callback supports
             # pytorch-lightning==1.5.0.
             "skorch",
