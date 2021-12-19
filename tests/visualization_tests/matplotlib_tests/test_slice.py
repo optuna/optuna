@@ -1,6 +1,6 @@
-import pytest
-import numpy as np
 from matplotlib.collections import PathCollection
+import numpy as np
+import pytest
 
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
