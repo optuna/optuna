@@ -460,12 +460,11 @@ def test_constraints_func_experimental_warning() -> None:
 def _create_frozen_trial(
     number: int, values: List[float], constraints: Optional[List[float]] = None
 ) -> optuna.trial.FrozenTrial:
-    with pytest.warns(optuna.exceptions.ExperimentalWarning):
-        trial = optuna.trial.create_trial(
-            state=optuna.trial.TrialState.COMPLETE,
-            values=values,
-            system_attrs={} if constraints is None else {_CONSTRAINTS_KEY: constraints},
-        )
+    trial = optuna.trial.create_trial(
+        state=optuna.trial.TrialState.COMPLETE,
+        values=values,
+        system_attrs={} if constraints is None else {_CONSTRAINTS_KEY: constraints},
+    )
     trial.number = number
     trial._trial_id = number
     return trial
