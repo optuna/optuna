@@ -507,7 +507,6 @@ class FrozenTrial(BaseTrial):
             return None
 
 
-@experimental("2.0.0")
 def create_trial(
     *,
     state: TrialState = TrialState.COMPLETE,
