@@ -228,7 +228,6 @@ def _run_trial(
     frozen_trial = study.tell(trial, values=value_or_values, state=state)
 
     if frozen_trial.state == TrialState.COMPLETE:
-        assert isinstance(frozen_trial.values, list)
         study._log_completed_trial(trial, frozen_trial.values)
     elif frozen_trial.state == TrialState.PRUNED:
         _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
