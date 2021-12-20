@@ -15,7 +15,7 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
 
 
 def _validate_edf_values(edf_values: Sequence[float]) -> None:
-    np_values = np.array(y_values)
+    np_values = np.array(edf_values)
     # Confirms that the values are monotonically non-decreasing.
     assert np.all(np_values[1:] - np_values[:-1] >= 0)
 
