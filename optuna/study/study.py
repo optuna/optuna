@@ -572,8 +572,6 @@ class Study:
                 If ``trial`` is not a :class:`~optuna.trial.Trial` or an :obj:`int`.
             ValueError:
                 If any of the following.
-                ``values`` is a sequence but its length does not match the number of objectives
-                for its associated study.
                 ``state`` is :class:`~optuna.trial.TrialState.COMPLETE` but
                 ``values`` is :obj:`None`.
                 ``state`` is :class:`~optuna.trial.TrialState.FAIL` or
