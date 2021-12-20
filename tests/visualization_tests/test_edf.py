@@ -39,8 +39,7 @@ def test_plot_optimization_history(direction: str) -> None:
     study0 = create_study(direction=direction)
     study0.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
     figure = plot_edf(study0)
-    data = figure.data
-    _validate(data[0]["y"])
+    _validate(figure.data[0]["y"])
     assert len(figure.data) == 1
     assert figure.layout.xaxis.title.text == "Objective Value"
 
