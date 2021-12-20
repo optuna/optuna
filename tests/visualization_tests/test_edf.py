@@ -52,9 +52,8 @@ def test_plot_optimization_history(direction: str) -> None:
         _validate(tmp_data["y"])
     assert len(figure.data) == 2
     figure = plot_edf((study0, study1))
-    data = figure.data
-    for tmp_data in data:
-        _validate(tmp_data["y"])
+    for points in figure.data:
+        _validate(points["y"])
     assert len(figure.data) == 2
 
     # Test with a customized target value.
