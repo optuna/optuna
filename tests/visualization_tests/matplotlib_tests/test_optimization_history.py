@@ -149,9 +149,6 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
             return 0.0
         return 0.0
 
-    def objective_for_bars(trial: Trial) -> float:
-        return trial.suggest_float("x", 0, 1)
-
     # Test with trials.
     studies = [create_study(direction=direction) for _ in range(n_studies)]
     for study in studies:
@@ -164,21 +161,6 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
         assert list(figure.get_lines()[-1].get_ydata()) == [1.0, 1.0, 0.0]
     else:
         assert list(figure.get_lines()[-1].get_ydata()) == [1.0, 2.0, 2.0]
-
-    # Test for error_bar.
-    studies = [create_study(direction=direction) for _ in range(3)]
-    suggested_params = [0.1, 0.3, 0.2]
-    for idx, (x, study) in enumerate(zip(suggested_params, studies)):
-        study.enqueue_trial({"x": x})
-        study.optimize(objective_for_bars, n_trials=1)
-    figure = plot_optimization_history(studies, error_bar=True)
-
-    mean = np.mean(suggested_params)
-    std = np.std(suggested_params)
-
-    assert_almost_equal(figure.get_lines()[0].get_ydata(), mean)
-    assert_almost_equal(figure.get_lines()[1].get_ydata(), mean - std)
-    assert_almost_equal(figure.get_lines()[2].get_ydata(), mean + std)
 
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == ["Best Value", "Objective Value"]
@@ -203,3 +185,24 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
 
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.get_lines()) == 0
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_error_bar_at_optimization_history(direction: str) -> None:
+    def objective(trial: Trial) -> float:
+        return trial.suggest_float("x", 0, 1)
+
+    # Test for error_bar.
+    studies = [create_study(direction=direction) for _ in range(3)]
+    suggested_params = [0.1, 0.3, 0.2]
+    for x, study in zip(suggested_params, studies):
+        study.enqueue_trial({"x": x})
+        study.optimize(objective, n_trials=1)
+    figure = plot_optimization_history(studies, error_bar=True)
+
+    mean = np.mean(suggested_params)
+    std = np.std(suggested_params)
+
+    assert_almost_equal(figure.get_lines()[0].get_ydata(), mean)
+    assert_almost_equal(figure.get_lines()[1].get_ydata(), mean - std)
+    assert_almost_equal(figure.get_lines()[2].get_ydata(), mean + std)
