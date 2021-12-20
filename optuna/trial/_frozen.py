@@ -10,7 +10,6 @@ import warnings
 from optuna import distributions
 from optuna import logging
 from optuna._deprecated import deprecated
-from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
