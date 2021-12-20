@@ -48,9 +48,8 @@ def test_plot_optimization_history(direction: str) -> None:
     study1 = create_study(direction=direction)
     study1.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
     figure = plot_edf([study0, study1])
-    data = figure.data
-    for tmp_data in data:
-        _validate(tmp_data["y"])
+    for points in figure.data:
+        _validate(points["y"])
     assert len(figure.data) == 2
     figure = plot_edf((study0, study1))
     for points in figure.data:
