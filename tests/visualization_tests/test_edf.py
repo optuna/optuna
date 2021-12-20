@@ -20,7 +20,7 @@ def _validate_edf_values(edf_values: Sequence[float]) -> None:
     assert np.all(np_values[1:] - np_values[:-1] >= 0)
 
     # Confirms that the values are in [0,1].
-    assert np.all((0 <= np_values) * (np_values <= 1))
+    assert np.all((0 <= np_values) & (np_values <= 1))
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
