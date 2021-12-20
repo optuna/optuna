@@ -21,7 +21,7 @@ from sklearn.model_selection import train_test_split
 
 import optuna
 
-# You can use Matplotlib instead of Plotly for visualization by simply replacing `optuna.visualization` to
+# You can use Matplotlib instead of Plotly for visualization by simply replacing `optuna.visualization` with
 # `optuna.visualization.matplotlib` in the following examples.
 from optuna.visualization import plot_contour
 from optuna.visualization import plot_edf
