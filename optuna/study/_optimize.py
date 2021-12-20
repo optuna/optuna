@@ -225,15 +225,14 @@ def _run_trial(
         stop_event.set()
         thread.join()
 
-    # NOTE (himkt) study.tell returns state
-    value_or_values, state = study.tell(trial, values=value_or_values, state=state)
+    frozen_trial = study.tell(trial, values=value_or_values, state=state)
 
-    if state == TrialState.COMPLETE:
-        assert isinstance(value_or_values, list)
-        study._log_completed_trial(trial, value_or_values)
-    elif state == TrialState.PRUNED:
+    if frozen_trial.state == TrialState.COMPLETE:
+        assert isinstance(frozen_trial.values, list)
+        study._log_completed_trial(trial, frozen_trial.values)
+    elif frozen_trial.state == TrialState.PRUNED:
         _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
-    elif state == TrialState.FAIL:
+    elif frozen_trial.state == TrialState.FAIL:
         if func_err is not None:
             _logger.warning(
                 "Trial {} failed because of the following error: {}".format(
@@ -241,11 +240,16 @@ def _run_trial(
                 ),
                 exc_info=func_err_fail_exc_info,
             )
+
     # NOTE (himkt) state could be None
-    elif state is not None and func_err is not None:
+    elif frozen_trial.state is not None and func_err is not None:
         assert False, "Should not reach."
 
-    if state == TrialState.FAIL and func_err is not None and not isinstance(func_err, catch):
+    if (
+        frozen_trial.state == TrialState.FAIL
+        and func_err is not None
+        and not isinstance(func_err, catch)
+    ):
         raise func_err
     return trial
 

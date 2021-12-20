@@ -499,7 +499,7 @@ class Study:
         values: Optional[Union[float, Sequence[float]]] = None,
         state: Optional[TrialState] = None,
         skip_if_finished: bool = False,
-    ) -> Tuple[Optional[List[float]], Optional[TrialState]]:
+    ) -> FrozenTrial:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
 
         .. seealso::
@@ -643,7 +643,7 @@ class Study:
         if state is None and values is None:
             self._storage.set_trial_state(trial_id, TrialState.FAIL)
             _logger.warning("You must specify either state or values.")
-            return None, TrialState.FAIL
+            return self._storage.get_trial(trial_id)
 
         if frozen_trial.state.is_finished() and skip_if_finished:
             _logger.info(
@@ -651,7 +651,7 @@ class Study:
                 f"{values} and state {state} since trial was already finished. "
                 f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
             )
-            return None, None
+            return self._storage.get_trial(trial_id)
 
         if state == TrialState.PRUNED:
             # Register the last intermediate value if present as the value of the trial.
@@ -681,7 +681,7 @@ class Study:
             if state != TrialState.PRUNED and values_conversion_failure_message is not None:
                 self._storage.set_trial_state(trial_id, TrialState.FAIL)
                 _logger.warning(values_conversion_failure_message)
-                return values, TrialState.FAIL
+                return self._storage.get_trial(trial_id)
 
         assert state is not None
 
@@ -693,7 +693,8 @@ class Study:
             raise
         finally:
             self._storage.set_trial_state_values(trial_id, state, values)
-            return values, state
+
+        return self._storage.get_trial(trial_id)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
