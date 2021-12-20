@@ -651,7 +651,7 @@ def test_study_id() -> None:
 def test_create_trial(state: TrialState) -> None:
     value = 0.2
     params = {"x": 10}
-    distributions: Optional[Dict[str, BaseDistribution]] = {"x": UniformDistribution(5, 12)}
+    distributions: Dict[str, BaseDistribution] = {"x": UniformDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
     intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
