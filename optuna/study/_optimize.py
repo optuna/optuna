@@ -239,9 +239,7 @@ def _run_trial(
                 ),
                 exc_info=func_err_fail_exc_info,
             )
-
-    # NOTE (himkt) state could be None
-    elif frozen_trial.state is not None and func_err is not None:
+    else:
         assert False, "Should not reach."
 
     if (
