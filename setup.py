@@ -116,6 +116,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.11.1 ; sys_platform=='darwin'",
             "torchvision==0.11.1+cpu ; sys_platform!='darwin'",
             "torchaudio==0.10.0",
+            # TODO (himkt): Remove `nltk` after solving
+            # https://github.com/allenai/allennlp/issues/5521
+            "nltk<3.6.6",
             "allennlp>=2.2.0 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
@@ -155,6 +158,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.11.1 ; sys_platform=='darwin'",
             "torchvision==0.11.1+cpu ; sys_platform!='darwin'",
             "torchaudio==0.10.0",
+            # TODO (himkt): Remove `nltk` after solving
+            # https://github.com/allenai/allennlp/issues/5521
+            "nltk<3.6.6",
             "allennlp>=2.2.0 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
