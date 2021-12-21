@@ -18,8 +18,8 @@ from optuna.integration.allennlp._variables import SPECIAL_DELIMITER as DELIMITE
 
 
 with try_import() as _imports:
-    from allennlp.commands.train import train_model
     import allennlp
+    from allennlp.commands.train import train_model
     import allennlp.common.cached_transformers
     import allennlp.common.util
 

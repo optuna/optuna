@@ -20,8 +20,8 @@ import pytest
 import torch.optim
 
 import optuna
-import optuna.integration.allennlp._executor
 from optuna.integration.allennlp import AllenNLPPruningCallback
+import optuna.integration.allennlp._executor
 from optuna.integration.allennlp._pruner import _create_pruner
 from optuna.integration.allennlp._variables import _VariableManager
 from optuna.testing.integration import DeterministicPruner
