@@ -20,7 +20,6 @@ from optuna.integration.allennlp._variables import SPECIAL_DELIMITER as DELIMITE
 
 with try_import() as _imports:
     import allennlp
-    import allennlp.commands
     import allennlp.common.cached_transformers
     import allennlp.common.util
 

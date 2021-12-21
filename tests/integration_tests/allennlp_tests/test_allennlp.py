@@ -20,6 +20,7 @@ import pytest
 import torch.optim
 
 import optuna
+import optuna.integration.allennlp._executor
 from optuna.integration.allennlp import AllenNLPPruningCallback
 from optuna.integration.allennlp._pruner import _create_pruner
 from optuna.integration.allennlp._variables import _VariableManager
@@ -198,7 +199,7 @@ def test_allennlp_executor_with_options() -> None:
             json.dump({executor._metrics: 1.0}, fout)
 
         expected_include_packages = [package_name, "optuna.integration.allennlp"]
-        with mock.patch("allennlp.commands.train.train_model", return_value=None) as mock_obj:
+        with mock.patch("optuna.integration.allennlp._executor.train_model", return_value=None) as mock_obj:  # noqa
             executor.run()
             assert mock_obj.call_args[1]["force"]
             assert mock_obj.call_args[1]["file_friendly_logging"]

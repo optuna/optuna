@@ -18,8 +18,8 @@ from optuna.integration.allennlp._variables import SPECIAL_DELIMITER as DELIMITE
 
 
 with try_import() as _imports:
+    from allennlp.commands.train import train_model
     import allennlp
-    import allennlp.commands
     import allennlp.common.cached_transformers
     import allennlp.common.util
 
@@ -227,7 +227,7 @@ class AllenNLPExecutor(object):
             os.environ[OPTUNA_ALLENNLP_DISTRIBUTED_FLAG] = "1"
 
         try:
-            allennlp.commands.train.train_model(
+            train_model(
                 params=params,
                 serialization_dir=self._serialization_dir,
                 file_friendly_logging=self._file_friendly_logging,
