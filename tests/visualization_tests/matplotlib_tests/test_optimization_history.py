@@ -188,7 +188,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_error_bar_at_optimization_history(direction: str) -> None:
+def test_error_bar_in_optimization_history(direction: str) -> None:
     def objective(trial: Trial) -> float:
         return trial.suggest_float("x", 0, 1)
 
