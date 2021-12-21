@@ -199,7 +199,10 @@ def test_allennlp_executor_with_options() -> None:
             json.dump({executor._metrics: 1.0}, fout)
 
         expected_include_packages = [package_name, "optuna.integration.allennlp"]
-        with mock.patch("optuna.integration.allennlp._executor.train_model", return_value=None) as mock_obj:  # noqa
+        with mock.patch(
+            "optuna.integration.allennlp._executor.train_model",
+            return_value=None,
+        ) as mock_obj:
             executor.run()
             assert mock_obj.call_args[1]["force"]
             assert mock_obj.call_args[1]["file_friendly_logging"]
