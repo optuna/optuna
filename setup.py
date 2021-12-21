@@ -108,9 +108,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            # TODO(nzw0301): remove the upper version constraint when the callback supports
-            # pytorch-lightning==1.5.0.
-            "pytorch-lightning>=1.0.2,<1.5.0",
+            "pytorch-lightning>=1.5.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.10.0 ; sys_platform=='darwin'",
@@ -118,6 +116,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.11.1 ; sys_platform=='darwin'",
             "torchvision==0.11.1+cpu ; sys_platform!='darwin'",
             "torchaudio==0.10.0",
+            # TODO(himkt): Remove `nltk` after solving
+            # https://github.com/allenai/allennlp/issues/5521
+            "nltk<3.6.6",
             "allennlp>=2.2.0 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
@@ -149,9 +150,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            # TODO(nzw0301): remove the upper version constraint when the callback supports
-            # pytorch-lightning==1.5.0.
-            "pytorch-lightning>=1.0.2,<1.5.0",
+            "pytorch-lightning>=1.5.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.10.0 ; sys_platform=='darwin'",
@@ -159,6 +158,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.11.1 ; sys_platform=='darwin'",
             "torchvision==0.11.1+cpu ; sys_platform!='darwin'",
             "torchaudio==0.10.0",
+            # TODO(himkt): Remove `nltk` after solving
+            # https://github.com/allenai/allennlp/issues/5521
+            "nltk<3.6.6",
             "allennlp>=2.2.0 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
