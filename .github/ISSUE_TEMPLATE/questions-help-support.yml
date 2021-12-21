@@ -1,8 +1,6 @@
 name: "\U00002753Questions"
 description: Please let us know if you have any questions.
-title: ""
 labels: ["question"]
-assignees: ""
 body:
   - type: markdown
     attributes:

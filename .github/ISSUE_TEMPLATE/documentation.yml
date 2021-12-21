@@ -1,8 +1,6 @@
 name: "\U0001f4d6Documentation"
 description: Report an issue related to https://optuna.readthedocs.io/.
-title: ""
 labels: ["documentation"]
-assignees: ""
 body:
   - type: textarea
     id: explanation
