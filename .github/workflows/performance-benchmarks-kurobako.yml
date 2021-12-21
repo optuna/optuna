@@ -19,10 +19,6 @@ on:
         description: 'Pruner Arguments List: A list of pruner keyword arguments. Should be a whitespace-separated list of json format dictionaries.'
         required: false
         default: '{}'
-      extra-requirements:
-        description: 'Extra Requirements: A list of extra requirements to run the benchmark. Should be a whitespace-separated list of packaged which can be installed by `pip`.'
-        required: false
-        default: ''
       n-runs:
         description: 'Number of Studies'
         required: false
@@ -70,7 +66,7 @@ jobs:
 
         pip install --progress-bar off .[benchmark]
 
-        pip install --progress-bar off kurobako ${{ github.event.inputs.extra-requirements }}
+        pip install --progress-bar off kurobako
 
     - name: Cache kurobako CLI
       id: cache-kurobako

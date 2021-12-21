@@ -31,14 +31,27 @@ Please run the following steps in your own forks.
 
 5. Use the `Branch` dropdown to select the workflow's branch. The default is `master`. 
 And, type the input parameters: 
-`Sampler List`, `Sampler Arguments List`, `Pruner List`, `Pruner Arguments List`, and `Extra Requirements`.
+`Sampler List`, `Sampler Arguments List`, `Pruner List`, and `Pruner Arguments List`.
 6. Click `Run workflow`.
 ![image](https://user-images.githubusercontent.com/38826298/145764702-771d9a6f-8c7d-40d5-a912-1485a1d7dcfa.png)
 7. After finishing the workflow, you can download the report and plot from `Artifacts`.
 ![image](https://user-images.githubusercontent.com/38826298/145802414-e29ca0ba-80fd-488a-af02-c33e9b4d5e3b.png)
+The report looks like as follows.
+It includes the version information of environments, the solvers (pairs of the sampler and the pruner in Optuna) and problems, the best objective value, AUC, elapsed time, and so on. 
+![image](https://user-images.githubusercontent.com/38826298/146860092-74da99c6-15b6-4da4-baef-0457af1d7171.png)
+The plot looks like as follows.
+It represents the optimization history plot of the optimization.
+The title is the name of the problem.
+The legends represents the specified pair of the sampler and the pruner.
+The history is averaged over the specified `n_runs` studies with the errorbar.
+The horizontal axis represents the budget (`#budgets * #epochs = \sum_{for each trial) (#consumed epochs in the trial)`).
+The vertical axis represents the objective value.
+![image](https://user-images.githubusercontent.com/38826298/146860370-853174c7-afc5-4f67-8143-61f22d2c8f6c.png)
+
 
 Note that the default run time of a GitHub Actions workflow job is limited to 6 hours. 
 Depending on the sampler and number of studies you specify, it may exceed the 6-hour limit and fail.
+See the [official document](https://docs.github.com/ja/actions/learn-github-actions/usage-limits-billing-and-administration) for more details.
 
 ### How to Run Locally
 
@@ -46,7 +59,7 @@ You can run the script of `benchmarks/run_kurobako.py` directly.
 This section explains how to locally run it.
 
 First, you need to install `kurobako` and its Python helper.
-To install `kurobako`, see https://github.com/optuna/kurobako for more details.
+To install `kurobako`, see https://github.com/optuna/kurobako#installation for more details.
 In addition, please run `pip install kurobako` to install the Python helper.
 
 Second, you need to download the dataset for `kurobako`.
