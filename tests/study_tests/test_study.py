@@ -111,13 +111,6 @@ def check_study(study: Study) -> None:
         check_frozen_trial(study.best_trial)
 
 
-def test_optimize_n_jobs_warning() -> None:
-
-    study = create_study()
-    with pytest.warns(FutureWarning):
-        study.optimize(func, n_trials=1, n_jobs=2)
-
-
 def test_optimize_trivial_in_memory_new() -> None:
 
     study = create_study()
@@ -634,6 +627,30 @@ def test_enqueue_trial_with_unfixed_parameters(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_properly_sets_user_attr(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.enqueue_trial(params={"x": -5, "y": 5}, user_attrs={"is_optimal": False})
+        study.enqueue_trial(params={"x": 0, "y": 0}, user_attrs={"is_optimal": True})
+
+        def objective(trial: Trial) -> float:
+
+            x = trial.suggest_int("x", -10, 10)
+            y = trial.suggest_int("y", -10, 10)
+            return x ** 2 + y ** 2
+
+        study.optimize(objective, n_trials=2)
+        t0 = study.trials[0]
+        assert t0.user_attrs == {"is_optimal": False}
+
+        t1 = study.trials[1]
+        assert t1.user_attrs == {"is_optimal": True}
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -973,10 +990,11 @@ def test_ask() -> None:
 def test_ask_enqueue_trial() -> None:
     study = create_study()
 
-    study.enqueue_trial({"x": 0.5})
+    study.enqueue_trial({"x": 0.5}, user_attrs={"memo", "this is memo"})
 
     trial = study.ask()
     assert trial.suggest_float("x", 0, 1) == 0.5
+    assert trial.user_attrs == {"memo", "this is memo"}
 
 
 def test_ask_fixed_search_space() -> None:
