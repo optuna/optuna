@@ -556,7 +556,7 @@ def test_called_single_methods_when_multi() -> None:
     state = TrialState.COMPLETE
     values = (0.2, 0.3)
     params = {"x": 10}
-    distributions = {"x": UniformDistribution(5, 12)}
+    distributions: Dict[str, BaseDistribution] = {"x": UniformDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
     intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
@@ -578,7 +578,7 @@ def test_called_single_methods_when_multi() -> None:
         trial.value = 0.1
 
     with pytest.raises(RuntimeError):
-        trial.value = [0.1]
+        trial.value = [0.1]  # type: ignore
 
 
 def test_init() -> None:
