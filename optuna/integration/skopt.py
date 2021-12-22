@@ -263,6 +263,16 @@ class _Optimizer(object):
                 dimension = space.Integer(0, count)
             elif isinstance(distribution, distributions.CategoricalDistribution):
                 dimension = space.Categorical(distribution.choices)
+            elif isinstance(distribution, distributions.FloatDistribution):
+                if distribution.log:
+                    high = np.nextafter(distribution.high, float("-inf"))
+                    dimension = space.Real(distribution.low, high, prior="log-uniform")
+                elif distribution.step is not None:
+                    count = int((distribution.high - distribution.low) // distribution.step)
+                    dimension = space.Integer(0, count)
+                else:
+                    high = np.nextafter(distribution.high, float("-inf"))
+                    dimension = space.Real(distribution.low, high)
             else:
                 raise NotImplementedError(
                     "The distribution {} is not implemented.".format(distribution)
@@ -298,6 +308,7 @@ class _Optimizer(object):
                     distributions.UniformDistribution,
                     distributions.LogUniformDistribution,
                     distributions.DiscreteUniformDistribution,
+                    distributions.FloatDistribution,
                 ),
             ):
                 # Type of value is np.floating, so cast it to Python's built-in float.
@@ -309,6 +320,9 @@ class _Optimizer(object):
             if isinstance(distribution, distributions.IntLogUniformDistribution):
                 value = int(np.round(value))
                 value = min(max(value, distribution.low), distribution.high)
+            if isinstance(distribution, distributions.FloatDistribution):
+                if distribution.step is not None:
+                    value = value * distribution.step + distribution.low
 
             params[name] = value
 
@@ -344,6 +358,9 @@ class _Optimizer(object):
 
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 param_value = (param_value - distribution.low) // distribution.q
+            if isinstance(distribution, distributions.FloatDistribution):
+                if distribution.step is not None:
+                    param_value = (param_value - distribution.low) // distribution.step
             if isinstance(distribution, distributions.IntUniformDistribution):
                 param_value = (param_value - distribution.low) // distribution.step
 
