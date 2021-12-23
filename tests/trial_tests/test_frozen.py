@@ -576,7 +576,7 @@ def test_called_single_methods_when_multi() -> None:
         trial.value = 0.1
 
     with pytest.raises(RuntimeError):
-        trial.value = [0.1]
+        trial.value = [0.1]  # type: ignore
 
 
 def test_init() -> None:

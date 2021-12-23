@@ -18,6 +18,7 @@ from optuna import distributions
 from optuna import load_study
 from optuna import samplers
 from optuna import storages
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntLogUniformDistribution

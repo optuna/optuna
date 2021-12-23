@@ -67,9 +67,7 @@ def test_target_is_not_none_and_study_is_multi_obj() -> None:
         [],
         ["param_a"],
         ["param_a", "param_b"],
-        ["param_b", "param_d"],
         ["param_a", "param_b", "param_c"],
-        ["param_a", "param_b", "param_d"],
         ["param_a", "param_b", "param_c", "param_d"],
         None,
     ],
@@ -93,7 +91,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
     assert len(figure.get_lines()) == 0
 
     # Test with some trials.
-    study = prepare_study_with_trials(more_than_three=True)
+    study = prepare_study_with_trials()
 
     # Test ValueError due to wrong params.
     with pytest.raises(ValueError):
@@ -124,7 +122,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
 )
 def test_plot_contour_customized_target(params: List[str]) -> None:
 
-    study = prepare_study_with_trials(more_than_three=True)
+    study = prepare_study_with_trials()
     with pytest.warns(UserWarning):
         figure = plot_contour(study, params=params, target=lambda t: t.params["param_d"])
     if len(params) == 2:
@@ -144,7 +142,7 @@ def test_plot_contour_customized_target(params: List[str]) -> None:
 )
 def test_plot_contour_customized_target_name(params: List[str]) -> None:
 
-    study = prepare_study_with_trials(more_than_three=True)
+    study = prepare_study_with_trials()
     figure = plot_contour(study, params=params, target_name="Target Name")
     if len(params) == 2:
         assert len(figure.get_lines()) == 0

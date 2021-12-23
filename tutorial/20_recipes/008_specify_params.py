@@ -6,7 +6,7 @@ Specify Hyperparameters Manually
 
 It's natural that you have some specific sets of hyperparameters to try first such as initial learning rate
 values and the number of leaves.
-Also, it's also possible that you've already tried those sets before having Optuna find better
+Also, it's possible that you've already tried those sets before having Optuna find better
 sets of hyperparameters.
 
 Optuna provides two APIs to support such cases:
