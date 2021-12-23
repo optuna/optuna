@@ -1030,7 +1030,7 @@ def test_ask(
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
@@ -1104,7 +1104,7 @@ def test_ask_flatten(
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
@@ -1226,7 +1226,7 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
@@ -1271,7 +1271,7 @@ def test_create_study_and_ask(
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
@@ -1337,7 +1337,7 @@ def test_create_study_and_ask_with_inconsistent_directions(
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
@@ -1384,7 +1384,7 @@ def test_ask_with_both_direction_and_directions() -> None:
 
     study_name = "test_study"
     search_space = (
-        '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
+        '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}}, '
         '"y": {"name": "CategoricalDistribution", "attributes": {"choices": ["foo"]}}}'
     )
 
