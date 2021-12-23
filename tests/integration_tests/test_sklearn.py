@@ -47,7 +47,7 @@ def test_optuna_search(enable_pruning: bool, fit_params: str) -> None:
 
     X, y = make_blobs(n_samples=10)
     est = SGDClassifier(max_iter=5, tol=1e-03)
-    param_dist = {"alpha": distributions.LogUniformDistribution(1e-04, 1e03)}
+    param_dist = {"alpha": distributions.FloatDistribution(1e-04, 1e03, log=True)}
     optuna_search = integration.OptunaSearchCV(
         est,
         param_dist,
@@ -78,7 +78,7 @@ def test_optuna_search_properties() -> None:
 
     X, y = make_blobs(n_samples=10)
     est = LogisticRegression(tol=1e-03)
-    param_dist = {"C": distributions.LogUniformDistribution(1e-04, 1e03)}
+    param_dist = {"C": distributions.FloatDistribution(1e-04, 1e03, log=True)}
 
     optuna_search = integration.OptunaSearchCV(
         est, param_dist, cv=3, error_score="raise", random_state=0, return_train_score=True
