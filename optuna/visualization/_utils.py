@@ -7,6 +7,7 @@ import warnings
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -66,7 +67,7 @@ def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
             if isinstance(dist, LogUniformDistribution):
                 return True
 
-            elif isinstance(dist, FloatDistribution):
+            elif isinstance(dist, (FloatDistribution, IntDistribution)):
                 if dist.log:
                     return True
 
