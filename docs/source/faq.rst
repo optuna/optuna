@@ -527,7 +527,7 @@ For more information about 2., see TutorialEasyParallelization_.
 .. _TutorialEasyParallelization: https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html
 
 For the case of 3
-================================
+=================
 
 This can be achieved by using RDB.
 However, if you cannot install RDB, it is not supported, so if you have a request, please make an Issue.
