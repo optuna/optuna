@@ -505,7 +505,7 @@ The variations of parallelization are in the following three cases.
 3. Multi-processing parallelization with multiple nodes
 
 1. Multi-threading parallelization with a single node
-================================
+=====================================================
 
 Parallelization can be achieved by setting the argument ``n_jobs`` in :func:`~optuna.study.Study.optimize`.
 However, the python code will not be faster due to GIL because :func:`~optuna.study.Study.optimize` with ``n_jobs!=1`` uses multi-threading. 
