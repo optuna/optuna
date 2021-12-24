@@ -98,7 +98,8 @@ jobs:
     - name: Install
       run: |
         python -m pip install --upgrade pip
-        pip install --progress-bar off -U setuptools
+        # TODO(nzw0301): remove setuptools version constraint after resolving https://github.com/mpi4py/mpi4py/issues/157
+        pip install --progress-bar off -U "setuptools<60.1.0"
 
         # Install minimal dependencies and confirm that `import optuna` is successful.
         pip install --progress-bar off .
