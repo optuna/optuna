@@ -192,7 +192,6 @@ def test_error_bar_in_optimization_history(direction: str) -> None:
     def objective(trial: Trial) -> float:
         return trial.suggest_float("x", 0, 1)
 
-    # Test for error_bar.
     studies = [create_study(direction=direction) for _ in range(3)]
     suggested_params = [0.1, 0.3, 0.2]
     for x, study in zip(suggested_params, studies):
