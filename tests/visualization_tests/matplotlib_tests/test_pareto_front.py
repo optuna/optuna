@@ -48,6 +48,23 @@ def test_plot_pareto_front_2d(
     )
     assert len(figure.get_lines()) == 0
 
+    if axis_order is not None:
+        pareto_front_points = np.array([[1.0, 0.0], [0.0, 1.0]])[:, axis_order]
+    else:
+        pareto_front_points = np.array([[1.0, 0.0], [0.0, 1.0]])
+    assert pareto_front_points.shape == (2, 2)
+
+    path_offsets = list(map(lambda pc: pc.get_offsets(), figure.findobj(PathCollection)))
+    exists_pareto_front = any(
+        map(lambda po: allclose_as_set(po, pareto_front_points), path_offsets)
+    )
+    exists_dominated_trials = any(
+        map(lambda po: allclose_as_set(po, np.array([[1.0, 1.0]])), path_offsets)
+    )
+    assert exists_pareto_front
+    if include_dominated_trials:
+        assert exists_dominated_trials
+
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
         plot_pareto_front(
@@ -132,6 +149,21 @@ def test_plot_pareto_front_3d(
         axis_order=axis_order,
     )
     assert len(figure.get_lines()) == 0
+
+    if axis_order is not None:
+        pareto_front_points = np.array([[1.0, 0.0, 1.0], [1.0, 1.0, 0.0]])[:, axis_order][:, 0:2]
+    else:
+        pareto_front_points = np.array([[1.0, 0.0, 1.0], [1.0, 1.0, 0.0]])[:, 0:2]
+    assert pareto_front_points.shape == (2, 2)
+
+    path_offsets = list(map(lambda pc: pc.get_offsets(), figure.findobj(PathCollection)))
+    exists_pareto_front = any(
+        map(lambda po: allclose_as_set(po, pareto_front_points), path_offsets)
+    )
+    exists_dominated_trials = any(map(lambda po: allclose_as_set(po, [[1.0, 1.0]]), path_offsets))
+    assert exists_pareto_front
+    if include_dominated_trials:
+        assert exists_dominated_trials
 
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
