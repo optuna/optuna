@@ -14,8 +14,8 @@ from optuna.visualization.matplotlib import plot_pareto_front
 def allclose_as_set(
     points1: Union[List[List[float]], np.ndarray], points2: Union[List[List[float]], np.ndarray]
 ) -> bool:
-    p1 = points1 if type(points1) == list else points1.tolist()  # type: ignore
-    p2 = points2 if type(points2) == list else points2.tolist()  # type: ignore
+    p1 = points1 if isinstance(points1, list) else points1.tolist()
+    p2 = points2 if isinstance(points2, list) else points2.tolist()
     return np.allclose(sorted(p1), sorted(p2))
 
 
