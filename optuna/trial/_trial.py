@@ -4,7 +4,6 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import Union
 import warnings
 
 import optuna
@@ -305,15 +304,13 @@ class Trial(BaseTrial):
                     The ``step != 1`` and ``log`` arguments cannot be used at the same time.
                     To set the ``log`` argument to :obj:`True`, set the ``step`` argument to 1.
 
-        Raises:
-            :exc:`ValueError`:
-                If ``step != 1`` and ``log = True`` are specified.
-
         .. seealso::
             :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
-        return int(self._suggest(name, IntDistribution(low, high, log=log, step=step)))
+        distribution = IntDistribution(low=low, high=high, log=log, step=step)
+        self._check_distribution(name, distribution)
+        return int(self._suggest(name, distribution))
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]
