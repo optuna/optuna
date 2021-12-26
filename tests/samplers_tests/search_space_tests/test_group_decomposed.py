@@ -123,9 +123,7 @@ def test_group_decomposed_search_space() -> None:
 
     # A single parameter.
     study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=1)
-    assert search_space.calculate(study).search_spaces == [
-        {"x": IntDistribution(low=0, high=10)}
-    ]
+    assert search_space.calculate(study).search_spaces == [{"x": IntDistribution(low=0, high=10)}]
 
     # Disjoint parameters.
     study.optimize(lambda t: t.suggest_int("y", 0, 10) + t.suggest_float("z", -3, 3), n_trials=1)

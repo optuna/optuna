@@ -992,9 +992,7 @@ def test_group() -> None:
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=2)
         assert mock.call_count == 1
-    assert study.trials[-1].distributions == {
-        "x": distributions.IntDistribution(low=0, high=10)
-    }
+    assert study.trials[-1].distributions == {"x": distributions.IntDistribution(low=0, high=10)}
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(
@@ -1042,9 +1040,7 @@ def test_group() -> None:
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=1)
         assert mock.call_count == 6
-    assert study.trials[-1].distributions == {
-        "x": distributions.IntDistribution(low=0, high=10)
-    }
+    assert study.trials[-1].distributions == {"x": distributions.IntDistribution(low=0, high=10)}
 
 
 def test_invalid_multivariate_and_group() -> None:
