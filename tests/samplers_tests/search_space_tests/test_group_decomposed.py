@@ -5,6 +5,8 @@ from optuna import TrialPruned
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.distributions import LogUniformDistribution
+from optuna.distributions import UniformDistribution
 from optuna.samplers._search_space import _GroupDecomposedSearchSpace
 from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
 from optuna.testing.storage import StorageSupplier
@@ -96,7 +98,7 @@ def test_search_space_group() -> None:
     # Add distributions which include some of search spaces in the group.
     search_space_group.add_distributions(
         {
-            "y": IntDistribution(low=0, high=10, log=True),
+            "y": IntDistribution(low=0, high=10),
             "w": IntDistribution(low=2, high=8, log=True),
             "t": FloatDistribution(low=10, high=100),
         }
