@@ -344,7 +344,7 @@ def test_not_contained_param() -> None:
     trial = create_trial(
         value=0.2,
         params={"x": 1},
-        distributions={"x": IntDistribution(1, 10, 1)},
+        distributions={"x": IntDistribution(1, 10)},
     )
     with pytest.warns(UserWarning):
         assert trial.suggest_int("x", 10, 100, 1) == 1
