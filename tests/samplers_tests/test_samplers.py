@@ -113,7 +113,7 @@ def test_raise_error_for_samplers_during_multi_objectives(
 
     study = optuna.study.create_study(directions=["maximize", "maximize"], sampler=sampler_class())
 
-    distribution = UniformDistribution(0.0, 1.0)
+    distribution = FloatDistribution(0.0, 1.0)
     with pytest.raises(ValueError):
         study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution)
 
