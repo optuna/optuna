@@ -52,7 +52,7 @@ else:
 
 def _create_pruner(
     pruner_class: str,
-    pruner_params: Dict[str, Any],
+    pruner_kwargs: Dict[str, Any],
 ) -> Optional[pruners.BasePruner]:
 
     """Restore a pruner which is defined in `create_study`.
@@ -66,7 +66,7 @@ def _create_pruner(
 
     """
     pruner = getattr(pruners, pruner_class, None)
-    return pruner(**pruner_params)
+    return pruner(**pruner_kwargs)
 
 
 @experimental("2.0.0")
@@ -171,7 +171,7 @@ class AllenNLPPruningCallback(TrainerCallback):
 
                 pruner = _create_pruner(
                     variable_manager.get_value("pruner_class"),
-                    variable_manager.get_value("pruner_params"),
+                    variable_manager.get_value("pruner_kwargs"),
                 )
 
                 study = load_study(

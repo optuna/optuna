@@ -30,7 +30,7 @@ class _VariableManager:
     NAME_OF_KEY = {
         "monitor": "{}_MONITOR",
         "pruner_class": "{}_PRUNER_CLASS",
-        "pruner_params": "{}_PRUNER_PARAMS",
+        "pruner_kwargs": "{}_PRUNER_PARAMS",
         "storage_name": "{}_STORAGE_NAME",
         "study_name": "{}_STUDY_NAME",
         "trial_id": "{}_TRIAL_ID",

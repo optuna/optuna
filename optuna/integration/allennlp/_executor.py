@@ -163,7 +163,7 @@ class AllenNLPExecutor(object):
         target_pid = psutil.Process().ppid()
         variable_manager = _VariableManager(target_pid)
 
-        pruner_params = _fetch_pruner_config(trial)
+        pruner_kwargs = _fetch_pruner_config(trial)
         variable_manager.set_value("study_name", trial.study.study_name)
         variable_manager.set_value("trial_id", trial._trial_id)
         variable_manager.set_value("storage_name", url)
@@ -171,7 +171,7 @@ class AllenNLPExecutor(object):
 
         if trial.study.pruner is not None:
             variable_manager.set_value("pruner_class", type(trial.study.pruner).__name__)
-            variable_manager.set_value("pruner_params", pruner_params)
+            variable_manager.set_value("pruner_kwargs", pruner_kwargs)
 
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.
