@@ -66,6 +66,9 @@ def _create_pruner(
 
     """
     pruner = getattr(pruners, pruner_class, None)
+    if pruner is None:
+        return None
+
     return pruner(**pruner_kwargs)
 
 
