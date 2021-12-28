@@ -510,7 +510,7 @@ The variations of parallelization are in the following three cases.
 Parallelization can be achieved by setting the argument ``n_jobs`` in :func:`~optuna.study.Study.optimize`.
 However, the python code will not be faster due to GIL because :func:`~optuna.study.Study.optimize` with ``n_jobs!=1`` uses multi-threading. 
 
-While optimizing, it will be faster in limited situations, such as waiting for other server requests, or waiting for C/C++ processing with numpy, etc., but it is not expected to be faster in other cases.
+While optimizing, it will be faster in limited situations, such as waiting for other server requests or C/C++ processing with numpy, etc., but it will not be faster in other cases.
 
 For more information about 1., see APIReference_.
 
