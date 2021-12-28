@@ -516,8 +516,8 @@ For more information about 1., see APIReference_.
 
 .. _APIReference: https://optuna.readthedocs.io/en/stable/reference/index.html
 
-For the case of 2
-=================
+2. Multi-processing parallelization with single node
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This can be achieved by using RDB.
 However, if you cannot install RDB or sqlite, it is not supported, so if you have a request, please make an Issue.
