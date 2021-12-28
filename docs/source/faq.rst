@@ -520,7 +520,7 @@ For more information about 1., see APIReference_.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This can be achieved by using file-based RDBs (such as SQLite) and client/server RDBs (such as PostgreSQL and MySQL).
-However, if you cannot install RDB or sqlite, it is not supported, so if you have a request, please make an Issue.
+However, if you are in the environment where you can not install an RDB, you can not run multi-processing parallelization with single node. When you really want to do it, please request it as a GitHub issue. If we receive a lot of requests, we may provide a solution for it.
 
 For more information about 2., see TutorialEasyParallelization_.
 
