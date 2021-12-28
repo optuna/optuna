@@ -519,7 +519,7 @@ For more information about 1., see APIReference_.
 2. Multi-processing parallelization with single node
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This can be achieved by using RDB.
+This can be achieved by using file-based RDBs (such as SQLite) and client/server RDBs (such as PostgreSQL and MySQL).
 However, if you cannot install RDB or sqlite, it is not supported, so if you have a request, please make an Issue.
 
 For more information about 2., see TutorialEasyParallelization_.
