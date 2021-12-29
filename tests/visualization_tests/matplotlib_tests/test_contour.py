@@ -4,8 +4,10 @@ from typing import Optional
 import numpy as np
 import pytest
 
+from optuna.distributions import CategoricalDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
+from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization.matplotlib import plot_contour
 from optuna.visualization.matplotlib._contour import _create_zmap
@@ -150,3 +152,32 @@ def test_plot_contour_customized_target_name(params: List[str]) -> None:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
             assert figure[i][0].yaxis.label.get_text() == list(params)[i]
+
+
+def test_plot_contour_mixture_category_types() -> None:
+
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": None, "param_b": 101},
+            distributions={
+                "param_a": CategoricalDistribution([None, "100"]),
+                "param_b": CategoricalDistribution([101, 102.0]),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=0.5,
+            params={"param_a": "100", "param_b": 102.0},
+            distributions={
+                "param_a": CategoricalDistribution([None, "100"]),
+                "param_b": CategoricalDistribution([101, 102.0]),
+            },
+        )
+    )
+
+    figure = plot_contour(study)
+    assert figure.get_xlim() == (-0.05, 1.05)
+    assert figure.get_ylim() == (100.95, 102.05)
