@@ -149,7 +149,7 @@ def test_optuna_search_multimetric(
         optuna_search._check_is_fitted()
 
     if fit_params == "coef_init" and not enable_pruning:
-        optuna_search.fit(X, y, coef_init=np.ones((3, 2), dtype=np.float64))
+        optuna_search.fit(X, y, coef_init=np.ones((3, 2)))
     else:
         optuna_search.fit(X, y)
 
