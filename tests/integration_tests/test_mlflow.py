@@ -389,6 +389,7 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
 
     @mlflc.track_in_mlflow()
     def _objective_func(trial: optuna.trial.Trial) -> float:
+        """Objective function"""
 
         x = trial.suggest_float("x", -1.0, 1.0)
         y = trial.suggest_float("y", 20, 30, log=True)
@@ -418,6 +419,9 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
 
     assert metric_name in first_run_dict["data"]["metrics"]
     assert first_run_dict["data"]["metrics"][metric_name] == metric
+
+    assert _objective_func.__name__ == "_objective_func"
+    assert _objective_func.__doc__ == "Objective function"
 
 
 def test_initialize_experiment(tmpdir: py.path.local) -> None:
