@@ -434,8 +434,8 @@ def _generate_contour_subplot(
 
 
 def _create_zmap(
-    x_values: np.ndarray,
-    y_values: np.ndarray,
+    x_values: List[Union[int, float]],
+    y_values: List[Union[int, float]],
     z_values: List[float],
     xi: np.ndarray,
     yi: np.ndarray,
