@@ -1,11 +1,15 @@
+import itertools
 from typing import List
 from typing import Optional
 
 import numpy as np
 import pytest
 
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
+from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization.matplotlib import plot_contour
 from optuna.visualization.matplotlib._contour import _create_zmap
@@ -150,3 +154,70 @@ def test_plot_contour_customized_target_name(params: List[str]) -> None:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
             assert figure[i][0].yaxis.label.get_text() == list(params)[i]
+
+
+def test_plot_contour_log_scale_and_str_category() -> None:
+
+    # If the search space has two parameters, plot_contour generates a single plot.
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1e-6, "param_b": "100"},
+            distributions={
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": CategoricalDistribution(["100", "101"]),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 1e-5, "param_b": "101"},
+            distributions={
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": CategoricalDistribution(["100", "101"]),
+            },
+        )
+    )
+
+    figure = plot_contour(study)
+
+    # Take 5% axis padding into account.
+    np.testing.assert_allclose(figure.get_xlim(), [1e-6, 1e-5], atol=5e-2)
+    np.testing.assert_allclose(figure.get_ylim(), [0.0, 1.0], atol=5e-2)
+
+    # If the search space has three parameters, plot_contour generates nine plots.
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1e-6, "param_b": "100", "param_c": "one"},
+            distributions={
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": CategoricalDistribution(["100", "101"]),
+                "param_c": CategoricalDistribution(["one", "two"]),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 1e-5, "param_b": "101", "param_c": "two"},
+            distributions={
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
+                "param_b": CategoricalDistribution(["100", "101"]),
+                "param_c": CategoricalDistribution(["one", "two"]),
+            },
+        )
+    )
+
+    figure = plot_contour(study)
+    subplots = [plot for plot in figure.flatten() if plot.has_data()]
+    expected = {"param_a": [1e-6, 1e-5], "param_b": [0.0, 1.0], "param_c": [0.0, 1.0]}
+    ranges = itertools.permutations(expected.keys(), 2)
+
+    for plot, (yrange, xrange) in zip(subplots, ranges):
+        # Take 5% axis padding into account.
+        np.testing.assert_allclose(plot.get_xlim(), expected[xrange], atol=5e-2)
+        np.testing.assert_allclose(plot.get_ylim(), expected[yrange], atol=5e-2)
