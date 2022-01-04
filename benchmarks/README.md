@@ -62,8 +62,7 @@ First, you need to install `kurobako` and its Python helper.
 To install `kurobako`, see https://github.com/optuna/kurobako#installation for more details.
 In addition, please run `pip install kurobako` to install the Python helper.
 You need to install `gnupolot` for visualization with `kurobako`.
-Please run `sudo apt -y install gnuplot` if you use Linux.
-Please install [Homebrew](https://brew.sh/) and run `brew install gnuplot` if you use MacOS.
+You can install `gnuplot` by package managers such as `apt` (for Ubuntu) or `brew` (for macOS).
 
 Second, you need to download the dataset for `kurobako`.
 Run the followings in the dataset directory.
