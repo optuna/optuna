@@ -718,6 +718,29 @@ def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -
     assert "100%" in err
 
 
+@pytest.mark.parametrize(
+    "timeout,expected",
+    [
+        (59.0, "/00:59"),
+        (60.0, "/01:00"),
+        (60.0 * 60, "/1:00:00"),
+        (60.0 * 60 * 24, "/24:00:00"),
+    ],
+)
+def test_optimize_with_progbar_timeout_formats(
+    timeout: float, expected: str, capsys: _pytest.capture.CaptureFixture
+) -> None:
+    def _objective(trial: Trial) -> float:
+        if trial.number == 5:
+            trial.study.stop()
+        return 1.0
+
+    study = create_study()
+    study.optimize(_objective, timeout=timeout, show_progress_bar=True)
+    _, err = capsys.readouterr()
+    assert expected in err
+
+
 def test_optimize_without_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
 
     study = create_study()

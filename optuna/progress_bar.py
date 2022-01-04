@@ -1,5 +1,4 @@
 import logging
-import time
 from typing import Any
 from typing import Optional
 
@@ -65,7 +64,7 @@ class _ProgressBar(object):
             # to display formatted timeout, since postfix carries
             # extra comma space auto-format.
             # https://github.com/tqdm/tqdm/issues/712
-            total = time.strftime("%M:%S", time.gmtime(self._timeout))
+            total = tqdm.format_interval(self._timeout)
             self._progress_bar.set_description_str(total)
 
         global _tqdm_handler
