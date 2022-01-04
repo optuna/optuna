@@ -725,6 +725,7 @@ def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -
         (60.0, "/01:00"),
         (60.0 * 60, "/1:00:00"),
         (60.0 * 60 * 24, "/24:00:00"),
+        (60.0 * 60 * 24 * 10, "/240:00:00"),
     ],
 )
 def test_optimize_with_progbar_timeout_formats(
