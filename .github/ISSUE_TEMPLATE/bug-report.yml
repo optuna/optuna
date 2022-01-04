@@ -39,7 +39,7 @@ body:
     attributes:
       label: Steps to reproduce
       description: Please provide how we reproduce your reported bugs. If possible, it is highly recommended to provide the reproducible example codes.
-      placeholder: |
+      value: |
         1.
         2.
         3.
