@@ -1,3 +1,4 @@
+import functools
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -214,6 +215,7 @@ class MLflowCallback(object):
         """
 
         def decorator(func: ObjectiveFuncType) -> ObjectiveFuncType:
+            @functools.wraps(func)
             def wrapper(trial: optuna.trial.Trial) -> Union[float, Sequence[float]]:
                 study = trial.study
                 self._initialize_experiment(study)
