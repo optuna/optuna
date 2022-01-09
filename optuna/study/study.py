@@ -639,9 +639,8 @@ class Study:
         frozen_trial = self._storage.get_trial(trial_id)
 
         if state is None and values is None:
-            self._storage.set_trial_state(trial_id, TrialState.FAIL)
             _logger.warning("You must specify either state or values.")
-            return self._storage.get_trial(trial_id)
+            state = TrialState.FAIL
 
         if frozen_trial.state.is_finished() and skip_if_finished:
             _logger.info(
