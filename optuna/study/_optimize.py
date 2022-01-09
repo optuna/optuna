@@ -206,6 +206,12 @@ def _run_trial(
         thread.start()
 
     try:
+        # (a) `func` returns a float or a list of float points.
+        # (b) `study.tell` takes `Optional[Union[float, Sequence[float]]]` for values.
+        #
+        # To fill the gap, the result of `func` needed to be wrapped by `Optional`.
+        # `study.tell` must take an optional for `values` because it would be `None`
+        # when an error happens inside `func`.
         value_or_values = cast(
             Optional[Union[float, List[float]]],
             func(trial),
