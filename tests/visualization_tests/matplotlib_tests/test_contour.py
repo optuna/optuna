@@ -158,35 +158,6 @@ def test_plot_contour_customized_target_name(params: List[str]) -> None:
 
 def test_plot_contour_log_scale_and_str_category() -> None:
 
-    # If the search space has two parameters, plot_contour generates a single plot.
-    study = create_study()
-    study.add_trial(
-        create_trial(
-            value=0.0,
-            params={"param_a": 1e-6, "param_b": "100"},
-            distributions={
-                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-                "param_b": CategoricalDistribution(["100", "101"]),
-            },
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=1.0,
-            params={"param_a": 1e-5, "param_b": "101"},
-            distributions={
-                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
-                "param_b": CategoricalDistribution(["100", "101"]),
-            },
-        )
-    )
-
-    figure = plot_contour(study)
-
-    # Take 5% axis padding into account.
-    np.testing.assert_allclose(figure.get_xlim(), [1e-6, 1e-5], atol=5e-2)
-    np.testing.assert_allclose(figure.get_ylim(), [0.0, 1.0], atol=5e-2)
-
     # If the search space has three parameters, plot_contour generates nine plots.
     study = create_study()
     study.add_trial(
