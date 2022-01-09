@@ -1,4 +1,5 @@
 import copy
+import math
 import threading
 from typing import Any
 from typing import Callable
@@ -25,7 +26,6 @@ from optuna._deprecated import deprecated
 from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.study._multi_objective import _get_pareto_front_trials
-from optuna.study._optimize import _check_and_convert_to_values
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary  # NOQA
@@ -44,6 +44,67 @@ ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]
 
 
 _logger = logging.get_logger(__name__)
+
+
+def _check_and_convert_to_values(
+    n_objectives: int, original_value: Union[float, Sequence[float]], trial_number: int
+) -> Tuple[Optional[List[float]], Optional[str]]:
+    if isinstance(original_value, Sequence):
+        if n_objectives != len(original_value):
+            return (
+                None,
+                (
+                    f"Trial {trial_number} failed, because the number of the values "
+                    f"{len(original_value)} did not match the number of the objectives "
+                    f"{n_objectives}."
+                ),
+            )
+        else:
+            _original_values = list(original_value)
+    else:
+        _original_values = [original_value]
+
+    _checked_values = []
+    for v in _original_values:
+        checked_v, failure_message = _check_single_value(v, trial_number)
+        if failure_message is not None:
+            # TODO(Imamura): Construct error message taking into account all values and do not
+            #  early return
+            # `value` is assumed to be ignored on failure so we can set it to any value.
+            return None, failure_message
+        elif isinstance(checked_v, float):
+            _checked_values.append(checked_v)
+        else:
+            assert False
+
+    return _checked_values, None
+
+
+def _check_single_value(
+    original_value: float, trial_number: int
+) -> Tuple[Optional[float], Optional[str]]:
+    value = None
+    failure_message = None
+
+    try:
+        value = float(original_value)
+    except (
+        ValueError,
+        TypeError,
+    ):
+        failure_message = (
+            f"Trial {trial_number} failed, because the value {repr(original_value)} could not be "
+            "cast to float."
+        )
+
+    if value is not None and math.isnan(value):
+        value = None
+        failure_message = (
+            f"Trial {trial_number} failed, because the objective function returned "
+            f"{original_value}."
+        )
+
+    return value, failure_message
 
 
 class Study:
