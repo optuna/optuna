@@ -18,8 +18,9 @@ import optuna
 from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
+from optuna.samplers._nsga2._crossovers._base import BaseCrossover
+from optuna.samplers._nsga2._crossovers._uniform import UniformCrossover
 from optuna.samplers._nsga2.crossover import crossover
-from optuna.samplers._nsga2.crossover import get_n_parents
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.study import Study
@@ -165,7 +166,7 @@ class NSGAIISampler(BaseSampler):
         *,
         population_size: int = 50,
         mutation_prob: Optional[float] = None,
-        crossover: str = "uniform",
+        crossover: Optional[BaseCrossover] = None,
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
@@ -196,23 +197,28 @@ class NSGAIISampler(BaseSampler):
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
-        if crossover not in ["uniform", "blxalpha", "sbx", "vsbx", "undx", "spx"]:
+
+        if crossover is None:
+            crossover = UniformCrossover(swapping_prob)
+
+        if not isinstance(crossover, BaseCrossover):
+            # TODO(xadrianzetx) this error message does not make much sense with classes
             raise ValueError(
                 f"'{crossover}' is not a valid crossover name."
                 " The available crossovers are"
                 " `uniform` (default), `blxalpha`, `sbx`, `vsbx`, `undx`, and `spx`."
             )
-        if crossover != "uniform":
+        if not isinstance(crossover, UniformCrossover):
+            # TODO(xadrianzetx) remove this and tag non uniform crossover classes experimental
             warnings.warn(
                 "``crossover`` option is an experimental feature."
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
-        n_parents = get_n_parents(crossover)
-        if population_size < n_parents:
+        if population_size < crossover.n_parents:
             raise ValueError(
                 f"Using {crossover},"
-                f" the population size should be greater than or equal to {n_parents}."
+                f" the population size should be greater than or equal to {crossover.n_parents}."
                 f" The specified `population_size` is {population_size}."
             )
 
