@@ -229,22 +229,26 @@ def _run_trial(
         stop_event.set()
         thread.join()
 
-    frozen_trial = study.tell(trial, values=value_or_values, state=state)
-
-    if frozen_trial.state == TrialState.COMPLETE:
-        study._log_completed_trial(frozen_trial)
-    elif frozen_trial.state == TrialState.PRUNED:
-        _logger.info("Trial {} pruned. {}".format(frozen_trial.number, str(func_err)))
-    elif frozen_trial.state == TrialState.FAIL:
-        if func_err is not None:
-            _logger.warning(
-                "Trial {} failed because of the following error: {}".format(
-                    frozen_trial.number, repr(func_err)
-                ),
-                exc_info=func_err_fail_exc_info,
-            )
-    else:
-        assert False, "Should not reach."
+    # `Study.tell` may raise during trial post-processing.
+    try:
+        frozen_trial = study.tell(trial, values=value_or_values, state=state)
+    except Exception:
+        raise
+    finally:
+        if frozen_trial.state == TrialState.COMPLETE:
+            study._log_completed_trial(frozen_trial)
+        elif frozen_trial.state == TrialState.PRUNED:
+            _logger.info("Trial {} pruned. {}".format(frozen_trial.number, str(func_err)))
+        elif frozen_trial.state == TrialState.FAIL:
+            if func_err is not None:
+                _logger.warning(
+                    "Trial {} failed because of the following error: {}".format(
+                        frozen_trial.number, repr(func_err)
+                    ),
+                    exc_info=func_err_fail_exc_info,
+                )
+        else:
+            assert False, "Should not reach."
 
     if (
         frozen_trial.state == TrialState.FAIL
