@@ -103,7 +103,7 @@ class FloatDistribution(BaseDistribution):
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
-            Upper endpoint of the range of the distribution. ``high`` is included from the range.
+            Upper endpoint of the range of the distribution. ``high`` is included in the range.
         log:
             If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
         step:
@@ -182,7 +182,7 @@ class UniformDistribution(BaseDistribution):
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
-            Upper endpoint of the range of the distribution. ``high`` is included from the range.
+            Upper endpoint of the range of the distribution. ``high`` is included in the range.
 
     Raises:
         ValueError:
@@ -220,7 +220,7 @@ class LogUniformDistribution(BaseDistribution):
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
-            Upper endpoint of the range of the distribution. ``high`` is included from the range.
+            Upper endpoint of the range of the distribution. ``high`` is included in the range.
 
     Raises:
         ValueError:
@@ -322,7 +322,7 @@ class IntDistribution(BaseDistribution):
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
-            Upper endpoint of the range of the distribution. ``high`` is included from the range.
+            Upper endpoint of the range of the distribution. ``high`` is included in the range.
         log:
             If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
         step:
