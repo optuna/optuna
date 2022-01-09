@@ -644,6 +644,9 @@ class Study:
                 :class:`~optuna.trial.TrialState.PRUNED`.
                 ``trial`` is a trial number but no
                 trial exists with that number.
+
+        Returns:
+            A :class:`~optuna.trial.FrozenTrial`.
         """
 
         if not isinstance(trial, (trial_module.Trial, int)):
