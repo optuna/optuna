@@ -46,12 +46,12 @@ def test_report() -> None:
 
     trial = study.trials[0]
     assert trial.intermediate_values == {1: (1, 2, 3), 2: (10, 20, 30)}
-    assert trial.values == (100, 200, 300)
+    assert trial.values == [100, 200, 300]
     assert trial.last_step == 2
 
     trial = study.trials[1]
     assert trial.intermediate_values == {}
-    assert trial.values == (100, 200, 300)
+    assert trial.values == [100, 200, 300]
     assert trial.last_step is None
 
 
