@@ -9,7 +9,6 @@ import numpy as np
 
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
-from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -17,6 +16,8 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+from optuna.samplers._nsga2._crossovers._base import BaseCrossover
+from optuna.samplers._nsga2._crossovers._uniform import UniformCrossover
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -33,37 +34,42 @@ _NUMERICAL_DISTRIBUTIONS = (
 )
 
 
-def try_crossover(
-    crossover_name: str,
+def _try_crossover(
+    parents: List[FrozenTrial],
+    crossover: BaseCrossover,
     study: Study,
-    parent_population: Sequence[FrozenTrial],
-    search_space: Dict[str, BaseDistribution],
     rng: np.random.RandomState,
     swapping_prob: float,
-    dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
+    categorical_search_space: Dict[str, BaseDistribution],
     numerical_search_space: Dict[str, BaseDistribution],
-    numerical_distributions: List[BaseDistribution],
     numerical_transform: Optional[_SearchSpaceTransform],
 ) -> Dict[str, Any]:
 
-    parents = _select_parents(crossover_name, study, parent_population, rng, dominates)
     child_params: Dict[str, Any] = {}
 
-    for param_name in search_space.keys():
-        # Categorical parameters always use uniform crossover.
-        if isinstance(search_space[param_name], CategoricalDistribution):
-            param = (
-                parents[0].params[param_name]
-                if rng.rand() < swapping_prob
-                else parents[-1].params[param_name]
-            )
-            child_params[param_name] = param
+    if len(categorical_search_space) > 0:
+        parents_categorical_params = np.array(
+            [
+                [parent.params[p] for p in categorical_search_space]
+                for parent in [parents[0], parents[-1]]
+            ]
+        )
+
+        categorical_crossover = UniformCrossover(swapping_prob)
+        child_categorical_array = categorical_crossover.crossover(
+            parents_categorical_params, rng, study, categorical_search_space
+        )
+
+        child_categorical_params = {
+            param: value for param, value in zip(categorical_search_space, child_categorical_array)
+        }
+        child_params.update(child_categorical_params)
 
     if numerical_transform is None:
         return child_params
 
     # The following is applied only for numerical parameters.
-    parents_numerical_params_array = np.stack(
+    parents_numerical_params = np.stack(
         [
             numerical_transform.transform(
                 {
@@ -74,62 +80,18 @@ def try_crossover(
             for parent in parents
         ]
     )  # Parent individual with NUMERICAL_DISTRIBUTIONS parameter.
-    if crossover_name == "uniform":
-        child_params_array = _uniform(
-            parents_numerical_params_array[0],
-            parents_numerical_params_array[1],
-            rng,
-            swapping_prob,
-        )
-    elif crossover_name == "blxalpha":
-        alpha = 0.5
-        child_params_array = _blxalpha(
-            parents_numerical_params_array[0], parents_numerical_params_array[1], rng, alpha
-        )
-    elif crossover_name == "sbx":
-        if len(study.directions) == 1:
-            eta = 2
-        else:
-            eta = 20
-        child_params_array = _sbx(
-            parents_numerical_params_array[0],
-            parents_numerical_params_array[1],
-            rng,
-            numerical_distributions,
-            eta,
-        )
-    elif crossover_name == "vsbx":
-        if len(study.directions) == 1:
-            eta = 2
-        else:
-            eta = 20
-        child_params_array = _vsbx(
-            parents_numerical_params_array[0], parents_numerical_params_array[1], rng, eta
-        )
-    elif crossover_name == "undx":
-        sigma_xi = 0.5
-        sigma_eta = 0.35 / np.sqrt(len(parents_numerical_params_array[0]))
-        child_params_array = _undx(
-            parents_numerical_params_array[0],
-            parents_numerical_params_array[1],
-            parents_numerical_params_array[2],
-            rng,
-            sigma_xi,
-            sigma_eta,
-        )
-    elif crossover_name == "spx":
-        epsilon = np.sqrt(len(parents_numerical_params_array[0]) + 2)
-        child_params_array = _spx(parents_numerical_params_array, rng, epsilon)
-    else:
-        assert False
 
-    child_numerical_params = numerical_transform.untransform(child_params_array)
+    child_numerical_array = crossover.crossover(
+        parents_numerical_params, rng, study, numerical_search_space
+    )
+    child_numerical_params = numerical_transform.untransform(child_numerical_array)
     child_params.update(child_numerical_params)
+
     return child_params
 
 
 def crossover(
-    crossover_name: str,
+    crossover: BaseCrossover,
     study: Study,
     parent_population: Sequence[FrozenTrial],
     search_space: Dict[str, BaseDistribution],
@@ -139,28 +101,27 @@ def crossover(
 ) -> Dict[str, Any]:
 
     numerical_search_space: Dict[str, BaseDistribution] = {}
-    numerical_distributions: List[BaseDistribution] = []
-
+    categorical_search_space: Dict[str, BaseDistribution] = {}
     for key, value in search_space.items():
         if isinstance(value, _NUMERICAL_DISTRIBUTIONS):
             numerical_search_space[key] = value
-            numerical_distributions.append(value)
+        else:
+            categorical_search_space[key] = value
 
     numerical_transform: Optional[_SearchSpaceTransform] = None
-    if len(numerical_distributions) != 0:
+    if len(numerical_search_space) != 0:
         numerical_transform = _SearchSpaceTransform(numerical_search_space)
 
     while True:  # Repeat while parameters lie outside search space boundaries.
-        child_params = try_crossover(
-            crossover_name,
+        parents = _select_parents(crossover, study, parent_population, rng, dominates)
+        child_params = _try_crossover(
+            parents,
+            crossover,
             study,
-            parent_population,
-            search_space,
             rng,
             swapping_prob,
-            dominates,
+            categorical_search_space,
             numerical_search_space,
-            numerical_distributions,
             numerical_transform,
         )
 
