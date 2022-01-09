@@ -234,7 +234,7 @@ def _run_trial(
     frozen_trial = study.tell(trial, values=value_or_values, state=state)
 
     if frozen_trial.state == TrialState.COMPLETE:
-        study._log_completed_trial(trial, frozen_trial.values)
+        study._log_completed_trial(frozen_trial)
     elif frozen_trial.state == TrialState.PRUNED:
         _logger.info("Trial {} pruned. {}".format(trial.number, str(func_err)))
     elif frozen_trial.state == TrialState.FAIL:
@@ -254,7 +254,7 @@ def _run_trial(
         and not isinstance(func_err, catch)
     ):
         raise func_err
-    return trial
+    return frozen_trial
 
 
 def _check_and_convert_to_values(

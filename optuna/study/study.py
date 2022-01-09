@@ -1043,23 +1043,22 @@ class Study:
     ) -> None:
         self.tell(trial, values, state)
 
-    def _log_completed_trial(self, trial: trial_module.Trial, values: Sequence[float]) -> None:
-
+    def _log_completed_trial(self, trial: trial_module.FrozenTrial) -> None:
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        if len(values) > 1:
+        if len(trial.values) > 1:
             _logger.info(
                 "Trial {} finished with values: {} and parameters: {}. ".format(
-                    trial.number, values, trial.params
+                    trial.number, trial.values, trial.params
                 )
             )
-        elif len(values) == 1:
+        elif len(trial.values) == 1:
             _logger.info(
                 "Trial {} finished with value: {} and parameters: {}. "
                 "Best is trial {} with value: {}.".format(
                     trial.number,
-                    values[0],
+                    trial.values[0],
                     trial.params,
                     self.best_trial.number,
                     self.best_value,

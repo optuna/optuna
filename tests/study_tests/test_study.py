@@ -1003,23 +1003,23 @@ def test_log_completed_trial_skip_storage_access() -> None:
 
     # Create a trial to retrieve it as the `study.best_trial`.
     study.optimize(lambda _: 0.0, n_trials=1)
-    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    frozen_trial = study.best_trial
 
     storage = study._storage
 
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, [1.0])
+        study._log_completed_trial(frozen_trial)
         # Trial.best_trial and Trial.best_params access storage.
         assert mock_object.call_count == 2
 
     logging.set_verbosity(logging.WARNING)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, [1.0])
+        study._log_completed_trial(frozen_trial)
         assert mock_object.call_count == 0
 
     logging.set_verbosity(logging.DEBUG)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, [1.0])
+        study._log_completed_trial(frozen_trial)
         assert mock_object.call_count == 2
 
 
