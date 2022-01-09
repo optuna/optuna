@@ -237,6 +237,10 @@ def _run_trial(
         tell_err = e
         raise
     finally:
+        # NOTE (himkt):
+        # Even if an error happens in Study.tell, this logging section
+        # should be reached. Because `frozen_trial` would not be assigned when
+        # Study.tell fails, it fetches the trial from the storage.
         if tell_err is not None:
             frozen_trial = study._storage.get_trial(trial._trial_id)
 
