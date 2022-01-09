@@ -662,9 +662,7 @@ class Study:
 
         if values is not None:
             values, values_conversion_failure_message = _check_and_convert_to_values(
-                len(self.directions),
-                values,
-                trial_number,
+                len(self.directions), values, trial_number
             )
 
             if state is None:
