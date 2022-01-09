@@ -170,31 +170,21 @@ def crossover(
     return child_params
 
 
-def get_n_parents(crossover_name: str) -> int:
-    # Select the number of parent individuals to be used for crossover.
-    if crossover_name in ["uniform", "blxalpha", "sbx", "vsbx"]:
-        n_parents = 2
-    elif crossover_name in ["undx", "spx"]:
-        n_parents = 3
-    else:
-        assert False
-    return n_parents
-
-
 def _select_parents(
-    crossover_name: str,
+    crossover: BaseCrossover,
     study: Study,
     parent_population: Sequence[FrozenTrial],
     rng: np.random.RandomState,
     dominates: Callable[[FrozenTrial, FrozenTrial, Sequence[StudyDirection]], bool],
 ) -> List[FrozenTrial]:
-    n_parents = get_n_parents(crossover_name)
-    parents = []
-    for _ in range(n_parents):
+
+    parents: List[FrozenTrial] = []
+    for _ in range(crossover.n_parents):
         parent = _select_parent(
             study, [t for t in parent_population if t not in parents], rng, dominates
         )
         parents.append(parent)
+
     return parents
 
 
