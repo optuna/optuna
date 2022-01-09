@@ -194,6 +194,7 @@ def _run_trial(
     func_err: Optional[Union[Exception, KeyboardInterrupt]] = None
     func_err_fail_exc_info: Optional[Any] = None
     stop_event: Optional[Event] = None
+    tell_err: Optional[Exception] = None
     thread: Optional[Thread] = None
 
     if study._storage.is_heartbeat_enabled():
@@ -232,9 +233,13 @@ def _run_trial(
     # `Study.tell` may raise during trial post-processing.
     try:
         frozen_trial = study.tell(trial, values=value_or_values, state=state)
-    except Exception:
+    except Exception as e:
+        tell_err = e
         raise
     finally:
+        if tell_err is not None:
+            frozen_trial = study._storage.get_trial(trial._trial_id)
+
         if frozen_trial.state == TrialState.COMPLETE:
             study._log_completed_trial(frozen_trial)
         elif frozen_trial.state == TrialState.PRUNED:
