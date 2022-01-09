@@ -7,9 +7,13 @@ from typing import Tuple
 from unittest.mock import patch
 import warnings
 
+import numpy as np
 import pytest
 
 import optuna
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import NSGAIISampler
 from optuna.samplers._nsga2.sampler import _CONSTRAINTS_KEY
@@ -547,3 +551,35 @@ def test_crossover_invalid_population(crossover_name: str) -> None:
             lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
             n_trials=n_trials,
         )
+
+
+@pytest.mark.parametrize("crossover", [optuna.samplers.UniformCrossover()])
+def test_crossover_numerical_distribution(crossover: optuna.samplers.BaseCrossover) -> None:
+
+    study = optuna.study.create_study()
+    search_space = {"x": FloatDistribution(1, 10), "y": IntDistribution(1, 10)}
+    rng = np.random.RandomState()
+    parent_params = np.array([[1.0, 2], [3.0, 4]])
+
+    child_params = crossover.crossover(parent_params, rng, study, search_space)
+    assert child_params.ndim == 1
+    assert len(child_params) == len(search_space)
+    assert np.nan not in child_params
+    assert np.inf not in child_params
+
+
+def test_crossover_categorical_distribution() -> None:
+
+    study = optuna.study.create_study()
+    search_space = {
+        "x": CategoricalDistribution(choices=["a", "c"]),
+        "y": CategoricalDistribution(choices=["b", "d"]),
+    }
+    parent_params = np.array([["a", "b"], ["c", "d"]])
+
+    crossover = optuna.samplers.UniformCrossover()
+    child_params = crossover.crossover(parent_params, np.random.RandomState(), study, search_space)
+
+    assert child_params.ndim == 1
+    assert len(child_params) == len(search_space)
+    assert all([isinstance(param, str) for param in child_params])
