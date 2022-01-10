@@ -1378,11 +1378,3 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
         assert 'retry_count' not in trials[4].system_attrs
         assert trials[5].system_attrs['failed_trial'] == 4
         assert trials[5].system_attrs['retry_count'] == 1
-
-        # Current behavior                                                                    
-        # assert 'failed_trial' not in trials[0].system_attrs                                 
-        # assert trials[1].system_attrs['failed_trial'] == 0                                  
-        # assert trials[2].system_attrs['failed_trial'] == 0                                  
-        # assert trials[3].system_attrs['failed_trial'] == 0 
-        # assert 'failed_trial' not in trials[4].system_attrs                                 
-        # assert trials[5].system_attrs['failed_trial'] == 4                                  
