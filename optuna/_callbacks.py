@@ -106,14 +106,14 @@ class RetryFailedTrialCallback:
         self._inherit_intermediate_values = inherit_intermediate_values
 
     def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
-        retry_count = trial.system_attrs.get('retry_count', 0) + 1
+        retry_count = trial.system_attrs.get("retry_count", 0) + 1
         if self._max_retry is not None and retry_count > self._max_retry:
             return
 
         system_attrs = {
             **trial.system_attrs,
             "failed_trial": trial.number,
-            "retry_count": retry_count
+            "retry_count": retry_count,
         }
 
         study.add_trial(
