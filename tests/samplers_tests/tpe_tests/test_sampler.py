@@ -1,5 +1,4 @@
-from multiprocessing import Manager
-from multiprocessing import Process
+import multiprocessing
 import random
 from typing import Callable
 from typing import Dict
@@ -1058,6 +1057,8 @@ def test_group_experimental_warning() -> None:
         _ = TPESampler(multivariate=True, group=True)
 
 
+# This function is used only in test_group_deterministic_iteration, but declared at top-level because
+# local function cannot be pickled, which occurs within multiprocessing.
 def run_tpe(k: int, sequence_dict: Dict[int, List[int]], hash_dict: Dict[int, int]) -> None:
     hash_dict[k] = hash("nondeterministic hash")
     sampler = TPESampler(n_startup_trials=1, seed=2, multivariate=True, group=True)
@@ -1069,11 +1070,15 @@ def run_tpe(k: int, sequence_dict: Dict[int, List[int]], hash_dict: Dict[int, in
 
 
 def test_group_deterministic_iteration() -> None:
-    manager = Manager()
+    # Multiprocessing supports three way to start a process.
+    # We use `spawn` option to create a child process as a fresh python process.
+    # For more detail, see https://github.com/optuna/optuna/pull/3187#issuecomment-997673037.
+    multiprocessing.set_start_method("spawn")
+    manager = multiprocessing.Manager()
     sequence_dict: Dict[int, List[int]] = manager.dict()
     hash_dict: Dict[int, int] = manager.dict()
     for i in range(3):
-        p = Process(target=run_tpe, args=(i, sequence_dict, hash_dict))
+        p = multiprocessing.Process(target=run_tpe, args=(i, sequence_dict, hash_dict))
         p.start()
         p.join()
     # Hashes are expected to be different because string hashing is nondeterministic per process.
