@@ -530,6 +530,6 @@ For more information about 2., see TutorialEasyParallelization_.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This can be achieved by using client/server RDBs (such as PostgreSQL and MySQL).
-However, if you are in the environment where you can not install a client/server RDB, you can not run multi-processing parallelization with multiple nodes. When you really want to do it, please request it as a GitHub issue. If we receive a lot of requests, we may provide a solution for it.
+However, if you are in the environment where you can not install a client/server RDB, you can not run multi-processing parallelization with multiple nodes.
 
 For more information about 3., see TutorialEasyParallelization_.
