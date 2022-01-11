@@ -725,6 +725,77 @@ def test_optimize_without_progbar(capsys: _pytest.capture.CaptureFixture) -> Non
     assert "100%" not in err
 
 
+def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    study.optimize(lambda _: 1.0, timeout=2.0, show_progress_bar=True)
+    _, err = capsys.readouterr()
+
+    assert "00:02/00:02" in err
+    assert "100%" in err
+
+
+@pytest.mark.parametrize(
+    "timeout,expected",
+    [
+        (59.0, "/00:59"),
+        (60.0, "/01:00"),
+        (60.0 * 60, "/1:00:00"),
+        (60.0 * 60 * 24, "/24:00:00"),
+        (60.0 * 60 * 24 * 10, "/240:00:00"),
+    ],
+)
+def test_optimize_with_progbar_timeout_formats(
+    timeout: float, expected: str, capsys: _pytest.capture.CaptureFixture
+) -> None:
+    def _objective(trial: Trial) -> float:
+        if trial.number == 5:
+            trial.study.stop()
+        return 1.0
+
+    study = create_study()
+    study.optimize(_objective, timeout=timeout, show_progress_bar=True)
+    _, err = capsys.readouterr()
+    assert expected in err
+
+
+def test_optimize_without_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    study.optimize(lambda _: 1.0, timeout=2.0)
+    _, err = capsys.readouterr()
+
+    assert "00:02/00:02" not in err
+    assert "100%" not in err
+
+
+def test_optimize_progbar_n_trials_prioritized(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    study.optimize(lambda _: 1.0, n_trials=10, timeout=10.0, show_progress_bar=True)
+    _, err = capsys.readouterr()
+
+    assert "10/10" in err
+    assert "100%" in err
+    assert "it" in err
+
+
+def test_optimize_progbar_no_constraints(capsys: _pytest.capture.CaptureFixture) -> None:
+    def _objective(trial: Trial) -> float:
+        if trial.number == 5:
+            trial.study.stop()
+        return 1.0
+
+    study = create_study()
+    study.optimize(_objective, show_progress_bar=True)
+    _, err = capsys.readouterr()
+
+    # We can't simply test if stderr is empty, since we're not sure
+    # what else could write to it. Instead, we are testing for a character
+    # that forms progress bar borders.
+    assert "|" not in err
+
+
 def test_optimize_with_progbar_parallel(capsys: _pytest.capture.CaptureFixture) -> None:
 
     study = create_study()
