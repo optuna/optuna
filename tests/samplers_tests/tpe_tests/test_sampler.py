@@ -1060,13 +1060,8 @@ def run_tpe(k: int, sequence_dict: Dict[int, List[int]], hash_dict: Dict[int, in
     hash_dict[k] = hash("nondeterministic hash")
     sampler = TPESampler(n_startup_trials=1, seed=2, multivariate=True, group=True)
     study = create_study(sampler=sampler)
-    sequence = []
-    for _ in range(10):
-        trial = study.ask()
-        picked = [i for i in range(10) if trial.suggest_int(str(i), 0, 1) == 1]
-        study.tell(trial, len(picked))
-        sequence.extend(picked)
-    sequence_dict[k] = sequence
+    study.optimize(lambda t: np.sum(t.suggest_int(f"x{i}", 0, 10) for i in range(10)), n_trials=2)
+    sequence_dict[k] = list(study.trials[-1].params.values())
 
 
 # Test deterministic iteration as discussed in https://github.com/optuna/optuna/issues/3137
