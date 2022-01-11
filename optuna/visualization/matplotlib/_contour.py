@@ -313,34 +313,30 @@ def _calculate_griddata(
 
     if _is_log_scale(trials, x_param):
         padding_x = (np.log10(x_values_max) - np.log10(x_values_min)) * AXES_PADDING_RATIO
-        x_values_min = np.power(np.log10(x_values_min) - padding_x, 10)
-        x_values_max = np.power(np.log10(x_values_max) + padding_x, 10)
+        x_values_min = np.power(10, np.log10(x_values_min) - padding_x)
+        x_values_max = np.power(10, np.log10(x_values_max) + padding_x)
         xi = np.logspace(np.log10(x_values_min), np.log10(x_values_max), contour_point_num)
-        x_array = np.log10(x_values)
     else:
         padding_x = (x_values_max - x_values_min) * AXES_PADDING_RATIO
         x_values_min -= padding_x
         x_values_max += padding_x
         xi = np.linspace(x_values_min, x_values_max, contour_point_num)
-        x_array = np.array(x_values)
 
     if _is_log_scale(trials, y_param):
         padding_y = (np.log10(y_values_max) - np.log10(y_values_min)) * AXES_PADDING_RATIO
-        y_values_min = np.power(np.log10(y_values_min) - padding_y, 10)
-        y_values_max = np.power(np.log10(y_values_max) + padding_y, 10)
+        y_values_min = np.power(10, np.log10(y_values_min) - padding_y)
+        y_values_max = np.power(10, np.log10(y_values_max) + padding_y)
         yi = np.logspace(np.log10(y_values_min), np.log10(y_values_max), contour_point_num)
-        y_array = np.log10(y_values)
     else:
         padding_y = (y_values_max - y_values_min) * AXES_PADDING_RATIO
         y_values_min -= padding_y
         y_values_max += padding_y
         yi = np.linspace(y_values_min, y_values_max, contour_point_num)
-        y_array = np.array(y_values)
 
     # create irregularly spaced map of trial values
     # and interpolate it with Plotly's interpolation formulation
     if x_param != y_param:
-        zmap = _create_zmap(x_array, y_array, z_values, xi, yi)
+        zmap = _create_zmap(x_values, y_values, z_values, xi, yi)
         zi = _interpolate_zmap(zmap, contour_point_num)
 
     return (
@@ -439,8 +435,8 @@ def _generate_contour_subplot(
 
 
 def _create_zmap(
-    x_values: np.ndarray,
-    y_values: np.ndarray,
+    x_values: List[Union[int, float]],
+    y_values: List[Union[int, float]],
     z_values: List[float],
     xi: np.ndarray,
     yi: np.ndarray,

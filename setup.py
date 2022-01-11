@@ -68,7 +68,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "plotly>=4.0.0",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
-            "mlflow<1.22.0",
+            "mlflow",
         ],
         "document": [
             # TODO(nzw): Remove the version constraint after resolving the issue
@@ -96,7 +96,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fakeredis",
             "lightgbm",
             "matplotlib>=3.0.0",
-            "mlflow<1.22.0",
+            "mlflow",
             "mpi4py",
             "mxnet",
             "pandas",
@@ -139,7 +139,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "lightgbm",
-            "mlflow<1.22.0",
+            "mlflow",
             "wandb",
             "mpi4py",
             "mxnet",
