@@ -1073,7 +1073,7 @@ def test_group_deterministic_iteration() -> None:
     # Multiprocessing supports three way to start a process.
     # We use `spawn` option to create a child process as a fresh python process.
     # For more detail, see https://github.com/optuna/optuna/pull/3187#issuecomment-997673037.
-    multiprocessing.set_start_method("spawn")
+    multiprocessing.set_start_method("spawn", force=True)
     manager = multiprocessing.Manager()
     sequence_dict: Dict[int, List[int]] = manager.dict()
     hash_dict: Dict[int, int] = manager.dict()
