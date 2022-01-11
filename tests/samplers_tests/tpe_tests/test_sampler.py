@@ -1,3 +1,5 @@
+from multiprocessing import Manager
+from multiprocessing import Process
 import random
 from typing import Callable
 from typing import Dict
@@ -1066,11 +1068,7 @@ def run_tpe(k: int, sequence_dict: Dict[int, List[int]], hash_dict: Dict[int, in
     sequence_dict[k] = list(study.trials[-1].params.values())
 
 
-# Test deterministic iteration as discussed in https://github.com/optuna/optuna/issues/3137
 def test_group_deterministic_iteration() -> None:
-    from multiprocessing import Manager
-    from multiprocessing import Process
-
     manager = Manager()
     sequence_dict: Dict[int, List[int]] = manager.dict()
     hash_dict: Dict[int, int] = manager.dict()
