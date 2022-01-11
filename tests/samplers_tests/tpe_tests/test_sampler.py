@@ -1057,8 +1057,8 @@ def test_group_experimental_warning() -> None:
         _ = TPESampler(multivariate=True, group=True)
 
 
-# This function is used only in test_group_deterministic_iteration, but declared at top-level because
-# local function cannot be pickled, which occurs within multiprocessing.
+# This function is used only in test_group_deterministic_iteration, but declared at top-level
+# because local function cannot be pickled, which occurs within multiprocessing.
 def run_tpe(k: int, sequence_dict: Dict[int, List[int]], hash_dict: Dict[int, int]) -> None:
     hash_dict[k] = hash("nondeterministic hash")
     sampler = TPESampler(n_startup_trials=1, seed=2, multivariate=True, group=True)
