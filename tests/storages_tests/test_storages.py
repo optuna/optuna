@@ -25,6 +25,7 @@ from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._redis import RedisStorage
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.testing.storage import STORAGE_MODES
@@ -1199,7 +1200,8 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
         )
 
 
-def test_fail_stale_trials() -> None:
+@pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
+def test_fail_stale_trials(storage_mode: str) -> None:
     heartbeat_interval = 1
     grace_period = 2
 
@@ -1207,8 +1209,8 @@ def test_fail_stale_trials() -> None:
         assert study.system_attrs["test"] == "A"
         assert trial.system_attrs["test"] == "B"
 
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
+    with StorageSupplier(storage_mode) as storage:
+        assert isinstance(storage, (RDBStorage, RedisStorage))
         storage.heartbeat_interval = heartbeat_interval
         storage.grace_period = grace_period
         storage.failed_trial_callback = failed_trial_callback

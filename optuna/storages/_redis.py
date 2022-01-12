@@ -103,9 +103,9 @@ class RedisStorage(BaseStorage):
 
         self._url = url
         self._redis = redis.Redis.from_url(url)
-        self._heartbeat_interval = heartbeat_interval
-        self._grace_period = grace_period
-        self._failed_trial_callback = failed_trial_callback
+        self.heartbeat_interval = heartbeat_interval
+        self.grace_period = grace_period
+        self.failed_trial_callback = failed_trial_callback
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
 
@@ -705,12 +705,12 @@ class RedisStorage(BaseStorage):
         return confirmed
 
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
-        assert self._heartbeat_interval is not None
+        assert self.heartbeat_interval is not None
 
-        if self._grace_period is None:
-            grace_period = 2 * self._heartbeat_interval
+        if self.grace_period is None:
+            grace_period = 2 * self.heartbeat_interval
         else:
-            grace_period = self._grace_period
+            grace_period = self.grace_period
 
         current_time = self._get_redis_time()
         heartbeats = self._redis.hgetall(self._key_study_heartbeats(study_id))
@@ -730,11 +730,11 @@ class RedisStorage(BaseStorage):
         return True
 
     def get_heartbeat_interval(self) -> Optional[int]:
-        return self._heartbeat_interval
+        return self.heartbeat_interval
 
     @staticmethod
     def _key_study_heartbeats(study_id: int) -> str:
         return "study_id:{:010d}:heartbeats".format(study_id)
 
     def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
-        return self._failed_trial_callback
+        return self.failed_trial_callback
