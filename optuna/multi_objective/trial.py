@@ -272,7 +272,7 @@ class FrozenMultiObjectiveTrial(object):
         self.n_objectives = n_objectives
         self._trial = trial
 
-        self.values = [trial.intermediate_values.get(i) for i in range(n_objectives)]
+        self.values = tuple(trial.intermediate_values.get(i) for i in range(n_objectives))
 
         intermediate_values: Dict[int, List[Optional[float]]] = {}
         for key, value in trial.intermediate_values.items():
@@ -377,9 +377,6 @@ class FrozenMultiObjectiveTrial(object):
         return hash(self._trial)
 
     # TODO(ohta): Implement `__repr__` method.
-
-    def _get_values(self) -> List[Optional[float]]:
-        return self.values
 
 
 def _normalize_value(value: Optional[float], direction: StudyDirection) -> float:

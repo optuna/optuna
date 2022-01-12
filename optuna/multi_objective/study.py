@@ -490,7 +490,7 @@ def _log_completed_trial(self: Study, trial: FrozenTrial) -> None:
         n_objectives,
         trial,
     )
-    actual_values = frozen_multi_objective_trial._get_values()
+    actual_values = frozen_multi_objective_trial.values
     _logger.info(
         "Trial {} finished with values: {} with parameters: {}.".format(
             trial.number, actual_values, trial.params
