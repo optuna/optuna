@@ -192,7 +192,6 @@ def _run_trial(
     func_err: Optional[Union[Exception, KeyboardInterrupt]] = None
     func_err_fail_exc_info: Optional[Any] = None
     stop_event: Optional[Event] = None
-    tell_err: Optional[Exception] = None
     thread: Optional[Thread] = None
 
     if study._storage.is_heartbeat_enabled():
