@@ -14,12 +14,17 @@ body:
     attributes:
       label: Environment
       description: |
-        Please give us some environment information. You can get this information by typing the following.
+        Please give us your environment information. You can get this information by typing the following.
         ```
         python -c 'import optuna; print(optuna.__version__)'
         python -c 'import platform; print(platform.python_version())'
         python -c 'import platform; print(platform.platform())'
         ```
+      value: |
+        - Optuna version:
+        - Python version:
+        - OS:
+        - (Optional) Other libraries and their versions:
     validations:
       required: true
   - type: textarea
@@ -44,11 +49,3 @@ body:
         ```
     validations:
       required: true
-  - type: textarea
-    id: additional-ianformation
-    attributes:
-      label: Additional information for reproducibility (optional)
-      description: If you ask how to use Optuna's functionality in your concrete codes, other related info are really helpful to answer your question.
-    validations:
-      required: true
-
