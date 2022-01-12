@@ -222,16 +222,10 @@ def _run_trial(
     # `Study.tell` may raise during trial post-processing.
     try:
         frozen_trial = study.tell(trial, values=value_or_values, state=state)
-    except Exception as e:
-        tell_err = e
+    except Exception:
+        frozen_trial = study._storage.get_trial(trial._trial_id)
         raise
     finally:
-        # Even if an error happens in Study.tell, this logging section
-        # should be reached. Because `frozen_trial` would not be assigned when
-        # Study.tell fails, it fetches the trial from the storage.
-        if tell_err is not None:
-            frozen_trial = study._storage.get_trial(trial._trial_id)
-
         if frozen_trial.state == TrialState.COMPLETE:
             study._log_completed_trial(frozen_trial)
         elif frozen_trial.state == TrialState.PRUNED:
