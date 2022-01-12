@@ -28,7 +28,6 @@ from optuna import Study
 from optuna import Trial
 from optuna import TrialPruned
 from optuna.exceptions import DuplicatedStudyError
-from optuna.storages import get_storage
 from optuna.study import StudyDirection
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
@@ -409,10 +408,6 @@ def test_load_study_study_name_none(storage_mode: str) -> None:
 def test_delete_study(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
-        # Get storage object because delete_study does not accept None.
-        storage = get_storage(storage=storage)
-        assert storage is not None
-
         # Test deleting a non-existing study.
         with pytest.raises(KeyError):
             delete_study("invalid-study-name", storage)
@@ -915,8 +910,6 @@ def test_callbacks(n_jobs: int) -> None:
 def test_get_trials(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
-        storage = get_storage(storage=storage)
-
         study = create_study(storage=storage)
         study.optimize(lambda t: t.suggest_int("x", 1, 5), n_trials=5)
 
@@ -940,8 +933,6 @@ def test_get_trials(storage_mode: str) -> None:
 def test_get_trials_state_option(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
-        storage = get_storage(storage=storage)
-
         study = create_study(storage=storage)
 
         def objective(trial: Trial) -> float:

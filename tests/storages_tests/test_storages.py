@@ -157,7 +157,6 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) ->
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_get_study_id_from_name_and_get_study_name_from_id.__name__
         study_name = function_name + "/" + storage_mode
-        storage = optuna.storages.get_storage(storage)
         study_id = storage.create_new_study(study_name=study_name)
 
         # Test existing study.
@@ -176,9 +175,6 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) ->
 def test_get_study_id_from_trial_id(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
-
-        # Generate unique study_name from the current function name and storage_mode.
-        storage = optuna.storages.get_storage(storage)
 
         # Check if trial_number starts from 0.
         study_id = storage.create_new_study()
@@ -434,8 +430,6 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
 def test_get_trial_number_from_id(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
-        storage = optuna.storages.get_storage(storage)
-
         # Check if trial_number starts from 0.
         study_id = storage.create_new_study()
 

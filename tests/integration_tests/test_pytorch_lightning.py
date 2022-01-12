@@ -134,7 +134,7 @@ def test_pytorch_lightning_pruning_callback_monitor_is_invalid() -> None:
         callback.on_validation_end(trainer, model)
 
 
-@pytest.mark.parametrize("storage_mode", ["sqlite", "cache"])
+@pytest.mark.parametrize("storage_mode", ["sqlite", "cached_sqlite"])
 def test_pytorch_lightning_pruning_callback_ddp_monitor(
     storage_mode: str,
 ) -> None:
