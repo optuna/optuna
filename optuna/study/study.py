@@ -651,7 +651,7 @@ class Study:
                 trial exists with that number.
 
         Returns:
-            A :class:`~optuna.trial.FrozenTrial`.
+            A :class:`~optuna.trial.FrozenTrial` representing the resulting trial.
         """
 
         if not isinstance(trial, (trial_module.Trial, int)):
