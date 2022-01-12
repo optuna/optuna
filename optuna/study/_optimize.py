@@ -2,7 +2,6 @@ from concurrent.futures import FIRST_COMPLETED
 from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import wait
-import copy
 import datetime
 import gc
 import itertools
@@ -10,10 +9,11 @@ import os
 import sys
 from threading import Event
 from threading import Thread
-from typing import Any, Sequence
+from typing import Any
 from typing import Callable
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Set
 from typing import Tuple
 from typing import Type
