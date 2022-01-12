@@ -80,8 +80,8 @@ Run the followings in the dataset directory.
 
 Finally, you can run the script of `benchmarks/run_kurobako.py`.
 ```bash
-% python benchmarks/run_kurobako.py
-          --path-to-kurobako "." \
+% python benchmarks/run_kurobako.py \
+          --path-to-kurobako "" \ # If the `kurobako` command is available.
           --name "performance-benchmarks" \
           --n-runs 10 \
           --n-jobs 10 \
