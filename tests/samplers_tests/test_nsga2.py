@@ -554,14 +554,22 @@ def test_crossover_invalid_population(crossover_name: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "crossover", [optuna.samplers.UniformCrossover(), optuna.samplers.BLXAlphaCrossover()]
+    "crossover",
+    [
+        optuna.samplers.UniformCrossover(),
+        optuna.samplers.BLXAlphaCrossover(),
+        optuna.samplers.SPXCrossover(),
+    ],
 )
 def test_crossover_numerical_distribution(crossover: optuna.samplers.BaseCrossover) -> None:
 
     study = optuna.study.create_study()
-    search_space = {"x": FloatDistribution(1, 10), "y": IntDistribution(1, 10)}
     rng = np.random.RandomState()
+    search_space = {"x": FloatDistribution(1, 10), "y": IntDistribution(1, 10)}
     parent_params = np.array([[1.0, 2], [3.0, 4]])
+
+    if crossover.n_parents == 3:
+        parent_params = np.append(parent_params, [[5.0, 6]], axis=0)
 
     child_params = crossover.crossover(parent_params, rng, study, search_space)
     assert child_params.ndim == 1
