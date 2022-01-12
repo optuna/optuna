@@ -10,9 +10,8 @@ import os
 import sys
 from threading import Event
 from threading import Thread
-from typing import Any
+from typing import Any, Sequence
 from typing import Callable
-from typing import cast
 from typing import List
 from typing import Optional
 from typing import Set
@@ -190,7 +189,7 @@ def _run_trial(
     trial = study.ask()
 
     state: Optional[TrialState] = None
-    value_or_values: Optional[Union[float, List[float]]] = None
+    value_or_values: Optional[Union[float, Sequence[float]]] = None
     func_err: Optional[Union[Exception, KeyboardInterrupt]] = None
     func_err_fail_exc_info: Optional[Any] = None
     stop_event: Optional[Event] = None
@@ -205,16 +204,7 @@ def _run_trial(
         thread.start()
 
     try:
-        # (a) `func` returns a float or a list of float points.
-        # (b) `study.tell` takes `Optional[Union[float, Sequence[float]]]` for values.
-        #
-        # To fill the gap, the result of `func` needed to be wrapped by `Optional`.
-        # `study.tell` must take an optional for `values` because it would be `None`
-        # when an error happens inside `func`.
-        value_or_values = cast(
-            Optional[Union[float, List[float]]],
-            func(trial),
-        )
+        value_or_values = func(trial)
     except exceptions.TrialPruned as e:
         # TODO(mamu): Handle multi-objective cases.
         state = TrialState.PRUNED
