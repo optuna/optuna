@@ -553,7 +553,9 @@ def test_crossover_invalid_population(crossover_name: str) -> None:
         )
 
 
-@pytest.mark.parametrize("crossover", [optuna.samplers.UniformCrossover()])
+@pytest.mark.parametrize(
+    "crossover", [optuna.samplers.UniformCrossover(), optuna.samplers.BLXAlphaCrossover()]
+)
 def test_crossover_numerical_distribution(crossover: optuna.samplers.BaseCrossover) -> None:
 
     study = optuna.study.create_study()
