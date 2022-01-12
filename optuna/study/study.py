@@ -627,7 +627,7 @@ class Study:
                 If ``state`` is :obj:`None`,
                 it will be updated to :class:`~optuna.trial.TrialState.COMPLETE`
                 or :class:`~optuna.trial.TrialState.FAIL` depending on whether
-                a validation for ``values`` reported succeed or not.
+                validation for ``values`` reported succeed or not.
             skip_if_finished:
                 Flag to control whether exception should be raised when values for already
                 finished trial are told. If :obj:`True`, tell is skipped without any error
