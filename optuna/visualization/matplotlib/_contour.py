@@ -17,6 +17,7 @@ from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _get_param_values
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 from optuna.visualization.matplotlib._utils import _is_log_scale
 from optuna.visualization.matplotlib._utils import _is_numerical
@@ -365,8 +366,8 @@ def _generate_contour_subplot(
     target: Optional[Callable[[FrozenTrial], float]],
 ) -> "ContourSet":
 
-    x_indices = sorted({t.params[x_param] for t in trials if x_param in t.params})
-    y_indices = sorted({t.params[y_param] for t in trials if y_param in t.params})
+    x_indices = sorted(set(_get_param_values(trials, x_param)))
+    y_indices = sorted(set(_get_param_values(trials, y_param)))
     if len(x_indices) < 2:
         _logger.warning("Param {} unique value length is less than 2.".format(x_param))
         return ax
