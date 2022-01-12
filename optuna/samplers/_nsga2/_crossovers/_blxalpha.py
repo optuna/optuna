@@ -39,7 +39,7 @@ class BLXAlphaCrossover(BaseCrossover):
         # Section 2 Crossover Operators for RCGA 2.1 Blend Crossover
 
         parents_min = parents_params.min(axis=0)
-        parents_max = parents_params.max(axis=1)
+        parents_max = parents_params.max(axis=0)
         diff = self._alpha * (parents_max - parents_min)  # Equation (1).
         low = parents_min - diff  # Equation (1).
         high = parents_max + diff  # Equation (1).
