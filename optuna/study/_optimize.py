@@ -156,7 +156,7 @@ def _optimize_sequential(
                 break
 
         try:
-            trial = _run_trial(study, func, catch)
+            frozen_trial = _run_trial(study, func, catch)
         except Exception:
             raise
         finally:
@@ -168,7 +168,6 @@ def _optimize_sequential(
                 gc.collect()
 
         if callbacks is not None:
-            frozen_trial = copy.deepcopy(study._storage.get_trial(trial._trial_id))
             for callback in callbacks:
                 callback(study, frozen_trial)
 
