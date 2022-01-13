@@ -652,6 +652,7 @@ class Study:
 
         Returns:
             A :class:`~optuna.trial.FrozenTrial` representing the resulting trial.
+            A returned trial is deep copied thus user can modify it as needed.
         """
 
         if not isinstance(trial, (trial_module.Trial, int)):
@@ -722,7 +723,7 @@ class Study:
                 f"{values} and state {state} since trial was already finished. "
                 f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
             )
-            return self._storage.get_trial(trial_id)
+            return copy.deepcopy(frozen_trial)
 
         if state == TrialState.PRUNED:
             # Register the last intermediate value if present as the value of the trial.
@@ -750,7 +751,7 @@ class Study:
             if state != TrialState.PRUNED and values_conversion_failure_message is not None:
                 self._storage.set_trial_state(trial_id, TrialState.FAIL)
                 _logger.warning(values_conversion_failure_message)
-                return self._storage.get_trial(trial_id)
+                return copy.deepcopy(self._storage.get_trial(trial_id))
 
         assert state is not None
 
@@ -763,7 +764,7 @@ class Study:
         finally:
             self._storage.set_trial_state_values(trial_id, state, values)
 
-        return self._storage.get_trial(trial_id)
+        return copy.deepcopy(self._storage.get_trial(trial_id))
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
