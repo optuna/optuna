@@ -494,3 +494,49 @@ There are two kinds of constrained optimizations, one with soft constraints and 
 Soft constraints do not have to be satisfied, but an objective function is penalized if they are unsatisfied. On the other hand, hard constraints must be satisfied.
 
 Optuna is adopting the soft one and **DOES NOT** support the hard one. In other words, Optuna **DOES NOT** have built-in samplers for the hard constraints.
+
+
+Can I monitor trials and make them failed automatically when they are killed by a scheduler?
+--------------------------------------------------------------------------------------------
+
+.. note::
+
+  Heartbeat mechanism is experimental. API would change in the future.
+
+Optuna supports monitoring trial heartbeats with RDB and Redis storages.
+Using heartbeat, if a process running a trial is killed by a scheduler in a cluster environment,
+Optuna will automatically change the state of the trial that was running on that process to `TrialState.FAIL`
+from `TrialState.RUNNING`.
+
+.. code-block:: python
+
+    import optuna
+
+    def objective(trial):
+        (Very time-consuming computation)
+
+    # Recording heartbeats every 60 seconds.
+    # Other processes' trials where more than 120 seconds have passed
+    # since the last heartbeat was recorded will be automatically failed.
+    storage = optuna.storages.RDBStorage(url=..., heartbeat_interval=60, grace_period=120)
+    study = optuna.create_study(storage=storage)
+    study.optimize(objective, n_trials=100)
+
+You can also execute a callback function to process the failed trial.
+Optuna provides a callback to retry failed trials as :class:`~optuna.storages.RetryFailedTrialCallback`.
+
+.. code-block:: python
+
+    import optuna
+    from optuna.storages import RetryFailedTrialCallback
+
+    storage = optuna.storages.RDBStorage(
+        url="sqlite:///:memory:",
+        heartbeat_interval=60,
+        grace_period=120,
+        failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
+    )
+
+    study = optuna.create_study(
+        storage=storage,
+    )
