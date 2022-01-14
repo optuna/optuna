@@ -9,7 +9,6 @@ import warnings
 
 import optuna
 from optuna import TrialPruned
-from optuna._experimental import experimental
 from optuna._imports import try_import
 from optuna.integration.allennlp._environment import _environment_variables
 from optuna.integration.allennlp._variables import _VariableManager
@@ -68,12 +67,8 @@ def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
     return kwargs
 
 
-@experimental("1.4.0")
 class AllenNLPExecutor(object):
     """AllenNLP extension to use optuna with Jsonnet config file.
-
-    This feature is experimental since AllenNLP major release will come soon.
-    The interface may change without prior notice to correspond to the update.
 
     See the examples of `objective function <https://github.com/optuna/optuna-examples/tree/
     main/allennlp/allennlp_jsonnet.py>`_.
