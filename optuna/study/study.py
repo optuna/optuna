@@ -708,15 +708,6 @@ class Study:
 
         frozen_trial = self._storage.get_trial(trial_id)
 
-        if state is None and values is None:
-            _logger.warning(
-                "Study.tell is called with `values` and `state` set to None but "
-                "you have to specify either `values` or `state` at least. "
-                "`values` is required if a trial finishes successfully or "
-                "`state` is required if a trial is fails or pruned."
-            )
-            state = TrialState.FAIL
-
         if frozen_trial.state.is_finished() and skip_if_finished:
             _logger.info(
                 f"Skipped telling trial {trial_number} with values "
@@ -724,6 +715,15 @@ class Study:
                 f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
             )
             return copy.deepcopy(frozen_trial)
+
+        if state is None and values is None:
+            warnings.warn(
+                "Study.tell is called with `values` and `state` set to None but "
+                "you have to specify either `values` or `state` at least. "
+                "`values` is required if a trial finishes successfully or "
+                "`state` is required if a trial is fails or pruned."
+            )
+            state = TrialState.FAIL
 
         if state == TrialState.PRUNED:
             # Register the last intermediate value if present as the value of the trial.
@@ -742,16 +742,18 @@ class Study:
             if state is None:
                 if values_conversion_failure_message is None:
                     state = TrialState.COMPLETE
+
+                # This path is reached when the objective returns invalid data
+                # including NaN or non-numerical points during Study.optimize.
                 else:
+                    warnings.warn(values_conversion_failure_message)
                     state = TrialState.FAIL
 
             # When called from `Study.optimize` and `state` is pruned, the given `values` contains
             # the intermediate value with the largest step so far. In this case, the value is
             # allowed to be NaN and errors should not be raised.
-            if state != TrialState.PRUNED and values_conversion_failure_message is not None:
-                self._storage.set_trial_state(trial_id, TrialState.FAIL)
-                _logger.warning(values_conversion_failure_message)
-                return copy.deepcopy(self._storage.get_trial(trial_id))
+            elif state != TrialState.PRUNED and values_conversion_failure_message is not None:
+                raise ValueError(values_conversion_failure_message)
 
         assert state is not None
 
