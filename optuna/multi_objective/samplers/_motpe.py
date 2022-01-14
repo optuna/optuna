@@ -183,7 +183,7 @@ def _create_trial(mo_trial: "multi_objective.trial.FrozenMultiObjectiveTrial") -
         warnings.simplefilter("ignore", ExperimentalWarning)
         trial = create_trial(
             state=mo_trial.state,
-            values=mo_trial.values,
+            values=mo_trial.values,  # type: ignore
             params=mo_trial.params,
             distributions=mo_trial.distributions,
             user_attrs=mo_trial.user_attrs,

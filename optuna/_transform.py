@@ -12,6 +12,7 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
@@ -193,6 +194,7 @@ def _transform_search_space(
                 IntUniformDistribution,
                 IntLogUniformDistribution,
                 FloatDistribution,
+                IntDistribution,
             ),
         ):
             if isinstance(d, UniformDistribution):
@@ -235,6 +237,18 @@ def _transform_search_space(
                     _transform_numerical_param(d.low - half_step, d, transform_log),
                     _transform_numerical_param(d.high + half_step, d, transform_log),
                 )
+            elif isinstance(d, IntDistribution):
+                half_step = 0.5 * d.step if transform_step else 0.0
+                if d.log:
+                    bds = (
+                        _transform_numerical_param(d.low - half_step, d, transform_log),
+                        _transform_numerical_param(d.high + half_step, d, transform_log),
+                    )
+                else:
+                    bds = (
+                        _transform_numerical_param(d.low, d, transform_log) - half_step,
+                        _transform_numerical_param(d.high, d, transform_log) + half_step,
+                    )
             else:
                 assert False, "Should not reach. Unexpected distribution."
 
@@ -273,6 +287,11 @@ def _transform_numerical_param(
         trans_param = float(param)
     elif isinstance(d, IntLogUniformDistribution):
         trans_param = math.log(param) if transform_log else float(param)
+    elif isinstance(d, IntDistribution):
+        if d.log:
+            trans_param = math.log(param) if transform_log else float(param)
+        else:
+            trans_param = float(param)
     else:
         assert False, "Should not reach. Unexpected distribution."
 
@@ -328,6 +347,14 @@ def _untransform_numerical_param(
             param = int(min(max(numpy.round(math.exp(trans_param)), d.low), d.high))
         else:
             param = int(trans_param)
+    elif isinstance(d, IntDistribution):
+        if d.log:
+            if transform_log:
+                param = int(min(max(numpy.round(math.exp(trans_param)), d.low), d.high))
+            else:
+                param = int(trans_param)
+        else:
+            param = int(numpy.round((trans_param - d.low) / d.step) * d.step + d.low)
     else:
         assert False, "Should not reach. Unexpected distribution."
 

@@ -1,3 +1,4 @@
+import functools
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -62,12 +63,6 @@ class MLflowCallback(object):
 
             shutil.rmtree(tempdir)
 
-        .. testoutput::
-            :hide:
-            :options: +NORMALIZE_WHITESPACE
-
-            INFO: 'my_study' does not exist. Creating a new experiment
-
         Add additional logging to MLflow
 
         .. testcode::
@@ -94,12 +89,6 @@ class MLflowCallback(object):
             study = optuna.create_study(study_name="my_other_study")
             study.optimize(objective, n_trials=10, callbacks=[mlflc])
 
-
-        .. testoutput::
-            :hide:
-            :options: +NORMALIZE_WHITESPACE
-
-            INFO: 'my_other_study' does not exist. Creating a new experiment
 
     Args:
         tracking_uri:
@@ -214,6 +203,7 @@ class MLflowCallback(object):
         """
 
         def decorator(func: ObjectiveFuncType) -> ObjectiveFuncType:
+            @functools.wraps(func)
             def wrapper(trial: optuna.trial.Trial) -> Union[float, Sequence[float]]:
                 study = trial.study
                 self._initialize_experiment(study)

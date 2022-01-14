@@ -68,7 +68,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "plotly>=4.0.0",
             "scikit-learn>=0.24.2",
             "scikit-optimize",
-            "mlflow<1.22.0",
+            "mlflow",
         ],
         "document": [
             # TODO(nzw): Remove the version constraint after resolving the issue
@@ -96,7 +96,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fakeredis",
             "lightgbm",
             "matplotlib>=3.0.0",
-            "mlflow<1.22.0",
+            "mlflow",
             "mpi4py",
             "mxnet",
             "pandas",
@@ -108,9 +108,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            # TODO(nzw0301): remove the upper version constraint when the callback supports
-            # pytorch-lightning==1.5.0.
-            "pytorch-lightning>=1.0.2,<1.5.0",
+            "pytorch-lightning>=1.5.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.10.0 ; sys_platform=='darwin'",
@@ -118,6 +116,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.11.1 ; sys_platform=='darwin'",
             "torchvision==0.11.1+cpu ; sys_platform!='darwin'",
             "torchaudio==0.10.0",
+            # TODO(himkt): Remove `nltk` after solving
+            # https://github.com/allenai/allennlp/issues/5521
+            "nltk<3.6.6",
             "allennlp>=2.2.0 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
@@ -138,7 +139,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "chainer>=5.0.0",
             "cma",
             "lightgbm",
-            "mlflow<1.22.0",
+            "mlflow",
             "wandb",
             "mpi4py",
             "mxnet",
@@ -149,9 +150,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow",
             "tensorflow-datasets",
             "pytorch-ignite",
-            # TODO(nzw0301): remove the upper version constraint when the callback supports
-            # pytorch-lightning==1.5.0.
-            "pytorch-lightning>=1.0.2,<1.5.0",
+            "pytorch-lightning>=1.5.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.10.0 ; sys_platform=='darwin'",
@@ -159,6 +158,9 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.11.1 ; sys_platform=='darwin'",
             "torchvision==0.11.1+cpu ; sys_platform!='darwin'",
             "torchaudio==0.10.0",
+            # TODO(himkt): Remove `nltk` after solving
+            # https://github.com/allenai/allennlp/issues/5521
+            "nltk<3.6.6",
             "allennlp>=2.2.0 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
             "fastai",
