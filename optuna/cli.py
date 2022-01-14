@@ -837,7 +837,7 @@ class _Tell(_BaseCommand):
         parser.add_argument("--study-name", type=str, help="Name of study.")
         parser.add_argument("--trial-number", type=int, help="Trial number.")
         parser.add_argument("--values", type=float, nargs="+", help="Objective values.")
-        parser.add_argument("--state", type=str, default="complete", help="Trial state.")
+        parser.add_argument("--state", type=Optional[str], help="Trial state.")
         parser.add_argument(
             "--skip-if-finished",
             default=False,
@@ -861,7 +861,11 @@ class _Tell(_BaseCommand):
             study_name=parsed_args.study_name,
         )
 
-        state = TrialState[parsed_args.state.upper()]
+        if parsed_args.state is not None:
+            state: Optional[TrialState] = TrialState[parsed_args.state.upper()]
+        else:
+            state = None
+
         trial_number = parsed_args.trial_number
         values = parsed_args.values
 
