@@ -1266,6 +1266,22 @@ def test_tell_pruned_values() -> None:
     study.tell(trial, state=TrialState.PRUNED)
     assert study.trials[-1].value is None
 
+    trial = study.ask()
+
+    trial.report(float("inf"), step=1)
+
+    study.tell(trial, state=TrialState.PRUNED)
+    assert study.trials[-1].value == float("inf")
+    assert study.trials[-1].state == TrialState.PRUNED
+
+    trial = study.ask()
+
+    trial.report(float("nan"), step=1)
+
+    study.tell(trial, state=TrialState.PRUNED)
+    assert study.trials[-1].value is None
+    assert study.trials[-1].state == TrialState.PRUNED
+
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_enqueued_trial_datetime_start(storage_mode: str) -> None:
