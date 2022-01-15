@@ -1,5 +1,6 @@
 from collections import Counter
 from typing import Callable
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -11,9 +12,11 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
+from optuna.samplers import BaseCrossover
 from optuna.samplers import BaseSampler
 from optuna.samplers import NSGAIISampler
 from optuna.samplers._nsga2.sampler import _CONSTRAINTS_KEY
@@ -484,28 +487,15 @@ def test_call_after_trial_of_random_sampler() -> None:
         assert mock_object.call_count == 1
 
 
-def test_crossover() -> None:
-    NSGAIISampler()
-    NSGAIISampler(crossover="uniform")
-    NSGAIISampler(crossover="blxalpha")
-    NSGAIISampler(crossover="sbx")
-    NSGAIISampler(crossover="vsbx")
-    NSGAIISampler(crossover="undx")
-    NSGAIISampler(crossover="spx")
-
-    with pytest.raises(ValueError):
-        NSGAIISampler(crossover="no_imp_crossover")
-
-
 parametrize_nsga2_sampler = pytest.mark.parametrize(
     "sampler_class",
     [
-        lambda: NSGAIISampler(population_size=2, crossover="uniform"),
-        lambda: NSGAIISampler(population_size=2, crossover="blxalpha"),
-        lambda: NSGAIISampler(population_size=2, crossover="sbx"),
-        lambda: NSGAIISampler(population_size=2, crossover="vsbx"),
-        lambda: NSGAIISampler(population_size=3, crossover="undx"),
-        lambda: NSGAIISampler(population_size=3, crossover="spx"),
+        lambda: NSGAIISampler(population_size=2, crossover=optuna.samplers.UniformCrossover()),
+        lambda: NSGAIISampler(population_size=2, crossover=optuna.samplers.BLXAlphaCrossover()),
+        lambda: NSGAIISampler(population_size=2, crossover=optuna.samplers.SBXCrossover()),
+        lambda: NSGAIISampler(population_size=2, crossover=optuna.samplers.VSBXCrossover()),
+        lambda: NSGAIISampler(population_size=3, crossover=optuna.samplers.UNDXCrossover()),
+        lambda: NSGAIISampler(population_size=3, crossover=optuna.samplers.UNDXCrossover()),
     ],
 )
 
@@ -539,13 +529,15 @@ def test_crossover_dims(n_params: int, sampler_class: Callable[[], BaseSampler])
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize("crossover_name", ["undx", "spx"])
-def test_crossover_invalid_population(crossover_name: str) -> None:
+@pytest.mark.parametrize(
+    "crossover", [optuna.samplers.UNDXCrossover(), optuna.samplers.SPXCrossover()]
+)
+def test_crossover_invalid_population(crossover: BaseCrossover) -> None:
     n_objectives = 2
     n_trials = 8
 
     with pytest.raises(ValueError):
-        sampler = NSGAIISampler(population_size=2, crossover=crossover_name)
+        sampler = NSGAIISampler(population_size=2, crossover=crossover)
         study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
         study.optimize(
             lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
@@ -584,7 +576,7 @@ def test_crossover_numerical_distribution(crossover: optuna.samplers.BaseCrossov
 def test_crossover_categorical_distribution() -> None:
 
     study = optuna.study.create_study()
-    search_space = {
+    search_space: Dict[str, BaseDistribution] = {
         "x": CategoricalDistribution(choices=["a", "c"]),
         "y": CategoricalDistribution(choices=["b", "d"]),
     }
