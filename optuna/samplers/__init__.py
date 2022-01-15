@@ -13,6 +13,7 @@ from optuna.samplers._nsga2._crossovers._blxalpha import BLXAlphaCrossover
 from optuna.samplers._nsga2._crossovers._sbx import SBXCrossover
 from optuna.samplers._nsga2._crossovers._spx import SPXCrossover
 from optuna.samplers._nsga2._crossovers._uniform import UniformCrossover
+from optuna.samplers._nsga2._crossovers._vsbx import VSBXCrossover
 
 
 __all__ = [
@@ -30,5 +31,6 @@ __all__ = [
     "SPXCrossover",
     "TPESampler",
     "UniformCrossover",
+    "VSBXCrossover",
     "intersection_search_space",
 ]
