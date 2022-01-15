@@ -559,6 +559,7 @@ def test_crossover_invalid_population(crossover_name: str) -> None:
         optuna.samplers.UniformCrossover(),
         optuna.samplers.BLXAlphaCrossover(),
         optuna.samplers.SPXCrossover(),
+        optuna.samplers.SBXCrossover(),
     ],
 )
 def test_crossover_numerical_distribution(crossover: optuna.samplers.BaseCrossover) -> None:

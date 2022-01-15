@@ -10,6 +10,7 @@ from optuna.samplers._tpe.multi_objective_sampler import MOTPESampler
 from optuna.samplers._tpe.sampler import TPESampler
 from optuna.samplers._nsga2._crossovers._base import BaseCrossover
 from optuna.samplers._nsga2._crossovers._blxalpha import BLXAlphaCrossover
+from optuna.samplers._nsga2._crossovers._sbx import SBXCrossover
 from optuna.samplers._nsga2._crossovers._spx import SPXCrossover
 from optuna.samplers._nsga2._crossovers._uniform import UniformCrossover
 
@@ -25,6 +26,7 @@ __all__ = [
     "NSGAIISampler",
     "PartialFixedSampler",
     "RandomSampler",
+    "SBXCrossover",
     "SPXCrossover",
     "TPESampler",
     "UniformCrossover",
