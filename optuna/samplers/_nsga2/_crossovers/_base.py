@@ -11,7 +11,7 @@ class BaseCrossover(object, metaclass=abc.ABCMeta):
     """Base class for crossovers.
 
     A crossover operation is used by :class:`~optuna.samplers.NSGAIISampler`
-    to create new parameter combination from parameters of `n` parent individuals.
+    to create new parameter combination from parameters of ``n`` parent individuals.
     """
 
     def __str__(self) -> str:
@@ -42,7 +42,7 @@ class BaseCrossover(object, metaclass=abc.ABCMeta):
                 A ``numpy.ndarray`` with dimensions ``num_parents x num_parameters``.
                 Represents a continuous parameter space for each parent individual.
             rng:
-                An instance of `numpy.random.RandomState`.
+                An instance of ``numpy.random.RandomState``.
             study:
                 Target study object.
             search_space:

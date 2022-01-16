@@ -25,9 +25,9 @@ class UNDXCrossover(BaseCrossover):
 
     Args:
         sigma_xi:
-            Parametrizes normal distribution from which `xi` is drawn.
+            Parametrizes normal distribution from which ``xi`` is drawn.
         sigma_eta:
-            Parametrizes normal distribution from which `etas` are drawn.
+            Parametrizes normal distribution from which ``etas`` are drawn.
             If not specified, defaults to ``0.35 / sqrt(len(search_space))``.
     """
 

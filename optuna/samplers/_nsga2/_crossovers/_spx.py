@@ -11,7 +11,7 @@ from optuna.study import Study
 
 @experimental("3.0.0")
 class SPXCrossover(BaseCrossover):
-    """A crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
+    """A Simplex Crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
 
     Uniformly samples child individuals from within a single simplex
     that is similar to the simplex produced by the parent individual.

@@ -8,7 +8,7 @@ from optuna.study import Study
 
 
 class UniformCrossover(BaseCrossover):
-    """A crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
+    """An Uniform Crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
 
     Select each parameter with equal probability from the two parent individuals.
     For further information about uniform crossover, please refer to the following paper:
@@ -17,6 +17,10 @@ class UniformCrossover(BaseCrossover):
       In Proceedings of the 3rd International Conference on Genetic Algorithms.
       Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, 2-9.
       <https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms>`_
+
+    Args:
+        swapping_prob:
+            Probability of swapping each parameter of the parents during crossover.
     """
 
     n_parents = 2

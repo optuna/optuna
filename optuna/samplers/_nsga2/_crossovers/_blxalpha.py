@@ -10,7 +10,7 @@ from optuna.study import Study
 
 @experimental("3.0.0")
 class BLXAlphaCrossover(BaseCrossover):
-    """A crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
+    """A Blend Crossover operation used by :class:`~optuna.samplers.NSGAIISampler`.
 
     Uniformly samples child individuals from the hyper-rectangles created
     by the two parent individuals. For further information about BLX-alpha crossover,
@@ -19,6 +19,10 @@ class BLXAlphaCrossover(BaseCrossover):
     - `Eshelman, L. and J. D. Schaffer.
       Real-Coded Genetic Algorithms and Interval-Schemata. FOGA (1992).
       <https://www.sciencedirect.com/science/article/abs/pii/B9780080948324500180>`_
+
+    Args:
+        alpha:
+            Parametrizes blend operation.
     """
 
     n_parents = 2
