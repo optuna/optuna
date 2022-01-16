@@ -20,5 +20,12 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
    optuna.samplers.PartialFixedSampler
    optuna.samplers.NSGAIISampler
    optuna.samplers.MOTPESampler
+   optuna.samplers.BaseCrossover
+   optuna.samplers.UniformCrossover
+   optuna.samplers.BLXAlphaCrossover
+   optuna.samplers.SPXCrossover
+   optuna.samplers.SBXCrossover
+   optuna.samplers.VSBXCrossover
+   optuna.samplers.UNDXCrossover
    optuna.samplers.IntersectionSearchSpace
    optuna.samplers.intersection_search_space
