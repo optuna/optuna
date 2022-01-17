@@ -36,13 +36,14 @@ def test_plot_optimization_history(direction: str) -> None:
     study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(study)
     assert len(figure.data) == 2
-    assert figure.data[0].x == (0, 1, 2)
-    assert figure.data[0].y == (1.0, 2.0, 0.0)
-    assert figure.data[1].x == (0, 1, 2)
+    assert np.array_equal(figure.data[0].x, [0, 1, 2])
+    assert np.array_equal(figure.data[0].y, [1.0, 2.0, 0.0])
+    assert np.array_equal(figure.data[1].x, [0, 1, 2])
+    ydata = figure.data[1].y
     if direction == "minimize":
-        assert np.array_equal(figure.data[1].y, [1.0, 1.0, 0.0])
+        assert np.array_equal(ydata, [1.0, 1.0, 0.0])
     else:
-        assert np.array_equal(figure.data[1].y, [1.0, 2.0, 2.0])
+        assert np.array_equal(ydata, [1.0, 2.0, 2.0])
     legend_texts = [x.name for x in figure.data]
     assert legend_texts == ["Objective Value", "Best Value"]
     assert figure.layout.yaxis.title.text == "Objective Value"
@@ -51,7 +52,7 @@ def test_plot_optimization_history(direction: str) -> None:
     with pytest.warns(UserWarning):
         figure = plot_optimization_history(study, target=lambda t: t.number)
     assert len(figure.data) == 1
-    assert np.array_equal(figure.data[0].x, [0.0, 1.0, 2.0])
+    assert np.array_equal(figure.data[0].x, [0, 1, 2])
     assert np.array_equal(figure.data[0].y, [0.0, 1.0, 2.0])
 
     # Test customized target name.
@@ -96,9 +97,9 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
         study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(studies)
     assert len(figure.data) == 2 * n_studies
-    assert figure.data[0].x == (0, 1, 2)
-    assert figure.data[0].y == (1.0, 2.0, 0.0)
-    assert figure.data[1].x == (0, 1, 2)
+    assert np.array_equal(figure.data[0].x, [0, 1, 2])
+    assert np.array_equal(figure.data[0].y, [1.0, 2.0, 0.0])
+    assert np.array_equal(figure.data[1].x, [0, 1, 2])
     ydata = figure.data[1].y
     if direction == "minimize":
         assert np.array_equal(ydata, [1.0, 1.0, 0.0])

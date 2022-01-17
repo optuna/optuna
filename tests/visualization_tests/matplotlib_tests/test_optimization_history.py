@@ -36,7 +36,7 @@ def test_plot_optimization_history(direction: str) -> None:
     study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(study)
     assert len(figure.get_lines()) == 1
-    assert list(figure.get_lines()[0].get_xdata()) == [0, 1, 2]
+    assert np.array_equal(figure.get_lines()[0].get_xdata(), [0, 1, 2])
     ydata = figure.get_lines()[0].get_ydata()
     if direction == "minimize":
         assert np.array_equal(ydata, [1.0, 1.0, 0.0])
@@ -50,9 +50,9 @@ def test_plot_optimization_history(direction: str) -> None:
     with pytest.warns(UserWarning):
         figure = plot_optimization_history(study, target=lambda t: t.number)
     assert len(figure.get_lines()) == 0
-    offsets = figure.collections[0].get_offsets()
-    assert np.array_equal(offsets.data[:, 0], [0.0, 1.0, 2.0])
-    assert np.array_equal(offsets.data[:, 1], [0.0, 1.0, 2.0])
+    xydata = figure.collections[0].get_offsets().data
+    assert np.array_equal(xydata[:, 0], [0.0, 1.0, 2.0])
+    assert np.array_equal(xydata[:, 1], [0.0, 1.0, 2.0])
 
     # Test customized target name.
     figure = plot_optimization_history(study, target_name="Target Name")
@@ -98,7 +98,7 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     figure = plot_optimization_history(studies)
     assert len(figure.get_lines()) == n_studies
     for i in range(n_studies):
-        assert list(figure.get_lines()[i].get_xdata()) == [0, 1, 2]
+        assert np.array_equal(figure.get_lines()[i].get_xdata(), [0, 1, 2])
         ydata = figure.get_lines()[i].get_ydata()
         if direction == "minimize":
             assert np.array_equal(ydata, [1.0, 1.0, 0.0])
@@ -117,9 +117,9 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
         figure = plot_optimization_history(studies, target=lambda t: t.number)
     assert len(figure.get_lines()) == 0
     assert len(figure.get_legend().get_texts()) == n_studies
-    offsets = figure.collections[0].get_offsets()
-    assert np.array_equal(offsets.data[:, 0], [0.0, 1.0, 2.0])
-    assert np.array_equal(offsets.data[:, 1], [0.0, 1.0, 2.0])
+    xydata = figure.collections[0].get_offsets()
+    assert np.array_equal(xydata[:, 0], [0.0, 1.0, 2.0])
+    assert np.array_equal(xydata[:, 1], [0.0, 1.0, 2.0])
 
     # Test customized target name.
     custom_target_name = "Target Name"
@@ -170,7 +170,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
 
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.get_lines()) == 4
-    assert list(figure.get_lines()[-1].get_xdata()) == [0, 1, 2]
+    assert np.array_equal(figure.get_lines()[-1].get_xdata(), [0, 1, 2])
     ydata = figure.get_lines()[-1].get_ydata()
     if direction == "minimize":
         assert np.array_equal(ydata, [1.0, 1.0, 0.0])
@@ -183,9 +183,9 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     with pytest.warns(UserWarning):
         figure = plot_optimization_history(studies, target=lambda t: t.number, error_bar=True)
     assert len(figure.get_lines()) == 3
-    offsets = figure.collections[1].get_offsets()
-    assert np.array_equal(offsets.data[:, 0], [0.0, 1.0, 2.0])
-    assert np.array_equal(offsets.data[:, 1], [0.0, 1.0, 2.0])
+    xydata = figure.collections[1].get_offsets()
+    assert np.array_equal(xydata[:, 0], [0.0, 1.0, 2.0])
+    assert np.array_equal(xydata[:, 1], [0.0, 1.0, 2.0])
 
     # Test customized target name.
     target_name = "Target Name"
