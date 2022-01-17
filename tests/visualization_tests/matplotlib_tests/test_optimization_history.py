@@ -37,20 +37,29 @@ def test_plot_optimization_history(direction: str) -> None:
     figure = plot_optimization_history(study)
     assert len(figure.get_lines()) == 1
     assert list(figure.get_lines()[0].get_xdata()) == [0, 1, 2]
+    ydata = figure.get_lines()[0].get_ydata()
     if direction == "minimize":
-        assert list(figure.get_lines()[0].get_ydata()) == [1.0, 1.0, 0.0]
+        assert np.array_equal(ydata, [1.0, 1.0, 0.0])
     else:
-        assert list(figure.get_lines()[0].get_ydata()) == [1.0, 2.0, 2.0]
+        assert np.array_equal(ydata, [1.0, 2.0, 2.0])
+    legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
+    assert legend_texts == ["Objective Value", "Best Value"]
+    assert figure.get_ylabel() == "Objective Value"
 
     # Test customized target.
     with pytest.warns(UserWarning):
         figure = plot_optimization_history(study, target=lambda t: t.number)
     assert len(figure.get_lines()) == 0
+    offsets = figure.collections[0].get_offsets()
+    assert np.array_equal(offsets.data[:, 0], [0.0, 1.0, 2.0])
+    assert np.array_equal(offsets.data[:, 1], [0.0, 1.0, 2.0])
 
     # Test customized target name.
     figure = plot_optimization_history(study, target_name="Target Name")
     assert len(figure.get_lines()) == 1
-    assert figure.yaxis.label.get_text() == "Target Name"
+    legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
+    assert legend_texts == ["Target Name", "Best Value"]
+    assert figure.get_ylabel() == "Target Name"
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
@@ -90,30 +99,34 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     assert len(figure.get_lines()) == n_studies
     for i in range(n_studies):
         assert list(figure.get_lines()[i].get_xdata()) == [0, 1, 2]
+        ydata = figure.get_lines()[i].get_ydata()
         if direction == "minimize":
-            assert list(figure.get_lines()[i].get_ydata()) == [1.0, 1.0, 0.0]
+            assert np.array_equal(ydata, [1.0, 1.0, 0.0])
         else:
-            assert list(figure.get_lines()[i].get_ydata()) == [1.0, 2.0, 2.0]
+            assert np.array_equal(ydata, [1.0, 2.0, 2.0])
     expected_legend_texts = []
     for i in range(n_studies):
-        expected_legend_texts.append(f"Best Values of {studies[i].study_name}")
+        expected_legend_texts.append(f"Best Value of {studies[i].study_name}")
         expected_legend_texts.append(f"Objective Value of {studies[i].study_name}")
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == sorted(expected_legend_texts)
+    assert figure.get_ylabel() == "Objective Value"
 
     # Test customized target.
     with pytest.warns(UserWarning):
         figure = plot_optimization_history(studies, target=lambda t: t.number)
     assert len(figure.get_lines()) == 0
     assert len(figure.get_legend().get_texts()) == n_studies
+    offsets = figure.collections[0].get_offsets()
+    assert np.array_equal(offsets.data[:, 0], [0.0, 1.0, 2.0])
+    assert np.array_equal(offsets.data[:, 1], [0.0, 1.0, 2.0])
 
     # Test customized target name.
     custom_target_name = "Target Name"
     figure = plot_optimization_history(studies, target_name=custom_target_name)
-
     expected_legend_texts = []
     for i in range(n_studies):
-        expected_legend_texts.append(f"Best Values of {studies[i].study_name}")
+        expected_legend_texts.append(f"Best Value of {studies[i].study_name}")
         expected_legend_texts.append(f"{custom_target_name} of {studies[i].study_name}")
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == sorted(expected_legend_texts)
@@ -158,11 +171,11 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.get_lines()) == 4
     assert list(figure.get_lines()[-1].get_xdata()) == [0, 1, 2]
+    ydata = figure.get_lines()[-1].get_ydata()
     if direction == "minimize":
-        assert list(figure.get_lines()[-1].get_ydata()) == [1.0, 1.0, 0.0]
+        assert np.array_equal(ydata, [1.0, 1.0, 0.0])
     else:
-        assert list(figure.get_lines()[-1].get_ydata()) == [1.0, 2.0, 2.0]
-
+        assert np.array_equal(ydata, [1.0, 2.0, 2.0])
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == ["Best Value", "Objective Value"]
 
@@ -170,11 +183,16 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     with pytest.warns(UserWarning):
         figure = plot_optimization_history(studies, target=lambda t: t.number, error_bar=True)
     assert len(figure.get_lines()) == 3
+    offsets = figure.collections[1].get_offsets()
+    assert np.array_equal(offsets.data[:, 0], [0.0, 1.0, 2.0])
+    assert np.array_equal(offsets.data[:, 1], [0.0, 1.0, 2.0])
 
     # Test customized target name.
-    figure = plot_optimization_history(studies, target_name="Target Name", error_bar=True)
+    target_name = "Target Name"
+    figure = plot_optimization_history(studies, target_name=target_name, error_bar=True)
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
-    assert sorted(legend_texts) == ["Best Value", "Target Name"]
+    assert sorted(legend_texts) == ["Best Value", target_name]
+    assert figure.get_ylabel() == target_name
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
