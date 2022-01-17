@@ -14,8 +14,8 @@ def test_target_is_none_and_study_is_multi_obj() -> None:
         plot_edf(study)
 
 
-def _validate(y_values: Sequence[float]) -> None:
-    np_values = np.array(y_values)
+def _validate_edf_values(edf_values: Sequence[float]) -> None:
+    np_values = np.array(edf_values)
     # This line confirms that the values are monotonically non-decreasing.
     assert np.all(np_values[1:] - np_values[:-1] >= 0)
     # This line confirms that the values are in [0,1].
@@ -40,7 +40,7 @@ def test_plot_optimization_history(direction: str) -> None:
     study0.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
     figure = plot_edf(study0)
     lines = figure.get_lines()
-    _validate(lines[0].get_ydata())
+    _validate_edf_values(lines[0].get_ydata())
     assert len(lines) == 1
     assert figure.xaxis.label.get_text() == "Objective Value"
 
@@ -50,13 +50,13 @@ def test_plot_optimization_history(direction: str) -> None:
     figure = plot_edf([study0, study1])
     lines = figure.get_lines()
     for line in lines:
-        _validate(line.get_ydata())
+        _validate_edf_values(line.get_ydata())
     assert len(lines) == 2
 
     figure = plot_edf((study0, study1))
     lines = figure.get_lines()
     for line in lines:
-        _validate(line.get_ydata())
+        _validate_edf_values(line.get_ydata())
     assert len(lines) == 2
 
     # Test with a customized target value.
@@ -65,7 +65,7 @@ def test_plot_optimization_history(direction: str) -> None:
     with pytest.warns(UserWarning):
         figure = plot_edf(study0, target=lambda t: t.params["x"])
     lines = figure.get_lines()
-    _validate(lines[0].get_ydata())
+    _validate_edf_values(lines[0].get_ydata())
     assert len(lines) == 1
 
     # Test with a customized target name.
@@ -73,6 +73,6 @@ def test_plot_optimization_history(direction: str) -> None:
     study0.optimize(lambda t: t.suggest_float("x", 0, 5), n_trials=10)
     figure = plot_edf(study0, target_name="Target Name")
     lines = figure.get_lines()
-    _validate(lines[0].get_ydata())
+    _validate_edf_values(lines[0].get_ydata())
     assert len(figure.get_lines()) == 1
     assert figure.xaxis.label.get_text() == "Target Name"
