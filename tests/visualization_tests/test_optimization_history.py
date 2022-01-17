@@ -177,7 +177,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
         assert np.array_equal(ydata, [1.0, 1.0, 0.0])
     else:
         assert np.array_equal(ydata, [1.0, 2.0, 2.0])
-    # Scatters for error bar don't have `name`
+    # Scatters for error bar don't have `name`.
     legend_texts = [scatter.name for scatter in figure.data if scatter.name is not None]
     assert sorted(legend_texts) == ["Best Value", "Objective Value"]
     assert figure.layout.yaxis.title.text == "Objective Value"
