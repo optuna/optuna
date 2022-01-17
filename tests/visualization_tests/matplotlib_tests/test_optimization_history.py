@@ -55,11 +55,12 @@ def test_plot_optimization_history(direction: str) -> None:
     assert np.array_equal(xydata[:, 1], [0.0, 1.0, 2.0])
 
     # Test customized target name.
-    figure = plot_optimization_history(study, target_name="Target Name")
+    custom_target_name = "Target Name"
+    figure = plot_optimization_history(study, target_name=custom_target_name)
     assert len(figure.get_lines()) == 1
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
-    assert legend_texts == ["Target Name", "Best Value"]
-    assert figure.get_ylabel() == "Target Name"
+    assert legend_texts == [custom_target_name, "Best Value"]
+    assert figure.get_ylabel() == custom_target_name
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
@@ -188,11 +189,11 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     assert np.array_equal(xydata[:, 1], [0.0, 1.0, 2.0])
 
     # Test customized target name.
-    target_name = "Target Name"
-    figure = plot_optimization_history(studies, target_name=target_name, error_bar=True)
+    custom_target_name = "Target Name"
+    figure = plot_optimization_history(studies, target_name=custom_target_name, error_bar=True)
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
-    assert sorted(legend_texts) == ["Best Value", target_name]
-    assert figure.get_ylabel() == target_name
+    assert sorted(legend_texts) == ["Best Value", custom_target_name]
+    assert figure.get_ylabel() == custom_target_name
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
