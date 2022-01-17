@@ -43,7 +43,7 @@ def test_plot_optimization_history(direction: str) -> None:
     else:
         assert np.array_equal(ydata, [1.0, 2.0, 2.0])
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
-    assert legend_texts == ["Objective Value", "Best Value"]
+    assert sorted(legend_texts) == ["Best Value", "Objective Value"]
     assert figure.get_ylabel() == "Objective Value"
 
     # Test customized target.
@@ -59,7 +59,7 @@ def test_plot_optimization_history(direction: str) -> None:
     figure = plot_optimization_history(study, target_name=custom_target_name)
     assert len(figure.get_lines()) == 1
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
-    assert legend_texts == [custom_target_name, "Best Value"]
+    assert sorted(legend_texts) == ["Best Value", custom_target_name]
     assert figure.get_ylabel() == custom_target_name
 
     # Ignore failed trials.
