@@ -20,6 +20,7 @@ We explain both of method here.
 
 You need a write access on the repository.
 Please run the following steps in your own forks.
+Note that you should pull the latest master branch of [Optuna](https://github.com/optuna/optuna) since the workflow YAML file must be placed in the default branch of the repository.
 
 1. Open the GitHub page of your forked Optuna repository.
 2. Click the `Actions` below the repository name.
