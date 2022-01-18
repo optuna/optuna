@@ -68,10 +68,6 @@ class Trial(BaseTrial):
             study, trial, self.relative_search_space
         )
 
-    def modify_result(self, trial, values, state, func_err):
-
-        return values, state, func_err
-
     def suggest_float(
         self,
         name: str,

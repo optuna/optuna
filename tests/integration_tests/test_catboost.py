@@ -53,6 +53,9 @@ def test_catboost_pruning_callback() -> None:
             callbacks=[pruning_callback],
         )
 
+        # evoke pruning manually.
+        pruning_callback.check_pruned()
+
         return 1.0
 
     study = optuna.create_study(pruner=DeterministicPruner(True))
@@ -93,6 +96,9 @@ def test_catboost_pruning_callback_init_param(metric: str, valid_name: str) -> N
             verbose=0,
             callbacks=[pruning_callback],
         )
+
+        # evoke pruning manually.
+        pruning_callback.check_pruned()
 
         return 1.0
 
@@ -135,6 +141,9 @@ def test_catboost_pruning_callback_errors(metric: str, valid_name: str) -> None:
             verbose=0,
             callbacks=[pruning_callback],
         )
+
+        # evoke pruning manually.
+        pruning_callback.check_pruned()
 
         return 1.0
 

@@ -229,9 +229,6 @@ def _run_trial(
         else:
             state = TrialState.COMPLETE
 
-    # add pruned check for catboost
-    values, state, func_err = trial.modify_result(trial, values, state, func_err)
-
     if study._storage.is_heartbeat_enabled():
         assert stop_event is not None
         assert thread is not None

@@ -4,7 +4,6 @@ from packaging import version
 
 import optuna
 from optuna._imports import try_import
-from optuna.trial import TrialState
 
 
 with try_import() as _imports:
@@ -14,22 +13,10 @@ with try_import() as _imports:
         raise ImportError(f"You don't have CatBoost installed! CatBoost version: {cb.__version__}")
 
 
-def modify_result(trial, values, state, func_err):
-    if trial.user_attrs.get("pruned") is True:
-        step = trial.user_attrs.get("step")
-        state = TrialState.PRUNED
-        func_err = optuna.TrialPruned("Trial was pruned at epoch {}.".format(step))
-        values = None
-
-    return values, state, func_err
-
-
 class CatBoostPruningCallback(object):
     """Callback for catboost to prune unpromising trials.
 
-    See `the example <https://github.com/optuna/optuna-examples/blob/main/
-    catboost/catboost_integration.py>`__
-    if you want to add a pruning callback which observes validation accuracy.
+    You must call `check_pruned` after training manually unlike other pruning callbacks.
 
     Args:
         trial:
@@ -52,7 +39,6 @@ class CatBoostPruningCallback(object):
     def __init__(
         self, trial: optuna.trial.Trial, metric: str, valid_name: str = "validation"
     ) -> None:
-        trial.modify_result = modify_result
         self._trial = trial
         self._metric = metric
         self._valid_name = valid_name
@@ -60,7 +46,21 @@ class CatBoostPruningCallback(object):
         self._message = ""
 
     def after_iteration(self, info: Any) -> bool:
-        """Run after each iteration."""
+        """Run after each iteration.
+
+        Args:
+            info:
+                A ``simpleNamespace`` containing iteraion, ``validation_name``, ``metric_name``
+                and history of losses.
+                For example ``namespace(iteration=2, metrics= {
+                'learn': {'Logloss': [0.6, 0.5]},
+                'validation': {'Logloss': [0.7, 0.6], 'AUC': [0.8, 0.9]}
+                })``.
+
+        Returns:
+            A boolean value. If :obj:`True`, the trial should be pruned.
+            Otherwise, the trial should continue.
+        """
         step = info.iteration - 1
         if self._valid_name not in info.metrics:
             raise ValueError(
@@ -73,11 +73,15 @@ class CatBoostPruningCallback(object):
                 'The entry associated with the metric name "{}" '
                 "is not found in the evaluation result list {}.".format(self._metric, info)
             )
-        scores = metrics[self._metric]
-        current_score = scores[-1]
+        current_score = metrics[self._metric][-1]
         self._trial.report(current_score, step=step)
         if self._trial.should_prune():
-            self._trial.set_user_attr("pruned", True)
-            self._trial.set_user_attr("step", step)
+            self._message = "Trial was pruned at iteration {}.".format(step)
+            self._pruned = True
             return False
         return True
+
+    def check_pruned(self) -> None:
+        """Check whether pruend."""
+        if self._pruned:
+            raise optuna.TrialPruned(self._message)
