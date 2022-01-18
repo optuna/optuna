@@ -71,9 +71,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow",
         ],
         "document": [
-            # TODO(nzw): Remove the version constraint after resolving the issue
-            # https://github.com/optuna/optuna/issues/2658.
-            "sphinx<4.0.0",
+            "sphinx",
             "sphinx_rtd_theme",
             "sphinx-copybutton",
             "sphinx-gallery",
