@@ -16,6 +16,9 @@ with try_import() as _imports:
 class CatBoostPruningCallback(object):
     """Callback for catboost to prune unpromising trials.
 
+    If TrialPruned is raised at after_iteration in CatBoostPruningCallback, then catboost exits
+    with error. So we add `checked_pruned` function in which TrialPruned is raised if pruning is
+    nessasary.
     You must call `check_pruned` after training manually unlike other pruning callbacks.
 
     Args:
