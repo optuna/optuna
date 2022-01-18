@@ -221,3 +221,17 @@ def test_plot_contour_mixture_category_types() -> None:
     figure = plot_contour(study)
     assert figure.get_xlim() == (-0.05, 1.05)
     assert figure.get_ylim() == (100.95, 102.05)
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        ["param_a", "param_b"],
+        ["param_b", "param_a"],
+    ],
+)
+def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
+
+    study = prepare_study_with_trials(less_than_two=True)
+    figure = plot_contour(study, params)
+    assert not figure.has_data()
