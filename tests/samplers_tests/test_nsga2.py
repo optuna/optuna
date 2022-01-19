@@ -5,6 +5,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
 
@@ -588,3 +589,19 @@ def test_crossover_categorical_distribution() -> None:
     assert child_params.ndim == 1
     assert len(child_params) == len(search_space)
     assert all([isinstance(param, str) for param in child_params])
+
+
+@pytest.mark.parametrize("parent_index", [0, 1])
+def test_uniform_crossover_deterministic(parent_index: int) -> None:
+
+    study = optuna.create_study()
+    search_space = {"x": FloatDistribution(1, 10), "y": IntDistribution(1, 10)}
+    parent_params = np.array([[1.0, 2], [3.0, 4]])
+
+    rng = Mock()
+    rng_values = np.full(len(search_space), fill_value=parent_index, dtype=float)
+    rng.rand = Mock(return_value=rng_values)
+
+    crossover = optuna.samplers.UniformCrossover()
+    child_params = crossover.crossover(parent_params, rng, study, search_space)
+    np.testing.assert_equal(child_params, parent_params[parent_index])

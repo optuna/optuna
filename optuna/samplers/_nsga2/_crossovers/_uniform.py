@@ -41,7 +41,7 @@ class UniformCrossover(BaseCrossover):
         # Section 1 Introduction
 
         n_params = len(search_space)
-        masks = (rng.rand(n_params) < self._swapping_prob).astype(int)
+        masks = (rng.rand(n_params) > self._swapping_prob).astype(int)
         child_params = parents_params[masks, range(n_params)]
 
         return child_params
