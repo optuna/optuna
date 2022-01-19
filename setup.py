@@ -168,6 +168,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "benchmark": [
             "asv",
             "virtualenv",
+            "botorch",
         ],
     }
 
