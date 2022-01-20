@@ -109,6 +109,8 @@ def test_loaded_trials(storage_url: str) -> None:
         (-float("inf"), -float("inf")),
         (np.finfo(np.float32).max, float("inf")),
         (np.finfo(np.float32).min, -float("inf")),
+        (np.finfo(np.float64).max, float("inf")),
+        (np.finfo(np.float64).min, -float("inf")),
     ],
 )
 def test_store_infinite_values(input: float, expected: float, storage_url: str) -> None:
