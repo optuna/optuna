@@ -221,6 +221,7 @@ def _run_trial(
     # `Study.tell` may raise during trial post-processing.
     try:
         with warnings.catch_warnings(record=True) as tell_warnings:
+            warnings.simplefilter("always", UserWarning)
             frozen_trial = study.tell(trial, values=value_or_values, state=state)
     except Exception:
         frozen_trial = study._storage.get_trial(trial._trial_id)
