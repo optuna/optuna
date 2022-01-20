@@ -21,13 +21,13 @@ from optuna.visualization.matplotlib._contour import AXES_PADDING_RATIO
 
 def test_create_zmap() -> None:
 
-    x_values = np.arange(10).tolist()
-    y_values = np.arange(10).tolist()
+    x_values = np.arange(10)
+    y_values = np.arange(10)
     z_values = list(np.random.rand(10))
 
     # we are testing for exact placement of z_values
     # so also passing x_values and y_values as xi and yi
-    zmap = _create_zmap(x_values, y_values, z_values, x_values, y_values)
+    zmap = _create_zmap(x_values.tolist(), y_values.tolist(), z_values, x_values, y_values)
 
     assert len(zmap) == len(z_values)
     for coord, value in zmap.items():
