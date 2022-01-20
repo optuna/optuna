@@ -4,12 +4,11 @@ FROM python:${PYTHON_VERSION}
 
 ENV PIP_OPTIONS "--no-cache-dir --progress-bar off"
 
-# TODO(nzw0301): remove setuptools version constraint after resolving https://github.com/mpi4py/mpi4py/issues/157
 RUN apt-get update \
     && apt-get -y install openmpi-bin libopenmpi-dev libopenblas-dev \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir -U pip \
-    && pip install ${PIP_OPTIONS} -U "setuptools<60.1.0"
+    && pip install ${PIP_OPTIONS} -U setuptools
 
 WORKDIR /workspaces
 COPY . .
