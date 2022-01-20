@@ -1,4 +1,5 @@
 from collections import Counter
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -590,18 +591,46 @@ def test_crossover_categorical_distribution() -> None:
     assert len(child_params) == len(search_space)
     assert all([isinstance(param, str) for param in child_params])
 
+    # Is child param from correct distribution?
+    search_space["x"].to_internal_repr(child_params[0])
+    search_space["y"].to_internal_repr(child_params[1])
 
-@pytest.mark.parametrize("parent_index", [0, 1])
-def test_uniform_crossover_deterministic(parent_index: int) -> None:
 
-    study = optuna.create_study()
-    search_space = {"x": FloatDistribution(1, 10), "y": IntDistribution(1, 10)}
-    parent_params = np.array([[1.0, 2], [3.0, 4]])
+@pytest.mark.parametrize(
+    "crossover,expected_params",
+    [
+        (optuna.samplers.UniformCrossover(), np.array([3.0, 4.0])),
+        (optuna.samplers.BLXAlphaCrossover(), np.array([2.0, 3.0])),
+        (optuna.samplers.SPXCrossover(), np.array([2.75735931, 3.75735931])),
+        (optuna.samplers.SBXCrossover(), np.array([3.0, 4.0])),
+        (optuna.samplers.VSBXCrossover(), np.array([3.0, 4.0])),
+        (optuna.samplers.UNDXCrossover(), np.array([1.0, 2.0])),
+    ],
+)
+def test_crossover_deterministic(crossover: BaseCrossover, expected_params: np.ndarray) -> None:
+
+    study = optuna.study.create_study()
+    search_space: Dict[str, BaseDistribution] = {
+        "x": FloatDistribution(1, 10),
+        "y": FloatDistribution(1, 10),
+    }
+    parent_params = np.array([[1.0, 2.0], [3.0, 4.0]])
+
+    if crossover.n_parents == 3:
+        parent_params = np.append(parent_params, [[5.0, 6.0]], axis=0)
+
+    def _rand(*args: Any, **kwargs: Any) -> Any:
+        if len(args) == 0:
+            return 0.5
+        return np.full(args[0], 0.5)
+
+    def _normal(*args: Any, **kwargs: Any) -> Any:
+        if kwargs.get("size") is None:
+            return 0.5
+        return np.full(kwargs.get("size"), 0.5)  # type: ignore
 
     rng = Mock()
-    rng_values = np.full(len(search_space), fill_value=parent_index, dtype=float)
-    rng.rand = Mock(return_value=rng_values)
-
-    crossover = optuna.samplers.UniformCrossover()
+    rng.rand = Mock(side_effect=_rand)
+    rng.normal = Mock(side_effect=_normal)
     child_params = crossover.crossover(parent_params, rng, study, search_space)
-    np.testing.assert_equal(child_params, parent_params[parent_index])
+    np.testing.assert_almost_equal(child_params, expected_params)
