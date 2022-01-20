@@ -776,6 +776,7 @@ def _calculate_weights_below_for_multi_objective(
 
     # Calculate weights based on hypervolume contributions.
     n_below = len(lvals)
+    weights_below: np.ndarray
     if n_below == 0:
         weights_below = np.asarray([])
     elif n_below == 1:

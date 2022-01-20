@@ -21,8 +21,8 @@ from optuna.visualization.matplotlib._contour import AXES_PADDING_RATIO
 
 def test_create_zmap() -> None:
 
-    x_values = np.arange(10)
-    y_values = np.arange(10)
+    x_values = np.arange(10).tolist()
+    y_values = np.arange(10).tolist()
     z_values = list(np.random.rand(10))
 
     # we are testing for exact placement of z_values
