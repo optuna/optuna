@@ -182,7 +182,9 @@ class _ParzenEstimator:
                 assert sigmas is not None
 
                 cdf_func = _ParzenEstimator._normal_cdf
-                p_accept = cdf_func(np.asarray(high), mus, sigmas) - cdf_func(np.asarray(low), mus, sigmas)
+                p_accept = cdf_func(np.asarray(high), mus, sigmas) - cdf_func(
+                    np.asarray(low), mus, sigmas
+                )
                 if q is None:
                     distance = samples[:, None] - mus
                     mahalanobis = distance / np.maximum(sigmas, EPS)
