@@ -42,7 +42,7 @@ class LightGBMPruningCallback(object):
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/
     lightgbm/lightgbm_integration.py>`__
-    if you want to add a pruning callback which observes AUC
+    if you want to add a pruning callback which observes accuracy
     of a LightGBM model.
 
     Args:
