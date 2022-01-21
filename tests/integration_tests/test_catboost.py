@@ -14,7 +14,7 @@ def test_catboost_pruning_callback_call() -> None:
     # The pruner is deactivated.
     study = optuna.create_study(pruner=DeterministicPruner(False))
     trial = create_running_trial(study, 1.0)
-    pruning_callback = CatBoostPruningCallback(trial, "Logloss", "validation")
+    pruning_callback = CatBoostPruningCallback(trial, "Logloss")
     info = types.SimpleNamespace(
         iteration=1, metrics={"learn": {"Logloss": [1.0]}, "validation": {"Logloss": [1.0]}}
     )
@@ -23,11 +23,11 @@ def test_catboost_pruning_callback_call() -> None:
     # The pruner is activated.
     study = optuna.create_study(pruner=DeterministicPruner(True))
     trial = create_running_trial(study, 1.0)
-    pruning_callback = CatBoostPruningCallback(trial, "Logloss", "validation")
+    pruning_callback = CatBoostPruningCallback(trial, "Logloss")
     info = types.SimpleNamespace(
         iteration=1, metrics={"learn": {"Logloss": [1.0]}, "validation": {"Logloss": [1.0]}}
     )
-    assert pruning_callback.after_iteration(info) is False
+    assert not pruning_callback.after_iteration(info)
 
 
 def test_catboost_pruning_callback() -> None:
@@ -69,12 +69,12 @@ def test_catboost_pruning_callback() -> None:
 
 
 METRICS = ["AUC", "Accuracy"]
-VALID_NAMES = ["validation_0", "validation_1"]
+EVAL_SET_INDEXES = [0, 1]
 
 
 @pytest.mark.parametrize("metric", METRICS)
-@pytest.mark.parametrize("valid_name", VALID_NAMES)
-def test_catboost_pruning_callback_init_param(metric: str, valid_name: str) -> None:
+@pytest.mark.parametrize("eval_set_index", EVAL_SET_INDEXES)
+def test_catboost_pruning_callback_init_param(metric: str, eval_set_index: int) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
 
         train_x = np.asarray([[1.0], [2.0]])
@@ -82,7 +82,7 @@ def test_catboost_pruning_callback_init_param(metric: str, valid_name: str) -> N
         valid_x = np.asarray([[1.0], [2.0]])
         valid_y = np.asarray([[1.0], [0.0]])
 
-        pruning_callback = CatBoostPruningCallback(trial, metric, valid_name)
+        pruning_callback = CatBoostPruningCallback(trial, metric, eval_set_index)
         param = {
             "objective": "Logloss",
             "eval_metric": metric,
@@ -113,13 +113,13 @@ def test_catboost_pruning_callback_init_param(metric: str, valid_name: str) -> N
 
 
 @pytest.mark.parametrize(
-    "metric, valid_name",
+    "metric, eval_set_index",
     [
-        ("foo_metric", "validation"),
-        ("AUC", "foo_valid"),
+        ("foo_metric", None),
+        ("AUC", 100),
     ],
 )
-def test_catboost_pruning_callback_errors(metric: str, valid_name: str) -> None:
+def test_catboost_pruning_callback_errors(metric: str, eval_set_index: int) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
 
         train_x = np.asarray([[1.0], [2.0]])
@@ -127,7 +127,7 @@ def test_catboost_pruning_callback_errors(metric: str, valid_name: str) -> None:
         valid_x = np.asarray([[1.0], [2.0]])
         valid_y = np.asarray([[1.0], [0.0]])
 
-        pruning_callback = CatBoostPruningCallback(trial, metric, valid_name)
+        pruning_callback = CatBoostPruningCallback(trial, metric, eval_set_index)
         param = {
             "objective": "Logloss",
             "eval_metric": "AUC",
