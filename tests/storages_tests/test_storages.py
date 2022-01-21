@@ -1227,3 +1227,14 @@ def test_fail_stale_trials(storage_mode: str) -> None:
         optuna.storages.fail_stale_trials(study)
 
         assert study.trials[0].state is TrialState.FAIL
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_read_trials_from_remote_storage(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        with pytest.raises(KeyError):
+            storage.read_trials_from_remote_storage(-1)
+
+        study_id = storage.create_new_study()
+        storage.read_trials_from_remote_storage(study_id)
