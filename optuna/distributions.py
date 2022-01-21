@@ -8,8 +8,14 @@ from typing import Sequence
 from typing import Union
 import warnings
 
+from optuna._deprecated import deprecated
+
 
 CategoricalChoiceType = Union[None, bool, int, float, str]
+
+
+_float_distribution_deprecated_msg = "Use :class:`~optuna.distributions.FloatDistribution` instead"
+_int_distribution_deprecated_msg = "Use :class:`~optuna.distributions.IntDistribution` instead"
 
 
 class BaseDistribution(object, metaclass=abc.ABCMeta):
@@ -172,7 +178,8 @@ class FloatDistribution(BaseDistribution):
             return self.low <= value <= self.high and abs(k - round(k)) < 1.0e-8
 
 
-class UniformDistribution(BaseDistribution):
+@deprecated("3.0.0", "5.0.0", text=_float_distribution_deprecated_msg)
+class UniformDistribution(FloatDistribution):
     """A uniform distribution in the linear domain.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_float`, and passed to
@@ -190,27 +197,21 @@ class UniformDistribution(BaseDistribution):
     """
 
     def __init__(self, low: float, high: float) -> None:
+        super().__init__(low=low, high=high, log=False, step=None)
 
-        if low > high:
-            raise ValueError(
-                "The `low` value must be smaller than or equal to the `high` value "
-                "(low={}, high={}).".format(low, high)
-            )
+    def _asdict(self) -> Dict:
+        d = copy.deepcopy(self.__dict__)
+        d.pop("log")
+        d.pop("step")
+        return d
 
-        self.low = float(low)
-        self.high = float(high)
-
-    def single(self) -> bool:
-
-        return self.low == self.high
-
-    def _contains(self, param_value_in_internal_repr: float) -> bool:
-
-        value = param_value_in_internal_repr
-        return self.low <= value <= self.high
+    def __repr__(self) -> str:
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
 
 
-class LogUniformDistribution(BaseDistribution):
+@deprecated("3.0.0", "5.0.0", text=_float_distribution_deprecated_msg)
+class LogUniformDistribution(FloatDistribution):
     """A uniform distribution in the log domain.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_float` with ``log=True``,
@@ -229,32 +230,21 @@ class LogUniformDistribution(BaseDistribution):
     """
 
     def __init__(self, low: float, high: float) -> None:
+        super().__init__(low=low, high=high, log=True, step=None)
 
-        if low > high:
-            raise ValueError(
-                "The `low` value must be smaller than or equal to the `high` value "
-                "(low={}, high={}).".format(low, high)
-            )
-        if low <= 0.0:
-            raise ValueError(
-                "The `low` value must be larger than 0 for a log distribution "
-                "(low={}, high={}).".format(low, high)
-            )
+    def _asdict(self) -> Dict:
+        d = copy.deepcopy(self.__dict__)
+        d.pop("log")
+        d.pop("step")
+        return d
 
-        self.low = float(low)
-        self.high = float(high)
-
-    def single(self) -> bool:
-
-        return self.low == self.high
-
-    def _contains(self, param_value_in_internal_repr: float) -> bool:
-
-        value = param_value_in_internal_repr
-        return self.low <= value <= self.high
+    def __repr__(self) -> str:
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
 
 
-class DiscreteUniformDistribution(BaseDistribution):
+@deprecated("3.0.0", "5.0.0", text=_float_distribution_deprecated_msg)
+class DiscreteUniformDistribution(FloatDistribution):
     """A discretized uniform distribution in the linear domain.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_float` with ``step``
@@ -280,36 +270,20 @@ class DiscreteUniformDistribution(BaseDistribution):
     """
 
     def __init__(self, low: float, high: float, q: float) -> None:
-        if low > high:
-            raise ValueError(
-                "The `low` value must be smaller than or equal to the `high` value "
-                "(low={}, high={}, q={}).".format(low, high, q)
-            )
-        if q <= 0:
-            raise ValueError("The `q` value must be non-zero positive value, but q={}.".format(q))
+        super().__init__(low=low, high=high, step=q)
+        self.q = q
 
-        high = _adjust_discrete_uniform_high(low, high, q)
+    def _asdict(self) -> Dict:
+        d = copy.deepcopy(self.__dict__)
+        d.pop("log")
 
-        self.low = float(low)
-        self.high = float(high)
-        self.q = float(q)
+        step = d.pop("step")
+        d["q"] = step
+        return d
 
-    def single(self) -> bool:
-
-        if self.low == self.high:
-            return True
-        high = decimal.Decimal(str(self.high))
-        low = decimal.Decimal(str(self.low))
-        q = decimal.Decimal(str(self.q))
-        if (high - low) < q:
-            return True
-        return False
-
-    def _contains(self, param_value_in_internal_repr: float) -> bool:
-
-        value = param_value_in_internal_repr
-        k = (value - self.low) / self.q
-        return self.low <= value <= self.high and abs(k - round(k)) < 1.0e-8
+    def __repr__(self) -> str:
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
 
 
 class IntDistribution(BaseDistribution):
@@ -389,7 +363,8 @@ class IntDistribution(BaseDistribution):
         return self.low <= value <= self.high and (value - self.low) % self.step == 0
 
 
-class IntUniformDistribution(BaseDistribution):
+@deprecated("3.0.0", "5.0.0", text=_int_distribution_deprecated_msg)
+class IntUniformDistribution(IntDistribution):
     """A uniform distribution on integers.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
@@ -416,43 +391,20 @@ class IntUniformDistribution(BaseDistribution):
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
-        if low > high:
-            raise ValueError(
-                "The `low` value must be smaller than or equal to the `high` value "
-                "(low={}, high={}).".format(low, high)
-            )
-        if step <= 0:
-            raise ValueError(
-                "The `step` value must be non-zero positive value, but step={}.".format(step)
-            )
+        super().__init__(low=low, high=high, log=False, step=step)
 
-        high = _adjust_int_uniform_high(low, high, step)
+    def _asdict(self) -> Dict:
+        d = copy.deepcopy(self.__dict__)
+        d.pop("log")
+        return d
 
-        self.low = low
-        self.high = high
-        self.step = step
-
-    def to_external_repr(self, param_value_in_internal_repr: float) -> int:
-
-        return int(param_value_in_internal_repr)
-
-    def to_internal_repr(self, param_value_in_external_repr: int) -> float:
-
-        return float(param_value_in_external_repr)
-
-    def single(self) -> bool:
-
-        if self.low == self.high:
-            return True
-        return (self.high - self.low) < self.step
-
-    def _contains(self, param_value_in_internal_repr: float) -> bool:
-
-        value = param_value_in_internal_repr
-        return self.low <= value <= self.high and (value - self.low) % self.step == 0
+    def __repr__(self) -> str:
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
 
 
-class IntLogUniformDistribution(BaseDistribution):
+@deprecated("3.0.0", "5.0.0", text=_int_distribution_deprecated_msg)
+class IntLogUniformDistribution(IntDistribution):
     """A uniform distribution on integers in the log domain.
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
@@ -482,68 +434,16 @@ class IntLogUniformDistribution(BaseDistribution):
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
-        if low > high:
-            raise ValueError(
-                "The `low` value must be smaller than or equal to the `high` value "
-                "(low={}, high={}).".format(low, high)
-            )
-
-        if low < 1.0:
-            raise ValueError(
-                "The `low` value must be equal to or greater than 1 for a log distribution "
-                "(low={}, high={}).".format(low, high)
-            )
-
-        if step != 1:
-            self._warn_step()
-
-        self.low = low
-        self.high = high
-        self._step = step
-
-    def __repr__(self) -> str:
-        # TODO(hvy): `BaseDistribution.__repr__` could rely on `_asdict` instead of `__dict__`.
-        # `IntLogUniformDistribution` would not have to override `__repr__`.
-        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
-        return "{}({})".format(self.__class__.__name__, kwargs)
+        super().__init__(low=low, high=high, log=True, step=step)
 
     def _asdict(self) -> Dict:
-        d = copy.copy(self.__dict__)
-        d["step"] = d.pop("_step")
+        d = copy.deepcopy(self.__dict__)
+        d.pop("log")
         return d
 
-    def _warn_step(self) -> None:
-        warnings.warn(
-            "Samplers and other components in Optuna will assume that `step` is 1. "
-            "`step` argument is deprecated and will be removed in the future. "
-            "The removal of this feature is currently scheduled for v4.0.0, "
-            "but this schedule is subject to change.",
-            FutureWarning,
-        )
-
-    def to_external_repr(self, param_value_in_internal_repr: float) -> int:
-        return int(param_value_in_internal_repr)
-
-    def to_internal_repr(self, param_value_in_external_repr: int) -> float:
-        return float(param_value_in_external_repr)
-
-    def single(self) -> bool:
-        return self.low == self.high
-
-    def _contains(self, param_value_in_internal_repr: float) -> bool:
-        value = param_value_in_internal_repr
-        # `step` is ignored and assumed to be 1.
-        return self.low <= value <= self.high
-
-    @property
-    def step(self) -> int:
-        self._warn_step()
-        return self._step
-
-    @step.setter
-    def step(self, value: int) -> None:
-        self._warn_step()
-        self._step = value
+    def __repr__(self) -> str:
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
+        return "{}({})".format(self.__class__.__name__, kwargs)
 
 
 class CategoricalDistribution(BaseDistribution):
