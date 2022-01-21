@@ -154,8 +154,10 @@ def test_check_distribution_suggest_int(storage_mode: str, enable_log: bool) -> 
             trial.suggest_int("x", 10, 20, log=enable_log)
             trial.suggest_int("x", 10, 22, log=enable_log)
 
-        # We expect exactly one warning.
-        assert len(record) == 1
+        # We expect exactly four warnings.
+        # One is RuntimeWarning for inconsistent parameter specification.
+        # Three are FutureWarning for deprecated distributions.
+        assert len(record) == 4
 
         with pytest.raises(ValueError):
             trial.suggest_float("x", 10, 20, log=enable_log)
