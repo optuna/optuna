@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.testing import assert_almost_equal
 import pytest
 
 from optuna.study import create_study
@@ -222,6 +221,6 @@ def test_error_bar_in_optimization_history(direction: str) -> None:
     mean = np.mean(suggested_params)
     std = np.std(suggested_params)
 
-    assert_almost_equal(figure.get_lines()[0].get_ydata(), mean)
-    assert_almost_equal(figure.get_lines()[1].get_ydata(), mean - std)
-    assert_almost_equal(figure.get_lines()[2].get_ydata(), mean + std)
+    np.testing.assert_almost_equal(figure.get_lines()[0].get_ydata(), mean)
+    np.testing.assert_almost_equal(figure.get_lines()[1].get_ydata(), mean - std)
+    np.testing.assert_almost_equal(figure.get_lines()[2].get_ydata(), mean + std)
