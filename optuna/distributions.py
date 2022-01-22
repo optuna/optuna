@@ -113,8 +113,9 @@ class FloatDistribution(BaseDistribution):
     Raises:
         ValueError:
             If ``low`` value is larger than ``high`` value.
-            If ``log`` is :obj:`True` and ``low`` value is smaller than 0.0.
+            If ``log`` is :obj:`True` and ``low`` value is less or equal to 0.0.
             If ``log`` is :obj:`True` and ``step`` is not :obj:`None`.
+            If ``step`` is less or equal to 0.
     """
 
     def __init__(
