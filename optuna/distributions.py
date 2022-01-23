@@ -3,6 +3,7 @@ import copy
 import decimal
 import json
 from typing import Any
+from typing import cast
 from typing import Dict
 from typing import Sequence
 from typing import Union
@@ -288,7 +289,7 @@ class DiscreteUniformDistribution(FloatDistribution):
 
     @property
     def q(self) -> float:
-        return self.step
+        return cast(float, self.step)
 
 
 class IntDistribution(BaseDistribution):
