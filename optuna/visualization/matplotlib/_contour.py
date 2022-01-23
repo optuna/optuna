@@ -226,11 +226,21 @@ def _calculate_griddata(
     x_values = []
     y_values = []
     z_values = []
+    x_range_values = []
+    y_range_values = []
     for trial in trials:
-        if x_param not in trial.params or y_param not in trial.params:
+        x_value = trial.params.get(x_param)
+        if x_value is not None:
+            x_range_values.append(x_value)
+
+        y_value = trial.params.get(y_param)
+        if y_value is not None:
+            y_range_values.append(y_value)
+
+        if x_value is None or y_value is None:
             continue
-        x_values.append(trial.params[x_param])
-        y_values.append(trial.params[y_param])
+        x_values.append(x_value)
+        y_values.append(y_value)
 
         if target is None:
             value = trial.value
@@ -300,10 +310,10 @@ def _calculate_griddata(
         ) = _convert_categorical2int(y_values)
 
     # Calculate min and max of x and y.
-    x_values_min = min(x_values)
-    x_values_max = max(x_values)
-    y_values_min = min(y_values)
-    y_values_max = max(y_values)
+    x_values_min = min(x_range_values)
+    x_values_max = max(x_range_values)
+    y_values_min = min(y_range_values)
+    y_values_max = max(y_range_values)
 
     # Calculate grid data points.
     # For x and y, create 1-D array of evenly spaced coordinates on linear or log scale.
