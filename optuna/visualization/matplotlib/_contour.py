@@ -199,9 +199,11 @@ class _LabelEncoder:
     def fit_transform(self, labels: List[str]) -> List[int]:
         return self.fit(labels).transform(labels)
 
-    def get_labels_and_indices(self) -> Tuple[List[str], List[int]]:
-        indices, labels = zip(*enumerate(self.labels))
-        return list(labels), list(indices)
+    def get_labels(self) -> List[str]:
+        return self.labels
+
+    def get_indices(self) -> List[int]:
+        return list(range(len(self.labels)))
 
 
 def _calculate_griddata(
@@ -304,12 +306,14 @@ def _calculate_griddata(
         enc = _LabelEncoder()
         x_range_values = enc.fit_transform(list(map(str, x_range_values)))
         x_values = enc.transform(list(map(str, x_values)))
-        cat_param_labels_x, cat_param_pos_x = enc.get_labels_and_indices()
+        cat_param_labels_x = enc.get_labels()
+        cat_param_pos_x = enc.get_indices()
     if not _is_numerical(trials, y_param):
         enc = _LabelEncoder()
         y_range_values = enc.fit_transform(list(map(str, y_range_values)))
         y_values = enc.transform(list(map(str, y_values)))
-        cat_param_labels_y, cat_param_pos_y = enc.get_labels_and_indices()
+        cat_param_labels_y = enc.get_labels()
+        cat_param_pos_y = enc.get_indices()
 
     # Calculate min and max of x and y.
     x_values_min = min(x_range_values)
