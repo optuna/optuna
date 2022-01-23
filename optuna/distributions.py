@@ -271,7 +271,6 @@ class DiscreteUniformDistribution(FloatDistribution):
 
     def __init__(self, low: float, high: float, q: float) -> None:
         super().__init__(low=low, high=high, step=q)
-        self.q = q
 
     def _asdict(self) -> Dict:
         d = copy.deepcopy(self.__dict__)
@@ -284,6 +283,10 @@ class DiscreteUniformDistribution(FloatDistribution):
     def __repr__(self) -> str:
         kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
         return "{}({})".format(self.__class__.__name__, kwargs)
+
+    @property
+    def q(self) -> float:
+        return self.step
 
 
 class IntDistribution(BaseDistribution):
