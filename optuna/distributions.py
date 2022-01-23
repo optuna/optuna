@@ -178,7 +178,7 @@ class FloatDistribution(BaseDistribution):
             return self.low <= value <= self.high and abs(k - round(k)) < 1.0e-8
 
 
-@deprecated("3.0.0", "5.0.0", text=_float_distribution_deprecated_msg)
+@deprecated("3.0.0", "6.0.0", text=_float_distribution_deprecated_msg)
 class UniformDistribution(FloatDistribution):
     """A uniform distribution in the linear domain.
 
@@ -210,7 +210,7 @@ class UniformDistribution(FloatDistribution):
         return "{}({})".format(self.__class__.__name__, kwargs)
 
 
-@deprecated("3.0.0", "5.0.0", text=_float_distribution_deprecated_msg)
+@deprecated("3.0.0", "6.0.0", text=_float_distribution_deprecated_msg)
 class LogUniformDistribution(FloatDistribution):
     """A uniform distribution in the log domain.
 
@@ -243,7 +243,7 @@ class LogUniformDistribution(FloatDistribution):
         return "{}({})".format(self.__class__.__name__, kwargs)
 
 
-@deprecated("3.0.0", "5.0.0", text=_float_distribution_deprecated_msg)
+@deprecated("3.0.0", "6.0.0", text=_float_distribution_deprecated_msg)
 class DiscreteUniformDistribution(FloatDistribution):
     """A discretized uniform distribution in the linear domain.
 
@@ -363,7 +363,7 @@ class IntDistribution(BaseDistribution):
         return self.low <= value <= self.high and (value - self.low) % self.step == 0
 
 
-@deprecated("3.0.0", "5.0.0", text=_int_distribution_deprecated_msg)
+@deprecated("3.0.0", "6.0.0", text=_int_distribution_deprecated_msg)
 class IntUniformDistribution(IntDistribution):
     """A uniform distribution on integers.
 
@@ -403,7 +403,7 @@ class IntUniformDistribution(IntDistribution):
         return "{}({})".format(self.__class__.__name__, kwargs)
 
 
-@deprecated("3.0.0", "5.0.0", text=_int_distribution_deprecated_msg)
+@deprecated("3.0.0", "6.0.0", text=_int_distribution_deprecated_msg)
 class IntLogUniformDistribution(IntDistribution):
     """A uniform distribution on integers in the log domain.
 
