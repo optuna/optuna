@@ -186,7 +186,7 @@ def _set_cmap(study: Study, target: Optional[Callable[[FrozenTrial], float]]) ->
 
 
 class _LabelEncoder:
-    def __init__(self):
+    def __init__(self) -> None:
         self.labels: List[str] = []
 
     def fit(self, labels: List[str]) -> "_LabelEncoder":
@@ -201,7 +201,7 @@ class _LabelEncoder:
 
     def get_labels_and_indices(self) -> Tuple[List[str], List[int]]:
         indices, labels = zip(*enumerate(self.labels))
-        return labels, indices
+        return list(labels), list(indices)
 
 
 def _calculate_griddata(
