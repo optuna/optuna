@@ -90,7 +90,7 @@ def _try_crossover(
     return child_params
 
 
-def crossover(
+def perform_crossover(
     crossover: BaseCrossover,
     study: Study,
     parent_population: Sequence[FrozenTrial],

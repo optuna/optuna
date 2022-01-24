@@ -20,7 +20,7 @@ from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._nsga2._crossovers._base import BaseCrossover
 from optuna.samplers._nsga2._crossovers._uniform import UniformCrossover
-from optuna.samplers._nsga2.crossover import crossover
+from optuna.samplers._nsga2.crossover import perform_crossover
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.study import Study
@@ -208,7 +208,7 @@ class NSGAIISampler(BaseSampler):
         if parent_generation >= 0:
             # We choose a child based on the specified crossover method.
             if self._rng.rand() < self._crossover_prob:
-                child_params = crossover(
+                child_params = perform_crossover(
                     self._crossover,
                     study,
                     parent_population,
