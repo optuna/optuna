@@ -127,12 +127,7 @@ class Trial(BaseTrial):
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is excluded from the
-                range.
-
-                .. note::
-                    If ``step`` is specified, ``high`` is included as well as ``low``.
-
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
             step:
                 A step of discretization.
 
@@ -191,8 +186,7 @@ class Trial(BaseTrial):
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is excluded from the
-                range.
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
 
         Returns:
             A suggested float value.
@@ -214,8 +208,7 @@ class Trial(BaseTrial):
             low:
                 Lower endpoint of the range of suggested values. ``low`` is included in the range.
             high:
-                Upper endpoint of the range of suggested values. ``high`` is excluded from the
-                range.
+                Upper endpoint of the range of suggested values. ``high`` is included in the range.
 
         Returns:
             A suggested float value.
@@ -476,6 +469,10 @@ class Trial(BaseTrial):
         Raises:
             :exc:`NotImplementedError`:
                 If trial is being used for multi-objective optimization.
+            :exe:`ValueError`:
+                If ``step`` is negative.
+            :exe:`TypeError`:
+                If the type of ``value`` is not :obj:`float`.
         """
 
         if len(self.study.directions) > 1:
@@ -544,6 +541,10 @@ class Trial(BaseTrial):
         """Set user attributes to the trial.
 
         The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
+
+        .. seealso::
+
+            See the recipe on :ref:`attributes`.
 
         Example:
 

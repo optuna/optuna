@@ -5,18 +5,14 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+import warnings
 
 import optuna
-from optuna._experimental import experimental
+from optuna import TrialPruned
 from optuna._imports import try_import
 from optuna.integration.allennlp._environment import _environment_variables
-from optuna.integration.allennlp._variables import _MONITOR
-from optuna.integration.allennlp._variables import _PREFIX
-from optuna.integration.allennlp._variables import _PRUNER_CLASS
-from optuna.integration.allennlp._variables import _PRUNER_KEYS
-from optuna.integration.allennlp._variables import _STORAGE_NAME
-from optuna.integration.allennlp._variables import _STUDY_NAME
-from optuna.integration.allennlp._variables import _TRIAL_ID
+from optuna.integration.allennlp._variables import _VariableManager
+from optuna.integration.allennlp._variables import OPTUNA_ALLENNLP_DISTRIBUTED_FLAG
 
 
 with try_import() as _imports:
@@ -29,6 +25,8 @@ with try_import() as _imports:
 # the environment that builds the documentation.
 if _imports.is_successful():
     import _jsonnet
+    import psutil
+    from torch.multiprocessing.spawn import ProcessRaisedException
 
 
 def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
@@ -69,12 +67,8 @@ def _fetch_pruner_config(trial: optuna.Trial) -> Dict[str, Any]:
     return kwargs
 
 
-@experimental("1.4.0")
 class AllenNLPExecutor(object):
     """AllenNLP extension to use optuna with Jsonnet config file.
-
-    This feature is experimental since AllenNLP major release will come soon.
-    The interface may change without prior notice to correspond to the update.
 
     See the examples of `objective function <https://github.com/optuna/optuna-examples/tree/
     main/allennlp/allennlp_jsonnet.py>`_.
@@ -142,40 +136,37 @@ class AllenNLPExecutor(object):
         if include_package is None:
             include_package = []
         if isinstance(include_package, str):
-            self._include_package = [include_package]
-        else:
-            self._include_package = include_package
+            include_package = [include_package]
+
+        self._include_package = include_package + ["optuna.integration.allennlp"]
 
         storage = trial.study._storage
 
         if isinstance(storage, optuna.storages.RDBStorage):
             url = storage.url
+
         elif isinstance(storage, optuna.storages.RedisStorage):
             url = storage._url
+
         elif isinstance(storage, optuna.storages._CachedStorage):
             assert isinstance(storage._backend, optuna.storages.RDBStorage)
             url = storage._backend.url
+
         else:
             url = ""
 
-        pruner_params = _fetch_pruner_config(trial)
-        pruner_params = {
-            "{}_{}".format(_PREFIX, key): repr(value) for key, value in pruner_params.items()
-        }
+        target_pid = psutil.Process().ppid()
+        variable_manager = _VariableManager(target_pid)
 
-        system_attrs = {
-            _STUDY_NAME: trial.study.study_name,
-            _TRIAL_ID: str(trial._trial_id),
-            _STORAGE_NAME: url,
-            _MONITOR: metrics,
-            _PRUNER_KEYS: ",".join(pruner_params.keys()),
-        }
+        pruner_kwargs = _fetch_pruner_config(trial)
+        variable_manager.set_value("study_name", trial.study.study_name)
+        variable_manager.set_value("trial_id", trial._trial_id)
+        variable_manager.set_value("storage_name", url)
+        variable_manager.set_value("monitor", metrics)
 
         if trial.study.pruner is not None:
-            system_attrs[_PRUNER_CLASS] = type(trial.study.pruner).__name__
-
-        system_attrs.update(pruner_params)
-        self._system_attrs = system_attrs
+            variable_manager.set_value("pruner_class", type(trial.study.pruner).__name__)
+            variable_manager.set_value("pruner_kwargs", pruner_kwargs)
 
     def _build_params(self) -> Dict[str, Any]:
         """Create a dict of params for AllenNLP.
@@ -187,11 +178,12 @@ class AllenNLPExecutor(object):
         """
         params = _environment_variables()
         params.update({key: str(value) for key, value in self._params.items()})
-        params.update(self._system_attrs)
         return json.loads(_jsonnet.evaluate_file(self._config_file, ext_vars=params))
 
     def _set_environment_variables(self) -> None:
-        for key, value in self._system_attrs.items():
+        for key, value in _environment_variables().items():
+            if key is None:
+                continue
             os.environ[key] = value
 
     def run(self) -> float:
@@ -212,12 +204,30 @@ class AllenNLPExecutor(object):
 
         self._set_environment_variables()
         params = allennlp.common.params.Params(self._build_params())
-        allennlp.commands.train.train_model(
-            params=params,
-            serialization_dir=self._serialization_dir,
-            file_friendly_logging=self._file_friendly_logging,
-            force=self._force,
-            include_package=self._include_package,
-        )
+
+        if "distributed" in params:
+
+            if OPTUNA_ALLENNLP_DISTRIBUTED_FLAG in os.environ:
+                warnings.warn(
+                    "Other process may already exists."
+                    " If you have trouble, please unset the environment"
+                    " variable `OPTUNA_ALLENNLP_USE_DISTRIBUTED`"
+                    " and try it again."
+                )
+
+            os.environ[OPTUNA_ALLENNLP_DISTRIBUTED_FLAG] = "1"
+
+        try:
+            allennlp.commands.train.train_model(
+                params=params,
+                serialization_dir=self._serialization_dir,
+                file_friendly_logging=self._file_friendly_logging,
+                force=self._force,
+                include_package=self._include_package,
+            )
+        except ProcessRaisedException as e:
+            if "raise TrialPruned()" in str(e):
+                raise TrialPruned()
+
         metrics = json.load(open(os.path.join(self._serialization_dir, "metrics.json")))
         return metrics[self._metrics]

@@ -14,6 +14,10 @@ on:
       - setup.py
       - .github/workflows/dockerimage.yml
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
 env:
   DOCKER_HUB_BASE_NAME: optuna/optuna
 

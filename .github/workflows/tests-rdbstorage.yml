@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: '0 23 * * SUN-THU'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests-rdbstorage:
     runs-on: ubuntu-latest

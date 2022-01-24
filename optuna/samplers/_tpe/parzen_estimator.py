@@ -22,6 +22,8 @@ _DISTRIBUTION_CLASSES = (
     distributions.IntUniformDistribution,
     distributions.IntLogUniformDistribution,
     distributions.CategoricalDistribution,
+    distributions.FloatDistribution,
+    distributions.IntDistribution,
 )
 
 
@@ -242,6 +244,19 @@ class _ParzenEstimator:
             q = distribution.q
             low = distribution.low - 0.5 * q
             high = distribution.high + 0.5 * q
+        elif isinstance(distribution, distributions.FloatDistribution):
+            if distribution.log:
+                low = np.log(distribution.low)
+                high = np.log(distribution.high)
+                q = None
+            elif distribution.step is not None:
+                q = distribution.step
+                low = distribution.low - 0.5 * q
+                high = distribution.high + 0.5 * q
+            else:
+                low = distribution.low
+                high = distribution.high
+                q = None
         elif isinstance(distribution, distributions.IntUniformDistribution):
             q = distribution.step
             low = distribution.low - 0.5 * q
@@ -250,6 +265,15 @@ class _ParzenEstimator:
             low = np.log(distribution.low - 0.5)
             high = np.log(distribution.high + 0.5)
             q = None
+        elif isinstance(distribution, distributions.IntDistribution):
+            if distribution.log:
+                low = np.log(distribution.low - 0.5)
+                high = np.log(distribution.high + 0.5)
+                q = None
+            else:
+                q = distribution.step
+                low = distribution.low - 0.5 * q
+                high = distribution.high + 0.5 * q
         else:
             distribution_list = [
                 distributions.UniformDistribution.__name__,
@@ -258,6 +282,8 @@ class _ParzenEstimator:
                 distributions.IntUniformDistribution.__name__,
                 distributions.IntLogUniformDistribution.__name__,
                 distributions.CategoricalDistribution.__name__,
+                distributions.FloatDistribution.__name__,
+                distributions.IntDistribution.__name__,
             ]
             raise NotImplementedError(
                 "The distribution {} is not implemented. "
@@ -283,6 +309,13 @@ class _ParzenEstimator:
             ):
                 samples = np.log(samples)
 
+            if isinstance(
+                distribution,
+                (distributions.FloatDistribution, distributions.IntDistribution),
+            ):
+                if distribution.log:
+                    samples = np.log(samples)
+
             transformed[param_name] = samples
         return transformed
 
@@ -306,6 +339,18 @@ class _ParzenEstimator:
                 transformed[param_name] = np.asarray(
                     np.clip(samples, distribution.low, distribution.high)
                 )
+            elif isinstance(distribution, distributions.FloatDistribution):
+                if distribution.log:
+                    transformed[param_name] = np.exp(samples)
+                elif distribution.step is not None:
+                    q = self._q[param_name]
+                    assert q is not None
+                    samples = np.round((samples - distribution.low) / q) * q + distribution.low
+                    transformed[param_name] = np.asarray(
+                        np.clip(samples, distribution.low, distribution.high)
+                    )
+                else:
+                    transformed[param_name] = samples
             elif isinstance(distribution, distributions.IntUniformDistribution):
                 q = self._q[param_name]
                 assert q is not None
@@ -318,6 +363,19 @@ class _ParzenEstimator:
                 transformed[param_name] = np.asarray(
                     np.clip(samples, distribution.low, distribution.high)
                 )
+            elif isinstance(distribution, distributions.IntDistribution):
+                if distribution.log:
+                    samples = np.round(np.exp(samples))
+                    transformed[param_name] = np.asarray(
+                        np.clip(samples, distribution.low, distribution.high)
+                    )
+                else:
+                    q = self._q[param_name]
+                    assert q is not None
+                    samples = np.round((samples - distribution.low) / q) * q + distribution.low
+                    transformed[param_name] = np.asarray(
+                        np.clip(samples, distribution.low, distribution.high)
+                    )
             elif isinstance(distribution, distributions.CategoricalDistribution):
                 transformed[param_name] = samples
 

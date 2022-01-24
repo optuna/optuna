@@ -18,6 +18,7 @@ from optuna import distributions
 from optuna import load_study
 from optuna import samplers
 from optuna import storages
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
@@ -81,8 +82,7 @@ def test_check_distribution_suggest_uniform(storage_mode: str) -> None:
             trial.suggest_uniform("x", 10, 30)
 
         # we expect exactly one warning (not counting ones caused by deprecation)
-        record = [r for r in record if r.category != FutureWarning]
-        assert len(record) == 1
+        assert len([r for r in record if r.category != FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_int("x", 10, 20)
@@ -106,8 +106,7 @@ def test_check_distribution_suggest_loguniform(storage_mode: str) -> None:
             trial.suggest_loguniform("x", 10, 30)
 
         # we expect exactly one warning (not counting ones caused by deprecation)
-        record = [r for r in record if r.category != FutureWarning]
-        assert len(record) == 1
+        assert len([r for r in record if r.category != FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_int("x", 10, 20)
@@ -131,8 +130,7 @@ def test_check_distribution_suggest_discrete_uniform(storage_mode: str) -> None:
             trial.suggest_discrete_uniform("x", 10, 22, 2)
 
         # we expect exactly one warning (not counting ones caused by deprecation)
-        record = [r for r in record if r.category != FutureWarning]
-        assert len(record) == 1
+        assert len([r for r in record if r.category != FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_int("x", 10, 20, 2)
@@ -653,7 +651,7 @@ def test_study_id() -> None:
 def test_create_trial(state: TrialState) -> None:
     value = 0.2
     params = {"x": 10}
-    distributions = {"x": UniformDistribution(5, 12)}
+    distributions: Dict[str, BaseDistribution] = {"x": UniformDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
     intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}

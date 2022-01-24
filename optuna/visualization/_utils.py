@@ -1,3 +1,4 @@
+from typing import Any
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -6,6 +7,8 @@ from typing import Union
 import warnings
 
 from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -58,11 +61,18 @@ def _check_plot_args(
 
 def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
 
-    return any(
-        isinstance(t.distributions[param], LogUniformDistribution)
-        for t in trials
-        if param in t.params
-    )
+    for trial in trials:
+        if param in trial.params:
+            dist = trial.distributions[param]
+
+            if isinstance(dist, LogUniformDistribution):
+                return True
+
+            elif isinstance(dist, (FloatDistribution, IntDistribution)):
+                if dist.log:
+                    return True
+
+    return False
 
 
 def _is_categorical(trials: List[FrozenTrial], param: str) -> bool:
@@ -81,3 +91,11 @@ def _is_numerical(trials: List[FrozenTrial], param: str) -> bool:
         for t in trials
         if param in t.params
     )
+
+
+def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
+
+    values = [t.params[p_name] for t in trials if p_name in t.params]
+    if _is_numerical(trials, p_name):
+        return values
+    return list(map(str, values))

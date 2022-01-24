@@ -88,6 +88,12 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
         if len(distributions) == 0:
             return OrderedDict()
 
+        # fANOVA does not support parameter distributions with a single value.
+        # However, there is no reason to calculate parameter importance in such case anyway,
+        # since it will always be 0 as the parameter is constant in the objective function.
+        zero_importances = {name: 0.0 for name, dist in distributions.items() if dist.single()}
+        distributions = {name: dist for name, dist in distributions.items() if not dist.single()}
+
         trials = []
         for trial in study.trials:
             if trial.state != TrialState.COMPLETE:
@@ -131,6 +137,7 @@ class FanovaImportanceEvaluator(BaseImportanceEvaluator):
             importance, _ = evaluator.get_importance((i,))
             importances[name] = importance
 
+        importances = {**importances, **zero_importances}
         total_importance = sum(importances.values())
         for name in importances:
             importances[name] /= total_importance

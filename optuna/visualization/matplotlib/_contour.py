@@ -8,6 +8,7 @@ from typing import Tuple
 from typing import Union
 
 import numpy as np
+import scipy
 
 from optuna._experimental import experimental
 from optuna.logging import get_logger
@@ -16,6 +17,7 @@ from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _get_param_values
 from optuna.visualization.matplotlib._matplotlib_imports import _imports
 from optuna.visualization.matplotlib._utils import _is_log_scale
 from optuna.visualization.matplotlib._utils import _is_numerical
@@ -30,9 +32,6 @@ if _imports.is_successful():
 _logger = get_logger(__name__)
 
 
-NEIGHBOR_OFFSETS = [1 + 0j, -1 + 0j, 0 + 1j, 0 - 1j]
-NUM_OPTIMIZATION_ITERATIONS = 100
-FRACTIONAL_DELTA_THRESHOLD = 1e-2
 AXES_PADDING_RATIO = 5e-2
 
 
@@ -314,36 +313,31 @@ def _calculate_griddata(
 
     if _is_log_scale(trials, x_param):
         padding_x = (np.log10(x_values_max) - np.log10(x_values_min)) * AXES_PADDING_RATIO
-        x_values_min = np.power(np.log10(x_values_min) - padding_x, 10)
-        x_values_max = np.power(np.log10(x_values_max) + padding_x, 10)
+        x_values_min = np.power(10, np.log10(x_values_min) - padding_x)
+        x_values_max = np.power(10, np.log10(x_values_max) + padding_x)
         xi = np.logspace(np.log10(x_values_min), np.log10(x_values_max), contour_point_num)
-        x_array = np.log10(x_values)
     else:
         padding_x = (x_values_max - x_values_min) * AXES_PADDING_RATIO
         x_values_min -= padding_x
         x_values_max += padding_x
         xi = np.linspace(x_values_min, x_values_max, contour_point_num)
-        x_array = np.array(x_values)
 
     if _is_log_scale(trials, y_param):
         padding_y = (np.log10(y_values_max) - np.log10(y_values_min)) * AXES_PADDING_RATIO
-        y_values_min = np.power(np.log10(y_values_min) - padding_y, 10)
-        y_values_max = np.power(np.log10(y_values_max) + padding_y, 10)
+        y_values_min = np.power(10, np.log10(y_values_min) - padding_y)
+        y_values_max = np.power(10, np.log10(y_values_max) + padding_y)
         yi = np.logspace(np.log10(y_values_min), np.log10(y_values_max), contour_point_num)
-        y_array = np.log10(y_values)
     else:
         padding_y = (y_values_max - y_values_min) * AXES_PADDING_RATIO
         y_values_min -= padding_y
         y_values_max += padding_y
         yi = np.linspace(y_values_min, y_values_max, contour_point_num)
-        y_array = np.array(y_values)
 
     # create irregularly spaced map of trial values
-    # and interpolate it with Plotly algorithm
+    # and interpolate it with Plotly's interpolation formulation
     if x_param != y_param:
-        zmap = _create_zmap(x_array, y_array, z_values, xi, yi)
-        _interpolate_zmap(zmap, contour_point_num)
-        zi = _create_zmatrix_from_zmap(zmap, contour_point_num)
+        zmap = _create_zmap(x_values, y_values, z_values, xi, yi)
+        zi = _interpolate_zmap(zmap, contour_point_num)
 
     return (
         xi,
@@ -372,8 +366,8 @@ def _generate_contour_subplot(
     target: Optional[Callable[[FrozenTrial], float]],
 ) -> "ContourSet":
 
-    x_indices = sorted({t.params[x_param] for t in trials if x_param in t.params})
-    y_indices = sorted({t.params[y_param] for t in trials if y_param in t.params})
+    x_indices = sorted(set(_get_param_values(trials, x_param)))
+    y_indices = sorted(set(_get_param_values(trials, y_param)))
     if len(x_indices) < 2:
         _logger.warning("Param {} unique value length is less than 2.".format(x_param))
         return ax
@@ -441,18 +435,18 @@ def _generate_contour_subplot(
 
 
 def _create_zmap(
-    x_values: np.ndarray,
-    y_values: np.ndarray,
+    x_values: List[Union[int, float]],
+    y_values: List[Union[int, float]],
     z_values: List[float],
     xi: np.ndarray,
     yi: np.ndarray,
-) -> Dict[complex, float]:
+) -> Dict[Tuple[int, int], float]:
 
     # creates z-map from trial values and params.
     # z-map is represented by hashmap of coordinate and trial value pairs
     #
-    # coordinates are represented by complex numbers, where real part
-    # indicates x-axis index and imaginary part indicates y-axis index
+    # coordinates are represented by tuple of integers, where the first item
+    # indicates x-axis index and the second item indicates y-axis index
     # and refer to a position of trial value on irregular param grid
     #
     # since params were resampled either with linspace or logspace
@@ -460,26 +454,16 @@ def _create_zmap(
     # so we are going with close approximations of trial value positions
     zmap = dict()
     for x, y, z in zip(x_values, y_values, z_values):
-        xindex = np.argmin(np.abs(xi - x))
-        yindex = np.argmin(np.abs(yi - y))
-        zmap[complex(xindex, yindex)] = z  # type: ignore
+        xindex = int(np.argmin(np.abs(xi - x)))
+        yindex = int(np.argmin(np.abs(yi - y)))
+        zmap[(xindex, yindex)] = z
 
     return zmap
 
 
-def _create_zmatrix_from_zmap(zmap: Dict[complex, float], shape: int) -> np.ndarray:
+def _interpolate_zmap(zmap: Dict[Tuple[int, int], float], contour_plot_num: int) -> np.ndarray:
 
-    # converts hashmap of coordinates to grid
-    zmatrix = np.zeros(shape=(shape, shape))
-    for coord, value in zmap.items():
-        zmatrix[int(coord.imag), int(coord.real)] += value
-
-    return zmatrix
-
-
-def _interpolate_zmap(zmap: Dict[complex, float], contour_plot_num: int) -> None:
-
-    # implements interpolation algorithm used in Plotly
+    # implements interpolation formulation used in Plotly
     # to interpolate heatmaps and contour plots
     # https://github.com/plotly/plotly.js/blob/master/src/traces/heatmap/interp2d.js#L30
     # citing their doc:
@@ -489,135 +473,34 @@ def _interpolate_zmap(zmap: Dict[complex, float], contour_plot_num: int) -> None
     # > Amazingly, this just amounts to repeatedly averaging all the existing
     # > nearest neighbors
     #
-    # our goal here is to assign value to every coordinate that is a part
-    # of 100x100 param grid (so from 0 + 0j up to 100 + 100j) that is not already
-    # occupied by actual trial value
-    max_fractional_delta = 1.0
-    empties = _find_coordinates_where_empty(zmap, contour_plot_num)
+    # Plotly's algorithm is equivalent to solve the following linear simultaneous equation.
+    # It is discretization form of the Poisson equation.
+    #
+    #     z[x, y] = zmap[(x, y)]                                  (if zmap[(x, y)] is given)
+    # 4 * z[x, y] = z[x-1, y] + z[x+1, y] + z[x, y-1] + z[x, y+1] (if zmap[(x, y)] is not given)
 
-    # one pass to fill in a starting value for all the empties
-    _run_iteration(zmap, empties)
+    a_data = []
+    a_row = []
+    a_col = []
+    b = np.zeros(contour_plot_num ** 2)
+    for x in range(contour_plot_num):
+        for y in range(contour_plot_num):
+            grid_index = y * contour_plot_num + x
+            if (x, y) in zmap:
+                a_data.append(1)
+                a_row.append(grid_index)
+                a_col.append(grid_index)
+                b[grid_index] = zmap[(x, y)]
+            else:
+                for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                    if 0 <= x + dx < contour_plot_num and 0 <= y + dy < contour_plot_num:
+                        a_data.append(1)
+                        a_row.append(grid_index)
+                        a_col.append(grid_index)
+                        a_data.append(-1)
+                        a_row.append(grid_index)
+                        a_col.append(grid_index + dy * contour_plot_num + dx)
 
-    for _ in range(NUM_OPTIMIZATION_ITERATIONS):
-        if max_fractional_delta > FRACTIONAL_DELTA_THRESHOLD:
-            # correct for overshoot and run again
-            max_fractional_delta = 0.5 - 0.25 * min(1, max_fractional_delta * 0.5)
-            max_fractional_delta = _run_iteration(zmap, empties, max_fractional_delta)
+    z = scipy.sparse.linalg.spsolve(scipy.sparse.csc_matrix((a_data, (a_row, a_col))), b)
 
-        else:
-            break
-
-
-def _find_coordinates_where_empty(
-    zmap: Dict[complex, float], contour_point_num: int
-) -> List[complex]:
-
-    # this function implements missing value discovery and sorting
-    # algorithm used in Plotly to interpolate heatmaps and contour plots
-    # https://github.com/plotly/plotly.js/blob/master/src/traces/heatmap/find_empties.js
-    # it works by repeatedly iterating  over coordinate map in search for patches of
-    # missing values with existing or previously discovered neighbors
-    # when discovered, such patches are added to the iteration queue (list of coordinates)
-    # sorted by number of neighbors, marking iteration order for interpolation algorithm
-    # search ends when all missing patches have been discovered
-    # it's like playing minesweeper in reverse
-
-    iter_queue: List[complex] = []
-    zcopy = zmap.copy()
-    discovered = 0
-    n_missing = (contour_point_num ** 2) - len(zmap)
-    coordinates = [
-        complex(xaxis, yaxis)
-        for yaxis in range(contour_point_num)
-        for xaxis in range(contour_point_num)
-    ]
-
-    while discovered != n_missing:
-        # patch will contain coordinates
-        # of missing values, which happen to have neighbors
-        # at this iteration, and were not previously covered
-        patchmap: Dict[complex, int] = {}
-
-        for coord in coordinates:
-            # we will always iterate over entire grid
-            # surprisingly, this is faster than removing
-            # discovered coordinates from list after each iteration
-            value = zcopy.get(coord, None)
-
-            if value is not None:
-                # trial value or already discovered
-                continue
-
-            n_neighbors = 0
-            for offset in NEIGHBOR_OFFSETS:
-                neighbor = zcopy.get(coord + offset, None)
-                if neighbor is not None:
-                    n_neighbors += 1
-
-            if n_neighbors > 0:
-                # missing values, which still have no neighbors
-                # are left for subsequent iterations
-                patchmap[coord] = n_neighbors
-
-        # newly discovered values will form
-        # neighbors for another missing value
-        # in the next iteration
-        zcopy.update(patchmap)
-
-        # we are sorting patches independently, since neighbor counts for patch `b`
-        # are only valid after patch `a` has been discovered
-        patch = [k for k, _ in sorted(patchmap.items(), key=lambda i: i[1], reverse=True)]
-        iter_queue.extend(patch)
-        discovered += len(patch)
-
-    return iter_queue
-
-
-def _run_iteration(
-    zmap: Dict[complex, float], coordinates: List[complex], overshoot: float = 0.0
-) -> float:
-
-    max_fractional_delta = 0.0
-
-    for coord in coordinates:
-        # we will iterate the grid in order
-        # established by `find_coordinates_where_empty`
-        # this will ensure that we are not trying to interpolate
-        # value with zero neighbors
-        current_val = zmap.get(coord, None)
-        max_neighbor = -np.inf
-        min_neighbor = np.inf
-        sum_neighbors = 0.0
-        n_neighbors = 0
-
-        for offset in NEIGHBOR_OFFSETS:
-            # if we represent current value as a center
-            # of 3x3 matrix, neighbors are all other
-            # values excluding those at diagonals
-            neighbor = zmap.get(coord + offset, None)
-
-            if neighbor is None:
-                # off the edge or not filled in
-                continue
-
-            sum_neighbors += neighbor
-            n_neighbors += 1
-
-            if current_val is not None:
-                max_neighbor = max(max_neighbor, neighbor)
-                min_neighbor = min(min_neighbor, neighbor)
-
-        # fill value is just mean of its neighbors
-        new_val = sum_neighbors / n_neighbors
-
-        if current_val is None:
-            zmap[coord] = new_val
-            max_fractional_delta = 1.0
-
-        else:
-            zmap[coord] = (1 + overshoot) * new_val - overshoot * current_val
-            if max_neighbor > min_neighbor:
-                fractional_delta = abs(new_val - current_val) / (max_neighbor - min_neighbor)
-                max_fractional_delta = max(overshoot, fractional_delta)
-
-    return max_fractional_delta
+    return z.reshape((contour_plot_num, contour_plot_num))

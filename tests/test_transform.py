@@ -8,6 +8,8 @@ from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
@@ -20,9 +22,15 @@ from optuna.distributions import UniformDistribution
         (0, IntUniformDistribution(0, 3)),
         (1, IntLogUniformDistribution(1, 10)),
         (2, IntUniformDistribution(0, 10, step=2)),
+        (0, IntDistribution(0, 3)),
+        (1, IntDistribution(1, 10, log=True)),
+        (2, IntDistribution(0, 10, step=2)),
         (0.0, UniformDistribution(0, 3)),
         (1.0, LogUniformDistribution(1, 10)),
         (0.2, DiscreteUniformDistribution(0, 1, q=0.2)),
+        (0.0, FloatDistribution(0, 3)),
+        (1.0, FloatDistribution(1, 10, log=True)),
+        (0.2, FloatDistribution(0, 1, step=0.2)),
         ("foo", CategoricalDistribution(["foo"])),
         ("bar", CategoricalDistribution(["foo", "bar", "baz"])),
     ],
@@ -77,11 +85,23 @@ def test_search_space_transform_encoding() -> None:
     "param,distribution",
     [
         (0, IntUniformDistribution(0, 3)),
+        (3, IntUniformDistribution(0, 3)),
         (1, IntLogUniformDistribution(1, 10)),
+        (10, IntLogUniformDistribution(1, 10)),
         (2, IntUniformDistribution(0, 10, step=2)),
+        (0, IntDistribution(0, 3)),
+        (1, IntDistribution(1, 10, log=True)),
+        (2, IntDistribution(0, 10, step=2)),
+        (10, IntUniformDistribution(0, 10, step=2)),
         (0.0, UniformDistribution(0, 3)),
+        (3.0, UniformDistribution(0, 3)),
         (1.0, LogUniformDistribution(1, 10)),
+        (10.0, LogUniformDistribution(1, 10)),
         (0.2, DiscreteUniformDistribution(0, 1, q=0.2)),
+        (1.0, DiscreteUniformDistribution(0, 1, q=0.2)),
+        (0.0, FloatDistribution(0, 3)),
+        (1.0, FloatDistribution(1, 10, log=True)),
+        (0.2, FloatDistribution(0, 1, step=0.2)),
     ],
 )
 def test_search_space_transform_numerical(
@@ -104,6 +124,14 @@ def test_search_space_transform_numerical(
             half_step = 0.5 * distribution.q
             expected_low -= half_step
             expected_high += half_step
+    elif isinstance(distribution, FloatDistribution):
+        if transform_log and distribution.log:
+            expected_low = math.log(expected_low)
+            expected_high = math.log(expected_high)
+        if transform_step and distribution.step is not None:
+            half_step = 0.5 * distribution.step
+            expected_low -= half_step
+            expected_high += half_step
     elif isinstance(distribution, IntUniformDistribution):
         if transform_step:
             half_step = 0.5 * distribution.step
@@ -117,6 +145,14 @@ def test_search_space_transform_numerical(
         if transform_log:
             expected_low = math.log(expected_low)
             expected_high = math.log(expected_high)
+    elif isinstance(distribution, IntDistribution):
+        if transform_step:
+            half_step = 0.5 * distribution.step
+            expected_low -= half_step
+            expected_high += half_step
+        if distribution.log and transform_log:
+            expected_low = math.log(expected_low)
+            expected_high = math.log(expected_high)
 
     for bound in trans.bounds:
         assert bound[0] == expected_low
@@ -124,14 +160,7 @@ def test_search_space_transform_numerical(
 
     trans_params = trans.transform({"x0": param})
     assert trans_params.size == 1
-
-    if isinstance(
-        distribution,
-        (DiscreteUniformDistribution, IntUniformDistribution, IntLogUniformDistribution),
-    ):
-        assert expected_low <= trans_params <= expected_high
-    else:
-        assert expected_low <= trans_params < expected_high
+    assert expected_low <= trans_params <= expected_high
 
 
 @pytest.mark.parametrize(
@@ -168,6 +197,14 @@ def test_search_space_transform_untransform_params() -> None:
         "x7": CategoricalDistribution(["corge"]),
         "x8": UniformDistribution(-2, -2),
         "x9": LogUniformDistribution(1, 1),
+        "x10": FloatDistribution(2, 3),
+        "x11": FloatDistribution(-2, 2),
+        "x12": FloatDistribution(1, 10),
+        "x13": FloatDistribution(1, 1),
+        "x14": FloatDistribution(0, 1, step=0.2),
+        "x15": IntDistribution(2, 4),
+        "x16": IntDistribution(1, 10, log=True),
+        "x17": IntDistribution(1, 9, step=2),
     }
 
     params = {
@@ -181,6 +218,14 @@ def test_search_space_transform_untransform_params() -> None:
         "x7": "corge",
         "x8": -2.0,
         "x9": 1.0,
+        "x10": 2.0,
+        "x11": -2,
+        "x12": 1.0,
+        "x13": 1.0,
+        "x14": 0.2,
+        "x15": 2,
+        "x16": 1,
+        "x17": 3,
     }
 
     trans = _SearchSpaceTransform(search_space)

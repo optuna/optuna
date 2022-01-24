@@ -1,3 +1,4 @@
+from collections import defaultdict
 from contextlib import contextmanager
 import copy
 from datetime import datetime
@@ -120,7 +121,7 @@ class RDBStorage(BaseStorage):
         failed_trial_callback:
             A callback function that is invoked after failing each stale trial.
             The function must accept two parameters with the following types in this order:
-            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+            :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
 
             .. note::
                 The procedure to fail existing stale trials is called just before asking the
@@ -406,12 +407,22 @@ class RDBStorage(BaseStorage):
             ).select_from(orm.outerjoin(models.StudyModel, summarized_trial))
 
             study_summary = study_summary_stmt.all()
+
+            _directions = defaultdict(list)
+            for d in session.query(models.StudyDirectionModel).all():
+                _directions[d.study_id].append(d.direction)
+
+            _user_attrs = defaultdict(list)
+            for a in session.query(models.StudyUserAttributeModel).all():
+                _user_attrs[d.study_id].append(a)
+
+            _system_attrs = defaultdict(list)
+            for a in session.query(models.StudySystemAttributeModel).all():
+                _system_attrs[d.study_id].append(a)
+
             study_summaries = []
             for study in study_summary:
-                directions = [
-                    d.direction
-                    for d in models.StudyDirectionModel.where_study_id(study.study_id, session)
-                ]
+                directions = _directions[study.study_id]
                 best_trial: Optional[models.TrialModel] = None
                 try:
                     if len(directions) > 1:
@@ -470,10 +481,8 @@ class RDBStorage(BaseStorage):
                         {value.step: value.intermediate_value for value in intermediate},
                         best_trial.trial_id,
                     )
-                user_attrs = models.StudyUserAttributeModel.where_study_id(study.study_id, session)
-                system_attrs = models.StudySystemAttributeModel.where_study_id(
-                    study.study_id, session
-                )
+                user_attrs = _user_attrs.get(study.study_id, [])
+                system_attrs = _system_attrs.get(study.study_id, [])
                 study_summaries.append(
                     StudySummary(
                         study_name=study.study_name,
@@ -620,154 +629,6 @@ class RDBStorage(BaseStorage):
         session.add(trial)
 
         return trial
-
-    def _update_trial(
-        self,
-        trial_id: int,
-        state: Optional[TrialState] = None,
-        values: Optional[Sequence[float]] = None,
-        intermediate_values: Optional[Dict[int, float]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        distributions_: Optional[Dict[str, distributions.BaseDistribution]] = None,
-        user_attrs: Optional[Dict[str, Any]] = None,
-        system_attrs: Optional[Dict[str, Any]] = None,
-        datetime_start: Optional[datetime] = None,
-        datetime_complete: Optional[datetime] = None,
-    ) -> bool:
-        """Sync latest trial updates to a database.
-
-        Args:
-            trial_id:
-                Trial id of the trial to update.
-            state:
-                New state. None when there are no changes.
-            values:
-                New value. None when there are no changes.
-            intermediate_values:
-                New intermediate values. None when there are no updates.
-            params:
-                New parameter dictionary. None when there are no updates.
-            distributions_:
-                New parameter distributions. None when there are no updates.
-            user_attrs:
-                New user_attr. None when there are no updates.
-            system_attrs:
-                New system_attr. None when there are no updates.
-            datetime_start:
-                Start time of the trial. Set when this method change the state
-                of trial into running state.
-            datetime_complete:
-                Completion time of the trial. Set if and only if this method
-                change the state of trial into one of the finished states.
-
-        Returns:
-            True when success.
-
-        """
-
-        with _create_scoped_session(self.scoped_session) as session:
-            trial_model = models.TrialModel.find_or_raise_by_id(trial_id, session)
-            if trial_model.state.is_finished():
-                raise RuntimeError("Cannot change attributes of finished trial.")
-            if (
-                state
-                and trial_model.state != state
-                and state == TrialState.RUNNING
-                and trial_model.state != TrialState.WAITING
-            ):
-                return False
-
-            if state:
-                trial_model.state = state
-
-            if datetime_start:
-                trial_model.datetime_start = datetime_start
-
-            if datetime_complete:
-                trial_model.datetime_complete = datetime_complete
-
-            if values is not None:
-                trial_values = models.TrialValueModel.where_trial_id(trial_id, session)
-                if len(trial_values) > 0:
-                    for objective in range(len(values)):
-                        trial_values[objective].value = values[objective]
-                        session.add(trial_values[objective])
-                else:
-                    for objective in range(len(values)):
-                        trial_model.values.extend(
-                            [models.TrialValueModel(objective=objective, value=values[objective])]
-                        )
-
-            if user_attrs:
-                trial_user_attrs = models.TrialUserAttributeModel.where_trial_id(trial_id, session)
-                trial_user_attrs_dict = {attr.key: attr for attr in trial_user_attrs}
-                for k, v in user_attrs.items():
-                    if k in trial_user_attrs_dict:
-                        trial_user_attrs_dict[k].value_json = json.dumps(v)
-                        session.add(trial_user_attrs_dict[k])
-                trial_model.user_attributes.extend(
-                    models.TrialUserAttributeModel(key=k, value_json=json.dumps(v))
-                    for k, v in user_attrs.items()
-                    if k not in trial_user_attrs_dict
-                )
-
-            if system_attrs:
-                trial_system_attrs = models.TrialSystemAttributeModel.where_trial_id(
-                    trial_id, session
-                )
-                trial_system_attrs_dict = {attr.key: attr for attr in trial_system_attrs}
-                for k, v in system_attrs.items():
-                    if k in trial_system_attrs_dict:
-                        trial_system_attrs_dict[k].value_json = json.dumps(v)
-                        session.add(trial_system_attrs_dict[k])
-                trial_model.system_attributes.extend(
-                    models.TrialSystemAttributeModel(key=k, value_json=json.dumps(v))
-                    for k, v in system_attrs.items()
-                    if k not in trial_system_attrs_dict
-                )
-
-            if intermediate_values:
-                trial_intermediate_values = models.TrialIntermediateValueModel.where_trial_id(
-                    trial_id, session
-                )
-                intermediate_values_dict = {v.step: v for v in trial_intermediate_values}
-                for s, v in intermediate_values.items():
-                    if s in intermediate_values_dict:
-                        intermediate_values_dict[s].intermediate_value = v
-                        session.add(intermediate_values_dict[s])
-                trial_model.intermediate_values.extend(
-                    models.TrialIntermediateValueModel(step=s, intermediate_value=v)
-                    for s, v in intermediate_values.items()
-                    if s not in intermediate_values_dict
-                )
-
-            if params and distributions_:
-                trial_param = models.TrialParamModel.where_trial_id(trial_id, session)
-                trial_param_dict = {attr.param_name: attr for attr in trial_param}
-                for name, v in params.items():
-                    if name in trial_param_dict:
-                        trial_param_dict[
-                            name
-                        ].distribution_json = distributions.distribution_to_json(
-                            distributions_[name]
-                        )
-                        trial_param_dict[name].param_value = v
-                        session.add(trial_param_dict[name])
-                trial_model.params.extend(
-                    models.TrialParamModel(
-                        param_name=param_name,
-                        param_value=param_value,
-                        distribution_json=distributions.distribution_to_json(
-                            distributions_[param_name]
-                        ),
-                    )
-                    for param_name, param_value in params.items()
-                    if param_name not in trial_param_dict
-                )
-
-            session.add(trial_model)
-
-        return True
 
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
 

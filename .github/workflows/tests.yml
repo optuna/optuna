@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: '0 23 * * SUN-THU'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -66,7 +70,7 @@ jobs:
         # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
         pip install scikit-optimize
         pip install cma
-        pip install botorch torch==1.8.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install botorch torch==1.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
     - name: Tests
       run: |

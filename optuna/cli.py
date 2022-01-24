@@ -30,12 +30,14 @@ from cliff.commandmanager import CommandManager
 import yaml
 
 import optuna
+from optuna._imports import _LazyImport
 from optuna.exceptions import CLIUsageError
 from optuna.exceptions import ExperimentalWarning
 from optuna.storages import RDBStorage
-from optuna.study import _dataframe
 from optuna.trial import TrialState
 
+
+_dataframe = _LazyImport("optuna.study._dataframe")
 
 _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -836,6 +838,13 @@ class _Tell(_BaseCommand):
         parser.add_argument("--trial-number", type=int, help="Trial number.")
         parser.add_argument("--values", type=float, nargs="+", help="Objective values.")
         parser.add_argument("--state", type=str, default="complete", help="Trial state.")
+        parser.add_argument(
+            "--skip-if-finished",
+            default=False,
+            action="store_true",
+            help="If specified, tell is skipped without any error when the trial is already"
+            "finished.",
+        )
         return parser
 
     def take_action(self, parsed_args: Namespace) -> int:
@@ -853,16 +862,17 @@ class _Tell(_BaseCommand):
         )
 
         state = TrialState[parsed_args.state.upper()]
+        trial_number = parsed_args.trial_number
+        values = parsed_args.values
+
         study.tell(
-            trial=parsed_args.trial_number,
-            values=parsed_args.values,
+            trial=trial_number,
+            values=values,
             state=state,
+            skip_if_finished=parsed_args.skip_if_finished,
         )
 
-        self.logger.info(
-            f"Told trial {parsed_args.trial_number} with values {parsed_args.values} and state "
-            f"{state}."
-        )
+        self.logger.info(f"Told trial {trial_number} with values {values} and state " f"{state}.")
 
         return 0
 

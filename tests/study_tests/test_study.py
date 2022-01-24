@@ -111,13 +111,6 @@ def check_study(study: Study) -> None:
         check_frozen_trial(study.best_trial)
 
 
-def test_optimize_n_jobs_warning() -> None:
-
-    study = create_study()
-    with pytest.warns(FutureWarning):
-        study.optimize(func, n_trials=1, n_jobs=2)
-
-
 def test_optimize_trivial_in_memory_new() -> None:
 
     study = create_study()
@@ -634,6 +627,30 @@ def test_enqueue_trial_with_unfixed_parameters(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_enqueue_trial_properly_sets_user_attr(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+
+        study.enqueue_trial(params={"x": -5, "y": 5}, user_attrs={"is_optimal": False})
+        study.enqueue_trial(params={"x": 0, "y": 0}, user_attrs={"is_optimal": True})
+
+        def objective(trial: Trial) -> float:
+
+            x = trial.suggest_int("x", -10, 10)
+            y = trial.suggest_int("y", -10, 10)
+            return x ** 2 + y ** 2
+
+        study.optimize(objective, n_trials=2)
+        t0 = study.trials[0]
+        assert t0.user_attrs == {"is_optimal": False}
+
+        t1 = study.trials[1]
+        assert t1.user_attrs == {"is_optimal": True}
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -687,37 +704,150 @@ def test_optimize_without_gc(collect_mock: Mock) -> None:
     assert collect_mock.call_count == 0
 
 
-def test_optimize_with_progbar(capsys: _pytest.capture.CaptureFixture) -> None:
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_optimize_with_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFixture) -> None:
 
     study = create_study()
-    study.optimize(lambda _: 1.0, n_trials=10, show_progress_bar=True)
+    study.optimize(lambda _: 1.0, n_trials=10, n_jobs=n_jobs, show_progress_bar=True)
     _, err = capsys.readouterr()
 
-    # search for progress bar elements in stderr
+    # Search for progress bar elements in stderr.
     assert "10/10" in err
     assert "100%" in err
 
 
-def test_optimize_without_progbar(capsys: _pytest.capture.CaptureFixture) -> None:
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_optimize_without_progbar(n_jobs: int, capsys: _pytest.capture.CaptureFixture) -> None:
 
     study = create_study()
-    study.optimize(lambda _: 1.0, n_trials=10)
+    study.optimize(lambda _: 1.0, n_trials=10, n_jobs=n_jobs)
     _, err = capsys.readouterr()
 
     assert "10/10" not in err
     assert "100%" not in err
 
 
-def test_optimize_with_progbar_parallel(capsys: _pytest.capture.CaptureFixture) -> None:
+def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
 
     study = create_study()
-    with pytest.warns(UserWarning, match="Progress bar only supports serial execution"):
-        study.optimize(lambda _: 1.0, n_trials=10, show_progress_bar=True, n_jobs=-1)
-
+    study.optimize(lambda _: 1.0, timeout=2.0, show_progress_bar=True)
     _, err = capsys.readouterr()
 
-    assert "10/10" not in err
+    assert "00:02/00:02" in err
+    assert "100%" in err
+
+
+@pytest.mark.parametrize(
+    "timeout,expected",
+    [
+        (59.0, "/00:59"),
+        (60.0, "/01:00"),
+        (60.0 * 60, "/1:00:00"),
+        (60.0 * 60 * 24, "/24:00:00"),
+        (60.0 * 60 * 24 * 10, "/240:00:00"),
+    ],
+)
+def test_optimize_with_progbar_timeout_formats(
+    timeout: float, expected: str, capsys: _pytest.capture.CaptureFixture
+) -> None:
+    def _objective(trial: Trial) -> float:
+        if trial.number == 5:
+            trial.study.stop()
+        return 1.0
+
+    study = create_study()
+    study.optimize(_objective, timeout=timeout, show_progress_bar=True)
+    _, err = capsys.readouterr()
+    assert expected in err
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_optimize_without_progbar_timeout(
+    n_jobs: int, capsys: _pytest.capture.CaptureFixture
+) -> None:
+
+    study = create_study()
+    study.optimize(lambda _: 1.0, timeout=2.0, n_jobs=n_jobs)
+    _, err = capsys.readouterr()
+
+    assert "00:02/00:02" not in err
     assert "100%" not in err
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_optimize_progbar_n_trials_prioritized(
+    n_jobs: int, capsys: _pytest.capture.CaptureFixture
+) -> None:
+
+    study = create_study()
+    study.optimize(lambda _: 1.0, n_trials=10, n_jobs=n_jobs, timeout=10.0, show_progress_bar=True)
+    _, err = capsys.readouterr()
+
+    assert "10/10" in err
+    assert "100%" in err
+    assert "it" in err
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_optimize_without_progbar_n_trials_prioritized(
+    n_jobs: int, capsys: _pytest.capture.CaptureFixture
+) -> None:
+
+    study = create_study()
+    study.optimize(lambda _: 1.0, n_trials=10, n_jobs=n_jobs, timeout=10.0)
+    _, err = capsys.readouterr()
+
+    # Testing for a character that forms progress bar borders.
+    assert "|" not in err
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_optimize_progbar_no_constraints(
+    n_jobs: int, capsys: _pytest.capture.CaptureFixture
+) -> None:
+    def _objective(trial: Trial) -> float:
+        if trial.number == 5:
+            trial.study.stop()
+        return 1.0
+
+    study = create_study()
+    study.optimize(_objective, n_jobs=n_jobs, show_progress_bar=True)
+    _, err = capsys.readouterr()
+
+    # We can't simply test if stderr is empty, since we're not sure
+    # what else could write to it. Instead, we are testing for a character
+    # that forms progress bar borders.
+    assert "|" not in err
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_optimize_without_progbar_no_constraints(
+    n_jobs: int, capsys: _pytest.capture.CaptureFixture
+) -> None:
+    def _objective(trial: Trial) -> float:
+        if trial.number == 5:
+            trial.study.stop()
+        return 1.0
+
+    study = create_study()
+    study.optimize(_objective, n_jobs=n_jobs)
+    _, err = capsys.readouterr()
+
+    # Testing for a character that forms progress bar borders.
+    assert "|" not in err
+
+
+def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    with pytest.warns(
+        UserWarning, match="The timeout-based progress bar is not supported with n_jobs != 1."
+    ):
+        study.optimize(lambda _: 1.0, timeout=2.0, show_progress_bar=True, n_jobs=2)
+    _, err = capsys.readouterr()
+
+    # Testing for a character that forms progress bar borders.
+    assert "|" not in err
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
@@ -973,10 +1103,11 @@ def test_ask() -> None:
 def test_ask_enqueue_trial() -> None:
     study = create_study()
 
-    study.enqueue_trial({"x": 0.5})
+    study.enqueue_trial({"x": 0.5}, user_attrs={"memo", "this is memo"})
 
     trial = study.ask()
     assert trial.suggest_float("x", 0, 1) == 0.5
+    assert trial.user_attrs == {"memo", "this is memo"}
 
 
 def test_ask_fixed_search_space() -> None:
@@ -1040,8 +1171,11 @@ def test_tell_duplicate_tell() -> None:
     trial = study.ask()
     study.tell(trial, 1.0)
 
+    # Should not panic when passthrough is enabled.
+    study.tell(trial, 1.0, skip_if_finished=True)
+
     with pytest.raises(RuntimeError):
-        study.tell(trial, 1.0)
+        study.tell(trial, 1.0, skip_if_finished=False)
 
 
 def test_tell_values() -> None:

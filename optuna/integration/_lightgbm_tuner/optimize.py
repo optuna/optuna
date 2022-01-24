@@ -17,7 +17,6 @@ from typing import Union
 import warnings
 
 import numpy as np
-from packaging import version
 import tqdm
 
 import optuna
@@ -757,7 +756,7 @@ class LightGBMTuner(_LightGBMBaseTuner):
         optuna_callbacks:
             List of Optuna callback functions that are invoked at the end of each trial.
             Each function must accept two parameters with the following types in this order:
-            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+            :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
             Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
 
         model_dir:
@@ -910,7 +909,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         optuna_callbacks:
             List of Optuna callback functions that are invoked at the end of each trial.
             Each function must accept two parameters with the following types in this order:
-            :class:`~optuna.study.Study` and :class:`~optuna.FrozenTrial`.
+            :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
             Please note that this is not a ``callbacks`` argument of `lightgbm.train()`_ .
 
         model_dir:
@@ -990,7 +989,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         verbosity: Optional[int] = None,
         show_progress_bar: bool = True,
         model_dir: Optional[str] = None,
-        return_cvbooster: Optional[bool] = None,
+        return_cvbooster: bool = False,
         *,
         optuna_seed: Optional[int] = None,
     ) -> None:
@@ -1023,10 +1022,7 @@ class LightGBMTunerCV(_LightGBMBaseTuner):
         self.lgbm_kwargs["show_stdv"] = show_stdv
         self.lgbm_kwargs["seed"] = seed
         self.lgbm_kwargs["fpreproc"] = fpreproc
-        if return_cvbooster is not None:
-            if version.parse(lgb.__version__) < version.parse("3.0.0"):
-                raise ValueError("return_cvbooster requires lightgbm>=3.0.0.")
-            self.lgbm_kwargs["return_cvbooster"] = return_cvbooster
+        self.lgbm_kwargs["return_cvbooster"] = return_cvbooster
 
     def _create_objective(
         self,

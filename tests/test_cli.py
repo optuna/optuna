@@ -88,6 +88,7 @@ def _parse_output(output: str, output_format: str) -> Any:
         assert False
 
 
+@pytest.mark.skip_coverage
 def test_create_study_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -108,6 +109,7 @@ def test_create_study_command() -> None:
         assert study_id == 2
 
 
+@pytest.mark.skip_coverage
 def test_create_study_command_with_study_name() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -124,6 +126,7 @@ def test_create_study_command_with_study_name() -> None:
         assert storage.get_study_name_from_id(study_id) == study_name
 
 
+@pytest.mark.skip_coverage
 def test_create_study_command_without_storage_url() -> None:
 
     with pytest.raises(subprocess.CalledProcessError) as err:
@@ -132,6 +135,7 @@ def test_create_study_command_without_storage_url() -> None:
     assert usage.startswith("usage:")
 
 
+@pytest.mark.skip_coverage
 def test_create_study_command_with_direction() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -155,6 +159,7 @@ def test_create_study_command_with_direction() -> None:
             subprocess.check_call(command)
 
 
+@pytest.mark.skip_coverage
 def test_create_study_command_with_multiple_directions() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -208,6 +213,7 @@ def test_create_study_command_with_multiple_directions() -> None:
             subprocess.check_call(command)
 
 
+@pytest.mark.skip_coverage
 def test_delete_study_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -226,12 +232,14 @@ def test_delete_study_command() -> None:
         assert study_name not in {s.study_name: s for s in storage.get_all_study_summaries()}
 
 
+@pytest.mark.skip_coverage
 def test_delete_study_command_without_storage_url() -> None:
 
     with pytest.raises(subprocess.CalledProcessError):
         subprocess.check_output(["optuna", "delete-study", "--study-name", "dummy_study"])
 
 
+@pytest.mark.skip_coverage
 def test_study_set_user_attr_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -262,6 +270,7 @@ def test_study_set_user_attr_command() -> None:
         assert all(study_user_attrs[k] == v for k, v in example_attrs.items())
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_studies_command(output_format: Optional[str]) -> None:
 
@@ -314,6 +323,7 @@ def test_studies_command(output_format: Optional[str]) -> None:
             assert studies[1]["direction"] == ["MINIMIZE", "MAXIMIZE"]
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_studies_command_flatten(output_format: Optional[str]) -> None:
 
@@ -382,6 +392,7 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
         assert studies[1]["direction_1"] == "MAXIMIZE"
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_trials_command(objective: Callable[[Trial], float], output_format: Optional[str]) -> None:
@@ -462,6 +473,7 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: Opti
                     assert value == str(expected_value)
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_trials_command_flatten(
@@ -540,6 +552,7 @@ def test_trials_command_flatten(
                     assert value == str(expected_value)
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_best_trial_command(
@@ -623,6 +636,7 @@ def test_best_trial_command(
                 assert value == str(expected_value)
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize("objective", (objective_func, objective_func_branched_search_space))
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_best_trial_command_flatten(
@@ -701,6 +715,7 @@ def test_best_trial_command_flatten(
                 assert value == str(expected_value)
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_best_trials_command(output_format: Optional[str]) -> None:
 
@@ -785,6 +800,7 @@ def test_best_trials_command(output_format: Optional[str]) -> None:
                     assert value == str(expected_value)
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
 
@@ -863,6 +879,7 @@ def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
                     assert value == str(expected_value)
 
 
+@pytest.mark.skip_coverage
 def test_create_study_command_with_skip_if_exists() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -898,6 +915,7 @@ def test_create_study_command_with_skip_if_exists() -> None:
         assert study_id == new_study_id  # The existing study instance is reused.
 
 
+@pytest.mark.skip_coverage
 def test_study_optimize_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -930,6 +948,7 @@ def test_study_optimize_command() -> None:
         )
 
 
+@pytest.mark.skip_coverage
 def test_study_optimize_command_inconsistent_args() -> None:
 
     with tempfile.NamedTemporaryFile() as tf:
@@ -952,6 +971,7 @@ def test_study_optimize_command_inconsistent_args() -> None:
             )
 
 
+@pytest.mark.skip_coverage
 def test_empty_argv() -> None:
 
     command_empty = ["optuna"]
@@ -972,6 +992,7 @@ def test_check_storage_url() -> None:
         optuna.cli._check_storage_url(None)
 
 
+@pytest.mark.skip_coverage
 def test_storage_upgrade_command() -> None:
 
     with StorageSupplier("sqlite") as storage:
@@ -986,6 +1007,7 @@ def test_storage_upgrade_command() -> None:
         subprocess.check_call(command)
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize(
     "direction,directions,sampler,sampler_kwargs,output_format",
     [
@@ -1059,6 +1081,7 @@ def test_ask(
             assert "FutureWarning" in warning_message
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize(
     "direction,directions,sampler,sampler_kwargs,output_format",
     [
@@ -1131,6 +1154,7 @@ def test_ask_flatten(
             assert "FutureWarning" in warning_message
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_ask_empty_search_space(output_format: str) -> None:
     study_name = "test_study"
@@ -1163,6 +1187,7 @@ def test_ask_empty_search_space(output_format: str) -> None:
             assert trial["params"] == {}
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize("output_format", (None, "table", "json", "yaml"))
 def test_ask_empty_search_space_flatten(output_format: str) -> None:
     study_name = "test_study"
@@ -1196,6 +1221,7 @@ def test_ask_empty_search_space_flatten(output_format: str) -> None:
             assert "params" not in trial
 
 
+@pytest.mark.skip_coverage
 def test_ask_sampler_kwargs_without_sampler() -> None:
 
     study_name = "test_study"
@@ -1225,6 +1251,7 @@ def test_ask_sampler_kwargs_without_sampler() -> None:
         assert "`--sampler_kwargs` is set without `--sampler`." in error_message
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize(
     "direction,directions,sampler,sampler_kwargs",
     [
@@ -1290,6 +1317,7 @@ def test_create_study_and_ask(
         assert trial["params"]["y"] == "foo"
 
 
+@pytest.mark.skip_coverage
 @pytest.mark.parametrize(
     "direction,directions,ask_direction,ask_directions",
     [
@@ -1351,6 +1379,7 @@ def test_create_study_and_ask_with_inconsistent_directions(
         assert "Cannot overwrite study direction" in error_message
 
 
+@pytest.mark.skip_coverage
 def test_ask_with_both_direction_and_directions() -> None:
 
     study_name = "test_study"
@@ -1392,6 +1421,7 @@ def test_ask_with_both_direction_and_directions() -> None:
         assert "Specify only one of `direction` and `directions`." in error_message
 
 
+@pytest.mark.skip_coverage
 def test_tell() -> None:
     study_name = "test_study"
 
@@ -1414,7 +1444,7 @@ def test_tell() -> None:
         output = json.loads(output)
         trial_number = output["number"]
 
-        output = subprocess.check_output(
+        subprocess.check_output(
             [
                 "optuna",
                 "tell",
@@ -1424,6 +1454,41 @@ def test_tell() -> None:
                 str(trial_number),
                 "--values",
                 "1.2",
+            ]
+        )
+
+        study = optuna.load_study(storage=db_url, study_name=study_name)
+        assert len(study.trials) == 1
+        assert study.trials[0].state == TrialState.COMPLETE
+        assert study.trials[0].values == [1.2]
+
+        # Error when updating a finished trial.
+        ret = subprocess.run(
+            [
+                "optuna",
+                "tell",
+                "--storage",
+                db_url,
+                "--trial-number",
+                str(trial_number),
+                "--values",
+                "1.2",
+            ]
+        )
+        assert ret.returncode != 0
+
+        # Passing `--skip-if-finished` to a finished trial for a noop.
+        subprocess.check_output(
+            [
+                "optuna",
+                "tell",
+                "--storage",
+                db_url,
+                "--trial-number",
+                str(trial_number),
+                "--values",
+                "1.3",  # Setting a different value and make sure it's not persisted.
+                "--skip-if-finished",
             ]
         )
 

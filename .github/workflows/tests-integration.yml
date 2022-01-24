@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: '0 23 * * SUN-THU'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests-integration:
     runs-on: ubuntu-latest
@@ -57,7 +61,8 @@ jobs:
       run: |
         if [ ${{ matrix.python-version }} = 3.6 ]; then
           pytest tests/integration_tests \
-            --ignore tests/integration_tests/test_botorch.py
+            --ignore tests/integration_tests/test_botorch.py \
+            --ignore tests/integration_tests/allennlp_tests/
         else
           pytest -s tests/integration_tests
         fi
