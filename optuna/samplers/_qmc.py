@@ -12,7 +12,7 @@ from optuna import logging
 from optuna._experimental import experimental
 from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
-from optuna.distributions import BaseDistribution
+from optuna.distributions import BaseDistribution, CategoricalDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -22,14 +22,6 @@ from optuna.trial import TrialState
 _logger = logging.get_logger(__name__)
 
 _SUGGESTED_STATES = (TrialState.COMPLETE, TrialState.PRUNED)
-
-_NUMERICAL_DISTRIBUTIONS = (
-    distributions.UniformDistribution,
-    distributions.LogUniformDistribution,
-    distributions.DiscreteUniformDistribution,
-    distributions.IntUniformDistribution,
-    distributions.IntLogUniformDistribution,
-)
 
 
 @experimental("3.0.0")
@@ -229,7 +221,7 @@ class QMCSampler(BaseSampler):
 
         search_space: Dict[str, BaseDistribution] = {}
         for param_name, distribution in trial.distributions.items():
-            if not isinstance(distribution, _NUMERICAL_DISTRIBUTIONS):
+            if isinstance(distribution, CategoricalDistribution):
                 continue
             search_space[param_name] = distribution
 
@@ -324,15 +316,15 @@ class QMCSampler(BaseSampler):
             qmc_id += " (scramble=False)"
         key_qmc_id = qmc_id + "'s last sample id"
 
-        # TODO(kstoneriv3): Following try-except block assumes that the block is
-        # an atomic transaction. Without this assumption, current implementation
+        # TODO(kstoneriv3): Here, we ideally assume that the following block is
+        # an atomic transaction. Without such an assumption, the current implementation
         # only ensures that each `sample_id` is sampled at least once.
         system_attrs = study._storage.get_study_system_attrs(study._study_id)
-        sample_id = system_attrs.get(key_qmc_id, 0)
-
-        if sample_id > 0:
+        if key_qmc_id in system_attrs.keys():
+            sample_id = system_attrs[key_qmc_id]
             sample_id += 1
-
+        else:
+            sample_id = 0
         study._storage.set_study_system_attr(study._study_id, key_qmc_id, sample_id)
 
         return sample_id

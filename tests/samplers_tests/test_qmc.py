@@ -1,4 +1,3 @@
-from collections import OrderedDict
 import sys
 from typing import Any
 from typing import Callable
@@ -16,16 +15,14 @@ from optuna.trial import Trial
 from optuna.trial import TrialState
 
 
-_SEARCH_SPACE = OrderedDict(
-    {
-        "x1": optuna.distributions.IntDistribution(0, 10),
-        "x2": optuna.distributions.IntDistribution(1, 10, log=True),
-        "x3": optuna.distributions.FloatDistribution(0, 10),
-        "x4": optuna.distributions.FloatDistribution(1, 10, log=True),
-        "x5": optuna.distributions.FloatDistribution(1, 10, step=3),
-        "x6": optuna.distributions.CategoricalDistribution([1, 4, 7, 10]),
-    }
-)
+_SEARCH_SPACE = {
+    "x1": optuna.distributions.IntDistribution(0, 10),
+    "x2": optuna.distributions.IntDistribution(1, 10, log=True),
+    "x3": optuna.distributions.FloatDistribution(0, 10),
+    "x4": optuna.distributions.FloatDistribution(1, 10, log=True),
+    "x5": optuna.distributions.FloatDistribution(1, 10, step=3),
+    "x6": optuna.distributions.CategoricalDistribution([1, 4, 7, 10]),
+}
 
 
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
@@ -255,9 +252,7 @@ def test_sample_relative() -> None:
 )
 def test_sample_relative_halton() -> None:
     n, d = 8, 5
-    search_space = OrderedDict(
-        {f"x{i}": optuna.distributions.UniformDistribution(0, 1) for i in range(d)}
-    )
+    search_space = {f"x{i}": optuna.distributions.FloatDistribution(0, 1) for i in range(d)}
     sampler = _init_QMCSampler_without_exp_warning(scramble=False, qmc_type="halton")
     study = optuna.create_study(sampler=sampler)
     trial = Mock()
@@ -289,9 +284,7 @@ def test_sample_relative_halton() -> None:
 )
 def test_sample_relative_sobol() -> None:
     n, d = 8, 5
-    search_space = OrderedDict(
-        {f"x{i}": optuna.distributions.UniformDistribution(0, 1) for i in range(d)}
-    )
+    search_space = {f"x{i}": optuna.distributions.FloatDistribution(0, 1) for i in range(d)}
     sampler = _init_QMCSampler_without_exp_warning(scramble=False, qmc_type="sobol")
     study = optuna.create_study(sampler=sampler)
     trial = Mock()
