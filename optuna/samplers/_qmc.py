@@ -43,7 +43,7 @@ class QMCSampler(BaseSampler):
     For further information about the use of QMC sequences for hyperparameter optimization,
     please refer to the following paper:
 
-    - Bergstra, James, and Yoshua Bengio. Random search for hyper-parameter optimization.
+    - `Bergstra, James, and Yoshua Bengio. Random search for hyper-parameter optimization.
       Journal of machine learning research 13.2, 2012.
       <https://jmlr.org/papers/v13/bergstra12a.html>`_
 
@@ -195,7 +195,7 @@ class QMCSampler(BaseSampler):
             )
             raise ValueError(message)
 
-        if (seed is None) and scramble and warn_asyncronous_seeding:
+        if seed is None and scramble and warn_asyncronous_seeding:
             # Sobol/Halton sequences without scrambling do not use seed.
             self._log_asyncronous_seeding()
 
@@ -327,12 +327,12 @@ class QMCSampler(BaseSampler):
         # TODO(kstoneriv3): Following try-except block assumes that the block is
         # an atomic transaction. Without this assumption, current implementation
         # only ensures that each `sample_id` is sampled at least once.
-        try:
-            sample_id = study._storage.get_study_system_attrs(study._study_id)[key_qmc_id]
+        system_attrs = study._storage.get_study_system_attrs(study._study_id)
+        sample_id = system_attrs.get(key_qmc_id, 0)
+
+        if sample_id > 0:
             sample_id += 1
-            study._storage.set_study_system_attr(study._study_id, key_qmc_id, sample_id)
-        except KeyError:
-            study._storage.set_study_system_attr(study._study_id, key_qmc_id, 0)
-            sample_id = 0
+
+        study._storage.set_study_system_attr(study._study_id, key_qmc_id, sample_id)
 
         return sample_id

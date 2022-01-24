@@ -18,11 +18,11 @@ from optuna.trial import TrialState
 
 _SEARCH_SPACE = OrderedDict(
     {
-        "x1": optuna.distributions.IntUniformDistribution(0, 10),
-        "x2": optuna.distributions.IntLogUniformDistribution(1, 10),
-        "x3": optuna.distributions.UniformDistribution(0, 10),
-        "x4": optuna.distributions.LogUniformDistribution(1, 10),
-        "x5": optuna.distributions.DiscreteUniformDistribution(1, 10, q=3),
+        "x1": optuna.distributions.IntDistribution(0, 10),
+        "x2": optuna.distributions.IntDistribution(1, 10, log=True),
+        "x3": optuna.distributions.FloatDistribution(0, 10),
+        "x4": optuna.distributions.FloatDistribution(1, 10, log=True),
+        "x5": optuna.distributions.FloatDistribution(1, 10, step=3),
         "x6": optuna.distributions.CategoricalDistribution([1, 4, 7, 10]),
     }
 )
