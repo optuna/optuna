@@ -11,6 +11,8 @@ Optuna users should not use distribution classes directly, but instead use utili
    :toctree: generated/
    :nosignatures:
 
+   optuna.distributions.FloatDistribution
+   optuna.distributions.IntDistribution
    optuna.distributions.UniformDistribution
    optuna.distributions.LogUniformDistribution
    optuna.distributions.DiscreteUniformDistribution
