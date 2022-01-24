@@ -237,15 +237,15 @@ def _calculate_griddata(
     x_range_values = []
     y_range_values = []
     for trial in trials:
-        contains_x_parm = x_param in trial.params
-        if contains_x_parm:
+        contains_x_param = x_param in trial.params
+        if contains_x_param:
             x_range_values.append(trial.params[x_param])
 
         contains_y_param = y_param in trial.params
         if contains_y_param:
             y_range_values.append(trial.params[y_param])
 
-        if not contains_x_parm or not contains_y_param:
+        if not contains_x_param or not contains_y_param:
             continue
         x_values.append(trial.params[x_param])
         y_values.append(trial.params[y_param])
