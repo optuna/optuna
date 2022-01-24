@@ -22,7 +22,7 @@ class CatBoostPruningCallback(object):
     a CatBoost model.
 
     If :class:`optuna.TrialPruned` is raised in ``after_iteration`` via
-    ``CatBoostPruningCallback``, then catboost exits.
+    ``CatBoostPruningCallback``, then catboost terminates abnormally.
     You must call ``check_pruned`` after training manually unlike other pruning callbacks
     to raise :class:`optuna.TrialPruned`.
 
@@ -55,20 +55,23 @@ class CatBoostPruningCallback(object):
         self._message = ""
 
     def after_iteration(self, info: Any) -> bool:
-        """Run after each iteration.
+        """Report an evaluation metric value for Optuna pruning after each CatBoost's iteration.
+
+        This method is call by CatBoost.
 
         Args:
             info:
-                A ``simpleNamespace`` containing iteraion, ``validation_name``, ``metric_name``
+                A ``SimpleNamespace`` containing iteraion, ``validation_name``, ``metric_name``
                 and history of losses.
-                For example ``namespace(iteration=2, metrics= {
+                For example ``SimpleNamespace(iteration=2, metrics={
                 'learn': {'Logloss': [0.6, 0.5]},
                 'validation': {'Logloss': [0.7, 0.6], 'AUC': [0.8, 0.9]}
                 })``.
 
         Returns:
-            A boolean value. If :obj:`True`, the trial should be pruned.
-            Otherwise, the trial should continue.
+            A boolean value. If :obj:`True`, CatBoost internally stops the optimization
+            with Optuna's pruning logic without raising :class:`optuna.TrialPruned`.
+            Otherwise, the optimization continues.
         """
         step = info.iteration - 1
         if self._valid_name not in info.metrics:
@@ -91,6 +94,6 @@ class CatBoostPruningCallback(object):
         return True
 
     def check_pruned(self) -> None:
-        """Check whether pruend."""
+        """Raise :class:`optuna.TrialPruned` manually if the CatBoost optimization is pruned."""
         if self._pruned:
             raise optuna.TrialPruned(self._message)
