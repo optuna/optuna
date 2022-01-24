@@ -29,6 +29,13 @@ _SEARCH_SPACE = OrderedDict(
 
 
 # TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
+def test_python_version() -> None:
+    if sys.version_info < (3, 7, 0):
+        with pytest.raises(ValueError):
+            optuna.samplers.QMCSampler()
+
+
+# TODO(kstoneriv3): Remove this after the support for Python 3.6 is stopped.
 @pytest.mark.skipif(
     sys.version_info < (3, 7, 0), reason="QMCSampler is not supported in Python 3.6"
 )
@@ -356,7 +363,7 @@ def test_sample_relative_seeding(scramble: bool, qmc_type: str) -> None:
     past_trials_parallel = [t for t in past_trials_parallel if t.number > 0]
     values_parallel = [t.params["x"] for t in past_trials_parallel]
     for v in values:
-        assert any(
+        assert np.any(
             np.isclose(v, values_parallel, rtol=1e-6)
         ), f"v: {v} of values: {values} is not included in values_parallel: {values_parallel}."
 

@@ -1,4 +1,4 @@
-from collections import OrderedDict
+import sys
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -6,13 +6,11 @@ from typing import Sequence
 
 import numpy as np
 
-# We want to lazy import scipy.stats.qmc as it is slow to import.
-import scipy  # NOQA
-
 import optuna
 from optuna import distributions
 from optuna import logging
 from optuna._experimental import experimental
+from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.samplers import BaseSampler
@@ -71,6 +69,10 @@ class QMCSampler(BaseSampler):
         As mentioned above, the search space of the :class:`~optuna.sampler.QMCSampler` is
         determined by the first trial of the study. Once the search space is determined, it cannot
         be changed afterwards.
+
+    .. note:
+        `QMCSampler` is not supported for Python 3.6 as it depends on `scipy.stat.qmc` module which
+        only supports Python 3.7 or the later versions.
 
     Args:
         qmc_type:
@@ -169,6 +171,15 @@ class QMCSampler(BaseSampler):
         warn_independent_sampling: bool = True,
     ) -> None:
 
+        version = sys.version_info
+        if version < (3, 7, 0):
+            version_txt = str(version[0]) + "." + str(version[1]) + "." + str(version[2])
+            message = (
+                f"`QMCSampler` is not supported for Python {version_txt}. "
+                "Consider using Python 3.7 or later."
+            )
+            raise ValueError(message)
+
         self._scramble = scramble
         self._seed = seed or np.random.PCG64().random_raw()
         self._independent_sampler = independent_sampler or optuna.samplers.RandomSampler(seed=seed)
@@ -179,7 +190,7 @@ class QMCSampler(BaseSampler):
             self._qmc_type = qmc_type
         else:
             message = (
-                f"The `qmc_type`, {qmc_type}, is not a valid. "
+                f'The `qmc_type`, "{qmc_type}", is not a valid. '
                 'It must be one of "halton" and "sobol".'
             )
             raise ValueError(message)
@@ -216,9 +227,7 @@ class QMCSampler(BaseSampler):
 
     def _infer_initial_search_space(self, trial: FrozenTrial) -> Dict[str, BaseDistribution]:
 
-        # TODO(kstoneriv3): Replace `OrderedDict` to `Dict` after
-        # the support for Python 3.6 is stopped.
-        search_space: OrderedDict[str, BaseDistribution] = OrderedDict()
+        search_space: Dict[str, BaseDistribution] = {}
         for param_name, distribution in trial.distributions.items():
             if not isinstance(distribution, _NUMERICAL_DISTRIBUTIONS):
                 continue
@@ -286,15 +295,15 @@ class QMCSampler(BaseSampler):
     def _sample_qmc(self, study: Study, search_space: Dict[str, BaseDistribution]) -> np.ndarray:
 
         # Lazy import because the `scipy.stats.qmc` is slow to import.
-        import scipy.stats.qmc
+        qmc_module = _LazyImport("scipy.stats.qmc")
 
         sample_id = self._find_sample_id(study, search_space)
         d = len(search_space)
 
         if self._qmc_type == "halton":
-            qmc_engine = scipy.stats.qmc.Halton(d, seed=self._seed, scramble=self._scramble)
+            qmc_engine = qmc_module.Halton(d, seed=self._seed, scramble=self._scramble)
         elif self._qmc_type == "sobol":
-            qmc_engine = scipy.stats.qmc.Sobol(d, seed=self._seed, scramble=self._scramble)
+            qmc_engine = qmc_module.Sobol(d, seed=self._seed, scramble=self._scramble)
         else:
             raise ValueError("Invalid `qmc_type`")
 
