@@ -61,9 +61,10 @@ class NSGAIISampler(BaseSampler):
             The available crossovers are listed here:
             https://optuna.readthedocs.io/en/stable/reference/samplers.html.
 
-            For :class:`~optuna.distributions.CategoricalDistribution`,
-            uniform crossover will be applied,
-            and for other distributions, the specified crossover will be applied.
+            :class:`~optuna.samplers.UniformCrossover` is always applied to parameters
+            sampled from :class:`~optuna.distributions.CategoricalDistribution`, and by
+            default for parameters sampled from other distributions unless this argument
+            is specified.
 
             For more information on each of the crossover method, please refer to
             specific crossover documentation.
