@@ -51,7 +51,7 @@ class QMCSampler(BaseSampler):
 
     We use the QMC implementations in Scipy. For the details of the QMC algorithm,
     see the Scipy API references on `scipy.stats.qmc
-    <https://scipy.github.io/devdocs/stats.qmc.html>`_.
+    <https://scipy.github.io/devdocs/reference/stats.qmc.html>`_.
 
     .. note:
         If your search space contains categorical parameters, it samples the catagorical
@@ -77,11 +77,11 @@ class QMCSampler(BaseSampler):
             The type of QMC sequence to be sampled. This must be one of
             `"halton"` and `"sobol"`. Default is `"halton"`.
 
-            .. note:
-               Sobol' sequence is designed to have low-discrepancy property when the number of
-               samples is :math:`n=2^m` for each positive integer :math:`m`. When it is possible
-               to pre-specify the number of trials suggested by `QMCSampler`, it is recommended
-               that the number of trials should be set as power of two.
+            .. note::
+                Sobol' sequence is designed to have low-discrepancy property when the number of
+                samples is :math:`n=2^m` for each positive integer :math:`m`. When it is possible
+                to pre-specify the number of trials suggested by `QMCSampler`, it is recommended
+                that the number of trials should be set as power of two.
 
         scramble:
             If this option is :obj:`True`, scrambling (randomization) is applied to the QMC
