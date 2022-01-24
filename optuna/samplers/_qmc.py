@@ -7,12 +7,12 @@ from typing import Sequence
 import numpy as np
 
 import optuna
-from optuna import distributions
 from optuna import logging
 from optuna._experimental import experimental
 from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
-from optuna.distributions import BaseDistribution, CategoricalDistribution
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
 from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
