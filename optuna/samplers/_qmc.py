@@ -69,7 +69,7 @@ class QMCSampler(BaseSampler):
     Args:
         qmc_type:
             The type of QMC sequence to be sampled. This must be one of
-            `"halton"` and `"sobol"`. Default is `"halton"`.
+            `"halton"` and `"sobol"`. Default is `"sobol"`.
 
             .. note::
                 Sobol' sequence is designed to have low-discrepancy property when the number of
@@ -155,7 +155,7 @@ class QMCSampler(BaseSampler):
     def __init__(
         self,
         *,
-        qmc_type: str = "halton",
+        qmc_type: str = "sobol",
         scramble: bool = False,  # default is False for simplicity in distributed environment.
         seed: Optional[int] = None,
         independent_sampler: Optional[BaseSampler] = None,
