@@ -233,15 +233,11 @@ def _run_trial(
             _logger.info("Trial {} pruned. {}".format(frozen_trial.number, str(func_err)))
         elif frozen_trial.state == TrialState.FAIL:
             if func_err is not None:
-                _logger.warning(
-                    "Trial {} failed because of the following error: {}".format(
-                        frozen_trial.number, repr(func_err)
-                    ),
-                    exc_info=func_err_fail_exc_info,
-                )
+                _log_failed_trial(frozen_trial, repr(func_err), exc_info=func_err_fail_exc_info)
+
             if tell_warnings is not None:
                 for tell_warning in tell_warnings:
-                    _logger.warning(tell_warning.message)
+                    _log_failed_trial(frozen_trial, tell_warning.message)
         else:
             assert False, "Should not reach."
 
@@ -261,3 +257,12 @@ def _record_heartbeat(trial_id: int, storage: storages.BaseStorage, stop_event: 
         storage.record_heartbeat(trial_id)
         if stop_event.wait(timeout=heartbeat_interval):
             return
+
+
+def _log_failed_trial(
+    trial: FrozenTrial, message: Union[str, Warning], exc_info: Any = None
+) -> None:
+    _logger.warning(
+        "Trial {} failed because of the following error: {}".format(trial.number, message),
+        exc_info=exc_info,
+    )
