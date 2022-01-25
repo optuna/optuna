@@ -101,7 +101,11 @@ class AllenNLPExecutor(object):
         serialization_dir:
             A path which model weights and logs are saved.
         metrics:
-            An evaluation metric for the result of ``objective``.
+            An evaluation metric. `Trainer <https://docs.allennlp.org/
+            main/api/training/gradient_descent_trainer/#train>`_ of AllenNLP
+            returns a dictionary consists of metrics after training.
+            :class:`~optuna.integration.AllenNLPExecutor` accesses the dictionary
+            by the key ``metrics`` you specify and use it as a objective value.
         force:
             If :obj:`True`, an executor overwrites the output directory if it exists.
         file_friendly_logging:
