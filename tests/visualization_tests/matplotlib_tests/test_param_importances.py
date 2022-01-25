@@ -29,7 +29,7 @@ def test_plot_param_importances() -> None:
     # Test with a trial.
     figure = plot_param_importances(study)
 
-    bars = figure.findobj(Rectangle)[:-1]  # the last Rectangle is the plot itself
+    bars = figure.findobj(Rectangle)[:-1]  # The last Rectangle is the plot itself.
     plotted_data = [bar.get_width() for bar in bars]
     # get_yticklabels return a data structure of Text(0, 0, 'param_d')
     labels = [label.get_text() for label in figure.get_yticklabels()]
