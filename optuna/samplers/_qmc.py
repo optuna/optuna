@@ -239,7 +239,7 @@ class QMCSampler(BaseSampler):
     def _log_independent_sampling(self, trial: FrozenTrial, param_name: str) -> None:
         _logger.warning(
             f"The parameter '{param_name}' in trial#{trial.number} is sampled independently "
-            "by using `{self._independent_sampler.__class__.__name__}` instead of `QMCSampler` "
+            f"by using `{self._independent_sampler.__class__.__name__}` instead of `QMCSampler` "
             "(optimization performance may be degraded). "
             "`QMCSampler` does not support dynamic search space or `CategoricalDistribution`. "
             "You can suppress this warning by setting `warn_independent_sampling` "
