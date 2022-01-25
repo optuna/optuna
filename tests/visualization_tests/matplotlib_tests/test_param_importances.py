@@ -62,7 +62,7 @@ def test_plot_param_importances() -> None:
 
     assert len(figure.get_lines()) == 0
     assert len(bars) == 1
-    assert set(labels) == set(("param_b",))  # "param_a", "param_c" are conditional.
+    assert set(labels) == set(("param_b",))
     assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert figure.xaxis.label.get_text() == "Importance for Objective Value"
 
