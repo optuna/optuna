@@ -23,8 +23,10 @@ class CatBoostPruningCallback(object):
 
     If :class:`optuna.TrialPruned` is raised in ``after_iteration`` via
     ``CatBoostPruningCallback``, then catboost terminates abnormally.
-    You must call ``check_pruned`` after training manually unlike other pruning callbacks
-    to raise :class:`optuna.TrialPruned`.
+
+    .. note::
+        You must call ``check_pruned`` after training manually unlike other pruning callbacks
+        to raise :class:`optuna.TrialPruned`.
 
     Args:
         trial:
