@@ -323,15 +323,15 @@ class _Optimizer(object):
                 value = float(value)
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 value = value * distribution.q + distribution.low
-            if isinstance(distribution, distributions.IntUniformDistribution):
+            elif isinstance(distribution, distributions.IntUniformDistribution):
                 value = int(value * distribution.step + distribution.low)
-            if isinstance(distribution, distributions.IntLogUniformDistribution):
+            elif isinstance(distribution, distributions.IntLogUniformDistribution):
                 value = int(np.round(value))
                 value = min(max(value, distribution.low), distribution.high)
-            if isinstance(distribution, distributions.FloatDistribution):
+            elif isinstance(distribution, distributions.FloatDistribution):
                 if distribution.step is not None:
                     value = value * distribution.step + distribution.low
-            if isinstance(distribution, distributions.IntDistribution):
+            elif isinstance(distribution, distributions.IntDistribution):
                 if distribution.log:
                     value = int(np.round(value))
                     value = min(max(value, distribution.low), distribution.high)
@@ -372,12 +372,12 @@ class _Optimizer(object):
 
             if isinstance(distribution, distributions.DiscreteUniformDistribution):
                 param_value = (param_value - distribution.low) // distribution.q
-            if isinstance(distribution, distributions.FloatDistribution):
+            elif isinstance(distribution, distributions.FloatDistribution):
                 if distribution.step is not None:
                     param_value = (param_value - distribution.low) // distribution.step
-            if isinstance(distribution, distributions.IntUniformDistribution):
+            elif isinstance(distribution, distributions.IntUniformDistribution):
                 param_value = (param_value - distribution.low) // distribution.step
-            if isinstance(distribution, distributions.IntDistribution):
+            elif isinstance(distribution, distributions.IntDistribution):
                 if not distribution.log:
                     param_value = (param_value - distribution.low) // distribution.step
 
