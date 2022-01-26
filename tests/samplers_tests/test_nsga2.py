@@ -18,10 +18,16 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.samplers import BaseCrossover
 from optuna.samplers import BaseSampler
 from optuna.samplers import NSGAIISampler
-from optuna.samplers._nsga2.sampler import _CONSTRAINTS_KEY
+from optuna.samplers.nsga2 import BaseCrossover
+from optuna.samplers.nsga2 import BLXAlphaCrossover
+from optuna.samplers.nsga2 import SBXCrossover
+from optuna.samplers.nsga2 import SPXCrossover
+from optuna.samplers.nsga2 import UNDXCrossover
+from optuna.samplers.nsga2 import UniformCrossover
+from optuna.samplers.nsga2 import VSBXCrossover
+from optuna.samplers.nsga2._sampler import _CONSTRAINTS_KEY
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 
@@ -34,7 +40,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers._nsga2.sampler._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers.nsga2._sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
@@ -45,7 +51,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers._nsga2.sampler._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers.nsga2._sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {i: 2 for i in range(20)}
 
@@ -407,7 +413,7 @@ def test_crowding_distance_sort() -> None:
         _create_frozen_trial(2, [9]),
         _create_frozen_trial(3, [0]),
     ]
-    optuna.samplers._nsga2.sampler._crowding_distance_sort(trials)
+    optuna.samplers.nsga2._sampler._crowding_distance_sort(trials)
     assert [t.number for t in trials] == [2, 3, 0, 1]
 
     trials = [
@@ -416,7 +422,7 @@ def test_crowding_distance_sort() -> None:
         _create_frozen_trial(2, [9, 0]),
         _create_frozen_trial(3, [0, 0]),
     ]
-    optuna.samplers._nsga2.sampler._crowding_distance_sort(trials)
+    optuna.samplers.nsga2._sampler._crowding_distance_sort(trials)
     assert [t.number for t in trials] == [2, 3, 0, 1]
 
 
@@ -430,7 +436,7 @@ def test_study_system_attr_for_population_cache() -> None:
         return [
             v
             for k, v in study.system_attrs.items()
-            if k.startswith(optuna.samplers._nsga2.sampler._POPULATION_CACHE_KEY_PREFIX)
+            if k.startswith(optuna.samplers.nsga2._sampler._POPULATION_CACHE_KEY_PREFIX)
         ]
 
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)
@@ -492,12 +498,12 @@ def test_call_after_trial_of_random_sampler() -> None:
 parametrize_nsga2_sampler = pytest.mark.parametrize(
     "sampler_class",
     [
-        lambda: NSGAIISampler(population_size=2, crossover=optuna.samplers.UniformCrossover()),
-        lambda: NSGAIISampler(population_size=2, crossover=optuna.samplers.BLXAlphaCrossover()),
-        lambda: NSGAIISampler(population_size=2, crossover=optuna.samplers.SBXCrossover()),
-        lambda: NSGAIISampler(population_size=2, crossover=optuna.samplers.VSBXCrossover()),
-        lambda: NSGAIISampler(population_size=3, crossover=optuna.samplers.UNDXCrossover()),
-        lambda: NSGAIISampler(population_size=3, crossover=optuna.samplers.UNDXCrossover()),
+        lambda: NSGAIISampler(population_size=2, crossover=UniformCrossover()),
+        lambda: NSGAIISampler(population_size=2, crossover=BLXAlphaCrossover()),
+        lambda: NSGAIISampler(population_size=2, crossover=SBXCrossover()),
+        lambda: NSGAIISampler(population_size=2, crossover=VSBXCrossover()),
+        lambda: NSGAIISampler(population_size=3, crossover=UNDXCrossover()),
+        lambda: NSGAIISampler(population_size=3, crossover=UNDXCrossover()),
     ],
 )
 
@@ -531,9 +537,7 @@ def test_crossover_dims(n_params: int, sampler_class: Callable[[], BaseSampler])
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize(
-    "crossover", [optuna.samplers.UNDXCrossover(), optuna.samplers.SPXCrossover()]
-)
+@pytest.mark.parametrize("crossover", [UNDXCrossover(), SPXCrossover()])
 def test_crossover_invalid_population(crossover: BaseCrossover) -> None:
     n_objectives = 2
     n_trials = 8
@@ -550,15 +554,15 @@ def test_crossover_invalid_population(crossover: BaseCrossover) -> None:
 @pytest.mark.parametrize(
     "crossover",
     [
-        optuna.samplers.UniformCrossover(),
-        optuna.samplers.BLXAlphaCrossover(),
-        optuna.samplers.SPXCrossover(),
-        optuna.samplers.SBXCrossover(),
-        optuna.samplers.VSBXCrossover(),
-        optuna.samplers.UNDXCrossover(),
+        UniformCrossover(),
+        BLXAlphaCrossover(),
+        SPXCrossover(),
+        SBXCrossover(),
+        VSBXCrossover(),
+        UNDXCrossover(),
     ],
 )
-def test_crossover_numerical_distribution(crossover: optuna.samplers.BaseCrossover) -> None:
+def test_crossover_numerical_distribution(crossover: BaseCrossover) -> None:
 
     study = optuna.study.create_study()
     rng = np.random.RandomState()
@@ -584,7 +588,7 @@ def test_crossover_categorical_distribution() -> None:
     }
     parent_params = np.array([["a", "b"], ["c", "d"]])
 
-    crossover = optuna.samplers.UniformCrossover()
+    crossover = UniformCrossover()
     child_params = crossover.crossover(parent_params, np.random.RandomState(), study, search_space)
 
     assert child_params.ndim == 1
@@ -599,12 +603,12 @@ def test_crossover_categorical_distribution() -> None:
 @pytest.mark.parametrize(
     "crossover,expected_params",
     [
-        (optuna.samplers.UniformCrossover(), np.array([3.0, 4.0])),
-        (optuna.samplers.BLXAlphaCrossover(), np.array([2.0, 3.0])),
-        (optuna.samplers.SPXCrossover(), np.array([2.75735931, 3.75735931])),
-        (optuna.samplers.SBXCrossover(), np.array([3.0, 4.0])),
-        (optuna.samplers.VSBXCrossover(), np.array([3.0, 4.0])),
-        (optuna.samplers.UNDXCrossover(), np.array([1.0, 2.0])),
+        (UniformCrossover(), np.array([3.0, 4.0])),
+        (BLXAlphaCrossover(), np.array([2.0, 3.0])),
+        (SPXCrossover(), np.array([2.75735931, 3.75735931])),
+        (SBXCrossover(), np.array([3.0, 4.0])),
+        (VSBXCrossover(), np.array([3.0, 4.0])),
+        (UNDXCrossover(), np.array([1.0, 2.0])),
     ],
 )
 def test_crossover_deterministic(crossover: BaseCrossover, expected_params: np.ndarray) -> None:
