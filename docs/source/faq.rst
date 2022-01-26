@@ -494,3 +494,51 @@ There are two kinds of constrained optimizations, one with soft constraints and 
 Soft constraints do not have to be satisfied, but an objective function is penalized if they are unsatisfied. On the other hand, hard constraints must be satisfied.
 
 Optuna is adopting the soft one and **DOES NOT** support the hard one. In other words, Optuna **DOES NOT** have built-in samplers for the hard constraints.
+
+
+Can I monitor trials and make them failed automatically when they are killed unexpectedly?
+------------------------------------------------------------------------------------------
+
+.. note::
+
+  Heartbeat mechanism is experimental. API would change in the future.
+
+A process running a trial could be killed unexpectedly, typically by a job scheduler in a cluster environment.
+If trials are killed unexpectedly, they will be left on the storage with their states `RUNNING` until we remove them or update their state manually.
+For such a case, Optuna supports monitoring trials using `heartbeat <https://en.wikipedia.org/wiki/Heartbeat_(computing)>`_ mechanism.
+Using heartbeat, if a process running a trial is killed unexpectedly,
+Optuna will automatically change the state of the trial that was running on that process to :obj:`~optuna.trial.TrialState.FAIL`
+from :obj:`~optuna.trial.TrialState.RUNNING`.
+
+.. code-block:: python
+
+    import optuna
+
+    def objective(trial):
+        (Very time-consuming computation)
+
+    # Recording heartbeats every 60 seconds.
+    # Other processes' trials where more than 120 seconds have passed
+    # since the last heartbeat was recorded will be automatically failed.
+    storage = optuna.storages.RDBStorage(url="sqlite:///:memory:", heartbeat_interval=60, grace_period=120)
+    study = optuna.create_study(storage=storage)
+    study.optimize(objective, n_trials=100)
+
+You can also execute a callback function to process the failed trial.
+Optuna provides a callback to retry failed trials as :class:`~optuna.storages.RetryFailedTrialCallback`.
+Note that a callback is invoked at a beginning of each trial, which means :class:`~optuna.storages.RetryFailedTrialCallback`
+will retry failed trials when a new trial starts to evaluate.
+
+.. code-block:: python
+
+    import optuna
+    from optuna.storages import RetryFailedTrialCallback
+
+    storage = optuna.storages.RDBStorage(
+        url="sqlite:///:memory:",
+        heartbeat_interval=60,
+        grace_period=120,
+        failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
+    )
+
+    study = optuna.create_study(storage=storage)
