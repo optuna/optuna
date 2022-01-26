@@ -537,6 +537,4 @@ Optuna provides a callback to retry failed trials as :class:`~optuna.storages.Re
         failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
     )
 
-    study = optuna.create_study(
-        storage=storage,
-    )
+    study = optuna.create_study(storage=storage)
