@@ -234,8 +234,7 @@ def _run_trial(
         elif frozen_trial.state == TrialState.FAIL:
             if func_err is not None:
                 _log_failed_trial(frozen_trial, repr(func_err), exc_info=func_err_fail_exc_info)
-
-            if tell_warnings is not None:
+            elif tell_warnings is not None:
                 for tell_warning in tell_warnings:
                     _log_failed_trial(frozen_trial, tell_warning.message)
         else:
