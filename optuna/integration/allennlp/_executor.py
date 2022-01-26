@@ -103,7 +103,7 @@ class AllenNLPExecutor(object):
         metrics:
             An evaluation metric. `GradientDescrentTrainer.train() <https://docs.allennlp.org/
             main/api/training/gradient_descent_trainer/#train>`_ of AllenNLP
-            returns a dictionary consists of metrics after training.
+            returns a dictionary containing metrics after training.
             :class:`~optuna.integration.AllenNLPExecutor` accesses the dictionary
             by the key ``metrics`` you specify and use it as a objective value.
         force:
