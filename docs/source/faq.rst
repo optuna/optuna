@@ -526,6 +526,8 @@ from :obj:`~optuna.trial.TrialState.RUNNING`.
 
 You can also execute a callback function to process the failed trial.
 Optuna provides a callback to retry failed trials as :class:`~optuna.storages.RetryFailedTrialCallback`.
+Note that a callback is invoked at a beginning of each trial, which means :class:`~optuna.storages.RetryFailedTrialCallback`
+will retry failed trials when a new trial starts to evaluate.
 
 .. code-block:: python
 
