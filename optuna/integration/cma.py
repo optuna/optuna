@@ -276,10 +276,6 @@ class PyCmaSampler(BaseSampler):
                     sigma0s.append((log_high - log_low) / 6)
                 else:
                     sigma0s.append((distribution.high - distribution.low) / 6)
-            if isinstance(distribution, UniformDistribution):
-                sigma0s.append((distribution.high - distribution.low) / 6)
-            elif isinstance(distribution, DiscreteUniformDistribution):
-                sigma0s.append((distribution.high - distribution.low) / 6)
             elif isinstance(distribution, FloatDistribution):
                 if distribution.log:
                     log_high = math.log(distribution.high)

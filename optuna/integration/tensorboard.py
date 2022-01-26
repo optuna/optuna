@@ -57,9 +57,9 @@ class TensorBoardCallback(object):
         self, distributions: Dict[str, optuna.distributions.BaseDistribution]
     ) -> None:
         supported_distributions = (
+            optuna.distributions.CategoricalDistribution,
             optuna.distributions.FloatDistribution,
             optuna.distributions.IntDistribution,
-            optuna.distributions.CategoricalDistribution,
         )
 
         for param_name, param_distribution in distributions.items():
