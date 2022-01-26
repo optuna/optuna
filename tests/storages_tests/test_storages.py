@@ -24,7 +24,6 @@ from optuna.storages import _CachedStorage
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.storages import RedisStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
@@ -50,7 +49,7 @@ def test_get_storage() -> None:
     assert isinstance(optuna.storages.get_storage(None), InMemoryStorage)
     assert isinstance(optuna.storages.get_storage("sqlite:///:memory:"), _CachedStorage)
     assert isinstance(
-        optuna.storages.get_storage("redis://test_user:passwd@localhost:6379/0"), RedisStorage
+        optuna.storages.get_storage("redis://test_user:passwd@localhost:6379/0"), _CachedStorage
     )
 
 

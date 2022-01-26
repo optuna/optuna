@@ -506,7 +506,7 @@ class RDBStorage(BaseStorage):
     def _create_new_trial(
         self, study_id: int, template_trial: Optional[FrozenTrial] = None
     ) -> FrozenTrial:
-        """Create a new trial and returns its trial_id and a :class:`~optuna.trial.FrozenTrial`.
+        """Create a new trial and returns a :class:`~optuna.trial.FrozenTrial`.
 
         Args:
             study_id:

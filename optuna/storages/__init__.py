@@ -26,10 +26,10 @@ def get_storage(storage: Union[None, str, BaseStorage]) -> BaseStorage:
         return InMemoryStorage()
     if isinstance(storage, str):
         if storage.startswith("redis"):
-            return RedisStorage(storage)
+            return _CachedStorage(RedisStorage(storage))
         else:
             return _CachedStorage(RDBStorage(storage))
-    elif isinstance(storage, RDBStorage):
+    elif isinstance(storage, (RDBStorage, RedisStorage)):
         return _CachedStorage(storage)
     else:
         return storage
