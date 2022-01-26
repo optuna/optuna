@@ -98,7 +98,7 @@ class BaseDistribution(object, metaclass=abc.ABCMeta):
 
     def __repr__(self) -> str:
 
-        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self.__dict__.items()))
+        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
         return "{}({})".format(self.__class__.__name__, kwargs)
 
 
@@ -208,10 +208,6 @@ class UniformDistribution(FloatDistribution):
         d.pop("step")
         return d
 
-    def __repr__(self) -> str:
-        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
-        return "{}({})".format(self.__class__.__name__, kwargs)
-
 
 @deprecated("3.0.0", "6.0.0", text=_float_distribution_deprecated_msg)
 class LogUniformDistribution(FloatDistribution):
@@ -240,10 +236,6 @@ class LogUniformDistribution(FloatDistribution):
         d.pop("log")
         d.pop("step")
         return d
-
-    def __repr__(self) -> str:
-        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
-        return "{}({})".format(self.__class__.__name__, kwargs)
 
 
 @deprecated("3.0.0", "6.0.0", text=_float_distribution_deprecated_msg)
@@ -282,10 +274,6 @@ class DiscreteUniformDistribution(FloatDistribution):
         step = d.pop("step")
         d["q"] = step
         return d
-
-    def __repr__(self) -> str:
-        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
-        return "{}({})".format(self.__class__.__name__, kwargs)
 
     @property
     def q(self) -> float:
@@ -404,10 +392,6 @@ class IntUniformDistribution(IntDistribution):
         d.pop("log")
         return d
 
-    def __repr__(self) -> str:
-        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
-        return "{}({})".format(self.__class__.__name__, kwargs)
-
 
 @deprecated("3.0.0", "6.0.0", text=_int_distribution_deprecated_msg)
 class IntLogUniformDistribution(IntDistribution):
@@ -446,10 +430,6 @@ class IntLogUniformDistribution(IntDistribution):
         d = copy.deepcopy(self.__dict__)
         d.pop("log")
         return d
-
-    def __repr__(self) -> str:
-        kwargs = ", ".join("{}={}".format(k, v) for k, v in sorted(self._asdict().items()))
-        return "{}({})".format(self.__class__.__name__, kwargs)
 
 
 class CategoricalDistribution(BaseDistribution):
