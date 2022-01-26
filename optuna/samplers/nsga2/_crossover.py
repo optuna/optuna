@@ -16,8 +16,8 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
-from optuna.samplers._nsga2._crossovers._base import BaseCrossover
-from optuna.samplers._nsga2._crossovers._uniform import UniformCrossover
+from optuna.samplers.nsga2._crossovers._base import BaseCrossover
+from optuna.samplers.nsga2._crossovers._uniform import UniformCrossover
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial

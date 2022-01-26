@@ -5,7 +5,7 @@ import numpy as np
 
 from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
-from optuna.samplers._nsga2._crossovers._base import BaseCrossover
+from optuna.samplers.nsga2._crossovers._base import BaseCrossover
 from optuna.study import Study
 
 

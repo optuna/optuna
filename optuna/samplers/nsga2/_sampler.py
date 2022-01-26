@@ -18,9 +18,9 @@ import optuna
 from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
-from optuna.samplers._nsga2._crossovers._base import BaseCrossover
-from optuna.samplers._nsga2._crossovers._uniform import UniformCrossover
-from optuna.samplers._nsga2.crossover import perform_crossover
+from optuna.samplers.nsga2._crossovers._base import BaseCrossover
+from optuna.samplers.nsga2._crossovers._uniform import UniformCrossover
+from optuna.samplers.nsga2._crossover import perform_crossover
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
 from optuna.study import Study
