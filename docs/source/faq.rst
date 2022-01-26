@@ -503,8 +503,10 @@ Can I monitor trials and make them failed automatically when they are killed une
 
   Heartbeat mechanism is experimental. API would change in the future.
 
-Optuna supports monitoring trial heartbeats with RDB and Redis storages.
-Using heartbeat, if a process running a trial is killed by a scheduler in a cluster environment,
+A process running a trial could be killed unexpectedly, typically by a job scheduler in a cluster environment.
+If trials are killed unexpectedly, they will be left on the storage with their states `RUNNING` until we remove them or update their state manually.
+For such a case, Optuna supports monitoring trials using `heartbeat <https://en.wikipedia.org/wiki/Heartbeat_(computing)>`_ mechanism.
+Using heartbeat, if a process running a trial is killed unexpectedly,
 Optuna will automatically change the state of the trial that was running on that process to :obj:`~optuna.trial.TrialState.FAIL`
 from :obj:`~optuna.trial.TrialState.RUNNING`.
 
