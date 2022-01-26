@@ -496,8 +496,8 @@ Soft constraints do not have to be satisfied, but an objective function is penal
 Optuna is adopting the soft one and **DOES NOT** support the hard one. In other words, Optuna **DOES NOT** have built-in samplers for the hard constraints.
 
 
-Can I monitor trials and make them failed automatically when they are killed by a scheduler?
---------------------------------------------------------------------------------------------
+Can I monitor trials and make them failed automatically when they are killed unexpectedly?
+------------------------------------------------------------------------------------------
 
 .. note::
 
