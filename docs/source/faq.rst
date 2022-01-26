@@ -518,7 +518,7 @@ from :obj:`~optuna.trial.TrialState.RUNNING`.
     # Recording heartbeats every 60 seconds.
     # Other processes' trials where more than 120 seconds have passed
     # since the last heartbeat was recorded will be automatically failed.
-    storage = optuna.storages.RDBStorage(url=..., heartbeat_interval=60, grace_period=120)
+    storage = optuna.storages.RDBStorage(url="sqlite:///:memory:", heartbeat_interval=60, grace_period=120)
     study = optuna.create_study(storage=storage)
     study.optimize(objective, n_trials=100)
 
