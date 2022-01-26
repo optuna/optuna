@@ -101,7 +101,7 @@ class AllenNLPExecutor(object):
         serialization_dir:
             A path which model weights and logs are saved.
         metrics:
-            An evaluation metric. `Trainer <https://docs.allennlp.org/
+            An evaluation metric. `GradientDescrentTrainer.train() <https://docs.allennlp.org/
             main/api/training/gradient_descent_trainer/#train>`_ of AllenNLP
             returns a dictionary consists of metrics after training.
             :class:`~optuna.integration.AllenNLPExecutor` accesses the dictionary
