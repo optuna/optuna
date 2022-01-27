@@ -1,5 +1,4 @@
 import math
-from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -15,6 +14,7 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _get_param_values
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
 
@@ -88,13 +88,6 @@ def plot_contour(
     _imports.check()
     _check_plot_args(study, target, target_name)
     return _get_contour_plot(study, params, target, target_name)
-
-
-def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
-    values = [t.params[p_name] for t in trials if p_name in t.params]
-    if _is_numerical(trials, p_name):
-        return values
-    return list(map(str, values))
 
 
 def _get_contour_plot(

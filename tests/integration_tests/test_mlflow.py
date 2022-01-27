@@ -387,8 +387,8 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
 
     mlflc = MLflowCallback(tracking_uri=tracking_file_name)
 
-    @mlflc.track_in_mlflow()
     def _objective_func(trial: optuna.trial.Trial) -> float:
+        """Objective function"""
 
         x = trial.suggest_float("x", -1.0, 1.0)
         y = trial.suggest_float("y", 20, 30, log=True)
@@ -398,8 +398,10 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
         mlflow.log_metric(metric_name, metric)
         return (x - 2) ** 2 + (y - 25) ** 2 + z
 
+    tracked_objective = mlflc.track_in_mlflow()(_objective_func)
+
     study = optuna.create_study(study_name=study_name)
-    study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
+    study.optimize(tracked_objective, n_trials=n_trials, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_file_name)
     experiments = mlfl_client.list_experiments()
@@ -418,6 +420,9 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
 
     assert metric_name in first_run_dict["data"]["metrics"]
     assert first_run_dict["data"]["metrics"][metric_name] == metric
+
+    assert tracked_objective.__name__ == _objective_func.__name__
+    assert tracked_objective.__doc__ == _objective_func.__doc__
 
 
 def test_initialize_experiment(tmpdir: py.path.local) -> None:

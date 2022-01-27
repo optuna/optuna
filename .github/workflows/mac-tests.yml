@@ -1,5 +1,5 @@
 # Run tests and integration tests on Mac, which are triggered by each master push.
-# Currently, Python3.7 is only used as an environment.
+# Currently, Python3.8 is only used as an environment.
 # This is mainly for the sake of speed.
 name: mac-tests
 
@@ -27,10 +27,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Setup Python3.7
+    - name: Setup Python3.8
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: 3.8
 
     - name: Setup cache
       uses: actions/cache@v2
@@ -38,9 +38,9 @@ jobs:
         cache-name: test
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-3.7-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.7-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
 
     - name: Install
       run: |
@@ -71,10 +71,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Setup Python3.7
+    - name: Setup Python3.8
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: 3.8
 
     - name: Setup cache
       uses: actions/cache@v2
@@ -82,9 +82,9 @@ jobs:
         cache-name: test-integration
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-3.7-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
+        key: ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
         restore-keys: |
-          ${{ runner.os }}-3.7-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
+          ${{ runner.os }}-3.8-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}
 
     - name: Setup mac environment
       run: |

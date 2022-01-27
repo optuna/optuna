@@ -1,3 +1,5 @@
+import numpy as np
+from numpy.testing import assert_almost_equal
 import pytest
 
 from optuna.study import create_study
@@ -35,6 +37,10 @@ def test_plot_optimization_history(direction: str) -> None:
     figure = plot_optimization_history(study)
     assert len(figure.get_lines()) == 1
     assert list(figure.get_lines()[0].get_xdata()) == [0, 1, 2]
+    if direction == "minimize":
+        assert list(figure.get_lines()[0].get_ydata()) == [1.0, 1.0, 0.0]
+    else:
+        assert list(figure.get_lines()[0].get_ydata()) == [1.0, 2.0, 2.0]
 
     # Test customized target.
     with pytest.warns(UserWarning):
@@ -82,7 +88,12 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
         study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(studies)
     assert len(figure.get_lines()) == n_studies
-
+    for i in range(n_studies):
+        assert list(figure.get_lines()[i].get_xdata()) == [0, 1, 2]
+        if direction == "minimize":
+            assert list(figure.get_lines()[i].get_ydata()) == [1.0, 1.0, 0.0]
+        else:
+            assert list(figure.get_lines()[i].get_ydata()) == [1.0, 2.0, 2.0]
     expected_legend_texts = []
     for i in range(n_studies):
         expected_legend_texts.append(f"Best Values of {studies[i].study_name}")
@@ -143,8 +154,14 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     studies = [create_study(direction=direction) for _ in range(n_studies)]
     for study in studies:
         study.optimize(objective, n_trials=3)
+
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.get_lines()) == 4
+    assert list(figure.get_lines()[-1].get_xdata()) == [0, 1, 2]
+    if direction == "minimize":
+        assert list(figure.get_lines()[-1].get_ydata()) == [1.0, 1.0, 0.0]
+    else:
+        assert list(figure.get_lines()[-1].get_ydata()) == [1.0, 2.0, 2.0]
 
     legend_texts = [legend.get_text() for legend in figure.legend().get_texts()]
     assert sorted(legend_texts) == ["Best Value", "Objective Value"]
@@ -169,3 +186,23 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
 
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.get_lines()) == 0
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_error_bar_in_optimization_history(direction: str) -> None:
+    def objective(trial: Trial) -> float:
+        return trial.suggest_float("x", 0, 1)
+
+    studies = [create_study(direction=direction) for _ in range(3)]
+    suggested_params = [0.1, 0.3, 0.2]
+    for x, study in zip(suggested_params, studies):
+        study.enqueue_trial({"x": x})
+        study.optimize(objective, n_trials=1)
+    figure = plot_optimization_history(studies, error_bar=True)
+
+    mean = np.mean(suggested_params)
+    std = np.std(suggested_params)
+
+    assert_almost_equal(figure.get_lines()[0].get_ydata(), mean)
+    assert_almost_equal(figure.get_lines()[1].get_ydata(), mean - std)
+    assert_almost_equal(figure.get_lines()[2].get_ydata(), mean + std)
