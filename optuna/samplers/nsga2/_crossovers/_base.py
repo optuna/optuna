@@ -40,7 +40,8 @@ class BaseCrossover(object, metaclass=abc.ABCMeta):
         Args:
             parents_params:
                 A ``numpy.ndarray`` with dimensions ``num_parents x num_parameters``.
-                Represents a continuous parameter space for each parent individual.
+                Represents a parameter space for each parent individual. This space is
+                continuous for numerical parameters and discrete for categorical parameters.
             rng:
                 An instance of ``numpy.random.RandomState``.
             study:
