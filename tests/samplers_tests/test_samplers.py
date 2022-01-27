@@ -48,10 +48,14 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
         optuna.samplers.NSGAIISampler,
     ]
+    # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
     + (
         []
         if sys.version_info < (3, 7, 0)
-        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
+        else [
+            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+            lambda: optuna.samplers.QMCSampler(),
+        ]
     ),
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
