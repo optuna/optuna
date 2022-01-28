@@ -665,10 +665,16 @@ class RedisStorage(BaseStorage):
 
         self._check_study_id(study_id)
 
-        trials = []
+        queries = []
         trial_ids = set(self._get_study_trials(study_id)) - excluded_trial_ids
         for trial_id in trial_ids:
-            frozen_trial = self.get_trial(trial_id)
+            queries.append(self._key_trial(trial_id))
+
+        trials = []
+        frozen_trial_pkls = self._redis.mget(queries)
+        for frozen_trial_pkl in frozen_trial_pkls:
+            assert frozen_trial_pkl is not None
+            frozen_trial = pickle.loads(frozen_trial_pkl)
 
             if states is None or frozen_trial.state in states:
                 trials.append(frozen_trial)
