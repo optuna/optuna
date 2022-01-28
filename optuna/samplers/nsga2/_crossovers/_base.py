@@ -47,8 +47,9 @@ class BaseCrossover(object, metaclass=abc.ABCMeta):
             study:
                 Target study object.
             search_space:
-                The search space returned by
-                :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`.
+                The subspace of original search space returned by
+                :func:`~optuna.samplers.BaseSampler.infer_relative_search_space`,
+                containing either only categorical or numerical distributions.
 
         Returns:
             A 1-dimensional ``numpy.ndarray`` containing new parameter combination.
