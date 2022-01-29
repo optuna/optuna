@@ -20,14 +20,14 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import NSGAIISampler
-from optuna.samplers.nsga2 import BaseCrossover
-from optuna.samplers.nsga2 import BLXAlphaCrossover
-from optuna.samplers.nsga2 import SBXCrossover
-from optuna.samplers.nsga2 import SPXCrossover
-from optuna.samplers.nsga2 import UNDXCrossover
-from optuna.samplers.nsga2 import UniformCrossover
-from optuna.samplers.nsga2 import VSBXCrossover
-from optuna.samplers.nsga2._sampler import _CONSTRAINTS_KEY
+from optuna.samplers.nsgaii import BaseCrossover
+from optuna.samplers.nsgaii import BLXAlphaCrossover
+from optuna.samplers.nsgaii import SBXCrossover
+from optuna.samplers.nsgaii import SPXCrossover
+from optuna.samplers.nsgaii import UNDXCrossover
+from optuna.samplers.nsgaii import UniformCrossover
+from optuna.samplers.nsgaii import VSBXCrossover
+from optuna.samplers.nsgaii._sampler import _CONSTRAINTS_KEY
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 
@@ -40,7 +40,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers.nsga2._sampler._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
@@ -51,7 +51,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers.nsga2._sampler._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {i: 2 for i in range(20)}
 
@@ -413,7 +413,7 @@ def test_crowding_distance_sort() -> None:
         _create_frozen_trial(2, [9]),
         _create_frozen_trial(3, [0]),
     ]
-    optuna.samplers.nsga2._sampler._crowding_distance_sort(trials)
+    optuna.samplers.nsgaii._sampler._crowding_distance_sort(trials)
     assert [t.number for t in trials] == [2, 3, 0, 1]
 
     trials = [
@@ -422,7 +422,7 @@ def test_crowding_distance_sort() -> None:
         _create_frozen_trial(2, [9, 0]),
         _create_frozen_trial(3, [0, 0]),
     ]
-    optuna.samplers.nsga2._sampler._crowding_distance_sort(trials)
+    optuna.samplers.nsgaii._sampler._crowding_distance_sort(trials)
     assert [t.number for t in trials] == [2, 3, 0, 1]
 
 
@@ -436,7 +436,7 @@ def test_study_system_attr_for_population_cache() -> None:
         return [
             v
             for k, v in study.system_attrs.items()
-            if k.startswith(optuna.samplers.nsga2._sampler._POPULATION_CACHE_KEY_PREFIX)
+            if k.startswith(optuna.samplers.nsgaii._sampler._POPULATION_CACHE_KEY_PREFIX)
         ]
 
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)

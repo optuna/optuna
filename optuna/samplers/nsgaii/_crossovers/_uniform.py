@@ -3,7 +3,7 @@ from typing import Dict
 import numpy as np
 
 from optuna.distributions import BaseDistribution
-from optuna.samplers.nsga2._crossovers._base import BaseCrossover
+from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
 
 
