@@ -59,9 +59,9 @@ class NSGAIISampler(BaseSampler):
         crossover:
             Crossover to be applied when creating child individuals.
             The available crossovers are listed here:
-            https://optuna.readthedocs.io/en/stable/reference/samplers/nsga2.html.
+            https://optuna.readthedocs.io/en/stable/reference/samplers/nsgaii.html.
 
-            :class:`~optuna.samplers.nsga2.UniformCrossover` is always applied to parameters
+            :class:`~optuna.samplers.nsgaii.UniformCrossover` is always applied to parameters
             sampled from :class:`~optuna.distributions.CategoricalDistribution`, and by
             default for parameters sampled from other distributions unless this argument
             is specified.
@@ -105,7 +105,7 @@ class NSGAIISampler(BaseSampler):
 
     Raises:
         ValueError:
-            If ``crossover`` is not instance of :class:`~optuna.samplers.nsga2.BaseCrossover`.
+            If ``crossover`` is not instance of :class:`~optuna.samplers.nsgaii.BaseCrossover`.
             Or, if ``population_size <= n_parents``.
             The `n_parents` is determined by each crossover.
             For `undx` and `spx`, ``n_parents=3``, and for the other algorithms, ``n_parents=2``.

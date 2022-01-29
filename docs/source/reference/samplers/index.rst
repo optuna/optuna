@@ -26,4 +26,4 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
 .. toctree::
     :maxdepth: 1
 
-    nsga2
+    nsgaii
