@@ -98,21 +98,21 @@ jobs:
 
     - name: Tests MySQL
       run: |
-        pytest tests/storages_tests/rdb_tests/test_with_server.py
+        pytest tests/storages_tests/test_with_server.py
       env:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: mysql+pymysql://user:test@127.0.0.1/optunatest
 
     - name: Tests PostgreSQL
       run: |
-        pytest tests/storages_tests/rdb_tests/test_with_server.py
+        pytest tests/storages_tests/test_with_server.py
       env:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: postgresql+psycopg2://user:test@127.0.0.1/optunatest
 
     - name: Tests Redis
       run: |
-        pytest tests/storages_tests/rdb_tests/test_with_server.py
+        pytest tests/storages_tests/test_with_server.py
       env:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: redis://localhost:6379
