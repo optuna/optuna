@@ -229,7 +229,7 @@ class _BaseCommand(Command):
 
 
 class _CreateStudy(_BaseCommand):
-    """Create a new study."""
+    """Create a new study. :class:`~optuna.cli._CreateStudy` """
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
@@ -281,7 +281,7 @@ class _CreateStudy(_BaseCommand):
 
 
 class _DeleteStudy(_BaseCommand):
-    """Delete a specified study."""
+    """Delete a specified study. :class:`~optuna.cli._Deletestudy` """
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
@@ -298,7 +298,10 @@ class _DeleteStudy(_BaseCommand):
 
 
 class _StudySetUserAttribute(_BaseCommand):
-    """Set a user attribute to a study."""
+    """
+    Set a user attribute to a study.
+    :class:`~optuna.cli._StudySetUserAttribute`
+    """
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
@@ -339,7 +342,7 @@ class _StudySetUserAttribute(_BaseCommand):
 
 
 class _Studies(_BaseCommand):
-    """Show a list of studies."""
+    """Show a list of studies. :class:`~optuna.cli._Studies` """
 
     _study_list_header = [
         ("name", ""),
@@ -557,7 +560,10 @@ class _BestTrials(_BaseCommand):
 
 
 class _StudyOptimize(_BaseCommand):
-    """Start optimization of a study. Deprecated since version 2.0.0."""
+    """
+    Start optimization of a study. Deprecated since version 2.0.0.
+    :class:`~optuna.cli._StudyOptimize`
+    """
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
@@ -644,7 +650,7 @@ class _StudyOptimize(_BaseCommand):
 
 
 class _StorageUpgrade(_BaseCommand):
-    """Upgrade the schema of a storage."""
+    """Upgrade the schema of a storage. :class:`~optuna.cli._Storageupgrade` """
 
     def get_parser(self, prog_name: str) -> ArgumentParser:
 
