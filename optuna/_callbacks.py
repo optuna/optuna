@@ -92,8 +92,8 @@ class RetryFailedTrialCallback:
             integer. If set to the default value of :obj:`None` will retry indefinitely.
             If set to an integer, will only retry that many times.
         inherit_intermediate:
-            Option to inherit `trial.intermediate_values` reported by :func:`optuna.trial.Trial.report` from
-            the failed trial. Default is :obj:`False`.
+            Option to inherit `trial.intermediate_values` reported by
+            :func:`optuna.trial.Trial.report` from the failed trial. Default is :obj:`False`.
     """
 
     def __init__(
