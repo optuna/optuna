@@ -514,6 +514,8 @@ class CategoricalDistribution(BaseDistribution):
 
 DISTRIBUTION_CLASSES = (
     IntDistribution,
+    IntLogUniformDistribution,
+    IntUniformDistribution,
     FloatDistribution,
     UniformDistribution,
     LogUniformDistribution,
