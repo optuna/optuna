@@ -1,5 +1,5 @@
 import itertools
-from typing import Any
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -240,9 +240,9 @@ def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
     assert not figure.has_data()
 
 
-def all_equal(lst: List[Any]) -> bool:
+def all_equal(iterable: Iterable) -> bool:
     """Returns True if all the elements are equal to each other"""
-    return all(e == lst[0] for e in lst[1:])
+    return len(set(iterable)) <= 1
 
 
 def range_covers(range1: Tuple[float, float], range2: Tuple[float, float]) -> bool:
