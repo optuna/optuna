@@ -129,6 +129,45 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
     assert figure.data[0]["dimensions"][2]["ticktext"] == ("net", "una")
 
 
+def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
+    # Test with categorical params that can be interpreted as numeric params.
+    study_categorical_params = create_study()
+    study_categorical_params.add_trial(
+        create_trial(
+            value=0.0,
+            params={"category_a": 2, "category_b": 20},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+
+    study_categorical_params.add_trial(
+        create_trial(
+            value=1.0,
+            params={"category_a": 1, "category_b": 30},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+
+    study_categorical_params.add_trial(
+        create_trial(
+            value=2.0,
+            params={"category_a": 2, "category_b": 10},
+            distributions={
+                "category_a": CategoricalDistribution((1, 2)),
+                "category_b": CategoricalDistribution((10, 20, 30)),
+            },
+        )
+    )
+    figure = plot_parallel_coordinate(study_categorical_params)
+    assert len(figure.get_lines()) == 0
+
+
 def test_plot_parallel_coordinate_log_params() -> None:
     # Test with log params.
     study_log_params = create_study()
@@ -177,6 +216,41 @@ def test_plot_parallel_coordinate_log_params() -> None:
     assert figure.data[0]["dimensions"][2]["values"] == (1.0, math.log10(200), math.log10(30))
     assert figure.data[0]["dimensions"][2]["ticktext"] == ("10", "100", "200")
     assert figure.data[0]["dimensions"][2]["tickvals"] == (1.0, 2.0, math.log10(200))
+
+
+def test_plot_parallel_coordinate_unique_hyper_param() -> None:
+    # Test case when one unique value is suggested during the optimization.
+
+    study_categorical_params = create_study()
+    study_categorical_params.add_trial(
+        create_trial(
+            value=0.0,
+            params={"category_a": "preferred", "param_b": 30},
+            distributions={
+                "category_a": CategoricalDistribution(("preferred", "opt")),
+                "param_b": LogUniformDistribution(1, 1000),
+            },
+        )
+    )
+
+    # both hyperparameters contain unique values
+    figure = plot_parallel_coordinate(study_categorical_params)
+    assert len(figure.get_lines()) == 0
+
+    study_categorical_params.add_trial(
+        create_trial(
+            value=2.0,
+            params={"category_a": "preferred", "param_b": 20},
+            distributions={
+                "category_a": CategoricalDistribution(("preferred", "opt")),
+                "param_b": LogUniformDistribution(1, 1000),
+            },
+        )
+    )
+
+    # still "category_a" contains unique suggested value during the optimization.
+    figure = plot_parallel_coordinate(study_categorical_params)
+    assert len(figure.get_lines()) == 0
 
 
 def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
