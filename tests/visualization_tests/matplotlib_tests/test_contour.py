@@ -1,6 +1,8 @@
 import itertools
-from typing import Iterable, List, Tuple
+from typing import Iterable
+from typing import List
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import pytest
