@@ -235,7 +235,19 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
 
     # both hyperparameters contain unique values
     figure = plot_parallel_coordinate(study_categorical_params)
-    assert len(figure.get_lines()) == 0
+    assert len(figure.data[0]["dimensions"]) == 3
+    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 0.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0,)
+    assert figure.data[0]["dimensions"][1]["label"] == "category_a"
+    assert figure.data[0]["dimensions"][1]["range"] == (0, 0)
+    assert figure.data[0]["dimensions"][1]["values"] == (0.0,)
+    assert figure.data[0]["dimensions"][1]["ticktext"] == ("preferred",)
+    assert figure.data[0]["dimensions"][2]["label"] == "param_b"
+    assert figure.data[0]["dimensions"][2]["range"] == (math.log10(30), math.log10(30))
+    assert figure.data[0]["dimensions"][2]["values"] == (math.log10(30),)
+    assert figure.data[0]["dimensions"][2]["ticktext"] == ("30",)
+    assert figure.data[0]["dimensions"][2]["tickvals"] == (math.log10(30),)
 
     study_categorical_params.add_trial(
         create_trial(
