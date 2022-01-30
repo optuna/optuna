@@ -1,5 +1,5 @@
 import itertools
-from typing import List
+from typing import Iterable, List, Tuple
 from typing import Optional
 
 import numpy as np
@@ -238,20 +238,20 @@ def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
     assert not figure.has_data()
 
 
-def all_equal(iterable):
+def all_equal(iterable: Iterable) -> bool:
     """Returns True if all the elements are equal to each other"""
     g = itertools.groupby(iterable)
     return next(g, True) and not next(g, False)
 
 
-def range_covers(range1, range2):
+def range_covers(range1: Tuple[float, float], range2: Tuple[float, float]) -> bool:
     """Returns True if `range1` covers `range2`"""
     min1, max1 = sorted(range1)
     min2, max2 = sorted(range2)
     return min1 <= min2 and max1 >= max2
 
 
-def test_contour_subplots_have_correct_axis_labels_and_ranges():
+def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
     study_without_trials = prepare_study_with_trials()
     params = ["param_a", "param_b", "param_c"]
     subplots = plot_contour(study_without_trials, params=params)
