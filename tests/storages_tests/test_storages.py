@@ -1237,7 +1237,7 @@ def test_retry_failed_trial_callback_intermediate(
         study = optuna.create_study(storage=storage)
 
         trial = study.ask()
-        _ = trial.suggest_uniform("_", -1, -1)
+        trial.suggest_float("_", -1, -1)
         trial.report(0.5, 1)
         storage.record_heartbeat(trial._trial_id)
         time.sleep(grace_period + 1)
