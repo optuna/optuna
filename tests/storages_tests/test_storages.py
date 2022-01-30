@@ -1211,7 +1211,7 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
             assert study.trials[0].params == study.trials[1].params
             assert study.trials[0].distributions == study.trials[1].distributions
             assert study.trials[0].user_attrs == study.trials[1].user_attrs
-            # only `intermediate_values` are not inherited
+            # Only `intermediate_values` are not inherited.
             assert study.trials[1].intermediate_values == {}
 
 
@@ -1253,7 +1253,7 @@ def test_retry_failed_trial_callback_intermediate(
         assert RetryFailedTrialCallback.retried_trial_number(study.trials[1]) == (
             None if max_retry == 0 else 0
         )
-        # Test inheritance of trial fields
+        # Test inheritance of trial fields.
         if max_retry != 0:
             assert study.trials[0].params == study.trials[1].params
             assert study.trials[0].distributions == study.trials[1].distributions
