@@ -163,7 +163,7 @@ def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
         )
     )
 
-    # Trials are sorted by using param_a and param_b.
+    # Trials are sorted by using param_a and param_b, i.e., trial#1, trial#2, and trial#0.
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.data[0]["dimensions"]) == 3
     assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
