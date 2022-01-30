@@ -14,6 +14,7 @@ from optuna.trial import Trial
 from optuna.visualization.matplotlib import plot_contour
 from optuna.visualization.matplotlib._contour import _create_zmap
 from optuna.visualization.matplotlib._contour import _interpolate_zmap
+from optuna.visualization.matplotlib._contour import AXES_PADDING_RATIO
 
 
 def test_create_zmap() -> None:
@@ -235,3 +236,53 @@ def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
     study = prepare_study_with_trials(less_than_two=True)
     figure = plot_contour(study, params)
     assert not figure.has_data()
+
+
+def all_equal(iterable):
+    """Returns True if all the elements are equal to each other"""
+    g = itertools.groupby(iterable)
+    return next(g, True) and not next(g, False)
+
+
+def range_covers(range1, range2):
+    """Returns True if `range1` covers `range2`"""
+    min1, max1 = sorted(range1)
+    min2, max2 = sorted(range2)
+    return min1 <= min2 and max1 >= max2
+
+
+def test_contour_subplots_have_correct_axis_labels_and_ranges():
+    study_without_trials = prepare_study_with_trials()
+    params = ["param_a", "param_b", "param_c"]
+    subplots = plot_contour(study_without_trials, params=params)
+    # `subplots` should look like this:
+    # param_a [[subplot 1, subplot 2, subplot 3],
+    # param_b  [subplot 4, subplot 4, subplot 6],
+    # param_c  [subplot 7, subplot 8, subplot 9]]
+    #           param_a    param_b    param_c
+    #
+    # The folowing block ensures:
+    # - The y-axis label of subplot 1 is "param_a"
+    # - The x-axis label of subplot 7 is "param_a"
+    # - Subplot 1, 2, and 3 have the same y-axis range that covers the search space for `param_a`
+    # - Subplot 1, 4, and 7 have the same x-axis range that covers the search space for `param_a`
+    # - The y-axis label of subplot 4 is "param_b"
+    # - ...
+    # - The y-axis label of subplot 7 is "param_c"
+    # - ...
+    param_ranges = {
+        "param_a": (0.0, 3.0),
+        "param_b": (0.0, 3.0),
+        "param_c": (2.0, 5.0),
+    }
+    for index, (param_name, param_range) in enumerate(param_ranges.items()):
+        padding = (param_range[1] - param_range[0]) * AXES_PADDING_RATIO
+        param_range_with_padding = (param_range[0] - padding, param_range[1] + padding)
+        assert subplots[index, 0].get_ylabel() == param_name
+        assert subplots[-1, index].get_xlabel() == param_name
+        ylims = [ax.get_ylim() for ax in subplots[index, :]]
+        assert all_equal(ylims)
+        assert all(range_covers(param_range_with_padding, ylim) for ylim in ylims)
+        xlims = [ax.get_xlim() for ax in subplots[:, index]]
+        assert all_equal(xlims)
+        assert all(range_covers(param_range_with_padding, xlim) for xlim in xlims)
