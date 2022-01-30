@@ -102,6 +102,28 @@ def test_loaded_trials(storage_url: str) -> None:
     _check_trials(loaded_study.trials)
 
 
+@pytest.mark.parametrize(
+    "input,expected",
+    [
+        (float("inf"), float("inf")),
+        (-float("inf"), -float("inf")),
+        (np.finfo(np.float32).max, float("inf")),
+        (np.finfo(np.float32).min, -float("inf")),
+        (np.finfo(np.float64).max, float("inf")),
+        (np.finfo(np.float64).min, -float("inf")),
+    ],
+)
+def test_store_infinite_values(input: float, expected: float, storage_url: str) -> None:
+
+    storage = optuna.storages.RDBStorage(url=storage_url)
+    study_id = storage.create_new_study()
+    trial_id = storage.create_new_trial(study_id)
+    storage.set_trial_intermediate_value(trial_id, 1, input)
+    storage.set_trial_values(trial_id, (input,))
+    assert storage.get_trial(trial_id).value == expected
+    assert storage.get_trial(trial_id).intermediate_values[1] == expected
+
+
 def test_multiprocess(storage_url: str) -> None:
     n_workers = 8
     study_name = _STUDY_NAME
