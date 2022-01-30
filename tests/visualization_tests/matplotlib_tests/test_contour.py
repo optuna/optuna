@@ -276,8 +276,9 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
         "param_c": (2.0, 5.0),
     }
     for index, (param_name, param_range) in enumerate(param_ranges.items()):
-        padding = (param_range[1] - param_range[0]) * AXES_PADDING_RATIO
-        param_range_with_padding = (param_range[0] - padding, param_range[1] + padding)
+        minimum, maximum = param_range
+        padding = (maximum - minimum) * AXES_PADDING_RATIO
+        param_range_with_padding = (maximum - padding, maximum + padding)
         assert subplots[index, 0].get_ylabel() == param_name
         assert subplots[-1, index].get_xlabel() == param_name
         ylims = [ax.get_ylim() for ax in subplots[index, :]]
