@@ -1219,9 +1219,10 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
 
 
 @pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
-def test_fail_stale_trials(storage_mode: str) -> None:
+@pytest.mark.parametrize("grace_period", [None, 2])
+def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> None:
     heartbeat_interval = 1
-    grace_period = 2
+    _grace_period = (heartbeat_interval * 2) if grace_period is None else grace_period
 
     def failed_trial_callback(study: "optuna.Study", trial: FrozenTrial) -> None:
         assert study.system_attrs["test"] == "A"
@@ -1238,7 +1239,7 @@ def test_fail_stale_trials(storage_mode: str) -> None:
         trial = study.ask()
         trial.set_system_attr("test", "B")
         storage.record_heartbeat(trial._trial_id)
-        time.sleep(grace_period + 1)
+        time.sleep(_grace_period + 1)
 
         assert study.trials[0].state is TrialState.RUNNING
 
