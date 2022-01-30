@@ -298,8 +298,7 @@ class _DeleteStudy(_BaseCommand):
 
 
 class _StudySetUserAttribute(_BaseCommand):
-    """
-    Set a user attribute to a study.
+    """Set a user attribute to a study.
     :class:`~optuna.cli._StudySetUserAttribute`
     """
 
@@ -560,8 +559,7 @@ class _BestTrials(_BaseCommand):
 
 
 class _StudyOptimize(_BaseCommand):
-    """
-    Start optimization of a study. Deprecated since version 2.0.0.
+    """Start optimization of a study. Deprecated since version 2.0.0.
     :class:`~optuna.cli._StudyOptimize`
     """
 
