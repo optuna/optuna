@@ -246,7 +246,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
         )
     )
 
-    # both hyperparameters contain unique values
+    # Both hyperparameters contain unique values.
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.data[0]["dimensions"]) == 3
     assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
