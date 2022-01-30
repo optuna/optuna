@@ -7,7 +7,6 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-@experimental("2.8.0")
 class MaxTrialsCallback:
     """Set a maximum number of trials before ending the study.
 
