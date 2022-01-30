@@ -1,14 +1,12 @@
-# filename: nsga2.py
 import sys
 from kurobako import solver
 from kurobako.solver.optuna_multi_objective import OptunaSolverFactory
 import optuna
-import json
 
+# import json
 
 
 optuna.logging.disable_default_handler()
-
 
 
 def create_study(n_objectives, seed):
@@ -18,19 +16,22 @@ def create_study(n_objectives, seed):
 
     # Sampler.
     sampler_cls = getattr(
-        optuna.multi_objective.samplers, sampler_name, getattr(optuna.integration, sampler_name, None)
+        optuna.multi_objective.samplers,
+        sampler_name,
+        getattr(optuna.integration, sampler_name, None),
     )
     if sampler_cls is None:
         raise ValueError("Unknown sampler: {}.".format(sampler_name))
 
-    # TODO: sampler_kwargs
-    sampler_kwargs = json.loads(sys.argv[2])
-    try:
-        sampler_kwargs["seed"] = seed
-        sampler = sampler_cls(**sampler_kwargs)
-    except:
-        del sampler_kwargs["seed"]
-        sampler = sampler_cls(**sampler_kwargs)
+    # TODO(drumehiron): sampler_kwargs
+    # sampler_kwargs = json.loads(sys.argv[2])
+    # try:
+    #     sampler_kwargs["seed"] = seed
+    #     sampler = sampler_cls(**sampler_kwargs)
+    # except:
+    #     del sampler_kwargs["seed"]
+    #     sampler = sampler_cls(**sampler_kwargs)
+    sampler = sampler_cls()
 
     return optuna.multi_objective.create_study(directions=directions, sampler=sampler)
 

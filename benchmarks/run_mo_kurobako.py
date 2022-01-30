@@ -19,12 +19,15 @@ def run(args: argparse.Namespace) -> None:
     subprocess.check_call(f"echo >| {problems_filename}", shell=True)
 
     # Create ZDT problems
-    cmd = f'{kurobako_cmd} problem-suite zdt | tee -a {problems_filename}'
+    cmd = f"{kurobako_cmd} problem-suite zdt | tee -a {problems_filename}"
     subprocess.run(cmd, shell=True)
 
     # Create NAS bench problem(C) (for Multi-Objective Settings).
     dataset = os.path.join(args.data_dir, "nasbench_full.bin")
-    cmd = f'{kurobako_cmd} problem nasbench "{dataset}" --encoding C --metrics accuracy params | tee -a {problems_filename}'
+    cmd = (
+        f'{kurobako_cmd} problem nasbench "{dataset}"'
+        f"--encoding C --metrics accuracy params | tee -a {problems_filename}"
+    )
     subprocess.run(cmd, shell=True)
 
     # Create solvers.
@@ -69,10 +72,10 @@ def run(args: argparse.Namespace) -> None:
 
     # Plot pareto-front.
     problem_names = ["NASBench", "ZDT1", "ZDT2", "ZDT3", "ZDT4", "ZDT5", "ZDT6"]
-    #TODO: --xmin settings
     for problem_name in problem_names:
         cmd = (
-            f"cat {result_filename} | grep {problem_name} | {kurobako_cmd} plot pareto-front -o {args.out_dir}"
+            f"cat {result_filename} | grep {problem_name} | "
+            f"{kurobako_cmd} plot pareto-front -o {args.out_dir}"
         )
         subprocess.run(cmd, shell=True)
 
@@ -83,10 +86,12 @@ if __name__ == "__main__":
     parser.add_argument("--name-prefix", type=str, default="")
     parser.add_argument("--n-runs", type=int, default=1)
     parser.add_argument("--n-jobs", type=int, default=1)
-    parser.add_argument("--sampler-list", type=str, default="RandomMultiObjectiveSampler NSGAIIMultiObjectiveSampler")
     parser.add_argument(
-        "--sampler-kwargs-list", type=str, default='{} {}'
+        "--sampler-list",
+        type=str,
+        default="RandomMultiObjectiveSampler NSGAIIMultiObjectiveSampler",
     )
+    parser.add_argument("--sampler-kwargs-list", type=str, default="{} {}")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", type=str, default="data")
     parser.add_argument("--out-dir", type=str, default="out")
