@@ -233,7 +233,7 @@ class HyperbandPruner(BasePruner):
 
         assert self._n_brackets is not None
         s = self._n_brackets - 1 - bracket_id
-        return math.ceil(self._n_brackets * (self._reduction_factor ** s) / (s + 1))
+        return math.ceil(self._n_brackets * (self._reduction_factor**s) / (s + 1))
 
     def _get_bracket_id(
         self, study: "optuna.study.Study", trial: "optuna.trial.FrozenTrial"

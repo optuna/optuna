@@ -215,7 +215,7 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", -1, 1)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -257,7 +257,7 @@ class Study:
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 1)
                     y = trial.suggest_float("y", 0, 1)
-                    return x ** 2 + y ** 2
+                    return x**2 + y**2
 
 
                 study = optuna.create_study()
@@ -316,7 +316,7 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", -1, 1)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -425,7 +425,7 @@ class Study:
 
                 x = trial.suggest_float("x", -1, 1)
 
-                study.tell(trial, x ** 2)
+                study.tell(trial, x**2)
 
         Example:
 
@@ -684,7 +684,7 @@ class Study:
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 1)
                     y = trial.suggest_float("y", 0, 1)
-                    return x ** 2 + y ** 2
+                    return x**2 + y**2
 
 
                 study = optuna.create_study()
@@ -752,7 +752,7 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", -1, 1)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -804,7 +804,7 @@ class Study:
                     if trial.number == 4:
                         trial.study.stop()
                     x = trial.suggest_float("x", 0, 10)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -843,7 +843,7 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 10)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -890,7 +890,7 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 10)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -956,7 +956,7 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 10)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -1066,7 +1066,7 @@ def create_study(
 
             def objective(trial):
                 x = trial.suggest_float("x", 0, 10)
-                return x ** 2
+                return x**2
 
 
             study = optuna.create_study()
@@ -1209,7 +1209,7 @@ def load_study(
 
             def objective(trial):
                 x = trial.suggest_float("x", 0, 10)
-                return x ** 2
+                return x**2
 
 
             study = optuna.create_study(storage="sqlite:///example.db", study_name="my_study")

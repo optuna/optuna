@@ -188,7 +188,7 @@ class _ParzenEstimator:
                     mahalanobis = distance / np.maximum(sigmas, EPS)
                     z = np.sqrt(2 * np.pi) * sigmas
                     coefficient = 1 / z / p_accept
-                    log_pdf = -0.5 * mahalanobis ** 2 + np.log(coefficient)
+                    log_pdf = -0.5 * mahalanobis**2 + np.log(coefficient)
                 else:
                     upper_bound = np.minimum(samples + q / 2.0, high)
                     lower_bound = np.maximum(samples - q / 2.0, low)

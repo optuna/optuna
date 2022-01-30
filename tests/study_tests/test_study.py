@@ -80,7 +80,7 @@ def check_params(params: Dict[str, Any]) -> None:
 def check_value(value: Optional[float]) -> None:
 
     assert isinstance(value, float)
-    assert -1.0 <= value <= 12.0 ** 2 + 5.0 ** 2 + 1.0
+    assert -1.0 <= value <= 12.0**2 + 5.0**2 + 1.0
 
 
 def check_frozen_trial(frozen_trial: FrozenTrial) -> None:
@@ -593,7 +593,7 @@ def test_enqueue_trial_properly_sets_param_values(storage_mode: str) -> None:
 
             x = trial.suggest_int("x", -10, 10)
             y = trial.suggest_int("y", -10, 10)
-            return x ** 2 + y ** 2
+            return x**2 + y**2
 
         study.optimize(objective, n_trials=2)
         t0 = study.trials[0]
@@ -618,7 +618,7 @@ def test_enqueue_trial_with_unfixed_parameters(storage_mode: str) -> None:
 
             x = trial.suggest_int("x", -10, 10)
             y = trial.suggest_int("y", -10, 10)
-            return x ** 2 + y ** 2
+            return x**2 + y**2
 
         study.optimize(objective, n_trials=1)
         t = study.trials[0]
@@ -640,7 +640,7 @@ def test_enqueue_trial_properly_sets_user_attr(storage_mode: str) -> None:
 
             x = trial.suggest_int("x", -10, 10)
             y = trial.suggest_int("y", -10, 10)
-            return x ** 2 + y ** 2
+            return x**2 + y**2
 
         study.optimize(objective, n_trials=2)
         t0 = study.trials[0]

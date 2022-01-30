@@ -82,7 +82,7 @@ def test_switch_label_when_param_insignificant() -> None:
     def _objective(trial: Trial) -> int:
         x = trial.suggest_int("x", 0, 2)
         _ = trial.suggest_int("y", -1, 1)
-        return x ** 2
+        return x**2
 
     study = create_study()
     for x in range(1, 3):

@@ -28,7 +28,7 @@ class RandomSampler(BaseSampler):
 
             def objective(trial):
                 x = trial.suggest_float("x", -5, 5)
-                return x ** 2
+                return x**2
 
 
             study = optuna.create_study(sampler=RandomSampler())

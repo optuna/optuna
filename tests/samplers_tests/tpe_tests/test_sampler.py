@@ -229,7 +229,7 @@ def test_sample_relative_misc_arguments() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = TPESampler(
-            weights=lambda n: np.asarray([i ** 2 + 1 for i in range(n)]),
+            weights=lambda n: np.asarray([i**2 + 1 for i in range(n)]),
             n_startup_trials=5,
             seed=0,
             multivariate=True,
