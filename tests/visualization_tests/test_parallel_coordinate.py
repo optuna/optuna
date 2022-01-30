@@ -274,7 +274,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
         )
     )
 
-    # still "category_a" contains unique suggested value during the optimization.
+    # Still "category_a" contains unique suggested value during the optimization.
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.data[0]["dimensions"]) == 3
     assert figure.data[0]["dimensions"][1]["label"] == "category_a"
