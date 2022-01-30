@@ -5,8 +5,6 @@ from optuna import TrialPruned
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.samplers._search_space import _GroupDecomposedSearchSpace
 from optuna.samplers._search_space.group_decomposed import _SearchSpaceGroup
 from optuna.testing.storage import StorageSupplier
