@@ -7,13 +7,19 @@ Command-Line Interface
 .. csv-table::
    :header: Command, Description
    :widths: 20, 40
+   :escape: \\
 
+    ask, Create a new trial and suggest parameters.
+    best-trial, Show the best trial.
+    best-trials, Show a list of trials located at the Pareto front.
     create-study, Create a new study.
     delete-study, Delete a specified study.
     storage upgrade, Upgrade the schema of a storage.
     studies, Show a list of studies.
     study optimize, Start optimization of a study.
     study set-user-attr, Set a user attribute to a study.
+    tell, Finish a trial\\, which was created by the ask command.
+    trials, Show a list of trials.
 
 Optuna provides command-line interface as shown in the above table.
 
