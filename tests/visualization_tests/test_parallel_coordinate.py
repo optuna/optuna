@@ -284,7 +284,6 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     assert figure.data[0]["dimensions"][1]["tickvals"] == (0,)
 
 
-
 def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
     # Test with sample from mulitiple distributions including categorical params
     # that can be interpreted as numeric params.
