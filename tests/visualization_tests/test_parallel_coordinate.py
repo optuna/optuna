@@ -280,6 +280,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     assert figure.data[0]["dimensions"][1]["range"] == (0, 0)
     assert figure.data[0]["dimensions"][1]["values"] == (0.0, 0.0)
     assert figure.data[0]["dimensions"][1]["ticktext"] == ("preferred",)
+    assert figure.data[0]["dimensions"][1]["tickvals"] == (0,)    
 
 
 
