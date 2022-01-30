@@ -95,7 +95,7 @@ class RDBStorage(BaseStorage):
 
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
-                return x ** 2
+                return x**2
 
 
             storage = optuna.storages.RDBStorage(

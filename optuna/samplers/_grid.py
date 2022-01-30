@@ -42,7 +42,7 @@ class GridSampler(BaseSampler):
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_int("y", -100, 100)
-                return x ** 2 + y ** 2
+                return x**2 + y**2
 
 
             search_space = {"x": [-50, 0, 50], "y": [-99, 0, 99]}
@@ -70,7 +70,7 @@ class GridSampler(BaseSampler):
             def objective(trial):
                 # The following suggest method specifies integer points between -5 and 5.
                 x = trial.suggest_float("x", -5, 5, step=1)
-                return x ** 2
+                return x**2
 
 
             # Non-int points are specified in the grid.

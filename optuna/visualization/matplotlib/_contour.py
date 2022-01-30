@@ -482,7 +482,7 @@ def _interpolate_zmap(zmap: Dict[Tuple[int, int], float], contour_plot_num: int)
     a_data = []
     a_row = []
     a_col = []
-    b = np.zeros(contour_plot_num ** 2)
+    b = np.zeros(contour_plot_num**2)
     for x in range(contour_plot_num):
         for y in range(contour_plot_num):
             grid_index = y * contour_plot_num + x

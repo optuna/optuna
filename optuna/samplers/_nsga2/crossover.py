@@ -415,8 +415,8 @@ def _undx(
     xp = (x1 + x2) / 2  # Section 2 (2).
     d = x1 - x2  # Section 2 (3).
 
-    xi = rng.normal(0, sigma_xi ** 2)
-    etas = rng.normal(0, sigma_eta ** 2, size=n)
+    xi = rng.normal(0, sigma_xi**2)
+    etas = rng.normal(0, sigma_eta**2, size=n)
     es = _orthonormal_basis_vector_to_psl(
         x1, x2
     )  # Orthonormal basis vectors of the subspace orthogonal to the psl.

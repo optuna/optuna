@@ -41,7 +41,7 @@ class SkoptSampler(BaseSampler):
             def objective(trial):
                 x = trial.suggest_float("x", -10, 10)
                 y = trial.suggest_int("y", 0, 10)
-                return x ** 2 + y
+                return x**2 + y
 
 
             sampler = optuna.integration.SkoptSampler()

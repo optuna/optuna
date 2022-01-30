@@ -55,7 +55,7 @@ class PyCmaSampler(BaseSampler):
             def objective(trial):
                 x = trial.suggest_float("x", -1, 1)
                 y = trial.suggest_int("y", -1, 1)
-                return x ** 2 + y
+                return x**2 + y
 
 
             sampler = optuna.integration.PyCmaSampler()
@@ -147,7 +147,7 @@ class PyCmaSampler(BaseSampler):
         self._sigma0 = sigma0
         self._cma_stds = cma_stds
         if seed is None:
-            seed = random.randint(1, 2 ** 32)
+            seed = random.randint(1, 2**32)
         self._cma_opts = cma_opts or {}
         self._cma_opts["seed"] = seed
         self._cma_opts.setdefault("verbose", -2)
@@ -158,7 +158,7 @@ class PyCmaSampler(BaseSampler):
 
     def reseed_rng(self) -> None:
 
-        self._cma_opts["seed"] = random.randint(1, 2 ** 32)
+        self._cma_opts["seed"] = random.randint(1, 2**32)
         self._independent_sampler.reseed_rng()
 
     def infer_relative_search_space(
