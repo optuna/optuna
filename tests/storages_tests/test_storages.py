@@ -1215,6 +1215,52 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
             assert study.trials[1].intermediate_values == {}
 
 
+@pytest.mark.parametrize(
+    "storage_mode,max_retry", itertools.product(STORAGE_MODES_HEARTBEAT, [None, 0, 1])
+)
+def test_retry_failed_trial_callback_intermediate(
+    storage_mode: str, max_retry: Optional[int]
+) -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    with StorageSupplier(
+        storage_mode,
+        heartbeat_interval=heartbeat_interval,
+        grace_period=grace_period,
+        failed_trial_callback=RetryFailedTrialCallback(
+            max_retry=max_retry, inherit_intermediate=True
+        ),
+    ) as storage:
+        assert storage.is_heartbeat_enabled()
+
+        study = optuna.create_study(storage=storage)
+
+        trial = study.ask()
+        _ = trial.suggest_uniform("_", -1, -1)
+        trial.report(0.5, 1)
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        # Exceptions raised in spawned threads are caught by `_TestableThread`.
+        with patch("optuna.study._optimize.Thread", _TestableThread):
+            study.optimize(lambda _: 1.0, n_trials=1)
+
+        # Test the last trial to see if it was a retry of the first trial or not.
+        # Test max_retry=None to see if trial is retried.
+        # Test max_retry=0 to see if no trials are retried.
+        # Test max_retry=1 to see if trial is retried.
+        assert RetryFailedTrialCallback.retried_trial_number(study.trials[1]) == (
+            None if max_retry == 0 else 0
+        )
+        # Test inheritance of trial fields
+        if max_retry != 0:
+            assert study.trials[0].params == study.trials[1].params
+            assert study.trials[0].distributions == study.trials[1].distributions
+            assert study.trials[0].user_attrs == study.trials[1].user_attrs
+            assert study.trials[0].intermediate_values == study.trials[1].intermediate_values
+
+
 def test_fail_stale_trials() -> None:
     heartbeat_interval = 1
     grace_period = 2
