@@ -1229,7 +1229,7 @@ def test_retry_failed_trial_callback_intermediate(
         heartbeat_interval=heartbeat_interval,
         grace_period=grace_period,
         failed_trial_callback=RetryFailedTrialCallback(
-            max_retry=max_retry, inherit_intermediate=True
+            max_retry=max_retry, inherit_intermediate_values=True
         ),
     ) as storage:
         assert storage.is_heartbeat_enabled()

@@ -91,16 +91,16 @@ class RetryFailedTrialCallback:
             The max number of times a trial can be retried. Must be set to :obj:`None` or an
             integer. If set to the default value of :obj:`None` will retry indefinitely.
             If set to an integer, will only retry that many times.
-        inherit_intermediate:
+        inherit_intermediate_values:
             Option to inherit `trial.intermediate_values` reported by
             :func:`optuna.trial.Trial.report` from the failed trial. Default is :obj:`False`.
     """
 
     def __init__(
-        self, max_retry: Optional[int] = None, inherit_intermediate: bool = False
+        self, max_retry: Optional[int] = None, inherit_intermediate_values: bool = False
     ) -> None:
         self._max_retry = max_retry
-        self._inherit_intermediate = inherit_intermediate
+        self._inherit_intermediate_values = inherit_intermediate_values
 
     def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
         system_attrs = {"failed_trial": trial.number}
@@ -126,7 +126,7 @@ class RetryFailedTrialCallback:
                 user_attrs=trial.user_attrs,
                 system_attrs=system_attrs,
                 intermediate_values=(
-                    trial.intermediate_values if self._inherit_intermediate else None
+                    trial.intermediate_values if self._inherit_intermediate_values else None
                 ),
             )
         )
