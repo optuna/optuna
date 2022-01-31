@@ -650,9 +650,6 @@ def _get_single_value(distribution: BaseDistribution) -> Union[int, float, Categ
         (
             FloatDistribution,
             IntDistribution,
-            UniformDistribution,
-            LogUniformDistribution,
-            DiscreteUniformDistribution,
             IntUniformDistribution,
             IntLogUniformDistribution,
         ),
