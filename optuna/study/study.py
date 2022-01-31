@@ -465,12 +465,12 @@ class Study:
 
         if self._optimize_lock.acquire(False):
             self._optimize_lock.release()
-            _msg = "Heartbeat of RDBStorage is supposed to be used with Study.optimize."
-            if isinstance(self._storage, storages.RDBStorage):
+            _msg = "Heartbeat of storage is supposed to be used with Study.optimize."
+            if isinstance(self._storage, (storages.RDBStorage, storages.RedisStorage)):
                 if self._storage.heartbeat_interval is not None:
                     warnings.warn(_msg)
             elif isinstance(self._storage, storages._CachedStorage) and isinstance(
-                self._storage._backend, storages.RDBStorage
+                self._storage._backend, (storages.RDBStorage, storages.RedisStorage)
             ):
                 if self._storage._backend.heartbeat_interval is not None:
                     warnings.warn(_msg)

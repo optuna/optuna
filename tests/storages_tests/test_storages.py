@@ -1122,8 +1122,9 @@ def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
         study1 = optuna.create_study(storage=storage)
         study2 = optuna.create_study(storage=storage)
 
-        trial1 = study1.ask()
-        trial2 = study2.ask()
+        with pytest.warns(UserWarning):
+            trial1 = study1.ask()
+            trial2 = study2.ask()
         storage.record_heartbeat(trial1._trial_id)
         storage.record_heartbeat(trial2._trial_id)
         time.sleep(grace_period + 1)
@@ -1173,7 +1174,8 @@ def test_failed_trial_callback(storage_mode: str) -> None:
         study = optuna.create_study(storage=storage)
         study.set_system_attr("test", "A")
 
-        trial = study.ask()
+        with pytest.warns(UserWarning):
+            trial = study.ask()
         trial.set_system_attr("test", "B")
         storage.record_heartbeat(trial._trial_id)
         time.sleep(grace_period + 1)
@@ -1201,7 +1203,8 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
 
         study = optuna.create_study(storage=storage)
 
-        trial = study.ask()
+        with pytest.warns(UserWarning):
+            trial = study.ask()
         trial.suggest_float("_", -1, -1)
         trial.report(0.5, 1)
         storage.record_heartbeat(trial._trial_id)
@@ -1291,7 +1294,8 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
         study = optuna.create_study(storage=storage)
         study.set_system_attr("test", "A")
 
-        trial = study.ask()
+        with pytest.warns(UserWarning):
+            trial = study.ask()
         trial.set_system_attr("test", "B")
         storage.record_heartbeat(trial._trial_id)
         time.sleep(_grace_period + 1)
