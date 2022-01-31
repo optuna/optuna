@@ -286,9 +286,6 @@ class CmaEsSampler(BaseSampler):
             if not isinstance(
                 distribution,
                 (
-                    optuna.distributions.UniformDistribution,
-                    optuna.distributions.LogUniformDistribution,
-                    optuna.distributions.DiscreteUniformDistribution,
                     optuna.distributions.IntUniformDistribution,
                     optuna.distributions.IntLogUniformDistribution,
                     optuna.distributions.FloatDistribution,
