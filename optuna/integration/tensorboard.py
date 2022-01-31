@@ -56,12 +56,7 @@ class TensorBoardCallback(object):
     def _add_distributions(
         self, distributions: Dict[str, optuna.distributions.BaseDistribution]
     ) -> None:
-        real_distributions = (
-            optuna.distributions.UniformDistribution,
-            optuna.distributions.LogUniformDistribution,
-            optuna.distributions.DiscreteUniformDistribution,
-            optuna.distributions.FloatDistribution,
-        )
+        real_distributions = (optuna.distributions.FloatDistribution,)
         int_distributions = (
             optuna.distributions.IntUniformDistribution,
             optuna.distributions.IntLogUniformDistribution,
