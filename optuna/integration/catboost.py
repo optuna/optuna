@@ -1,8 +1,10 @@
 from typing import Any
+from typing import Optional
 
 from packaging import version
 
 import optuna
+from optuna._experimental import experimental
 from optuna._imports import try_import
 
 
@@ -13,6 +15,7 @@ with try_import() as _imports:
         raise ImportError(f"You don't have CatBoost>=0.26! CatBoost version: {cb.__version__}")
 
 
+@experimental("3.0.0")
 class CatBoostPruningCallback(object):
     """Callback for catboost to prune unpromising trials.
 
@@ -21,11 +24,12 @@ class CatBoostPruningCallback(object):
     if you want to add a pruning callback which observes validation accuracy of
     a CatBoost model.
 
-    If :class:`optuna.TrialPruned` is raised in ``after_iteration`` via
-    ``CatBoostPruningCallback``, then catboost terminates abnormally.
-
     .. note::
-        You must call ``check_pruned`` after training manually unlike other pruning callbacks
+        :class:`optuna.TrialPruned` cannot be raised
+        in :meth:`~optuna.integration.CatBoostPruningCallback.after_iteration`
+        that is called in CatBoost via ``CatBoostPruningCallback``.
+        You must call :meth:`~optuna.integration.CatBoostPruningCallback.check_pruned`
+        after training manually unlike other pruning callbacks
         to raise :class:`optuna.TrialPruned`.
 
     Args:
@@ -45,7 +49,9 @@ class CatBoostPruningCallback(object):
             ``eval_set_index``, e.g., ``0`` or ``1`` when ``eval_set`` contains two datasets.
     """
 
-    def __init__(self, trial: optuna.trial.Trial, metric: str, eval_set_index: int = None) -> None:
+    def __init__(
+        self, trial: optuna.trial.Trial, metric: str, eval_set_index: Optional[int] = None
+    ) -> None:
         default_valid_name = "validation"
         self._trial = trial
         self._metric = metric
