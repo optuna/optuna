@@ -464,6 +464,7 @@ class Study:
         """
 
         if self._optimize_lock.acquire(False):
+            self._optimize_lock.release()
             _msg = "Heartbeat of RDBStorage is supposed to be used with Study.optimize."
             if isinstance(self._storage, storages.RDBStorage):
                 if self._storage.heartbeat_interval is not None:
