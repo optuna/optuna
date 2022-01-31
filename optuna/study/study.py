@@ -12,6 +12,7 @@ from typing import Sequence
 from typing import Tuple
 from typing import Type
 from typing import TYPE_CHECKING
+from typing import TypeVar
 from typing import Union
 import warnings
 
@@ -47,10 +48,15 @@ ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]
 _logger = logging.get_logger(__name__)
 
 
-def _convert_positional_args(n_positional_args: int = 0) -> Any:
-    def decorator(func: Any) -> Any:
+_T = TypeVar("_T")
+
+
+def _convert_positional_args(
+    *, n_positional_args: int = 0
+) -> Callable[[Callable[..., _T]], Callable[..., _T]]:
+    def decorator(func: Callable[..., _T]) -> Callable[..., _T]:
         @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: Any, **kwargs: Any) -> _T:
             assert len(args) <= n_positional_args, "Too many positional arguments."
             if len(args) >= 1:
                 warnings.warn(
