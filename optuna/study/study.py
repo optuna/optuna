@@ -463,6 +463,17 @@ class Study:
             A :class:`~optuna.trial.Trial`.
         """
 
+        if self._optimize_lock.acquire(False):
+            _msg = "Heartbeat of RDBStorage is supposed to be used with Study.optimize."
+            if isinstance(self._storage, storages.RDBStorage):
+                if self._storage.heartbeat_interval is not None:
+                    warnings.warn(_msg)
+            elif isinstance(self._storage, storages._CachedStorage) and isinstance(
+                self._storage._backend, storages.RDBStorage
+            ):
+                if self._storage._backend.heartbeat_interval is not None:
+                    warnings.warn(_msg)
+
         fixed_distributions = fixed_distributions or {}
 
         # Sync storage once every trial.
