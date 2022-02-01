@@ -57,14 +57,21 @@ def _convert_positional_args(
     def decorator(func: Callable[..., _T]) -> Callable[..., _T]:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> _T:
-            assert len(args) <= n_positional_args, "Too many positional arguments."
             if len(args) >= 1:
                 warnings.warn(
-                    f"{func.__name__}: Positional arguments are deprecated."
+                    f"{func.__name__}(): Positional arguments are deprecated."
                     " Please give all values as keyword arguments."
                 )
+            if len(args) > n_positional_args:
+                raise TypeError(
+                    f"{func.__name__}() takes {n_positional_args} positional"
+                    f" arguments but {len(args)} were given."
+                )
             for val, arg_name in zip(args, list(signature(func).parameters)):
-                assert arg_name not in kwargs
+                if arg_name in kwargs:
+                    raise TypeError(
+                        f"{func.__name__}() got multiple values for argument '{arg_name}'."
+                    )
                 kwargs[arg_name] = val
             return func(**kwargs)
 
