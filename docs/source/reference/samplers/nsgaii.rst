@@ -1,7 +1,7 @@
 .. module:: optuna.samplers.nsgaii
 
 optuna.samplers.nsgaii
-=====================
+======================
 
 The :mod:`~optuna.samplers.nsgaii` module defines crossover operations used by :class:`~optuna.samplers.NSGAIISampler`.
 
