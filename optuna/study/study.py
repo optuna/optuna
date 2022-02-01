@@ -66,6 +66,9 @@ def _convert_positional_args(
                     f" arguments but {len(args)} were given."
                 )
             for val, arg_name in zip(args, previous_positional_arg_names):
+                # When specifying a positional argument that is not located at the end of args as
+                # a keyword argument, raise TypeError as follows by imitating the Python standard
+                # behavior.
                 if arg_name in kwargs:
                     raise TypeError(
                         f"{func.__name__}() got multiple values for argument '{arg_name}'."
