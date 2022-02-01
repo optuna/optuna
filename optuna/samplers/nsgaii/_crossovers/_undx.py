@@ -85,8 +85,8 @@ class UNDXCrossover(BaseCrossover):
         else:
             sigma_eta = self._sigma_eta
 
-        etas = rng.normal(0, sigma_eta ** 2, size=n)
-        xi = rng.normal(0, self._sigma_xi ** 2)
+        etas = rng.normal(0, sigma_eta**2, size=n)
+        xi = rng.normal(0, self._sigma_xi**2)
         es = self._orthonormal_basis_vector_to_psl(
             parents_params, n
         )  # Orthonormal basis vectors of the subspace orthogonal to the psl.
