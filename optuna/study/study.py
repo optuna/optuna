@@ -1,6 +1,4 @@
 import copy
-from functools import wraps
-from inspect import signature
 import threading
 from typing import Any
 from typing import Callable
@@ -52,22 +50,22 @@ _T = TypeVar("_T")
 
 
 def _convert_positional_args(
-    *, n_positional_args: int = 0
+    *,
+    previous_positional_arg_names: Sequence[str],
 ) -> Callable[[Callable[..., _T]], Callable[..., _T]]:
     def decorator(func: Callable[..., _T]) -> Callable[..., _T]:
-        @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> _T:
             if len(args) >= 1:
                 warnings.warn(
                     f"{func.__name__}(): Positional arguments are deprecated."
                     " Please give all values as keyword arguments."
                 )
-            if len(args) > n_positional_args:
+            if len(args) > len(previous_positional_arg_names):
                 raise TypeError(
-                    f"{func.__name__}() takes {n_positional_args} positional"
+                    f"{func.__name__}() takes {len(previous_positional_arg_names)} positional"
                     f" arguments but {len(args)} were given."
                 )
-            for val, arg_name in zip(args, list(signature(func).parameters)):
+            for val, arg_name in zip(args, previous_positional_arg_names):
                 if arg_name in kwargs:
                     raise TypeError(
                         f"{func.__name__}() got multiple values for argument '{arg_name}'."
@@ -1079,7 +1077,16 @@ class Study:
             assert False, "Should not reach."
 
 
-@_convert_positional_args(n_positional_args=6)
+@_convert_positional_args(
+    previous_positional_arg_names=[
+        "storage",
+        "sampler",
+        "pruner",
+        "study_name",
+        "direction",
+        "load_if_exists",
+    ],
+)
 def create_study(
     *,
     storage: Optional[Union[str, storages.BaseStorage]] = None,
@@ -1220,7 +1227,14 @@ def create_study(
     return study
 
 
-@_convert_positional_args(n_positional_args=4)
+@_convert_positional_args(
+    previous_positional_arg_names=[
+        "study_name",
+        "storage",
+        "sampler",
+        "pruner",
+    ],
+)
 def load_study(
     *,
     study_name: Optional[str],
@@ -1299,7 +1313,12 @@ def load_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
-@_convert_positional_args(n_positional_args=2)
+@_convert_positional_args(
+    previous_positional_arg_names=[
+        "study_name",
+        "storage",
+    ],
+)
 def delete_study(
     *,
     study_name: str,
@@ -1353,7 +1372,14 @@ def delete_study(
 
 
 @experimental("2.8.0")
-@_convert_positional_args(n_positional_args=4)
+@_convert_positional_args(
+    previous_positional_arg_names=[
+        "from_study_name",
+        "from_storage",
+        "to_storage",
+        "to_study_name",
+    ],
+)
 def copy_study(
     *,
     from_study_name: str,
