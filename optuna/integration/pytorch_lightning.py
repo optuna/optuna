@@ -4,6 +4,7 @@ from packaging import version
 
 import optuna
 from optuna.storages._cached_storage import _CachedStorage
+from optuna.storages._rdb.storage import RDBStorage
 
 
 # Define key names of `Trial.system_attrs`.
@@ -60,7 +61,10 @@ class PyTorchLightningPruningCallback(Callback):
         if self.is_ddp_backend:
             if version.parse(pl.__version__) < version.parse("1.5.0"):
                 raise ValueError("PyTorch Lightning>=1.5.0 is required in DDP.")
-            if not isinstance(self._trial.study._storage, _CachedStorage):
+            if not (
+                isinstance(self._trial.study._storage, _CachedStorage)
+                and isinstance(self._trial.study._storage._backend, RDBStorage)
+            ):
                 raise ValueError(
                     "optuna.integration.PyTorchLightningPruningCallback"
                     " supports only optuna.storages.RDBStorage in DDP."

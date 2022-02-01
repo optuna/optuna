@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -34,7 +35,8 @@ def get_install_requires() -> List[str]:
         "colorlog",
         "numpy",
         "packaging>=20.0",
-        "scipy!=1.4.0",
+        # TODO(kstoneriv3): remove this after deprecation of Python 3.6
+        "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
         "PyYAML",  # Only used in `optuna/cli.py`.
@@ -71,9 +73,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "mlflow",
         ],
         "document": [
-            # TODO(nzw): Remove the version constraint after resolving the issue
-            # https://github.com/optuna/optuna/issues/2658.
-            "sphinx<4.0.0",
+            "sphinx",
             "sphinx_rtd_theme",
             "sphinx-copybutton",
             "sphinx-gallery",
@@ -168,6 +168,7 @@ def get_extras_require() -> Dict[str, List[str]]:
         "benchmark": [
             "asv",
             "virtualenv",
+            "botorch",
         ],
     }
 

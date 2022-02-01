@@ -7,7 +7,6 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-@experimental("2.8.0")
 class MaxTrialsCallback:
     """Set a maximum number of trials before ending the study.
 
@@ -28,7 +27,7 @@ class MaxTrialsCallback:
 
             def objective(trial):
                 x = trial.suggest_float("x", -1, 1)
-                return x ** 2
+                return x**2
 
 
             study = optuna.create_study()

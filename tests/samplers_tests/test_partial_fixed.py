@@ -14,7 +14,7 @@ def test_fixed_sampling() -> None:
     def objective(trial: Trial) -> float:
         x = trial.suggest_float("x", -10, 10)
         y = trial.suggest_float("y", -10, 10)
-        return x ** 2 + y ** 2
+        return x**2 + y**2
 
     study0 = optuna.create_study()
     study0.sampler = RandomSampler(seed=42)
@@ -40,7 +40,7 @@ def test_float_to_int() -> None:
     def objective(trial: Trial) -> float:
         x = trial.suggest_int("x", -10, 10)
         y = trial.suggest_int("y", -10, 10)
-        return x ** 2 + y ** 2
+        return x**2 + y**2
 
     fixed_y = 0.5
 
@@ -61,7 +61,7 @@ def test_out_of_the_range_numerical(fixed_y: int) -> None:
     def objective(trial: Trial) -> float:
         x = trial.suggest_int("x", -1, 1)
         y = trial.suggest_int("y", -1, 1)
-        return x ** 2 + y ** 2
+        return x**2 + y**2
 
     # It is possible to fix numerical parameters as out-of-the-range value.
     # `UserWarning` will occur.
@@ -81,7 +81,7 @@ def test_out_of_the_range_categorical() -> None:
         x = trial.suggest_int("x", -1, 1)
         y = trial.suggest_categorical("y", [-1, 0, 1])
         y = cast(int, y)
-        return x ** 2 + y ** 2
+        return x**2 + y**2
 
     fixed_y = 2
 

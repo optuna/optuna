@@ -1,3 +1,4 @@
+from typing import Any
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -90,3 +91,11 @@ def _is_numerical(trials: List[FrozenTrial], param: str) -> bool:
         for t in trials
         if param in t.params
     )
+
+
+def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
+
+    values = [t.params[p_name] for t in trials if p_name in t.params]
+    if _is_numerical(trials, p_name):
+        return values
+    return list(map(str, values))

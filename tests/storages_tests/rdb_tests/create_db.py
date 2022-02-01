@@ -12,7 +12,7 @@ def objective_test_upgrade(trial: optuna.trial.Trial) -> float:
     trial.set_system_attr("a", 0)
     trial.set_user_attr("b", 1)
     trial.report(0.5, step=0)
-    return x ** 2 + y ** 2 + z ** 2
+    return x**2 + y**2 + z**2
 
 
 def mo_objective_test_upgrade(trial: optuna.trial.Trial) -> Tuple[float, float]:
@@ -21,7 +21,7 @@ def mo_objective_test_upgrade(trial: optuna.trial.Trial) -> Tuple[float, float]:
     z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
     trial.set_system_attr("a", 0)
     trial.set_user_attr("b", 1)
-    return x, x ** 2 + y ** 2 + z ** 2
+    return x, x**2 + y**2 + z**2
 
 
 if __name__ == "__main__":

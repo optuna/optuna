@@ -1,6 +1,8 @@
+import multiprocessing
 import random
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Union
 from unittest.mock import Mock
@@ -16,6 +18,7 @@ from optuna import distributions
 from optuna import TrialPruned
 from optuna.samplers import _tpe
 from optuna.samplers import TPESampler
+from optuna.study.study import create_study
 from optuna.trial import Trial
 
 
@@ -226,7 +229,7 @@ def test_sample_relative_misc_arguments() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", optuna.exceptions.ExperimentalWarning)
         sampler = TPESampler(
-            weights=lambda n: np.asarray([i ** 2 + 1 for i in range(n)]),
+            weights=lambda n: np.asarray([i**2 + 1 for i in range(n)]),
             n_startup_trials=5,
             seed=0,
             multivariate=True,
@@ -1052,6 +1055,36 @@ def test_invalid_multivariate_and_group() -> None:
 def test_group_experimental_warning() -> None:
     with pytest.warns(optuna.exceptions.ExperimentalWarning):
         _ = TPESampler(multivariate=True, group=True)
+
+
+# This function is used only in test_group_deterministic_iteration, but declared at top-level
+# because local function cannot be pickled, which occurs within multiprocessing.
+def run_tpe(k: int, sequence_dict: Dict[int, List[int]], hash_dict: Dict[int, int]) -> None:
+    hash_dict[k] = hash("nondeterministic hash")
+    sampler = TPESampler(n_startup_trials=1, seed=2, multivariate=True, group=True)
+    study = create_study(sampler=sampler)
+    study.optimize(
+        lambda t: np.sum([t.suggest_int(f"x{i}", 0, 10) for i in range(10)]), n_trials=2
+    )
+    sequence_dict[k] = list(study.trials[-1].params.values())
+
+
+def test_group_deterministic_iteration() -> None:
+    # Multiprocessing supports three way to start a process.
+    # We use `spawn` option to create a child process as a fresh python process.
+    # For more detail, see https://github.com/optuna/optuna/pull/3187#issuecomment-997673037.
+    multiprocessing.set_start_method("spawn", force=True)
+    manager = multiprocessing.Manager()
+    sequence_dict: Dict[int, List[int]] = manager.dict()
+    hash_dict: Dict[int, int] = manager.dict()
+    for i in range(3):
+        p = multiprocessing.Process(target=run_tpe, args=(i, sequence_dict, hash_dict))
+        p.start()
+        p.join()
+    # Hashes are expected to be different because string hashing is nondeterministic per process.
+    assert not (hash_dict[0] == hash_dict[1] == hash_dict[2])
+    # But the sequences are expected to be the same.
+    assert sequence_dict[0] == sequence_dict[1] == sequence_dict[2]
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])

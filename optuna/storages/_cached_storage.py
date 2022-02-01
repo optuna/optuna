@@ -14,6 +14,7 @@ import optuna
 from optuna import distributions
 from optuna.storages import BaseStorage
 from optuna.storages._rdb.storage import RDBStorage
+from optuna.storages._redis import RedisStorage
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
@@ -36,14 +37,16 @@ class _CachedStorage(BaseStorage):
     """A wrapper class of storage backends.
 
     This class is used in :func:`~optuna.get_storage` function and automatically
-    wraps :class:`~optuna.storages.RDBStorage` class.
+    wraps :class:`~optuna.storages.RDBStorage` class or
+    :class:`~optuna.storages.RedisStorage` class.
 
     Args:
         backend:
-            :class:`~optuna.storages.BaseStorage` class instance to wrap.
+            :class:`~optuna.storages.RDBStorage` class or :class:`~optuna.storages.RedisStorage`
+            class instance to wrap.
     """
 
-    def __init__(self, backend: RDBStorage) -> None:
+    def __init__(self, backend: Union[RDBStorage, RedisStorage]) -> None:
         self._backend = backend
         self._studies: Dict[int, _StudyInfo] = {}
         self._trial_id_to_study_id_and_number: Dict[int, Tuple[int, int]] = {}
@@ -403,4 +406,4 @@ class _CachedStorage(BaseStorage):
         return self._backend.get_heartbeat_interval()
 
     def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
-        return self._backend.failed_trial_callback
+        return self._backend.get_failed_trial_callback()

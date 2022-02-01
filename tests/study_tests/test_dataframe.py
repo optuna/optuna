@@ -171,7 +171,7 @@ def test_trials_dataframe_with_multi_objective_optimization(
         x = trial.suggest_float("x", 1, 1)
         y = trial.suggest_float("y", 2, 2)
 
-        return x + y, x ** 2 + y ** 2  # 3, 5
+        return x + y, x**2 + y**2  # 3, 5
 
     study = create_study(directions=["minimize", "maximize"])
     study.optimize(f, n_trials=3)

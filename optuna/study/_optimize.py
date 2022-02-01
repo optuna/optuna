@@ -56,8 +56,11 @@ def _optimize(
     if not study._optimize_lock.acquire(False):
         raise RuntimeError("Nested invocation of `Study.optimize` method isn't allowed.")
 
-    # TODO(crcrpar): Make progress bar work when n_jobs != 1.
-    progress_bar = pbar_module._ProgressBar(show_progress_bar and n_jobs == 1, n_trials, timeout)
+    if show_progress_bar and n_trials is None and timeout is not None and n_jobs != 1:
+        warnings.warn("The timeout-based progress bar is not supported with n_jobs != 1.")
+        show_progress_bar = False
+
+    progress_bar = pbar_module._ProgressBar(show_progress_bar, n_trials, timeout)
 
     study._stop_flag = False
 
@@ -76,9 +79,6 @@ def _optimize(
                 progress_bar=progress_bar,
             )
         else:
-            if show_progress_bar:
-                warnings.warn("Progress bar only supports serial execution (`n_jobs=1`).")
-
             if n_jobs == -1:
                 n_jobs = os.cpu_count() or 1
 
@@ -117,7 +117,7 @@ def _optimize(
                             gc_after_trial,
                             True,
                             time_start,
-                            None,
+                            progress_bar,
                         )
                     )
     finally:

@@ -84,7 +84,7 @@ class TPESampler(BaseSampler):
 
             def objective(trial):
                 x = trial.suggest_float("x", -10, 10)
-                return x ** 2
+                return x**2
 
 
             study = optuna.create_study(sampler=TPESampler())
@@ -303,7 +303,8 @@ class TPESampler(BaseSampler):
             assert self._group_decomposed_search_space is not None
             self._search_space_group = self._group_decomposed_search_space.calculate(study)
             for sub_space in self._search_space_group.search_spaces:
-                for name, distribution in sub_space.items():
+                # Sort keys because Python's string hashing is nondeterministic.
+                for name, distribution in sorted(sub_space.items()):
                     if distribution.single():
                         continue
                     search_space[name] = distribution
@@ -340,7 +341,8 @@ class TPESampler(BaseSampler):
             params = {}
             for sub_space in self._search_space_group.search_spaces:
                 search_space = {}
-                for name, distribution in sub_space.items():
+                # Sort keys because Python's string hashing is nondeterministic.
+                for name, distribution in sorted(sub_space.items()):
                     if not distribution.single():
                         search_space[name] = distribution
                 params.update(self._sample_relative(study, trial, search_space))
@@ -491,7 +493,7 @@ class TPESampler(BaseSampler):
 
                 def objective(trial):
                     x = trial.suggest_float("x", -10, 10)
-                    return x ** 2
+                    return x**2
 
 
                 sampler = TPESampler(**TPESampler.hyperopt_parameters())
