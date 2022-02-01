@@ -1,4 +1,6 @@
 import copy
+from functools import wraps
+from inspect import signature
 import threading
 from typing import Any
 from typing import Callable
@@ -54,7 +56,12 @@ def _convert_positional_args(
     previous_positional_arg_names: Sequence[str],
 ) -> Callable[[Callable[..., _T]], Callable[..., _T]]:
     def decorator(func: Callable[..., _T]) -> Callable[..., _T]:
+        @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> _T:
+            assert len(previous_positional_arg_names) <= len(signature(func).parameters), (
+                f"{previous_positional_arg_names} is not a subset of"
+                f" {list(signature(func).parameters)}"
+            )
             if len(args) >= 1:
                 warnings.warn(
                     f"{func.__name__}(): Positional arguments are deprecated."
