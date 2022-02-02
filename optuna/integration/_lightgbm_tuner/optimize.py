@@ -12,9 +12,9 @@ from typing import Generator
 from typing import Iterator
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
-from typing import Sequence
 import warnings
 
 import numpy as np
