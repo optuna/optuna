@@ -13,7 +13,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
-from typing import Tuple
 import uuid
 
 import alembic.command
