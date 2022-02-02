@@ -640,7 +640,7 @@ class RedisStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Sequence[TrialState]] = None,
     ) -> List[FrozenTrial]:
 
         trials = self._get_trials(study_id, states, set())

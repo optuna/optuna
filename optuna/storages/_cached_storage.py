@@ -337,7 +337,7 @@ class _CachedStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Sequence[TrialState]] = None,
     ) -> List[FrozenTrial]:
         if study_id not in self._studies:
             self.read_trials_from_remote_storage(study_id)

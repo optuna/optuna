@@ -428,7 +428,7 @@ class InMemoryStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Sequence[TrialState]] = None,
     ) -> List[FrozenTrial]:
 
         with self._lock:
