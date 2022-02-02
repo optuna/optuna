@@ -10,6 +10,7 @@ from typing import Tuple
 from typing import Union
 
 import optuna
+from optuna import distributions
 from optuna.distributions import BaseDistribution
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
@@ -363,6 +364,43 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """Set a parameter to a trial.
 
         Args:
+            trial_id:
+                ID of the trial.
+            param_name:
+                Name of the parameter.
+            param_value_internal:
+                Internal representation of the parameter value.
+            distribution:
+                Sampled distribution of the parameter.
+
+        Raises:
+            :exc:`KeyError`:
+                If no trial with the matching ``trial_id`` exists.
+            :exc:`RuntimeError`:
+                If the trial is already finished.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def _check_and_set_param_distribution(
+        self,
+        study_id: int,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: distributions.BaseDistribution,
+    ) -> None:
+        """Check existance of study and set a parameter to a trial.
+
+        Called by _CachedStorage when distribution does not exist in _CachedStorage cache.
+        On the cache miss, check compatibility against previous trials in the database
+        and INSERT immediately to prevent other processes from creating incompatible
+        ones. By INSERT, it is assumed that no previous entry has been persisted
+        already.
+
+        Args:
+            study_id:
+                ID of the study.
             trial_id:
                 ID of the trial.
             param_name:

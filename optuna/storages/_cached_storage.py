@@ -230,11 +230,7 @@ class _CachedStorage(BaseStorage):
                 if cached_dist:
                     distributions.check_distribution_compatibility(cached_dist, distribution)
                 else:
-                    # On cache miss, check compatibility against previous trials in the database
-                    # and INSERT immediately to prevent other processes from creating incompatible
-                    # ones. By INSERT, it is assumed that no previous entry has been persisted
-                    # already.
-                    self._backend._check_and_set_param_distribution(
+                    self._check_and_set_param_distribution(
                         study_id, trial_id, param_name, param_value_internal, distribution
                     )
                     self._studies[study_id].param_distribution[param_name] = distribution
@@ -254,6 +250,18 @@ class _CachedStorage(BaseStorage):
                 return
 
         self._backend.set_trial_param(trial_id, param_name, param_value_internal, distribution)
+
+    def _check_and_set_param_distribution(
+        self,
+        study_id: int,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: distributions.BaseDistribution,
+    ) -> None:
+        self._backend._check_and_set_param_distribution(
+            study_id, trial_id, param_name, param_value_internal, distribution
+        )
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
 

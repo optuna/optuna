@@ -274,6 +274,22 @@ class InMemoryStorage(BaseStorage):
             trial.distributions[param_name] = distribution
             self._set_trial(trial_id, trial)
 
+    def _check_and_set_param_distribution(
+        self,
+        study_id: int,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: distributions.BaseDistribution,
+    ) -> None:
+        if study_id != self._trial_id_to_study_id_and_number[trial_id][0]:
+            raise KeyError(
+                "Invalid study_id {}. {} is expected.".format(
+                    study_id, self._trial_id_to_study_id_and_number[trial_id][0]
+                )
+            )
+        self.set_trial_param(trial_id, param_name, param_value_internal, distribution)
+
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
 
         with self._lock:

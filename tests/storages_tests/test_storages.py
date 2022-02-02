@@ -577,6 +577,22 @@ def test_set_trial_param(storage_mode: str) -> None:
             storage.set_trial_param(non_existent_trial_id, "x", 0.1, distribution_x)
 
 
+@pytest.mark.parametrize("storage_mode", ["inmemory", "sqlite", "redis"])
+def test_check_and_set_param_distribution_raw(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+
+        study_id = storage.create_new_study()
+        trial_id = storage.create_new_trial(study_id)
+        distribution_x = UniformDistribution(low=1.0, high=2.0)
+
+        storage._check_and_set_param_distribution(study_id, trial_id, "x", 0.5, distribution_x)
+        assert storage.get_trial_param(trial_id, "x") == 0.5
+
+        with pytest.raises(KeyError):
+            storage._check_and_set_param_distribution(-1, trial_id, "x", 0.5, distribution_x)
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_values(storage_mode: str) -> None:
 
