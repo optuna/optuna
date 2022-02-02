@@ -263,6 +263,12 @@ class DiscreteUniformDistribution(FloatDistribution):
         ValueError:
             If ``low`` value is larger than ``high`` value, or ``q`` value is smaller or
             equal to 0.
+
+    Attributes:
+        low:
+            Lower endpoint of the range of the distribution. ``low`` is included in the range.
+        high:
+            Upper endpoint of the range of the distribution. ``high`` is included in the range.
     """
 
     def __init__(self, low: float, high: float, q: float) -> None:
