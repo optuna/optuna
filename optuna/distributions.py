@@ -251,7 +251,7 @@ class DiscreteUniformDistribution(FloatDistribution):
         :math:`\\mathsf{high}` will be replaced with the maximum of :math:`k q + \\mathsf{low}
         < \\mathsf{high}`, where :math:`k` is an integer.
 
-    Attributes:
+    Args:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
