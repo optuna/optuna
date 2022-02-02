@@ -653,7 +653,7 @@ class RedisStorage(BaseStorage):
     def _get_trials(
         self,
         study_id: int,
-        states: Optional[Tuple[TrialState, ...]],
+        states: Optional[Sequence[TrialState]],
         excluded_trial_ids: Set[int],
     ) -> List[FrozenTrial]:
 
