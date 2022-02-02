@@ -27,22 +27,53 @@ def test_plot_parallel_coordinate() -> None:
 
     # Test with a trial.
     figure = plot_parallel_coordinate(study)
-    assert len(figure.get_lines()) == 0
+    assert len(figure.data[0]["dimensions"]) == 3
+    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
+    assert figure.data[0]["dimensions"][1]["label"] == "param_a"
+    assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
+    assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
+    assert figure.data[0]["dimensions"][2]["label"] == "param_b"
+    assert figure.data[0]["dimensions"][2]["range"] == (0.0, 2.0)
+    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 0.0, 1.0)
+
 
     # Test with a trial to select parameter.
     figure = plot_parallel_coordinate(study, params=["param_a"])
-    assert len(figure.get_lines()) == 0
+    assert len(figure.data[0]["dimensions"]) == 2
+    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
+    assert figure.data[0]["dimensions"][1]["label"] == "param_a"
+    assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
+    assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
         figure = plot_parallel_coordinate(
             study, params=["param_a"], target=lambda t: t.params["param_b"]
         )
-    assert len(figure.get_lines()) == 0
+    assert len(figure.data[0]["dimensions"]) == 2
+    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (2.0, 0.0, 1.0)
+    assert figure.data[0]["dimensions"][1]["label"] == "param_a"
+    assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
+    assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
 
     # Test with a customized target name.
     figure = plot_parallel_coordinate(study, target_name="Target Name")
-    assert len(figure.get_lines()) == 0
+    assert len(figure.data[0]["dimensions"]) == 3
+    assert figure.data[0]["dimensions"][0]["label"] == "Target Name"
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
+    assert figure.data[0]["dimensions"][1]["label"] == "param_a"
+    assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
+    assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
+    assert figure.data[0]["dimensions"][2]["label"] == "param_b"
+    assert figure.data[0]["dimensions"][2]["range"] == (0.0, 2.0)
+    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 0.0, 1.0)
 
     # Test with wrong params that do not exist in trials
     with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
@@ -83,7 +114,18 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
         )
     )
     figure = plot_parallel_coordinate(study_categorical_params)
-    assert len(figure.get_lines()) == 0
+    assert len(figure.data[0]["dimensions"]) == 3
+    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0)
+    assert figure.data[0]["dimensions"][1]["label"] == "category_a"
+    assert figure.data[0]["dimensions"][1]["range"] == (0, 1)
+    assert figure.data[0]["dimensions"][1]["values"] == (0, 1)
+    assert figure.data[0]["dimensions"][1]["ticktext"] == ("preferred", "opt")
+    assert figure.data[0]["dimensions"][2]["label"] == "category_b"
+    assert figure.data[0]["dimensions"][2]["range"] == (0, 1)
+    assert figure.data[0]["dimensions"][2]["values"] == (0, 1)
+    assert figure.data[0]["dimensions"][2]["ticktext"] == ("net", "una")
 
 
 def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
