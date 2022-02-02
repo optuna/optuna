@@ -54,7 +54,7 @@ def _check_and_convert_to_values(
             return (
                 None,
                 (
-                    f"Trial {trial_number} failed, because the number of the values "
+                    f"The number of the values "
                     f"{len(original_value)} did not match the number of the objectives "
                     f"{n_objectives}."
                 ),
@@ -92,17 +92,11 @@ def _check_single_value(
         ValueError,
         TypeError,
     ):
-        failure_message = (
-            f"Trial {trial_number} failed, because the value {repr(original_value)} could not be "
-            "cast to float."
-        )
+        failure_message = f"The value {repr(original_value)} could not be  cast to float."
 
     if value is not None and math.isnan(value):
         value = None
-        failure_message = (
-            f"Trial {trial_number} failed, because the objective function returned "
-            f"{original_value}."
-        )
+        failure_message = f"The objective function returned {original_value}."
 
     return value, failure_message
 
