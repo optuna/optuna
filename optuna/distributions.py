@@ -284,7 +284,7 @@ class DiscreteUniformDistribution(FloatDistribution):
 
     @property
     def q(self) -> float:
-        """Return a discretization step.
+        """Discretization step.
 
         :class:`~optuna.distributions.DiscreteUniformDistribution` is now subtype of
         :class:`~optuna.distributions.FloatDistribution` and FloatDistribution has ``step``
