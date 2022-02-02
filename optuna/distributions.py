@@ -281,7 +281,7 @@ class DiscreteUniformDistribution(FloatDistribution):
         return cast(float, self.step)
 
     @q.setter
-    def q(self, v: float) -> float:
+    def q(self, v: float) -> None:
         self.step = v
 
 
