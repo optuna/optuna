@@ -1361,20 +1361,20 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
         assert len(trials) == n_trials + 1
 
         assert "failed_trial" not in trials[0].system_attrs
-        assert "retry_count" not in trials[0].system_attrs
+        assert "retry_history" not in trials[0].system_attrs
 
-        # trial 1-3 are retried ones of the trial 0
+        # trial 1-3 are retried ones originated from the trial 0
         assert trials[1].system_attrs["failed_trial"] == 0
-        assert trials[1].system_attrs["retry_count"] == 1
+        assert trials[1].system_attrs["retry_history"] == [0]
 
-        assert trials[2].system_attrs["failed_trial"] == 1
-        assert trials[2].system_attrs["retry_count"] == 2
+        assert trials[2].system_attrs["failed_trial"] == 0
+        assert trials[2].system_attrs["retry_history"] == [0, 1]
 
-        assert trials[3].system_attrs["failed_trial"] == 2
-        assert trials[3].system_attrs["retry_count"] == 3
+        assert trials[3].system_attrs["failed_trial"] == 0
+        assert trials[3].system_attrs["retry_history"] == [0, 1, 2]
 
         # trial 4~ are the newly started one and its retry after exceededing max_retry
         assert "failed_trial" not in trials[4].system_attrs
-        assert "retry_count" not in trials[4].system_attrs
+        assert "retry_history" not in trials[4].system_attrs
         assert trials[5].system_attrs["failed_trial"] == 4
-        assert trials[5].system_attrs["retry_count"] == 1
+        assert trials[5].system_attrs["retry_history"] == [4]

@@ -1,4 +1,5 @@
 from typing import Container
+from typing import List
 from typing import Optional
 
 import optuna
@@ -106,15 +107,11 @@ class RetryFailedTrialCallback:
         self._inherit_intermediate_values = inherit_intermediate_values
 
     def __call__(self, study: "optuna.study.Study", trial: FrozenTrial) -> None:
-        retry_count = trial.system_attrs.get("retry_count", 0) + 1
-        if self._max_retry is not None and retry_count > self._max_retry:
-            return
-
-        system_attrs = {
-            **trial.system_attrs,
-            "failed_trial": trial.number,
-            "retry_count": retry_count,
-        }
+        system_attrs = {"failed_trial": trial.number, "retry_history": [], **trial.system_attrs}
+        system_attrs["retry_history"].append(trial.number)  # type: ignore
+        if self._max_retry is not None:
+            if self._max_retry < len(system_attrs["retry_history"]):  # type: ignore
+                return
 
         study.add_trial(
             optuna.create_trial(
@@ -132,7 +129,7 @@ class RetryFailedTrialCallback:
     @staticmethod
     @experimental("2.8.0")
     def retried_trial_number(trial: FrozenTrial) -> Optional[int]:
-        """Return the number of the trial being retried.
+        """Return the number of the original trial being retried.
 
         Args:
             trial:
@@ -144,3 +141,21 @@ class RetryFailedTrialCallback:
         """
 
         return trial.system_attrs.get("failed_trial", None)
+
+    @staticmethod
+    @experimental("2.11.0")
+    def retry_history(trial: FrozenTrial) -> List[int]:
+        """Return the list of trial IDs from the original trial to the specified one.
+
+        Args:
+            trial:
+                The trial object.
+
+        Returns:
+            A list of trial IDs in ascending order of the series of retried trials.
+            The first item of the list indicates the original trial which is identical
+            to the :func:`~optuna.storage.RetryFailedTrialCallback.retried_trial_number`,
+            and the last item is the one right before the specified trial in the retry series.
+            If the specified trial is not a retry of any trial, returns an empty list.
+        """
+        return trial.system_attrs.get("retry_history", [])
