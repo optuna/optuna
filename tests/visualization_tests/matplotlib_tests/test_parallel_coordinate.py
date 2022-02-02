@@ -40,7 +40,6 @@ def test_plot_parallel_coordinate() -> None:
     assert figure.data[0]["dimensions"][2]["range"] == (0.0, 2.0)
     assert figure.data[0]["dimensions"][2]["values"] == (2.0, 0.0, 1.0)
 
-
     # Test with a trial to select parameter.
     figure = plot_parallel_coordinate(study, params=["param_a"])
     assert len(figure.data[0]["dimensions"]) == 2
