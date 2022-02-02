@@ -280,6 +280,10 @@ class DiscreteUniformDistribution(FloatDistribution):
     def q(self) -> float:
         return cast(float, self.step)
 
+    @q.setter
+    def q(self, v: float) -> float:
+        self.step = v
+
 
 class IntDistribution(BaseDistribution):
     """A distribution on integers.
