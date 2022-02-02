@@ -732,6 +732,19 @@ def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -
     assert "100%" in err
 
 
+def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    with pytest.warns(
+        UserWarning, match="The timeout-based progress bar is not supported with n_jobs != 1."
+    ):
+        study.optimize(lambda _: 1.0, timeout=2.0, show_progress_bar=True, n_jobs=2)
+    _, err = capsys.readouterr()
+
+    # Testing for a character that forms progress bar borders.
+    assert "|" not in err
+
+
 @pytest.mark.parametrize(
     "timeout,expected",
     [
@@ -826,19 +839,6 @@ def test_optimize_without_progbar_no_constraints(
 
     study = create_study()
     study.optimize(_objective, n_jobs=n_jobs)
-    _, err = capsys.readouterr()
-
-    # Testing for a character that forms progress bar borders.
-    assert "|" not in err
-
-
-def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
-
-    study = create_study()
-    with pytest.warns(
-        UserWarning, match="The timeout-based progress bar is not supported with n_jobs != 1."
-    ):
-        study.optimize(lambda _: 1.0, timeout=2.0, show_progress_bar=True, n_jobs=2)
     _, err = capsys.readouterr()
 
     # Testing for a character that forms progress bar borders.
