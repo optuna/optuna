@@ -242,7 +242,7 @@ def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
 
 def all_equal(iterable: Iterable) -> bool:
     """Returns True if all the elements are equal to each other"""
-    return len(set(iterable)) <= 1
+    return len(set(iterable)) == 1
 
 
 def range_covers(range1: Tuple[float, float], range2: Tuple[float, float]) -> bool:
