@@ -14,6 +14,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
+from typing import Sequence
 import warnings
 
 import numpy as np
@@ -696,7 +697,7 @@ class _LightGBMBaseTuner(_BaseTuner):
             def get_trials(
                 self,
                 deepcopy: bool = True,
-                states: Optional[Tuple[TrialState, ...]] = None,
+                states: Optional[Sequence[TrialState]] = None,
             ) -> List[optuna.trial.FrozenTrial]:
 
                 trials = super().get_trials(deepcopy=deepcopy, states=states)
