@@ -253,9 +253,9 @@ def range_covers(range1: Tuple[float, float], range2: Tuple[float, float]) -> bo
 
 
 def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
-    study_without_trials = prepare_study_with_trials()
+    study = prepare_study_with_trials()
     params = ["param_a", "param_b", "param_c"]
-    subplots = plot_contour(study_without_trials, params=params)
+    subplots = plot_contour(study, params=params)
     # `subplots` should look like this:
     # param_a [[subplot 1, subplot 2, subplot 3],
     # param_b  [subplot 4, subplot 4, subplot 6],
