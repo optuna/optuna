@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from optuna.distributions import CategoricalDistribution
@@ -201,7 +203,20 @@ def test_plot_parallel_coordinate_log_params() -> None:
         )
     )
     figure = plot_parallel_coordinate(study_log_params)
-    assert len(figure.get_lines()) == 0
+    assert len(figure.data[0]["dimensions"]) == 3
+    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 1.0, 0.1)
+    assert figure.data[0]["dimensions"][1]["label"] == "param_a"
+    assert figure.data[0]["dimensions"][1]["range"] == (-6.0, -4.0)
+    assert figure.data[0]["dimensions"][1]["values"] == (-6, math.log10(2e-5), -4)
+    assert figure.data[0]["dimensions"][1]["ticktext"] == ("1e-06", "1e-05", "0.0001")
+    assert figure.data[0]["dimensions"][1]["tickvals"] == (-6, -5, -4.0)
+    assert figure.data[0]["dimensions"][2]["label"] == "param_b"
+    assert figure.data[0]["dimensions"][2]["range"] == (1.0, math.log10(200))
+    assert figure.data[0]["dimensions"][2]["values"] == (1.0, math.log10(200), math.log10(30))
+    assert figure.data[0]["dimensions"][2]["ticktext"] == ("10", "100", "200")
+    assert figure.data[0]["dimensions"][2]["tickvals"] == (1.0, 2.0, math.log10(200))
 
 
 def test_plot_parallel_coordinate_unique_hyper_param() -> None:
