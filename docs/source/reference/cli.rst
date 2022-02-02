@@ -6,7 +6,7 @@ optuna.cli
 The :mod:`~optuna.cli` module implements Optuna's command-line functionality using the `cliff framework <https://docs.openstack.org/cliff/latest/index.html>`_.
 
 .. seealso::
-   Examples are provided in the :ref:`cli` tutorial.
+    The :ref:`cli` tutorial provides use-cases with examples.
 
 .. autoprogram-cliff:: optuna.cli._OptunaApp
    :application: optuna
