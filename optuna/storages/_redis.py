@@ -312,11 +312,16 @@ class RedisStorage(BaseStorage):
 
     def get_all_study_summaries(self) -> List[StudySummary]:
 
-        study_summaries = []
+        queries = []
         study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]
         for study_id in study_ids:
-            study_summary = self._get_study_summary(study_id)
-            study_summaries.append(study_summary)
+            queries.append(self._key_study_summary(study_id))
+
+        study_summaries = []
+        summary_pkls = self._redis.mget(queries)
+        for summary_pkl in summary_pkls:
+            assert summary_pkl is not None
+            study_summaries.append(pickle.loads(summary_pkl))
 
         return study_summaries
 
