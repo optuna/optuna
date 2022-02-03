@@ -110,8 +110,8 @@ class FloatDistribution(BaseDistribution):
 
     .. note::
         When ``step`` is not :obj:`None`, if the range :math:`[\\mathsf{low}, \\mathsf{high}]`
-        is not divisible by :math:`step`, :math:`\\mathsf{high}` will be replaced with
-        the maximum of :math:`k \\times \\mathsf{step} + \\mathsf{low} < \\mathsf{high}`,
+        is not divisible by :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced
+        with the maximum of :math:`k \\times \\mathsf{step} + \\mathsf{low} < \\mathsf{high}`,
         where :math:`k` is an integer.
 
     Attributes:
