@@ -463,17 +463,9 @@ class Study:
             A :class:`~optuna.trial.Trial`.
         """
 
-        if self._optimize_lock.acquire(False):
-            self._optimize_lock.release()
-            _msg = "Heartbeat of storage is supposed to be used with Study.optimize."
-            if isinstance(self._storage, (storages.RDBStorage, storages.RedisStorage)):
-                if self._storage.heartbeat_interval is not None:
-                    warnings.warn(_msg)
-            elif isinstance(self._storage, storages._CachedStorage) and isinstance(
-                self._storage._backend, (storages.RDBStorage, storages.RedisStorage)
-            ):
-                if self._storage._backend.heartbeat_interval is not None:
-                    warnings.warn(_msg)
+        if not self._optimize_lock.locked():
+            if self._storage.is_heartbeat_enabled():
+                warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
 
         fixed_distributions = fixed_distributions or {}
 
