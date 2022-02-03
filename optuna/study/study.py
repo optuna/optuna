@@ -377,7 +377,8 @@ class Study:
             show_progress_bar:
                 Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
                 Currently, progress bar is experimental feature and disabled
-                when ``n_jobs`` :math:`\\ne 1`.
+                when ``n_trials`` is :obj:`None``, ``timeout`` not is :obj:`None`, and
+                ``n_jobs`` :math:`\\ne 1`.
 
         Raises:
             RuntimeError:
