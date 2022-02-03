@@ -742,6 +742,10 @@ class RDBStorage(BaseStorage):
     @staticmethod
     def _ensure_numerical_limit(value: float) -> float:
 
+        # If the value is nan, skip the limit on the value.
+        if np.isnan(value):
+            return value
+
         # Max and min trial values that can be stored are limited by
         # dialect. Most limiting one is MySQL which in current data
         # model will store floats as single precision (32 bit).
