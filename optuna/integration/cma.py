@@ -248,6 +248,10 @@ class PyCmaSampler(BaseSampler):
                     x0[name] = math.exp(numpy.mean([log_high, log_low]))
                 else:
                     x0[name] = numpy.mean([distribution.high, distribution.low])
+            elif isinstance(distribution, LogUniformDistribution):
+                log_high = math.log(distribution.high)
+                log_low = math.log(distribution.low)
+                x0[name] = math.exp(numpy.mean([log_high, log_low]))
             elif isinstance(distribution, CategoricalDistribution):
                 index = (len(distribution.choices) - 1) // 2
                 x0[name] = distribution.choices[index]
@@ -269,14 +273,22 @@ class PyCmaSampler(BaseSampler):
 
         sigma0s = []
         for name, distribution in search_space.items():
-            if isinstance(distribution, IntDistribution):
+            if isinstance(distribution, UniformDistribution):
+                sigma0s.append((distribution.high - distribution.low) / 6)
+            elif isinstance(distribution, DiscreteUniformDistribution):
+                sigma0s.append((distribution.high - distribution.low) / 6)
+            elif isinstance(distribution, FloatDistribution):
                 if distribution.log:
                     log_high = math.log(distribution.high)
                     log_low = math.log(distribution.low)
                     sigma0s.append((log_high - log_low) / 6)
                 else:
                     sigma0s.append((distribution.high - distribution.low) / 6)
-            elif isinstance(distribution, FloatDistribution):
+            elif isinstance(distribution, LogUniformDistribution):
+                log_high = math.log(distribution.high)
+                log_low = math.log(distribution.low)
+                sigma0s.append((log_high - log_low) / 6)
+            elif isinstance(distribution, IntDistribution):
                 if distribution.log:
                     log_high = math.log(distribution.high)
                     log_low = math.log(distribution.low)
@@ -468,11 +480,13 @@ class _Optimizer(object):
     ) -> float:
 
         dist = search_space[param_name]
-        if isinstance(dist, IntDistribution):
-            if dist.log:
-                return math.log(optuna_param_value)
+        if isinstance(dist, LogUniformDistribution):
+            return math.log(optuna_param_value)
         elif isinstance(dist, DiscreteUniformDistribution):
             return optuna_param_value - dist.low
+        elif isinstance(dist, IntDistribution):
+            if dist.log:
+                return math.log(optuna_param_value)
         elif isinstance(dist, FloatDistribution):
             if dist.log:
                 return math.log(optuna_param_value)

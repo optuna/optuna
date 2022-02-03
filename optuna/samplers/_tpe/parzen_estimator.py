@@ -291,7 +291,9 @@ class _ParzenEstimator:
             distribution = self._search_space[param_name]
 
             assert isinstance(distribution, _DISTRIBUTION_CLASSES)
-            if isinstance(
+            if isinstance(distribution, distributions.LogUniformDistribution):
+                samples = np.log(samples)
+            elif isinstance(
                 distribution,
                 (distributions.FloatDistribution, distributions.IntDistribution),
             ):

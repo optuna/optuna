@@ -810,11 +810,14 @@ def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) ->
 
     relative_search_space = {
         "a": CategoricalDistribution([1]),
-        "b": FloatDistribution(low=1.0, high=1.0),
-        "c": FloatDistribution(low=1.0, high=1.0, log=True),
-        "d": FloatDistribution(low=1.0, high=1.0, step=1.0),
-        "e": IntDistribution(low=1, high=1),
-        "f": IntDistribution(low=1, high=1, log=True),
+        "b": IntDistribution(low=1, high=1),
+        "c": IntDistribution(low=1, high=1, log=True),
+        "d": FloatDistribution(low=1.0, high=1.0),
+        "e": FloatDistribution(low=1.0, high=1.0, log=True),
+        "f": FloatDistribution(low=1.0, high=1.0, step=1.0),
+        "g": UniformDistribution(low=1.0, high=1.0),
+        "h": LogUniformDistribution(low=1.0, high=1.0),
+        "i": DiscreteUniformDistribution(low=1.0, high=1.0, q=1.0),
     }
 
     with warnings.catch_warnings():
