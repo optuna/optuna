@@ -66,16 +66,22 @@ def test_convert_positional_args_mypy_type_inference() -> None:
     assert ret_sample.method()
 
 
-def test_convert_positional_args_too_many_previous_positional_arg_names() -> None:
-    previous_positional_arg_names: List[str] = ["a", "b", "c", "d"]
-    decorator_converter = _convert_positional_args(
-        previous_positional_arg_names=previous_positional_arg_names
-    )
-    assert callable(decorator_converter)
+def test_convert_positional_args_invalid_previous_positional_arg_names() -> None:
+    def _test_converter(previous_positional_arg_names: List[str]) -> None:
+        decorator_converter = _convert_positional_args(
+            previous_positional_arg_names=previous_positional_arg_names
+        )
+        assert callable(decorator_converter)
 
-    decorated_func = decorator_converter(_sample_func)
-    with pytest.raises(AssertionError):
-        decorated_func(1, 2, c=2)
+        with pytest.raises(AssertionError) as record:
+            decorator_converter(_sample_func)
+        assert (
+            str(record.value)
+            == f"{previous_positional_arg_names} is not a sublist of ['a', 'b', 'c']"
+        )
+
+    _test_converter(previous_positional_arg_names=["a", "b", "c", "d"])
+    _test_converter(previous_positional_arg_names=["b", "a"])
 
 
 def test_convert_positional_args_invalid_positional_args() -> None:
