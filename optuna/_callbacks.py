@@ -145,7 +145,7 @@ class RetryFailedTrialCallback:
     @staticmethod
     @experimental("3.0.0")
     def retry_history(trial: FrozenTrial) -> List[int]:
-        """Return the list of trial IDs from the original trial to the specified one.
+        """Return the list of retried trial IDs with respect to the specified trial.
 
         Args:
             trial:
