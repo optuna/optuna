@@ -136,7 +136,7 @@ class RetryFailedTrialCallback:
                 The trial object.
 
         Returns:
-            The number of the latest failed trial. If not retry of a previous trial,
+            The number of the first failed trial. If not retry of a previous trial,
             returns :obj:`None`.
         """
 
