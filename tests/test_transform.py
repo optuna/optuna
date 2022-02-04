@@ -84,6 +84,7 @@ def test_search_space_transform_encoding() -> None:
         (1, IntDistribution(1, 10, log=True)),
         (10, IntDistribution(1, 10, log=True)),
         (2, IntDistribution(0, 10, step=2)),
+        (10, IntDistribution(0, 10, step=2)),
         (0.0, UniformDistribution(0, 3)),
         (3.0, UniformDistribution(0, 3)),
         (1.0, LogUniformDistribution(1, 10)),

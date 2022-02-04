@@ -251,9 +251,6 @@ class _Optimizer(object):
                 # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
                 high = np.nextafter(distribution.high, float("-inf"))
                 dimension = space.Real(distribution.low, high, prior="log-uniform")
-            elif isinstance(distribution, distributions.DiscreteUniformDistribution):
-                count = int((distribution.high - distribution.low) // distribution.q)
-                dimension = space.Integer(0, count)
             elif isinstance(distribution, distributions.IntDistribution):
                 if distribution.log:
                     low = distribution.low - 0.5
@@ -262,6 +259,11 @@ class _Optimizer(object):
                 else:
                     count = (distribution.high - distribution.low) // distribution.step
                     dimension = space.Integer(0, count)
+            elif isinstance(distribution, distributions.DiscreteUniformDistribution):
+                count = int((distribution.high - distribution.low) // distribution.q)
+                dimension = space.Integer(0, count)
+            elif isinstance(distribution, distributions.CategoricalDistribution):
+                dimension = space.Categorical(distribution.choices)
             elif isinstance(distribution, distributions.FloatDistribution):
                 if distribution.log:
                     high = np.nextafter(distribution.high, float("-inf"))
@@ -272,8 +274,6 @@ class _Optimizer(object):
                 else:
                     high = np.nextafter(distribution.high, float("-inf"))
                     dimension = space.Real(distribution.low, high)
-            elif isinstance(distribution, distributions.CategoricalDistribution):
-                dimension = space.Categorical(distribution.choices)
             else:
                 raise NotImplementedError(
                     "The distribution {} is not implemented.".format(distribution)
