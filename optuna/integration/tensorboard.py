@@ -64,8 +64,9 @@ class TensorBoardCallback(object):
         )
         supported_distributions = (
             optuna.distributions.CategoricalDistribution,
+            optuna.distributions.FloatDistribution,
             optuna.distributions.IntDistribution,
-        ) + (real_distributions,)
+        )
 
         for param_name, param_distribution in distributions.items():
             if isinstance(param_distribution, real_distributions):
