@@ -413,6 +413,11 @@ def test_float_init_error() -> None:
         distributions.FloatDistribution(low=1.0, high=100.0, step=-1)
 
 
+def test_categorical_init_error() -> None:
+    with pytest.raises(ValueError):
+        distributions.CategoricalDistribution(choices=())
+
+
 def test_categorical_distribution_different_sequence_types() -> None:
 
     c1 = distributions.CategoricalDistribution(choices=("Roppongi", "Azabu"))
