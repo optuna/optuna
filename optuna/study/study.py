@@ -16,6 +16,8 @@ from typing import TypeVar
 from typing import Union
 import warnings
 
+from typing_extensions import ParamSpec
+
 from optuna import exceptions
 from optuna import logging
 from optuna import pruners
@@ -49,13 +51,14 @@ _logger = logging.get_logger(__name__)
 
 
 _T = TypeVar("_T")
+_P = ParamSpec("_P")
 
 
 def _convert_positional_args(
     *,
     previous_positional_arg_names: Sequence[str],
-) -> Callable[[Callable[..., _T]], Callable[..., _T]]:
-    def decorator(func: Callable[..., _T]) -> Callable[..., _T]:
+) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
+    def decorator(func: Callable[_P, _T]) -> Callable[_P, _T]:
         assert (
             previous_positional_arg_names
             == list(signature(func).parameters)[: len(previous_positional_arg_names)]
