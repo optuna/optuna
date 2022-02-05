@@ -21,11 +21,11 @@ def objective_test_upgrade_v3(trial: optuna.trial.Trial) -> float:
 
 def mo_objective_test_upgrade_v3(trial: optuna.trial.Trial) -> Tuple[float, float]:
     x1 = trial.suggest_float("x1", -5, 5)
-    x2 = trial.suggest_float("x2", -5, 5, step=2)
-    x3 = trial.suggest_float("x3", 1.0, 3.0, log=True)
+    x2 = trial.suggest_float("x2", -6, 6, step=2)
+    x3 = trial.suggest_float("x3", 1e-5, 1e-3, log=True)
     y1 = trial.suggest_int("y1", 0, 10)
-    y2 = trial.suggest_int("y2", 1, 10, log=True)
-    y3 = trial.suggest_int("y3", 1, 10, step=3)
+    y2 = trial.suggest_int("y2", 1, 20, log=True)
+    y3 = trial.suggest_int("y3", 5, 15, step=3)
     z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
     trial.set_system_attr("a", 0)
     trial.set_user_attr("b", 1)
