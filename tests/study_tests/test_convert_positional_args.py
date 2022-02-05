@@ -28,8 +28,8 @@ def test_convert_positional_args_user_warning() -> None:
 
     decorated_func = decorator_converter(_sample_func)
     with pytest.warns(UserWarning) as record:
-        decorated_func(1, 2, c=3)
-        decorated_func(1, b=2, c=3)
+        decorated_func(1, 2, c=3)  # type: ignore
+        decorated_func(1, b=2, c=3)  # type: ignore
         decorated_func(a=1, b=2, c=3)  # no warn
 
     assert len(record) == 2
@@ -94,9 +94,9 @@ def test_convert_positional_args_invalid_positional_args() -> None:
     decorated_func = decorator_converter(_sample_func)
     with pytest.warns(UserWarning):
         with pytest.raises(TypeError) as record:
-            decorated_func(1, 2, 3)
+            decorated_func(1, 2, 3)  # type: ignore
         assert str(record.value) == "_sample_func() takes 2 positional arguments but 3 were given."
 
         with pytest.raises(TypeError) as record:
-            decorated_func(1, 3, b=2)
+            decorated_func(1, 3, b=2)  # type: ignore
         assert str(record.value) == "_sample_func() got multiple values for argument 'b'."
