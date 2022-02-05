@@ -376,7 +376,6 @@ def test_upgrade_multi_objective_optimization_v3(optuna_version: str) -> None:
         assert study.user_attrs["d"] == 3
 
 
-
 @pytest.mark.parametrize("optuna_version", ["2.6.0"])
 def test_upgrade_distributions(optuna_version: str) -> None:
     src_db_file = os.path.join(
