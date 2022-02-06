@@ -41,7 +41,7 @@ def test_get_param_importance_target_is_none_and_study_is_multi_obj(
             x7 = trial.suggest_float("x7", 0.1, 3)
 
         assert isinstance(x6, float)
-        value = x1 ** 4 + x2 + x3 - x4 ** 2 - x5 + x6
+        value = x1**4 + x2 + x3 - x4**2 - x5 + x6
         if trial.number % 2 == 0:
             value += x7
         return value, 0.0
@@ -72,7 +72,7 @@ def test_get_param_importances(
             x7 = trial.suggest_float("x7", 0.1, 3)
 
         assert isinstance(x6, float)
-        value = x1 ** 4 + x2 + x3 - x4 ** 2 - x5 + x6
+        value = x1**4 + x2 + x3 - x4**2 - x5 + x6
         if trial.number % 2 == 0:
             value += x7
         return value
@@ -112,7 +112,7 @@ def test_get_param_importances_with_params(
         if trial.number % 2 == 0:
             x4 = trial.suggest_float("x4", 0.1, 3)
 
-        value = x1 ** 4 + x2 + x3
+        value = x1**4 + x2 + x3
         if trial.number % 2 == 0:
             value += x4
         return value
@@ -148,7 +148,7 @@ def test_get_param_importances_with_target(
         if trial.number % 2 == 0:
             x4 = trial.suggest_float("x4", 0.1, 3)
 
-        value = x1 ** 4 + x2 + x3
+        value = x1**4 + x2 + x3
         if trial.number % 2 == 0:
             value += x4
         return value
@@ -200,7 +200,7 @@ def test_get_param_importances_invalid_single_trial(
 ) -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, 3)
-        return x1 ** 2
+        return x1**2
 
     study = create_study()
     study.optimize(objective, n_trials=1)
@@ -212,7 +212,7 @@ def test_get_param_importances_invalid_single_trial(
 def test_get_param_importances_invalid_evaluator_type() -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, 3)
-        return x1 ** 2
+        return x1**2
 
     study = create_study()
     study.optimize(objective, n_trials=3)
@@ -230,7 +230,7 @@ def test_get_param_importances_invalid_no_completed_trials_params(
         if trial.number % 2 == 0:
             _ = trial.suggest_float("x2", 0.1, 3, log=True)
             raise optuna.TrialPruned
-        return x1 ** 2
+        return x1**2
 
     study = create_study()
     study.optimize(objective, n_trials=3)
@@ -254,7 +254,7 @@ def test_get_param_importances_invalid_dynamic_search_space_params(
 ) -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, trial.number + 0.1)
-        return x1 ** 2
+        return x1**2
 
     study = create_study()
     study.optimize(objective, n_trials=3)
@@ -269,7 +269,7 @@ def test_get_param_importances_invalid_params_type(
 ) -> None:
     def objective(trial: Trial) -> float:
         x1 = trial.suggest_float("x1", 0.1, 3)
-        return x1 ** 2
+        return x1**2
 
     study = create_study()
     study.optimize(objective, n_trials=3)
@@ -288,7 +288,7 @@ def test_get_param_importances_empty_search_space(
     def objective(trial: Trial) -> float:
         x = trial.suggest_float("x", 0, 5)
         y = trial.suggest_float("y", 1, 1)
-        return 4 * x ** 2 + 4 * y ** 2
+        return 4 * x**2 + 4 * y**2
 
     study = create_study()
     study.optimize(objective, n_trials=3)

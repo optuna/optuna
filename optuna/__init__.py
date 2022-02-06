@@ -53,5 +53,4 @@ __all__ = [
 
 
 importance = _LazyImport("optuna.importance")
-type_checking = _LazyImport("optuna.type_checking")
 visualization = _LazyImport("optuna.visualization")

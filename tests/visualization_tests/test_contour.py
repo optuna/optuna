@@ -93,7 +93,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
     else:
         # TODO(crcrpar): Add more checks. Currently this only checks the number of data.
         n_params = len(params) if params is not None else 4
-        assert len(figure.data) == n_params ** 2 + n_params * (n_params - 1)
+        assert len(figure.data) == n_params**2 + n_params * (n_params - 1)
 
 
 @pytest.mark.parametrize(

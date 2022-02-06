@@ -234,7 +234,7 @@ def test_hyperband_pruner_and_grid_sampler() -> None:
 
         x = trial.suggest_float("x", -100, 100)
         y = trial.suggest_int("y", -100, 100)
-        return x ** 2 + y ** 2
+        return x**2 + y**2
 
     study.optimize(objective, n_trials=10)
 

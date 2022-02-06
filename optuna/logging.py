@@ -91,7 +91,7 @@ def get_verbosity() -> int:
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
-                return x ** 2 + y
+                return x**2 + y
 
         .. testcode::
 
@@ -144,7 +144,7 @@ def set_verbosity(verbosity: int) -> None:
 
             def objective(trial):
                 x = trial.suggest_int("x", -10, 10)
-                return x ** 2
+                return x**2
 
         .. testcode::
 
@@ -196,7 +196,7 @@ def disable_default_handler() -> None:
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
-                return x ** 2 + y
+                return x**2 + y
 
         .. testcode::
 
@@ -250,7 +250,7 @@ def disable_propagation() -> None:
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
-                return x ** 2 + y
+                return x**2 + y
 
         .. testcode::
 
@@ -303,7 +303,7 @@ def enable_propagation() -> None:
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
                 y = trial.suggest_categorical("y", [-1, 0, 1])
-                return x ** 2 + y
+                return x**2 + y
 
         .. testcode::
 

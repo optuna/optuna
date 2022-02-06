@@ -494,3 +494,89 @@ There are two kinds of constrained optimizations, one with soft constraints and 
 Soft constraints do not have to be satisfied, but an objective function is penalized if they are unsatisfied. On the other hand, hard constraints must be satisfied.
 
 Optuna is adopting the soft one and **DOES NOT** support the hard one. In other words, Optuna **DOES NOT** have built-in samplers for the hard constraints.
+
+How can I parallelize optimization?
+-----------------------------------
+
+The variations of parallelization are in the following three cases.
+
+1. Multi-threading parallelization with single node
+2. Multi-processing parallelization with single node
+3. Multi-processing parallelization with multiple nodes
+
+1. Multi-threading parallelization with a single node
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Parallelization can be achieved by setting the argument ``n_jobs`` in :func:`optuna.study.Study.optimize`.
+However, the python code will not be faster due to GIL because :func:`optuna.study.Study.optimize` with ``n_jobs!=1`` uses multi-threading. 
+
+While optimizing, it will be faster in limited situations, such as waiting for other server requests or C/C++ processing with numpy, etc., but it will not be faster in other cases.
+
+For more information about 1., see APIReference_.
+
+.. _APIReference: https://optuna.readthedocs.io/en/stable/reference/index.html
+
+2. Multi-processing parallelization with single node
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This can be achieved by using file-based RDBs (such as SQLite) and client/server RDBs (such as PostgreSQL and MySQL).
+However, if you are in the environment where you can not install an RDB, you can not run multi-processing parallelization with single node. When you really want to do it, please request it as a GitHub issue. If we receive a lot of requests, we may provide a solution for it.
+
+For more information about 2., see TutorialEasyParallelization_.
+
+.. _TutorialEasyParallelization: https://optuna.readthedocs.io/en/stable/tutorial/10_key_features/004_distributed.html
+
+3. Multi-processing parallelization with multiple nodes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This can be achieved by using client/server RDBs (such as PostgreSQL and MySQL).
+However, if you are in the environment where you can not install a client/server RDB, you can not run multi-processing parallelization with multiple nodes.
+
+For more information about 3., see TutorialEasyParallelization_.
+
+Can I monitor trials and make them failed automatically when they are killed unexpectedly?
+------------------------------------------------------------------------------------------
+
+.. note::
+
+  Heartbeat mechanism is experimental. API would change in the future.
+
+A process running a trial could be killed unexpectedly, typically by a job scheduler in a cluster environment.
+If trials are killed unexpectedly, they will be left on the storage with their states `RUNNING` until we remove them or update their state manually.
+For such a case, Optuna supports monitoring trials using `heartbeat <https://en.wikipedia.org/wiki/Heartbeat_(computing)>`_ mechanism.
+Using heartbeat, if a process running a trial is killed unexpectedly,
+Optuna will automatically change the state of the trial that was running on that process to :obj:`~optuna.trial.TrialState.FAIL`
+from :obj:`~optuna.trial.TrialState.RUNNING`.
+
+.. code-block:: python
+
+    import optuna
+
+    def objective(trial):
+        (Very time-consuming computation)
+
+    # Recording heartbeats every 60 seconds.
+    # Other processes' trials where more than 120 seconds have passed
+    # since the last heartbeat was recorded will be automatically failed.
+    storage = optuna.storages.RDBStorage(url="sqlite:///:memory:", heartbeat_interval=60, grace_period=120)
+    study = optuna.create_study(storage=storage)
+    study.optimize(objective, n_trials=100)
+
+You can also execute a callback function to process the failed trial.
+Optuna provides a callback to retry failed trials as :class:`~optuna.storages.RetryFailedTrialCallback`.
+Note that a callback is invoked at a beginning of each trial, which means :class:`~optuna.storages.RetryFailedTrialCallback`
+will retry failed trials when a new trial starts to evaluate.
+
+.. code-block:: python
+
+    import optuna
+    from optuna.storages import RetryFailedTrialCallback
+
+    storage = optuna.storages.RDBStorage(
+        url="sqlite:///:memory:",
+        heartbeat_interval=60,
+        grace_period=120,
+        failed_trial_callback=RetryFailedTrialCallback(max_retry=3),
+    )
+
+    study = optuna.create_study(storage=storage)

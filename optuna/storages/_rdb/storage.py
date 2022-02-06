@@ -1,3 +1,4 @@
+from collections import defaultdict
 from contextlib import contextmanager
 import copy
 from datetime import datetime
@@ -19,6 +20,7 @@ import alembic.command
 import alembic.config
 import alembic.migration
 import alembic.script
+import numpy as np
 from sqlalchemy import func
 from sqlalchemy import orm
 from sqlalchemy.engine import create_engine
@@ -38,6 +40,10 @@ from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+
+_RDB_MAX_FLOAT = np.finfo(np.float32).max
+_RDB_MIN_FLOAT = np.finfo(np.float32).min
 
 
 _logger = optuna.logging.get_logger(__name__)
@@ -94,7 +100,7 @@ class RDBStorage(BaseStorage):
 
             def objective(trial):
                 x = trial.suggest_float("x", -100, 100)
-                return x ** 2
+                return x**2
 
 
             storage = optuna.storages.RDBStorage(
@@ -406,12 +412,22 @@ class RDBStorage(BaseStorage):
             ).select_from(orm.outerjoin(models.StudyModel, summarized_trial))
 
             study_summary = study_summary_stmt.all()
+
+            _directions = defaultdict(list)
+            for d in session.query(models.StudyDirectionModel).all():
+                _directions[d.study_id].append(d.direction)
+
+            _user_attrs = defaultdict(list)
+            for a in session.query(models.StudyUserAttributeModel).all():
+                _user_attrs[d.study_id].append(a)
+
+            _system_attrs = defaultdict(list)
+            for a in session.query(models.StudySystemAttributeModel).all():
+                _system_attrs[d.study_id].append(a)
+
             study_summaries = []
             for study in study_summary:
-                directions = [
-                    d.direction
-                    for d in models.StudyDirectionModel.where_study_id(study.study_id, session)
-                ]
+                directions = _directions[study.study_id]
                 best_trial: Optional[models.TrialModel] = None
                 try:
                     if len(directions) > 1:
@@ -460,20 +476,21 @@ class RDBStorage(BaseStorage):
                     best_trial_frozen = FrozenTrial(
                         best_trial.number,
                         TrialState.COMPLETE,
-                        value.value,
+                        self._lift_numerical_limit(value.value),
                         best_trial.datetime_start,
                         best_trial.datetime_complete,
                         param_dict,
                         param_distributions,
                         {i.key: json.loads(i.value_json) for i in user_attrs},
                         {i.key: json.loads(i.value_json) for i in system_attrs},
-                        {value.step: value.intermediate_value for value in intermediate},
+                        {
+                            value.step: self._lift_numerical_limit(value.intermediate_value)
+                            for value in intermediate
+                        },
                         best_trial.trial_id,
                     )
-                user_attrs = models.StudyUserAttributeModel.where_study_id(study.study_id, session)
-                system_attrs = models.StudySystemAttributeModel.where_study_id(
-                    study.study_id, session
-                )
+                user_attrs = _user_attrs.get(study.study_id, [])
+                system_attrs = _system_attrs.get(study.study_id, [])
                 study_summaries.append(
                     StudySummary(
                         study_name=study.study_name,
@@ -497,7 +514,7 @@ class RDBStorage(BaseStorage):
     def _create_new_trial(
         self, study_id: int, template_trial: Optional[FrozenTrial] = None
     ) -> FrozenTrial:
-        """Create a new trial and returns its trial_id and a :class:`~optuna.trial.FrozenTrial`.
+        """Create a new trial and returns a :class:`~optuna.trial.FrozenTrial`.
 
         Args:
             study_id:
@@ -722,6 +739,25 @@ class RDBStorage(BaseStorage):
 
         return param_value
 
+    @staticmethod
+    def _ensure_numerical_limit(value: float) -> float:
+
+        # Max and min trial values that can be stored are limited by
+        # dialect. Most limiting one is MySQL which in current data
+        # model will store floats as single precision (32 bit).
+        # There is no support for +inf and -inf in this dialect.
+        return float(np.clip(value, _RDB_MIN_FLOAT, _RDB_MAX_FLOAT))
+
+    @staticmethod
+    def _lift_numerical_limit(value: float) -> float:
+
+        # Floats can't be compared for equality because they are
+        # approximate and not stored as exact values.
+        # https://dev.mysql.com/doc/refman/8.0/en/problems-with-float.html
+        if np.isclose(value, _RDB_MIN_FLOAT) or np.isclose(value, _RDB_MAX_FLOAT):
+            return float(np.sign(value) * float("inf"))
+        return value
+
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
         with _create_scoped_session(self.scoped_session) as session:
@@ -736,6 +772,7 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
+        value = self._ensure_numerical_limit(value)
 
         trial_value = models.TrialValueModel.find_by_trial_and_objective(trial, objective, session)
         if trial_value is None:
@@ -761,6 +798,7 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
+        intermediate_value = self._ensure_numerical_limit(intermediate_value)
 
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session
@@ -923,14 +961,13 @@ class RDBStorage(BaseStorage):
 
         return trials
 
-    @staticmethod
-    def _build_frozen_trial_from_trial_model(trial: models.TrialModel) -> FrozenTrial:
+    def _build_frozen_trial_from_trial_model(self, trial: models.TrialModel) -> FrozenTrial:
 
         values: Optional[List[float]]
         if trial.values:
             values = [0 for _ in trial.values]
             for value_model in trial.values:
-                values[value_model.objective] = value_model.value
+                values[value_model.objective] = self._lift_numerical_limit(value_model.value)
         else:
             values = None
 
@@ -955,7 +992,10 @@ class RDBStorage(BaseStorage):
             system_attrs={
                 attr.key: json.loads(attr.value_json) for attr in trial.system_attributes
             },
-            intermediate_values={v.step: v.intermediate_value for v in trial.intermediate_values},
+            intermediate_values={
+                v.step: self._lift_numerical_limit(v.intermediate_value)
+                for v in trial.intermediate_values
+            },
             trial_id=trial.trial_id,
         )
 

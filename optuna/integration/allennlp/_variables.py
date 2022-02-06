@@ -1,8 +1,8 @@
+import json
 import os
-from typing import Optional
+from typing import Any
 
 
-SPECIAL_DELIMITER = "[OPTUNA_ALLENNLP_INTEGRATION_DELIMITER]"
 OPTUNA_ALLENNLP_DISTRIBUTED_FLAG = "OPTUNA_ALLENNLP_USE_DISTRIBUTED"
 
 
@@ -30,8 +30,7 @@ class _VariableManager:
     NAME_OF_KEY = {
         "monitor": "{}_MONITOR",
         "pruner_class": "{}_PRUNER_CLASS",
-        "pruner_keys": "{}_PRUNER_KEYS",
-        "pruner_values": "{}_PRUNER_VALUES",
+        "pruner_kwargs": "{}_PRUNER_PARAMS",
         "storage_name": "{}_STORAGE_NAME",
         "study_name": "{}_STUDY_NAME",
         "trial_id": "{}_TRIAL_ID",
@@ -51,16 +50,16 @@ class _VariableManager:
             raise KeyError(f"{name} is not found in `{self.NAME_OF_PATH}`.")
         return key
 
-    def set_value(self, name: str, value: str) -> None:
+    def set_value(self, name: str, value: Any) -> None:
         """Set values to environment variables.
 
         `set_value` is only invoked in `optuna.integration.allennlp.AllenNLPExecutor`.
 
         """
         key = self._get_key(name).format(self.target_pid)
-        os.environ[key] = value
+        os.environ[key] = json.dumps(value)
 
-    def get_value(self, name: str) -> Optional[str]:
+    def get_value(self, name: str) -> Any:
         """Fetch parameters from environment variables.
 
         `get_value` is only called in `optuna.integration.allennlp.AllenNLPPruningCallback`.
@@ -68,6 +67,6 @@ class _VariableManager:
         """
         key = self._get_key(name).format(self.target_pid)
         value = os.environ.get(key)
-        assert value is not None, f"{key} is not found in environment variables."
-
-        return value
+        if value is None:
+            raise KeyError(f"{key} is not found in environment variables.")
+        return json.loads(value)

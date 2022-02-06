@@ -24,8 +24,8 @@ from optuna.storages import _CachedStorage
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
-from optuna.storages import RedisStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
+from optuna.storages._redis import RedisStorage
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.testing.storage import STORAGE_MODES
@@ -50,7 +50,7 @@ def test_get_storage() -> None:
     assert isinstance(optuna.storages.get_storage(None), InMemoryStorage)
     assert isinstance(optuna.storages.get_storage("sqlite:///:memory:"), _CachedStorage)
     assert isinstance(
-        optuna.storages.get_storage("redis://test_user:passwd@localhost:6379/0"), RedisStorage
+        optuna.storages.get_storage("redis://test_user:passwd@localhost:6379/0"), _CachedStorage
     )
 
 
@@ -158,7 +158,6 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) ->
         # Generate unique study_name from the current function name and storage_mode.
         function_name = test_get_study_id_from_name_and_get_study_name_from_id.__name__
         study_name = function_name + "/" + storage_mode
-        storage = optuna.storages.get_storage(storage)
         study_id = storage.create_new_study(study_name=study_name)
 
         # Test existing study.
@@ -177,9 +176,6 @@ def test_get_study_id_from_name_and_get_study_name_from_id(storage_mode: str) ->
 def test_get_study_id_from_trial_id(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
-
-        # Generate unique study_name from the current function name and storage_mode.
-        storage = optuna.storages.get_storage(storage)
 
         # Check if trial_number starts from 0.
         study_id = storage.create_new_study()
@@ -435,8 +431,6 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
 def test_get_trial_number_from_id(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
-        storage = optuna.storages.get_storage(storage)
-
         # Check if trial_number starts from 0.
         study_id = storage.create_new_study()
 
@@ -950,6 +944,24 @@ def test_get_best_trial(storage_mode: str) -> None:
         assert storage.get_best_trial(study_id).number == i
 
 
+@pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
+def test_get_trials_excluded_trial_ids(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        assert isinstance(storage, (RDBStorage, RedisStorage))
+        study_id = storage.create_new_study()
+
+        storage.create_new_trial(study_id)
+
+        trials = storage._get_trials(study_id, states=None, excluded_trial_ids=set())
+        assert len(trials) == 1
+
+        # A large exclusion list used to raise errors. Check that it is not an issue.
+        # See https://github.com/optuna/optuna/issues/1457.
+        trials = storage._get_trials(study_id, states=None, excluded_trial_ids=set(range(500000)))
+        assert len(trials) == 0
+
+
 def _setup_studies(
     storage: BaseStorage,
     n_study: int,
@@ -1190,6 +1202,8 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
         study = optuna.create_study(storage=storage)
 
         trial = study.ask()
+        trial.suggest_float("_", -1, -1)
+        trial.report(0.5, 1)
         storage.record_heartbeat(trial._trial_id)
         time.sleep(grace_period + 1)
 
@@ -1204,18 +1218,73 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
         assert RetryFailedTrialCallback.retried_trial_number(study.trials[1]) == (
             None if max_retry == 0 else 0
         )
+        # Test inheritance of trial fields.
+        if max_retry != 0:
+            assert study.trials[0].params == study.trials[1].params
+            assert study.trials[0].distributions == study.trials[1].distributions
+            assert study.trials[0].user_attrs == study.trials[1].user_attrs
+            # Only `intermediate_values` are not inherited.
+            assert study.trials[1].intermediate_values == {}
 
 
-def test_fail_stale_trials() -> None:
+@pytest.mark.parametrize(
+    "storage_mode,max_retry", itertools.product(STORAGE_MODES_HEARTBEAT, [None, 0, 1])
+)
+def test_retry_failed_trial_callback_intermediate(
+    storage_mode: str, max_retry: Optional[int]
+) -> None:
     heartbeat_interval = 1
     grace_period = 2
+
+    with StorageSupplier(
+        storage_mode,
+        heartbeat_interval=heartbeat_interval,
+        grace_period=grace_period,
+        failed_trial_callback=RetryFailedTrialCallback(
+            max_retry=max_retry, inherit_intermediate_values=True
+        ),
+    ) as storage:
+        assert storage.is_heartbeat_enabled()
+
+        study = optuna.create_study(storage=storage)
+
+        trial = study.ask()
+        trial.suggest_float("_", -1, -1)
+        trial.report(0.5, 1)
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+
+        # Exceptions raised in spawned threads are caught by `_TestableThread`.
+        with patch("optuna.study._optimize.Thread", _TestableThread):
+            study.optimize(lambda _: 1.0, n_trials=1)
+
+        # Test the last trial to see if it was a retry of the first trial or not.
+        # Test max_retry=None to see if trial is retried.
+        # Test max_retry=0 to see if no trials are retried.
+        # Test max_retry=1 to see if trial is retried.
+        assert RetryFailedTrialCallback.retried_trial_number(study.trials[1]) == (
+            None if max_retry == 0 else 0
+        )
+        # Test inheritance of trial fields.
+        if max_retry != 0:
+            assert study.trials[0].params == study.trials[1].params
+            assert study.trials[0].distributions == study.trials[1].distributions
+            assert study.trials[0].user_attrs == study.trials[1].user_attrs
+            assert study.trials[0].intermediate_values == study.trials[1].intermediate_values
+
+
+@pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
+@pytest.mark.parametrize("grace_period", [None, 2])
+def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> None:
+    heartbeat_interval = 1
+    _grace_period = (heartbeat_interval * 2) if grace_period is None else grace_period
 
     def failed_trial_callback(study: "optuna.Study", trial: FrozenTrial) -> None:
         assert study.system_attrs["test"] == "A"
         assert trial.system_attrs["test"] == "B"
 
-    with StorageSupplier("sqlite") as storage:
-        assert isinstance(storage, RDBStorage)
+    with StorageSupplier(storage_mode) as storage:
+        assert isinstance(storage, (RDBStorage, RedisStorage))
         storage.heartbeat_interval = heartbeat_interval
         storage.grace_period = grace_period
         storage.failed_trial_callback = failed_trial_callback
@@ -1225,10 +1294,38 @@ def test_fail_stale_trials() -> None:
         trial = study.ask()
         trial.set_system_attr("test", "B")
         storage.record_heartbeat(trial._trial_id)
-        time.sleep(grace_period + 1)
+        time.sleep(_grace_period + 1)
 
         assert study.trials[0].state is TrialState.RUNNING
 
         optuna.storages.fail_stale_trials(study)
 
         assert study.trials[0].state is TrialState.FAIL
+
+
+# This test is a workaround. This test should be removed when get_storage()
+# can return raw RDBStorage and RedisStorage. Because then test_fail_stale_trials
+# can test the fail_stale_trials().
+@pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
+def test_fail_stale_trials_raw(storage_mode: str) -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    with StorageSupplier(storage_mode) as storage:
+        assert isinstance(storage, (RDBStorage, RedisStorage))
+        storage.heartbeat_interval = heartbeat_interval
+        storage.grace_period = grace_period
+
+        study_id = storage.create_new_study()
+        assert storage.fail_stale_trials(study_id) == []
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_read_trials_from_remote_storage(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        with pytest.raises(KeyError):
+            storage.read_trials_from_remote_storage(-1)
+
+        study_id = storage.create_new_study()
+        storage.read_trials_from_remote_storage(study_id)

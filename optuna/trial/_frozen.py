@@ -10,7 +10,6 @@ import warnings
 from optuna import distributions
 from optuna import logging
 from optuna._deprecated import deprecated
-from optuna._experimental import experimental
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -47,7 +46,7 @@ class FrozenTrial(BaseTrial):
 
             def objective(trial):
                 x = trial.suggest_float("x", -1, 1)
-                return x ** 2
+                return x**2
 
 
             study = optuna.create_study()
@@ -79,7 +78,7 @@ class FrozenTrial(BaseTrial):
                     # this user attribute always differs
                     trial.set_user_attr("evaluation time", datetime.datetime.now())
 
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -507,7 +506,6 @@ class FrozenTrial(BaseTrial):
             return None
 
 
-@experimental("2.0.0")
 def create_trial(
     *,
     state: TrialState = TrialState.COMPLETE,

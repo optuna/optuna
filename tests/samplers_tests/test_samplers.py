@@ -21,6 +21,7 @@ from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
@@ -47,10 +48,14 @@ parametrize_sampler = pytest.mark.parametrize(
         lambda: optuna.integration.PyCmaSampler(n_startup_trials=0),
         optuna.samplers.NSGAIISampler,
     ]
+    # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
     + (
         []
         if sys.version_info < (3, 7, 0)
-        else [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
+        else [
+            lambda: optuna.integration.BoTorchSampler(n_startup_trials=0),
+            lambda: optuna.samplers.QMCSampler(),
+        ]
     ),
 )
 parametrize_relative_sampler = pytest.mark.parametrize(
@@ -241,10 +246,18 @@ def test_discrete_uniform(
         IntUniformDistribution(-10, 10, 2),
         IntUniformDistribution(0, 10, 2),
         IntUniformDistribution(-10, 0, 2),
+        IntDistribution(-10, 10),
+        IntDistribution(0, 10),
+        IntDistribution(-10, 0),
+        IntDistribution(-10, 10, step=2),
+        IntDistribution(0, 10, step=2),
+        IntDistribution(-10, 0, step=2),
+        IntDistribution(1, 100, log=True),
     ],
 )
 def test_int(
-    sampler_class: Callable[[], BaseSampler], distribution: IntUniformDistribution
+    sampler_class: Callable[[], BaseSampler],
+    distribution: Union[IntDistribution, IntUniformDistribution],
 ) -> None:
 
     study = optuna.study.create_study(sampler=sampler_class())
@@ -299,6 +312,9 @@ def test_categorical(
         FloatDistribution(-10, 10, step=0.5),
         IntUniformDistribution(1, 10),
         IntLogUniformDistribution(1, 100),
+        IntDistribution(3, 10),
+        IntDistribution(1, 100, log=True),
+        IntDistribution(3, 10, step=2),
     ],
 )
 @pytest.mark.parametrize(
@@ -312,6 +328,9 @@ def test_categorical(
         FloatDistribution(-10, 10, step=0.5),
         IntUniformDistribution(1, 10),
         IntLogUniformDistribution(1, 100),
+        IntDistribution(3, 10),
+        IntDistribution(1, 100, log=True),
+        IntDistribution(3, 10, step=2),
     ],
 )
 def test_sample_relative_numerical(
@@ -340,6 +359,7 @@ def test_sample_relative_numerical(
                 FloatDistribution,
                 IntUniformDistribution,
                 IntLogUniformDistribution,
+                IntDistribution,
             ),
         )
         assert np.all(points[:, i] >= distribution.low)
@@ -347,7 +367,9 @@ def test_sample_relative_numerical(
     for param_value, distribution in zip(sample(), search_space.values()):
         assert not isinstance(param_value, np.floating)
         assert not isinstance(param_value, np.integer)
-        if isinstance(distribution, (IntUniformDistribution, IntLogUniformDistribution)):
+        if isinstance(
+            distribution, (IntUniformDistribution, IntLogUniformDistribution, IntDistribution)
+        ):
             assert isinstance(param_value, int)
         else:
             assert isinstance(param_value, float)
@@ -389,6 +411,8 @@ def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSa
         FloatDistribution(-10, 10, step=0.5),
         IntUniformDistribution(1, 10),
         IntLogUniformDistribution(1, 100),
+        IntDistribution(1, 10),
+        IntDistribution(1, 100, log=True),
     ],
 )
 def test_sample_relative_mixed(
@@ -416,6 +440,7 @@ def test_sample_relative_mixed(
             FloatDistribution,
             IntUniformDistribution,
             IntLogUniformDistribution,
+            IntDistribution,
         ),
     )
     assert np.all(points[:, 0] >= search_space["x"].low)
@@ -427,7 +452,12 @@ def test_sample_relative_mixed(
         assert not isinstance(param_value, np.integer)
         if isinstance(
             distribution,
-            (IntUniformDistribution, IntLogUniformDistribution, CategoricalDistribution),
+            (
+                IntUniformDistribution,
+                IntLogUniformDistribution,
+                IntDistribution,
+                CategoricalDistribution,
+            ),
         ):
             assert isinstance(param_value, int)
         else:
@@ -614,6 +644,13 @@ def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> Non
         IntUniformDistribution(-10, 10, 2),
         IntUniformDistribution(0, 10, 2),
         IntUniformDistribution(-10, 0, 2),
+        IntDistribution(-10, 10),
+        IntDistribution(0, 10),
+        IntDistribution(-10, 0),
+        IntDistribution(-10, 10, step=2),
+        IntDistribution(0, 10, step=2),
+        IntDistribution(-10, 0, step=2),
+        IntDistribution(1, 100, log=True),
         CategoricalDistribution((1, 2, 3)),
         CategoricalDistribution(("a", "b", "c")),
         CategoricalDistribution((1, "a")),
@@ -812,6 +849,8 @@ def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) ->
         "g": FloatDistribution(low=1.0, high=1.0),
         "h": FloatDistribution(low=1.0, high=1.0, log=True),
         "i": FloatDistribution(low=1.0, high=1.0, step=1.0),
+        "j": IntDistribution(low=1, high=1),
+        "k": IntDistribution(low=1, high=1, log=True),
     }
 
     with warnings.catch_warnings():

@@ -1,12 +1,22 @@
 import itertools
 from typing import List
 from typing import Optional
+from typing import Union
 
+from matplotlib.collections import PathCollection
 import numpy as np
 import pytest
 
 import optuna
 from optuna.visualization.matplotlib import plot_pareto_front
+
+
+def allclose_as_set(
+    points1: Union[List[List[float]], np.ndarray], points2: Union[List[List[float]], np.ndarray]
+) -> bool:
+    p1 = points1 if isinstance(points1, list) else points1.tolist()
+    p2 = points2 if isinstance(points2, list) else points2.tolist()
+    return np.allclose(sorted(p1), sorted(p2))
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
@@ -37,6 +47,23 @@ def test_plot_pareto_front_2d(
         axis_order=axis_order,
     )
     assert len(figure.get_lines()) == 0
+
+    if axis_order is not None:
+        pareto_front_points = np.array([[1.0, 0.0], [0.0, 1.0]])[:, axis_order]
+    else:
+        pareto_front_points = np.array([[1.0, 0.0], [0.0, 1.0]])
+    assert pareto_front_points.shape == (2, 2)
+
+    path_offsets = list(map(lambda pc: pc.get_offsets(), figure.findobj(PathCollection)))
+    exists_pareto_front = any(
+        map(lambda po: allclose_as_set(po, pareto_front_points), path_offsets)
+    )
+    exists_dominated_trials = any(
+        map(lambda po: allclose_as_set(po, np.array([[1.0, 1.0]])), path_offsets)
+    )
+    assert exists_pareto_front
+    if include_dominated_trials:
+        assert exists_dominated_trials
 
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
@@ -72,6 +99,23 @@ def test_plot_pareto_front_2d(
         assert figure.get_xlabel() == target_names[axis_order[0]]
         assert figure.get_ylabel() == target_names[axis_order[1]]
 
+    if axis_order is not None:
+        pareto_front_points = np.array([[1.0, 0.0], [0.0, 1.0]])[:, axis_order]
+    else:
+        pareto_front_points = np.array([[1.0, 0.0], [0.0, 1.0]])
+    assert pareto_front_points.shape == (2, 2)
+
+    path_offsets = list(map(lambda pc: pc.get_offsets(), figure.findobj(PathCollection)))
+    exists_pareto_front = any(
+        map(lambda po: allclose_as_set(po, pareto_front_points), path_offsets)
+    )
+    exists_dominated_trials = any(
+        map(lambda po: allclose_as_set(po, np.array([[1.0, 1.0]])), path_offsets)
+    )
+    assert exists_pareto_front
+    if include_dominated_trials:
+        assert exists_dominated_trials
+
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
@@ -105,6 +149,21 @@ def test_plot_pareto_front_3d(
         axis_order=axis_order,
     )
     assert len(figure.get_lines()) == 0
+
+    if axis_order is not None:
+        pareto_front_points = np.array([[1.0, 0.0, 1.0], [1.0, 1.0, 0.0]])[:, axis_order][:, 0:2]
+    else:
+        pareto_front_points = np.array([[1.0, 0.0, 1.0], [1.0, 1.0, 0.0]])[:, 0:2]
+    assert pareto_front_points.shape == (2, 2)
+
+    path_offsets = list(map(lambda pc: pc.get_offsets(), figure.findobj(PathCollection)))
+    exists_pareto_front = any(
+        map(lambda po: allclose_as_set(po, pareto_front_points), path_offsets)
+    )
+    exists_dominated_trials = any(map(lambda po: allclose_as_set(po, [[1.0, 1.0]]), path_offsets))
+    assert exists_pareto_front
+    if include_dominated_trials:
+        assert exists_dominated_trials
 
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
@@ -152,6 +211,21 @@ def test_plot_pareto_front_3d(
         assert figure.get_xlabel() == target_names[axis_order[0]]
         assert figure.get_ylabel() == target_names[axis_order[1]]
         assert figure.get_zlabel() == target_names[axis_order[2]]
+
+    if axis_order is not None:
+        pareto_front_points = np.array([[1.0, 0.0, 1.0], [1.0, 1.0, 0.0]])[:, axis_order][:, 0:2]
+    else:
+        pareto_front_points = np.array([[1.0, 0.0, 1.0], [1.0, 1.0, 0.0]])[:, 0:2]
+    assert pareto_front_points.shape == (2, 2)
+
+    path_offsets = list(map(lambda pc: pc.get_offsets(), figure.findobj(PathCollection)))
+    exists_pareto_front = any(
+        map(lambda po: allclose_as_set(po, pareto_front_points), path_offsets)
+    )
+    exists_dominated_trials = any(map(lambda po: allclose_as_set(po, [[1.0, 1.0]]), path_offsets))
+    assert exists_pareto_front
+    if include_dominated_trials:
+        assert exists_dominated_trials
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")

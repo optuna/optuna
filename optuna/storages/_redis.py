@@ -8,6 +8,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 
 import optuna
@@ -102,9 +103,9 @@ class RedisStorage(BaseStorage):
 
         self._url = url
         self._redis = redis.Redis.from_url(url)
-        self._heartbeat_interval = heartbeat_interval
-        self._grace_period = grace_period
-        self._failed_trial_callback = failed_trial_callback
+        self.heartbeat_interval = heartbeat_interval
+        self.grace_period = grace_period
+        self.failed_trial_callback = failed_trial_callback
 
     def create_new_study(self, study_name: Optional[str] = None) -> int:
 
@@ -311,15 +312,38 @@ class RedisStorage(BaseStorage):
 
     def get_all_study_summaries(self) -> List[StudySummary]:
 
-        study_summaries = []
+        queries = []
         study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]
         for study_id in study_ids:
-            study_summary = self._get_study_summary(study_id)
-            study_summaries.append(study_summary)
+            queries.append(self._key_study_summary(study_id))
+
+        study_summaries = []
+        summary_pkls = self._redis.mget(queries)
+        for summary_pkl in summary_pkls:
+            assert summary_pkl is not None
+            study_summaries.append(pickle.loads(summary_pkl))
 
         return study_summaries
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
+
+        return self._create_new_trial(study_id, template_trial)._trial_id
+
+    def _create_new_trial(
+        self, study_id: int, template_trial: Optional[FrozenTrial] = None
+    ) -> FrozenTrial:
+        """Create a new trial and returns a :class:`~optuna.trial.FrozenTrial`.
+
+        Args:
+            study_id:
+                Study id.
+            template_trial:
+                A :class:`~optuna.trial.FrozenTrial` with default values for trial attributes.
+
+        Returns:
+            A :class:`~optuna.trial.FrozenTrial` instance.
+
+        """
 
         self._check_study_id(study_id)
 
@@ -361,7 +385,7 @@ class RedisStorage(BaseStorage):
         if trial.state.is_finished():
             self._update_cache(trial_id)
 
-        return trial_id
+        return trial
 
     @staticmethod
     def _create_running_trial() -> FrozenTrial:
@@ -382,7 +406,6 @@ class RedisStorage(BaseStorage):
 
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
 
-        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -416,7 +439,6 @@ class RedisStorage(BaseStorage):
         distribution: distributions.BaseDistribution,
     ) -> None:
 
-        self._check_trial_id(trial_id)
         self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
 
         # Check param distribution compatibility with previous trial(s).
@@ -505,6 +527,18 @@ class RedisStorage(BaseStorage):
             pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
             pipe.execute()
 
+    def _check_and_set_param_distribution(
+        self,
+        study_id: int,
+        trial_id: int,
+        param_name: str,
+        param_value_internal: float,
+        distribution: distributions.BaseDistribution,
+    ) -> None:
+
+        self._check_study_id(study_id)
+        self.set_trial_param(trial_id, param_name, param_value_internal, distribution)
+
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
 
         distribution = self.get_trial(trial_id).distributions[param_name]
@@ -512,7 +546,6 @@ class RedisStorage(BaseStorage):
 
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
-        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -557,7 +590,6 @@ class RedisStorage(BaseStorage):
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
 
-        self._check_trial_id(trial_id)
         frozen_trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, frozen_trial.state)
         frozen_trial.intermediate_values[step] = intermediate_value
@@ -565,7 +597,6 @@ class RedisStorage(BaseStorage):
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
         trial.user_attrs[key] = value
@@ -573,7 +604,6 @@ class RedisStorage(BaseStorage):
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
         trial.system_attrs[key] = value
@@ -618,20 +648,37 @@ class RedisStorage(BaseStorage):
         states: Optional[Tuple[TrialState, ...]] = None,
     ) -> List[FrozenTrial]:
 
-        self._check_study_id(study_id)
-
-        trials = []
-        trial_ids = self._get_study_trials(study_id)
-        for trial_id in trial_ids:
-            frozen_trial = self.get_trial(trial_id)
-
-            if states is None or frozen_trial.state in states:
-                trials.append(frozen_trial)
+        trials = self._get_trials(study_id, states, set())
 
         if deepcopy:
             return copy.deepcopy(trials)
         else:
             return trials
+
+    def _get_trials(
+        self,
+        study_id: int,
+        states: Optional[Tuple[TrialState, ...]],
+        excluded_trial_ids: Set[int],
+    ) -> List[FrozenTrial]:
+
+        self._check_study_id(study_id)
+
+        queries = []
+        trial_ids = set(self._get_study_trials(study_id)) - excluded_trial_ids
+        for trial_id in trial_ids:
+            queries.append(self._key_trial(trial_id))
+
+        trials = []
+        frozen_trial_pkls = self._redis.mget(queries)
+        for frozen_trial_pkl in frozen_trial_pkls:
+            assert frozen_trial_pkl is not None
+            frozen_trial = pickle.loads(frozen_trial_pkl)
+
+            if states is None or frozen_trial.state in states:
+                trials.append(frozen_trial)
+
+        return trials
 
     def read_trials_from_remote_storage(self, study_id: int) -> None:
         self._check_study_id(study_id)
@@ -644,7 +691,7 @@ class RedisStorage(BaseStorage):
     def _check_trial_id(self, trial_id: int) -> None:
 
         if not self._redis.exists(self._key_trial(trial_id)):
-            raise KeyError("study_id {} does not exist.".format(trial_id))
+            raise KeyError("trial_id {} does not exist.".format(trial_id))
 
     def record_heartbeat(self, trial_id: int) -> None:
         study_id = self.get_study_id_from_trial_id(trial_id)
@@ -663,12 +710,12 @@ class RedisStorage(BaseStorage):
         return confirmed
 
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
-        assert self._heartbeat_interval is not None
+        assert self.heartbeat_interval is not None
 
-        if self._grace_period is None:
-            grace_period = 2 * self._heartbeat_interval
+        if self.grace_period is None:
+            grace_period = 2 * self.heartbeat_interval
         else:
-            grace_period = self._grace_period
+            grace_period = self.grace_period
 
         current_time = self._get_redis_time()
         heartbeats = self._redis.hgetall(self._key_study_heartbeats(study_id))
@@ -688,11 +735,11 @@ class RedisStorage(BaseStorage):
         return True
 
     def get_heartbeat_interval(self) -> Optional[int]:
-        return self._heartbeat_interval
+        return self.heartbeat_interval
 
     @staticmethod
     def _key_study_heartbeats(study_id: int) -> str:
         return "study_id:{:010d}:heartbeats".format(study_id)
 
     def get_failed_trial_callback(self) -> Optional[Callable[["optuna.Study", FrozenTrial], None]]:
-        return self._failed_trial_callback
+        return self.failed_trial_callback

@@ -35,27 +35,31 @@ def test_plot_optimization_history(direction: str) -> None:
     study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(study)
     assert len(figure.data) == 2
-    assert figure.data[0].x == (0, 1, 2)
-    assert figure.data[0].y == (1.0, 2.0, 0.0)
-    assert figure.data[1].x == (0, 1, 2)
+    assert np.array_equal(figure.data[0].x, [0, 1, 2])
+    assert np.array_equal(figure.data[0].y, [1.0, 2.0, 0.0])
+    assert np.array_equal(figure.data[1].x, [0, 1, 2])
+    ydata = figure.data[1].y
     if direction == "minimize":
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 1.0, 0.0]))
+        assert np.array_equal(ydata, [1.0, 1.0, 0.0])
     else:
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 2.0, 2.0]))
-    assert figure.data[0].name == "Objective Value"
+        assert np.array_equal(ydata, [1.0, 2.0, 2.0])
+    legend_texts = [x.name for x in figure.data]
+    assert legend_texts == ["Objective Value", "Best Value"]
     assert figure.layout.yaxis.title.text == "Objective Value"
 
     # Test customized target.
     with pytest.warns(UserWarning):
         figure = plot_optimization_history(study, target=lambda t: t.number)
     assert len(figure.data) == 1
-    assert np.array_equal(figure.data[0].x, np.array([0, 1, 2], dtype=float))
-    assert np.array_equal(figure.data[0].y, np.array([0, 1, 2], dtype=float))
+    assert np.array_equal(figure.data[0].x, [0, 1, 2])
+    assert np.array_equal(figure.data[0].y, [0.0, 1.0, 2.0])
 
     # Test customized target name.
-    figure = plot_optimization_history(study, target_name="Target Name")
-    assert figure.data[0].name == "Target Name"
-    assert figure.layout.yaxis.title.text == "Target Name"
+    custom_target_name = "Target Name"
+    figure = plot_optimization_history(study, target_name=custom_target_name)
+    legend_texts = [x.name for x in figure.data]
+    assert legend_texts == [custom_target_name, "Best Value"]
+    assert figure.layout.yaxis.title.text == custom_target_name
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
@@ -93,27 +97,39 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
         study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(studies)
     assert len(figure.data) == 2 * n_studies
-    assert figure.data[0].x == (0, 1, 2)
-    assert figure.data[0].y == (1.0, 2.0, 0.0)
-    assert figure.data[1].x == (0, 1, 2)
+    assert np.array_equal(figure.data[0].x, [0, 1, 2])
+    assert np.array_equal(figure.data[0].y, [1.0, 2.0, 0.0])
+    assert np.array_equal(figure.data[1].x, [0, 1, 2])
+    ydata = figure.data[1].y
     if direction == "minimize":
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 1.0, 0.0]))
+        assert np.array_equal(ydata, [1.0, 1.0, 0.0])
     else:
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 2.0, 2.0]))
-    assert figure.data[0].name == f"Objective Value of {studies[0].study_name}"
+        assert np.array_equal(ydata, [1.0, 2.0, 2.0])
+    expected_legend_texts = []
+    for i in range(n_studies):
+        expected_legend_texts.append(f"Best Value of {studies[i].study_name}")
+        expected_legend_texts.append(f"Objective Value of {studies[i].study_name}")
+    legend_texts = [scatter.name for scatter in figure.data]
+    assert sorted(legend_texts) == sorted(expected_legend_texts)
     assert figure.layout.yaxis.title.text == "Objective Value"
 
     # Test customized target.
     with pytest.warns(UserWarning):
         figure = plot_optimization_history(studies, target=lambda t: t.number)
     assert len(figure.data) == 1 * n_studies
-    assert np.array_equal(figure.data[0].x, np.array([0, 1, 2], dtype=float))
-    assert np.array_equal(figure.data[0].y, np.array([0, 1, 2], dtype=float))
+    assert np.array_equal(figure.data[0].x, [0, 1, 2])
+    assert np.array_equal(figure.data[0].y, [0, 1, 2])
 
     # Test customized target name.
-    figure = plot_optimization_history(studies, target_name="Target Name")
-    assert figure.data[0].name == f"Target Name of {studies[0].study_name}"
-    assert figure.layout.yaxis.title.text == "Target Name"
+    custom_target_name = "Target Name"
+    figure = plot_optimization_history(studies, target_name=custom_target_name)
+    expected_legend_texts = []
+    for i in range(n_studies):
+        expected_legend_texts.append(f"Best Value of {studies[i].study_name}")
+        expected_legend_texts.append(f"{custom_target_name} of {studies[i].study_name}")
+    legend_texts = [scatter.name for scatter in figure.data]
+    assert sorted(legend_texts) == sorted(expected_legend_texts)
+    assert figure.layout.yaxis.title.text == custom_target_name
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
@@ -152,27 +168,32 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
         study.optimize(objective, n_trials=3)
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.data) == 4
-    assert np.array_equal(figure.data[0].x, (0, 1, 2))
-    assert np.array_equal(figure.data[0].y, (1.0, 2.0, 0.0))
-    assert np.array_equal(figure.data[1].x, (0, 1, 2))
+    assert np.array_equal(figure.data[0].x, [0, 1, 2])
+    assert np.array_equal(figure.data[0].y, [1.0, 2.0, 0.0])
+    assert np.array_equal(figure.data[1].x, [0, 1, 2])
+    ydata = figure.data[1].y
     if direction == "minimize":
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 1.0, 0.0]))
+        assert np.array_equal(ydata, [1.0, 1.0, 0.0])
     else:
-        assert np.array_equal(figure.data[1].y, np.array([1.0, 2.0, 2.0]))
-    assert figure.data[0].name == "Objective Value"
+        assert np.array_equal(ydata, [1.0, 2.0, 2.0])
+    # Scatters for error bar don't have `name`.
+    legend_texts = [scatter.name for scatter in figure.data if scatter.name is not None]
+    assert sorted(legend_texts) == ["Best Value", "Objective Value"]
     assert figure.layout.yaxis.title.text == "Objective Value"
 
     # Test customized target.
     with pytest.warns(UserWarning):
         figure = plot_optimization_history(studies, target=lambda t: t.number, error_bar=True)
     assert len(figure.data) == 1
-    assert np.array_equal(figure.data[0].x, np.array([0, 1, 2], dtype=float))
-    assert np.array_equal(figure.data[0].y, np.array([0, 1, 2], dtype=float))
+    assert np.array_equal(figure.data[0].x, [0, 1, 2])
+    assert np.array_equal(figure.data[0].y, [0, 1, 2])
 
     # Test customized target name.
-    figure = plot_optimization_history(studies, target_name="Target Name", error_bar=True)
-    assert figure.data[0].name == "Target Name"
-    assert figure.layout.yaxis.title.text == "Target Name"
+    custom_target_name = "Target Name"
+    figure = plot_optimization_history(studies, target_name=custom_target_name, error_bar=True)
+    legend_texts = [scatter.name for scatter in figure.data if scatter.name is not None]
+    assert sorted(legend_texts) == ["Best Value", custom_target_name]
+    assert figure.layout.yaxis.title.text == custom_target_name
 
     # Ignore failed trials.
     def fail_objective(_: Trial) -> float:
@@ -184,3 +205,23 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
 
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.data) == 0
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_error_bar_in_optimization_history(direction: str) -> None:
+    def objective(trial: Trial) -> float:
+        return trial.suggest_float("x", 0, 1)
+
+    studies = [create_study(direction=direction) for _ in range(3)]
+    suggested_params = [0.1, 0.3, 0.2]
+    for x, study in zip(suggested_params, studies):
+        study.enqueue_trial({"x": x})
+        study.optimize(objective, n_trials=1)
+    figure = plot_optimization_history(studies, error_bar=True)
+
+    mean = np.mean(suggested_params)
+    std = np.std(suggested_params)
+
+    np.testing.assert_almost_equal(figure.data[0].y, mean)
+    np.testing.assert_almost_equal(figure.data[2].y, mean + std)
+    np.testing.assert_almost_equal(figure.data[3].y, mean - std)

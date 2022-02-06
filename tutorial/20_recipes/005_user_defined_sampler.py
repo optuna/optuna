@@ -108,7 +108,7 @@ class SimulatedAnnealingSampler(optuna.samplers.BaseSampler):
 def objective(trial):
     x = trial.suggest_float("x", -10, 10)
     y = trial.suggest_float("y", -5, 5)
-    return x ** 2 + y
+    return x**2 + y
 
 
 sampler = SimulatedAnnealingSampler()

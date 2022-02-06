@@ -42,7 +42,7 @@ class OptimizeSuite:
     def objective(self, trial: optuna.Trial) -> float:
         x = trial.suggest_float("x", -100, 100)
         y = trial.suggest_int("y", -100, 100)
-        return x ** 2 + y ** 2
+        return x**2 + y**2
 
     def optimize(self, storage_mode: str, sampler_mode: str, n_trials: int) -> None:
         with StorageSupplier(storage_mode) as storage:
