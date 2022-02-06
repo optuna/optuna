@@ -65,7 +65,7 @@ class CatBoostPruningCallback(object):
     def after_iteration(self, info: Any) -> bool:
         """Report an evaluation metric value for Optuna pruning after each CatBoost's iteration.
 
-        This method is call by CatBoost.
+        This method is called by CatBoost.
 
         Args:
             info:
@@ -77,7 +77,7 @@ class CatBoostPruningCallback(object):
                 })``.
 
         Returns:
-            A boolean value. If :obj:`True`, CatBoost internally stops the optimization
+            A boolean value. If :obj:`False`, CatBoost internally stops the optimization
             with Optuna's pruning logic without raising :class:`optuna.TrialPruned`.
             Otherwise, the optimization continues.
         """
