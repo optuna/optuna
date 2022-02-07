@@ -78,13 +78,13 @@ def test_search_space_transform_encoding() -> None:
         (1, IntDistribution(1, 10, log=True)),
         (10, IntDistribution(1, 10, log=True)),
         (2, IntDistribution(0, 10, step=2)),
-        (3.0, FloatDistribution(0, 3)),
-        (10.0, FloatDistribution(1, 10, log=True)),
-        (1.0, FloatDistribution(0, 1, step=0.2)),
         (10, IntDistribution(0, 10, step=2)),
         (0.0, FloatDistribution(0, 3)),
+        (3.0, FloatDistribution(0, 3)),
         (1.0, FloatDistribution(1, 10, log=True)),
+        (10.0, FloatDistribution(1, 10, log=True)),
         (0.2, FloatDistribution(0, 1, step=0.2)),
+        (1.0, FloatDistribution(0, 1, step=0.2)),
     ],
 )
 def test_search_space_transform_numerical(
