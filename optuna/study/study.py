@@ -441,7 +441,7 @@ class Study:
 
                 distributions = {
                     "optimizer": optuna.distributions.CategoricalDistribution(["adam", "sgd"]),
-                    "lr": optuna.distributions.LogUniformDistribution(0.0001, 0.1),
+                    "lr": optuna.distributions.FloatDistribution(0.0001, 0.1, log=True),
                 }
 
                 # You can pass the distributions previously defined.
@@ -885,7 +885,7 @@ class Study:
             .. testcode::
 
                 import optuna
-                from optuna.distributions import UniformDistribution
+                from optuna.distributions import FloatDistribution
 
 
                 def objective(trial):
@@ -898,7 +898,7 @@ class Study:
 
                 trial = optuna.trial.create_trial(
                     params={"x": 2.0},
-                    distributions={"x": UniformDistribution(0, 10)},
+                    distributions={"x": FloatDistribution(0, 10)},
                     value=4.0,
                 )
 
@@ -951,7 +951,7 @@ class Study:
             .. testcode::
 
                 import optuna
-                from optuna.distributions import UniformDistribution
+                from optuna.distributions import FloatDistribution
 
 
                 def objective(trial):
