@@ -1324,6 +1324,10 @@ def copy_study(
     The direction(s) of the objective(s) in the study, trials, user attributes and system
     attributes are copied.
 
+    .. note::
+        :func:`~optuna.copy_study` copies a study even if the optimization is working on.
+        It means users will get a copied study that contains a trial that is not finished.
+
     Example:
 
         .. testsetup::
