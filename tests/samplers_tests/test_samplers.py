@@ -142,59 +142,12 @@ def test_random_sampler_reseed_rng() -> None:
         FloatDistribution(-1.0, 1.0),
         FloatDistribution(0.0, 1.0),
         FloatDistribution(-1.0, 0.0),
-    ],
-)
-def test_uniform(
-    sampler_class: Callable[[], BaseSampler],
-    distribution: FloatDistribution,
-) -> None:
-
-    study = optuna.study.create_study(sampler=sampler_class())
-    points = np.array(
-        [
-            study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution)
-            for _ in range(100)
-        ]
-    )
-    assert np.all(points >= distribution.low)
-    assert np.all(points < distribution.high)
-    assert not isinstance(
-        study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution),
-        np.floating,
-    )
-
-
-@parametrize_sampler
-@pytest.mark.parametrize("distribution", [FloatDistribution(1e-7, 1.0, log=True)])
-def test_log_uniform(
-    sampler_class: Callable[[], BaseSampler],
-    distribution: FloatDistribution,
-) -> None:
-
-    study = optuna.study.create_study(sampler=sampler_class())
-    points = np.array(
-        [
-            study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution)
-            for _ in range(100)
-        ]
-    )
-    assert np.all(points >= distribution.low)
-    assert np.all(points < distribution.high)
-    assert not isinstance(
-        study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution),
-        np.floating,
-    )
-
-
-@parametrize_sampler
-@pytest.mark.parametrize(
-    "distribution",
-    [
+        FloatDistribution(1e-7, 1.0, log=True),
         FloatDistribution(-10, 10, step=0.1),
         FloatDistribution(-10.2, 10.2, step=0.1),
     ],
 )
-def test_discrete_uniform(
+def test_float(
     sampler_class: Callable[[], BaseSampler],
     distribution: FloatDistribution,
 ) -> None:
@@ -213,12 +166,13 @@ def test_discrete_uniform(
         np.floating,
     )
 
-    # Check all points are multiples of distribution.q.
-    points = points
-    points -= distribution.low
-    points /= distribution.step
-    round_points = np.round(points)
-    np.testing.assert_almost_equal(round_points, points)
+    if distribution.step is not None:
+        # Check all points are multiples of distribution.step.
+        points = points
+        points -= distribution.low
+        points /= distribution.step
+        round_points = np.round(points)
+        np.testing.assert_almost_equal(round_points, points)
 
 
 @parametrize_sampler
