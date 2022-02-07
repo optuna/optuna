@@ -1324,7 +1324,7 @@ def copy_study(
     attributes are copied.
 
     .. note::
-        :func:`optuna.copy_study` copies a study even if the optimization is working on.
+        :func:`~optuna.copy_study` copies a study even if the optimization is working on.
         It means users will get a copied study that contains a trial that is not finished.
 
     Example:
