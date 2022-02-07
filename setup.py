@@ -39,8 +39,8 @@ def get_install_requires() -> List[str]:
         "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
+        "typing-extensions",
         "PyYAML",  # Only used in `optuna/cli.py`.
-        "typing-extensions"
     ]
     return requirements
 
@@ -109,7 +109,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow ; python_version>'3.6'",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=1.5.0 ; python_version>'3.6'",
+            "pytorch-lightning>=1.5.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.10.0 ; sys_platform=='darwin'",
