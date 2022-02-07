@@ -87,7 +87,7 @@ class RetryFailedTrialCallback:
 
     .. seealso::
         See :class:`~optuna.storages.RDBStorage`.
-    
+
     Args:
         max_retry:
             The max number of times a trial can be retried. Must be set to :obj:`None` or an
