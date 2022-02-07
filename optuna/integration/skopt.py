@@ -254,6 +254,7 @@ class _Optimizer(object):
             elif isinstance(distribution, distributions.CategoricalDistribution):
                 dimension = space.Categorical(distribution.choices)
             elif isinstance(distribution, distributions.FloatDistribution):
+                # Convert the upper bound from exclusive (optuna) to inclusive (skopt).
                 if distribution.log:
                     high = np.nextafter(distribution.high, float("-inf"))
                     dimension = space.Real(distribution.low, high, prior="log-uniform")
