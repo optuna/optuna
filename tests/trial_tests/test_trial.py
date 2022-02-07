@@ -21,8 +21,7 @@ from optuna import storages
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
+from optuna.distributions import IntDistribution
 from optuna.testing.integration import DeterministicPruner
 from optuna.testing.sampler import DeterministicRelativeSampler
 from optuna.testing.storage import STORAGE_MODES
@@ -384,7 +383,7 @@ def test_suggest_int(storage_mode: str) -> None:
     ) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = IntUniformDistribution(low=0, high=3)
+        distribution = IntDistribution(low=0, high=3)
 
         assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
@@ -464,7 +463,7 @@ def test_suggest_int_log(storage_mode: str) -> None:
     ) as storage:
         study = create_study(storage=storage, sampler=sampler)
         trial = Trial(study, study._storage.create_new_trial(study._study_id))
-        distribution = IntLogUniformDistribution(low=1, high=3)
+        distribution = IntDistribution(low=1, high=3, log=True)
 
         assert trial._suggest("x", distribution) == 1  # Test suggesting a param.
         assert trial._suggest("x", distribution) == 1  # Test suggesting the same param.
@@ -509,9 +508,9 @@ def test_distributions(storage_mode: str) -> None:
             "a": FloatDistribution(low=0, high=10),
             "b": FloatDistribution(low=0.1, high=10, log=True),
             "c": FloatDistribution(low=0, high=10, step=1),
-            "d": IntUniformDistribution(low=0, high=10),
+            "d": IntDistribution(low=0, high=10),
             "e": CategoricalDistribution(choices=("foo", "bar", "baz")),
-            "f": IntLogUniformDistribution(low=1, high=10),
+            "f": IntDistribution(low=1, high=10, log=True),
         }
 
 
@@ -559,7 +558,7 @@ def test_relative_parameters(storage_mode: str) -> None:
 
         # Error (due to incompatible distribution class).
         trial3 = create_trial()
-        distribution3 = IntUniformDistribution(low=1, high=100)
+        distribution3 = IntDistribution(low=1, high=100)
         with pytest.raises(ValueError):
             trial3._suggest("y", distribution3)
 
@@ -571,7 +570,7 @@ def test_relative_parameters(storage_mode: str) -> None:
 
         # Error (due to incompatible distribution class).
         trial5 = create_trial()
-        distribution5 = IntLogUniformDistribution(low=1, high=100)
+        distribution5 = IntDistribution(low=1, high=100, log=True)
         with pytest.raises(ValueError):
             trial5._suggest("y", distribution5)
 

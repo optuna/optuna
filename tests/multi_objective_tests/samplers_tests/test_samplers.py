@@ -8,7 +8,7 @@ from optuna import multi_objective
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
-from optuna.distributions import IntUniformDistribution
+from optuna.distributions import IntDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
 
@@ -31,12 +31,12 @@ parametrize_sampler = pytest.mark.parametrize(
         FloatDistribution(1e-7, 1.0, log=True),
         FloatDistribution(-10, 10, step=0.1),
         FloatDistribution(-10.2, 10.2, step=0.1),
-        IntUniformDistribution(-10, 10),
-        IntUniformDistribution(0, 10),
-        IntUniformDistribution(-10, 0),
-        IntUniformDistribution(-10, 10, 2),
-        IntUniformDistribution(0, 10, 2),
-        IntUniformDistribution(-10, 0, 2),
+        IntDistribution(-10, 10),
+        IntDistribution(0, 10),
+        IntDistribution(-10, 0),
+        IntDistribution(-10, 10, step=2),
+        IntDistribution(0, 10, step=2),
+        IntDistribution(-10, 0, step=2),
         CategoricalDistribution((1, 2, 3)),
         CategoricalDistribution(("a", "b", "c")),
         CategoricalDistribution((1, "a")),

@@ -12,8 +12,7 @@ import optuna
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
+from optuna.distributions import IntDistribution
 from optuna.integration.cma import _Optimizer
 from optuna.study._study_direction import StudyDirection
 from optuna.testing.distribution import UnsupportedDistribution
@@ -48,8 +47,8 @@ class TestPyCmaSampler(object):
             )
             assert mock_obj.mock_calls[0] == call(
                 {
-                    "x": IntUniformDistribution(low=-1, high=1),
-                    "y": IntUniformDistribution(low=-1, high=1),
+                    "x": IntDistribution(low=-1, high=1),
+                    "y": IntDistribution(low=-1, high=1),
                 },
                 {"x": 0, "y": 0},
                 0.1,
@@ -162,9 +161,9 @@ class TestOptimizer(object):
         return {
             "c": CategoricalDistribution(("a", "b")),
             "d": FloatDistribution(-1, 9, step=2),
-            "i": IntUniformDistribution(-1, 1),
-            "ii": IntUniformDistribution(-1, 3, 2),
-            "il": IntLogUniformDistribution(2, 16),
+            "i": IntDistribution(-1, 1),
+            "ii": IntDistribution(-1, 3, step=2),
+            "il": IntDistribution(2, 16, log=True),
             "l": FloatDistribution(0.001, 0.1, log=True),
             "u": FloatDistribution(-2, 2),
         }
@@ -333,7 +332,7 @@ class TestOptimizer(object):
         assert not optimizer._is_compatible(trial)
 
         # Error (different distribution class).
-        trial = _create_frozen_trial(x0, dict(search_space, u=IntUniformDistribution(-2, 2)))
+        trial = _create_frozen_trial(x0, dict(search_space, u=IntDistribution(-2, 2)))
         with pytest.raises(ValueError):
             optimizer._is_compatible(trial)
 

@@ -401,7 +401,6 @@ class RedisStorage(BaseStorage):
 
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
 
-        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -435,7 +434,6 @@ class RedisStorage(BaseStorage):
         distribution: distributions.BaseDistribution,
     ) -> None:
 
-        self._check_trial_id(trial_id)
         self.check_trial_is_updatable(trial_id, self.get_trial(trial_id).state)
 
         # Check param distribution compatibility with previous trial(s).
@@ -543,7 +541,6 @@ class RedisStorage(BaseStorage):
 
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
-        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
 
@@ -588,7 +585,6 @@ class RedisStorage(BaseStorage):
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
 
-        self._check_trial_id(trial_id)
         frozen_trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, frozen_trial.state)
         frozen_trial.intermediate_values[step] = intermediate_value
@@ -596,7 +592,6 @@ class RedisStorage(BaseStorage):
 
     def set_trial_user_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
         trial.user_attrs[key] = value
@@ -604,7 +599,6 @@ class RedisStorage(BaseStorage):
 
     def set_trial_system_attr(self, trial_id: int, key: str, value: Any) -> None:
 
-        self._check_trial_id(trial_id)
         trial = self.get_trial(trial_id)
         self.check_trial_is_updatable(trial_id, trial.state)
         trial.system_attrs[key] = value
@@ -665,10 +659,16 @@ class RedisStorage(BaseStorage):
 
         self._check_study_id(study_id)
 
-        trials = []
+        queries = []
         trial_ids = set(self._get_study_trials(study_id)) - excluded_trial_ids
         for trial_id in trial_ids:
-            frozen_trial = self.get_trial(trial_id)
+            queries.append(self._key_trial(trial_id))
+
+        trials = []
+        frozen_trial_pkls = self._redis.mget(queries)
+        for frozen_trial_pkl in frozen_trial_pkls:
+            assert frozen_trial_pkl is not None
+            frozen_trial = pickle.loads(frozen_trial_pkl)
 
             if states is None or frozen_trial.state in states:
                 trials.append(frozen_trial)
@@ -686,7 +686,7 @@ class RedisStorage(BaseStorage):
     def _check_trial_id(self, trial_id: int) -> None:
 
         if not self._redis.exists(self._key_trial(trial_id)):
-            raise KeyError("study_id {} does not exist.".format(trial_id))
+            raise KeyError("trial_id {} does not exist.".format(trial_id))
 
     def record_heartbeat(self, trial_id: int) -> None:
         study_id = self.get_study_id_from_trial_id(trial_id)

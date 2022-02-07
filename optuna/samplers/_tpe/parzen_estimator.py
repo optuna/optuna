@@ -16,8 +16,6 @@ EPS = 1e-12
 SIGMA0_MAGNITUDE = 0.2
 
 _DISTRIBUTION_CLASSES = (
-    distributions.IntUniformDistribution,
-    distributions.IntLogUniformDistribution,
     distributions.CategoricalDistribution,
     distributions.FloatDistribution,
     distributions.IntDistribution,
@@ -242,14 +240,6 @@ class _ParzenEstimator:
                 low = distribution.low
                 high = distribution.high
                 q = None
-        elif isinstance(distribution, distributions.IntUniformDistribution):
-            q = distribution.step
-            low = distribution.low - 0.5 * q
-            high = distribution.high + 0.5 * q
-        elif isinstance(distribution, distributions.IntLogUniformDistribution):
-            low = np.log(distribution.low - 0.5)
-            high = np.log(distribution.high + 0.5)
-            q = None
         elif isinstance(distribution, distributions.IntDistribution):
             if distribution.log:
                 low = np.log(distribution.low - 0.5)
@@ -261,8 +251,6 @@ class _ParzenEstimator:
                 high = distribution.high + 0.5 * q
         else:
             distribution_list = [
-                distributions.IntUniformDistribution.__name__,
-                distributions.IntLogUniformDistribution.__name__,
                 distributions.CategoricalDistribution.__name__,
                 distributions.FloatDistribution.__name__,
                 distributions.IntDistribution.__name__,
@@ -286,12 +274,6 @@ class _ParzenEstimator:
 
             assert isinstance(distribution, _DISTRIBUTION_CLASSES)
             if isinstance(
-                distribution,
-                (distributions.IntLogUniformDistribution),
-            ):
-                samples = np.log(samples)
-
-            elif isinstance(
                 distribution,
                 (distributions.FloatDistribution, distributions.IntDistribution),
             ):
@@ -322,18 +304,6 @@ class _ParzenEstimator:
                     )
                 else:
                     transformed[param_name] = samples
-            elif isinstance(distribution, distributions.IntUniformDistribution):
-                q = self._q[param_name]
-                assert q is not None
-                samples = np.round((samples - distribution.low) / q) * q + distribution.low
-                transformed[param_name] = np.asarray(
-                    np.clip(samples, distribution.low, distribution.high)
-                )
-            elif isinstance(distribution, distributions.IntLogUniformDistribution):
-                samples = np.round(np.exp(samples))
-                transformed[param_name] = np.asarray(
-                    np.clip(samples, distribution.low, distribution.high)
-                )
             elif isinstance(distribution, distributions.IntDistribution):
                 if distribution.log:
                     samples = np.round(np.exp(samples))

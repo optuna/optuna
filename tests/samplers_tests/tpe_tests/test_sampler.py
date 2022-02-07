@@ -87,9 +87,9 @@ def test_infer_relative_search_space() -> None:
         "a": distributions.FloatDistribution(1.0, 100.0),
         "b": distributions.FloatDistribution(1.0, 100.0, log=True),
         "c": distributions.FloatDistribution(1.0, 100.0, step=3.0),
-        "d": distributions.IntUniformDistribution(1, 100),
-        "e": distributions.IntUniformDistribution(0, 100, step=2),
-        "f": distributions.IntLogUniformDistribution(1, 100),
+        "d": distributions.IntDistribution(1, 100),
+        "e": distributions.IntDistribution(0, 100, step=2),
+        "f": distributions.IntDistribution(1, 100, log=True),
         "g": distributions.CategoricalDistribution(["x", "y", "z"]),
     }
 
@@ -337,7 +337,7 @@ def test_sample_relative_int_uniform_distributions(step: int) -> None:
         random.seed(idx)
         return step * random.randint(0, 100 // step)
 
-    int_dist = optuna.distributions.IntUniformDistribution(0, 100, step=step)
+    int_dist = optuna.distributions.IntDistribution(0, 100, step=step)
     past_trials = [
         frozen_trial_factory(i, dist=int_dist, value_fn=int_value_fn) for i in range(1, 8)
     ]
@@ -361,7 +361,7 @@ def test_sample_relative_int_loguniform_distributions() -> None:
         random.seed(idx)
         return random.randint(0, 100)
 
-    intlog_dist = optuna.distributions.IntLogUniformDistribution(1, 100)
+    intlog_dist = optuna.distributions.IntDistribution(1, 100, log=True)
     past_trials = [
         frozen_trial_factory(i, dist=intlog_dist, value_fn=int_value_fn) for i in range(1, 8)
     ]
@@ -640,7 +640,7 @@ def test_sample_independent_int_uniform_distributions() -> None:
         random.seed(idx)
         return random.randint(0, 100)
 
-    int_dist = optuna.distributions.IntUniformDistribution(1, 100)
+    int_dist = optuna.distributions.IntDistribution(1, 100)
     past_trials = [
         frozen_trial_factory(i, dist=int_dist, value_fn=int_value_fn) for i in range(1, 8)
     ]
@@ -661,7 +661,7 @@ def test_sample_independent_int_loguniform_distributions() -> None:
         random.seed(idx)
         return random.randint(0, 100)
 
-    intlog_dist = optuna.distributions.IntLogUniformDistribution(1, 100)
+    intlog_dist = optuna.distributions.IntDistribution(1, 100, log=True)
     past_trials = [
         frozen_trial_factory(i, dist=intlog_dist, value_fn=int_value_fn) for i in range(1, 8)
     ]
@@ -992,9 +992,7 @@ def test_group() -> None:
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=2)
         assert mock.call_count == 1
-    assert study.trials[-1].distributions == {
-        "x": distributions.IntUniformDistribution(low=0, high=10)
-    }
+    assert study.trials[-1].distributions == {"x": distributions.IntDistribution(low=0, high=10)}
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(
@@ -1002,7 +1000,7 @@ def test_group() -> None:
         )
         assert mock.call_count == 1
     assert study.trials[-1].distributions == {
-        "y": distributions.IntUniformDistribution(low=0, high=10),
+        "y": distributions.IntDistribution(low=0, high=10),
         "z": distributions.FloatDistribution(low=-3, high=3),
     }
 
@@ -1018,7 +1016,7 @@ def test_group() -> None:
     assert study.trials[-1].distributions == {
         "u": distributions.FloatDistribution(low=1e-2, high=1e2, log=True),
         "v": distributions.CategoricalDistribution(choices=["A", "B", "C"]),
-        "y": distributions.IntUniformDistribution(low=0, high=10),
+        "y": distributions.IntDistribution(low=0, high=10),
         "z": distributions.FloatDistribution(low=-3, high=3),
     }
 
@@ -1035,16 +1033,14 @@ def test_group() -> None:
         )
         assert mock.call_count == 4
     assert study.trials[-1].distributions == {
-        "y": distributions.IntUniformDistribution(low=0, high=10),
-        "w": distributions.IntLogUniformDistribution(low=2, high=8),
+        "y": distributions.IntDistribution(low=0, high=10),
+        "w": distributions.IntDistribution(low=2, high=8, log=True),
     }
 
     with patch.object(sampler, "_sample_relative", wraps=sampler._sample_relative) as mock:
         study.optimize(lambda t: t.suggest_int("x", 0, 10), n_trials=1)
         assert mock.call_count == 6
-    assert study.trials[-1].distributions == {
-        "x": distributions.IntUniformDistribution(low=0, high=10)
-    }
+    assert study.trials[-1].distributions == {"x": distributions.IntDistribution(low=0, high=10)}
 
 
 def test_invalid_multivariate_and_group() -> None:

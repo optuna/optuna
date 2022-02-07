@@ -56,29 +56,25 @@ class TensorBoardCallback(object):
     def _add_distributions(
         self, distributions: Dict[str, optuna.distributions.BaseDistribution]
     ) -> None:
-        real_distributions = (optuna.distributions.FloatDistribution,)
-        int_distributions = (
-            optuna.distributions.IntUniformDistribution,
-            optuna.distributions.IntLogUniformDistribution,
-            optuna.distributions.IntDistribution,
-        )
-        categorical_distributions = (optuna.distributions.CategoricalDistribution,)
+
         supported_distributions = (
-            real_distributions + int_distributions + categorical_distributions
+            optuna.distributions.CategoricalDistribution,
+            optuna.distributions.FloatDistribution,
+            optuna.distributions.IntDistribution,
         )
 
         for param_name, param_distribution in distributions.items():
-            if isinstance(param_distribution, real_distributions):
+            if isinstance(param_distribution, optuna.distributions.FloatDistribution):
                 self._hp_params[param_name] = hp.HParam(
                     param_name,
                     hp.RealInterval(float(param_distribution.low), float(param_distribution.high)),
                 )
-            elif isinstance(param_distribution, int_distributions):
+            elif isinstance(param_distribution, optuna.distributions.IntDistribution):
                 self._hp_params[param_name] = hp.HParam(
                     param_name,
                     hp.IntInterval(param_distribution.low, param_distribution.high),
                 )
-            elif isinstance(param_distribution, categorical_distributions):
+            elif isinstance(param_distribution, optuna.distributions.CategoricalDistribution):
                 self._hp_params[param_name] = hp.HParam(
                     param_name,
                     hp.Discrete(param_distribution.choices),

@@ -12,8 +12,6 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -21,8 +19,6 @@ from optuna.trial import FrozenTrial
 
 _NUMERICAL_DISTRIBUTIONS = (
     FloatDistribution,
-    IntUniformDistribution,
-    IntLogUniformDistribution,
     IntDistribution,
 )
 

@@ -9,16 +9,11 @@ from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
 
 
 @pytest.mark.parametrize(
     "param,distribution",
     [
-        (0, IntUniformDistribution(0, 3)),
-        (1, IntLogUniformDistribution(1, 10)),
-        (2, IntUniformDistribution(0, 10, step=2)),
         (0, IntDistribution(0, 3)),
         (1, IntDistribution(1, 10, log=True)),
         (2, IntDistribution(0, 10, step=2)),
@@ -46,7 +41,7 @@ def test_search_space_transform_shapes_dtypes(param: Any, distribution: BaseDist
 
 
 def test_search_space_transform_encoding() -> None:
-    trans = _SearchSpaceTransform({"x0": IntUniformDistribution(0, 3)})
+    trans = _SearchSpaceTransform({"x0": IntDistribution(0, 3)})
 
     assert len(trans.column_to_encoded_columns) == 1
     numpy.testing.assert_equal(trans.column_to_encoded_columns[0], numpy.array([0]))
@@ -78,18 +73,15 @@ def test_search_space_transform_encoding() -> None:
 @pytest.mark.parametrize(
     "param,distribution",
     [
-        (0, IntUniformDistribution(0, 3)),
-        (3, IntUniformDistribution(0, 3)),
-        (1, IntLogUniformDistribution(1, 10)),
-        (10, IntLogUniformDistribution(1, 10)),
-        (2, IntUniformDistribution(0, 10, step=2)),
         (0, IntDistribution(0, 3)),
+        (3, IntDistribution(0, 3)),
         (1, IntDistribution(1, 10, log=True)),
+        (10, IntDistribution(1, 10, log=True)),
         (2, IntDistribution(0, 10, step=2)),
-        (10, IntUniformDistribution(0, 10, step=2)),
         (3.0, FloatDistribution(0, 3)),
         (10.0, FloatDistribution(1, 10, log=True)),
         (1.0, FloatDistribution(0, 1, step=0.2)),
+        (10, IntDistribution(0, 10, step=2)),
         (0.0, FloatDistribution(0, 3)),
         (1.0, FloatDistribution(1, 10, log=True)),
         (0.2, FloatDistribution(0, 1, step=0.2)),
@@ -114,19 +106,6 @@ def test_search_space_transform_numerical(
             half_step = 0.5 * distribution.step
             expected_low -= half_step
             expected_high += half_step
-    elif isinstance(distribution, IntUniformDistribution):
-        if transform_step:
-            half_step = 0.5 * distribution.step
-            expected_low -= half_step
-            expected_high += half_step
-    elif isinstance(distribution, IntLogUniformDistribution):
-        if transform_step:
-            half_step = 0.5
-            expected_low -= half_step
-            expected_high += half_step
-        if transform_log:
-            expected_low = math.log(expected_low)
-            expected_high = math.log(expected_high)
     elif isinstance(distribution, IntDistribution):
         if transform_step:
             half_step = 0.5 * distribution.step

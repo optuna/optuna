@@ -12,8 +12,7 @@ from optuna import create_study
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
+from optuna.distributions import IntDistribution
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import BaseTrial
@@ -221,7 +220,7 @@ def test_suggest_int() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 1},
-        distributions={"x": IntUniformDistribution(0, 10)},
+        distributions={"x": IntDistribution(0, 10)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -243,7 +242,7 @@ def test_suggest_int_log() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 1},
-        distributions={"x": IntLogUniformDistribution(1, 10)},
+        distributions={"x": IntDistribution(1, 10, log=True)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -337,7 +336,7 @@ def test_not_contained_param() -> None:
     trial = create_trial(
         value=0.2,
         params={"x": 1.0},
-        distributions={"x": IntUniformDistribution(1, 10)},
+        distributions={"x": IntDistribution(1, 10)},
     )
     with pytest.warns(UserWarning):
         assert trial.suggest_int("x", 10, 100) == 1
@@ -345,7 +344,7 @@ def test_not_contained_param() -> None:
     trial = create_trial(
         value=0.2,
         params={"x": 1},
-        distributions={"x": IntUniformDistribution(1, 10, 1)},
+        distributions={"x": IntDistribution(1, 10)},
     )
     with pytest.warns(UserWarning):
         assert trial.suggest_int("x", 10, 100, 1) == 1
@@ -353,7 +352,7 @@ def test_not_contained_param() -> None:
     trial = create_trial(
         value=0.2,
         params={"x": 1},
-        distributions={"x": IntLogUniformDistribution(1, 10)},
+        distributions={"x": IntDistribution(1, 10, log=True)},
     )
     with pytest.warns(UserWarning):
         assert trial.suggest_int("x", 10, 100, log=True) == 1

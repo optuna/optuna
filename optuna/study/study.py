@@ -996,11 +996,9 @@ class Study:
 
     def _pop_waiting_trial_id(self) -> Optional[int]:
 
-        # TODO(c-bata): Reduce database query counts for extracting waiting trials.
-        for trial in self._storage.get_all_trials(self._study_id, deepcopy=False):
-            if trial.state != TrialState.WAITING:
-                continue
-
+        for trial in self._storage.get_all_trials(
+            self._study_id, deepcopy=False, states=(TrialState.WAITING,)
+        ):
             if not self._storage.set_trial_state(trial._trial_id, TrialState.RUNNING):
                 continue
 

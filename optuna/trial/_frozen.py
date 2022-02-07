@@ -13,8 +13,7 @@ from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
+from optuna.distributions import IntDistribution
 from optuna.trial._base import BaseTrial
 from optuna.trial._state import TrialState
 
@@ -240,23 +239,7 @@ class FrozenTrial(BaseTrial):
         return self.suggest_float(name, low, high, step=q)
 
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
-
-        if step != 1:
-            if log:
-                raise ValueError(
-                    "The parameter `step != 1` is not supported when `log` is True."
-                    "The specified `step` is {}.".format(step)
-                )
-            else:
-                distribution: Union[
-                    IntUniformDistribution, IntLogUniformDistribution
-                ] = IntUniformDistribution(low=low, high=high, step=step)
-        else:
-            if log:
-                distribution = IntLogUniformDistribution(low=low, high=high)
-            else:
-                distribution = IntUniformDistribution(low=low, high=high, step=step)
-        return int(self._suggest(name, distribution))
+        return int(self._suggest(name, IntDistribution(low, high, log=log, step=step)))
 
     def suggest_categorical(
         self, name: str, choices: Sequence[CategoricalChoiceType]

@@ -37,12 +37,10 @@ class DeterministicRelativeSampler(optuna.samplers.BaseSampler):
         param_distribution: BaseDistribution,
     ) -> Any:
 
-        if isinstance(param_distribution, distributions.FloatDistribution):
+        if isinstance(
+            param_distribution, (distributions.FloatDistribution, distributions.IntDistribution)
+        ):
             param_value: Any = param_distribution.low
-        elif isinstance(param_distribution, distributions.IntUniformDistribution):
-            param_value = param_distribution.low
-        elif isinstance(param_distribution, distributions.IntDistribution):
-            param_value = param_distribution.low
         elif isinstance(param_distribution, distributions.CategoricalDistribution):
             param_value = param_distribution.choices[0]
         else:

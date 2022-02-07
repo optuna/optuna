@@ -251,7 +251,7 @@ class DiscreteUniformDistribution(FloatDistribution):
         :math:`\\mathsf{high}` will be replaced with the maximum of :math:`k q + \\mathsf{low}
         < \\mathsf{high}`, where :math:`k` is an integer.
 
-    Attributes:
+    Args:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
@@ -263,6 +263,12 @@ class DiscreteUniformDistribution(FloatDistribution):
         ValueError:
             If ``low`` value is larger than ``high`` value, or ``q`` value is smaller or
             equal to 0.
+
+    Attributes:
+        low:
+            Lower endpoint of the range of the distribution. ``low`` is included in the range.
+        high:
+            Upper endpoint of the range of the distribution. ``high`` is included in the range.
     """
 
     def __init__(self, low: float, high: float, q: float) -> None:
@@ -278,7 +284,17 @@ class DiscreteUniformDistribution(FloatDistribution):
 
     @property
     def q(self) -> float:
+        """Discretization step.
+
+        :class:`~optuna.distributions.DiscreteUniformDistribution` is a subtype of
+        :class:`~optuna.distributions.FloatDistribution`.
+        This property is a proxy for its ``step`` attribute.
+        """
         return cast(float, self.step)
+
+    @q.setter
+    def q(self, v: float) -> None:
+        self.step = v
 
 
 class IntDistribution(BaseDistribution):
@@ -498,12 +514,12 @@ class CategoricalDistribution(BaseDistribution):
 
 DISTRIBUTION_CLASSES = (
     IntDistribution,
+    IntLogUniformDistribution,
+    IntUniformDistribution,
     FloatDistribution,
     UniformDistribution,
     LogUniformDistribution,
     DiscreteUniformDistribution,
-    IntUniformDistribution,
-    IntLogUniformDistribution,
     CategoricalDistribution,
 )
 
@@ -548,16 +564,9 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
                 return FloatDistribution(low, high, log=log, step=step)
 
             else:
-                if log:
-                    if step is not None:
-                        return IntLogUniformDistribution(low, high, step)
-                    else:
-                        return IntLogUniformDistribution(low, high)
-                else:
-                    if step is not None:
-                        return IntUniformDistribution(low, high, step)
-                    else:
-                        return IntUniformDistribution(low, high)
+                if step is None:
+                    step = 1
+                return IntDistribution(low=low, high=high, log=log, step=step)
 
         raise ValueError("Unknown distribution type: {}".format(json_dict["type"]))
 
@@ -650,8 +659,6 @@ def _get_single_value(distribution: BaseDistribution) -> Union[int, float, Categ
         (
             FloatDistribution,
             IntDistribution,
-            IntUniformDistribution,
-            IntLogUniformDistribution,
         ),
     ):
         return distribution.low

@@ -15,8 +15,8 @@ SEARCH_SPACE = {
     "a": distributions.FloatDistribution(1.0, 100.0),
     "b": distributions.FloatDistribution(1.0, 100.0, log=True),
     "c": distributions.FloatDistribution(1.0, 100.0, step=3.0),
-    "d": distributions.IntUniformDistribution(1, 100),
-    "e": distributions.IntLogUniformDistribution(1, 100),
+    "d": distributions.IntDistribution(1, 100),
+    "e": distributions.IntDistribution(1, 100, log=True),
     "f": distributions.CategoricalDistribution(["x", "y", "z"]),
 }
 
@@ -171,7 +171,7 @@ def test_suggest_with_step_parzen_estimator(multivariate: bool) -> None:
     # Define search space for distribution with step argument and true ranges
     search_space = {
         "c": distributions.FloatDistribution(low=1.0, high=7.0, step=3.0),
-        "d": distributions.IntUniformDistribution(low=1, high=5, step=2),
+        "d": distributions.IntDistribution(low=1, high=5, step=2),
     }
     multivariate_samples = {"c": np.array([4]), "d": np.array([3])}
     valid_ranges = {"c": set(np.arange(1.0, 10.0, 3.0)), "d": set(np.arange(1, 7, 2))}
