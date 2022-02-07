@@ -241,7 +241,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
             params={"category_a": "preferred", "param_b": 30},
             distributions={
                 "category_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
@@ -269,7 +269,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
             params={"category_a": "preferred", "param_b": 20},
             distributions={
                 "category_a": CategoricalDistribution(("preferred", "opt")),
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
