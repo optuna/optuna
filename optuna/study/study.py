@@ -951,7 +951,6 @@ class Study:
             .. testcode::
 
                 import optuna
-                from optuna.distributions import FloatDistribution
 
 
                 def objective(trial):
