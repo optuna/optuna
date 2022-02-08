@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  tests-rdbstorage:
+  tests-storage-with-server:
     runs-on: ubuntu-latest
 
     strategy:
