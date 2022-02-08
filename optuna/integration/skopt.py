@@ -296,8 +296,6 @@ class _Optimizer(object):
             if isinstance(distribution, distributions.FloatDistribution):
                 # Type of value is np.floating, so cast it to Python's built-in float.
                 value = float(value)
-
-            if isinstance(distribution, distributions.FloatDistribution):
                 if distribution.step is not None:
                     value = value * distribution.step + distribution.low
             elif isinstance(distribution, distributions.IntDistribution):
