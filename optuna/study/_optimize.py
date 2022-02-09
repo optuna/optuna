@@ -29,7 +29,6 @@ from optuna import logging
 from optuna import progress_bar as pbar_module
 from optuna import storages
 from optuna import trial as trial_module
-from optuna.exceptions import ExperimentalWarning
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
