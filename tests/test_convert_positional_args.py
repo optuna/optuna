@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 
-from optuna.study.study import _convert_positional_args
+from optuna._convert_positional_args import convert_positional_args
 
 
 def _sample_func(*, a: int, b: int, c: int) -> int:
@@ -11,7 +11,7 @@ def _sample_func(*, a: int, b: int, c: int) -> int:
 
 def test_convert_positional_args_decorator() -> None:
     previous_positional_arg_names: List[str] = []
-    decorator_converter = _convert_positional_args(
+    decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
     )
 
@@ -19,9 +19,9 @@ def test_convert_positional_args_decorator() -> None:
     assert decorated_func.__name__ == _sample_func.__name__
 
 
-def test_convert_positional_args_user_warning() -> None:
+def testconvert_positional_args_user_warning() -> None:
     previous_positional_arg_names: List[str] = ["a", "b"]
-    decorator_converter = _convert_positional_args(
+    decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
     )
     assert callable(decorator_converter)
@@ -38,9 +38,9 @@ def test_convert_positional_args_user_warning() -> None:
         assert _sample_func.__name__ in str(warn.message)
 
 
-def test_convert_positional_args_mypy_type_inference() -> None:
+def testconvert_positional_args_mypy_type_inference() -> None:
     previous_positional_arg_names: List[str] = []
-    decorator_converter = _convert_positional_args(
+    decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
     )
     assert callable(decorator_converter)
@@ -66,9 +66,9 @@ def test_convert_positional_args_mypy_type_inference() -> None:
     assert ret_sample.method()
 
 
-def test_convert_positional_args_invalid_previous_positional_arg_names() -> None:
+def testconvert_positional_args_invalid_previous_positional_arg_names() -> None:
     def _test_converter(previous_positional_arg_names: List[str], raise_error: bool) -> None:
-        decorator_converter = _convert_positional_args(
+        decorator_converter = convert_positional_args(
             previous_positional_arg_names=previous_positional_arg_names
         )
         assert callable(decorator_converter)
@@ -89,9 +89,9 @@ def test_convert_positional_args_invalid_previous_positional_arg_names() -> None
     _test_converter(previous_positional_arg_names=["b", "a"], raise_error=False)
 
 
-def test_convert_positional_args_invalid_positional_args() -> None:
+def testconvert_positional_args_invalid_positional_args() -> None:
     previous_positional_arg_names: List[str] = ["a", "b"]
-    decorator_converter = _convert_positional_args(
+    decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
     )
     assert callable(decorator_converter)

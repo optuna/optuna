@@ -1,6 +1,4 @@
 import copy
-from functools import wraps
-from inspect import signature
 import threading
 from typing import Any
 from typing import Callable
@@ -12,11 +10,8 @@ from typing import Sequence
 from typing import Tuple
 from typing import Type
 from typing import TYPE_CHECKING
-from typing import TypeVar
 from typing import Union
 import warnings
-
-from typing_extensions import ParamSpec
 
 from optuna import exceptions
 from optuna import logging
@@ -24,6 +19,7 @@ from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
+from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated
 from optuna._experimental import experimental
 from optuna._imports import _LazyImport
@@ -48,51 +44,6 @@ ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]
 
 
 _logger = logging.get_logger(__name__)
-
-
-_T = TypeVar("_T")
-_P = ParamSpec("_P")
-
-
-def _convert_positional_args(
-    *,
-    previous_positional_arg_names: Sequence[str],
-    warning_stacklevel: int = 2,
-) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
-    def decorator(func: Callable[_P, _T]) -> Callable[_P, _T]:
-        assert set(previous_positional_arg_names).issubset(set(signature(func).parameters)), (
-            f"{set(previous_positional_arg_names)} is not a subset of"
-            f" {set(signature(func).parameters)}"
-        )
-
-        @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> _T:
-            if len(args) >= 1:
-                warnings.warn(
-                    f"{func.__name__}(): Positional arguments are deprecated."
-                    " Please give all values as keyword arguments.",
-                    FutureWarning,
-                    stacklevel=warning_stacklevel,
-                )
-            if len(args) > len(previous_positional_arg_names):
-                raise TypeError(
-                    f"{func.__name__}() takes {len(previous_positional_arg_names)} positional"
-                    f" arguments but {len(args)} were given."
-                )
-            for val, arg_name in zip(args, previous_positional_arg_names):
-                # When specifying a positional argument that is not located at the end of args as
-                # a keyword argument, raise TypeError as follows by imitating the Python standard
-                # behavior.
-                if arg_name in kwargs:
-                    raise TypeError(
-                        f"{func.__name__}() got multiple values for argument '{arg_name}'."
-                    )
-                kwargs[arg_name] = val
-            return func(**kwargs)
-
-        return wrapper
-
-    return decorator
 
 
 class Study:
@@ -1094,7 +1045,7 @@ class Study:
             assert False, "Should not reach."
 
 
-@_convert_positional_args(
+@convert_positional_args(
     previous_positional_arg_names=[
         "storage",
         "sampler",
@@ -1244,7 +1195,7 @@ def create_study(
     return study
 
 
-@_convert_positional_args(
+@convert_positional_args(
     previous_positional_arg_names=[
         "study_name",
         "storage",
@@ -1330,7 +1281,7 @@ def load_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
-@_convert_positional_args(
+@convert_positional_args(
     previous_positional_arg_names=[
         "study_name",
         "storage",
@@ -1389,7 +1340,7 @@ def delete_study(
 
 
 @experimental("2.8.0")
-@_convert_positional_args(
+@convert_positional_args(
     previous_positional_arg_names=[
         "from_study_name",
         "from_storage",
