@@ -60,12 +60,9 @@ def _convert_positional_args(
     warning_stacklevel: int = 2,
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
     def decorator(func: Callable[_P, _T]) -> Callable[_P, _T]:
-        assert (
-            previous_positional_arg_names
-            == list(signature(func).parameters)[: len(previous_positional_arg_names)]
-        ), (
-            f"{previous_positional_arg_names} is not a sublist of"
-            f" {list(signature(func).parameters)}"
+        assert set(previous_positional_arg_names).issubset(set(signature(func).parameters)), (
+            f"{set(previous_positional_arg_names)} is not a subset of"
+            f" {set(signature(func).parameters)}"
         )
 
         @wraps(func)
