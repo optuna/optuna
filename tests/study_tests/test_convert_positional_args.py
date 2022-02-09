@@ -67,21 +67,26 @@ def test_convert_positional_args_mypy_type_inference() -> None:
 
 
 def test_convert_positional_args_invalid_previous_positional_arg_names() -> None:
-    def _test_converter(previous_positional_arg_names: List[str]) -> None:
+    def _test_converter(previous_positional_arg_names: List[str], raise_error: bool) -> None:
         decorator_converter = _convert_positional_args(
             previous_positional_arg_names=previous_positional_arg_names
         )
         assert callable(decorator_converter)
 
-        with pytest.raises(AssertionError) as record:
+        if raise_error:
+            with pytest.raises(AssertionError) as record:
+                decorator_converter(_sample_func)
+            assert str(record.value) == (
+                f"{set(previous_positional_arg_names)} is not a subset of"
+                f" {set(['a', 'b', 'c'])}"
+            )
+        else:
             decorator_converter(_sample_func)
-        assert (
-            str(record.value)
-            == f"{previous_positional_arg_names} is not a sublist of ['a', 'b', 'c']"
-        )
 
-    _test_converter(previous_positional_arg_names=["a", "b", "c", "d"])
-    _test_converter(previous_positional_arg_names=["b", "a"])
+    _test_converter(previous_positional_arg_names=["a", "b", "c", "d"], raise_error=True)
+    _test_converter(previous_positional_arg_names=["a", "d"], raise_error=True)
+    # Changing the order of the arguments is allowed.
+    _test_converter(previous_positional_arg_names=["b", "a"], raise_error=False)
 
 
 def test_convert_positional_args_invalid_positional_args() -> None:
