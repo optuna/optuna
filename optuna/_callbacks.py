@@ -145,14 +145,14 @@ class RetryFailedTrialCallback:
     @staticmethod
     @experimental("3.0.0")
     def retry_history(trial: FrozenTrial) -> List[int]:
-        """Return the list of retried trial IDs with respect to the specified trial.
+        """Return the list of retried trial numbers with respect to the specified trial.
 
         Args:
             trial:
                 The trial object.
 
         Returns:
-            A list of trial IDs in ascending order of the series of retried trials.
+            A list of trial numbers in ascending order of the series of retried trials.
             The first item of the list indicates the original trial which is identical
             to the :func:`~optuna.storage.RetryFailedTrialCallback.retried_trial_number`,
             and the last item is the one right before the specified trial in the retry series.
