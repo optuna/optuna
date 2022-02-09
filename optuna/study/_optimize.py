@@ -245,7 +245,7 @@ def _run_trial(
         and not isinstance(func_err, catch)
     ):
         raise func_err
-    return frozen_trial
+    return trial
 
 
 def _record_heartbeat(trial_id: int, storage: storages.BaseStorage, stop_event: Event) -> None:
