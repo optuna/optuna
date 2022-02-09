@@ -72,7 +72,8 @@ def _convert_positional_args(
             if len(args) >= 1:
                 warnings.warn(
                     f"{func.__name__}(): Positional arguments are deprecated."
-                    " Please give all values as keyword arguments."
+                    " Please give all values as keyword arguments.",
+                    FutureWarning,
                 )
             if len(args) > len(previous_positional_arg_names):
                 raise TypeError(
