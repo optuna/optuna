@@ -554,6 +554,7 @@ class Study:
         values: Optional[Union[float, Sequence[float]]] = None,
         state: Optional[TrialState] = None,
         skip_if_finished: bool = False,
+        suppress_warning: bool = False,
     ) -> FrozenTrial:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
 
@@ -626,6 +627,10 @@ class Study:
                 Flag to control whether exception should be raised when values for already
                 finished trial are told. If :obj:`True`, tell is skipped without any error
                 when the trial is already finished.
+            suppress_warning:
+                If :obj:`True`, tell will not show warnings when tell receives an invalid
+                values. This flag is expected to be :obj:`True` internally and not designed
+                to be used by users.
 
         Raises:
             TypeError:
@@ -701,6 +706,7 @@ class Study:
             assert False, "Should not reach."
 
         frozen_trial = self._storage.get_trial(trial_id)
+        warning_message = None
 
         if frozen_trial.state.is_finished() and skip_if_finished:
             _logger.info(
@@ -711,13 +717,17 @@ class Study:
             return copy.deepcopy(frozen_trial)
 
         if state is None and values is None:
-            warnings.warn(
+            state = TrialState.FAIL
+            message_values_and_state_not_specified = (
                 "Study.tell is called with `values` and `state` set to None but "
                 "you have to specify either `values` or `state` at least. "
                 "`values` is required if a trial finishes successfully or "
                 "`state` is required if a trial is fails or pruned."
             )
-            state = TrialState.FAIL
+            if not suppress_warning:
+                warnings.warn(message_values_and_state_not_specified)
+            else:
+                warning_message = message_values_and_state_not_specified
 
         if state == TrialState.PRUNED:
             # Register the last intermediate value if present as the value of the trial.
@@ -740,8 +750,11 @@ class Study:
                 # This path is reached when the objective returns invalid data
                 # including NaN or non-numerical points during Study.optimize.
                 else:
-                    warnings.warn(values_conversion_failure_message)
                     state = TrialState.FAIL
+                    if not suppress_warning:
+                        warnings.warn(values_conversion_failure_message)
+                    else:
+                        warning_message = values_conversion_failure_message
 
             # When called from `Study.optimize` and `state` is pruned, the given `values` contains
             # the intermediate value with the largest step so far. In this case, the value is
@@ -760,7 +773,10 @@ class Study:
         finally:
             self._storage.set_trial_state_values(trial_id, state, values)
 
-        return copy.deepcopy(self._storage.get_trial(trial_id))
+        frozen_trial = copy.deepcopy(self._storage.get_trial(trial_id))
+        if warning_message is not None:
+            frozen_trial.set_user_attr("warning_message", warning_message)
+        return frozen_trial
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.

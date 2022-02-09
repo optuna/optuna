@@ -220,9 +220,9 @@ def _run_trial(
 
     # `Study.tell` may raise during trial post-processing.
     try:
-        with warnings.catch_warnings(record=True) as tell_warnings:
-            warnings.simplefilter("always", UserWarning)
-            frozen_trial = study.tell(trial, values=value_or_values, state=state)
+        frozen_trial = study.tell(
+            trial, values=value_or_values, state=state, suppress_warning=True
+        )
     except Exception:
         frozen_trial = study._storage.get_trial(trial._trial_id)
         raise
@@ -234,9 +234,8 @@ def _run_trial(
         elif frozen_trial.state == TrialState.FAIL:
             if func_err is not None:
                 _log_failed_trial(frozen_trial, repr(func_err), exc_info=func_err_fail_exc_info)
-            elif tell_warnings is not None:
-                for tell_warning in tell_warnings:
-                    _log_failed_trial(frozen_trial, tell_warning.message)
+            elif "warning_message" in frozen_trial.user_attrs:
+                _log_failed_trial(frozen_trial, frozen_trial.user_attrs["warning_message"])
         else:
             assert False, "Should not reach."
 
