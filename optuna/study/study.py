@@ -57,6 +57,7 @@ _P = ParamSpec("_P")
 def _convert_positional_args(
     *,
     previous_positional_arg_names: Sequence[str],
+    warning_stacklevel: int = 2,
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
     def decorator(func: Callable[_P, _T]) -> Callable[_P, _T]:
         assert (
@@ -74,6 +75,7 @@ def _convert_positional_args(
                     f"{func.__name__}(): Positional arguments are deprecated."
                     " Please give all values as keyword arguments.",
                     FutureWarning,
+                    stacklevel=warning_stacklevel,
                 )
             if len(args) > len(previous_positional_arg_names):
                 raise TypeError(
@@ -1397,6 +1399,7 @@ def delete_study(
         "to_storage",
         "to_study_name",
     ],
+    warning_stacklevel=3,
 )
 def copy_study(
     *,
