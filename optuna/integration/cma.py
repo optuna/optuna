@@ -475,7 +475,7 @@ class _Optimizer(object):
             else:
                 return float(cma_param_value)
 
-        if isinstance(dist, IntDistribution):
+        elif isinstance(dist, IntDistribution):
             if dist.log:
                 exp_value = math.exp(cma_param_value)
                 v = numpy.round(exp_value)
@@ -485,7 +485,7 @@ class _Optimizer(object):
                 v = r * dist.step + dist.low
                 return int(v)
 
-        if isinstance(dist, CategoricalDistribution):
+        elif isinstance(dist, CategoricalDistribution):
             v = int(numpy.round(cma_param_value))
             return dist.choices[v]
         return cma_param_value
