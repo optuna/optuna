@@ -187,8 +187,7 @@ def _run_trial(
     func: "optuna.study.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.Trial:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", ExperimentalWarning)
+    if study._storage.is_heartbeat_enabled():
         optuna.storages.fail_stale_trials(study)
 
     trial = study.ask()
