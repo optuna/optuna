@@ -168,7 +168,6 @@ def test_float(
 
     if distribution.step is not None:
         # Check all points are multiples of distribution.step.
-        points = points
         points -= distribution.low
         points /= distribution.step
         round_points = np.round(points)
