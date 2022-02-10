@@ -647,12 +647,13 @@ def test_enqueue_trial_properly_sets_user_attr(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
+    fixed_value = 11
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
         assert len(study.trials) == 0
 
-        study.enqueue_trial(params={"x": 11})
+        study.enqueue_trial(params={"x": fixed_value})
 
         def objective(trial: Trial) -> float:
 
@@ -661,7 +662,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
         with pytest.warns(UserWarning):
             study.optimize(objective, n_trials=1)
         t = study.trials[0]
-        assert -10 <= t.params["x"] <= 10
+        assert t.params["x"] == fixed_value
 
     # Internal logic might differ when distribution contains a single element.
     # Test it explicitly.
@@ -669,7 +670,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
         study = create_study(storage=storage)
         assert len(study.trials) == 0
 
-        study.enqueue_trial(params={"x": 11})
+        study.enqueue_trial(params={"x": fixed_value})
 
         def objective(trial: Trial) -> float:
 
@@ -678,7 +679,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
         with pytest.warns(UserWarning):
             study.optimize(objective, n_trials=1)
         t = study.trials[0]
-        assert t.params["x"] == 1
+        assert t.params["x"] == fixed_value
 
 
 @patch("optuna.study._optimize.gc.collect")
