@@ -11,7 +11,7 @@ class BaseCrossover(object, metaclass=abc.ABCMeta):
     A crossover operation is used by :class:`~optuna.samplers.NSGAIISampler`
     to create new parameter combination from parameters of ``n`` parent individuals.
 
-    .. note:
+    .. note::
         Concrete implementations of this class are expected to only accept parameters
         from numerical distributions. At the moment, only crossover operation for categorical
         parameters (uniform crossover) is built-in into :class:`~optuna.samplers.NSGAIISampler`.
