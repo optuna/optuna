@@ -56,12 +56,7 @@ class TensorBoardCallback(object):
     def _add_distributions(
         self, distributions: Dict[str, optuna.distributions.BaseDistribution]
     ) -> None:
-        real_distributions = (
-            optuna.distributions.UniformDistribution,
-            optuna.distributions.LogUniformDistribution,
-            optuna.distributions.DiscreteUniformDistribution,
-            optuna.distributions.FloatDistribution,
-        )
+
         supported_distributions = (
             optuna.distributions.CategoricalDistribution,
             optuna.distributions.FloatDistribution,
@@ -69,7 +64,7 @@ class TensorBoardCallback(object):
         )
 
         for param_name, param_distribution in distributions.items():
-            if isinstance(param_distribution, real_distributions):
+            if isinstance(param_distribution, optuna.distributions.FloatDistribution):
                 self._hp_params[param_name] = hp.HParam(
                     param_name,
                     hp.RealInterval(float(param_distribution.low), float(param_distribution.high)),

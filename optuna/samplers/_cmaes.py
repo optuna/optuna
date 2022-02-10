@@ -60,7 +60,7 @@ class CmaEsSampler(BaseSampler):
             study.optimize(objective, n_trials=20)
 
     Please note that this sampler does not support CategoricalDistribution.
-    However, :class:`~optuna.distributions.DiscreteUniformDistribution`
+    However, :class:`~optuna.distributions.FloatDistribution` with ``step``,
     (:func:`~optuna.trial.Trial.suggest_float`) and
     Int(Log)Distribution (:func:`~optuna.trial.Trial.suggest_int`) are supported.
 
@@ -286,9 +286,6 @@ class CmaEsSampler(BaseSampler):
             if not isinstance(
                 distribution,
                 (
-                    optuna.distributions.UniformDistribution,
-                    optuna.distributions.LogUniformDistribution,
-                    optuna.distributions.DiscreteUniformDistribution,
                     optuna.distributions.FloatDistribution,
                     optuna.distributions.IntDistribution,
                 ),

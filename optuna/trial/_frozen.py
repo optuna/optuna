@@ -497,12 +497,12 @@ def create_trial(
 
             import optuna
             from optuna.distributions import CategoricalDistribution
-            from optuna.distributions import UniformDistribution
+            from optuna.distributions import FloatDistribution
 
             trial = optuna.trial.create_trial(
                 params={"x": 1.0, "y": 0},
                 distributions={
-                    "x": UniformDistribution(0, 10),
+                    "x": FloatDistribution(0, 10),
                     "y": CategoricalDistribution([-1, 0, 1]),
                 },
                 value=5.0,

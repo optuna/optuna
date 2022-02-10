@@ -19,11 +19,8 @@ import optuna
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import PartialFixedSampler
 from optuna.study import Study
@@ -142,71 +139,17 @@ def test_random_sampler_reseed_rng() -> None:
 @pytest.mark.parametrize(
     "distribution",
     [
-        UniformDistribution(-1.0, 1.0),
-        UniformDistribution(0.0, 1.0),
-        UniformDistribution(-1.0, 0.0),
         FloatDistribution(-1.0, 1.0),
         FloatDistribution(0.0, 1.0),
         FloatDistribution(-1.0, 0.0),
-    ],
-)
-def test_uniform(
-    sampler_class: Callable[[], BaseSampler],
-    distribution: Union[FloatDistribution, UniformDistribution],
-) -> None:
-
-    study = optuna.study.create_study(sampler=sampler_class())
-    points = np.array(
-        [
-            study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution)
-            for _ in range(100)
-        ]
-    )
-    assert np.all(points >= distribution.low)
-    assert np.all(points < distribution.high)
-    assert not isinstance(
-        study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution),
-        np.floating,
-    )
-
-
-@parametrize_sampler
-@pytest.mark.parametrize(
-    "distribution", [LogUniformDistribution(1e-7, 1.0), FloatDistribution(1e-7, 1.0, log=True)]
-)
-def test_log_uniform(
-    sampler_class: Callable[[], BaseSampler],
-    distribution: Union[FloatDistribution, LogUniformDistribution],
-) -> None:
-
-    study = optuna.study.create_study(sampler=sampler_class())
-    points = np.array(
-        [
-            study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution)
-            for _ in range(100)
-        ]
-    )
-    assert np.all(points >= distribution.low)
-    assert np.all(points < distribution.high)
-    assert not isinstance(
-        study.sampler.sample_independent(study, _create_new_trial(study), "x", distribution),
-        np.floating,
-    )
-
-
-@parametrize_sampler
-@pytest.mark.parametrize(
-    "distribution",
-    [
-        DiscreteUniformDistribution(-10, 10, 0.1),
-        DiscreteUniformDistribution(-10.2, 10.2, 0.1),
+        FloatDistribution(1e-7, 1.0, log=True),
         FloatDistribution(-10, 10, step=0.1),
         FloatDistribution(-10.2, 10.2, step=0.1),
     ],
 )
-def test_discrete_uniform(
+def test_float(
     sampler_class: Callable[[], BaseSampler],
-    distribution: Union[FloatDistribution, DiscreteUniformDistribution],
+    distribution: FloatDistribution,
 ) -> None:
 
     study = optuna.study.create_study(sampler=sampler_class())
@@ -223,15 +166,12 @@ def test_discrete_uniform(
         np.floating,
     )
 
-    # Check all points are multiples of distribution.q.
-    points = points
-    points -= distribution.low
-    if isinstance(distribution, DiscreteUniformDistribution):
-        points /= distribution.q
-    else:
+    if distribution.step is not None:
+        # Check all points are multiples of distribution.step.
+        points -= distribution.low
         points /= distribution.step
-    round_points = np.round(points)
-    np.testing.assert_almost_equal(round_points, points)
+        round_points = np.round(points)
+        np.testing.assert_almost_equal(round_points, points)
 
 
 @parametrize_sampler
@@ -293,9 +233,6 @@ def test_categorical(
 @pytest.mark.parametrize(
     "x_distribution",
     [
-        UniformDistribution(-1.0, 1.0),
-        LogUniformDistribution(1e-7, 1.0),
-        DiscreteUniformDistribution(-10, 10, 0.5),
         FloatDistribution(-1.0, 1.0),
         FloatDistribution(1e-7, 1.0, log=True),
         FloatDistribution(-10, 10, step=0.5),
@@ -307,9 +244,6 @@ def test_categorical(
 @pytest.mark.parametrize(
     "y_distribution",
     [
-        UniformDistribution(-1.0, 1.0),
-        LogUniformDistribution(1e-7, 1.0),
-        DiscreteUniformDistribution(-10, 10, 0.5),
         FloatDistribution(-1.0, 1.0),
         FloatDistribution(1e-7, 1.0, log=True),
         FloatDistribution(-10, 10, step=0.5),
@@ -338,9 +272,6 @@ def test_sample_relative_numerical(
         assert isinstance(
             distribution,
             (
-                UniformDistribution,
-                LogUniformDistribution,
-                DiscreteUniformDistribution,
                 FloatDistribution,
                 IntDistribution,
             ),
@@ -384,9 +315,6 @@ def test_sample_relative_categorical(relative_sampler_class: Callable[[], BaseSa
 @pytest.mark.parametrize(
     "x_distribution",
     [
-        UniformDistribution(-1.0, 1.0),
-        LogUniformDistribution(1e-7, 1.0),
-        DiscreteUniformDistribution(-10, 10, 0.5),
         FloatDistribution(-1.0, 1.0),
         FloatDistribution(1e-7, 1.0, log=True),
         FloatDistribution(-10, 10, step=0.5),
@@ -413,9 +341,6 @@ def test_sample_relative_mixed(
     assert isinstance(
         search_space["x"],
         (
-            UniformDistribution,
-            LogUniformDistribution,
-            DiscreteUniformDistribution,
             FloatDistribution,
             IntDistribution,
         ),
@@ -601,16 +526,10 @@ def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> Non
 @pytest.mark.parametrize(
     "distribution",
     [
-        UniformDistribution(-1.0, 1.0),
-        UniformDistribution(0.0, 1.0),
-        UniformDistribution(-1.0, 0.0),
         FloatDistribution(-1.0, 1.0),
         FloatDistribution(0.0, 1.0),
         FloatDistribution(-1.0, 0.0),
-        LogUniformDistribution(1e-7, 1.0),
         FloatDistribution(1e-7, 1.0, log=True),
-        DiscreteUniformDistribution(-10, 10, 0.1),
-        DiscreteUniformDistribution(-10.2, 10.2, 0.1),
         FloatDistribution(-10, 10, step=0.1),
         FloatDistribution(-10.2, 10.2, step=0.1),
         IntDistribution(-10, 10),
@@ -626,7 +545,7 @@ def test_partial_fixed_sampling(sampler_class: Callable[[], BaseSampler]) -> Non
     ],
 )
 def test_multi_objective_sample_independent(
-    multi_objective_sampler_class: Callable[[], BaseSampler], distribution: UniformDistribution
+    multi_objective_sampler_class: Callable[[], BaseSampler], distribution: BaseDistribution
 ) -> None:
     study = optuna.study.create_study(
         directions=["minimize", "maximize"], sampler=multi_objective_sampler_class()
@@ -641,13 +560,14 @@ def test_multi_objective_sample_independent(
             # Please see https://github.com/optuna/optuna/pull/393 why this assertion is needed.
             assert not isinstance(value, np.floating)
 
-        if isinstance(distribution, DiscreteUniformDistribution):
-            # Check the value is a multiple of `distribution.q` which is
-            # the quantization interval of the distribution.
-            value -= distribution.low
-            value /= distribution.q
-            round_value = np.round(value)
-            np.testing.assert_almost_equal(round_value, value)
+        if isinstance(distribution, FloatDistribution):
+            if distribution.step is not None:
+                # Check the value is a multiple of `distribution.q` which is
+                # the quantization interval of the distribution.
+                value -= distribution.low
+                value /= distribution.step
+                round_value = np.round(value)
+                np.testing.assert_almost_equal(round_value, value)
 
 
 def test_after_trial() -> None:
@@ -815,9 +735,6 @@ def test_sample_single_distribution(sampler_class: Callable[[], BaseSampler]) ->
         "d": FloatDistribution(low=1.0, high=1.0),
         "e": FloatDistribution(low=1.0, high=1.0, log=True),
         "f": FloatDistribution(low=1.0, high=1.0, step=1.0),
-        "g": UniformDistribution(low=1.0, high=1.0),
-        "h": LogUniformDistribution(low=1.0, high=1.0),
-        "i": DiscreteUniformDistribution(low=1.0, high=1.0, q=1.0),
     }
 
     with warnings.catch_warnings():

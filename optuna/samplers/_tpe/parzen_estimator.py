@@ -16,9 +16,6 @@ EPS = 1e-12
 SIGMA0_MAGNITUDE = 0.2
 
 _DISTRIBUTION_CLASSES = (
-    distributions.UniformDistribution,
-    distributions.LogUniformDistribution,
-    distributions.DiscreteUniformDistribution,
     distributions.CategoricalDistribution,
     distributions.FloatDistribution,
     distributions.IntDistribution,
@@ -230,19 +227,7 @@ class _ParzenEstimator:
     ) -> Tuple[Optional[float], Optional[float], Optional[float]]:
 
         # We calculate low and high.
-        if isinstance(distribution, distributions.UniformDistribution):
-            low = distribution.low
-            high = distribution.high
-            q = None
-        elif isinstance(distribution, distributions.LogUniformDistribution):
-            low = np.log(distribution.low)
-            high = np.log(distribution.high)
-            q = None
-        elif isinstance(distribution, distributions.DiscreteUniformDistribution):
-            q = distribution.q
-            low = distribution.low - 0.5 * q
-            high = distribution.high + 0.5 * q
-        elif isinstance(distribution, distributions.FloatDistribution):
+        if isinstance(distribution, distributions.FloatDistribution):
             if distribution.log:
                 low = np.log(distribution.low)
                 high = np.log(distribution.high)
@@ -266,9 +251,6 @@ class _ParzenEstimator:
                 high = distribution.high + 0.5 * q
         else:
             distribution_list = [
-                distributions.UniformDistribution.__name__,
-                distributions.LogUniformDistribution.__name__,
-                distributions.DiscreteUniformDistribution.__name__,
                 distributions.CategoricalDistribution.__name__,
                 distributions.FloatDistribution.__name__,
                 distributions.IntDistribution.__name__,
@@ -291,9 +273,7 @@ class _ParzenEstimator:
             distribution = self._search_space[param_name]
 
             assert isinstance(distribution, _DISTRIBUTION_CLASSES)
-            if isinstance(distribution, distributions.LogUniformDistribution):
-                samples = np.log(samples)
-            elif isinstance(
+            if isinstance(
                 distribution,
                 (distributions.FloatDistribution, distributions.IntDistribution),
             ):
@@ -312,18 +292,7 @@ class _ParzenEstimator:
             distribution = self._search_space[param_name]
 
             assert isinstance(distribution, _DISTRIBUTION_CLASSES)
-            if isinstance(distribution, distributions.UniformDistribution):
-                transformed[param_name] = samples
-            elif isinstance(distribution, distributions.LogUniformDistribution):
-                transformed[param_name] = np.exp(samples)
-            elif isinstance(distribution, distributions.DiscreteUniformDistribution):
-                q = self._q[param_name]
-                assert q is not None
-                samples = np.round((samples - distribution.low) / q) * q + distribution.low
-                transformed[param_name] = np.asarray(
-                    np.clip(samples, distribution.low, distribution.high)
-                )
-            elif isinstance(distribution, distributions.FloatDistribution):
+            if isinstance(distribution, distributions.FloatDistribution):
                 if distribution.log:
                     transformed[param_name] = np.exp(samples)
                 elif distribution.step is not None:

@@ -10,20 +10,14 @@ import numpy as np
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 
 
 _NUMERICAL_DISTRIBUTIONS = (
-    UniformDistribution,
-    LogUniformDistribution,
-    DiscreteUniformDistribution,
     FloatDistribution,
     IntDistribution,
 )
