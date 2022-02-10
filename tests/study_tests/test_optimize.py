@@ -86,7 +86,7 @@ def test_run_trial_invoke_study_tell_with_suppressing_warning(storage_mode: str)
         def func_numerical(trial: Trial) -> float:
             return trial.suggest_float("v", 0, 10)
 
-        study.tell = mock.MagicMock(side_effect=study.tell)
+        study.tell = mock.MagicMock(side_effect=study.tell)  # type: ignore
         _optimize._run_trial(study, func_numerical, catch=())
         study.tell.assert_called_with(
             mock.ANY, values=mock.ANY, state=mock.ANY, suppress_warning=True
