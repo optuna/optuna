@@ -181,7 +181,7 @@ def _run_trial(
     study: "optuna.Study",
     func: "optuna.study.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
-) -> trial_module.Trial:
+) -> trial_module.FrozenTrial:
     if study._storage.is_heartbeat_enabled():
         optuna.storages.fail_stale_trials(study)
 
@@ -245,7 +245,7 @@ def _run_trial(
         and not isinstance(func_err, catch)
     ):
         raise func_err
-    return trial
+    return frozen_trial
 
 
 def _record_heartbeat(trial_id: int, storage: storages.BaseStorage, stop_event: Event) -> None:

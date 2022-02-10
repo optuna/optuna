@@ -19,8 +19,7 @@ def test_run_trial_value_error(storage_mode: str) -> None:
 
             raise ValueError
 
-        trial = _optimize._run_trial(study, func_value_error, catch=(ValueError,))
-        frozen_trial = study._storage.get_trial(trial._trial_id)
+        frozen_trial = _optimize._run_trial(study, func_value_error, catch=(ValueError,))
 
         assert frozen_trial.state == TrialState.FAIL
 
@@ -40,8 +39,7 @@ def test_run_trial_none(storage_mode: str) -> None:
 
             return None  # type: ignore
 
-        trial = _optimize._run_trial(study, func_none, catch=(Exception,))
-        frozen_trial = study._storage.get_trial(trial._trial_id)
+        frozen_trial = _optimize._run_trial(study, func_none, catch=(Exception,))
 
         assert frozen_trial.state == TrialState.FAIL
 
@@ -57,8 +55,7 @@ def test_run_trial_nan(storage_mode: str) -> None:
 
             return float("nan")
 
-        trial = _optimize._run_trial(study, func_nan, catch=(Exception,))
-        frozen_trial = study._storage.get_trial(trial._trial_id)
+        frozen_trial = _optimize._run_trial(study, func_nan, catch=(Exception,))
 
         assert frozen_trial.state == TrialState.FAIL
 
@@ -73,7 +70,6 @@ def test_run_trial_nonnumerical(storage_mode: str) -> None:
 
             return "value"  # type: ignore
 
-        trial = _optimize._run_trial(study, func_nonnumerical, catch=())
-        frozen_trial = study._storage.get_trial(trial._trial_id)
+        frozen_trial = _optimize._run_trial(study, func_nonnumerical, catch=())
 
         assert frozen_trial.state == TrialState.FAIL
