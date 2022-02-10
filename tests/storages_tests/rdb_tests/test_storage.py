@@ -34,8 +34,8 @@ from optuna.trial import Trial
 
 from .create_db import mo_objective_test_upgrade
 from .create_db import objective_test_upgrade
-from .create_db_v3 import objective_test_upgrade_v3
 from .create_db_v3 import mo_objective_test_upgrade_v3
+from .create_db_v3 import objective_test_upgrade_v3
 
 
 def test_init() -> None:
