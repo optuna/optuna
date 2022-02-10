@@ -79,7 +79,7 @@ def _try_crossover(
     )  # Parent individual with NUMERICAL_DISTRIBUTIONS parameter.
 
     child_numerical_array = crossover.crossover(
-        parents_numerical_params, rng, study, numerical_search_space
+        parents_numerical_params, rng, study, numerical_transform.bounds
     )
     child_numerical_params = numerical_transform.untransform(child_numerical_array)
     child_params.update(child_numerical_params)

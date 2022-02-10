@@ -14,6 +14,7 @@ import numpy as np
 import pytest
 
 import optuna
+from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -618,6 +619,7 @@ def test_crossover_deterministic(crossover: BaseCrossover, expected_params: np.n
         "x": FloatDistribution(1, 10),
         "y": FloatDistribution(1, 10),
     }
+    numerical_transform = _SearchSpaceTransform(search_space)
     parent_params = np.array([[1.0, 2.0], [3.0, 4.0]])
 
     if crossover.n_parents == 3:
@@ -636,5 +638,5 @@ def test_crossover_deterministic(crossover: BaseCrossover, expected_params: np.n
     rng = Mock()
     rng.rand = Mock(side_effect=_rand)
     rng.normal = Mock(side_effect=_normal)
-    child_params = crossover.crossover(parent_params, rng, study, search_space)
+    child_params = crossover.crossover(parent_params, rng, study, numerical_transform.bounds)
     np.testing.assert_almost_equal(child_params, expected_params)
