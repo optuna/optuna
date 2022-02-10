@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 
 from optuna import create_study
@@ -73,3 +75,19 @@ def test_run_trial_nonnumerical(storage_mode: str) -> None:
         frozen_trial = _optimize._run_trial(study, func_nonnumerical, catch=())
 
         assert frozen_trial.state == TrialState.FAIL
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_run_trial_invoke_study_tell_with_suppressing_warning(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+
+        def func_numerical(trial: Trial) -> float:
+            return trial.suggest_float("v", 0, 10)
+
+        study.tell = mock.MagicMock(side_effect=study.tell)
+        _optimize._run_trial(study, func_numerical, catch=())
+        study.tell.assert_called_with(
+            mock.ANY, values=mock.ANY, state=mock.ANY, suppress_warning=True
+        )
