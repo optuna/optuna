@@ -27,6 +27,7 @@ from optuna.samplers.nsgaii import SPXCrossover
 from optuna.samplers.nsgaii import UNDXCrossover
 from optuna.samplers.nsgaii import UniformCrossover
 from optuna.samplers.nsgaii import VSBXCrossover
+from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
 from optuna.samplers.nsgaii._sampler import _CONSTRAINTS_KEY
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -567,29 +568,28 @@ def test_crossover_numerical_distribution(crossover: BaseCrossover) -> None:
     study = optuna.study.create_study()
     rng = np.random.RandomState()
     search_space = {"x": FloatDistribution(1, 10), "y": IntDistribution(1, 10)}
+    numerical_transform = _SearchSpaceTransform(search_space)
     parent_params = np.array([[1.0, 2], [3.0, 4]])
 
     if crossover.n_parents == 3:
         parent_params = np.append(parent_params, [[5.0, 6]], axis=0)
 
-    child_params = crossover.crossover(parent_params, rng, study, search_space)
+    child_params = crossover.crossover(parent_params, rng, study, numerical_transform.bounds)
     assert child_params.ndim == 1
     assert len(child_params) == len(search_space)
     assert np.nan not in child_params
     assert np.inf not in child_params
 
 
-def test_crossover_categorical_distribution() -> None:
+def test_crossover_inlined_categorical_distribution() -> None:
 
-    study = optuna.study.create_study()
     search_space: Dict[str, BaseDistribution] = {
         "x": CategoricalDistribution(choices=["a", "c"]),
         "y": CategoricalDistribution(choices=["b", "d"]),
     }
     parent_params = np.array([["a", "b"], ["c", "d"]])
-
-    crossover = UniformCrossover()
-    child_params = crossover.crossover(parent_params, np.random.RandomState(), study, search_space)
+    rng = np.random.RandomState()
+    child_params = _inlined_categorical_uniform_crossover(parent_params, rng, 0.5, search_space)
 
     assert child_params.ndim == 1
     assert len(child_params) == len(search_space)

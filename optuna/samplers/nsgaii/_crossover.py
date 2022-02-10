@@ -17,7 +17,6 @@ from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
-from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
@@ -55,11 +54,9 @@ def _try_crossover(
             ]
         )
 
-        categorical_crossover = UniformCrossover(swapping_prob)
-        child_categorical_array = categorical_crossover.crossover(
-            parents_categorical_params, rng, study, categorical_search_space
+        child_categorical_array = _inlined_categorical_uniform_crossover(
+            parents_categorical_params, rng, swapping_prob, categorical_search_space
         )
-
         child_categorical_params = {
             param: value for param, value in zip(categorical_search_space, child_categorical_array)
         }
@@ -173,3 +170,19 @@ def _is_contained(params: Dict[str, Any], search_space: Dict[str, BaseDistributi
         if not param_distribution._contains(param_distribution.to_internal_repr(param)):
             return False
     return True
+
+
+def _inlined_categorical_uniform_crossover(
+    parent_params: np.ndarray,
+    rng: np.random.RandomState,
+    swapping_prob: float,
+    search_space: Dict[str, BaseDistribution],
+) -> np.ndarray:
+
+    # We can't use uniform crossover implementation of `BaseCrossover` for
+    # parameters from `CategoricalDistribution`, since categorical params are
+    # passed to crossover untransformed, which is not what `BaseCrossover`
+    # implementations expect.
+    n_categorical_params = len(search_space)
+    masks = (rng.rand(n_categorical_params) >= swapping_prob).astype(int)
+    return parent_params[masks, range(n_categorical_params)]
