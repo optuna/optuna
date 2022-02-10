@@ -1,10 +1,8 @@
-from typing import Dict
 from typing import Optional
 
 import numpy as np
 
 from optuna._experimental import experimental
-from optuna.distributions import BaseDistribution
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
 
@@ -39,7 +37,7 @@ class SPXCrossover(BaseCrossover):
         parents_params: np.ndarray,
         rng: np.random.RandomState,
         study: Study,
-        search_space: Dict[str, BaseDistribution],
+        search_space_bounds: np.ndarray,
     ) -> np.ndarray:
 
         # https://www.researchgate.net/publication/2388486_Progress_Toward_Linkage_Learning_in_Real-Coded_GAs_with_Simplex_Crossover
@@ -49,7 +47,7 @@ class SPXCrossover(BaseCrossover):
         G = np.mean(parents_params, axis=0)  # Equation (1).
         rs = np.power(rng.rand(n), 1 / (np.arange(n) + 1))  # Equation (2).
 
-        epsilon = np.sqrt(len(search_space) + 2) if self._epsilon is None else self._epsilon
+        epsilon = np.sqrt(len(search_space_bounds) + 2) if self._epsilon is None else self._epsilon
         xks = [G + epsilon * (pk - G) for pk in parents_params]  # Equation (3).
 
         ck = 0  # Equation (4).

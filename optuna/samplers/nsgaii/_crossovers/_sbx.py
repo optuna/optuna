@@ -1,30 +1,10 @@
-from typing import Dict
 from typing import Optional
 
 import numpy as np
 
 from optuna._experimental import experimental
-from optuna.distributions import BaseDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import FloatDistribution
-from optuna.distributions import IntDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
-
-
-_NUMERICAL_DISTRIBUTIONS = (
-    UniformDistribution,
-    LogUniformDistribution,
-    DiscreteUniformDistribution,
-    FloatDistribution,
-    IntUniformDistribution,
-    IntLogUniformDistribution,
-    IntDistribution,
-)
 
 
 @experimental("3.0.0")
@@ -57,7 +37,7 @@ class SBXCrossover(BaseCrossover):
         parents_params: np.ndarray,
         rng: np.random.RandomState,
         study: Study,
-        search_space: Dict[str, BaseDistribution],
+        search_space_bounds: np.ndarray,
     ) -> np.ndarray:
 
         # https://www.researchgate.net/profile/M-M-Raghuwanshi/publication/267198495_Simulated_Binary_Crossover_with_Lognormal_Distribution/links/5576c78408ae7536375205d7/Simulated-Binary-Crossover-with-Lognormal-Distribution.pdf
@@ -65,14 +45,8 @@ class SBXCrossover(BaseCrossover):
 
         # To avoid generating solutions that violate the box constraints,
         # alpha1, alpha2, xls and xus are introduced, unlike the reference.
-        xls_list = []
-        xus_list = []
-        for distribution in search_space.values():
-            assert isinstance(distribution, _NUMERICAL_DISTRIBUTIONS)
-            xls_list.append(distribution.low)
-            xus_list.append(distribution.high)
-        xls = np.array(xls_list)
-        xus = np.array(xus_list)
+        xls = search_space_bounds[..., 0]
+        xus = search_space_bounds[..., 1]
 
         xs_min = np.min(parents_params, axis=0)
         xs_max = np.max(parents_params, axis=0)
@@ -87,7 +61,7 @@ class SBXCrossover(BaseCrossover):
         alpha1 = 2 - np.power(beta1, -(eta + 1))
         alpha2 = 2 - np.power(beta2, -(eta + 1))
 
-        us = rng.rand(len(search_space))
+        us = rng.rand(len(search_space_bounds))
         mask1 = us > 1 / alpha1  # Equation (3).
         betaq1 = np.power(us * alpha1, 1 / (eta + 1))  # Equation (3).
         betaq1[mask1] = np.power((1 / (2 - us * alpha1)), 1 / (eta + 1))[mask1]  # Equation (3).

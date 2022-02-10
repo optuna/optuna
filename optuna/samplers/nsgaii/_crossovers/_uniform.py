@@ -1,8 +1,5 @@
-from typing import Dict
-
 import numpy as np
 
-from optuna.distributions import BaseDistribution
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
 
@@ -34,13 +31,13 @@ class UniformCrossover(BaseCrossover):
         parents_params: np.ndarray,
         rng: np.random.RandomState,
         study: Study,
-        search_space: Dict[str, BaseDistribution],
+        search_space_bounds: np.ndarray,
     ) -> np.ndarray:
 
         # https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms
         # Section 1 Introduction
 
-        n_params = len(search_space)
+        n_params = len(search_space_bounds)
         masks = (rng.rand(n_params) >= self._swapping_prob).astype(int)
         child_params = parents_params[masks, range(n_params)]
 

@@ -1,10 +1,8 @@
-from typing import Dict
 from typing import Optional
 
 import numpy as np
 
 from optuna._experimental import experimental
-from optuna.distributions import BaseDistribution
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
 
@@ -39,7 +37,7 @@ class VSBXCrossover(BaseCrossover):
         parents_params: np.ndarray,
         rng: np.random.RandomState,
         study: Study,
-        search_space: Dict[str, BaseDistribution],
+        search_space_bounds: np.ndarray,
     ) -> np.ndarray:
 
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.422.952&rep=rep1&type=pdf
@@ -49,7 +47,7 @@ class VSBXCrossover(BaseCrossover):
         else:
             eta = self._eta
 
-        us = rng.rand(len(search_space))
+        us = rng.rand(len(search_space_bounds))
         beta_1 = np.power(1 / 2 * us, 1 / (eta + 1))
         beta_2 = np.power(1 / 2 * (1 - us), 1 / (eta + 1))
         mask = us > 0.5

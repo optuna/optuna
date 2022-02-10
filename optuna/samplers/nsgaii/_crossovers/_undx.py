@@ -1,10 +1,8 @@
-from typing import Dict
 from typing import Optional
 
 import numpy as np
 
 from optuna._experimental import experimental
-from optuna.distributions import BaseDistribution
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
 
@@ -72,16 +70,16 @@ class UNDXCrossover(BaseCrossover):
         parents_params: np.ndarray,
         rng: np.random.RandomState,
         study: Study,
-        search_space: Dict[str, BaseDistribution],
+        search_space_bounds: np.ndarray,
     ) -> np.ndarray:
 
         # https://ieeexplore.ieee.org/document/782672
         # Section 2 Unimodal Normal Distribution Crossover
-        n = len(search_space)
+        n = len(search_space_bounds)
         xp = (parents_params[0] + parents_params[1]) / 2  # Section 2 (2).
         d = parents_params[0] - parents_params[1]  # Section 2 (3).
         if self._sigma_eta is None:
-            sigma_eta = 0.35 / np.sqrt(len(search_space))
+            sigma_eta = 0.35 / np.sqrt(n)
         else:
             sigma_eta = self._sigma_eta
 
