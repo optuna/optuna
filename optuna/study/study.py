@@ -775,7 +775,7 @@ class Study:
 
         frozen_trial = copy.deepcopy(self._storage.get_trial(trial_id))
         if warning_message is not None:
-            frozen_trial.set_user_attr("warning_message", warning_message)
+            frozen_trial.set_system_attr("study_tell_warning", warning_message)
         return frozen_trial
 
     def set_user_attr(self, key: str, value: Any) -> None:

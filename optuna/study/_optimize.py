@@ -234,8 +234,8 @@ def _run_trial(
         elif frozen_trial.state == TrialState.FAIL:
             if func_err is not None:
                 _log_failed_trial(frozen_trial, repr(func_err), exc_info=func_err_fail_exc_info)
-            elif "warning_message" in frozen_trial.user_attrs:
-                _log_failed_trial(frozen_trial, frozen_trial.user_attrs["warning_message"])
+            elif "study_tell_warning" in frozen_trial.system_attrs:
+                _log_failed_trial(frozen_trial, frozen_trial.system_attrs["study_tell_warning"])
         else:
             assert False, "Should not reach."
 
