@@ -649,7 +649,9 @@ class Study:
             A returned trial is deep copied thus user can modify it as needed.
         """
 
-        return self._tell(trial=trial, values=values, state=state, skip_if_finished=skip_if_finished)
+        return self._tell(
+            trial=trial, values=values, state=state, skip_if_finished=skip_if_finished
+        )
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
