@@ -218,9 +218,10 @@ def _run_trial(
         stop_event.set()
         thread.join()
 
-    # `Study.tell` may raise during trial post-processing.
+    # `Study._tell` may raise during trial post-processing.
     try:
-        frozen_trial = study.tell(
+        # Note: call `Study._tell` instead of `Study.tell` to suppress warning.
+        frozen_trial = study._tell(
             trial, values=value_or_values, state=state, suppress_warning=True
         )
     except Exception:
