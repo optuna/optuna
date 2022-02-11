@@ -18,7 +18,7 @@ def convert_positional_args(
     previous_positional_arg_names: Sequence[str],
     warning_stacklevel: int = 2,
 ) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
-    """Convert positional arguments to keyword arguments
+    """Convert positional arguments to keyword arguments.
 
     Args:
         previous_positional_arg_names: List of names previously given as positional arguments.

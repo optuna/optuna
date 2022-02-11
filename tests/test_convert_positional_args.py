@@ -19,7 +19,7 @@ def test_convert_positional_args_decorator() -> None:
     assert decorated_func.__name__ == _sample_func.__name__
 
 
-def testconvert_positional_args_user_warning() -> None:
+def test_convert_positional_args_future_warning() -> None:
     previous_positional_arg_names: List[str] = ["a", "b"]
     decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
@@ -30,7 +30,7 @@ def testconvert_positional_args_user_warning() -> None:
     with pytest.warns(FutureWarning) as record:
         decorated_func(1, 2, c=3)  # type: ignore
         decorated_func(1, b=2, c=3)  # type: ignore
-        decorated_func(a=1, b=2, c=3)  # no warn
+        decorated_func(a=1, b=2, c=3)  # No warning.
 
     assert len(record) == 2
     for warn in record.list:
@@ -38,7 +38,7 @@ def testconvert_positional_args_user_warning() -> None:
         assert _sample_func.__name__ in str(warn.message)
 
 
-def testconvert_positional_args_mypy_type_inference() -> None:
+def test_convert_positional_args_mypy_type_inference() -> None:
     previous_positional_arg_names: List[str] = []
     decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
@@ -66,7 +66,7 @@ def testconvert_positional_args_mypy_type_inference() -> None:
     assert ret_sample.method()
 
 
-def testconvert_positional_args_invalid_previous_positional_arg_names() -> None:
+def test_convert_positional_args_invalid_previous_positional_arg_names() -> None:
     def _test_converter(previous_positional_arg_names: List[str], raise_error: bool) -> None:
         decorator_converter = convert_positional_args(
             previous_positional_arg_names=previous_positional_arg_names
@@ -89,7 +89,7 @@ def testconvert_positional_args_invalid_previous_positional_arg_names() -> None:
     _test_converter(previous_positional_arg_names=["b", "a"], raise_error=False)
 
 
-def testconvert_positional_args_invalid_positional_args() -> None:
+def test_convert_positional_args_invalid_positional_args() -> None:
     previous_positional_arg_names: List[str] = ["a", "b"]
     decorator_converter = convert_positional_args(
         previous_positional_arg_names=previous_positional_arg_names
