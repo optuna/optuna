@@ -1,3 +1,4 @@
+import re
 from typing import List
 
 import pytest
@@ -66,27 +67,27 @@ def test_convert_positional_args_mypy_type_inference() -> None:
     assert ret_sample.method()
 
 
-def test_convert_positional_args_invalid_previous_positional_arg_names() -> None:
-    def _test_converter(previous_positional_arg_names: List[str], raise_error: bool) -> None:
-        decorator_converter = convert_positional_args(
-            previous_positional_arg_names=previous_positional_arg_names
-        )
-        assert callable(decorator_converter)
+@pytest.mark.parametrize(
+    "previous_positional_arg_names, raise_error",
+    [(["a", "b", "c", "d"], True), (["a", "d"], True), (["b", "a"], False)],
+)
+def test_convert_positional_args_invalid_previous_positional_arg_names(
+    previous_positional_arg_names: List[str], raise_error: bool
+) -> None:
+    decorator_converter = convert_positional_args(
+        previous_positional_arg_names=previous_positional_arg_names
+    )
+    assert callable(decorator_converter)
 
-        if raise_error:
-            with pytest.raises(AssertionError) as record:
-                decorator_converter(_sample_func)
-            assert str(record.value) == (
-                f"{set(previous_positional_arg_names)} is not a subset of"
-                f" {set(['a', 'b', 'c'])}"
-            )
-        else:
+    if raise_error:
+        with pytest.raises(AssertionError) as record:
             decorator_converter(_sample_func)
-
-    _test_converter(previous_positional_arg_names=["a", "b", "c", "d"], raise_error=True)
-    _test_converter(previous_positional_arg_names=["a", "d"], raise_error=True)
-    # Changing the order of the arguments is allowed.
-    _test_converter(previous_positional_arg_names=["b", "a"], raise_error=False)
+        res = re.findall(r"({.+?}|set\(\))", str(record.value))
+        assert len(res) == 2
+        assert eval(res[0]) == set(previous_positional_arg_names)
+        assert eval(res[1]) == set(["a", "b", "c"])
+    else:
+        decorator_converter(_sample_func)
 
 
 def test_convert_positional_args_invalid_positional_args() -> None:
