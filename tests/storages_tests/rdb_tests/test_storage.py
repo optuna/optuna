@@ -32,10 +32,10 @@ from optuna.testing.storage import StorageSupplier
 from optuna.testing.threading import _TestableThread
 from optuna.trial import Trial
 
-from .create_db import objective_test_upgrade_old
+from .create_db import mo_objective_test_upgrade
 from .create_db import mo_objective_test_upgrade_old
 from .create_db import objective_test_upgrade
-from .create_db import mo_objective_test_upgrade
+from .create_db import objective_test_upgrade_old
 
 
 def test_init() -> None:
