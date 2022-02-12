@@ -21,7 +21,7 @@ I recommend you to create isolated environment using `venv` for this purpose.
 2. Generate database
 
 ```sh
-> python3 create_db_v3.py
+> python3 create_db.py
 [I 2022-02-05 15:39:32,488] A new study created in RDB with name: single_empty
 ...
 >
