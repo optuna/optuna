@@ -32,10 +32,10 @@ from optuna.testing.storage import StorageSupplier
 from optuna.testing.threading import _TestableThread
 from optuna.trial import Trial
 
-from .create_db import mo_objective_test_upgrade
+from .create_db import objective_test_upgrade_old
+from .create_db import mo_objective_test_upgrade_old
 from .create_db import objective_test_upgrade
-from .create_db_v3 import mo_objective_test_upgrade_v3
-from .create_db_v3 import objective_test_upgrade_v3
+from .create_db import mo_objective_test_upgrade
 
 
 def test_init() -> None:
@@ -190,6 +190,95 @@ def test_upgrade_identity() -> None:
 
 
 @pytest.mark.parametrize("optuna_version", ["0.9.0", "1.2.0", "1.3.0", "2.4.0"])
+def test_upgrade_single_objective_optimization_old(optuna_version: str) -> None:
+    src_db_file = os.path.join(
+        os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
+    )
+    with tempfile.TemporaryDirectory() as workdir:
+        shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
+        storage_url = f"sqlite:///{workdir}/sqlite.db"
+
+        storage = RDBStorage(storage_url, skip_compatibility_check=True)
+        assert storage.get_current_version() == f"v{optuna_version}.a"
+        head_version = storage.get_head_version()
+        storage.upgrade()
+        assert head_version == storage.get_current_version()
+
+        # Create a new study.
+        study = create_study(storage=storage)
+        assert len(study.trials) == 0
+        study.optimize(objective_test_upgrade, n_trials=1)
+        assert len(study.trials) == 1
+
+        # Check empty study.
+        study = load_study(storage=storage, study_name="single_empty")
+        assert len(study.trials) == 0
+        study.optimize(objective_test_upgrade_old, n_trials=1)
+        assert len(study.trials) == 1
+
+        # Resume single objective optimization.
+        study = load_study(storage=storage, study_name="single")
+        assert len(study.trials) == 1
+        study.optimize(objective_test_upgrade_old, n_trials=1)
+        assert len(study.trials) == 2
+        for trial in study.trials:
+            assert trial.system_attrs["a"] == 0
+            assert trial.user_attrs["b"] == 1
+            assert trial.intermediate_values[0] == 0.5
+            assert -5 <= trial.params["x"] <= 5
+            assert 0 <= trial.params["y"] <= 10
+            assert trial.params["z"] in (-5, 0, 5)
+            assert trial.value is not None and 0 <= trial.value <= 150
+
+        assert study.system_attrs["c"] == 2
+        assert study.user_attrs["d"] == 3
+
+
+@pytest.mark.parametrize("optuna_version", ["2.4.0"])
+def test_upgrade_multi_objective_optimization_old(optuna_version: str) -> None:
+    src_db_file = os.path.join(
+        os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
+    )
+    with tempfile.TemporaryDirectory() as workdir:
+        shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
+        storage_url = f"sqlite:///{workdir}/sqlite.db"
+
+        storage = RDBStorage(storage_url, skip_compatibility_check=True)
+        assert storage.get_current_version() == f"v{optuna_version}.a"
+        head_version = storage.get_head_version()
+        storage.upgrade()
+        assert head_version == storage.get_current_version()
+
+        # Create a new study.
+        study = create_study(storage=storage, directions=["minimize", "minimize"])
+        assert len(study.trials) == 0
+        study.optimize(mo_objective_test_upgrade_old, n_trials=1)
+        assert len(study.trials) == 1
+
+        # Check empty study.
+        study = load_study(storage=storage, study_name="multi_empty")
+        assert len(study.trials) == 0
+        study.optimize(mo_objective_test_upgrade_old, n_trials=1)
+        assert len(study.trials) == 1
+
+        # Resume multi-objective optimization.
+        study = load_study(storage=storage, study_name="multi")
+        assert len(study.trials) == 1
+        study.optimize(mo_objective_test_upgrade_old, n_trials=1)
+        assert len(study.trials) == 2
+        for trial in study.trials:
+            assert trial.system_attrs["a"] == 0
+            assert trial.user_attrs["b"] == 1
+            assert -5 <= trial.params["x"] <= 5
+            assert 0 <= trial.params["y"] <= 10
+            assert trial.params["z"] in (-5, 0, 5)
+            assert -5 <= trial.values[0] < 5
+            assert 0 <= trial.values[1] <= 150
+        assert study.system_attrs["c"] == 2
+        assert study.user_attrs["d"] == 3
+
+
+@pytest.mark.parametrize("optuna_version", ["2.6.0"])
 def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
         os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
@@ -225,16 +314,20 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
             assert trial.system_attrs["a"] == 0
             assert trial.user_attrs["b"] == 1
             assert trial.intermediate_values[0] == 0.5
-            assert -5 <= trial.params["x"] <= 5
-            assert 0 <= trial.params["y"] <= 10
+            assert -5 <= trial.params["x1"] <= 5
+            assert 1e-5 <= trial.params["x2"] <= 1e-3
+            assert -6 <= trial.params["x3"] <= 6
+            assert 0 <= trial.params["y1"] <= 10
+            assert 1 <= trial.params["y2"] <= 20
+            assert 5 <= trial.params["y3"] <= 15
             assert trial.params["z"] in (-5, 0, 5)
-            assert trial.value is not None and 0 <= trial.value <= 150
+            assert trial.value is not None and 0 <= trial.value <= 820
 
         assert study.system_attrs["c"] == 2
         assert study.user_attrs["d"] == 3
 
 
-@pytest.mark.parametrize("optuna_version", ["2.4.0"])
+@pytest.mark.parametrize("optuna_version", ["2.6.0"])
 def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
     src_db_file = os.path.join(
         os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
@@ -261,7 +354,7 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
         study.optimize(mo_objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 1
 
-        # Resume multi-objective optimization.
+        # Resume single objective optimization.
         study = load_study(storage=storage, study_name="multi")
         assert len(study.trials) == 1
         study.optimize(mo_objective_test_upgrade, n_trials=1)
@@ -269,102 +362,9 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
         for trial in study.trials:
             assert trial.system_attrs["a"] == 0
             assert trial.user_attrs["b"] == 1
-            assert -5 <= trial.params["x"] <= 5
-            assert 0 <= trial.params["y"] <= 10
-            assert trial.params["z"] in (-5, 0, 5)
-            assert -5 <= trial.values[0] < 5
-            assert 0 <= trial.values[1] <= 150
-        assert study.system_attrs["c"] == 2
-        assert study.user_attrs["d"] == 3
-
-
-@pytest.mark.parametrize("optuna_version", ["2.6.0"])
-def test_upgrade_single_objective_optimization_v3(optuna_version: str) -> None:
-    src_db_file = os.path.join(
-        os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
-    )
-    with tempfile.TemporaryDirectory() as workdir:
-        shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
-        storage_url = f"sqlite:///{workdir}/sqlite.db"
-
-        storage = RDBStorage(storage_url, skip_compatibility_check=True)
-        assert storage.get_current_version() == f"v{optuna_version}.a"
-        head_version = storage.get_head_version()
-        storage.upgrade()
-        assert head_version == storage.get_current_version()
-
-        # Create a new study.
-        study = create_study(storage=storage)
-        assert len(study.trials) == 0
-        study.optimize(objective_test_upgrade_v3, n_trials=1)
-        assert len(study.trials) == 1
-
-        # Check empty study.
-        study = load_study(storage=storage, study_name="single_empty")
-        assert len(study.trials) == 0
-        study.optimize(objective_test_upgrade_v3, n_trials=1)
-        assert len(study.trials) == 1
-
-        # Resume single objective optimization.
-        study = load_study(storage=storage, study_name="single")
-        assert len(study.trials) == 1
-        study.optimize(objective_test_upgrade_v3, n_trials=1)
-        assert len(study.trials) == 2
-        for trial in study.trials:
-            assert trial.system_attrs["a"] == 0
-            assert trial.user_attrs["b"] == 1
-            assert trial.intermediate_values[0] == 0.5
             assert -5 <= trial.params["x1"] <= 5
-            assert -6 <= trial.params["x2"] <= 6
-            assert 1e-5 <= trial.params["x3"] <= 1e-3
-            assert 0 <= trial.params["y1"] <= 10
-            assert 1 <= trial.params["y2"] <= 20
-            assert 5 <= trial.params["y3"] <= 15
-            assert trial.params["z"] in (-5, 0, 5)
-            assert trial.value is not None and 0 <= trial.value <= 820
-
-        assert study.system_attrs["c"] == 2
-        assert study.user_attrs["d"] == 3
-
-
-@pytest.mark.parametrize("optuna_version", ["2.6.0"])
-def test_upgrade_multi_objective_optimization_v3(optuna_version: str) -> None:
-    src_db_file = os.path.join(
-        os.path.dirname(__file__), "test_upgrade_assets", f"{optuna_version}.db"
-    )
-    with tempfile.TemporaryDirectory() as workdir:
-        shutil.copyfile(src_db_file, f"{workdir}/sqlite.db")
-        storage_url = f"sqlite:///{workdir}/sqlite.db"
-
-        storage = RDBStorage(storage_url, skip_compatibility_check=True)
-        assert storage.get_current_version() == f"v{optuna_version}.a"
-        head_version = storage.get_head_version()
-        storage.upgrade()
-        assert head_version == storage.get_current_version()
-
-        # Create a new study.
-        study = create_study(storage=storage, directions=["minimize", "minimize"])
-        assert len(study.trials) == 0
-        study.optimize(mo_objective_test_upgrade_v3, n_trials=1)
-        assert len(study.trials) == 1
-
-        # Check empty study.
-        study = load_study(storage=storage, study_name="multi_empty")
-        assert len(study.trials) == 0
-        study.optimize(mo_objective_test_upgrade_v3, n_trials=1)
-        assert len(study.trials) == 1
-
-        # Resume single objective optimization.
-        study = load_study(storage=storage, study_name="multi")
-        assert len(study.trials) == 1
-        study.optimize(mo_objective_test_upgrade_v3, n_trials=1)
-        assert len(study.trials) == 2
-        for trial in study.trials:
-            assert trial.system_attrs["a"] == 0
-            assert trial.user_attrs["b"] == 1
-            assert -5 <= trial.params["x1"] <= 5
-            assert -6 <= trial.params["x2"] <= 6
-            assert 1e-5 <= trial.params["x3"] <= 1e-3
+            assert 1e-5 <= trial.params["x2"] <= 1e-3
+            assert -6 <= trial.params["x3"] <= 6
             assert 0 <= trial.params["y1"] <= 10
             assert 1 <= trial.params["y2"] <= 20
             assert 5 <= trial.params["y3"] <= 15
@@ -390,8 +390,8 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         old_distribution_dict = old_study.trials[0].distributions
 
         assert isinstance(old_distribution_dict["x1"], UniformDistribution)
-        assert isinstance(old_distribution_dict["x2"], DiscreteUniformDistribution)
-        assert isinstance(old_distribution_dict["x3"], LogUniformDistribution)
+        assert isinstance(old_distribution_dict["x2"], LogUniformDistribution)
+        assert isinstance(old_distribution_dict["x3"], DiscreteUniformDistribution)
         assert isinstance(old_distribution_dict["y1"], IntUniformDistribution)
         assert isinstance(old_distribution_dict["y2"], IntLogUniformDistribution)
         assert isinstance(old_distribution_dict["z"], CategoricalDistribution)
