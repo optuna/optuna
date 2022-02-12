@@ -1,4 +1,4 @@
-### Migration test guide
+### Guide to creating database migration test assets
 
 1. Install Optuna
 
