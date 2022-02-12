@@ -2,7 +2,7 @@
 
 1. Install Optuna
 
-You can know the current stable schema version by checking `optuna/storages/_rdb/alembic/versions`.
+You can view the current stable schema version by checking `optuna/storages/_rdb/alembic/versions`.
 
 ```sh
 > ls optuna/storages/_rdb/alembic/versions
