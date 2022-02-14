@@ -36,7 +36,7 @@ class BaseSampler(object, metaclass=abc.ABCMeta):
     The following figure depicts the lifetime of a trial and how the above three methods are
     called in the trial.
 
-    .. image:: ../../../image/sampling-sequence.png
+    .. image:: ../../../../image/sampling-sequence.png
 
     |
 
