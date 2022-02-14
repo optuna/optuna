@@ -108,6 +108,12 @@ class FloatDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_float`, and passed to
     :mod:`~optuna.samplers` in general.
 
+    .. note::
+        When ``step`` is not :obj:`None`, if the range :math:`[\\mathsf{low}, \\mathsf{high}]`
+        is not divisible by :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced
+        with the maximum of :math:`k \\times \\mathsf{step} + \\mathsf{low} < \\mathsf{high}`,
+        where :math:`k` is an integer.
+
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
@@ -302,6 +308,12 @@ class IntDistribution(BaseDistribution):
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
     :mod:`~optuna.samplers` in general.
+
+    .. note::
+        When ``step`` is not :obj:`None`, if the range :math:`[\\mathsf{low}, \\mathsf{high}]`
+        is not divisible by :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced
+        with the maximum of :math:`k \\times \\mathsf{step} + \\mathsf{low} < \\mathsf{high}`,
+        where :math:`k` is an integer.
 
     Attributes:
         low:

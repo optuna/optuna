@@ -28,6 +28,14 @@ body:
     validations:
       required: true
   - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        Please describe your question.
+    validations:
+      required: true
+  - type: textarea
     id: logs
     attributes:
       label: Error messages, stack traces, or logs

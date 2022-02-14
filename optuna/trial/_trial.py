@@ -656,7 +656,7 @@ class Trial(BaseTrial):
                 "Fixed parameter '{}' with value {} is out of range "
                 "for distribution {}.".format(name, param_value, distribution)
             )
-        return contained
+        return True
 
     def _is_relative_param(self, name: str, distribution: BaseDistribution) -> bool:
 
