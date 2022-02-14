@@ -31,7 +31,7 @@ def test_plot_param_importances() -> None:
 
     bars = figure.findobj(Rectangle)[:-1]  # The last Rectangle is the plot itself.
     plotted_data = [bar.get_width() for bar in bars]
-    # get_yticklabels return a data structure of Text(0, 0, 'param_d')
+    # get_yticklabels returns a data structure of Text(0, 0, 'param_d').
     labels = [label.get_text() for label in figure.get_yticklabels()]
 
     assert len(figure.get_lines()) == 0
@@ -43,7 +43,7 @@ def test_plot_param_importances() -> None:
     # Test with an evaluator.
     plot_param_importances(study, evaluator=MeanDecreaseImpurityImportanceEvaluator())
 
-    bars = figure.findobj(Rectangle)[:-1]  # the last Rectangle is the plot itself
+    bars = figure.findobj(Rectangle)[:-1]  # The last Rectangle is the plot itself.
     plotted_data = [bar.get_width() for bar in bars]
     labels = [label.get_text() for label in figure.get_yticklabels()]
 
@@ -56,7 +56,7 @@ def test_plot_param_importances() -> None:
     # Test with a trial to select parameter.
     figure = plot_param_importances(study, params=["param_b"])
 
-    bars = figure.findobj(Rectangle)[:-1]  # the last Rectangle is the plot itself
+    bars = figure.findobj(Rectangle)[:-1]  # The last Rectangle is the plot itself.
     plotted_data = [bar.get_width() for bar in bars]
     labels = [label.get_text() for label in figure.get_yticklabels()]
 
@@ -71,7 +71,7 @@ def test_plot_param_importances() -> None:
         figure = plot_param_importances(
             study, target=lambda t: t.params["param_b"] + t.params["param_d"]
         )
-    bars = figure.findobj(Rectangle)[:-1]  # the last Rectangle is the plot itself
+    bars = figure.findobj(Rectangle)[:-1]  # The last Rectangle is the plot itself.
     plotted_data = [bar.get_width() for bar in bars]
     labels = [label.get_text() for label in figure.get_yticklabels()]
 
