@@ -146,19 +146,20 @@ class RDBStorage(BaseStorage):
         pool_pre_ping
 
     .. note::
-        Mainly in a cluster environment, running trials are often killed unexpectedly by the job
-        scheduler. If you want to monitor the trial's life and death, please use the heartbeat
+        Mainly in a cluster environment, running trials are often killed unexpectedly.
+        If you want to detect a failure of trials, please use the heartbeat
         mechanism. Set ``heartbeat_interval``, ``grace_period``, and `failed_trial_callback``
         appropriately according to your use case. For more details, please refer to the
         `FAQ page`_ and `Example page
         <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`_.
 
     .. _FAQ page:
-        https://optuna.readthedocs.io/en/latest/faq.html#can-i-monitor-trials-and-make-them-
+        https://optuna.readthedocs.io/en/v3.0.0-a1/faq.html#can-i-monitor-trials-and-make-them-
         failed-automatically-when-they-are-killed-unexpectedly
 
     .. seealso::
-        See :class:`~optuna.storages.RetryFailedTrialCallback` for heartbeat mechanism.
+        You can use :class:`~optuna.storages.RetryFailedTrialCallback` to automatically retry
+        failed trials detected by heartbeat.
 
     Raises:
         :exc:`ValueError`:
