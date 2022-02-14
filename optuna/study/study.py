@@ -20,7 +20,6 @@ from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
 from optuna._deprecated import deprecated
-from optuna._experimental import experimental
 from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.study._multi_objective import _get_pareto_front_trials
@@ -826,7 +825,6 @@ class Study:
 
         self._stop_flag = True
 
-    @experimental("1.2.0")
     def enqueue_trial(
         self, params: Dict[str, Any], user_attrs: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -875,7 +873,6 @@ class Study:
             )
         )
 
-    @experimental("2.0.0")
     def add_trial(self, trial: FrozenTrial) -> None:
         """Add trial to study.
 
@@ -941,7 +938,6 @@ class Study:
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
-    @experimental("2.5.0")
     def add_trials(self, trials: Iterable[FrozenTrial]) -> None:
         """Add trials to study.
 
@@ -1312,7 +1308,6 @@ def delete_study(
     storage.delete_study(study_id)
 
 
-@experimental("2.8.0")
 def copy_study(
     from_study_name: str,
     from_storage: Union[str, storages.BaseStorage],
