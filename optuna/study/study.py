@@ -649,7 +649,7 @@ class Study:
             A returned trial is deep copied thus user can modify it as needed.
         """
 
-        return self._tell(
+        return self._tell_with_warning(
             trial=trial, values=values, state=state, skip_if_finished=skip_if_finished
         )
 
@@ -998,7 +998,13 @@ class Study:
     def _ask(self) -> trial_module.Trial:
         return self.ask()
 
+    @deprecated("2.5.0", "4.0.0")
     def _tell(
+        self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
+    ) -> None:
+        self.tell(trial, values, state)
+
+    def _tell_with_warning(
         self,
         trial: Union[trial_module.Trial, int],
         values: Optional[Union[float, Sequence[float]]] = None,
