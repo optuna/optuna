@@ -65,12 +65,16 @@ class RetryFailedTrialCallback:
 
     When a trial fails, this callback can be used with the :class:`optuna.storage` class to
     recreate the trial in :obj:`TrialState.WAITING` to queue up the trial to be run again.
-    In case the retried trial fails again and is to be retried further,
-    the :func:`~optuna.storage.RetryFailedTrialCallback.retried_trial_number` of the next
-    recreated trial will point to the latest failed one.
 
-    This is helpful in environments where trials may fail due to external conditions, such as
-    being preempted by other processes.
+    The failed trial can be identified by the
+    :func:`~optuna.storage.RetryFailedTrialCallback.retried_trial_number` function.
+    Even if repetitive failure occurrs (a retried trial fails again),
+    this method returns the number of the original trial.
+    To get a full list including the numbers of the retried trials as well as their original trial,
+    call the :func:`~optuna.storage.RetryFailedTrialCallback.retry_history` function.
+
+    This callback is helpful in environments where trials may fail due to external conditions,
+    such as being preempted by other processes.
 
     Usage:
 
