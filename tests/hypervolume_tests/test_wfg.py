@@ -24,7 +24,7 @@ def test_wfg_3d() -> None:
     o = np.asarray(s)
     np.random.shuffle(o)
     v = optuna._hypervolume.WFG().compute(o, r)
-    assert v == 10 ** n - 1
+    assert v == 10**n - 1
 
 
 def test_wfg_nd() -> None:
@@ -36,7 +36,7 @@ def test_wfg_nd() -> None:
         o = np.asarray(s)
         np.random.shuffle(o)
         v = optuna._hypervolume.WFG().compute(o, r)
-        assert v == 10 ** n - 1
+        assert v == 10**n - 1
 
 
 def test_wfg_duplicate_points() -> None:

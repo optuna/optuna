@@ -58,7 +58,7 @@ def test_init_cmaes_opts(use_separable_cma: bool, cma_class_str: str) -> None:
         assert np.array_equal(actual_kwargs["mean"], np.array([0, 0]))
         assert actual_kwargs["sigma"] == 0.1
         assert np.allclose(actual_kwargs["bounds"], np.array([(-1, 1), (-1, 1)]))
-        assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, 2 ** 32)
+        assert actual_kwargs["seed"] == np.random.RandomState(1).randint(1, 2**32)
         assert actual_kwargs["n_max_resampling"] == 10 * 2
         assert actual_kwargs["population_size"] is None
 
@@ -69,7 +69,7 @@ def test_warm_starting_cmaes(mock_func_ws: MagicMock) -> None:
     def objective(trial: optuna.Trial) -> float:
         x = trial.suggest_float("x", -10, 10)
         y = trial.suggest_float("y", -10, 10)
-        return x ** 2 + y
+        return x**2 + y
 
     source_study = optuna.create_study()
     source_study.optimize(objective, 20)
@@ -89,7 +89,7 @@ def test_warm_starting_cmaes_maximize(mock_func_ws: MagicMock) -> None:
         x = trial.suggest_float("x", -10, 10)
         y = trial.suggest_float("y", -10, 10)
         # Objective values are negative.
-        return -(x ** 2) - (y - 5) ** 2
+        return -(x**2) - (y - 5) ** 2
 
     source_study = optuna.create_study(direction="maximize")
     source_study.optimize(objective, 20)

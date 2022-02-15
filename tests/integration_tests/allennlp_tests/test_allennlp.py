@@ -393,8 +393,7 @@ def test_allennlp_pruning_callback_with_executor(
         manager = _VariableManager(process.ppid())
         ret_pruner = _create_pruner(
             manager.get_value("pruner_class"),
-            manager.get_value("pruner_keys"),
-            manager.get_value("pruner_values"),
+            manager.get_value("pruner_kwargs"),
         )
 
         assert isinstance(ret_pruner, pruner_class)

@@ -27,7 +27,6 @@ EXAMPLE_DISTRIBUTIONS: Dict[str, Any] = {
     "c2": distributions.CategoricalDistribution(choices=("Roppongi", "Azabu")),
     "c3": distributions.CategoricalDistribution(choices=["Roppongi", "Azabu"]),
     "ilu": distributions.IntLogUniformDistribution(low=2, high=12),
-    "iluq": distributions.IntLogUniformDistribution(low=2, high=12, step=2),
 }
 
 EXAMPLE_JSONS = {
@@ -53,8 +52,6 @@ EXAMPLE_JSONS = {
     "c2": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
     "c3": '{"name": "CategoricalDistribution", "attributes": {"choices": ["Roppongi", "Azabu"]}}',
     "ilu": '{"name": "IntLogUniformDistribution", "attributes": {"low": 2, "high": 12}}',
-    "iluq": '{"name": "IntLogUniformDistribution", '
-    '"attributes": {"low": 2, "high": 12, "step": 2}}',
 }
 
 EXAMPLE_ABBREVIATED_JSONS = {
@@ -67,7 +64,6 @@ EXAMPLE_ABBREVIATED_JSONS = {
     "c2": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
     "c3": '{"type": "categorical", "choices": ["Roppongi", "Azabu"]}',
     "ilu": '{"type": "int", "low": 2, "high": 12, "log": true}',
-    "iluq": '{"type": "int", "low": 2, "high": 12, "step": 2, "log": true}',
 }
 
 
@@ -220,9 +216,6 @@ def test_check_distribution_compatibility() -> None:
     distributions.check_distribution_compatibility(
         EXAMPLE_DISTRIBUTIONS["ilu"], distributions.IntLogUniformDistribution(low=1, high=13)
     )
-    distributions.check_distribution_compatibility(
-        EXAMPLE_DISTRIBUTIONS["iluq"], distributions.IntLogUniformDistribution(low=1, high=13)
-    )
 
 
 @pytest.mark.parametrize(
@@ -337,17 +330,6 @@ def test_contains() -> None:
     assert not ilu._contains(12.1)
     assert not ilu._contains(13)
 
-    # `step` is ignored and assumed to be 1.
-    iluq = distributions.IntLogUniformDistribution(low=2, high=7, step=2)
-    assert not iluq._contains(0.9)
-    assert iluq._contains(2)
-    assert iluq._contains(4)
-    assert iluq._contains(5)
-    assert iluq._contains(6)
-    assert iluq._contains(7)
-    assert not iluq._contains(7.1)
-    assert not iluq._contains(8)
-
 
 def test_empty_range_contains() -> None:
 
@@ -395,11 +377,6 @@ def test_empty_range_contains() -> None:
     assert not ilu._contains(0)
     assert ilu._contains(1)
     assert not ilu._contains(2)
-
-    iluq = distributions.IntLogUniformDistribution(low=1, high=1, step=2)
-    assert not iluq._contains(0)
-    assert iluq._contains(1)
-    assert not iluq._contains(2)
 
 
 @pytest.mark.parametrize(
@@ -596,7 +573,6 @@ def test_int_uniform_distribution_asdict() -> None:
 def test_int_log_uniform_distribution_asdict() -> None:
 
     assert EXAMPLE_DISTRIBUTIONS["ilu"]._asdict() == {"low": 2, "high": 12, "step": 1}
-    assert EXAMPLE_DISTRIBUTIONS["iluq"]._asdict() == {"low": 2, "high": 12, "step": 2}
 
 
 def test_int_init_error() -> None:
@@ -663,35 +639,6 @@ def test_int_uniform_distribution_invalid_step() -> None:
 
     with pytest.raises(ValueError):
         distributions.IntUniformDistribution(low=1, high=100, step=-1)
-
-
-def test_int_log_uniform_distribution_deprecation() -> None:
-
-    # step != 1 is deprecated
-
-    d = distributions.IntLogUniformDistribution(low=1, high=100)
-
-    with pytest.warns(FutureWarning):
-        # `step` should always be assumed to be 1 and samplers and other components should never
-        # have to get/set the attribute.
-        assert d.step == 1
-
-    with pytest.warns(FutureWarning):
-        d.step = 2
-
-    with pytest.warns(FutureWarning):
-        d = distributions.IntLogUniformDistribution(low=1, high=100, step=2)
-
-    with pytest.warns(FutureWarning):
-        assert d.step == 2
-
-    with pytest.warns(FutureWarning):
-        d.step = 1
-        assert d.step == 1
-
-    with pytest.warns(FutureWarning):
-        d.step = 2
-        assert d.step == 2
 
 
 def test_categorical_distribution_different_sequence_types() -> None:

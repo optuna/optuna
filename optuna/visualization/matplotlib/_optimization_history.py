@@ -250,7 +250,7 @@ def _get_optimization_histories(
                 marker="o",
                 color=cmap(3) if len(studies) == 1 else cmap(2 * i + 1),
                 alpha=0.5,
-                label="Best Value" if len(studies) == 1 else f"Best Values of {study.study_name}",
+                label="Best Value" if len(studies) == 1 else f"Best Value of {study.study_name}",
             )
 
             ax.legend()

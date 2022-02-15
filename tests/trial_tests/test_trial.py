@@ -18,6 +18,7 @@ from optuna import distributions
 from optuna import load_study
 from optuna import samplers
 from optuna import storages
+from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import IntLogUniformDistribution
@@ -153,8 +154,8 @@ def test_check_distribution_suggest_int(storage_mode: str, enable_log: bool) -> 
             trial.suggest_int("x", 10, 20, log=enable_log)
             trial.suggest_int("x", 10, 22, log=enable_log)
 
-        # We expect exactly one warning.
-        assert len(record) == 1
+        # We expect exactly one warning (not counting ones caused by deprecation).
+        assert len([r for r in record if r.category != FutureWarning]) == 1
 
         with pytest.raises(ValueError):
             trial.suggest_float("x", 10, 20, log=enable_log)
@@ -650,7 +651,7 @@ def test_study_id() -> None:
 def test_create_trial(state: TrialState) -> None:
     value = 0.2
     params = {"x": 10}
-    distributions = {"x": UniformDistribution(5, 12)}
+    distributions: Dict[str, BaseDistribution] = {"x": UniformDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
     intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}

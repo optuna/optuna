@@ -52,7 +52,7 @@ class CmaEsSampler(BaseSampler):
             def objective(trial):
                 x = trial.suggest_float("x", -1, 1)
                 y = trial.suggest_int("y", -1, 1)
-                return x ** 2 + y
+                return x**2 + y
 
 
             sampler = optuna.samplers.CmaEsSampler()
@@ -292,6 +292,7 @@ class CmaEsSampler(BaseSampler):
                     optuna.distributions.IntUniformDistribution,
                     optuna.distributions.IntLogUniformDistribution,
                     optuna.distributions.FloatDistribution,
+                    optuna.distributions.IntDistribution,
                 ),
             ):
                 # Categorical distribution is unsupported.
@@ -380,7 +381,7 @@ class CmaEsSampler(BaseSampler):
                 study._storage.set_trial_system_attr(trial._trial_id, key, optimizer_attrs[key])
 
         # Caution: optimizer should update its seed value
-        seed = self._cma_rng.randint(1, 2 ** 16) + trial.number
+        seed = self._cma_rng.randint(1, 2**16) + trial.number
         optimizer._rng = np.random.RandomState(seed)
         params = optimizer.ask()
 
@@ -479,7 +480,7 @@ class CmaEsSampler(BaseSampler):
                 mean=mean,
                 sigma=sigma0,
                 bounds=trans.bounds,
-                seed=self._cma_rng.randint(1, 2 ** 31 - 2),
+                seed=self._cma_rng.randint(1, 2**31 - 2),
                 n_max_resampling=10 * n_dimension,
                 population_size=population_size,
             )
@@ -489,7 +490,7 @@ class CmaEsSampler(BaseSampler):
             sigma=sigma0,
             cov=cov,
             bounds=trans.bounds,
-            seed=self._cma_rng.randint(1, 2 ** 31 - 2),
+            seed=self._cma_rng.randint(1, 2**31 - 2),
             n_max_resampling=10 * n_dimension,
             population_size=population_size,
         )

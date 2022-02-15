@@ -13,7 +13,7 @@ API Reference
     logging
     multi_objective/index
     pruners
-    samplers
+    samplers/index
     storages
     study
     trial

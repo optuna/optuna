@@ -201,7 +201,7 @@ for _ in range(n_trials):
 
 
 def batched_objective(xs: np.ndarray, ys: np.ndarray):
-    return xs ** 2 + ys
+    return xs**2 + ys
 
 
 ###################################################################################################

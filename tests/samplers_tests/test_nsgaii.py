@@ -1,18 +1,35 @@
 from collections import Counter
+from typing import Any
 from typing import Callable
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from unittest.mock import Mock
 from unittest.mock import patch
 import warnings
 
+import numpy as np
 import pytest
 
 import optuna
+from optuna._transform import _SearchSpaceTransform
+from optuna.distributions import BaseDistribution
+from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.samplers import BaseSampler
 from optuna.samplers import NSGAIISampler
-from optuna.samplers._nsga2.sampler import _CONSTRAINTS_KEY
+from optuna.samplers.nsgaii import BaseCrossover
+from optuna.samplers.nsgaii import BLXAlphaCrossover
+from optuna.samplers.nsgaii import SBXCrossover
+from optuna.samplers.nsgaii import SPXCrossover
+from optuna.samplers.nsgaii import UNDXCrossover
+from optuna.samplers.nsgaii import UniformCrossover
+from optuna.samplers.nsgaii import VSBXCrossover
+from optuna.samplers.nsgaii._crossover import _inlined_categorical_uniform_crossover
+from optuna.samplers.nsgaii._sampler import _CONSTRAINTS_KEY
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 
@@ -25,7 +42,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers._nsga2.sampler._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {0: 10, 1: 10, 2: 10, 3: 10}
 
@@ -36,7 +53,7 @@ def test_population_size() -> None:
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=40)
 
     generations = Counter(
-        [t.system_attrs[optuna.samplers._nsga2.sampler._GENERATION_KEY] for t in study.trials]
+        [t.system_attrs[optuna.samplers.nsgaii._sampler._GENERATION_KEY] for t in study.trials]
     )
     assert generations == {i: 2 for i in range(20)}
 
@@ -398,7 +415,7 @@ def test_crowding_distance_sort() -> None:
         _create_frozen_trial(2, [9]),
         _create_frozen_trial(3, [0]),
     ]
-    optuna.samplers._nsga2.sampler._crowding_distance_sort(trials)
+    optuna.samplers.nsgaii._sampler._crowding_distance_sort(trials)
     assert [t.number for t in trials] == [2, 3, 0, 1]
 
     trials = [
@@ -407,7 +424,7 @@ def test_crowding_distance_sort() -> None:
         _create_frozen_trial(2, [9, 0]),
         _create_frozen_trial(3, [0, 0]),
     ]
-    optuna.samplers._nsga2.sampler._crowding_distance_sort(trials)
+    optuna.samplers.nsgaii._sampler._crowding_distance_sort(trials)
     assert [t.number for t in trials] == [2, 3, 0, 1]
 
 
@@ -421,7 +438,7 @@ def test_study_system_attr_for_population_cache() -> None:
         return [
             v
             for k, v in study.system_attrs.items()
-            if k.startswith(optuna.samplers._nsga2.sampler._POPULATION_CACHE_KEY_PREFIX)
+            if k.startswith(optuna.samplers.nsgaii._sampler._POPULATION_CACHE_KEY_PREFIX)
         ]
 
     study.optimize(lambda t: [t.suggest_float("x", 0, 9)], n_trials=10)
@@ -460,12 +477,11 @@ def test_constraints_func_experimental_warning() -> None:
 def _create_frozen_trial(
     number: int, values: List[float], constraints: Optional[List[float]] = None
 ) -> optuna.trial.FrozenTrial:
-    with pytest.warns(optuna.exceptions.ExperimentalWarning):
-        trial = optuna.trial.create_trial(
-            state=optuna.trial.TrialState.COMPLETE,
-            values=values,
-            system_attrs={} if constraints is None else {_CONSTRAINTS_KEY: constraints},
-        )
+    trial = optuna.trial.create_trial(
+        state=optuna.trial.TrialState.COMPLETE,
+        values=values,
+        system_attrs={} if constraints is None else {_CONSTRAINTS_KEY: constraints},
+    )
     trial.number = number
     trial._trial_id = number
     return trial
@@ -481,28 +497,15 @@ def test_call_after_trial_of_random_sampler() -> None:
         assert mock_object.call_count == 1
 
 
-def test_crossover() -> None:
-    NSGAIISampler()
-    NSGAIISampler(crossover="uniform")
-    NSGAIISampler(crossover="blxalpha")
-    NSGAIISampler(crossover="sbx")
-    NSGAIISampler(crossover="vsbx")
-    NSGAIISampler(crossover="undx")
-    NSGAIISampler(crossover="spx")
-
-    with pytest.raises(ValueError):
-        NSGAIISampler(crossover="no_imp_crossover")
-
-
 parametrize_nsga2_sampler = pytest.mark.parametrize(
     "sampler_class",
     [
-        lambda: NSGAIISampler(population_size=2, crossover="uniform"),
-        lambda: NSGAIISampler(population_size=2, crossover="blxalpha"),
-        lambda: NSGAIISampler(population_size=2, crossover="sbx"),
-        lambda: NSGAIISampler(population_size=2, crossover="vsbx"),
-        lambda: NSGAIISampler(population_size=3, crossover="undx"),
-        lambda: NSGAIISampler(population_size=3, crossover="spx"),
+        lambda: NSGAIISampler(population_size=2, crossover=UniformCrossover()),
+        lambda: NSGAIISampler(population_size=2, crossover=BLXAlphaCrossover()),
+        lambda: NSGAIISampler(population_size=2, crossover=SBXCrossover()),
+        lambda: NSGAIISampler(population_size=2, crossover=VSBXCrossover()),
+        lambda: NSGAIISampler(population_size=3, crossover=UNDXCrossover()),
+        lambda: NSGAIISampler(population_size=3, crossover=UNDXCrossover()),
     ],
 )
 
@@ -536,15 +539,104 @@ def test_crossover_dims(n_params: int, sampler_class: Callable[[], BaseSampler])
     assert len(study.trials) == n_trials
 
 
-@pytest.mark.parametrize("crossover_name", ["undx", "spx"])
-def test_crossover_invalid_population(crossover_name: str) -> None:
+@pytest.mark.parametrize("crossover", [UNDXCrossover(), SPXCrossover()])
+def test_crossover_invalid_population(crossover: BaseCrossover) -> None:
     n_objectives = 2
     n_trials = 8
 
     with pytest.raises(ValueError):
-        sampler = NSGAIISampler(population_size=2, crossover=crossover_name)
+        sampler = NSGAIISampler(population_size=2, crossover=crossover)
         study = optuna.create_study(directions=["minimize"] * n_objectives, sampler=sampler)
         study.optimize(
             lambda t: [t.suggest_float(f"x{i}", 0, 1) for i in range(n_objectives)],
             n_trials=n_trials,
         )
+
+
+@pytest.mark.parametrize(
+    "crossover",
+    [
+        UniformCrossover(),
+        BLXAlphaCrossover(),
+        SPXCrossover(),
+        SBXCrossover(),
+        VSBXCrossover(),
+        UNDXCrossover(),
+    ],
+)
+def test_crossover_numerical_distribution(crossover: BaseCrossover) -> None:
+
+    study = optuna.study.create_study()
+    rng = np.random.RandomState()
+    search_space = {"x": FloatDistribution(1, 10), "y": IntDistribution(1, 10)}
+    numerical_transform = _SearchSpaceTransform(search_space)
+    parent_params = np.array([[1.0, 2], [3.0, 4]])
+
+    if crossover.n_parents == 3:
+        parent_params = np.append(parent_params, [[5.0, 6]], axis=0)
+
+    child_params = crossover.crossover(parent_params, rng, study, numerical_transform.bounds)
+    assert child_params.ndim == 1
+    assert len(child_params) == len(search_space)
+    assert np.nan not in child_params
+    assert np.inf not in child_params
+
+
+def test_crossover_inlined_categorical_distribution() -> None:
+
+    search_space: Dict[str, BaseDistribution] = {
+        "x": CategoricalDistribution(choices=["a", "c"]),
+        "y": CategoricalDistribution(choices=["b", "d"]),
+    }
+    parent_params = np.array([["a", "b"], ["c", "d"]])
+    rng = np.random.RandomState()
+    child_params = _inlined_categorical_uniform_crossover(parent_params, rng, 0.5, search_space)
+
+    assert child_params.ndim == 1
+    assert len(child_params) == len(search_space)
+    assert all([isinstance(param, str) for param in child_params])
+
+    # Is child param from correct distribution?
+    search_space["x"].to_internal_repr(child_params[0])
+    search_space["y"].to_internal_repr(child_params[1])
+
+
+@pytest.mark.parametrize(
+    "crossover,expected_params",
+    [
+        (UniformCrossover(), np.array([3.0, 4.0])),
+        (BLXAlphaCrossover(), np.array([2.0, 3.0])),
+        (SPXCrossover(), np.array([2.75735931, 3.75735931])),
+        (SBXCrossover(), np.array([3.0, 4.0])),
+        (VSBXCrossover(), np.array([3.0, 4.0])),
+        (UNDXCrossover(), np.array([1.0, 2.0])),
+    ],
+)
+def test_crossover_deterministic(crossover: BaseCrossover, expected_params: np.ndarray) -> None:
+
+    study = optuna.study.create_study()
+    search_space: Dict[str, BaseDistribution] = {
+        "x": FloatDistribution(1, 10),
+        "y": FloatDistribution(1, 10),
+    }
+    numerical_transform = _SearchSpaceTransform(search_space)
+    parent_params = np.array([[1.0, 2.0], [3.0, 4.0]])
+
+    if crossover.n_parents == 3:
+        parent_params = np.append(parent_params, [[5.0, 6.0]], axis=0)
+
+    def _rand(*args: Any, **kwargs: Any) -> Any:
+        if len(args) == 0:
+            return 0.5
+        return np.full(args[0], 0.5)
+
+    def _normal(*args: Any, **kwargs: Any) -> Any:
+        if kwargs.get("size") is None:
+            return 0.5
+        return np.full(kwargs.get("size"), 0.5)  # type: ignore
+
+    rng = Mock()
+    rng.rand = Mock(side_effect=_rand)
+    rng.normal = Mock(side_effect=_normal)
+    child_params = crossover.crossover(parent_params, rng, study, numerical_transform.bounds)
+    np.testing.assert_almost_equal(child_params, expected_params)

@@ -28,7 +28,7 @@ class RandomMultiObjectiveSampler(BaseMultiObjectiveSampler):
             def objective(trial):
                 x = trial.suggest_float("x", -5, 5)
                 y = trial.suggest_float("y", -5, 5)
-                return x ** 2, y + 10
+                return x**2, y + 10
 
 
             study = optuna.multi_objective.create_study(

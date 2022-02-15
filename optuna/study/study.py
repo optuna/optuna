@@ -215,7 +215,7 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", -1, 1)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -257,7 +257,7 @@ class Study:
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 1)
                     y = trial.suggest_float("y", 0, 1)
-                    return x ** 2 + y ** 2
+                    return x**2 + y**2
 
 
                 study = optuna.create_study()
@@ -316,7 +316,7 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", -1, 1)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -349,13 +349,6 @@ class Study:
                     It is recommended to use :ref:`process-based parallelization<distributed>`
                     if ``func`` is CPU bound.
 
-                .. warning::
-                    Deprecated in v2.7.0. This feature will be removed in the future.
-                    It is recommended to use :ref:`process-based parallelization<distributed>`.
-                    The removal of this feature is currently scheduled for v4.0.0, but this
-                    schedule is subject to change.
-                    See https://github.com/optuna/optuna/releases/tag/v2.7.0.
-
             catch:
                 A study continues to run even when a trial raises one of the exceptions specified
                 in this argument. Default is an empty tuple, i.e. the study will stop for any
@@ -364,6 +357,12 @@ class Study:
                 List of callback functions that are invoked at the end of each trial. Each function
                 must accept two parameters with the following types in this order:
                 :class:`~optuna.study.Study` and :class:`~optuna.trial.FrozenTrial`.
+
+                .. seealso::
+
+                    See the tutorial of :ref:`optuna_callback` for how to use and implement
+                    callback functions.
+
             gc_after_trial:
                 Flag to determine whether to automatically run garbage collection after each trial.
                 Set to :obj:`True` to run the garbage collection, :obj:`False` otherwise.
@@ -378,19 +377,13 @@ class Study:
             show_progress_bar:
                 Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
                 Currently, progress bar is experimental feature and disabled
-                when ``n_jobs`` :math:`\\ne 1`.
+                when ``n_trials`` is :obj:`None``, ``timeout`` not is :obj:`None`, and
+                ``n_jobs`` :math:`\\ne 1`.
 
         Raises:
             RuntimeError:
                 If nested invocation of this method occurs.
         """
-        if n_jobs != 1:
-            warnings.warn(
-                "`n_jobs` argument has been deprecated in v2.7.0. "
-                "This feature will be removed in v4.0.0. "
-                "See https://github.com/optuna/optuna/releases/tag/v2.7.0.",
-                FutureWarning,
-            )
 
         _optimize(
             study=self,
@@ -433,7 +426,7 @@ class Study:
 
                 x = trial.suggest_float("x", -1, 1)
 
-                study.tell(trial, x ** 2)
+                study.tell(trial, x**2)
 
         Example:
 
@@ -692,7 +685,7 @@ class Study:
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 1)
                     y = trial.suggest_float("y", 0, 1)
-                    return x ** 2 + y ** 2
+                    return x**2 + y**2
 
 
                 study = optuna.create_study()
@@ -760,7 +753,7 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", -1, 1)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -812,7 +805,7 @@ class Study:
                     if trial.number == 4:
                         trial.study.stop()
                     x = trial.suggest_float("x", 0, 10)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -834,7 +827,9 @@ class Study:
         self._stop_flag = True
 
     @experimental("1.2.0")
-    def enqueue_trial(self, params: Dict[str, Any]) -> None:
+    def enqueue_trial(
+        self, params: Dict[str, Any], user_attrs: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Enqueue a trial with given parameter values.
 
         You can fix the next sampling parameters which will be evaluated in your
@@ -849,20 +844,23 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 10)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
                 study.enqueue_trial({"x": 5})
-                study.enqueue_trial({"x": 0})
+                study.enqueue_trial({"x": 0}, user_attrs={"memo": "optimal"})
                 study.optimize(objective, n_trials=2)
 
                 assert study.trials[0].params == {"x": 5}
                 assert study.trials[1].params == {"x": 0}
+                assert study.trials[1].user_attrs == {"memo": "optimal"}
 
         Args:
             params:
                 Parameter values to pass your objective function.
+            user_attrs:
+                A dictionary of user-specific attributes other than ``params``.
 
         .. seealso::
             Please refer to :ref:`specify_params` for the tutorial of specifying hyperparameters
@@ -870,7 +868,11 @@ class Study:
         """
 
         self.add_trial(
-            create_trial(state=TrialState.WAITING, system_attrs={"fixed_params": params})
+            create_trial(
+                state=TrialState.WAITING,
+                system_attrs={"fixed_params": params},
+                user_attrs=user_attrs,
+            )
         )
 
     @experimental("2.0.0")
@@ -889,7 +891,7 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 10)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -955,7 +957,7 @@ class Study:
 
                 def objective(trial):
                     x = trial.suggest_float("x", 0, 10)
-                    return x ** 2
+                    return x**2
 
 
                 study = optuna.create_study()
@@ -995,11 +997,9 @@ class Study:
 
     def _pop_waiting_trial_id(self) -> Optional[int]:
 
-        # TODO(c-bata): Reduce database query counts for extracting waiting trials.
-        for trial in self._storage.get_all_trials(self._study_id, deepcopy=False):
-            if trial.state != TrialState.WAITING:
-                continue
-
+        for trial in self._storage.get_all_trials(
+            self._study_id, deepcopy=False, states=(TrialState.WAITING,)
+        ):
             if not self._storage.set_trial_state(trial._trial_id, TrialState.RUNNING):
                 continue
 
@@ -1065,7 +1065,7 @@ def create_study(
 
             def objective(trial):
                 x = trial.suggest_float("x", 0, 10)
-                return x ** 2
+                return x**2
 
 
             study = optuna.create_study()
@@ -1208,7 +1208,7 @@ def load_study(
 
             def objective(trial):
                 x = trial.suggest_float("x", 0, 10)
-                return x ** 2
+                return x**2
 
 
             study = optuna.create_study(storage="sqlite:///example.db", study_name="my_study")
@@ -1323,6 +1323,10 @@ def copy_study(
 
     The direction(s) of the objective(s) in the study, trials, user attributes and system
     attributes are copied.
+
+    .. note::
+        :func:`~optuna.copy_study` copies a study even if the optimization is working on.
+        It means users will get a copied study that contains a trial that is not finished.
 
     Example:
 
