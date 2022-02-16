@@ -93,7 +93,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sampler-list",
         type=str,
-        default="RandomMultiObjectiveSampler NSGAIIMultiObjectiveSampler",
+        default="RandomSampler TPESampler NSGAIISampler",
     )
     parser.add_argument("--sampler-kwargs-list", type=str, default="{} {}")
     parser.add_argument("--seed", type=int, default=0)
