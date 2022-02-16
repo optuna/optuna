@@ -1,6 +1,6 @@
 import sys
 from kurobako import solver
-from kurobako.solver.optuna_multi_objective import OptunaSolverFactory
+from kurobako.solver.optuna import OptunaSolverFactory
 import optuna
 
 # import json
