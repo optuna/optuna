@@ -11,8 +11,8 @@ def run(args: argparse.Namespace) -> None:
         raise ValueError(f"Data directory {args.data_dir} cannot be found.")
 
     os.makedirs(args.out_dir, exist_ok=True)
-    study_json_fn = os.path.join(args.out_dir, "studies.json")
-    subprocess.check_call(f"echo >| {study_json_fn}", shell=True)
+    study_json_filename = os.path.join(args.out_dir, "studies.json")
+    subprocess.check_call(f"echo >| {study_json_filename}", shell=True)
     solvers_filename = os.path.join(args.out_dir, "solvers.json")
     subprocess.check_call(f"echo >| {solvers_filename}", shell=True)
     problems_filename = os.path.join(args.out_dir, "problems.json")
