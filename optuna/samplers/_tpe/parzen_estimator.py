@@ -171,8 +171,8 @@ class _ParzenEstimator:
                 log_pdf = np.log(categorical_weights.T[samples, :])
             else:
                 # We restore parameters of parzen estimators.
-                low = self._low[param_name]
-                high = self._high[param_name]
+                low = np.asarray(self._low[param_name])
+                high = np.asarray(self._high[param_name])
                 q = self._q[param_name]
                 mus = self._mus[param_name]
                 sigmas = self._sigmas[param_name]
@@ -182,9 +182,7 @@ class _ParzenEstimator:
                 assert sigmas is not None
 
                 cdf_func = _ParzenEstimator._normal_cdf
-                p_accept = cdf_func(np.asarray(high), mus, sigmas) - cdf_func(
-                    np.asarray(low), mus, sigmas
-                )
+                p_accept = cdf_func(high, mus, sigmas) - cdf_func(low, mus, sigmas)
                 if q is None:
                     distance = samples[:, None] - mus
                     mahalanobis = distance / np.maximum(sigmas, EPS)
