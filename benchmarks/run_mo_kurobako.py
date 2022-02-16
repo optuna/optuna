@@ -96,7 +96,7 @@ if __name__ == "__main__":
         type=str,
         default="RandomSampler TPESampler NSGAIISampler",
     )
-    parser.add_argument("--sampler-kwargs-list", type=str, default="{} {}")
+    parser.add_argument("--sampler-kwargs-list", type=str, default="{} {} {}")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", type=str, default="data")
     parser.add_argument("--out-dir", type=str, default="out")
