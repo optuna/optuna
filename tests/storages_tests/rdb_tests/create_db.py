@@ -7,7 +7,7 @@ from packaging import version
 import optuna
 
 
-def objective_test_upgrade_old(trial: optuna.trial.Trial) -> float:
+def single_objective_function(trial: optuna.trial.Trial) -> float:
     x = trial.suggest_uniform("x", -5, 5)  # optuna==0.9.0 does not have suggest_float.
     y = trial.suggest_int("y", 0, 10)
     z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
@@ -17,7 +17,7 @@ def objective_test_upgrade_old(trial: optuna.trial.Trial) -> float:
     return x**2 + y**2 + z**2
 
 
-def mo_objective_test_upgrade_old(trial: optuna.trial.Trial) -> Tuple[float, float]:
+def multi_objective_function(trial: optuna.trial.Trial) -> Tuple[float, float]:
     x = trial.suggest_uniform("x", -5, 5)
     y = trial.suggest_int("y", 0, 10)
     z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
@@ -26,7 +26,7 @@ def mo_objective_test_upgrade_old(trial: optuna.trial.Trial) -> Tuple[float, flo
     return x, x**2 + y**2 + z**2
 
 
-def objective_test_upgrade(trial: optuna.trial.Trial) -> float:
+def single_objective_schema_migration(trial: optuna.trial.Trial) -> float:
     x1 = trial.suggest_float("x1", -5, 5)
     x2 = trial.suggest_float("x2", 1e-5, 1e-3, log=True)
     x3 = trial.suggest_float("x3", -6, 6, step=2)
@@ -46,13 +46,6 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="Create SQLite database for schema upgrade tests.")
     parser.add_argument("--storage-url", default=default_storage_url)
     args = parser.parse_args()
-
-    if version.parse(optuna.__version__) >= version.parse("2.6.0"):
-        single_objective_function = objective_test_upgrade
-        multi_objective_function = mo_objective_test_upgrade
-    else:
-        single_objective_function = objective_test_upgrade_old
-        multi_objective_function = mo_objective_test_upgrade_old
 
     # Create an empty study.
     optuna.create_study(storage=args.storage_url, study_name="single_empty")
@@ -80,6 +73,12 @@ if __name__ == "__main__":
         study.optimize(multi_objective_function, n_trials=1)
     except TypeError:
         print(f"optuna=={optuna.__version__} does not support multi-objective optimization.")
+
+    # Create a study for schema migration.
+    if version.parse(optuna.__version__) >= version.parse("2.4.0"):
+        study = optuna.create_study(storage=args.storage_url, study_name="schema migration")
+        study.optimize(single_objective_schema_migration
+        , n_trials=1)
 
     for s in optuna.get_all_study_summaries(args.storage_url):
         print(f"{s.study_name}, {s.n_trials}")
