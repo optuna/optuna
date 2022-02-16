@@ -119,9 +119,6 @@ def test_loaded_trials(storage_url: str) -> None:
 def test_store_infinite_values(input: float, expected: float, storage_url: str) -> None:
 
     storage: Union[RDBStorage, RedisStorage]
-    # This way is a workaround. When optuna.storages.get_storage() supports raw
-    # storage mode, use it like this.
-    # storage = optuna.storages.get_storage(url=storage_url, raw=True)
     if storage_url.startswith("redis"):
         # Only RDB can convert max/min value to inf. It was introduced by
         # https://github.com/optuna/optuna/pull/3238.

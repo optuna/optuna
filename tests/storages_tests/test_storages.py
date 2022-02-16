@@ -1307,9 +1307,6 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
         assert study.trials[0].state is TrialState.FAIL
 
 
-# This test is a workaround. This test should be removed when get_storage()
-# can return raw RDBStorage and RedisStorage. Because then test_fail_stale_trials
-# can test the fail_stale_trials().
 @pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
 def test_fail_stale_trials_raw(storage_mode: str) -> None:
     heartbeat_interval = 1
