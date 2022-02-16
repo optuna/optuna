@@ -123,8 +123,8 @@ class RDBStorage(BaseStorage):
 
             .. note::
                 The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`.
-                If you use `:meth:`~optuna.study.Study.ask` and
-                `:meth:`~optuna.study.Study.tell` instead, it will not work.
+                If you use :meth:`~optuna.study.Study.ask` and
+                :meth:`~optuna.study.Study.tell` instead, it will not work.
 
         grace_period:
             Grace period before a running trial is failed from the last heartbeat.

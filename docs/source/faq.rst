@@ -564,8 +564,8 @@ from :obj:`~optuna.trial.TrialState.RUNNING`.
 
 .. note::
 
-  The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`. If you use `:meth:`~optuna.study.Study.ask` and
-  `:meth:`~optuna.study.Study.tell`, please change the state of the killed trials by calling `:meth:`~optuna.study.Study.tell`
+  The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`. If you use :meth:`~optuna.study.Study.ask` and
+  :meth:`~optuna.study.Study.tell`, please change the state of the killed trials by calling :meth:`~optuna.study.Study.tell`
   explicitly.
 
 You can also execute a callback function to process the failed trial.
