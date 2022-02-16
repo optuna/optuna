@@ -1,3 +1,6 @@
+import math
+
+from matplotlib.patches import Rectangle
 import pytest
 
 from optuna.importance import MeanDecreaseImpurityImportanceEvaluator
@@ -25,17 +28,42 @@ def test_plot_param_importances() -> None:
 
     # Test with a trial.
     figure = plot_param_importances(study)
+
+    bars = figure.findobj(Rectangle)[:-1]  # The last Rectangle is the plot itself.
+    plotted_data = [bar.get_width() for bar in bars]
+    # get_yticklabels returns a data structure of Text(0, 0, 'param_d').
+    labels = [label.get_text() for label in figure.get_yticklabels()]
+
     assert len(figure.get_lines()) == 0
+    assert len(bars) == 2
+    assert set(labels) == set(("param_b", "param_d"))  # "param_a", "param_c" are conditional.
+    assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert figure.xaxis.label.get_text() == "Importance for Objective Value"
 
     # Test with an evaluator.
     plot_param_importances(study, evaluator=MeanDecreaseImpurityImportanceEvaluator())
+
+    bars = figure.findobj(Rectangle)[:-1]  # The last Rectangle is the plot itself.
+    plotted_data = [bar.get_width() for bar in bars]
+    labels = [label.get_text() for label in figure.get_yticklabels()]
+
     assert len(figure.get_lines()) == 0
+    assert len(bars) == 2
+    assert set(labels) == set(("param_b", "param_d"))  # "param_a", "param_c" are conditional.
+    assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert figure.xaxis.label.get_text() == "Importance for Objective Value"
 
     # Test with a trial to select parameter.
     figure = plot_param_importances(study, params=["param_b"])
+
+    bars = figure.findobj(Rectangle)[:-1]  # The last Rectangle is the plot itself.
+    plotted_data = [bar.get_width() for bar in bars]
+    labels = [label.get_text() for label in figure.get_yticklabels()]
+
     assert len(figure.get_lines()) == 0
+    assert len(bars) == 1
+    assert set(labels) == set(("param_b",))
+    assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert figure.xaxis.label.get_text() == "Importance for Objective Value"
 
     # Test with a customized target value.
@@ -43,6 +71,13 @@ def test_plot_param_importances() -> None:
         figure = plot_param_importances(
             study, target=lambda t: t.params["param_b"] + t.params["param_d"]
         )
+    bars = figure.findobj(Rectangle)[:-1]  # The last Rectangle is the plot itself.
+    plotted_data = [bar.get_width() for bar in bars]
+    labels = [label.get_text() for label in figure.get_yticklabels()]
+
+    assert len(bars) == 2
+    assert set(labels) == set(("param_b", "param_d"))  # "param_a", "param_c" are conditional.
+    assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert len(figure.get_lines()) == 0
 
     # Test with a customized target name.
