@@ -323,9 +323,9 @@ def _calculate_griddata(
 
     # Calculate grid data points.
     # For x and y, create 1-D array of evenly spaced coordinates on linear or log scale.
-    xi = np.array([])
-    yi = np.array([])
-    zi = np.array([])
+    xi: np.ndarray = np.array([])
+    yi: np.ndarray = np.array([])
+    zi: np.ndarray = np.array([])
 
     if _is_log_scale(trials, x_param):
         padding_x = (np.log10(x_values_max) - np.log10(x_values_min)) * AXES_PADDING_RATIO
