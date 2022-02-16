@@ -82,6 +82,7 @@ def _create_scoped_session(
         session.close()
 
 
+# TODO(HideakiImamura): Replace the URL of the FAQ page after the release of v3.0.0.
 class RDBStorage(BaseStorage):
     """Storage class for RDB backend.
 
