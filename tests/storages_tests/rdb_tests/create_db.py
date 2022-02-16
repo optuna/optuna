@@ -77,8 +77,7 @@ if __name__ == "__main__":
     # Create a study for schema migration.
     if version.parse(optuna.__version__) >= version.parse("2.4.0"):
         study = optuna.create_study(storage=args.storage_url, study_name="schema migration")
-        study.optimize(single_objective_schema_migration
-        , n_trials=1)
+        study.optimize(single_objective_schema_migration, n_trials=1)
 
     for s in optuna.get_all_study_summaries(args.storage_url):
         print(f"{s.study_name}, {s.n_trials}")
