@@ -1,4 +1,4 @@
-name: Tests (RDB storage)
+name: Tests (Storage with server)
 
 on:
   push:
@@ -13,6 +13,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # TODO(masap): Modify job name to "tests-storage-with-server" because this test is not only for
+  # RDB. Since current name "tests-rdbstorage" is required in the Branch protection rules, you
+  # need to modify the Branch protection rules as well.
   tests-rdbstorage:
     runs-on: ubuntu-latest
 
@@ -48,6 +51,10 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:6.2.6
+        ports:
+          - 6379:6379
 
     steps:
     - name: Checkout
@@ -61,7 +68,7 @@ jobs:
     - name: Setup cache
       uses: actions/cache@v2
       env:
-        cache-name: test-rdbstorage
+        cache-name: test-storage-with-server
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-${{ matrix.python-version }}-${{ env.cache-name }}-${{ hashFiles('**/setup.py') }}-v1
@@ -85,9 +92,9 @@ jobs:
 
         pip install --progress-bar off .[tests]
 
-    - name: Install RDB bindings
+    - name: Install DB bindings
       run: |
-        pip install --progress-bar off PyMySQL cryptography psycopg2-binary
+        pip install --progress-bar off PyMySQL cryptography psycopg2-binary redis
 
     - name: Tests MySQL
       run: |
@@ -102,3 +109,10 @@ jobs:
       env:
         OMP_NUM_THREADS: 1
         TEST_DB_URL: postgresql+psycopg2://user:test@127.0.0.1/optunatest
+
+    - name: Tests Redis
+      run: |
+        pytest tests/storages_tests/rdb_tests/test_with_server.py
+      env:
+        OMP_NUM_THREADS: 1
+        TEST_DB_URL: redis://localhost:6379
