@@ -36,7 +36,7 @@ class UNDXCrossover(BaseCrossover):
         self._sigma_xi = sigma_xi
         self._sigma_eta = sigma_eta
 
-    def _distance_from_x_to_psl(self, parents_params: np.ndarray) -> np.ndarray:
+    def _distance_from_x_to_psl(self, parents_params: np.ndarray) -> np.floating:
 
         # The line connecting x1 to x2 is called psl (primary search line).
         # Compute the 2-norm of the vector orthogonal to psl from x3.
