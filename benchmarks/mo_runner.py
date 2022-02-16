@@ -34,7 +34,11 @@ n_objectives = 2
     #     sampler = sampler_cls(**sampler_kwargs)
     sampler = sampler_cls()
 
-    return optuna.multi_objective.create_study(directions=directions, sampler=sampler)
+    return optuna.create_study(
+        directions=directions,
+        sampler=sampler,
+        pruner=optuna.pruners.NopPruner(),
+    )
 
 
 if __name__ == "__main__":
