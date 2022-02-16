@@ -79,7 +79,8 @@ def run(args: argparse.Namespace) -> None:
     for problem_name, xmin, xmax, ymin, ymax in zip(problem_names, xmins, xmaxs, ymins, ymaxs):
         cmd = (
             f"cat {result_filename} | grep {problem_name} | "
-            f"{kurobako_cmd} plot pareto-front -o {args.out_dir}"
+            f"{kurobako_cmd} plot pareto-front -o {args.out_dir} "
+            f"--xmin {xmin} --xmax {xmax} --ymin {ymin} --ymax {ymax}"
         )
         subprocess.run(cmd, shell=True)
 
