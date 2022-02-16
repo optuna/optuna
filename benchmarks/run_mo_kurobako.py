@@ -54,7 +54,7 @@ def run(args: argparse.Namespace) -> None:
         f"{kurobako_cmd} studies --budget 300 "
         f"--solvers $(cat {solvers_filename}) --problems $(cat {problems_filename}) "
         f"--repeats {args.n_runs} --seed {args.seed} "
-        f"> {study_json_fn}"
+        f"> {study_json_filename}"
     )
     subprocess.run(cmd, shell=True)
 
