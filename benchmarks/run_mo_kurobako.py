@@ -72,7 +72,11 @@ def run(args: argparse.Namespace) -> None:
 
     # Plot pareto-front.
     problem_names = ["NASBench", "ZDT1", "ZDT2", "ZDT3", "ZDT4", "ZDT5", "ZDT6"]
-    for problem_name in problem_names:
+    xmins = [0, 0, 0, 0, 0, 8, 0.2]
+    xmaxs = [25000000, 1, 1, 1, 1, 24, 1]
+    ymins = [0, 1, 2, 0, 20, 1, 5]
+    ymaxs = [0.2, 7, 7, 7, 250, 6, 10]
+    for problem_name, xmin, xmax, ymin, ymax in zip(problem_names, xmins, xmaxs, ymins, ymaxs):
         cmd = (
             f"cat {result_filename} | grep {problem_name} | "
             f"{kurobako_cmd} plot pareto-front -o {args.out_dir}"
