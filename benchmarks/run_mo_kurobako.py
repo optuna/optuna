@@ -22,7 +22,7 @@ def run(args: argparse.Namespace) -> None:
     cmd = f"{kurobako_cmd} problem-suite zdt | tee -a {problems_filename}"
     subprocess.run(cmd, shell=True)
 
-    # Create NAS bench problem(C) (for Multi-Objective Settings).
+    # Create NAS bench problem(A) (for Multi-Objective Settings).
     dataset = os.path.join(args.data_dir, "nasbench_full.bin")
     cmd = (
         f'{kurobako_cmd} problem nasbench "{dataset}"'
