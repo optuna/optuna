@@ -17,7 +17,7 @@ n_objectives = 2
 
     # Sampler.
     sampler_cls = getattr(
-        optuna.multi_objective.samplers,
+        optuna.samplers,
         sampler_name,
         getattr(optuna.integration, sampler_name, None),
     )
