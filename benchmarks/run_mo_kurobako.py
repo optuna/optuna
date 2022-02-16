@@ -60,7 +60,7 @@ def run(args: argparse.Namespace) -> None:
 
     result_filename = os.path.join(args.out_dir, "results.json")
     cmd = (
-        f"cat {study_json_fn} | {kurobako_cmd} run --parallelism {args.n_jobs} "
+        f"cat {study_json_filename} | {kurobako_cmd} run --parallelism {args.n_jobs} -q "
         f"> {result_filename}"
     )
     subprocess.run(cmd, shell=True)
