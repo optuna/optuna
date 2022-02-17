@@ -463,6 +463,10 @@ class Study:
             A :class:`~optuna.trial.Trial`.
         """
 
+        if not self._optimize_lock.locked():
+            if self._storage.is_heartbeat_enabled():
+                warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
+
         fixed_distributions = fixed_distributions or {}
 
         # Sync storage once every trial.
