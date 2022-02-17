@@ -5,6 +5,7 @@ import numpy
 import pytest
 
 from optuna._transform import _SearchSpaceTransform
+from optuna._transform import _untransform_numerical_param
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -234,3 +235,42 @@ def test_search_space_transform_untransform_params() -> None:
 
     for name in params.keys():
         assert untrans_params[name] == params[name]
+
+
+@pytest.mark.parametrize("transform_log", [True, False])
+@pytest.mark.parametrize("transform_step", [True, False])
+@pytest.mark.parametrize(
+    "distribution",
+    [
+        DiscreteUniformDistribution(0, 1, q=0.2),
+        FloatDistribution(0, 1, step=0.2),
+        IntUniformDistribution(2, 4),
+        IntLogUniformDistribution(1, 10),
+        IntDistribution(2, 4),
+        IntDistribution(1, 10, log=True),
+    ],
+)
+def test_transform_untransform_params_at_bounds(
+    transform_log: bool, transform_step: bool, distribution: BaseDistribution
+) -> None:
+    EPS = 1e-12
+
+    # Skip the following two conditions that do not clip in `_untransform_numerical_param`:
+    # 1. `IntLogUniformDistribution` without `transform_log`
+    # 2. `IntDistribution(log=True)` without `transform_log`
+    if not transform_log and (
+        isinstance(distribution, IntLogUniformDistribution)
+        or (isinstance(distribution, IntDistribution) and distribution.log)
+    ):
+        return
+
+    trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)
+
+    # Manually crete round-off errors.
+    lower_bound = trans.bounds[0][0] - EPS
+    upper_bound = trans.bounds[0][1] + EPS
+
+    trans_lower_param = _untransform_numerical_param(lower_bound, distribution, transform_log)
+    trans_upper_param = _untransform_numerical_param(upper_bound, distribution, transform_log)
+    assert trans_lower_param == distribution.low  # type: ignore
+    assert trans_upper_param == distribution.high  # type: ignore
