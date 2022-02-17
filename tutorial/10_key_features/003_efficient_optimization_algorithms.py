@@ -29,6 +29,8 @@ Optuna provides the following sampling algorithms:
 
 - Nondominated Sorting Genetic Algorithm II implemented in :class:`~optuna.samplers.NSGAIISampler`
 
+- A Quasi Monte Carlo sampling algorithm implemented in :class:`~optuna.samplers.QMCSampler`
+
 The default sampler is :class:`~optuna.samplers.TPESampler`.
 
 Switching Samplers
