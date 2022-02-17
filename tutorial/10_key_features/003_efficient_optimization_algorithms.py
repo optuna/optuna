@@ -66,7 +66,7 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 #
 # - Median pruning algorithm implemented in :class:`~optuna.pruners.MedianPruner`
 #
-# - Non-pruning algorithm implementd in :class:`~optuna.pruners.NopPruner`
+# - Non-pruning algorithm implemented in :class:`~optuna.pruners.NopPruner`
 #
 # - Algorithm to operate pruner with tolerance implemented in :class:`~optuna.pruners.PatientPruner`
 #
