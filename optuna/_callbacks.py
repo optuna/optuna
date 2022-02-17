@@ -10,9 +10,10 @@ from optuna.trial import TrialState
 class MaxTrialsCallback:
     """Set a maximum number of trials before ending the study.
 
-    While the :obj:`n_trials` argument of :func:`~optuna.study.Study.optimize` sets the number of trials that
-    will be run, you may want to continue running until you have a certain number of successfullly
-    completed trials or stop the study when you have a certain number of trials that fail.
+    While the :obj:`n_trials` argument of :func:`~optuna.study.Study.optimize` sets
+    the number of trials that will be run, you may want to continue running until
+    you have a certain number of successfullly completed trials or stop the study
+    when you have a certain number of trials that fail.
     This :obj:`MaxTrialsCallback` class allows you to set a maximum number of trials for a
     particular :class:`~optuna.trial.TrialState` before stopping the study.
 
