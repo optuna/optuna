@@ -181,6 +181,7 @@ a:hover {
 }
 
 /* This is the patch fix for tutorial page */
+/* TODO (himkt): Remove here after resolving https://github.com/optuna/optuna/pull/3322 */
 .sphx-glr-thumbcontainer {
   min-width: 182px;
 }
