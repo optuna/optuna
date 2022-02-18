@@ -179,3 +179,8 @@ a:hover {
 .rst-content .admonition {
   background: #f1f3f4;
 }
+
+/* This is the patch fix for tutorial page */
+.sphx-glr-thumbcontainer {
+  min-width: 182px;
+}
