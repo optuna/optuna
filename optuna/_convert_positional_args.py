@@ -37,8 +37,8 @@ def convert_positional_args(
 
             if len(args) >= 1:
                 warnings.warn(
-                    f"{func.__name__}(): Positional arguments are deprecated."
-                    " Please give all values as keyword arguments.",
+                    f"{func.__name__}(): Please give all values as keyword arguments."
+                    " See https://github.com/optuna/optuna/issues/3324 for details.",
                     FutureWarning,
                     stacklevel=warning_stacklevel,
                 )
