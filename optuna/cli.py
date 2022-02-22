@@ -837,7 +837,7 @@ class _Tell(_BaseCommand):
         parser.add_argument("--study-name", type=str, help="Name of study.")
         parser.add_argument("--trial-number", type=int, help="Trial number.")
         parser.add_argument("--values", type=float, nargs="+", help="Objective values.")
-        parser.add_argument("--state", type=str, help="Trial state.")
+        parser.add_argument("--state", type=str, help="Trial state.", choices=("complete", "pruned", "fail"))
         parser.add_argument(
             "--skip-if-finished",
             default=False,
