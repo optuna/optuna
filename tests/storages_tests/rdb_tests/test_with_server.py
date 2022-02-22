@@ -41,7 +41,7 @@ def storage_url() -> str:
         pytest.skip("This test requires TEST_DB_URL.")
     storage_url = os.environ["TEST_DB_URL"]
     try:
-        optuna.study.delete_study(_STUDY_NAME, storage_url)
+        optuna.study.delete_study(study_name=_STUDY_NAME, storage=storage_url)
     except KeyError:
         pass
     return storage_url
