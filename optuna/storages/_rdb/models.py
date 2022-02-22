@@ -32,6 +32,8 @@ MAX_VERSION_LENGTH = 256
 
 NOT_FOUND_MSG = "Record does not exist."
 
+FLOAT_PRECISION = 53
+
 BaseModel: Any = declarative_base()
 
 
@@ -342,7 +344,7 @@ class TrialParamModel(BaseModel):
     param_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"))
     param_name = Column(String(MAX_INDEXED_STRING_LENGTH))
-    param_value = Column(Float(precision=53))
+    param_value = Column(Float(precision=FLOAT_PRECISION))
     distribution_json = Column(Text())
 
     trial = orm.relationship(
@@ -413,7 +415,7 @@ class TrialValueModel(BaseModel):
     trial_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     objective = Column(Integer, nullable=False)
-    value = Column(Float(precision=53), nullable=False)
+    value = Column(Float(precision=FLOAT_PRECISION), nullable=False)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
@@ -449,8 +451,7 @@ class TrialIntermediateValueModel(BaseModel):
     trial_intermediate_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     step = Column(Integer, nullable=False)
-    intermediate_value = Column(Float, nullable=True)
-    intermediate_value = Column(Float(precision=53), nullable=True)
+    intermediate_value = Column(Float(precision=FLOAT_PRECISION), nullable=True)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("intermediate_values", cascade="all, delete-orphan")
