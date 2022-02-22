@@ -236,6 +236,8 @@ def _run_trial(
                 _log_failed_trial(frozen_trial, repr(func_err), exc_info=func_err_fail_exc_info)
             elif "study_tell_warning" in frozen_trial.system_attrs:
                 _log_failed_trial(frozen_trial, frozen_trial.system_attrs["study_tell_warning"])
+            else:
+                assert False, "Should not reach."
         else:
             assert False, "Should not reach."
 
