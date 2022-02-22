@@ -92,7 +92,7 @@ def _check_single_value(
         ValueError,
         TypeError,
     ):
-        failure_message = f"The value {repr(original_value)} could not be  cast to float."
+        failure_message = f"The value {repr(original_value)} could not be cast to float."
 
     if value is not None and math.isnan(value):
         value = None
