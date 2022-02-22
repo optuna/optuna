@@ -220,7 +220,7 @@ def _run_trial(
 
     # `Study._tell` may raise during trial post-processing.
     try:
-        # Note: call `Study._tell` instead of `Study.tell` to suppress warning.
+        # Note: call `Study._tell_with_warning` instead of `Study.tell` to suppress warning.
         frozen_trial = study._tell_with_warning(
             trial, values=value_or_values, state=state, suppress_warning=True
         )
