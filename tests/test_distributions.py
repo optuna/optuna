@@ -248,6 +248,11 @@ def test_empty_range_contains() -> None:
     assert iq._contains(1)
     assert not iq._contains(2)
 
+    il = distributions.IntDistribution(low=1, high=1, log=True)
+    assert not il._contains(0)
+    assert il._contains(1)
+    assert not il._contains(2)
+
     f = distributions.FloatDistribution(low=1.0, high=1.0)
     assert not f._contains(0.9)
     assert f._contains(1.0)
@@ -257,6 +262,11 @@ def test_empty_range_contains() -> None:
     assert not fd._contains(0.9)
     assert fd._contains(1.0)
     assert not fd._contains(1.1)
+
+    fl = distributions.FloatDistribution(low=1.0, high=1.0, log=True)
+    assert not fl._contains(0.9)
+    assert fl._contains(1.0)
+    assert not fl._contains(1.1)
 
 
 @pytest.mark.parametrize(
