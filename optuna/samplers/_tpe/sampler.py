@@ -626,9 +626,8 @@ def _get_observation_pairs(
 
         # We extract param_value from the trial.
         for param_name in param_names:
-            raw_param_value = trial.params.get(param_name, None)
             param_value: Optional[float]
-            if raw_param_value is not None:
+            if param_name in trial.params:
                 distribution = trial.distributions[param_name]
                 param_value = distribution.to_internal_repr(trial.params[param_name])
             else:
@@ -770,6 +769,7 @@ def _calculate_weights_below_for_multi_objective(
 
     # Calculate weights based on hypervolume contributions.
     n_below = len(lvals)
+    weights_below: np.ndarray
     if n_below == 0:
         weights_below = np.asarray([])
     elif n_below == 1:

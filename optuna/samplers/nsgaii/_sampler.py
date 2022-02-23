@@ -18,10 +18,11 @@ import optuna
 from optuna._experimental import ExperimentalWarning
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
-from optuna.samplers._nsga2.crossover import crossover
-from optuna.samplers._nsga2.crossover import get_n_parents
 from optuna.samplers._random import RandomSampler
 from optuna.samplers._search_space import IntersectionSearchSpace
+from optuna.samplers.nsgaii._crossover import perform_crossover
+from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
+from optuna.samplers.nsgaii._crossovers._uniform import UniformCrossover
 from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
@@ -57,66 +58,16 @@ class NSGAIISampler(BaseSampler):
 
         crossover:
             Crossover to be applied when creating child individuals.
-            The available crossovers are
-            `uniform` (default), `blxalpha`, `sbx`, `vsbx`, `undx`, and `spx`.
+            The available crossovers are listed here:
+            https://optuna.readthedocs.io/en/stable/reference/samplers/nsgaii.html.
 
-            For :class:`~optuna.distributions.CategoricalDistribution`,
-            uniform crossover will be applied,
-            and for other distributions, the specified crossover will be applied.
+            :class:`~optuna.samplers.nsgaii.UniformCrossover` is always applied to parameters
+            sampled from :class:`~optuna.distributions.CategoricalDistribution`, and by
+            default for parameters sampled from other distributions unless this argument
+            is specified.
 
-            For more information on each of the crossover method, please refer to the following.
-
-            - uniform: Select each parameter with equal probability
-              from the two parent individuals.
-
-                - `Gilbert Syswerda. 1989. Uniform Crossover in Genetic Algorithms.
-                  In Proceedings of the 3rd International Conference on Genetic Algorithms.
-                  Morgan Kaufmann Publishers Inc., San Francisco, CA, USA, 2–9.
-                  <https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms>`_
-
-            - blxalpha: It uniformly samples child individuals from the hyper-rectangles created
-              by the two parent individuals.
-
-                - `Eshelman, L. and J. D. Schaffer.
-                  Real-Coded Genetic Algorithms and Interval-Schemata. FOGA (1992).
-                  <https://www.sciencedirect.com/science/article/abs/pii/B9780080948324500180>`_
-
-            - sbx: Generate a child from two parent individuals
-              according to the polynomial probability distribution.
-
-                - `Deb, K. and R. Agrawal.
-                  “Simulated Binary Crossover for Continuous Search Space.”
-                  Complex Syst. 9 (1995): n. pag.
-                  <https://www.complex-systems.com/abstracts/v09_i02_a02/>`_
-
-            - vsbx: In SBX, the probability of occurrence of child individuals
-              becomes zero in some parameter regions.
-              vSBX generates child individuals without excluding any region of the parameter space,
-              while maintaining the excellent properties of SBX.
-
-                - `Pedro J. Ballester, Jonathan N. Carter.
-                  Real-Parameter Genetic Algorithms for Finding Multiple Optimal Solutions
-                  in Multi-modal Optimization. GECCO 2003: 706-717
-                  <https://link.springer.com/chapter/10.1007/3-540-45105-6_86>`_
-
-            - undx: Generate child individuals from the three parents
-              using a multivariate normal distribution.
-
-                - `H. Kita, I. Ono and S. Kobayashi,
-                  Multi-parental extension of the unimodal normal distribution crossover
-                  for real-coded genetic algorithms,
-                  Proceedings of the 1999 Congress on Evolutionary Computation-CEC99
-                  (Cat. No. 99TH8406), 1999, pp. 1581-1588 Vol. 2
-                  <https://ieeexplore.ieee.org/document/782672>`_
-
-            - spx: It uniformly samples child individuals from within a single simplex
-              that is similar to the simplex produced by the parent individual.
-
-                - `Shigeyoshi Tsutsui and Shigeyoshi Tsutsui and David E. Goldberg and
-                  David E. Goldberg and Kumara Sastry and Kumara Sastry
-                  Progress Toward Linkage Learning in Real-Coded GAs with Simplex Crossover.
-                  IlliGAL Report. 2000.
-                  <https://www.researchgate.net/publication/2388486_Progress_Toward_Linkage_Learning_in_Real-Coded_GAs_with_Simplex_Crossover>`_
+            For more information on each of the crossover method, please refer to
+            specific crossover documentation.
 
         crossover_prob:
             Probability that a crossover (parameters swapping between parents) will occur
@@ -154,10 +105,12 @@ class NSGAIISampler(BaseSampler):
 
     Raises:
         ValueError:
-            If ``crossover`` is not in `[uniform, blxalpha, sbx, vsbx, undx, spx]`.
+            If ``crossover`` is not instance of :class:`~optuna.samplers.nsgaii.BaseCrossover`.
             Or, if ``population_size <= n_parents``.
             The `n_parents` is determined by each crossover.
-            For `undx` and `spx`, ``n_parents=3``, and for the other algorithms, ``n_parents=2``.
+            For :class:`~optuna.samplers.nsgaii.UNDXCrossover` and
+            :class:`~optuna.samplers.nsgaii.SPXCrossover`, ``n_parents=3``, and for the other
+            algorithms, ``n_parents=2``.
     """
 
     def __init__(
@@ -165,7 +118,7 @@ class NSGAIISampler(BaseSampler):
         *,
         population_size: int = 50,
         mutation_prob: Optional[float] = None,
-        crossover: str = "uniform",
+        crossover: Optional[BaseCrossover] = None,
         crossover_prob: float = 0.9,
         swapping_prob: float = 0.5,
         seed: Optional[int] = None,
@@ -196,23 +149,20 @@ class NSGAIISampler(BaseSampler):
                 " The interface can change in the future.",
                 ExperimentalWarning,
             )
-        if crossover not in ["uniform", "blxalpha", "sbx", "vsbx", "undx", "spx"]:
+
+        if crossover is None:
+            crossover = UniformCrossover(swapping_prob)
+
+        if not isinstance(crossover, BaseCrossover):
             raise ValueError(
-                f"'{crossover}' is not a valid crossover name."
-                " The available crossovers are"
-                " `uniform` (default), `blxalpha`, `sbx`, `vsbx`, `undx`, and `spx`."
+                f"'{crossover}' is not a valid crossover."
+                " For valid crossovers see"
+                " https://optuna.readthedocs.io/en/stable/reference/samplers.html."
             )
-        if crossover != "uniform":
-            warnings.warn(
-                "``crossover`` option is an experimental feature."
-                " The interface can change in the future.",
-                ExperimentalWarning,
-            )
-        n_parents = get_n_parents(crossover)
-        if population_size < n_parents:
+        if population_size < crossover.n_parents:
             raise ValueError(
                 f"Using {crossover},"
-                f" the population size should be greater than or equal to {n_parents}."
+                f" the population size should be greater than or equal to {crossover.n_parents}."
                 f" The specified `population_size` is {population_size}."
             )
 
@@ -261,7 +211,7 @@ class NSGAIISampler(BaseSampler):
         if parent_generation >= 0:
             # We choose a child based on the specified crossover method.
             if self._rng.rand() < self._crossover_prob:
-                child_params = crossover(
+                child_params = perform_crossover(
                     self._crossover,
                     study,
                     parent_population,

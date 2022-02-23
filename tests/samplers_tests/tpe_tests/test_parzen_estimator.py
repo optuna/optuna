@@ -316,6 +316,9 @@ def test_calculate(
     s_weights, s_mus, s_sigmas = mpe._weights, mpe._mus["a"], mpe._sigmas["a"]
 
     # Result contains an additional value for a prior distribution if consider_prior is True.
+    assert isinstance(s_weights, np.ndarray)
+    assert isinstance(s_mus, np.ndarray)
+    assert isinstance(s_sigmas, np.ndarray)
     np.testing.assert_almost_equal(s_weights, expected["weights"])
     np.testing.assert_almost_equal(s_mus, expected["mus"])
     np.testing.assert_almost_equal(s_sigmas, expected["sigmas"])
