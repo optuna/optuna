@@ -32,9 +32,9 @@ from optuna.testing.storage import StorageSupplier
 from optuna.testing.threading import _TestableThread
 from optuna.trial import Trial
 
+from .create_db import multi_objective_function
 from .create_db import single_objective_function
 from .create_db import single_objective_schema_migration
-from .create_db import multi_objective_function
 
 
 def test_init() -> None:
