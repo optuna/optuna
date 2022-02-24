@@ -31,6 +31,7 @@ from optuna import storages
 from optuna import trial as trial_module
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+from optuna.study.heartbeat import HeartBeatFactory
 
 
 _logger = logging.get_logger(__name__)
@@ -197,15 +198,11 @@ def _run_trial(
     func_err_fail_exc_info: Optional[Any] = None
     # Set to a string if `func` returns correctly but the return value violates assumptions.
     values_conversion_failure_message: Optional[str] = None
-    stop_event: Optional[Event] = None
-    thread: Optional[Thread] = None
+    heartbeat: Optional[HeartBeatFactory] = None
 
     if study._storage.is_heartbeat_enabled():
-        stop_event = Event()
-        thread = Thread(
-            target=_record_heartbeat, args=(trial._trial_id, study._storage, stop_event)
-        )
-        thread.start()
+        heartbeat = HeartBeatFactory(trial)
+        heartbeat.launch()
 
     try:
         value_or_values = func(trial)
@@ -228,10 +225,8 @@ def _run_trial(
             state = TrialState.COMPLETE
 
     if study._storage.is_heartbeat_enabled():
-        assert stop_event is not None
-        assert thread is not None
-        stop_event.set()
-        thread.join()
+        assert heartbeat is not None
+        heartbeat.stop()
 
     # `Study.tell` may raise during trial post-processing.
     try:
@@ -322,12 +317,3 @@ def _check_single_value(
         )
 
     return value, failure_message
-
-
-def _record_heartbeat(trial_id: int, storage: storages.BaseStorage, stop_event: Event) -> None:
-    heartbeat_interval = storage.get_heartbeat_interval()
-    assert heartbeat_interval is not None
-    while True:
-        storage.record_heartbeat(trial_id)
-        if stop_event.wait(timeout=heartbeat_interval):
-            return

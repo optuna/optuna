@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import copy
 import threading
 from typing import Any
@@ -29,6 +30,7 @@ from optuna.study._optimize import _check_and_convert_to_values
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary  # NOQA
+from optuna.study.heartbeat import HeartBeatFactory
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -397,6 +399,19 @@ class Study:
             gc_after_trial=gc_after_trial,
             show_progress_bar=show_progress_bar,
         )
+
+    @contextmanager
+    def ask_with_heartbeat(
+        self, fixed_distributions: Optional[Dict[str, BaseDistribution]] = None
+    ):
+        trial = self.ask(fixed_distributions=fixed_distributions)
+        heartbeat = HeartBeatFactory(trial)
+
+        try:
+            heartbeat.launch()
+            yield trial
+        finally:
+            heartbeat.stop()
 
     def ask(
         self, fixed_distributions: Optional[Dict[str, BaseDistribution]] = None
