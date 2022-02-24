@@ -1,9 +1,9 @@
 from threading import Event
 from threading import Thread
 
-from optuna.trial import Trial
 from optuna.storages import BaseStorage
 from optuna.storages import fail_stale_trials
+from optuna.trial import Trial
 
 
 class HeartBeatFactory:

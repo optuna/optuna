@@ -26,9 +26,9 @@ from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
 from optuna import trial as trial_module
+from optuna.study.heartbeat import HeartBeatFactory
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
-from optuna.study.heartbeat import HeartBeatFactory
 
 
 _logger = logging.get_logger(__name__)
