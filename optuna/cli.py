@@ -784,9 +784,9 @@ class _Ask(_BaseCommand):
 
         try:
             study = optuna.load_study(
-                create_study_kwargs["study_name"],
-                create_study_kwargs["storage"],
-                create_study_kwargs.get("sampler"),
+                study_name=create_study_kwargs["study_name"],
+                storage=create_study_kwargs["storage"],
+                sampler=create_study_kwargs.get("sampler"),
             )
             directions = None
             if (

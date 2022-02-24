@@ -171,8 +171,8 @@ class _ParzenEstimator:
                 log_pdf = np.log(categorical_weights.T[samples, :])
             else:
                 # We restore parameters of parzen estimators.
-                low = self._low[param_name]
-                high = self._high[param_name]
+                low = np.asarray(self._low[param_name])
+                high = np.asarray(self._high[param_name])
                 q = self._q[param_name]
                 mus = self._mus[param_name]
                 sigmas = self._sigmas[param_name]
@@ -493,7 +493,7 @@ class _ParzenEstimator:
         return mus, sigmas
 
     @staticmethod
-    def _normal_cdf(x: float, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
+    def _normal_cdf(x: np.ndarray, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
 
         mu, sigma = map(np.asarray, (mu, sigma))
         denominator = x - mu

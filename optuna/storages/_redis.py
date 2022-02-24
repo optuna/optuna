@@ -63,6 +63,12 @@ class RedisStorage(BaseStorage):
         url: URL of the redis storage, password and db are optional. (ie: redis://localhost:6379)
         heartbeat_interval:
             Interval to record the heartbeat. It is recorded every ``interval`` seconds.
+
+            .. note::
+                The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`.
+                If you use :meth:`~optuna.study.Study.ask` and
+                :meth:`~optuna.study.Study.tell` instead, it will not work.
+
         grace_period:
             Grace period before a running trial is failed from the last heartbeat.
             If it is :obj:`None`, the grace period will be `2 * heartbeat_interval`.

@@ -562,6 +562,12 @@ from :obj:`~optuna.trial.TrialState.RUNNING`.
     study = optuna.create_study(storage=storage)
     study.optimize(objective, n_trials=100)
 
+.. note::
+
+  The heartbeat is supposed to be used with :meth:`~optuna.study.Study.optimize`. If you use :meth:`~optuna.study.Study.ask` and
+  :meth:`~optuna.study.Study.tell`, please change the state of the killed trials by calling :meth:`~optuna.study.Study.tell`
+  explicitly.
+
 You can also execute a callback function to process the failed trial.
 Optuna provides a callback to retry failed trials as :class:`~optuna.storages.RetryFailedTrialCallback`.
 Note that a callback is invoked at a beginning of each trial, which means :class:`~optuna.storages.RetryFailedTrialCallback`

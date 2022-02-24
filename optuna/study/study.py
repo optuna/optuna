@@ -19,6 +19,7 @@ from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
+from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated
 from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
@@ -461,6 +462,10 @@ class Study:
         Returns:
             A :class:`~optuna.trial.Trial`.
         """
+
+        if not self._optimize_lock.locked():
+            if self._storage.is_heartbeat_enabled():
+                warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
 
         fixed_distributions = fixed_distributions or {}
 
@@ -1040,14 +1045,24 @@ class Study:
             assert False, "Should not reach."
 
 
+@convert_positional_args(
+    previous_positional_arg_names=[
+        "storage",
+        "sampler",
+        "pruner",
+        "study_name",
+        "direction",
+        "load_if_exists",
+    ],
+)
 def create_study(
+    *,
     storage: Optional[Union[str, storages.BaseStorage]] = None,
     sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
     study_name: Optional[str] = None,
     direction: Optional[Union[str, StudyDirection]] = None,
     load_if_exists: bool = False,
-    *,
     directions: Optional[Sequence[Union[str, StudyDirection]]] = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
@@ -1180,7 +1195,16 @@ def create_study(
     return study
 
 
+@convert_positional_args(
+    previous_positional_arg_names=[
+        "study_name",
+        "storage",
+        "sampler",
+        "pruner",
+    ],
+)
 def load_study(
+    *,
     study_name: Optional[str],
     storage: Union[str, storages.BaseStorage],
     sampler: Optional["samplers.BaseSampler"] = None,
@@ -1257,7 +1281,14 @@ def load_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
+@convert_positional_args(
+    previous_positional_arg_names=[
+        "study_name",
+        "storage",
+    ],
+)
 def delete_study(
+    *,
     study_name: str,
     storage: Union[str, storages.BaseStorage],
 ) -> None:
@@ -1308,7 +1339,17 @@ def delete_study(
     storage.delete_study(study_id)
 
 
+@convert_positional_args(
+    previous_positional_arg_names=[
+        "from_study_name",
+        "from_storage",
+        "to_storage",
+        "to_study_name",
+    ],
+    warning_stacklevel=3,
+)
 def copy_study(
+    *,
     from_study_name: str,
     from_storage: Union[str, storages.BaseStorage],
     to_storage: Union[str, storages.BaseStorage],

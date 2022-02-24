@@ -127,7 +127,7 @@ def test_optimize_trivial_in_memory_resume() -> None:
 
 def test_optimize_trivial_rdb_resume_study() -> None:
 
-    study = create_study("sqlite:///:memory:")
+    study = create_study(storage="sqlite:///:memory:")
     study.optimize(func, n_trials=10)
     check_study(study)
 
@@ -410,15 +410,15 @@ def test_delete_study(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         # Test deleting a non-existing study.
         with pytest.raises(KeyError):
-            delete_study("invalid-study-name", storage)
+            delete_study(study_name="invalid-study-name", storage=storage)
 
         # Test deleting an existing study.
         study = create_study(storage=storage, load_if_exists=False)
-        delete_study(study.study_name, storage)
+        delete_study(study_name=study.study_name, storage=storage)
 
         # Test failed to delete the study which is already deleted.
         with pytest.raises(KeyError):
-            delete_study(study.study_name, storage)
+            delete_study(study_name=study.study_name, storage=storage)
 
 
 @pytest.mark.parametrize("from_storage_mode", STORAGE_MODES)
