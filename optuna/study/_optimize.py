@@ -9,8 +9,6 @@ import itertools
 import math
 import os
 import sys
-from threading import Event
-from threading import Thread
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -27,7 +25,6 @@ import optuna
 from optuna import exceptions
 from optuna import logging
 from optuna import progress_bar as pbar_module
-from optuna import storages
 from optuna import trial as trial_module
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
