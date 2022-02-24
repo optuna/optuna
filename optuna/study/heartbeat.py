@@ -7,11 +7,11 @@ from optuna.trial import Trial
 
 
 class HeartBeatFactory:
-    def __init__(self, trial: Trial):
-        self.trial = trial
+    def __init__(self, trial: Trial) -> None:
+        self._trial = trial
 
     def launch(self) -> None:
-        fail_stale_trials(self.trial.study)
+        fail_stale_trials(self._trial.study)
 
         def _record_heartbeat(trial_id: int, storage: BaseStorage, stop_event: Event) -> None:
             heartbeat_interval = storage.get_heartbeat_interval()
@@ -24,13 +24,13 @@ class HeartBeatFactory:
         stop_event = Event()
         thread = Thread(
             target=_record_heartbeat,
-            args=(self.trial._trial_id, self.trial.study._storage, stop_event),
+            args=(self._trial._trial_id, self._trial.study._storage, stop_event),
         )
         thread.start()
         self.stop_event = stop_event
         self.thread = thread
 
-    def stop(self):
+    def stop(self) -> None:
         assert self.stop_event is not None
         assert self.thread is not None
 

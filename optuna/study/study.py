@@ -4,6 +4,7 @@ import threading
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Generator
 from typing import Iterable
 from typing import List
 from typing import Optional
@@ -403,7 +404,7 @@ class Study:
     @contextmanager
     def ask_with_heartbeat(
         self, fixed_distributions: Optional[Dict[str, BaseDistribution]] = None
-    ):
+    ) -> Generator[trial_module.Trial, None, None]:
         trial = self.ask(fixed_distributions=fixed_distributions)
         heartbeat = HeartBeatFactory(trial)
 
