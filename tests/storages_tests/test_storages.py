@@ -1133,7 +1133,7 @@ def test_fail_stale_trials_with_optimize(storage_mode: str) -> None:
         assert study2.trials[0].state is TrialState.RUNNING
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna.study._optimize.Thread", _TestableThread):
+        with patch("optuna.study.heartbeat.Thread", _TestableThread):
             study1.optimize(lambda _: 1.0, n_trials=1)
 
         assert study1.trials[0].state is TrialState.FAIL
@@ -1181,7 +1181,7 @@ def test_failed_trial_callback(storage_mode: str) -> None:
         time.sleep(grace_period + 1)
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna.study._optimize.Thread", _TestableThread):
+        with patch("optuna.study.heartbeat.Thread", _TestableThread):
             study.optimize(lambda _: 1.0, n_trials=1)
             failed_trial_callback.assert_called_once()
 
@@ -1211,7 +1211,7 @@ def test_retry_failed_trial_callback(storage_mode: str, max_retry: Optional[int]
         time.sleep(grace_period + 1)
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna.study._optimize.Thread", _TestableThread):
+        with patch("optuna.study.heartbeat.Thread", _TestableThread):
             study.optimize(lambda _: 1.0, n_trials=1)
 
         # Test the last trial to see if it was a retry of the first trial or not.
@@ -1258,7 +1258,7 @@ def test_retry_failed_trial_callback_intermediate(
         time.sleep(grace_period + 1)
 
         # Exceptions raised in spawned threads are caught by `_TestableThread`.
-        with patch("optuna.study._optimize.Thread", _TestableThread):
+        with patch("optuna.study.heartbeat.Thread", _TestableThread):
             study.optimize(lambda _: 1.0, n_trials=1)
 
         # Test the last trial to see if it was a retry of the first trial or not.
