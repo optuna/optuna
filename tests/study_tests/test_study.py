@@ -1095,11 +1095,11 @@ def test_ask() -> None:
 def test_ask_enqueue_trial() -> None:
     study = create_study()
 
-    study.enqueue_trial({"x": 0.5}, user_attrs={"memo", "this is memo"})
+    study.enqueue_trial({"x": 0.5}, user_attrs={"memo": "this is memo"})
 
     trial = study.ask()
     assert trial.suggest_float("x", 0, 1) == 0.5
-    assert trial.user_attrs == {"memo", "this is memo"}
+    assert trial.user_attrs == {"memo": "this is memo"}
 
 
 def test_ask_fixed_search_space() -> None:
