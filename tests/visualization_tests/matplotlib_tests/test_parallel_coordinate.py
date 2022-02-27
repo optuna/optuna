@@ -232,7 +232,6 @@ def test_plot_parallel_coordinate_log_params() -> None:
 
 def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # Test case when one unique value is suggested during the optimization.
-
     study_categorical_params = create_study()
     study_categorical_params.add_trial(
         create_trial(
