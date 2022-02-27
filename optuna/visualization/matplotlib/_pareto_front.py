@@ -83,22 +83,25 @@ def plot_pareto_front(
     _imports.check()
     if axis_order:
         warnings.warn(
-            "``axis_order`` option is deprecated."
-            " This feature will be removed in the future.",
+            "``axis_order`` option is deprecated. This feature will be removed in the future.",
             DeprecationWarning,
         )
     trials = _get_trials(study, include_dominated_trials)
     if targets is not None and axis_order is not None:
-        raise ValueError("Using both ``targets`` and ``axis_order`` is not supported. "
-                         " Use either `targets` or `axis_order`.")
+        raise ValueError(
+            "Using both ``targets`` and ``axis_order`` is not supported. "
+            " Use either `targets` or `axis_order`."
+        )
     if targets is None:
         if len(study.directions) == 2:
             targets = _targets_default_2d
         elif len(study.directions) == 3:
             targets = _targets_default_3d
         else:
-            raise ValueError("``plot_pareto_front`` function only supports 2 or 3 objective"
-                             " studies when using ``targets`` is ``None``. Please use`targets`")
+            raise ValueError(
+                "``plot_pareto_front`` function only supports 2 or 3 objective"
+                " studies when using ``targets`` is ``None``. Please use`targets`"
+            )
     target_values = [targets(t) for t in trials]
     n_targets = len(study.directions)
     if target_names is not None:
@@ -114,8 +117,10 @@ def plot_pareto_front(
             study, target_values, target_names, include_dominated_trials, axis_order
         )
     else:
-        raise ValueError("``plot_pareto_front`` function only supports 2 or 3 targets. "
-                         " you used {} targets now.".format(n_targets))
+        raise ValueError(
+            "``plot_pareto_front`` function only supports 2 or 3 targets. "
+            " you used {} targets now.".format(n_targets)
+        )
 
 
 def _targets_default_2d(trial: FrozenTrial) -> Sequence[float]:
