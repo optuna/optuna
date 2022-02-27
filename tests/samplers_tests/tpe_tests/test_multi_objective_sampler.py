@@ -359,6 +359,7 @@ def test_multi_objective_sample_independent_categorical_distributions() -> None:
     "log, step",
     [
         (False, 1),
+        (True, 1),
         (False, 2),
     ],
 )
@@ -369,7 +370,7 @@ def test_multi_objective_sample_int_distributions(log: bool, step: int) -> None:
     random.seed(128)
 
     def int_value_fn(idx: int) -> float:
-        return random.randint(0, 100)
+        return random.randint(1, 100)
 
     int_dist = optuna.distributions.IntDistribution(1, 100, log, step)
     past_trials = [
@@ -379,7 +380,7 @@ def test_multi_objective_sample_int_distributions(log: bool, step: int) -> None:
         for i in range(16)
     ]
 
-    trial = frozen_trial_factory(16, [0, 0])
+    trial = frozen_trial_factory(16, [1, 1])
     sampler = TPESampler(seed=0)
     attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
