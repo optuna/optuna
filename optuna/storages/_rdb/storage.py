@@ -4,6 +4,7 @@ import copy
 from datetime import datetime
 import json
 import logging
+import math
 import os
 from typing import Any
 from typing import Callable
@@ -15,7 +16,6 @@ from typing import Sequence
 from typing import Set
 from typing import Tuple
 import uuid
-import math
 
 import alembic.command
 import alembic.config

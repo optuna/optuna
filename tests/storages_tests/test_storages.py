@@ -11,8 +11,8 @@ from typing import Sequence
 from typing import Tuple
 from unittest.mock import Mock
 from unittest.mock import patch
-import numpy
 
+import numpy
 import pytest
 
 import optuna
@@ -1331,6 +1331,7 @@ def test_read_trials_from_remote_storage(storage_mode: str) -> None:
 
         study_id = storage.create_new_study()
         storage.read_trials_from_remote_storage(study_id)
+
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_report_with_nan(storage_mode: str) -> None:
