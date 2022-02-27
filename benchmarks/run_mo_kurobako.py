@@ -42,7 +42,7 @@ def run(args: argparse.Namespace) -> None:
 
     for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
         name = f"{args.name_prefix}_{sampler}"
-        python_command = f"mo_runner.py {sampler} {sampler_kwargs}"
+        python_command = f"benchmarks/mo_runner.py {sampler} {sampler_kwargs}"
         cmd = (
             f"{kurobako_cmd} solver --name {name} command python {python_command}"
             f"| tee -a {solvers_filename}"
