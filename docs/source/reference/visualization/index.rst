@@ -34,3 +34,6 @@ The :mod:`~optuna.visualization` module provides utility functions for plotting 
     :maxdepth: 1
 
     matplotlib
+
+.. seealso::
+    The :ref:`visualization` tutorial provides use-cases with examples.
