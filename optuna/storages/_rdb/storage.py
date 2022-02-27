@@ -53,7 +53,7 @@ _logger = optuna.logging.get_logger(__name__)
 def _ensure_not_nan(value):
     # Ensure the value is not Nan, which is not supported by MySQL
     # if Nan, change it the None
-    if isinstance(value, tuple) or isinstance(value, list):
+    if isinstance(value, (tuple, list)):
         return type(value)([None if math.isnan(v) else v for v in value])
     elif isinstance(value, dict):
         return {key: None if math.isnan(v) else v for key, v in value.iterms()}
