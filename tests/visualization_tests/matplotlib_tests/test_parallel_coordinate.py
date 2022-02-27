@@ -28,7 +28,6 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study)
     assert len(list(figure.get_figure().axes)) == 0 + 1
 
-
     study = prepare_study_with_trials(with_c_d=False)
     # Test with a trial.
     figure = plot_parallel_coordinate(study)
@@ -39,8 +38,10 @@ def test_plot_parallel_coordinate() -> None:
     assert len(figure.findobj(LineCollection)) == 1
     assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 2.0, 1.0]
     assert fig.axes[2].get_ylim() == (1.0, 2.5)
-    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
-             fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [1.0, 2.5]
+    assert [
+        fig.axes[2].get_lines()[0].get_ydata()[0],
+        fig.axes[2].get_lines()[0].get_ydata()[-1],
+    ] == [1.0, 2.5]
     assert fig.axes[3].get_ylim() == (0.0, 2.0)
     assert fig.axes[3].get_lines()[0].get_ydata().tolist() == [2.0, 0.0, 1.0]
 
@@ -53,8 +54,10 @@ def test_plot_parallel_coordinate() -> None:
     assert len(figure.findobj(LineCollection)) == 1
     assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 2.0, 1.0]
     assert fig.axes[2].get_ylim() == (1.0, 2.5)
-    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
-            fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [1.0, 2.5]
+    assert [
+        fig.axes[2].get_lines()[0].get_ydata()[0],
+        fig.axes[2].get_lines()[0].get_ydata()[-1],
+    ] == [1.0, 2.5]
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
@@ -69,10 +72,10 @@ def test_plot_parallel_coordinate() -> None:
     assert len(figure.findobj(LineCollection)) == 1
     assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [2.0, 0.0, 1.0]
     assert fig.axes[2].get_ylim() == (1.0, 2.5)
-    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
-            fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [1.0, 2.5]
-
-    
+    assert [
+        fig.axes[2].get_lines()[0].get_ydata()[0],
+        fig.axes[2].get_lines()[0].get_ydata()[-1],
+    ] == [1.0, 2.5]
 
     # Test with a customized target name.
     figure = plot_parallel_coordinate(study, target_name="Target Name")
@@ -84,8 +87,10 @@ def test_plot_parallel_coordinate() -> None:
     assert len(figure.findobj(LineCollection)) == 1
     assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 2.0, 1.0]
     assert fig.axes[2].get_ylim() == (1.0, 2.5)
-    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
-             fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [1.0, 2.5]
+    assert [
+        fig.axes[2].get_lines()[0].get_ydata()[0],
+        fig.axes[2].get_lines()[0].get_ydata()[-1],
+    ] == [1.0, 2.5]
     assert fig.axes[3].get_ylim() == (0.0, 2.0)
     assert fig.axes[3].get_lines()[0].get_ydata().tolist() == [2.0, 0.0, 1.0]
 
@@ -136,8 +141,10 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
     assert len(figure.findobj(LineCollection)) == 1
     assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 2.0]
     assert fig.axes[2].get_ylim() == (0, 1)
-    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
-             fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [0, 1]
+    assert [
+        fig.axes[2].get_lines()[0].get_ydata()[0],
+        fig.axes[2].get_lines()[0].get_ydata()[-1],
+    ] == [0, 1]
     assert fig.axes[3].get_ylim() == (0, 1)
     assert fig.axes[3].get_lines()[0].get_ydata().tolist() == [0, 1]
 
@@ -223,11 +230,17 @@ def test_plot_parallel_coordinate_log_params() -> None:
     assert len(figure.findobj(LineCollection)) == 1
     assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 1.0, 0.1]
     assert fig.axes[2].get_ylim() == (-6.0, -4.0)
-    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
-             fig.axes[2].get_lines()[0].get_ydata()[1],
-             fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [-6, math.log10(2e-5), -4]
+    assert [
+        fig.axes[2].get_lines()[0].get_ydata()[0],
+        fig.axes[2].get_lines()[0].get_ydata()[1],
+        fig.axes[2].get_lines()[0].get_ydata()[-1],
+    ] == [-6, math.log10(2e-5), -4]
     assert fig.axes[3].get_ylim() == (1.0, math.log10(200))
-    assert fig.axes[3].get_lines()[0].get_ydata().tolist() == [1.0, math.log10(200), math.log10(30)]
+    assert fig.axes[3].get_lines()[0].get_ydata().tolist() == [
+        1.0,
+        math.log10(200),
+        math.log10(30),
+    ]
 
 
 def test_plot_parallel_coordinate_unique_hyper_param() -> None:
