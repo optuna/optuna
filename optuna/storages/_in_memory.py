@@ -294,6 +294,13 @@ class InMemoryStorage(BaseStorage):
 
             return trial._trial_id
 
+    def get_trial_number_from_id(self, trial_id: int) -> int:
+
+        with self._lock:
+            self._check_trial_id(trial_id)
+
+            return self._trial_id_to_study_id_and_number[trial_id][1]
+
     def get_best_trial(self, study_id: int) -> FrozenTrial:
 
         with self._lock:

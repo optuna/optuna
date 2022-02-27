@@ -734,6 +734,17 @@ class RDBStorage(BaseStorage):
                 distribution_json=distributions.distribution_to_json(distribution),
             ).check_and_add(session)
 
+    def get_trial_param(self, trial_id: int, param_name: str) -> float:
+
+        with _create_scoped_session(self.scoped_session) as session:
+            trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
+            trial_param = models.TrialParamModel.find_or_raise_by_trial_and_param_name(
+                trial, param_name, session
+            )
+            param_value = trial_param.param_value
+
+        return param_value
+
     @staticmethod
     def _ensure_numerical_limit(value: float) -> float:
 
