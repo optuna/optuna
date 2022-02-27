@@ -70,7 +70,7 @@ def plot_pareto_front(
             default order is used.
         targets:
             A function that returns a tuple of target values to display.
-            The argument to this function is ``FrozenTrial``.
+            The argument to this function is :class:`~optuna.trial.FrozenTrial`.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
@@ -100,7 +100,8 @@ def plot_pareto_front(
         else:
             raise ValueError(
                 "``plot_pareto_front`` function only supports 2 or 3 objective"
-                " studies when using ``targets`` is ``None``. Please use`targets`"
+                " studies when using ``targets`` is ``None``. Please specify the used values with"
+                " `targets`."
             )
     target_values = [targets(t) for t in trials]
     n_targets = len(study.directions)
