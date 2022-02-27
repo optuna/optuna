@@ -1,4 +1,7 @@
+from matplotlib.collections import PathCollection
+from matplotlib.collections import LineCollection
 import math
+import numpy as np
 
 import pytest
 
@@ -23,58 +26,68 @@ def test_plot_parallel_coordinate() -> None:
     # Test with no trial.
     study = create_study()
     figure = plot_parallel_coordinate(study)
-    assert len(figure.get_lines()) == 0
+    assert len(list(figure.get_figure().axes)) == 0 + 1
+
 
     study = prepare_study_with_trials(with_c_d=False)
-
     # Test with a trial.
     figure = plot_parallel_coordinate(study)
-    assert len(figure.data[0]["dimensions"]) == 3
-    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
-    assert figure.data[0]["dimensions"][1]["label"] == "param_a"
-    assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
-    assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
-    assert figure.data[0]["dimensions"][2]["label"] == "param_b"
-    assert figure.data[0]["dimensions"][2]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 0.0, 1.0)
+    assert len(list(figure.get_figure().axes)) == 3 + 1
+    fig = figure.get_figure()
+    assert fig.axes[1].get_ylabel() == "Objective Value"
+    assert fig.axes[1].get_ylim() == (0.0, 2.0)
+    assert len(figure.findobj(LineCollection)) == 1
+    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 2.0, 1.0]
+    assert fig.axes[2].get_ylim() == (1.0, 2.5)
+    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
+             fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [1.0, 2.5]
+    assert fig.axes[3].get_ylim() == (0.0, 2.0)
+    assert fig.axes[3].get_lines()[0].get_ydata().tolist() == [2.0, 0.0, 1.0]
 
     # Test with a trial to select parameter.
     figure = plot_parallel_coordinate(study, params=["param_a"])
-    assert len(figure.data[0]["dimensions"]) == 2
-    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
-    assert figure.data[0]["dimensions"][1]["label"] == "param_a"
-    assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
-    assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
+    assert len(list(figure.get_figure().axes)) == 2 + 1
+    fig = figure.get_figure()
+    assert fig.axes[1].get_ylabel() == "Objective Value"
+    assert fig.axes[1].get_ylim() == (0.0, 2.0)
+    assert len(figure.findobj(LineCollection)) == 1
+    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 2.0, 1.0]
+    assert fig.axes[2].get_ylim() == (1.0, 2.5)
+    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
+            fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [1.0, 2.5]
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
         figure = plot_parallel_coordinate(
             study, params=["param_a"], target=lambda t: t.params["param_b"]
         )
-    assert len(figure.data[0]["dimensions"]) == 2
-    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (2.0, 0.0, 1.0)
-    assert figure.data[0]["dimensions"][1]["label"] == "param_a"
-    assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
-    assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
+
+    assert len(list(figure.get_figure().axes)) == 2 + 1
+    fig = figure.get_figure()
+    assert fig.axes[1].get_ylabel() == "Objective Value"
+    assert fig.axes[1].get_ylim() == (0.0, 2.0)
+    assert len(figure.findobj(LineCollection)) == 1
+    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [2.0, 0.0, 1.0]
+    assert fig.axes[2].get_ylim() == (1.0, 2.5)
+    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
+            fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [1.0, 2.5]
+
+    
 
     # Test with a customized target name.
     figure = plot_parallel_coordinate(study, target_name="Target Name")
-    assert len(figure.data[0]["dimensions"]) == 3
-    assert figure.data[0]["dimensions"][0]["label"] == "Target Name"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
-    assert figure.data[0]["dimensions"][1]["label"] == "param_a"
-    assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
-    assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
-    assert figure.data[0]["dimensions"][2]["label"] == "param_b"
-    assert figure.data[0]["dimensions"][2]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 0.0, 1.0)
+
+    assert len(list(figure.get_figure().axes)) == 3 + 1
+    fig = figure.get_figure()
+    assert fig.axes[1].get_ylabel() == "Target Name"
+    assert fig.axes[1].get_ylim() == (0.0, 2.0)
+    assert len(figure.findobj(LineCollection)) == 1
+    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 2.0, 1.0]
+    assert fig.axes[2].get_ylim() == (1.0, 2.5)
+    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
+             fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [1.0, 2.5]
+    assert fig.axes[3].get_ylim() == (0.0, 2.0)
+    assert fig.axes[3].get_lines()[0].get_ydata().tolist() == [2.0, 0.0, 1.0]
 
     # Test with wrong params that do not exist in trials
     with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
@@ -115,18 +128,18 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
         )
     )
     figure = plot_parallel_coordinate(study_categorical_params)
-    assert len(figure.data[0]["dimensions"]) == 3
-    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][1]["label"] == "category_a"
-    assert figure.data[0]["dimensions"][1]["range"] == (0, 1)
-    assert figure.data[0]["dimensions"][1]["values"] == (0, 1)
-    assert figure.data[0]["dimensions"][1]["ticktext"] == ("preferred", "opt")
-    assert figure.data[0]["dimensions"][2]["label"] == "category_b"
-    assert figure.data[0]["dimensions"][2]["range"] == (0, 1)
-    assert figure.data[0]["dimensions"][2]["values"] == (0, 1)
-    assert figure.data[0]["dimensions"][2]["ticktext"] == ("net", "una")
+
+    assert len(list(figure.get_figure().axes)) == 3 + 1
+    fig = figure.get_figure()
+    assert fig.axes[1].get_ylabel() == "Objective Value"
+    assert fig.axes[1].get_ylim() == (0.0, 2.0)
+    assert len(figure.findobj(LineCollection)) == 1
+    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 2.0]
+    assert fig.axes[2].get_ylim() == (0, 1)
+    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
+             fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [0, 1]
+    assert fig.axes[3].get_ylim() == (0, 1)
+    assert fig.axes[3].get_lines()[0].get_ydata().tolist() == [0, 1]
 
 
 def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
@@ -202,20 +215,19 @@ def test_plot_parallel_coordinate_log_params() -> None:
         )
     )
     figure = plot_parallel_coordinate(study_log_params)
-    assert len(figure.data[0]["dimensions"]) == 3
-    assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 1.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 1.0, 0.1)
-    assert figure.data[0]["dimensions"][1]["label"] == "param_a"
-    assert figure.data[0]["dimensions"][1]["range"] == (-6.0, -4.0)
-    assert figure.data[0]["dimensions"][1]["values"] == (-6, math.log10(2e-5), -4)
-    assert figure.data[0]["dimensions"][1]["ticktext"] == ("1e-06", "1e-05", "0.0001")
-    assert figure.data[0]["dimensions"][1]["tickvals"] == (-6, -5, -4.0)
-    assert figure.data[0]["dimensions"][2]["label"] == "param_b"
-    assert figure.data[0]["dimensions"][2]["range"] == (1.0, math.log10(200))
-    assert figure.data[0]["dimensions"][2]["values"] == (1.0, math.log10(200), math.log10(30))
-    assert figure.data[0]["dimensions"][2]["ticktext"] == ("10", "100", "200")
-    assert figure.data[0]["dimensions"][2]["tickvals"] == (1.0, 2.0, math.log10(200))
+
+    assert len(list(figure.get_figure().axes)) == 3 + 1
+    fig = figure.get_figure()
+    assert fig.axes[1].get_ylabel() == "Objective Value"
+    assert fig.axes[1].get_ylim() == (0.0, 1.0)
+    assert len(figure.findobj(LineCollection)) == 1
+    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 1.0, 0.1]
+    assert fig.axes[2].get_ylim() == (-6.0, -4.0)
+    assert [ fig.axes[2].get_lines()[0].get_ydata()[0],
+             fig.axes[2].get_lines()[0].get_ydata()[1],
+             fig.axes[2].get_lines()[0].get_ydata()[-1] ] == [-6, math.log10(2e-5), -4]
+    assert fig.axes[3].get_ylim() == (1.0, math.log10(200))
+    assert fig.axes[3].get_lines()[0].get_ydata().tolist() == [1.0, math.log10(200), math.log10(30)]
 
 
 def test_plot_parallel_coordinate_unique_hyper_param() -> None:
