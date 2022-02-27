@@ -1335,7 +1335,7 @@ def test_read_trials_from_remote_storage(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_report_with_nan(storage_mode: str) -> None:
-    def objective(trial):
+    def objective(trial: optuna.Trial) -> int:
         trial.report(float(numpy.nan), 1)
         return 1
 

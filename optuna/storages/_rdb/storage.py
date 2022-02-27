@@ -50,7 +50,7 @@ _RDB_MIN_FLOAT = np.finfo(np.float32).min
 _logger = optuna.logging.get_logger(__name__)
 
 
-def _ensure_not_nan(value):
+def _ensure_not_nan(value: Any) -> Any:
     # Ensure the value is not Nan, which is not supported by MySQL
     # if Nan, change it the None
     if isinstance(value, (tuple, list)):
