@@ -7,7 +7,7 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
 
 .. seealso::
     | :ref:`pruning` tutorial explains the overview of the sampler classes.
-    | :ref:`user_defined_sampler` tutorial could be helpful if you want to implement your own pruner classes.
+    | :ref:`user_defined_sampler` tutorial could be helpful if you want to implement your own sampler classes.
 
 .. autosummary::
    :toctree: generated/
