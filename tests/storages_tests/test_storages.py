@@ -11,6 +11,7 @@ from typing import Sequence
 from typing import Tuple
 from unittest.mock import Mock
 from unittest.mock import patch
+import numpy
 
 import pytest
 
@@ -1330,3 +1331,13 @@ def test_read_trials_from_remote_storage(storage_mode: str) -> None:
 
         study_id = storage.create_new_study()
         storage.read_trials_from_remote_storage(study_id)
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_report_with_nan(storage_mode: str) -> None:
+    def objective(trial):
+        trial.report(float(numpy.nan), 1)
+        return 1
+
+    with StorageSupplier(storage_mode) as storage:
+        study = optuna.create_study(storage=storage)
+        study.optimize(objective, n_trials=1)
