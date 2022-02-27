@@ -69,7 +69,8 @@ def plot_pareto_front(
             A list of indices indicating the axis order. If :obj:`None` is specified,
             default order is used.
         targets:
-            A function to return a list of target values from trials.
+            A function that returns a tuple of target values to display.
+            The argument to this function is ``FrozenTrial``.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
