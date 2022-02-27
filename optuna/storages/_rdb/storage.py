@@ -15,6 +15,7 @@ from typing import Sequence
 from typing import Set
 from typing import Tuple
 import uuid
+import math
 
 import alembic.command
 import alembic.config
@@ -47,6 +48,17 @@ _RDB_MIN_FLOAT = np.finfo(np.float32).min
 
 
 _logger = optuna.logging.get_logger(__name__)
+
+
+def _ensure_not_nan(value):
+    # Ensure the value is not Nan, which is not supported by MySQL
+    # if Nan, change it the None
+    if isinstance(value, tuple) or isinstance(value, list):
+        return type(value)([None if math.isnan(v) else v for v in value])
+    elif isinstance(value, dict):
+        return {key: None if math.isnan(v) else v for key, v in value.iterms()}
+    else:
+        return None if math.isnan(value) else value
 
 
 @contextmanager
@@ -766,6 +778,7 @@ class RDBStorage(BaseStorage):
 
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
+        values = _ensure_not_nan(values)
         with _create_scoped_session(self.scoped_session) as session:
             trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
             self.check_trial_is_updatable(trial_id, trial.state)
@@ -778,7 +791,8 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
-        value = self._ensure_numerical_limit(value)
+        if value is not None:
+            value = self._ensure_numerical_limit(value)
 
         trial_value = models.TrialValueModel.find_by_trial_and_objective(trial, objective, session)
         if trial_value is None:
@@ -793,6 +807,7 @@ class RDBStorage(BaseStorage):
         self, trial_id: int, step: int, intermediate_value: float
     ) -> None:
 
+        intermediate_value = _ensure_not_nan(intermediate_value)
         with _create_scoped_session(self.scoped_session, True) as session:
             self._set_trial_intermediate_value_without_commit(
                 session, trial_id, step, intermediate_value
@@ -804,7 +819,8 @@ class RDBStorage(BaseStorage):
 
         trial = models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
-        intermediate_value = self._ensure_numerical_limit(intermediate_value)
+        if intermediate_value is not None:
+            intermediate_value = self._ensure_numerical_limit(intermediate_value)
 
         trial_intermediate_value = models.TrialIntermediateValueModel.find_by_trial_and_step(
             trial, step, session

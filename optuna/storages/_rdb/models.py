@@ -413,7 +413,7 @@ class TrialValueModel(BaseModel):
     trial_value_id = Column(Integer, primary_key=True)
     trial_id = Column(Integer, ForeignKey("trials.trial_id"), nullable=False)
     objective = Column(Integer, nullable=False)
-    value = Column(Float, nullable=False)
+    value = Column(Float, nullable=True)
 
     trial = orm.relationship(
         TrialModel, backref=orm.backref("values", cascade="all, delete-orphan")
