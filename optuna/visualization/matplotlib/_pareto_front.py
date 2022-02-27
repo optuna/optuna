@@ -1,5 +1,8 @@
+from typing import Callable
 from typing import List
 from typing import Optional
+from typing import Sequence
+import warnings
 
 import optuna
 from optuna._experimental import experimental
@@ -23,6 +26,7 @@ def plot_pareto_front(
     target_names: Optional[List[str]] = None,
     include_dominated_trials: bool = True,
     axis_order: Optional[List[int]] = None,
+    targets: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
 ) -> "Axes":
     """Plot the Pareto front of a study.
 
@@ -64,6 +68,9 @@ def plot_pareto_front(
         axis_order:
             A list of indices indicating the axis order. If :obj:`None` is specified,
             default order is used.
+        targets:
+            A function that returns a tuple of target values to display.
+            The argument to this function is ``FrozenTrial``.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
@@ -74,13 +81,49 @@ def plot_pareto_front(
     """
 
     _imports.check()
-
-    if len(study.directions) == 2:
-        return _get_pareto_front_2d(study, target_names, include_dominated_trials, axis_order)
-    elif len(study.directions) == 3:
-        return _get_pareto_front_3d(study, target_names, include_dominated_trials, axis_order)
+    if axis_order:
+        warnings.warn(
+            "``axis_order`` option is deprecated."
+            " This feature will be removed in the future.",
+            DeprecationWarning,
+        )
+    trials = _get_trials(study, include_dominated_trials)
+    if targets is not None and axis_order is not None:
+        raise ValueError("Using both ``targets`` and ``axis_order`` is not supported. "
+                         " Use either `targets` or `axis_order`.")
+    if targets is None:
+        if len(study.directions) == 2:
+            targets = _targets_default_2d
+        elif len(study.directions) == 3:
+            targets = _targets_default_3d
+        else:
+            raise ValueError("``plot_pareto_front`` function only supports 2 or 3 objective"
+                             " studies when using ``targets`` is ``None``. Please use`targets`")
+    target_values = [targets(t) for t in trials]
+    n_targets = len(study.directions)
+    if target_names is not None:
+        n_targets = len(target_names)
+    if len(target_values) > 0:
+        n_targets = len(target_values[0])
+    if n_targets == 2:
+        return _get_pareto_front_2d(
+            study, target_values, target_names, include_dominated_trials, axis_order
+        )
+    elif n_targets == 3:
+        return _get_pareto_front_3d(
+            study, target_values, target_names, include_dominated_trials, axis_order
+        )
     else:
-        raise ValueError("`plot_pareto_front` function only supports 2 or 3 objective studies.")
+        raise ValueError("``plot_pareto_front`` function only supports 2 or 3 targets. "
+                         " you used {} targets now.".format(n_targets))
+
+
+def _targets_default_2d(trial: FrozenTrial) -> Sequence[float]:
+    return trial.values[0], trial.values[1]
+
+
+def _targets_default_3d(trial: FrozenTrial) -> Sequence[float]:
+    return trial.values[0], trial.values[1], trial.values[2]
 
 
 def _get_non_pareto_front_trials(
@@ -94,8 +137,20 @@ def _get_non_pareto_front_trials(
     return non_pareto_trials
 
 
+def _get_trials(study: Study, include_dominated_trials: bool) -> List[FrozenTrial]:
+    trials = study.best_trials
+    if len(trials) == 0:
+        _logger.warning("Your study does not have any completed trials.")
+
+    if include_dominated_trials:
+        non_pareto_trials = _get_non_pareto_front_trials(study, trials)
+        trials += non_pareto_trials
+    return trials
+
+
 def _get_pareto_front_2d(
     study: Study,
+    target_values: Sequence[Sequence[float]],
     target_names: Optional[List[str]],
     include_dominated_trials: bool = False,
     axis_order: Optional[List[int]] = None,
@@ -113,14 +168,6 @@ def _get_pareto_front_2d(
         raise ValueError("The length of `target_names` is supposed to be 2.")
 
     # Prepare data for plotting.
-    trials = study.best_trials
-    if len(trials) == 0:
-        _logger.warning("Your study does not have any completed trials.")
-
-    if include_dominated_trials:
-        non_pareto_trials = _get_non_pareto_front_trials(study, trials)
-        trials += non_pareto_trials
-
     if axis_order is None:
         axis_order = list(range(2))
     else:
@@ -144,17 +191,17 @@ def _get_pareto_front_2d(
     ax.set_xlabel(target_names[axis_order[0]])
     ax.set_ylabel(target_names[axis_order[1]])
 
-    if len(trials) - len(study.best_trials) != 0:
+    if len(target_values) - len(study.best_trials) != 0:
         ax.scatter(
-            x=[t.values[axis_order[0]] for t in trials[len(study.best_trials) :]],
-            y=[t.values[axis_order[1]] for t in trials[len(study.best_trials) :]],
+            x=[v[axis_order[0]] for v in target_values[len(study.best_trials) :]],
+            y=[v[axis_order[1]] for v in target_values[len(study.best_trials) :]],
             color=cmap(0),
             label="Trial",
         )
     if len(study.best_trials):
         ax.scatter(
-            x=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
-            y=[t.values[axis_order[1]] for t in trials[: len(study.best_trials)]],
+            x=[v[axis_order[0]] for v in target_values[: len(study.best_trials)]],
+            y=[v[axis_order[1]] for v in target_values[: len(study.best_trials)]],
             color=cmap(3),
             label="Best Trial",
         )
@@ -167,6 +214,7 @@ def _get_pareto_front_2d(
 
 def _get_pareto_front_3d(
     study: Study,
+    target_values: Sequence[Sequence[float]],
     target_names: Optional[List[str]],
     include_dominated_trials: bool = False,
     axis_order: Optional[List[int]] = None,
@@ -183,14 +231,6 @@ def _get_pareto_front_3d(
         target_names = ["Objective 0", "Objective 1", "Objective 2"]
     elif len(target_names) != 3:
         raise ValueError("The length of `target_names` is supposed to be 3.")
-
-    trials = study.best_trials
-    if len(trials) == 0:
-        _logger.warning("Your study does not have any completed trials.")
-
-    if include_dominated_trials:
-        non_pareto_trials = _get_non_pareto_front_trials(study, trials)
-        trials += non_pareto_trials
 
     if axis_order is None:
         axis_order = list(range(3))
@@ -216,20 +256,20 @@ def _get_pareto_front_3d(
     ax.set_ylabel(target_names[axis_order[1]])
     ax.set_zlabel(target_names[axis_order[2]])
 
-    if len(trials) - len(study.best_trials) != 0:
+    if len(target_values) - len(study.best_trials) != 0:
         ax.scatter(
-            xs=[t.values[axis_order[0]] for t in trials[len(study.best_trials) :]],
-            ys=[t.values[axis_order[1]] for t in trials[len(study.best_trials) :]],
-            zs=[t.values[axis_order[2]] for t in trials[len(study.best_trials) :]],
+            xs=[v[axis_order[0]] for v in target_values[len(study.best_trials) :]],
+            ys=[v[axis_order[1]] for v in target_values[len(study.best_trials) :]],
+            zs=[v[axis_order[2]] for v in target_values[len(study.best_trials) :]],
             color=cmap(0),
             label="Trial",
         )
 
     if len(study.best_trials):
         ax.scatter(
-            xs=[t.values[axis_order[0]] for t in trials[: len(study.best_trials)]],
-            ys=[t.values[axis_order[1]] for t in trials[: len(study.best_trials)]],
-            zs=[t.values[axis_order[2]] for t in trials[: len(study.best_trials)]],
+            xs=[v[axis_order[0]] for v in target_values[: len(study.best_trials)]],
+            ys=[v[axis_order[1]] for v in target_values[: len(study.best_trials)]],
+            zs=[v[axis_order[2]] for v in target_values[: len(study.best_trials)]],
             color=cmap(3),
             label="Best Trial",
         )
