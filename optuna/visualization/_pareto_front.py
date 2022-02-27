@@ -90,8 +90,6 @@ def plot_pareto_front(
     Raises:
         :exc:`ValueError`:
             If the number of objectives of ``study`` isn't 2 or 3.
-
-    See also
     """
 
     _imports.check()
