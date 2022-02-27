@@ -137,14 +137,14 @@ class FloatDistribution(BaseDistribution):
         self, low: float, high: float, log: bool = False, step: Union[None, float] = None
     ) -> None:
 
+        if log and step is not None:
+            raise ValueError("The parameter `step` is not supported when `log` is true.")
+
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
                 "(low={}, high={}).".format(low, high)
             )
-
-        if log and step is not None:
-            raise ValueError("The parameter `step` is not supported when `log` is true.")
 
         if log and low <= 0.0:
             raise ValueError(
@@ -335,6 +335,13 @@ class IntDistribution(BaseDistribution):
     """
 
     def __init__(self, low: int, high: int, log: bool = False, step: int = 1) -> None:
+
+        if log and step != 1:
+            raise ValueError(
+                "Samplers and other components in Optuna only accept step is 1 "
+                "when `log` argument is True."
+            )
+
         if low > high:
             raise ValueError(
                 "The `low` value must be smaller than or equal to the `high` value "
@@ -350,12 +357,6 @@ class IntDistribution(BaseDistribution):
         if step <= 0:
             raise ValueError(
                 "The `step` value must be non-zero positive value, but step={}.".format(step)
-            )
-
-        if log and step != 1:
-            raise ValueError(
-                "Samplers and other components in Optuna only accept step is 1 "
-                "when `log` argument is True."
             )
 
         self.log = log
