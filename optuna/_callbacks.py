@@ -68,7 +68,7 @@ class RetryFailedTrialCallback:
 
     The failed trial can be identified by the
     :func:`~optuna.storages.RetryFailedTrialCallback.retried_trial_number` function.
-    Even if repetitive failure occurrs (a retried trial fails again),
+    Even if repetitive failure occurs (a retried trial fails again),
     this method returns the number of the original trial.
     To get a full list including the numbers of the retried trials as well as their original trial,
     call the :func:`~optuna.storages.RetryFailedTrialCallback.retry_history` function.
