@@ -7,6 +7,10 @@ The :mod:`~optuna.pruners` module defines a :class:`~optuna.pruners.BasePruner` 
 
 .. seealso::
     :ref:`pruning` tutorial explains the concept of the pruner classes and a minimal example.
+    The :ref:`user_defined_pruner` tutorial provides use-cases with examples.
+
+.. seealso::
+    :ref:`user_defined_pruner` tutorial could be helpful if you want to implement your own pruner classes.
 
 .. autosummary::
    :toctree: generated/
