@@ -68,22 +68,40 @@ def plot_pareto_front(
         axis_order:
             A list of indices indicating the axis order. If :obj:`None` is specified,
             default order is used.
+
+            .. warning::
+                Deprecated in v3.0.0. This feature will be removed in the future. The removal of
+                this feature is currently scheduled for v5.0.0, but this schedule is subject to
+                change. See https://github.com/optuna/optuna/releases/tag/v3.0.0.
         targets:
             A function that returns a tuple of target values to display.
             The argument to this function is :class:`~optuna.trial.FrozenTrial`.
+
+            .. note::
+                Added in v3.0.0 as an experimental feature. The interface may change in newer
+                versions without prior notice.
+                See https://github.com/optuna/optuna/releases/tag/v3.0.0.
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
 
     Raises:
         :exc:`ValueError`:
-            If the number of objectives of ``study`` isn't 2 or 3.
+            If ``targets`` is ``None`` when your objective studies have more than 3 objectives.
+        :exc:`ValueError`:
+            If the number of target values to display isn't 2 or 3.
+        :exc:`ValueError`:
+            If ``targets`` is specified for empty studies and ``target_names`` is ``None``
+        :exc:`ValueError`:
+            if using both ``targets`` and ``axis_order``.
     """
 
     _imports.check()
-    if axis_order:
+    if axis_order is not None:
         warnings.warn(
-            "``axis_order`` option is deprecated. This feature will be removed in the future.",
+            "`axis_order` has been deprecated in v3.0.0. "
+            "This feature will be removed in v5.0.0. "
+            "See https://github.com/optuna/optuna/releases/tag/v3.0.0.",
             DeprecationWarning,
         )
     trials = _get_trials(study, include_dominated_trials)
@@ -92,23 +110,30 @@ def plot_pareto_front(
             "Using both ``targets`` and ``axis_order`` is not supported. "
             " Use either `targets` or `axis_order`."
         )
-    if targets is None:
+    _targets = targets
+    if _targets is None:
         if len(study.directions) == 2:
-            targets = _targets_default_2d
+            _targets = _targets_default_2d
         elif len(study.directions) == 3:
-            targets = _targets_default_3d
+            _targets = _targets_default_3d
         else:
             raise ValueError(
                 "``plot_pareto_front`` function only supports 2 or 3 objective"
-                " studies when using ``targets`` is ``None``. Please specify the used values with"
-                " `targets`."
+                " studies when using ``targets`` is ``None``. Please use ``targets``"
+                " if your objective studies have more than 3 objectives."
             )
-    target_values = [targets(t) for t in trials]
-    n_targets = len(study.directions)
-    if target_names is not None:
-        n_targets = len(target_names)
+    target_values = [_targets(t) for t in trials]
     if len(target_values) > 0:
         n_targets = len(target_values[0])
+    elif target_names is not None:
+        n_targets = len(target_names)
+    elif targets is None:
+        n_targets = len(study.directions)
+    else:
+        raise ValueError(
+            "If ``targets`` is specified for empty studies, ``target_names`` must be specified."
+        )
+
     if n_targets == 2:
         return _get_pareto_front_2d(
             study, target_values, target_names, include_dominated_trials, axis_order

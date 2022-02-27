@@ -39,7 +39,6 @@ def test_plot_pareto_front_2d(
         study=study,
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
-        targets=targets,
     )
 
     assert len(figure.get_lines()) == 0
@@ -154,7 +153,6 @@ def test_plot_pareto_front_3d(
         study=study,
         include_dominated_trials=include_dominated_trials,
         axis_order=axis_order,
-        targets=targets,
     )
     assert len(figure.get_lines()) == 0
 
@@ -332,6 +330,41 @@ def test_plot_pareto_front_invalid_axis_order(
             study=study,
             include_dominated_trials=include_dominated_trials,
             axis_order=invalid_axis_order,
+        )
+
+
+def test_plot_pareto_front_targets_without_target_names() -> None:
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
+    with pytest.raises(ValueError):
+        plot_pareto_front(
+            study=study,
+            target_names=None,
+            targets=lambda t: (t.values[0], t.values[1], t.values[2]),
+        )
+
+
+@pytest.mark.parametrize(
+    "targets",
+    [
+        lambda t: (t.values[0], t.values[1]),
+        lambda t: (t.values[0], t.values[1], t.values[2], t.values[3]),
+    ],
+)
+def test_plot_pareto_front_invalid_targets(
+    targets: Optional[Callable[[FrozenTrial], Sequence[float]]]
+) -> None:
+    study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
+    study.enqueue_trial({"w": 1, "x": 1, "y": 1, "z": 1})
+    study.enqueue_trial({"w": 1, "x": 1, "y": 0, "z": 1})
+    study.enqueue_trial({"w": 1, "x": 1, "y": 1, "z": 0})
+    study.optimize(
+        lambda t: [t.suggest_int("x", 0, 1), t.suggest_int("y", 0, 1), t.suggest_int("z", 0, 1)],
+        n_trials=3,
+    )
+    with pytest.raises(ValueError):
+        plot_pareto_front(
+            study=study,
+            targets=targets,
         )
 
 
