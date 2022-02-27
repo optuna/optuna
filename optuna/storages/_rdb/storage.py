@@ -56,7 +56,7 @@ def _ensure_not_nan(value: Any) -> Any:
     if isinstance(value, (tuple, list)):
         return type(value)([None if math.isnan(v) else v for v in value])
     elif isinstance(value, dict):
-        return {key: None if math.isnan(v) else v for key, v in value.iterms()}
+        return {key: None if math.isnan(v) else v for key, v in value.items()}
     else:
         return None if math.isnan(value) else value
 
