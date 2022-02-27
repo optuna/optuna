@@ -260,18 +260,9 @@ class _CachedStorage(BaseStorage):
         # TODO(hvy): Optimize to not issue a query to the backend storage.
         return self._backend.get_trial_id_from_study_id_trial_number(study_id, trial_number)
 
-    def get_trial_number_from_id(self, trial_id: int) -> int:
-
-        return self.get_trial(trial_id).number
-
     def get_best_trial(self, study_id: int) -> FrozenTrial:
 
         return self._backend.get_best_trial(study_id)
-
-    def get_trial_param(self, trial_id: int, param_name: str) -> float:
-
-        trial = self.get_trial(trial_id)
-        return trial.distributions[param_name].to_internal_repr(trial.params[param_name])
 
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
