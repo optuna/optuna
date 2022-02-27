@@ -1,3 +1,4 @@
+import collections
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -89,6 +90,8 @@ def plot_pareto_front(
         :exc:`ValueError`:
             If ``targets`` is ``None`` when your objective studies have more than 3 objectives.
         :exc:`ValueError`:
+            If ``targets`` returns something other than sequence.
+        :exc:`ValueError`:
             If the number of target values to display isn't 2 or 3.
         :exc:`ValueError`:
             If ``targets`` is specified for empty studies and ``target_names`` is ``None``
@@ -123,6 +126,12 @@ def plot_pareto_front(
                 " if your objective studies have more than 3 objectives."
             )
     target_values = [_targets(t) for t in trials]
+    if len(target_values) > 0 and not isinstance(target_values[0], collections.Sequence):
+        raise ValueError(
+            "``targets`` should return a sequence of target values."
+            " your ``targets`` returns {}".format(type(target_values[0]))
+        )
+
     if len(target_values) > 0:
         n_targets = len(target_values[0])
     elif target_names is not None:

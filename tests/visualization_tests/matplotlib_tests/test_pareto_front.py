@@ -346,7 +346,8 @@ def test_plot_pareto_front_targets_without_target_names() -> None:
 @pytest.mark.parametrize(
     "targets",
     [
-        lambda t: (t.values[0], t.values[1]),
+        lambda t: (t.values[0]),
+        lambda t: (t.values[0],),
         lambda t: (t.values[0], t.values[1], t.values[2], t.values[3]),
     ],
 )
@@ -355,10 +356,15 @@ def test_plot_pareto_front_invalid_targets(
 ) -> None:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
     study.enqueue_trial({"w": 1, "x": 1, "y": 1, "z": 1})
-    study.enqueue_trial({"w": 1, "x": 1, "y": 0, "z": 1})
+    study.enqueue_trial({"w": 0, "x": 1, "y": 0, "z": 1})
     study.enqueue_trial({"w": 1, "x": 1, "y": 1, "z": 0})
     study.optimize(
-        lambda t: [t.suggest_int("x", 0, 1), t.suggest_int("y", 0, 1), t.suggest_int("z", 0, 1)],
+        lambda t: [
+            t.suggest_int("w", 0, 1),
+            t.suggest_int("x", 0, 1),
+            t.suggest_int("y", 0, 1),
+            t.suggest_int("z", 0, 1),
+        ],
         n_trials=3,
     )
     with pytest.raises(ValueError):
