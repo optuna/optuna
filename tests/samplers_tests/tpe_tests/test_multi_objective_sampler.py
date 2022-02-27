@@ -244,13 +244,61 @@ def test_multi_objective_sample_independent_misc_arguments() -> None:
         assert sampler.sample_independent(study, trial, "param-a", dist) != suggestion
 
 
-def test_multi_objective_sample_independent_uniform_distributions() -> None:
-    # Prepare sample from uniform distribution for cheking other distributions.
+@pytest.mark.parametrize(
+    "log, step",
+    [
+        (False, None),
+        (True, None),
+        (False, 0.1),
+    ],
+)
+def test_multi_objective_sample_independent_float_distributions(
+    log: bool, step: Optional[float]
+) -> None:
+    # Prepare sample from float distribution for checking other distributions.
     study = optuna.create_study(directions=["minimize", "maximize"])
     random.seed(128)
+    float_dist = optuna.distributions.FloatDistribution(1.0, 100.0, log=log, step=step)
+
+    if float_dist.step:
+
+        def value_fn(number: int) -> float:
+            return int(random.random() * 1000) * 0.1
+
+        past_trials = [
+            frozen_trial_factory(
+                i, [random.random(), random.random()], dist=float_dist, value_fn=value_fn
+            )
+            for i in range(16)
+        ]
+    else:
+        past_trials = [
+            frozen_trial_factory(i, [random.random(), random.random()], dist=float_dist)
+            for i in range(16)
+        ]
+
+    trial = frozen_trial_factory(16, [0, 0])
+    sampler = TPESampler(seed=0)
+    attrs = MockSystemAttr()
+    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
+        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
+    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
+        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
+    ) as mock1, patch(
+        "optuna.trial.FrozenTrial.system_attrs",
+        new_callable=PropertyMock,
+    ) as mock2:
+        mock1.return_value = attrs.value
+        mock2.return_value = attrs.value
+        float_suggestion = sampler.sample_independent(study, trial, "param-a", float_dist)
+    assert 1.0 <= float_suggestion < 100.0
+
+    if float_dist.step == 0.1:
+        assert abs(int(float_suggestion * 10) - float_suggestion * 10) < 1e-3
+
+    # Test sample is different when `float_dist.log` is True or float_dist.step != 1.0.
+    dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
-
-    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
     attrs = MockSystemAttr()
@@ -264,92 +312,11 @@ def test_multi_objective_sample_independent_uniform_distributions() -> None:
     ) as mock2:
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
-        uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
-    assert 1.0 <= uniform_suggestion < 100.0
-
-
-def test_multi_objective_sample_independent_log_uniform_distributions() -> None:
-    """Prepare sample from uniform distribution for cheking other distributions."""
-
-    study = optuna.create_study(directions=["minimize", "maximize"])
-    random.seed(128)
-
-    uni_dist = optuna.distributions.FloatDistribution(1.0, 100.0)
-    past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
-    trial = frozen_trial_factory(16, [0, 0])
-    sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        uniform_suggestion = sampler.sample_independent(study, trial, "param-a", uni_dist)
-
-    # Test sample from log-uniform is different from uniform.
-    log_dist = optuna.distributions.FloatDistribution(1.0, 100.0, log=True)
-    past_trials = [
-        frozen_trial_factory(i, [random.random(), random.random()], log_dist) for i in range(16)
-    ]
-    trial = frozen_trial_factory(16, [0, 0])
-    sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        loguniform_suggestion = sampler.sample_independent(study, trial, "param-a", log_dist)
-    assert 1.0 <= loguniform_suggestion < 100.0
-    assert uniform_suggestion != loguniform_suggestion
-
-
-def test_multi_objective_sample_independent_disrete_uniform_distributions() -> None:
-    """Test samples from discrete have expected intervals."""
-
-    study = optuna.create_study(directions=["minimize", "maximize"])
-    random.seed(128)
-
-    disc_dist = optuna.distributions.FloatDistribution(1.0, 100.0, step=0.1)
-
-    def value_fn(idx: int) -> float:
-        return int(random.random() * 1000) * 0.1
-
-    past_trials = [
-        frozen_trial_factory(
-            i, [random.random(), random.random()], dist=disc_dist, value_fn=value_fn
-        )
-        for i in range(16)
-    ]
-
-    trial = frozen_trial_factory(16, [0, 0])
-    sampler = TPESampler(seed=0)
-    attrs = MockSystemAttr()
-    with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
-        study._storage, "set_trial_system_attr", side_effect=attrs.set_trial_system_attr
-    ), patch.object(study._storage, "get_trial", return_value=trial), patch(
-        "optuna.trial.Trial.system_attrs", new_callable=PropertyMock
-    ) as mock1, patch(
-        "optuna.trial.FrozenTrial.system_attrs",
-        new_callable=PropertyMock,
-    ) as mock2:
-        mock1.return_value = attrs.value
-        mock2.return_value = attrs.value
-        discrete_uniform_suggestion = sampler.sample_independent(
-            study, trial, "param-a", disc_dist
-        )
-    assert 1.0 <= discrete_uniform_suggestion <= 100.0
-    assert abs(int(discrete_uniform_suggestion * 10) - discrete_uniform_suggestion * 10) < 1e-3
+        suggestion = sampler.sample_independent(study, trial, "param-a", dist)
+    if float_dist.log or float_dist.step != 1.0:
+        assert float_suggestion != suggestion
+    else:
+        assert float_suggestion == suggestion
 
 
 def test_multi_objective_sample_independent_categorical_distributions() -> None:
@@ -388,7 +355,14 @@ def test_multi_objective_sample_independent_categorical_distributions() -> None:
     assert categorical_suggestion in categories
 
 
-def test_multi_objective_sample_int_uniform_distributions() -> None:
+@pytest.mark.parametrize(
+    "log, step",
+    [
+        (False, 1),
+        (False, 2),
+    ],
+)
+def test_multi_objective_sample_int_distributions(log: bool, step: int) -> None:
     """Test sampling from int distribution returns integer."""
 
     study = optuna.create_study(directions=["minimize", "maximize"])
@@ -397,7 +371,7 @@ def test_multi_objective_sample_int_uniform_distributions() -> None:
     def int_value_fn(idx: int) -> float:
         return random.randint(0, 100)
 
-    int_dist = optuna.distributions.IntDistribution(1, 100)
+    int_dist = optuna.distributions.IntDistribution(1, 100, log, step)
     past_trials = [
         frozen_trial_factory(
             i, [random.random(), random.random()], dist=int_dist, value_fn=int_value_fn
