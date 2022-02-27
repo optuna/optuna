@@ -24,6 +24,9 @@ The :mod:`~optuna.samplers` module defines a base class for parameter sampling a
    optuna.samplers.IntersectionSearchSpace
    optuna.samplers.intersection_search_space
 
+.. seealso::
+    The :ref:`sampler` tutorial provides use-cases with examples.
+
 .. toctree::
     :maxdepth: 1
 
