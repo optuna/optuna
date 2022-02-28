@@ -15,6 +15,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Set
 from typing import Tuple
+from typing import Union
 import uuid
 
 import alembic.command
@@ -50,7 +51,7 @@ _RDB_MIN_FLOAT = np.finfo(np.float32).min
 _logger = optuna.logging.get_logger(__name__)
 
 
-def _ensure_not_nan(value: Sequence[float]) -> Sequence[float]:
+def _ensure_not_nan(value: Union[float, Sequence[float]]) -> Optional[Union[float, Sequence[float]]]:
     # Ensure the value is not Nan, which is not supported by MySQL
     # if Nan, change it the None
     if isinstance(value, (tuple, list)):
