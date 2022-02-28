@@ -153,7 +153,7 @@ def plot_pareto_front(
         )
     else:
         raise ValueError(
-            "`plot_pareto_front` function only supports 2 or 3 targets. "
+            "`plot_pareto_front` function only supports 2 or 3 targets."
             " you used {} targets now.".format(n_targets)
         )
 
