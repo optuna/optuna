@@ -315,6 +315,14 @@ class InMemoryStorage(BaseStorage):
                 )
             return self.get_trial(best_trial_id)
 
+    def get_trial_param(self, trial_id: int, param_name: str) -> float:
+
+        with self._lock:
+            trial = self._get_trial(trial_id)
+
+            distribution = trial.distributions[param_name]
+            return distribution.to_internal_repr(trial.params[param_name])
+
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
         with self._lock:
