@@ -96,7 +96,7 @@ def plot_pareto_front(
         :exc:`ValueError`:
             If ``targets`` is specified for empty studies and ``target_names`` is ``None``
         :exc:`ValueError`:
-            if using both ``targets`` and ``axis_order``.
+            If using both ``targets`` and ``axis_order``.
     """
 
     _imports.check()
@@ -110,8 +110,8 @@ def plot_pareto_front(
     trials = _get_trials(study, include_dominated_trials)
     if targets is not None and axis_order is not None:
         raise ValueError(
-            "Using both ``targets`` and ``axis_order`` is not supported. "
-            " Use either `targets` or `axis_order`."
+            "Using both `targets` and `axis_order` is not supported. "
+            "Use either `targets` or `axis_order`."
         )
     _targets = targets
     if _targets is None:
@@ -121,15 +121,15 @@ def plot_pareto_front(
             _targets = _targets_default_3d
         else:
             raise ValueError(
-                "``plot_pareto_front`` function only supports 2 or 3 objective"
-                " studies when using ``targets`` is ``None``. Please use ``targets``"
+                "`plot_pareto_front` function only supports 2 or 3 objective"
+                " studies when using `targets` is `None`. Please use `targets`"
                 " if your objective studies have more than 3 objectives."
             )
     target_values = [_targets(t) for t in trials]
     if len(target_values) > 0 and not isinstance(target_values[0], collections.Sequence):
         raise ValueError(
-            "``targets`` should return a sequence of target values."
-            " your ``targets`` returns {}".format(type(target_values[0]))
+            "`targets` should return a sequence of target values."
+            " your `targets` returns {}".format(type(target_values[0]))
         )
 
     if len(target_values) > 0:
@@ -140,7 +140,7 @@ def plot_pareto_front(
         n_targets = len(study.directions)
     else:
         raise ValueError(
-            "If ``targets`` is specified for empty studies, ``target_names`` must be specified."
+            "If `targets` is specified for empty studies, `target_names` must be specified."
         )
 
     if n_targets == 2:
@@ -153,7 +153,7 @@ def plot_pareto_front(
         )
     else:
         raise ValueError(
-            "``plot_pareto_front`` function only supports 2 or 3 targets. "
+            "`plot_pareto_front` function only supports 2 or 3 targets. "
             " you used {} targets now.".format(n_targets)
         )
 
