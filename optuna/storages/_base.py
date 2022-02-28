@@ -398,7 +398,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def get_trial_number_from_id(self, trial_id: int) -> int:
         """Read the trial number of a trial.
 
@@ -417,9 +416,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
             :exc:`KeyError`:
                 If no trial with the matching ``trial_id`` exists.
         """
-        raise NotImplementedError
+        return self.get_trial(trial_id).number
 
-    @abc.abstractmethod
     def get_trial_param(self, trial_id: int, param_name: str) -> float:
         """Read the parameter of a trial.
 
@@ -437,7 +435,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
                 If no trial with the matching ``trial_id`` exists.
                 If no such parameter exists.
         """
-        raise NotImplementedError
+        trial = self.get_trial(trial_id)
+        return trial.distributions[param_name].to_internal_repr(trial.params[param_name])
 
     @abc.abstractmethod
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
