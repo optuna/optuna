@@ -98,7 +98,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "lightgbm",
             "matplotlib>=3.0.0",
             "mlflow",
-            # "mpi4py",
+            "mpi4py",
             "mxnet",
             "pandas",
             "plotly>=4.0.0",
