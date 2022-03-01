@@ -35,7 +35,7 @@ def run(args: argparse.Namespace) -> None:
     # subprocess.run(cmd, shell=True)
 
     # Create Binh and Korn problem
-    cmd = (f"{kurobako_cmd} problem command python3 benchmarks/problem/binh_and_korn_problem.py | tee -a {problems_filename}")
+    cmd = f"{kurobako_cmd} problem command python3 benchmarks/problem/binh_and_korn_problem.py | tee -a {problems_filename}"
     subprocess.run(cmd, shell=True)
 
     # Create solvers.

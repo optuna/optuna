@@ -6,12 +6,11 @@ class WSGProblemFactory(problem.ProblemFactory):
         # wip
         params = []
 
-        return problem.ProblemSpec(name="WFG",
-                                    params=params,
-                                    vales=[])
+        return problem.ProblemSpec(name="WFG", params=params, vales=[])
 
     def create_problem(self, seed):
         return WSGProblem()
+
 
 class WSGProblem(problem.Problem):
     def create_evaluator(self, params):
@@ -29,9 +28,10 @@ class WSGEvaluator(problem.Evaluator):
     def evaluate(self, next_step):
         self._current_step = 1
 
-        #TODO:
+        # TODO:
         return None
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     runner = problem.ProblemRunner(WSGProblemFactory())
     runner.run()

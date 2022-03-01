@@ -37,7 +37,7 @@ class BinhAndKornEvaluator(problem.Evaluator):
     def evaluate(self, next_step):
         self._current_step = 1
         x, y = self._x, self._y
-        v0 = 4 * x ** 2 + 4 * y ** 2
+        v0 = 4 * x**2 + 4 * y**2
         v1 = (x - 5) ** 2 + (y - 5) ** 2
         return [v0, v1]
 
