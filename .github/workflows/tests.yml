@@ -18,7 +18,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
 
     services:
       redis:
@@ -70,7 +70,11 @@ jobs:
         # TODO(hvy): Fix samplers_tests/test_samplers.py to not require optional dependencies and remove these installs.
         pip install scikit-optimize
         pip install cma
-        pip install botorch torch==1.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+
+    # TODO(nzw): Remove this step after PyTorch and BoTorch support Python 3.10.
+    - name: Install PyTorch and BoTorch.
+      run: pip install botorch torch==1.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+      if: matrix.python-version != '3.10'
 
     - name: Tests
       run: |
