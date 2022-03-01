@@ -50,14 +50,14 @@ parametrize_sampler = pytest.mark.parametrize(
     ]
     # TODO(kstoneriv3): Update this after the support for Python 3.6 is stopped.
     + (
-        [
+        []
+        if sys.version_info < (3, 7, 0)
+        else [
             lambda: optuna.samplers.QMCSampler(),
         ]
-        if sys.version_info < (3, 7, 0)
-        else []
-        # TODO(nzw0301): Relax the version constraint if BoTorch supports Python 3.10
-        # or the support for Python 3.6 is stopped by Optuna.
     )
+    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10
+    # or Optuna does not support Python 3.6.
     + (
         [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
         if (3, 7, 0) <= sys.version_info < (3, 10, 0)
@@ -81,8 +81,8 @@ parametrize_multi_objective_sampler = pytest.mark.parametrize(
         optuna.samplers.NSGAIISampler,
         lambda: optuna.samplers.MOTPESampler(n_startup_trials=0),
     ]
-    # TODO(nzw0301): Relax the version constraint if BoTorch supports Python 3.10
-    # or the support for Python 3.6 is stopped by Optuna.
+    # TODO(nzw0301): Remove version constraints if BoTorch supports Python 3.10
+    # or Optuna does not support Python 3.6.
     + (
         [lambda: optuna.integration.BoTorchSampler(n_startup_trials=0)]
         if (3, 7, 0) <= sys.version_info < (3, 10, 0)
