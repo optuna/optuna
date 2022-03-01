@@ -261,21 +261,18 @@ def test_multi_objective_sample_independent_float_distributions(
     float_dist = optuna.distributions.FloatDistribution(1.0, 100.0, log=log, step=step)
 
     if float_dist.step:
-
-        def value_fn(number: int) -> float:
-            return int(random.random() * 1000) * 0.1
-
-        past_trials = [
-            frozen_trial_factory(
-                i, [random.random(), random.random()], dist=float_dist, value_fn=value_fn
-            )
-            for i in range(16)
-        ]
+        value_fn: Optional[Callable[[int], float]] = (
+            lambda number: int(random.random() * 1000) * 0.1
+        )
     else:
-        past_trials = [
-            frozen_trial_factory(i, [random.random(), random.random()], dist=float_dist)
-            for i in range(16)
-        ]
+        value_fn = None
+
+    past_trials = [
+        frozen_trial_factory(
+            i, [random.random(), random.random()], dist=float_dist, value_fn=value_fn
+        )
+        for i in range(16)
+    ]
 
     trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
@@ -297,6 +294,7 @@ def test_multi_objective_sample_independent_float_distributions(
         assert abs(int(float_suggestion * 10) - float_suggestion * 10) < 1e-3
 
     # Test sample is different when `float_dist.log` is True or float_dist.step != 1.0.
+    random.seed(128)
     dist = optuna.distributions.FloatDistribution(1.0, 100.0)
     past_trials = [frozen_trial_factory(i, [random.random(), random.random()]) for i in range(16)]
     trial = frozen_trial_factory(16, [0, 0])
@@ -313,7 +311,7 @@ def test_multi_objective_sample_independent_float_distributions(
         mock1.return_value = attrs.value
         mock2.return_value = attrs.value
         suggestion = sampler.sample_independent(study, trial, "param-a", dist)
-    if float_dist.log or float_dist.step != 1.0:
+    if float_dist.log or float_dist.step == 0.1:
         assert float_suggestion != suggestion
     else:
         assert float_suggestion == suggestion
