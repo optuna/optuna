@@ -1142,7 +1142,8 @@ def create_study(
         :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
 
     See also:
-        The :ref:`rdb` tutorial provides concrete examples to save and resume optimization using RDB.
+        The :ref:`rdb` tutorial provides concrete examples to save and resume optimization using
+        RDB.
 
     """
 
