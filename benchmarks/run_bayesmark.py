@@ -68,9 +68,9 @@ def make_plots(args: argparse.Namespace) -> None:
     db_root = os.path.abspath("runs")
     summary, _ = XRSerializer.load_derived(db_root, db=_DB, key=cc.PERF_RESULTS)
 
-    fig = plt.figure(figsize=(12, 12))
-    gs = fig.add_gridspec(2, hspace=0)
-    axs = gs.subplots(sharex=True)
+    fig = plt.figure(figsize=(18, 8))
+    gs = fig.add_gridspec(1, 2)
+    axs = gs.subplots()
 
     for benchmark in summary.coords["function"].values:
         for metric, ax in zip(["mean", "median"], axs):
@@ -109,7 +109,6 @@ def make_plot(summary: Dataset, ax: Axes, func: str, metric: str) -> None:
     ax.set_xlabel("Budget", fontsize=10)
     ax.set_ylabel(f"{metric.capitalize()} score", fontsize=10)
     ax.grid(alpha=0.2)
-    ax.label_outer()
 
 
 def build_color_dict(names: List[str]) -> Dict[str, np.ndarray]:
