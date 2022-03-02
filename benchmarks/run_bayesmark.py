@@ -67,6 +67,7 @@ def make_plots(args: argparse.Namespace) -> None:
     # https://github.com/uber/bayesmark/blob/master/notebooks/plot_test_case.ipynb
     db_root = os.path.abspath("runs")
     summary, _ = XRSerializer.load_derived(db_root, db=_DB, key=cc.PERF_RESULTS)
+    plot_warmup = json.loads(args.plot_warmup)
 
     fig = plt.figure(figsize=(18, 8))
     gs = fig.add_gridspec(1, 2)
@@ -74,7 +75,7 @@ def make_plots(args: argparse.Namespace) -> None:
 
     for benchmark in summary.coords["function"].values:
         for metric, ax in zip(["mean", "median"], axs):
-            make_plot(summary, ax, benchmark, metric)
+            make_plot(summary, ax, benchmark, metric, plot_warmup)
 
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles, labels)
@@ -82,26 +83,31 @@ def make_plots(args: argparse.Namespace) -> None:
     fig.savefig(os.path.join("plots", f"optuna-{args.dataset}-{args.model}-sumamry.png"))
 
 
-def make_plot(summary: Dataset, ax: Axes, func: str, metric: str) -> None:
+def make_plot(summary: Dataset, ax: Axes, func: str, metric: str, plot_warmup: bool) -> None:
 
     color = build_color_dict(summary.coords["optimizer"].values.tolist())
     optimizers = summary.coords["optimizer"].values
+    start = 0 if plot_warmup else 10
 
     for optimizer in optimizers:
         curr_ds = summary.sel(
             {"function": func, "optimizer": optimizer, "objective": cc.VISIBLE_TO_OPT}
         )
 
+        if len(curr_ds.coords[cc.ITER].values) <= start:
+            # Not enough trials to make a plot.
+            continue
+
         ax.fill_between(
-            curr_ds.coords[cc.ITER].values,
-            curr_ds[f"{metric} LB"].values,
-            curr_ds[f"{metric} UB"].values,
+            curr_ds.coords[cc.ITER].values[start:],
+            curr_ds[f"{metric} LB"].values[start:],
+            curr_ds[f"{metric} UB"].values[start:],
             color=color[optimizer],
             alpha=0.5,
         )
         ax.plot(
-            curr_ds.coords["iter"].values,
-            curr_ds[metric].values,
+            curr_ds.coords["iter"].values[start:],
+            curr_ds[metric].values[start:],
             color=color[optimizer],
             label=optimizer,
         )
@@ -151,6 +157,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--pruner-list", type=str, default="NopPruner")
     parser.add_argument("--pruner-kwargs-list", type=str, default="{}")
+    parser.add_argument("--plot-warmup", type=str, default="true")
 
     args = parser.parse_args()
     run_benchmark(args)

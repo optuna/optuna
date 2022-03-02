@@ -27,6 +27,10 @@ on:
         description: 'Number of Studies'
         required: false
         default: '10'
+      plot-warmup:
+        description: Include warm-up steps in plots.
+        type: boolean
+        default: true
 
 
 jobs:
@@ -70,7 +74,8 @@ jobs:
           --sampler-list '${{ github.event.inputs.sampler-list }}' \
           --sampler-kwargs-list '${{ github.event.inputs.sampler-kwargs-list }}' \
           --pruner-list '${{ github.event.inputs.pruner-list }}' \
-          --pruner-kwargs-list '${{ github.event.inputs.pruner-kwargs-list }}'
+          --pruner-kwargs-list '${{ github.event.inputs.pruner-kwargs-list }}' \
+          --plot-warmup '${{ github.event.inputs.plot-warmup }}'
     
     - uses: actions/upload-artifact@v2
       with:
