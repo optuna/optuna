@@ -197,6 +197,8 @@ setup(
     url="https://optuna.org/",
     project_urls={
         "Source": "https://github.com/optuna/optuna",
+        "Documentation": "https://optuna.readthedocs.io",
+        "Bug Tracker": "https://github.com/optuna/optuna/issues",
     },
     packages=find_packages(exclude=("tests", "tests.*", "benchmarks")),
     package_data={
