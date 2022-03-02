@@ -195,6 +195,9 @@ setup(
     author="Takuya Akiba",
     author_email="akiba@preferred.jp",
     url="https://optuna.org/",
+    project_urls={
+        "Source": "https://github.com/optuna/optuna",
+    },
     packages=find_packages(exclude=("tests", "tests.*", "benchmarks")),
     package_data={
         "optuna": [
