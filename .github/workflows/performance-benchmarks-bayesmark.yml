@@ -96,7 +96,6 @@ jobs:
     
     - name: Run benchmark report builder
       run: |
-        mkdir report
         python benchmarks/report_bayesmark.py
     
     - uses: actions/upload-artifact@v2
