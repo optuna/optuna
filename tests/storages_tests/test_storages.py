@@ -762,14 +762,7 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
 def test_get_all_study_summaries(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
-        expected_summaries, _ = _setup_studies(
-            storage,
-            n_study=10,
-            n_trial=10,
-            seed=46,
-            use_study_user_attrs=True,
-            use_study_system_attrs=True,
-        )
+        expected_summaries, _ = _setup_studies(storage, n_study=10, n_trial=10, seed=46)
         summaries = storage.get_all_study_summaries()
         assert len(summaries) == len(expected_summaries)
         for _, expected_summary in expected_summaries.items():
@@ -975,8 +968,6 @@ def _setup_studies(
     n_trial: int,
     seed: int,
     direction: Optional[StudyDirection] = None,
-    use_study_user_attrs: bool = False,
-    use_study_system_attrs: bool = False,
 ) -> Tuple[Dict[int, StudySummary], Dict[int, Dict[int, FrozenTrial]]]:
     generator = random.Random(seed)
     study_id_to_summary: Dict[int, StudySummary] = {}
@@ -987,10 +978,8 @@ def _setup_studies(
         if direction is None:
             direction = generator.choice([StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
         storage.set_study_directions(study_id, (direction,))
-        if use_study_user_attrs is not None:
-            storage.set_study_user_attr(study_id, "u", i)
-        if use_study_system_attrs is not None:
-            storage.set_study_system_attr(study_id, "s", i)
+        storage.set_study_user_attr(study_id, "u", i)
+        storage.set_study_system_attr(study_id, "s", i)
         best_trial = None
         trials = {}
         datetime_start = None
@@ -1016,8 +1005,8 @@ def _setup_studies(
             study_name=study_name,
             direction=direction,
             best_trial=best_trial,
-            user_attrs={} if use_study_user_attrs is None else {"u": i},
-            system_attrs={} if use_study_system_attrs is None else {"s": i},
+            user_attrs={"u": i},
+            system_attrs={"s": i},
             n_trials=len(trials),
             datetime_start=datetime_start,
             study_id=study_id,
