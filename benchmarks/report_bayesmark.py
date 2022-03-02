@@ -50,7 +50,7 @@ class BayesmarkReportBuilder:
         num_datasets = len(self._datasets)
         num_models = len(self._models)
 
-        with open(os.path.join("benchmark", "bayesmark", "report_template.md")) as file:
+        with open(os.path.join("benchmarks", "bayesmark", "report_template.md")) as file:
             report_template = file.read()
 
         # TODO(xadrianzetx) Consider using proper templating engine.
