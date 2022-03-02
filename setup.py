@@ -63,7 +63,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "types-redis",
             "types-PyYAML",
         ],
-        "codecov": ["codecov", "pytest-cov"],
+        "codecov": ["codecov"],
         "doctest": [
             "cma",
             "matplotlib>=3.0.0",
