@@ -43,19 +43,19 @@ class OptunaOptimizer(AbstractOptimizer):
 
         super().__init__(api_config, **kwargs)
 
-        sampler_name = kwargs.get("sampler")
-        if sampler_name is None:
+        try:
+            sampler = _SAMPLERS[kwargs["sampler"]]
+            sampler_kwargs: Dict[str, Any] = kwargs["sampler_kwargs"]
+
+        except KeyError:
             raise ValueError("Unknown sampler passed to Optuna optimizer.")
 
-        sampler = _SAMPLERS[sampler_name]
-        sampler_kwargs: Dict[str, Any] = kwargs["sampler_kwargs"]
+        try:
+            pruner = _PRUNERS[kwargs["pruner"]]
+            pruner_kwargs: Dict[str, Any] = kwargs["pruner_kwargs"]
 
-        pruner_name = kwargs.get("pruner")
-        if pruner_name is None:
+        except KeyError:
             raise ValueError("Unknown pruner passed to Optuna optimizer.")
-
-        pruner = _PRUNERS[pruner_name]
-        pruner_kwargs: Dict[str, Any] = kwargs["pruner_kwargs"]
 
         # We are using negative log-likelihood for classification
         # and MSE for regression. Both are minimized.
