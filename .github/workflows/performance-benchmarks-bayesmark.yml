@@ -65,7 +65,6 @@ jobs:
 
     - name: Run performance benchmark
       run: |
-        mkdir runs plots partial
         python benchmarks/run_bayesmark.py \
           --dataset ${{ matrix.dataset }} \
           --model ${{ matrix.model }} \

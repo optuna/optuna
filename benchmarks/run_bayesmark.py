@@ -160,6 +160,10 @@ if __name__ == "__main__":
     parser.add_argument("--plot-warmup", type=str, default="true")
 
     args = parser.parse_args()
+    os.makedirs("runs", exist_ok=True)
+    os.makedirs("plots", exist_ok=True)
+    os.makedirs("partial", exist_ok=True)
+
     run_benchmark(args)
     make_plots(args)
     partial_report(args)
