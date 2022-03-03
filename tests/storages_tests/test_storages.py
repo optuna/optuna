@@ -23,8 +23,8 @@ from optuna.storages import _CachedStorage
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
 from optuna.storages import RDBStorage
+from optuna.storages import RedisStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
-from optuna.storages._redis import RedisStorage
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.testing.storage import STORAGE_MODES
@@ -1304,9 +1304,6 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
         assert study.trials[0].state is TrialState.FAIL
 
 
-# This test is a workaround. This test should be removed when get_storage()
-# can return raw RDBStorage and RedisStorage. Because then test_fail_stale_trials
-# can test the fail_stale_trials().
 @pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
 def test_fail_stale_trials_raw(storage_mode: str) -> None:
     heartbeat_interval = 1

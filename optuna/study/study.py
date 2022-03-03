@@ -21,7 +21,6 @@ from optuna import storages
 from optuna import trial as trial_module
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated
-from optuna._experimental import experimental
 from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.study._multi_objective import _get_pareto_front_trials
@@ -831,7 +830,6 @@ class Study:
 
         self._stop_flag = True
 
-    @experimental("1.2.0")
     def enqueue_trial(
         self, params: Dict[str, Any], user_attrs: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -880,7 +878,6 @@ class Study:
             )
         )
 
-    @experimental("2.0.0")
     def add_trial(self, trial: FrozenTrial) -> None:
         """Add trial to study.
 
@@ -946,7 +943,6 @@ class Study:
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
-    @experimental("2.5.0")
     def add_trials(self, trials: Iterable[FrozenTrial]) -> None:
         """Add trials to study.
 
@@ -1143,6 +1139,10 @@ def create_study(
 
     See also:
         :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
+
+    See also:
+        The :ref:`rdb` tutorial provides concrete examples to save and resume optimization using
+        RDB.
 
     """
 
@@ -1342,7 +1342,6 @@ def delete_study(
     storage.delete_study(study_id)
 
 
-@experimental("2.8.0")
 @convert_positional_args(
     previous_positional_arg_names=[
         "from_study_name",

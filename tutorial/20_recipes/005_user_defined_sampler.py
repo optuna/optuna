@@ -1,5 +1,5 @@
 """
-.. _sampler:
+.. _user_defined_sampler:
 
 User-Defined Sampler
 ====================

@@ -483,10 +483,6 @@ class RedisStorage(BaseStorage):
 
         return trial_ids[trial_number]
 
-    def get_trial_number_from_id(self, trial_id: int) -> int:
-
-        return self.get_trial(trial_id).number
-
     @staticmethod
     def _key_best_trial(study_id: int) -> str:
 
@@ -544,11 +540,6 @@ class RedisStorage(BaseStorage):
 
         self._check_study_id(study_id)
         self.set_trial_param(trial_id, param_name, param_value_internal, distribution)
-
-    def get_trial_param(self, trial_id: int, param_name: str) -> float:
-
-        distribution = self.get_trial(trial_id).distributions[param_name]
-        return distribution.to_internal_repr(self.get_trial(trial_id).params[param_name])
 
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 

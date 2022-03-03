@@ -878,11 +878,6 @@ class RDBStorage(BaseStorage):
                 )
             return trial_id[0]
 
-    def get_trial_number_from_id(self, trial_id: int) -> int:
-
-        trial_number = self.get_trial(trial_id).number
-        return trial_number
-
     def get_trial(self, trial_id: int) -> FrozenTrial:
 
         with _create_scoped_session(self.scoped_session) as session:
