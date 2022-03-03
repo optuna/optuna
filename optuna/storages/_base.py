@@ -550,7 +550,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Sequence[TrialState]] = None,
     ) -> List[FrozenTrial]:
         """Read all trials in a study.
 

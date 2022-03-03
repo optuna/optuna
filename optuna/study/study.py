@@ -201,7 +201,7 @@ class Study:
     def get_trials(
         self,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Sequence[TrialState]] = None,
     ) -> List[FrozenTrial]:
         """Return all trials in the study.
 
