@@ -266,7 +266,7 @@ def test_transform_untransform_params_at_bounds(
 
     trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)
 
-    # Manually crete round-off errors.
+    # Manually create round-off errors.
     lower_bound = trans.bounds[0][0] - EPS
     upper_bound = trans.bounds[0][1] + EPS
 
