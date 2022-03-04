@@ -3,13 +3,13 @@ from datetime import datetime
 import pickle
 from typing import Any
 from typing import Callable
+from typing import Container
 from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
-from typing import Tuple
 
 import optuna
 from optuna import distributions
@@ -642,7 +642,7 @@ class RedisStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
 
         trials = self._get_trials(study_id, states, set())
@@ -655,7 +655,7 @@ class RedisStorage(BaseStorage):
     def _get_trials(
         self,
         study_id: int,
-        states: Optional[Tuple[TrialState, ...]],
+        states: Optional[Container[TrialState]],
         excluded_trial_ids: Set[int],
     ) -> List[FrozenTrial]:
 

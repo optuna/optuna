@@ -1,6 +1,7 @@
 import math
 from typing import Any
 from typing import Callable
+from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -588,7 +589,7 @@ def _get_observation_pairs(
         else:
             signs.append(-1)
 
-    states: Tuple[TrialState, ...]
+    states: Optional[Container[TrialState]]
     if constant_liar:
         states = (TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING)
     else:

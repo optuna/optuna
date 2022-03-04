@@ -7,13 +7,13 @@ import logging
 import os
 from typing import Any
 from typing import Callable
+from typing import Container
 from typing import Dict
 from typing import Generator
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
-from typing import Tuple
 import uuid
 
 import alembic.command
@@ -890,7 +890,7 @@ class RDBStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
 
         trials = self._get_trials(study_id, states, set())
@@ -900,8 +900,8 @@ class RDBStorage(BaseStorage):
     def _get_trials(
         self,
         study_id: int,
-        states: Optional[Tuple[TrialState, ...]],
         excluded_trial_ids: Set[int],
+        states: Optional[Container[optuna.trial._state.TrialState]] = None,
     ) -> List[FrozenTrial]:
 
         with _create_scoped_session(self.scoped_session) as session:

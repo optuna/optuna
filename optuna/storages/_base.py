@@ -1,6 +1,7 @@
 import abc
 from typing import Any
 from typing import Callable
+from typing import Container
 from typing import cast
 from typing import Dict
 from typing import List
@@ -550,7 +551,7 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
         """Read all trials in a study.
 
