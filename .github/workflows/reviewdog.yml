@@ -1,0 +1,28 @@
+name: reviewdog-suggester
+
+on:
+  pull_request: {}
+
+jobs:
+  black:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install
+      run: |
+        python -m pip install -U pip
+        pip install --progress-bar off -U .[checking]
+
+    - name: Black
+      run: black .
+
+    - name: Reviewdog
+      uses: reviewdog/action-suggester@v1
+      with:
+        tool_name: black
