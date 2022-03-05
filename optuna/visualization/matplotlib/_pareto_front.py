@@ -126,7 +126,7 @@ def plot_pareto_front(
                 " if your objective studies have more than 3 objectives."
             )
     target_values = [_targets(t) for t in trials]
-    if len(target_values) > 0 and not isinstance(target_values[0], collections.Sequence):
+    if len(target_values) > 0 and not isinstance(target_values[0], collections.abc.Sequence):
         raise ValueError(
             "`targets` should return a sequence of target values."
             " your `targets` returns {}".format(type(target_values[0]))
