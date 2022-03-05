@@ -88,13 +88,13 @@ def plot_pareto_front(
 
     Raises:
         :exc:`ValueError`:
-            If ``targets`` is ``None`` when your objective studies have more than 3 objectives.
+            If ``targets`` is :obj:`None` when your objective studies have more than 3 objectives.
         :exc:`ValueError`:
             If ``targets`` returns something other than sequence.
         :exc:`ValueError`:
             If the number of target values to display isn't 2 or 3.
         :exc:`ValueError`:
-            If ``targets`` is specified for empty studies and ``target_names`` is ``None``
+            If ``targets`` is specified for empty studies and ``target_names`` is :obj:`None`.
         :exc:`ValueError`:
             If using both ``targets`` and ``axis_order``.
     """

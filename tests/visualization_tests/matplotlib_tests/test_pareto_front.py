@@ -333,6 +333,7 @@ def test_plot_pareto_front_invalid_axis_order(
         )
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 def test_plot_pareto_front_targets_without_target_names() -> None:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
     with pytest.raises(
@@ -346,6 +347,7 @@ def test_plot_pareto_front_targets_without_target_names() -> None:
         )
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize(
     "targets",
     [
@@ -356,18 +358,7 @@ def test_plot_pareto_front_invalid_target_values(
     targets: Optional[Callable[[FrozenTrial], Sequence[float]]]
 ) -> None:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
-    study.enqueue_trial({"w": 1, "x": 1, "y": 1, "z": 1})
-    study.enqueue_trial({"w": 0, "x": 1, "y": 0, "z": 1})
-    study.enqueue_trial({"w": 1, "x": 1, "y": 1, "z": 0})
-    study.optimize(
-        lambda t: [
-            t.suggest_int("w", 0, 1),
-            t.suggest_int("x", 0, 1),
-            t.suggest_int("y", 0, 1),
-            t.suggest_int("z", 0, 1),
-        ],
-        n_trials=3,
-    )
+    study.optimize(lambda t: [0, 0, 0, 0], n_trials=3)
     with pytest.raises(
         ValueError,
         match="targets` should return a sequence of target values. your `targets`"
@@ -379,6 +370,7 @@ def test_plot_pareto_front_invalid_target_values(
         )
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize(
     "targets",
     [
@@ -390,18 +382,7 @@ def test_plot_pareto_front_n_targets_unsupported(
     targets: Callable[[FrozenTrial], Sequence[float]]
 ) -> None:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize", "minimize"])
-    study.enqueue_trial({"w": 1, "x": 1, "y": 1, "z": 1})
-    study.enqueue_trial({"w": 0, "x": 1, "y": 0, "z": 1})
-    study.enqueue_trial({"w": 1, "x": 1, "y": 1, "z": 0})
-    study.optimize(
-        lambda t: [
-            t.suggest_int("w", 0, 1),
-            t.suggest_int("x", 0, 1),
-            t.suggest_int("y", 0, 1),
-            t.suggest_int("z", 0, 1),
-        ],
-        n_trials=3,
-    )
+    study.optimize(lambda t: [0, 0, 0, 0], n_trials=3)
     n_targets = len(targets(study.best_trials[0]))
     with pytest.raises(
         ValueError,
@@ -414,6 +395,7 @@ def test_plot_pareto_front_n_targets_unsupported(
         )
 
 
+@pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 def test_plot_pareto_front_using_axis_order_and_targets() -> None:
     study = optuna.create_study(directions=["minimize", "minimize", "minimize"])
     with pytest.raises(
