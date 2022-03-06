@@ -30,7 +30,7 @@ def create_study(seed: int) -> optuna.Study:
     # try:
     #     sampler_kwargs["seed"] = seed
     #     sampler = sampler_cls(**sampler_kwargs)
-    # except:
+    # except ValueError:
     #     del sampler_kwargs["seed"]
     #     sampler = sampler_cls(**sampler_kwargs)
     sampler = sampler_cls()

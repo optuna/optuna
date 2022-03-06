@@ -161,7 +161,7 @@ class WFG2(object):
         for _ in range(n - k):
             t_1.append(transformation_functions.LinearShiftTransformation(0.35))
 
-        def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
+        def _input_converter0(i: int, y: np.ndarray) -> np.ndarray:
             indices = [k + 2 * (i + 1 - k) - 2, k + 2 * (i - k + 1) - 1]
             return y[indices]
 
@@ -169,18 +169,18 @@ class WFG2(object):
         for i in range(k, n // 2):
             t_2.append(
                 transformation_functions.NonSeparableReductionTransformation(
-                    2, lambda y: _input_converter(i, y)
+                    2, lambda y: _input_converter0(i, y)
                 )
             )
 
-        def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
+        def _input_converter1(i: int, y: np.ndarray) -> np.ndarray:
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
         t_3 = [
             transformation_functions.WeightedSumReductionTransformation(
                 np.ones(k // (M - 1)),
-                lambda y: _input_converter(i, y),
+                lambda y: _input_converter1(i, y),
             )
             for i in range(M - 1)
         ]
@@ -238,7 +238,7 @@ class WFG3(object):
         for _ in range(n - k):
             t_1.append(transformation_functions.LinearShiftTransformation(0.35))
 
-        def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
+        def _input_converter0(i: int, y: np.ndarray) -> np.ndarray:
             indices = [k + 2 * (i + 1 - k) - 2, k + 2 * (i - k + 1) - 1]
             return y[indices]
 
@@ -246,18 +246,18 @@ class WFG3(object):
         for i in range(k, n // 2):
             t_2.append(
                 transformation_functions.NonSeparableReductionTransformation(
-                    2, lambda y: _input_converter(i, y)
+                    2, lambda y: _input_converter0(i, y)
                 )
             )
 
-        def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
+        def _input_converter1(i: int, y: np.ndarray) -> np.ndarray:
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
         t_3 = [
             transformation_functions.WeightedSumReductionTransformation(
                 np.ones(k // (M - 1)),
-                lambda y: _input_converter(i, y),
+                lambda y: _input_converter1(i, y),
             )
             for i in range(M - 1)
         ]
@@ -499,13 +499,13 @@ class WFG7(object):
 
         shapes = [shape_functions.ConcaveShapeFunction(M) for _ in range(M)]
 
-        def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
+        def _input_converter0(i: int, y: np.ndarray) -> np.ndarray:
             return y[i:n]
 
         t_1 = [
             transformation_functions.ParameterDependentBiasTransformation(
                 np.ones(n - i),
-                lambda y: _input_converter(i, y),
+                lambda y: _input_converter0(i, y),
                 0.98 / 49.98,
                 0.02,
                 50,
@@ -520,7 +520,7 @@ class WFG7(object):
         for _ in range(n - k):
             t_2.append(transformation_functions.LinearShiftTransformation(0.35))
 
-        def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
+        def _input_converter1(i: int, y: np.ndarray) -> np.ndarray:
             indices = np.arange(i * k // (M - 1), (i + 1) * k // (M - 1))
             return y[indices]
 
@@ -528,7 +528,7 @@ class WFG7(object):
         for i in range(M - 1):
             t_3.append(
                 transformation_functions.WeightedSumReductionTransformation(
-                    np.ones(k // (M - 1)), lambda y: _input_converter(i, y)
+                    np.ones(k // (M - 1)), lambda y: _input_converter1(i, y)
                 )
             )
         t_3.append(
@@ -579,7 +579,7 @@ class WFG8(object):
 
         shapes = [shape_functions.ConcaveShapeFunction(M) for _ in range(M)]
 
-        def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
+        def _input_converter0(i: int, y: np.ndarray) -> np.ndarray:
             return y[: i - 1]
 
         t_1 = [lambda y: y for _ in range(k)]
@@ -587,7 +587,7 @@ class WFG8(object):
             t_1.append(
                 transformation_functions.ParameterDependentBiasTransformation(
                     np.ones(i - 1),
-                    lambda y: _input_converter(i, y),
+                    lambda y: _input_converter0(i, y),
                     0.98 / 49.98,
                     0.02,
                     50,
@@ -658,13 +658,13 @@ class WFG9(object):
 
         shapes = [shape_functions.ConcaveShapeFunction(M) for _ in range(M)]
 
-        def _input_converter(i: int, y: np.ndarray) -> np.ndarray:
+        def _input_converter0(i: int, y: np.ndarray) -> np.ndarray:
             return y[i:n]
 
         t_1 = [
             transformation_functions.ParameterDependentBiasTransformation(
                 np.ones(n - i),
-                lambda y: _input_converter(i, y),
+                lambda y: _input_converter0(i, y),
                 0.98 / 49.98,
                 0.02,
                 50,

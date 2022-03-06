@@ -3,32 +3,32 @@ from kurobako import problem
 from WFGtestSuite import wfg
 
 
-class WFG1ProblemFactory(problem.ProblemFactory):
+class WFGProblemFactory(problem.ProblemFactory):
     def specification(self):
         params = [
             problem.Var("x", problem.ContinuousRange(0, 2)),
             problem.Var("y", problem.ContinuousRange(0, 4)),
         ]
         return problem.ProblemSpec(
-            name="WFG1",
+            name="WFG7",
             params=params,
             values=[problem.Var("f1"), problem.Var("f2")],
         )
 
     def create_problem(self, seed):
-        return WFG1Problem()
+        return WFGProblem()
 
 
-class WFG1Problem(problem.Problem):
+class WFGProblem(problem.Problem):
     def create_evaluator(self, params):
-        return WFG1Evaluator(params)
+        return WFGEvaluator(params)
 
 
-class WFG1Evaluator(problem.Evaluator):
+class WFGEvaluator(problem.Evaluator):
     def __init__(self, params):
         self._x, self._y = params
         self._current_step = 0
-        self.wfg = wfg.WFG1(n_arguments=2, n_objectives=2, k=1)
+        self.wfg = wfg.WFG7(n_arguments=2, n_objectives=2, k=1)
 
     def current_step(self):
         return self._current_step
@@ -47,5 +47,5 @@ class WFG1Evaluator(problem.Evaluator):
 
 
 if __name__ == "__main__":
-    runner = problem.ProblemRunner(WFG1ProblemFactory())
+    runner = problem.ProblemRunner(WFGProblemFactory())
     runner.run()

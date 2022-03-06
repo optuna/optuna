@@ -18,33 +18,34 @@ def run(args: argparse.Namespace) -> None:
     problems_filename = os.path.join(args.out_dir, "problems.json")
     subprocess.check_call(f"echo >| {problems_filename}", shell=True)
 
-    # Create ZDT problems
-    cmd = f"{kurobako_cmd} problem-suite zdt | tee -a {problems_filename}"
-    subprocess.run(cmd, shell=True)
+    # # Create ZDT problems
+    # cmd = f"{kurobako_cmd} problem-suite zdt | tee -a {problems_filename}"
+    # subprocess.run(cmd, shell=True)
 
-    # Create Binh and Korn problem
-    cmd = (
-        f"{kurobako_cmd} problem command "
-        f"python3 benchmarks/problem/binh_and_korn_problem.py"
-        f"| tee -a {problems_filename}"
-    )
-    subprocess.run(cmd, shell=True)
+    # # Create Binh and Korn problem
+    # cmd = (
+    #     f"{kurobako_cmd} problem command "
+    #     f"python3 benchmarks/problem/binh_and_korn_problem.py"
+    #     f"| tee -a {problems_filename}"
+    # )
+    # subprocess.run(cmd, shell=True)
 
-    # Create WFG problem
-    cmd = (
-        f"{kurobako_cmd} problem command "
-        f"python3 benchmarks/problem/wfg_problem.py "
-        f"| tee -a {problems_filename}"
-    )
-    subprocess.run(cmd, shell=True)
+    # Create WFG 1~9 problem
+    for n_wfg in range(1, 10):
+        cmd = (
+            f"{kurobako_cmd} problem command "
+            f"python3 benchmarks/problem/wfg{n_wfg}_problem.py "
+            f"| tee -a {problems_filename}"
+        )
+        subprocess.run(cmd, shell=True)
 
-    # Create NAS bench problem(A) (for Multi-Objective Settings).
-    dataset = os.path.join(args.data_dir, "nasbench_full.bin")
-    cmd = (
-        f'{kurobako_cmd} problem nasbench "{dataset}" '
-        f"--metrics params accuracy | tee -a {problems_filename}"
-    )
-    subprocess.run(cmd, shell=True)
+    # # Create NAS bench problem(A) (for Multi-Objective Settings).
+    # dataset = os.path.join(args.data_dir, "nasbench_full.bin")
+    # cmd = (
+    #     f'{kurobako_cmd} problem nasbench "{dataset}" '
+    #     f"--metrics params accuracy | tee -a {problems_filename}"
+    # )
+    # subprocess.run(cmd, shell=True)
 
     # Create solvers.
     sampler_list = args.sampler_list.split()
