@@ -5,11 +5,16 @@ from kurobako import problem
 from WFGtestSuite import wfg
 
 
+N_VAR = 10
+K = 2
+
+
 class WFGProblemFactory(problem.ProblemFactory):
     def specification(self):
+        self._low = 0
+        self._high = 2
         params = [
-            problem.Var("x", problem.ContinuousRange(0, 2)),
-            problem.Var("y", problem.ContinuousRange(0, 4)),
+            problem.Var(f"x{i}", problem.ContinuousRange(0, self._high * i)) for i in range(N_VAR)
         ]
         return problem.ProblemSpec(
             name="WFG2",
@@ -28,17 +33,16 @@ class WFGProblem(problem.Problem):
 
 class WFGEvaluator(problem.Evaluator):
     def __init__(self, params):
-        self._x, self._y = params
+        self._x = params
         self._current_step = 0
-        self.wfg = wfg.WFG2(n_arguments=2, n_objectives=2, k=1)
+        self.wfg = wfg.WFG2(n_arguments=N_VAR, n_objectives=2, k=K)
 
     def current_step(self):
         return self._current_step
 
     def evaluate(self, next_step):
         self._current_step = 1
-        x, y = self._x, self._y
-        v = self.wfg([x, y])
+        v = self.wfg(self._x)
         v = v.tolist()
 
         if math.isnan(v[0]) or math.isinf(v[0]):

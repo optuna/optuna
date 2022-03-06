@@ -97,7 +97,15 @@ def run(args: argparse.Namespace) -> None:
         "ZDT5": {"xmin": 8, "xmax": 24, "ymin": 1, "ymax": 6},
         "ZDT6": {"xmin": 0.2, "xmax": 1, "ymin": 5, "ymax": 10},
         "BinhKorn": {"xmin": 0, "xmax": 150, "ymin": 0, "ymax": 50},
-        "WFG1": {"xmin": 2.5, "xmax": 3.5, "ymin": 0.8, "ymax": 1.5},
+        "WFG1": {"xmin": 2.7, "xmax": 3.05, "ymin": 4.7, "ymax": 5.05},
+        "WFG2": {"xmin": 2.0, "xmax": 2.8, "ymin": 3.0, "ymax": 4.8},
+        "WFG3": {"xmin": 2.0, "xmax": 2.8, "ymin": 3.0, "ymax": 4.8},
+        "WFG4": {"xmin": 2.0, "xmax": 3.0, "ymin": 0.0, "ymax": 3.6},
+        "WFG5": {"xmin": 2.0, "xmax": 3.0, "ymin": 2.5, "ymax": 5.0},
+        "WFG6": {"xmin": 2.0, "xmax": 3.0, "ymin": 3.4, "ymax": 5.0},
+        "WFG7": {"xmin": 2.0, "xmax": 3.0, "ymin": 4.0, "ymax": 5.0},
+        "WFG8": {"xmin": 2.0, "xmax": 3.0, "ymin": 3.4, "ymax": 5.0},
+        "WFG9": {"xmin": 2.0, "xmax": 3.0, "ymin": 0.0, "ymax": 5.0},
     }
 
     for problem_name, plot_arg in plot_args.items():
