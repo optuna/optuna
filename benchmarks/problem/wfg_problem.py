@@ -1,7 +1,7 @@
 import math
-import numpy as np 
 from kurobako import problem
 from WFGtestSuite import wfg
+
 
 class WFG1ProblemFactory(problem.ProblemFactory):
     def specification(self):
@@ -10,12 +10,10 @@ class WFG1ProblemFactory(problem.ProblemFactory):
             problem.Var("y", problem.ContinuousRange(0, 4)),
         ]
         return problem.ProblemSpec(
-            name="WFG1", 
-            params=params, 
-            values=[
-                problem.Var("f1"), 
-                problem.Var("f2") 
-            ],)
+            name="WFG1",
+            params=params,
+            values=[problem.Var("f1"), problem.Var("f2")],
+        )
 
     def create_problem(self, seed):
         return WFG1Problem()
@@ -30,7 +28,7 @@ class WFG1Evaluator(problem.Evaluator):
     def __init__(self, params):
         self._x, self._y = params
         self._current_step = 0
-        self.wfg = wfg.WFG1(n_arguments=2, n_objectives=2, k=1) # TODO check
+        self.wfg = wfg.WFG1(n_arguments=2, n_objectives=2, k=1)
 
     def current_step(self):
         return self._current_step
@@ -38,7 +36,7 @@ class WFG1Evaluator(problem.Evaluator):
     def evaluate(self, next_step):
         self._current_step = 1
         x, y = self._x, self._y
-        v = self.wfg([x,y])
+        v = self.wfg([x, y])
         v = v.tolist()
 
         if math.isnan(v[0]) or math.isinf(v[0]):
