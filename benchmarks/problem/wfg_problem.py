@@ -1,37 +1,53 @@
+import math
+import numpy as np 
 from kurobako import problem
+from WFGtestSuite import wfg
 
-
-class WSGProblemFactory(problem.ProblemFactory):
+class WFG1ProblemFactory(problem.ProblemFactory):
     def specification(self):
-        # wip
-        params = []
-
-        return problem.ProblemSpec(name="WFG", params=params, vales=[])
+        params = [
+            problem.Var("x", problem.ContinuousRange(0, 2)),
+            problem.Var("y", problem.ContinuousRange(0, 4)),
+        ]
+        return problem.ProblemSpec(
+            name="WFG1", 
+            params=params, 
+            values=[
+                problem.Var("f1"), 
+                problem.Var("f2") 
+            ],)
 
     def create_problem(self, seed):
-        return WSGProblem()
+        return WFG1Problem()
 
 
-class WSGProblem(problem.Problem):
+class WFG1Problem(problem.Problem):
     def create_evaluator(self, params):
-        return WSGProblem(params)
+        return WFG1Evaluator(params)
 
 
-class WSGEvaluator(problem.Evaluator):
+class WFG1Evaluator(problem.Evaluator):
     def __init__(self, params):
         self._x, self._y = params
         self._current_step = 0
+        self.wfg = wfg.WFG1(n_arguments=2, n_objectives=2, k=1) # TODO check
 
     def current_step(self):
         return self._current_step
 
     def evaluate(self, next_step):
         self._current_step = 1
+        x, y = self._x, self._y
+        v = self.wfg([x,y])
+        v = v.tolist()
 
-        # TODO:
-        return None
+        if math.isnan(v[0]) or math.isinf(v[0]):
+            raise ValueError
+        if math.isnan(v[1]) or math.isinf(v[1]):
+            raise ValueError
+        return v
 
 
 if __name__ == "__main__":
-    runner = problem.ProblemRunner(WSGProblemFactory())
+    runner = problem.ProblemRunner(WFG1ProblemFactory())
     runner.run()

@@ -8,13 +8,12 @@ class BinhAndKornProblemFactory(problem.ProblemFactory):
             problem.Var("y", problem.ContinuousRange(0, 3)),
         ]
         return problem.ProblemSpec(
-            name="Binh and Korn",
+            name="BinhKorn",
             params=params,
             values=[
                 problem.Var("4 * x ** 2 + 4 * y ** 2"),
                 problem.Var("(x - 5) ** 2 + (y - 5) ** 2"),
             ],
-            reference_point=[140, 50],  # Used at `kurobako plot curve --metric hypervolume`.
         )
 
     def create_problem(self, seed):

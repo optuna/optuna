@@ -22,21 +22,23 @@ def run(args: argparse.Namespace) -> None:
     cmd = f"{kurobako_cmd} problem-suite zdt | tee -a {problems_filename}"
     subprocess.run(cmd, shell=True)
 
-    # Create NAS bench problem(A) (for Multi-Objective Settings).
-    dataset = os.path.join(args.data_dir, "nasbench_full.bin")
-    cmd = (
-        f'{kurobako_cmd} problem nasbench "{dataset}" '
-        f"--metrics params accuracy | tee -a {problems_filename}"
-    )
-    subprocess.run(cmd, shell=True)
-
-    # Create WFG problem
-    # cmd = (f"{kurobako_cmd} problem command python3 benchmarks/problem/wfg_problem.py | tee -a {problems_filename}")
-    # subprocess.run(cmd, shell=True)
 
     # Create Binh and Korn problem
     cmd = f"{kurobako_cmd} problem command python3 benchmarks/problem/binh_and_korn_problem.py | tee -a {problems_filename}"
     subprocess.run(cmd, shell=True)
+
+    # Create WFG problem
+    cmd = (f"{kurobako_cmd} problem command python3 benchmarks/problem/wfg_problem.py | tee -a {problems_filename}")
+    subprocess.run(cmd, shell=True)
+    
+    # Create NAS bench problem(A) (for Multi-Objective Settings).
+    # dataset = os.path.join(args.data_dir, "nasbench_full.bin")
+    # cmd = (
+    #     f'{kurobako_cmd} problem nasbench "{dataset}" '
+    #     f"--metrics params accuracy | tee -a {problems_filename}"
+    # )
+    # subprocess.run(cmd, shell=True)
+
 
     # Create solvers.
     sampler_list = args.sampler_list.split()
@@ -79,19 +81,27 @@ def run(args: argparse.Namespace) -> None:
     subprocess.run(cmd, shell=True)
 
     # Plot pareto-front.
-    problem_names = ["NASBench", "ZDT1", "ZDT2", "ZDT3", "ZDT4", "ZDT5", "ZDT6"]
-    xmins = [0, 0, 0, 0, 0, 8, 0.2]
-    xmaxs = [25000000, 1, 1, 1, 1, 24, 1]
-    ymins = [0, 1, 2, 0, 20, 1, 5]
-    ymaxs = [0.2, 7, 7, 7, 250, 6, 10]
-    for problem_name, xmin, xmax, ymin, ymax in zip(problem_names, xmins, xmaxs, ymins, ymaxs):
+    plot_args = {
+        "NASBench":{"xmin":0,"xmax":25000000,"ymin":0,"ymax":0.2},
+        "ZDT1":{"xmin":0,"xmax":1,"ymin":1,"ymax":7},
+        "ZDT2":{"xmin":0,"xmax":1,"ymin":2,"ymax":7},
+        "ZDT3":{"xmin":0,"xmax":1,"ymin":0,"ymax":7},
+        "ZDT4":{"xmin":0,"xmax":1,"ymin":20,"ymax":250},
+        "ZDT5":{"xmin":8,"xmax":24,"ymin":1,"ymax":6},
+        "ZDT6":{"xmin":0.2,"xmax":1,"ymin":5,"ymax":10},
+        "BinhKorn":{"xmin":0,"xmax":150,"ymin":0,"ymax":50},
+        "WFG1":{"xmin":2.5,"xmax":3.5,"ymin":0.8,"ymax":1.5},
+    }
+
+    for problem_name, plot_arg in plot_args.items():
+        xmin, xmax = plot_arg["xmin"],plot_arg["xmax"],
+        ymin, ymax = plot_arg["ymin"],plot_arg["ymax"]
         cmd = (
             f"cat {result_filename} | grep {problem_name} | "
             f"{kurobako_cmd} plot pareto-front -o {args.out_dir} "
             f"--xmin {xmin} --xmax {xmax} --ymin {ymin} --ymax {ymax}"
         )
         subprocess.run(cmd, shell=True)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
