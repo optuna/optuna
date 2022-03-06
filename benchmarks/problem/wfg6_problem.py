@@ -1,5 +1,7 @@
 import math
+
 from kurobako import problem
+
 from WFGtestSuite import wfg
 
 

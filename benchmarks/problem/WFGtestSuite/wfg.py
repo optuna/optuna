@@ -2,7 +2,6 @@ from typing import List
 
 import numpy as np
 
-
 from . import shape_functions
 from . import transformation_functions
 

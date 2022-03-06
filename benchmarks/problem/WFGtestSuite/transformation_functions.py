@@ -1,6 +1,5 @@
-from typing import Callable
-
 import abc
+from typing import Callable
 
 import numpy as np
 
