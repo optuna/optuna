@@ -378,7 +378,7 @@ def test_multi_objective_sample_int_distributions(log: bool, step: int) -> None:
         for i in range(16)
     ]
 
-    trial = frozen_trial_factory(16, [1, 1])
+    trial = frozen_trial_factory(16, [0, 0])
     sampler = TPESampler(seed=0)
     attrs = MockSystemAttr()
     with patch.object(study._storage, "get_all_trials", return_value=past_trials), patch.object(
