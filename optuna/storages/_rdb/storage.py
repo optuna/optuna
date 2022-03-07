@@ -900,8 +900,8 @@ class RDBStorage(BaseStorage):
     def _get_trials(
         self,
         study_id: int,
+        states: Optional[Container[optuna.trial._state.TrialState]],
         excluded_trial_ids: Set[int],
-        states: Optional[Container[optuna.trial._state.TrialState]] = None,
     ) -> List[FrozenTrial]:
 
         with _create_scoped_session(self.scoped_session) as session:
