@@ -317,7 +317,7 @@ class TestChainerMNTrial(object):
 
     @staticmethod
     @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-    def test_suggest_discrete_uniform(storage_mode: str, comm: CommunicatorBase) -> None:
+    def test_suggest_float_with_step(storage_mode: str, comm: CommunicatorBase) -> None:
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             study = TestChainerMNStudy._create_shared_study(storage, comm)
