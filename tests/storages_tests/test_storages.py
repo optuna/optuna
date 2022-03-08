@@ -1349,7 +1349,7 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
     ) as storage:
         study = optuna.create_study(storage=storage)
 
-        # Make repeatedly failed and retried trials by heartbeat
+        # Make repeatedly failed and retried trials by heartbeat.
         for _ in range(n_trials):
             trial = study.ask()
             storage.record_heartbeat(trial._trial_id)
@@ -1363,7 +1363,7 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
         assert "failed_trial" not in trials[0].system_attrs
         assert "retry_history" not in trials[0].system_attrs
 
-        # trial 1-3 are retried ones originated from the trial 0
+        # The trials 1-3 are retried ones originating from the trial 0.
         assert trials[1].system_attrs["failed_trial"] == 0
         assert trials[1].system_attrs["retry_history"] == [0]
 
@@ -1373,7 +1373,8 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
         assert trials[3].system_attrs["failed_trial"] == 0
         assert trials[3].system_attrs["retry_history"] == [0, 1, 2]
 
-        # trial 4~ are the newly started one and its retry after exceededing max_retry
+        # Trials 4 and later are the newly started ones and
+        # they are retried after exceeding max_retry.
         assert "failed_trial" not in trials[4].system_attrs
         assert "retry_history" not in trials[4].system_attrs
         assert trials[5].system_attrs["failed_trial"] == 4
