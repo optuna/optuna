@@ -42,6 +42,7 @@ class MaxTrialsCallback:
         states:
             Tuple of the :class:`~optuna.trial.TrialState` to be counted
             towards the max trials limit. Default value is :obj:`(TrialState.COMPLETE,)`.
+            If :obj:None, count all states.
     """
 
     def __init__(
