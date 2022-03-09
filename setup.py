@@ -167,7 +167,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fastai",
         ],
         "benchmark": [
-            "asv",
+            "asv>=0.5.0",
             "virtualenv",
             "botorch",
         ],
