@@ -32,14 +32,14 @@ def run(args: argparse.Namespace) -> None:
 
     # Create WFG 1~9 problem
     for n_wfg in range(1, 10):
-        if n_wfg ==8:
+        if n_wfg == 8:
             n_dim = 3
             k = 2
-        elif n_wfg in (7,8,9):
+        elif n_wfg in (7, 8, 9):
             n_dim = 2
             k = 1
         else:
-            n_dim = 10 
+            n_dim = 10
             k = 2
         n_objective = 2
 
@@ -50,7 +50,6 @@ def run(args: argparse.Namespace) -> None:
             f"| tee -a {problems_filename}"
         )
         subprocess.run(cmd, shell=True)
-
 
     # # Create NAS bench problem(A) (for Multi-Objective Settings).
     # dataset = os.path.join(args.data_dir, "nasbench_full.bin")
@@ -130,7 +129,7 @@ def run(args: argparse.Namespace) -> None:
         cmd = (
             f"cat {result_filename} | grep {problem_name} | "
             f"{kurobako_cmd} plot pareto-front -o {args.out_dir} "
-            # f"--xmin {xmin} --xmax {xmax} --ymin {ymin} --ymax {ymax}"
+            f"--xmin {xmin} --xmax {xmax} --ymin {ymin} --ymax {ymax}"
         )
         subprocess.run(cmd, shell=True)
 
