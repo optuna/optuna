@@ -420,16 +420,16 @@ class RDBStorage(BaseStorage):
             study_summary = study_summary_stmt.all()
 
             _directions = defaultdict(list)
-            for d in session.query(models.StudyDirectionModel).all():
-                _directions[d.study_id].append(d.direction)
+            for direction_model in session.query(models.StudyDirectionModel).all():
+                _directions[direction_model.study_id].append(direction_model.direction)
 
             _user_attrs = defaultdict(list)
-            for a in session.query(models.StudyUserAttributeModel).all():
-                _user_attrs[d.study_id].append(a)
+            for attribute_model in session.query(models.StudyUserAttributeModel).all():
+                _user_attrs[attribute_model.study_id].append(attribute_model)
 
             _system_attrs = defaultdict(list)
-            for a in session.query(models.StudySystemAttributeModel).all():
-                _system_attrs[d.study_id].append(a)
+            for attribute_model in session.query(models.StudySystemAttributeModel).all():
+                _system_attrs[attribute_model.study_id].append(attribute_model)
 
             study_summaries = []
             for study in study_summary:

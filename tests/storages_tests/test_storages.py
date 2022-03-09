@@ -978,6 +978,8 @@ def _setup_studies(
         if direction is None:
             direction = generator.choice([StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
         storage.set_study_directions(study_id, (direction,))
+        storage.set_study_user_attr(study_id, "u", i)
+        storage.set_study_system_attr(study_id, "s", i)
         best_trial = None
         trials = {}
         datetime_start = None
@@ -1003,8 +1005,8 @@ def _setup_studies(
             study_name=study_name,
             direction=direction,
             best_trial=best_trial,
-            user_attrs={},
-            system_attrs={},
+            user_attrs={"u": i},
+            system_attrs={"s": i},
             n_trials=len(trials),
             datetime_start=datetime_start,
             study_id=study_id,
