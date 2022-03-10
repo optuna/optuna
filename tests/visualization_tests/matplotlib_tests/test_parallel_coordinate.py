@@ -35,10 +35,10 @@ def test_plot_parallel_coordinate() -> None:
     assert axes[1].get_ylabel() == "Objective Value"
     assert axes[1].get_ylim() == (0.0, 2.0)
     assert axes[2].get_ylim() == (1.0, 2.5)
-    assert [
-        axes[2].get_lines()[0].get_ydata()[0],
-        axes[2].get_lines()[0].get_ydata()[-1],
-    ] == [1.0, 2.5]
+    # Since the value of param_a in trial#1 is missing, the value is replaced with nan.
+    param_a_data = axes[2].get_lines()[0].get_ydata().tolist()
+    assert [param_a_data[0], param_a_data[2]]  == [1.0, 2.5]
+    assert math.isnan(param_a_data[1])
     assert axes[3].get_ylim() == (0.0, 2.0)
     assert axes[3].get_lines()[0].get_ydata().tolist() == [2.0, 0.0, 1.0]
     line_collections = figure.findobj(LineCollection)
@@ -283,6 +283,7 @@ def test_plot_parallel_coordinate_log_params() -> None:
 
 def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # Test case when one unique value is suggested during the optimization.
+
     study_categorical_params = create_study()
     study_categorical_params.add_trial(
         create_trial(
@@ -316,7 +317,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
 
 
 def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
-    # Test with sample from mulitiple distributions including categorical params
+    # Test with sample from multiple distributions including categorical params
     # that can be interpreted as numeric params.
     study_multi_distro_params = create_study()
     study_multi_distro_params.add_trial(
