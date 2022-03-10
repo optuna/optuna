@@ -130,6 +130,11 @@ def _get_parallel_coordinate_plot(
                 break
 
     objectives = tuple([target(t) for t in trials if t.number not in skipped_trial_ids])
+
+    if len(objectives) == 0:
+        _logger.warning("Your study has ony completed trials with missing parameters.")
+        return go.Figure(data=[], layout=layout)
+
     dims: List[Dict[str, Any]] = [
         {
             "label": target_name,
