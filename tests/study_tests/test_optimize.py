@@ -5,6 +5,7 @@ import pytest
 from optuna import create_study
 from optuna import Trial
 from optuna.study import _optimize
+from optuna.study._tell import _tell_with_warning
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import TrialState
@@ -87,13 +88,15 @@ def test_run_trial_invoke_study_tell_with_suppressing_warning(storage_mode: str)
             return trial.suggest_float("v", 0, 10)
 
         study.tell = mock.MagicMock(side_effect=study.tell)  # type: ignore
-        study._tell_with_warning = mock.MagicMock(  # type: ignore
-            side_effect=study._tell_with_warning,
-        )
-
-        _optimize._run_trial(study, func_numerical, catch=())
-
-        study.tell.assert_not_called()
-        study._tell_with_warning.assert_called_with(
-            mock.ANY, values=mock.ANY, state=mock.ANY, suppress_warning=True
-        )
+        with mock.patch(
+            "optuna.study._optimize._tell_with_warning", side_effect=_tell_with_warning
+        ) as mock_obj:
+            _optimize._run_trial(study, func_numerical, catch=())
+            study.tell.assert_not_called()
+            mock_obj.assert_called_with(
+                study=mock.ANY,
+                trial=mock.ANY,
+                values=mock.ANY,
+                state=mock.ANY,
+                suppress_warning=True,
+            )
