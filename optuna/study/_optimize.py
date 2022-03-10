@@ -193,7 +193,7 @@ def _run_trial(
 
     state: Optional[TrialState] = None
     values: Optional[List[float]] = None
-    func_err: Optional[Exception] = None
+    func_err: Optional[BaseException] = None
     func_err_fail_exc_info: Optional[Any] = None
     # Set to a string if `func` returns correctly but the return value violates assumptions.
     values_conversion_failure_message: Optional[str] = None
@@ -212,6 +212,9 @@ def _run_trial(
     except exceptions.TrialPruned as e:
         # TODO(mamu): Handle multi-objective cases.
         state = TrialState.PRUNED
+        func_err = e
+    except KeyboardInterrupt as e:
+        state = TrialState.FAIL
         func_err = e
     except Exception as e:
         state = TrialState.FAIL

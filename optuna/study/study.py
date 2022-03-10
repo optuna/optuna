@@ -329,7 +329,7 @@ class Study:
                 The number of trials for each process. If this argument is set to :obj:`None`,
                 there is no limitation on the number of trials. If ``timeout`` is also set to
                 :obj:`None`, the study continues to create trials until it receives a termination
-                signal such as Ctrl+C or SIGTERM.
+                signal such as Ctrl+C or SIGTERM, in which case it also kills the current trial.
 
                 .. seealso::
                     :class:`optuna.study.MaxTrialsCallback` can ensure how many times trials
@@ -338,7 +338,8 @@ class Study:
                 Stop study after the given number of second(s). If this argument is set to
                 :obj:`None`, the study is executed without time limitation. If :obj:`n_trials` is
                 also set to :obj:`None`, the study continues to create trials until it receives a
-                termination signal such as Ctrl+C or SIGTERM.
+                termination signal such as Ctrl+C or SIGTERM, in which case it also kills the
+                current trial.
             n_jobs:
                 The number of parallel jobs. If this argument is set to :obj:`-1`, the number is
                 set to CPU count.
