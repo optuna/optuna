@@ -50,9 +50,6 @@ class StudyModel(BaseModel):
 class TrialModel(BaseModel):
     __tablename__ = "trials"
     trial_id = Column(Integer, primary_key=True)
-    # No `UniqueConstraint` is put on the `number` columns although it in practice is constrained
-    # to be unique. This is to reduce code complexity as table-level locking would be required
-    # otherwise. See https://github.com/optuna/optuna/pull/939#discussion_r387447632.
     number = Column(Integer)
     study_id = Column(Integer, ForeignKey("studies.study_id"))
     state = Column(Enum(TrialState), nullable=False)
