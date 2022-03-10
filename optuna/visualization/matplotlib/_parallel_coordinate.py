@@ -160,8 +160,13 @@ def _get_parallel_coordinate_plot(
             cat_param_values.append([v[0] for v in vocab_item_sorted])
             cat_param_ticks.append([v[1] for v in vocab_item_sorted])
 
-        p_min = min(values)
-        p_max = max(values)
+        if _is_log_scale(trials, p_name):
+            _values = [np.log10(v) for v in values]
+        else:
+            _values = values
+
+        p_min = min(_values)
+        p_max = max(_values)
         p_w = p_max - p_min
 
         if p_w == 0.0:
@@ -169,7 +174,7 @@ def _get_parallel_coordinate_plot(
             for i in range(len(values)):
                 dims_obj_base[i].append(center)
         else:
-            for i, v in enumerate(values):
+            for i, v in enumerate(_values):
                 dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
 
         var_names.append(p_name if len(p_name) < 20 else "{}...".format(p_name[:17]))
