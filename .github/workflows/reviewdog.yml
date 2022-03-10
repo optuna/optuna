@@ -22,8 +22,18 @@ jobs:
     - name: Black
       run: black .
 
+    - name: Reviewdog
+      uses: reviewdog/action-suggester@v1
+      with:
+        tool_name: black
+
     - name: Blackdoc
       run: blackdoc .
+
+    - name: Reviewdog
+      uses: reviewdog/action-suggester@v1
+      with:
+        tool_name: blackdoc
 
     - name: Isort
       run: isort .
@@ -31,4 +41,4 @@ jobs:
     - name: Reviewdog
       uses: reviewdog/action-suggester@v1
       with:
-        tool_name: black
+        tool_name: isort
