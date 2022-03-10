@@ -140,7 +140,6 @@ def _get_parallel_coordinate_plot(
     cat_param_names = []
     cat_param_values = []
     cat_param_ticks = []
-    log_param_names = []
     param_values = []
     var_names = [target_name]
     numeric_cat_params_indices: List[int] = []
@@ -148,10 +147,7 @@ def _get_parallel_coordinate_plot(
     for param_index, p_name in enumerate(sorted_params):
         values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
 
-        if _is_log_scale(trials, p_name):
-            values = [math.log10(v) for v in values]
-            log_param_names.append(p_name)
-        elif _is_categorical(trials, p_name):
+        if _is_categorical(trials, p_name):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
 
             if _is_numerical(trials, p_name):
