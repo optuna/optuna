@@ -122,11 +122,19 @@ def _get_parallel_coordinate_plot(
     else:
         reversescale = True
 
+    skipped_trial_ids = set()
+    for trial in trials:
+        for used_param in sorted_params:
+            if used_param not in trial.params.keys():
+                skipped_trial_ids.add(trial.number)
+                break
+
+    objectives = tuple([target(t) for t in trials if t.number not in skipped_trial_ids])
     dims: List[Dict[str, Any]] = [
         {
             "label": target_name,
-            "values": tuple([target(t) for t in trials]),
-            "range": (min([target(t) for t in trials]), max([target(t) for t in trials])),
+            "values": objectives,
+            "range": (min(objectives), max(objectives)),
         }
     ]
 
@@ -134,6 +142,9 @@ def _get_parallel_coordinate_plot(
     for dim_index, p_name in enumerate(sorted_params, start=1):
         values = []
         for t in trials:
+            if t.number in skipped_trial_ids:
+                continue
+
             if p_name in t.params:
                 values.append(t.params[p_name])
 
