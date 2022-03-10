@@ -22,6 +22,12 @@ jobs:
     - name: Black
       run: black .
 
+    - name: Blackdoc
+      run: blackdoc .
+
+    - name: Isort
+      run: isort .
+
     - name: Reviewdog
       uses: reviewdog/action-suggester@v1
       with:
