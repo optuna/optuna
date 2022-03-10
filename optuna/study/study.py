@@ -1,5 +1,4 @@
 import copy
-import math
 import threading
 from typing import Any
 from typing import Callable
@@ -29,6 +28,7 @@ from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary  # NOQA
+from optuna.study._tell import _tell_with_warning
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -44,61 +44,6 @@ ObjectiveFuncType = Callable[[trial_module.Trial], Union[float, Sequence[float]]
 
 
 _logger = logging.get_logger(__name__)
-
-
-def _check_and_convert_to_values(
-    n_objectives: int, original_value: Union[float, Sequence[float]], trial_number: int
-) -> Tuple[Optional[List[float]], Optional[str]]:
-    if isinstance(original_value, Sequence):
-        if n_objectives != len(original_value):
-            return (
-                None,
-                (
-                    f"The number of the values "
-                    f"{len(original_value)} did not match the number of the objectives "
-                    f"{n_objectives}."
-                ),
-            )
-        else:
-            _original_values = list(original_value)
-    else:
-        _original_values = [original_value]
-
-    _checked_values = []
-    for v in _original_values:
-        checked_v, failure_message = _check_single_value(v, trial_number)
-        if failure_message is not None:
-            # TODO(Imamura): Construct error message taking into account all values and do not
-            #  early return
-            # `value` is assumed to be ignored on failure so we can set it to any value.
-            return None, failure_message
-        elif isinstance(checked_v, float):
-            _checked_values.append(checked_v)
-        else:
-            assert False
-
-    return _checked_values, None
-
-
-def _check_single_value(
-    original_value: float, trial_number: int
-) -> Tuple[Optional[float], Optional[str]]:
-    value = None
-    failure_message = None
-
-    try:
-        value = float(original_value)
-    except (
-        ValueError,
-        TypeError,
-    ):
-        failure_message = f"The value {repr(original_value)} could not be cast to float."
-
-    if value is not None and math.isnan(value):
-        value = None
-        failure_message = f"The objective function returned {original_value}."
-
-    return value, failure_message
 
 
 class Study:
@@ -649,8 +594,8 @@ class Study:
             A returned trial is deep copied thus user can modify it as needed.
         """
 
-        return self._tell_with_warning(
-            trial=trial, values=values, state=state, skip_if_finished=skip_if_finished
+        return _tell_with_warning(
+            study=self, trial=trial, values=values, state=state, skip_if_finished=skip_if_finished
         )
 
     def set_user_attr(self, key: str, value: Any) -> None:
@@ -1003,153 +948,6 @@ class Study:
         self, trial: trial_module.Trial, state: TrialState, values: Optional[List[float]]
     ) -> None:
         self.tell(trial, values, state)
-
-    def _tell_with_warning(
-        self,
-        trial: Union[trial_module.Trial, int],
-        values: Optional[Union[float, Sequence[float]]] = None,
-        state: Optional[TrialState] = None,
-        skip_if_finished: bool = False,
-        suppress_warning: bool = False,
-    ) -> FrozenTrial:
-        """Internal method of :func:`~optuna.study.Study.tell`.
-
-        Refer to the document for :func:`~optuna.study.Study.tell` for the reference.
-        This method has one additional parameter ``suppress_warning``.
-
-        Args:
-            suppress_warning:
-                If :obj:`True`, tell will not show warnings when tell receives an invalid
-                values. This flag is expected to be :obj:`True` only when it is invoked by
-                Study.optimize.
-        """
-
-        if not isinstance(trial, (trial_module.Trial, int)):
-            raise TypeError("Trial must be a trial object or trial number.")
-
-        if state == TrialState.COMPLETE:
-            if values is None:
-                raise ValueError(
-                    "No values were told. Values are required when state is TrialState.COMPLETE."
-                )
-        elif state in (TrialState.PRUNED, TrialState.FAIL):
-            if values is not None:
-                raise ValueError(
-                    "Values were told. Values cannot be specified when state is "
-                    "TrialState.PRUNED or TrialState.FAIL."
-                )
-        elif state is not None:
-            raise ValueError(f"Cannot tell with state {state}.")
-
-        if isinstance(trial, trial_module.Trial):
-            trial_number = trial.number
-            trial_id = trial._trial_id
-        elif isinstance(trial, int):
-            trial_number = trial
-            try:
-                trial_id = self._storage.get_trial_id_from_study_id_trial_number(
-                    self._study_id, trial_number
-                )
-            except NotImplementedError as e:
-                warnings.warn(
-                    "Study.tell may be slow because the trial was represented by its number but "
-                    f"the storage {self._storage.__class__.__name__} does not implement the "
-                    "method required to map numbers back. Please provide the trial object "
-                    "to avoid performance degradation."
-                )
-
-                trials = self.get_trials(deepcopy=False)
-
-                if len(trials) <= trial_number:
-                    raise ValueError(
-                        f"Cannot tell for trial with number {trial_number} since it has not been "
-                        "created."
-                    ) from e
-
-                trial_id = trials[trial_number]._trial_id
-            except KeyError as e:
-                raise ValueError(
-                    f"Cannot tell for trial with number {trial_number} since it has not been "
-                    "created."
-                ) from e
-        else:
-            assert False, "Should not reach."
-
-        frozen_trial = self._storage.get_trial(trial_id)
-        warning_message = None
-
-        if frozen_trial.state.is_finished() and skip_if_finished:
-            _logger.info(
-                f"Skipped telling trial {trial_number} with values "
-                f"{values} and state {state} since trial was already finished. "
-                f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
-            )
-            return copy.deepcopy(frozen_trial)
-
-        if state is None and values is None:
-            state = TrialState.FAIL
-            message_values_and_state_not_specified = (
-                "Study.tell is called with `values` and `state` set to None but "
-                "you have to specify either `values` or `state` at least. "
-                "`values` is required if a trial finishes successfully or "
-                "`state` is required if a trial is fails or pruned."
-            )
-            if not suppress_warning:
-                warnings.warn(message_values_and_state_not_specified)
-            else:
-                warning_message = message_values_and_state_not_specified
-
-        if state == TrialState.PRUNED:
-            # Register the last intermediate value if present as the value of the trial.
-            # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
-            assert values is None
-
-            last_step = frozen_trial.last_step
-            if last_step is not None:
-                values = [frozen_trial.intermediate_values[last_step]]
-
-        if values is not None:
-            values, values_conversion_failure_message = _check_and_convert_to_values(
-                len(self.directions), values, trial_number
-            )
-
-            if state is None:
-                if values_conversion_failure_message is None:
-                    state = TrialState.COMPLETE
-
-                # This path is reached when the objective returns invalid data
-                # including NaN or non-numerical points during Study.optimize.
-                else:
-                    state = TrialState.FAIL
-                    if not suppress_warning:
-                        warnings.warn(values_conversion_failure_message)
-                    else:
-                        warning_message = values_conversion_failure_message
-
-            # When called from `Study.optimize` and `state` is pruned, the given `values` contains
-            # the intermediate value with the largest step so far. In this case, the value is
-            # allowed to be NaN and errors should not be raised.
-            elif state != TrialState.PRUNED and values_conversion_failure_message is not None:
-                raise ValueError(values_conversion_failure_message)
-
-        assert state is not None
-
-        try:
-            # Sampler defined trial post-processing.
-            study = pruners._filter_study(self, frozen_trial)
-            self.sampler.after_trial(study, frozen_trial, state, values)
-        except Exception:
-            raise
-        finally:
-            if values is not None:
-                self._storage.set_trial_values(trial_id, values)
-
-            self._storage.set_trial_state(trial_id, state)
-
-        frozen_trial = copy.deepcopy(self._storage.get_trial(trial_id))
-        if warning_message is not None:
-            frozen_trial.set_system_attr("study_tell_warning", warning_message)
-        return frozen_trial
 
     def _log_completed_trial(self, trial: trial_module.FrozenTrial) -> None:
         if not _logger.isEnabledFor(logging.INFO):

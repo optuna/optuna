@@ -26,6 +26,7 @@ from optuna import logging
 from optuna import progress_bar as pbar_module
 from optuna import storages
 from optuna import trial as trial_module
+from optuna.study._tell import _tell_with_warning
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -218,10 +219,10 @@ def _run_trial(
         stop_event.set()
         thread.join()
 
-    # `Study._tell_with_warning` may raise during trial post-processing.
+    # `_tell_with_warning` may raise during trial post-processing.
     try:
-        frozen_trial = study._tell_with_warning(
-            trial, values=value_or_values, state=state, suppress_warning=True
+        frozen_trial = _tell_with_warning(
+            study=study, trial=trial, values=value_or_values, state=state, suppress_warning=True
         )
     except Exception:
         frozen_trial = study._storage.get_trial(trial._trial_id)
