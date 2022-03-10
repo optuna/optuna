@@ -361,3 +361,31 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
     assert figure.data[0]["dimensions"][4]["range"] == (0, 2)
     assert figure.data[0]["dimensions"][4]["values"] == (2, 0, 2, 1)
     assert figure.data[0]["dimensions"][4]["ticktext"] == (-1, 1, 2)
+
+
+def test_plot_parallel_coordinate_only_missing_params() -> None:
+    # All trials contains only a part of parameters,
+    # the plot returns an empty figure.
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1e-6},
+            distributions={
+                "param_a": LogUniformDistribution(1e-7, 1e-2),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_b": 200},
+            distributions={
+                "param_b": LogUniformDistribution(1, 1000),
+            },
+        )
+    )
+
+    study = create_study()
+    figure = plot_parallel_coordinate(study)
+    assert len(figure.data) == 0
