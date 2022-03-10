@@ -198,8 +198,28 @@ def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
             },
         )
     )
+
+    # Trials are sorted by using param_a and param_b, i.e., trial#1, trial#2, and trial#0.
     figure = plot_parallel_coordinate(study_categorical_params)
-    assert len(figure.get_lines()) == 0
+    axes = figure.get_figure().axes
+    assert len(axes) == 3 + 1
+    assert axes[1].get_ylabel() == "Objective Value"
+    assert axes[1].get_ylim() == (0.0, 2.0)
+    assert len(figure.findobj(LineCollection)) == 1
+    # TODO(nzw0301): implement the validation of values of objectives
+    # assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [1.0, 2.0,]
+    assert axes[2].get_ylim() == (0, 1)
+    assert axes[2].get_lines()[0].get_ydata().tolist() == [0, 1, 1]
+    assert [int(l.get_text()) for l in axes[2].get_yticklabels()] == [1, 2]
+    assert [l.get_position()[1] for l in axes[2].get_yticklabels()] == [0, 1]
+    assert axes[3].get_ylim() == (0, 2)
+    assert axes[3].get_lines()[0].get_ydata().tolist() == [2, 0, 1]
+    assert [int(l.get_text()) for l in axes[3].get_yticklabels()] == [10, 20, 30]
+    assert [l.get_position()[1] for l in axes[3].get_yticklabels()] == [0, 1, 2]
+    xticklabels = axes[0].get_xticklabels()
+    assert xticklabels[0].get_text() == "Objective Value"
+    assert xticklabels[1].get_text() == "category_a"
+    assert xticklabels[2].get_text() == "category_b"
 
 
 def test_plot_parallel_coordinate_log_params() -> None:
@@ -255,6 +275,10 @@ def test_plot_parallel_coordinate_log_params() -> None:
         math.log10(200),
         math.log10(30),
     ]
+    xticklabels = axes[0].get_xticklabels()
+    assert xticklabels[0].get_text() == "Objective Value"
+    assert xticklabels[1].get_text() == "param_a"
+    assert xticklabels[2].get_text() == "param_b"
 
 
 def test_plot_parallel_coordinate_unique_hyper_param() -> None:
@@ -289,3 +313,60 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # Still "category_a" contains unique suggested value during the optimization.
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.get_lines()) == 0
+
+
+def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
+    # Test with sample from mulitiple distributions including categorical params
+    # that can be interpreted as numeric params.
+    study_multi_distro_params = create_study()
+    study_multi_distro_params.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": "preferred", "param_b": 2, "param_c": 30, "param_d": 2},
+            distributions={
+                "param_a": CategoricalDistribution(("preferred", "opt")),
+                "param_b": CategoricalDistribution((1, 2, 10)),
+                "param_c": LogUniformDistribution(1, 1000),
+                "param_d": CategoricalDistribution((1, -1, 2)),
+            },
+        )
+    )
+
+    study_multi_distro_params.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": "opt", "param_b": 1, "param_c": 200, "param_d": 2},
+            distributions={
+                "param_a": CategoricalDistribution(("preferred", "opt")),
+                "param_b": CategoricalDistribution((1, 2, 10)),
+                "param_c": LogUniformDistribution(1, 1000),
+                "param_d": CategoricalDistribution((1, -1, 2)),
+            },
+        )
+    )
+
+    study_multi_distro_params.add_trial(
+        create_trial(
+            value=2.0,
+            params={"param_a": "preferred", "param_b": 10, "param_c": 10, "param_d": 1},
+            distributions={
+                "param_a": CategoricalDistribution(("preferred", "opt")),
+                "param_b": CategoricalDistribution((1, 2, 10)),
+                "param_c": LogUniformDistribution(1, 1000),
+                "param_d": CategoricalDistribution((1, -1, 2)),
+            },
+        )
+    )
+
+    study_multi_distro_params.add_trial(
+        create_trial(
+            value=3.0,
+            params={"param_a": "opt", "param_b": 2, "param_c": 10, "param_d": -1},
+            distributions={
+                "param_a": CategoricalDistribution(("preferred", "opt")),
+                "param_b": CategoricalDistribution((1, 2, 10)),
+                "param_c": LogUniformDistribution(1, 1000),
+                "param_d": CategoricalDistribution((-1, 1, 2)),
+            },
+        )
+    )
