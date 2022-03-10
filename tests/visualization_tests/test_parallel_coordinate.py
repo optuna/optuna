@@ -31,21 +31,21 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study)
     assert len(figure.data[0]["dimensions"]) == 3
     assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 1.0)
     assert figure.data[0]["dimensions"][1]["label"] == "param_a"
     assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][2]["label"] == "param_b"
-    assert figure.data[0]["dimensions"][2]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 0.0, 1.0)
+    assert figure.data[0]["dimensions"][2]["range"] == (1.0, 2.0)
+    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 1.0)
 
     # Test with a trial to select parameter.
     figure = plot_parallel_coordinate(study, params=["param_a"])
     assert len(figure.data[0]["dimensions"]) == 2
     assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 1.0)
     assert figure.data[0]["dimensions"][1]["label"] == "param_a"
     assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
@@ -57,8 +57,8 @@ def test_plot_parallel_coordinate() -> None:
         )
     assert len(figure.data[0]["dimensions"]) == 2
     assert figure.data[0]["dimensions"][0]["label"] == "Objective Value"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (2.0, 0.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["range"] == (1.0, 2.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (2.0, 1.0)
     assert figure.data[0]["dimensions"][1]["label"] == "param_a"
     assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
@@ -67,14 +67,14 @@ def test_plot_parallel_coordinate() -> None:
     figure = plot_parallel_coordinate(study, target_name="Target Name")
     assert len(figure.data[0]["dimensions"]) == 3
     assert figure.data[0]["dimensions"][0]["label"] == "Target Name"
-    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 2.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["range"] == (0.0, 1.0)
+    assert figure.data[0]["dimensions"][0]["values"] == (0.0, 1.0)
     assert figure.data[0]["dimensions"][1]["label"] == "param_a"
     assert figure.data[0]["dimensions"][1]["range"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][1]["values"] == (1.0, 2.5)
     assert figure.data[0]["dimensions"][2]["label"] == "param_b"
-    assert figure.data[0]["dimensions"][2]["range"] == (0.0, 2.0)
-    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 0.0, 1.0)
+    assert figure.data[0]["dimensions"][2]["range"] == (1.0, 2.0)
+    assert figure.data[0]["dimensions"][2]["values"] == (2.0, 1.0)
 
     # Test with wrong params that do not exist in trials
     with pytest.raises(ValueError, match="Parameter optuna does not exist in your study."):
