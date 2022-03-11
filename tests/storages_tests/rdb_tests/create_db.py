@@ -70,7 +70,7 @@ if __name__ == "__main__":
     except TypeError:
         print(f"optuna=={optuna.__version__} does not support multi-objective optimization.")
 
-    # Create a study for schema migration.
+    # Create a study for distributions upgrade.
     if version.parse(optuna.__version__) >= version.parse("2.4.0"):
         study = optuna.create_study(storage=args.storage_url, study_name="schema migration")
         study.optimize(single_objective_schema_migration, n_trials=1)
