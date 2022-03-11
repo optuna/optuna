@@ -33,9 +33,9 @@ from optuna.testing.storage import StorageSupplier
 from optuna.testing.threading import _TestableThread
 from optuna.trial import Trial
 
-from .create_db import multi_objective_function
-from .create_db import single_objective_function
-from .create_db import single_objective_schema_migration
+from .create_db import mo_objective_test_upgrade
+from .create_db import objective_test_upgrade
+from .create_db import objective_test_upgrade_v3_distribution
 
 
 def test_init() -> None:
@@ -207,19 +207,19 @@ def test_upgrade_single_objective_optimization(optuna_version: str) -> None:
         # Create a new study.
         study = create_study(storage=storage)
         assert len(study.trials) == 0
-        study.optimize(single_objective_function, n_trials=1)
+        study.optimize(objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 1
 
         # Check empty study.
         study = load_study(storage=storage, study_name="single_empty")
         assert len(study.trials) == 0
-        study.optimize(single_objective_function, n_trials=1)
+        study.optimize(objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 1
 
         # Resume single objective optimization.
         study = load_study(storage=storage, study_name="single")
         assert len(study.trials) == 1
-        study.optimize(single_objective_function, n_trials=1)
+        study.optimize(objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 2
         for trial in study.trials:
             assert trial.system_attrs["a"] == 0
@@ -252,19 +252,19 @@ def test_upgrade_multi_objective_optimization(optuna_version: str) -> None:
         # Create a new study.
         study = create_study(storage=storage, directions=["minimize", "minimize"])
         assert len(study.trials) == 0
-        study.optimize(multi_objective_function, n_trials=1)
+        study.optimize(mo_objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 1
 
         # Check empty study.
         study = load_study(storage=storage, study_name="multi_empty")
         assert len(study.trials) == 0
-        study.optimize(multi_objective_function, n_trials=1)
+        study.optimize(mo_objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 1
 
         # Resume multi-objective optimization.
         study = load_study(storage=storage, study_name="multi")
         assert len(study.trials) == 1
-        study.optimize(multi_objective_function, n_trials=1)
+        study.optimize(mo_objective_test_upgrade, n_trials=1)
         assert len(study.trials) == 2
         for trial in study.trials:
             assert trial.system_attrs["a"] == 0
@@ -322,7 +322,7 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         assert isinstance(new_distribution_dict["z"], CategoricalDistribution)
 
         # check if Study.optimize can run on new storage
-        new_study.optimize(single_objective_schema_migration, n_trials=1)
+        new_study.optimize(objective_test_upgrade_v3_distribution, n_trials=1)
 
 
 def test_record_heartbeat() -> None:

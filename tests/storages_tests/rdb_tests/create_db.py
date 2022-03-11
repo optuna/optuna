@@ -43,7 +43,7 @@ from packaging import version
 import optuna
 
 
-def single_objective_function(trial: optuna.trial.Trial) -> float:
+def objective_test_upgrade(trial: optuna.trial.Trial) -> float:
     x = trial.suggest_float("x", -5, 5)  # optuna==0.9.0 does not have suggest_float.
     y = trial.suggest_int("y", 0, 10)
     z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
@@ -53,7 +53,7 @@ def single_objective_function(trial: optuna.trial.Trial) -> float:
     return x**2 + y**2 + z**2
 
 
-def multi_objective_function(trial: optuna.trial.Trial) -> Tuple[float, float]:
+def mo_objective_test_upgrade(trial: optuna.trial.Trial) -> Tuple[float, float]:
     x = trial.suggest_float("x", -5, 5)
     y = trial.suggest_int("y", 0, 10)
     z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
@@ -62,7 +62,7 @@ def multi_objective_function(trial: optuna.trial.Trial) -> Tuple[float, float]:
     return x, x**2 + y**2 + z**2
 
 
-def single_objective_schema_migration(trial: optuna.trial.Trial) -> float:
+def objective_test_upgrade_v3_distribution(trial: optuna.trial.Trial) -> float:
     x1 = trial.suggest_float("x1", -5, 5)
     x2 = trial.suggest_float("x2", 1e-5, 1e-3, log=True)
     x3 = trial.suggest_float("x3", -6, 6, step=2)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     study = optuna.create_study(storage=args.storage_url, study_name="single")
     study.set_system_attr("c", 2)
     study.set_user_attr("d", 3)
-    study.optimize(single_objective_function, n_trials=1)
+    study.optimize(objective_test_upgrade, n_trials=1)
 
     # Create a study for multi-objective optimization.
     try:
@@ -102,14 +102,14 @@ if __name__ == "__main__":
         )
         study.set_system_attr("c", 2)
         study.set_user_attr("d", 3)
-        study.optimize(multi_objective_function, n_trials=1)
+        study.optimize(mo_objective_test_upgrade, n_trials=1)
     except TypeError:
         print(f"optuna=={optuna.__version__} does not support multi-objective optimization.")
 
     # Create a study for distributions upgrade.
     if version.parse(optuna.__version__) >= version.parse("2.4.0"):
         study = optuna.create_study(storage=args.storage_url, study_name="schema migration")
-        study.optimize(single_objective_schema_migration, n_trials=1)
+        study.optimize(objective_test_upgrade_v3_distribution, n_trials=1)
 
     for s in optuna.get_all_study_summaries(args.storage_url):
         print(f"{s.study_name}, {s.n_trials}")
