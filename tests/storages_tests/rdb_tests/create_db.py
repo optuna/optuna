@@ -41,10 +41,10 @@ def single_objective_schema_migration(trial: optuna.trial.Trial) -> float:
 
 
 if __name__ == "__main__":
-    default_storage_url = f"sqlite:///test_upgrade_assets/{optuna.__version__}.db"
-
     parser = ArgumentParser(description="Create SQLite database for schema upgrade tests.")
-    parser.add_argument("--storage-url", default=default_storage_url)
+    parser.add_argument(
+        "--storage-url", default=f"sqlite:///test_upgrade_assets/{optuna.__version__}.db"
+    )
     args = parser.parse_args()
 
     # Create an empty study.
@@ -59,14 +59,10 @@ if __name__ == "__main__":
     # Create a study for multi-objective optimization.
     try:
         optuna.create_study(
-            storage=args.storage_url,
-            study_name="multi_empty",
-            directions=["minimize", "minimize"],
+            storage=args.storage_url, study_name="multi_empty", directions=["minimize", "minimize"]
         )
         study = optuna.create_study(
-            storage=args.storage_url,
-            study_name="multi",
-            directions=["minimize", "minimize"],
+            storage=args.storage_url, study_name="multi", directions=["minimize", "minimize"]
         )
         study.set_system_attr("c", 2)
         study.set_user_attr("d", 3)
