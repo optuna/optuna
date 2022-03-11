@@ -1,21 +1,24 @@
 """This script generates assets for testing schema migration.
 
-1. Install Optuna
+1. Prepare Optuna
 
-You can view the current stable schema version by checking `optuna/storages/_rdb/alembic/versions`.
+If you want to generate a DB file for the latest version of Optuna,
+you have to edit `optuna/version.py` since we add a suffix to a version in the master branch.
 
-```sh
-> ls optuna/storages/_rdb/alembic/versions
-v0.9.0.a.py  v1.2.0.a.py  v1.3.0.a.py  v2.4.0.a.py  v2.6.0.a_.py
-```
+> cat optuna/version.py                                                                                                                                                                                                                                                      2022-03-11 09:30:46
+__version__ = "3.0.0b0.dev"
 
+In the case, please temporarily remove the suffix when running this script.
+After generating an asset, the change should be reverted.
+
+If you want to generate a DB file for older versions of Optuna, you have to install it.
 I recommend you to create isolated environment using `venv` for this purpose.
 
 ```sh
 > deactivate  # if you already use `venv` for development
 > python3 -m venv venv_gen
 > . venv_gen/bin/activate
-> pip install optuna==2.6.0  # it depends on the output of `ls` above
+> pip install optuna==2.6.0  # install Optuna v2.6.0
 ```
 
 2. Generate database
