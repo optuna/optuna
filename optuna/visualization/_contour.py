@@ -17,6 +17,7 @@ from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _get_param_values
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
+from optuna.visualization._utils import COLOR_SCALE
 
 
 if _imports.is_successful():
@@ -286,12 +287,12 @@ def _generate_contour_subplot(
         y=y_indices,
         z=z,
         colorbar={"title": target_name},
-        colorscale=plotly.colors.PLOTLY_SCALES["Blues"],
+        colorscale=COLOR_SCALE,
         connectgaps=True,
         contours_coloring="heatmap",
         hoverinfo="none",
         line_smoothing=1.3,
-        reversescale=target is None and direction == StudyDirection.MAXIMIZE,
+        reversescale=target is None and direction == StudyDirection.MINIMIZE,
     )
 
     scatter = go.Scatter(

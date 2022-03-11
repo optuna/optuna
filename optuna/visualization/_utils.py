@@ -17,6 +17,8 @@ from optuna.visualization import _plotly_imports
 
 __all__ = ["is_available"]
 
+COLOR_SCALE = "blues"
+
 
 def is_available() -> bool:
     """Returns whether visualization with plotly is available or not.

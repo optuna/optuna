@@ -20,6 +20,7 @@ from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
+from optuna.visualization._utils import COLOR_SCALE
 
 
 if _imports.is_successful():
@@ -197,7 +198,7 @@ def _get_parallel_coordinate_plot(
             labelside="bottom",
             line={
                 "color": dims[0]["values"],
-                "colorscale": "blues",
+                "colorscale": COLOR_SCALE,
                 "colorbar": {"title": target_name},
                 "showscale": True,
                 "reversescale": reversescale,
