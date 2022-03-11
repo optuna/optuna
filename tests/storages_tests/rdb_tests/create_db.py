@@ -5,7 +5,7 @@
 If you want to generate a DB file for the latest version of Optuna,
 you have to edit `optuna/version.py` since we add a suffix to a version in the master branch.
 
-> cat optuna/version.py                                                                                                                                                                                                                                                      2022-03-11 09:30:46
+> cat optuna/version.py
 __version__ = "3.0.0b0.dev"
 
 In the case, please temporarily remove the suffix when running this script.
