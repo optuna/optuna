@@ -63,7 +63,8 @@ class CmaEsSampler(BaseSampler):
     :class:`~optuna.distributions.CategoricalDistribution`.
     However, :class:`~optuna.distributions.DiscreteUniformDistribution`
     (:func:`~optuna.trial.Trial.suggest_float`),
-    :class:`~optuna.distributions.IntUniformDistribution` (:func:`~optuna.trial.Trial.suggest_int`),
+    :class:`~optuna.distributions.IntUniformDistribution`
+    (:func:`~optuna.trial.Trial.suggest_int`),
     and :class:`~optuna.distributions.IntLogUniformDistribution`
     (:func:`~optuna.trial.Trial.suggest_int`) are supported.
 
