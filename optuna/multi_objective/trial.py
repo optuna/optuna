@@ -27,12 +27,12 @@ class MultiObjectiveTrial(object):
 
     Note that the direct use of this constructor is not recommended.
     This object is seamlessly instantiated and passed to the objective function behind
-    the :func:`~optuna.multi_objective.study.MultiObjectiveStudy.optimize()` method;
+    the :func:`~optuna.multi_objective.study.MultiObjectiveStudy.optimize` method;
     hence library users do not care about instantiation of this object.
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` object.
+            A :class:`optuna.trial.Trial` object.
     """
 
     def __init__(self, trial: Trial):
@@ -53,7 +53,7 @@ class MultiObjectiveTrial(object):
     ) -> float:
         """Suggest a value for the floating point parameter.
 
-        Please refer to the documentation of :func:`~optuna.trial.Trial.suggest_float`
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_float`
         for further details.
         """
 
@@ -62,7 +62,7 @@ class MultiObjectiveTrial(object):
     def suggest_uniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
-        Please refer to the documentation of :func:`~optuna.trial.Trial.suggest_uniform`
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_uniform`
         for further details.
         """
 
@@ -71,7 +71,7 @@ class MultiObjectiveTrial(object):
     def suggest_loguniform(self, name: str, low: float, high: float) -> float:
         """Suggest a value for the continuous parameter.
 
-        Please refer to the documentation of :func:`~optuna.trial.Trial.suggest_loguniform`
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_loguniform`
         for further details.
         """
 
@@ -80,7 +80,7 @@ class MultiObjectiveTrial(object):
     def suggest_discrete_uniform(self, name: str, low: float, high: float, q: float) -> float:
         """Suggest a value for the discrete parameter.
 
-        Please refer to the documentation of :func:`~optuna.trial.Trial.suggest_discrete_uniform`
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_discrete_uniform`
         for further details.
         """
 
@@ -89,7 +89,7 @@ class MultiObjectiveTrial(object):
     def suggest_int(self, name: str, low: int, high: int, step: int = 1, log: bool = False) -> int:
         """Suggest a value for the integer parameter.
 
-        Please refer to the documentation of :func:`~optuna.trial.Trial.suggest_int`
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_int`
         for further details.
         """
 
@@ -100,7 +100,7 @@ class MultiObjectiveTrial(object):
     ) -> CategoricalChoiceType:
         """Suggest a value for the categorical parameter.
 
-        Please refer to the documentation of :func:`~optuna.trial.Trial.suggest_categorical`
+        Please refer to the documentation of :func:`optuna.trial.Trial.suggest_categorical`
         for further details.
         """
 
@@ -156,7 +156,7 @@ class MultiObjectiveTrial(object):
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set user attributes to the trial.
 
-        Please refer to the documentation of :func:`~optuna.trial.Trial.set_user_attr`
+        Please refer to the documentation of :func:`optuna.trial.Trial.set_user_attr`
         for further details.
         """
 
@@ -165,7 +165,7 @@ class MultiObjectiveTrial(object):
     def set_system_attr(self, key: str, value: Any) -> None:
         """Set system attributes to the trial.
 
-        Please refer to the documentation of :func:`~optuna.trial.Trial.set_system_attr`
+        Please refer to the documentation of :func:`optuna.trial.Trial.set_system_attr`
         for further details.
         """
 

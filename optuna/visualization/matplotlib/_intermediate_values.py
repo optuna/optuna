@@ -62,7 +62,7 @@ def plot_intermediate_values(study: Study) -> "Axes":
             optuna.visualization.matplotlib.plot_intermediate_values(study)
 
     .. seealso::
-        Please refer to :func:`~optuna.visualization.plot_intermediate_values` for an example.
+        Please refer to :func:`optuna.visualization.plot_intermediate_values` for an example.
 
     Args:
         study:

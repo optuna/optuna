@@ -36,7 +36,7 @@ def plot_optimization_history(
     """Plot optimization history of all trials in a study with Matplotlib.
 
     .. seealso::
-        Please refer to :func:`~optuna.visualization.plot_optimization_history` for an example.
+        Please refer to :func:`optuna.visualization.plot_optimization_history` for an example.
 
     Example:
 

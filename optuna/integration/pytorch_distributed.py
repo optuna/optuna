@@ -26,12 +26,11 @@ _suggest_deprecated_msg = (
 
 @experimental("2.6.0")
 class TorchDistributedTrial(optuna.trial.BaseTrial):
-    """A wrapper of :class:`~optuna.trial.Trial` to incorporate Optuna with PyTorch distributed.
+    """A wrapper of :class:`optuna.trial.Trial` to incorporate Optuna with PyTorch distributed.
 
     .. seealso::
         :class:`~optuna.integration.TorchDistributedTrial` provides the same interface as
-        :class:`~optuna.trial.Trial`. Please refer to :class:`~optuna.trial.Trial` for further
-        details.
+        :class:`optuna.trial.Trial`
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/
     pytorch/pytorch_distributed_simple.py>`__
@@ -40,11 +39,11 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` object or :obj:`None`. Please set trial object in
+            A :class:`optuna.trial.Trial` object or :obj:`None`. Please set trial object in
             rank-0 node and set :obj:`None` in the other rank node.
         device:
-            A `torch.device` to communicate with the other nodes. Please set a CUDA device
-            assigned to the current node if you use "nccl" as `torch.distributed` backend.
+            A ``torch.device`` to communicate with the other nodes. Please set a CUDA device
+            assigned to the current node if you use "nccl" as ``torch.distributed`` backend.
 
     .. note::
         The methods of :class:`~optuna.integration.TorchDistributedTrial` are expected to be

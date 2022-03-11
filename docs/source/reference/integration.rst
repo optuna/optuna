@@ -8,10 +8,10 @@ The :mod:`~optuna.integration` module contains classes used to integrate Optuna 
 For most of the ML frameworks supported by Optuna, the corresponding Optuna integration class serves only to implement a callback object and functions, compliant with the framework's specific callback API, to be called with each intermediate step in the model training. The functionality implemented in these callbacks across the different ML frameworks includes:
 
 (1) Reporting intermediate model scores back to the Optuna trial using :func:`~optuna.trial.Trial.report`,
-(2) According to the results of :func:`~optuna.trial.Trial.should_prune`, pruning the current model by raising :func:`~optuna.TrialPruned`, and
+(2) According to the results of :func:`~optuna.trial.Trial.should_prune`, pruning the current model by raising :class:`~optuna.TrialPruned`, and
 (3) Reporting intermediate Optuna data such as the current trial number back to the framework, as done in :class:`~optuna.integration.MLflowCallback`.
 
-For scikit-learn, an integrated :class:`~optuna.integration.OptunaSearchCV` estimator is available that combines scikit-learn BaseEstimator functionality with access to a class-level ``Study`` object.
+For scikit-learn, an integrated :class:`~optuna.integration.OptunaSearchCV` estimator is available that combines scikit-learn BaseEstimator functionality with access to a class-level :class:`~optuna.study.Study` object.
 
 AllenNLP
 --------

@@ -1140,7 +1140,7 @@ def create_study(
             Or, if both ``direction`` and ``directions`` are specified.
 
     See also:
-        :func:`~optuna.create_study` is an alias of :func:`~optuna.study.create_study`.
+        :func:`~optuna.create_study` is an alias of :func:`optuna.study.create_study`.
 
     See also:
         The :ref:`rdb` tutorial provides concrete examples to save and resume optimization using
@@ -1267,7 +1267,7 @@ def load_study(
             If ``study_name`` is :obj:`None` and the storage contains more than 1 study.
 
     See also:
-        :func:`~optuna.load_study` is an alias of :func:`~optuna.study.load_study`.
+        :func:`~optuna.load_study` is an alias of :func:`optuna.study.load_study`.
 
     """
     if study_name is None:
@@ -1335,7 +1335,7 @@ def delete_study(
             :func:`~optuna.study.create_study` for further details.
 
     See also:
-        :func:`~optuna.delete_study` is an alias of :func:`~optuna.study.delete_study`.
+        :func:`~optuna.delete_study` is an alias of :func:`optuna.study.delete_study`.
 
     """
 
@@ -1423,6 +1423,9 @@ def copy_study(
         to_study_name:
             Name of the created study. If omitted, ``from_study_name`` is used.
 
+    See also:
+        :func:`~optuna.copy_study` is an alias of :func:`optuna.study.copy_study`.
+
     Raises:
         :class:`~optuna.exceptions.DuplicatedStudyError`:
             If a study with a conflicting name already exists in the destination storage.
@@ -1492,7 +1495,7 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
 
     See also:
         :func:`~optuna.get_all_study_summaries` is an alias of
-        :func:`~optuna.study.get_all_study_summaries`.
+        :func:`optuna.study.get_all_study_summaries`.
 
     """
 

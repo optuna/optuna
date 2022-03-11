@@ -35,7 +35,7 @@ class Trial(BaseTrial):
 
     Note that the direct use of this constructor is not recommended.
     This object is seamlessly instantiated and passed to the objective function behind
-    the :func:`~optuna.study.Study.optimize()` method; hence library users do not care about
+    the :func:`~optuna.study.Study.optimize` method; hence library users do not care about
     instantiation of this object.
 
     Args:

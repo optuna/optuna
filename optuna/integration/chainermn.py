@@ -56,12 +56,11 @@ class _ChainerMNObjectiveFunc(object):
 
 
 class ChainerMNStudy(object):
-    """A wrapper of :class:`~optuna.study.Study` to incorporate Optuna with ChainerMN.
+    """A wrapper of :class:`optuna.study.Study` to incorporate Optuna with ChainerMN.
 
     .. seealso::
         :class:`~optuna.integration.chainermn.ChainerMNStudy` provides the same interface as
-        :class:`~optuna.study.Study`. Please refer to :class:`~optuna.study.Study` for further
-        details.
+        :class:`optuna.study.Study`.
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/
     chainer/chainermn_integration.py>`__
@@ -70,7 +69,7 @@ class ChainerMNStudy(object):
 
     Args:
         study:
-            A :class:`~optuna.study.Study` object.
+            A :class:`optuna.study.Study` object.
         comm:
             A `ChainerMN communicator <https://docs.chainer.org/en/stable/chainermn/reference/
             index.html#communicators>`_.
@@ -106,7 +105,7 @@ class ChainerMNStudy(object):
     ) -> None:
         """Optimize an objective function.
 
-        This method provides the same interface as :func:`~optuna.study.Study.optimize` except
+        This method provides the same interface as :func:`optuna.study.Study.optimize` except
         the absence of ``n_jobs`` argument.
         """
 
@@ -146,16 +145,15 @@ class ChainerMNStudy(object):
 
 
 class ChainerMNTrial(BaseTrial):
-    """A wrapper of :class:`~optuna.trial.Trial` to incorporate Optuna with ChainerMN.
+    """A wrapper of :class:`optuna.trial.Trial` to incorporate Optuna with ChainerMN.
 
     .. seealso::
         :class:`~optuna.integration.chainermn.ChainerMNTrial` provides the same interface as
-        :class:`~optuna.trial.Trial`. Please refer to :class:`~optuna.trial.Trial` for further
-        details.
+        :class:`optuna.trial.Trial`.
 
     Args:
         trial:
-            A :class:`~optuna.trial.Trial` object if the caller is rank0 worker,
+            A :class:`optuna.trial.Trial` object if the caller is rank0 worker,
             :obj:`None` otherwise.
         comm:
             A `ChainerMN communicator <https://docs.chainer.org/en/stable/chainermn/reference/

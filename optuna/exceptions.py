@@ -12,7 +12,7 @@ class TrialPruned(OptunaError):
     example.
 
     See also:
-        :class:`~optuna.TrialPruned` is an alias of :class:`~optuna.exceptions.TrialPruned`.
+        :class:`~optuna.TrialPruned` is an alias of :class:`optuna.exceptions.TrialPruned`.
 
     Example:
 
