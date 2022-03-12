@@ -8,6 +8,7 @@ from typing import Union
 import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
+import numpy as np
 import py
 import pytest
 
@@ -469,7 +470,7 @@ def test_log_metric_none(tmpdir: py.path.local) -> None:
 
     mlflc = MLflowCallback(tracking_uri=tracking_uri, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
-    study.optimize(lambda _: None, n_trials=1, callbacks=[mlflc])
+    study.optimize(lambda _: np.nan, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
     experiments = mlfl_client.list_experiments()
