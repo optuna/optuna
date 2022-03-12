@@ -314,9 +314,7 @@ def test_tag_study_user_attrs(tmpdir: py.path.local, tag_study_user_attrs: bool)
     study_name = "my_study"
     n_trials = 3
 
-    mlflc = MLflowCallback(
-        tracking_uri=tracking_uri, tag_study_user_attrs=tag_study_user_attrs
-    )
+    mlflc = MLflowCallback(tracking_uri=tracking_uri, tag_study_user_attrs=tag_study_user_attrs)
     study = optuna.create_study(study_name=study_name)
     study.set_user_attr("my_study_attr", "a")
     study.optimize(_objective_func_long_user_attr, n_trials=n_trials, callbacks=[mlflc])
