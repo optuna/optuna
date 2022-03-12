@@ -64,38 +64,13 @@ def test_study_name(tmpdir: py.path.local) -> None:
     study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
-    experiments = mlfl_client.list_experiments()
-    assert len(experiments) == 1
+    assert len(mlfl_client.list_experiments()) == 1
 
-    experiment = experiments[0]
+    experiment = mlfl_client.list_experiments()[0]
+    runs = mlfl_client.list_run_infos(experiment.experiment_id)
+
     assert experiment.name == study_name
-    experiment_id = experiment.experiment_id
-
-    run_infos = mlfl_client.list_run_infos(experiment_id)
-    assert len(run_infos) == n_trials
-
-    first_run_id = run_infos[0].run_id
-    first_run = mlfl_client.get_run(first_run_id)
-    first_run_dict = first_run.to_dictionary()
-    assert "value" in first_run_dict["data"]["metrics"]
-    assert "x" in first_run_dict["data"]["params"]
-    assert "y" in first_run_dict["data"]["params"]
-    assert "z" in first_run_dict["data"]["params"]
-    assert first_run_dict["data"]["tags"]["direction"] == "MINIMIZE"
-    assert first_run_dict["data"]["tags"]["state"] == "COMPLETE"
-    assert (
-        first_run_dict["data"]["tags"]["x_distribution"]
-        == "UniformDistribution(high=1.0, low=-1.0)"
-    )
-    assert (
-        first_run_dict["data"]["tags"]["y_distribution"]
-        == "LogUniformDistribution(high=30.0, low=20.0)"
-    )
-    assert (
-        first_run_dict["data"]["tags"]["z_distribution"]
-        == "CategoricalDistribution(choices=(-1.0, 1.0))"
-    )
-    assert first_run_dict["data"]["tags"]["my_user_attr"] == "my_user_attr_value"
+    assert len(runs) == n_trials
 
 
 @pytest.mark.parametrize("name,expected", [(None, "Default"), ("foo", "foo")])
