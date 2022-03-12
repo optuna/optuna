@@ -28,8 +28,10 @@ def _multiobjective_func(trial: optuna.trial.Trial) -> Tuple[float, float]:
 
     x = trial.suggest_float("x", low=-10, high=10)
     y = trial.suggest_float("y", low=1, high=10, log=True)
-    first_objective = (x - 2) ** 2 + (y - 25) ** 2
-    second_objective = (x - 2) ** 3 + (y - 25) ** 3
+    z = trial.suggest_categorical("z", (-1.0, 1.0))
+    assert isinstance(z, float)
+    first_objective = (x - 2) ** 2 + (y - 25) ** 2 + z
+    second_objective = (x - 2) ** 3 + (y - 25) ** 3 - z
 
     return first_objective, second_objective
 
