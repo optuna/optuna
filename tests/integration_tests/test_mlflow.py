@@ -310,6 +310,24 @@ def test_mlflow_callback_fails_when_nest_trials_is_false_and_active_run_exists(
             study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
 
 
+def test_tag_always_logged(tmpdir: py.path.local) -> None:
+
+    tracking_uri = f"file:{tmpdir}"
+    study_name = "my_study"
+    n_trials = 3
+
+    mlflc = MLflowCallback(tracking_uri=tracking_uri)
+    study = optuna.create_study(study_name=study_name)
+    study.optimize(_objective_func, n_trials=n_trials, callbacks=[mlflc])
+
+    mlfl_client = MlflowClient(tracking_uri)
+    experiment = mlfl_client.list_experiments()[0]
+    runs = mlfl_client.search_runs([experiment.experiment_id])
+
+    assert all((r.data.tags["direction"] == "MINIMIZE") for r in runs)
+    assert all((r.data.tags["state"] == "COMPLETE") for r in runs)
+
+
 @pytest.mark.parametrize("tag_study_user_attrs", [True, False])
 def test_tag_study_user_attrs(tmpdir: py.path.local, tag_study_user_attrs: bool) -> None:
 
