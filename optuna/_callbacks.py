@@ -65,7 +65,7 @@ class RetryFailedTrialCallback:
     """Retry a failed trial up to a maximum number of times.
 
     When a trial fails, this callback can be used with the :class:`~optuna.storage` class to
-    recreate trial in the WAITING state to queue up the trial to be run again.
+    recreate the trial in WAITING state to queue up the trial to be run again.
 
     This is helpful in environments where trials may fail due to external conditions, such as
     being preempted by other processes.
