@@ -428,24 +428,6 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
     assert tracked_objective.__doc__ == _objective_func.__doc__
 
 
-def test_initialize_experiment(tmpdir: py.path.local) -> None:
-    tracking_file_name = "file:{}".format(tmpdir)
-    metric_name = "my_metric_name"
-    study_name = "my_study"
-
-    mlflc = MLflowCallback(tracking_uri=tracking_file_name, metric_name=metric_name)
-    study = optuna.create_study(study_name=study_name)
-
-    mlflc._initialize_experiment(study)
-
-    mlfl_client = MlflowClient(tracking_file_name)
-    experiments = mlfl_client.list_experiments()
-    assert len(experiments) == 1
-
-    experiment = experiments[0]
-    assert experiment.name == study_name
-
-
 @pytest.mark.parametrize(
     "names,values", [(["metric"], [3.17]), (["metric1", "metric2"], [3.17, 3.18])]
 )
