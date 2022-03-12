@@ -1,4 +1,5 @@
 from typing import Any
+from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -429,19 +430,25 @@ def test_track_in_mlflow_decorator(tmpdir: py.path.local) -> None:
 
 
 @pytest.mark.parametrize(
-    "names,values", [(["metric"], [3.17]), (["metric1", "metric2"], [3.17, 3.18])]
+    "func,names,values",
+    [
+        (_objective_func, ["metric"], [578.0]),
+        (_multiobjective_func, ["metric1", "metric2"], [578.0, -13826.0]),
+    ],
 )
-def test_log_metric(tmpdir: py.path.local, names: List[str], values: List[float]) -> None:
+def test_log_metric(
+    tmpdir: py.path.local, func: Callable, names: List[str], values: List[float]
+) -> None:
 
     tracking_uri = f"file:{tmpdir}"
     study_name = "my_study"
 
     mlflc = MLflowCallback(tracking_uri=tracking_uri, metric_name=names)
-    study = optuna.create_study(study_name=study_name)
-    mlflc._initialize_experiment(study)
-
-    with mlflow.start_run():
-        mlflc._log_metrics(values)
+    study = optuna.create_study(
+        study_name=study_name, directions=["minimize" for _ in range(len(values))]
+    )
+    study.enqueue_trial({"x": 1.0, "y": 1.0, "z": 1.0})
+    study.optimize(func, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
     experiments = mlfl_client.list_experiments()
@@ -464,16 +471,12 @@ def test_log_metric(tmpdir: py.path.local, names: List[str], values: List[float]
 def test_log_metric_none(tmpdir: py.path.local) -> None:
 
     tracking_uri = f"file:{tmpdir}"
-    metric_name = "my_metric_name"
+    metric_name = "metric"
     study_name = "my_study"
-    metric_value = None
 
     mlflc = MLflowCallback(tracking_uri=tracking_uri, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
-    mlflc._initialize_experiment(study)
-
-    with mlflow.start_run():
-        mlflc._log_metrics(metric_value)
+    study.optimize(lambda _: None, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
     experiments = mlfl_client.list_experiments()
@@ -494,31 +497,13 @@ def test_log_metric_none(tmpdir: py.path.local) -> None:
 def test_log_params(tmpdir: py.path.local) -> None:
 
     tracking_uri = f"file:{tmpdir}"
-    metric_name = "my_metric_name"
+    metric_name = "metric"
     study_name = "my_study"
-
-    param1_name = "my_param1"
-    param1_value = "a"
-    param2_name = "my_param2"
-    param2_value = 5
-
-    params = {param1_name: param1_value, param2_name: param2_value}
 
     mlflc = MLflowCallback(tracking_uri=tracking_uri, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
-    mlflc._initialize_experiment(study)
-
-    with mlflow.start_run():
-
-        trial = optuna.trial.create_trial(
-            params=params,
-            distributions={
-                param1_name: optuna.distributions.CategoricalDistribution(["a", "b"]),
-                param2_name: optuna.distributions.UniformDistribution(0, 10),
-            },
-            value=5.0,
-        )
-        mlflc._log_params(trial.params)
+    study.enqueue_trial({"x": 1.0, "y": 1.0, "z": 1.0})
+    study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
 
     mlfl_client = MlflowClient(tracking_uri)
     experiments = mlfl_client.list_experiments()
@@ -532,11 +517,12 @@ def test_log_params(tmpdir: py.path.local) -> None:
     first_run = mlfl_client.get_run(first_run_id)
     first_run_dict = first_run.to_dictionary()
 
-    assert param1_name in first_run_dict["data"]["params"]
-    assert first_run_dict["data"]["params"][param1_name] == param1_value
-
-    assert param2_name in first_run_dict["data"]["params"]
-    assert first_run_dict["data"]["params"][param2_name] == str(param2_value)
+    for param_name, param_value in study.best_params.items():
+        assert param_name in first_run_dict["data"]["params"]
+        assert first_run_dict["data"]["params"][param_name] == str(param_value)
+        assert first_run_dict["data"]["tags"][f"{param_name}_distribution"] == str(
+            study.best_trial.distributions[param_name]
+        )
 
 
 @pytest.mark.parametrize("metrics", [["foo"], ["foo", "bar", "baz"]])
