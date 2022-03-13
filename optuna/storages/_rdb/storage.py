@@ -900,7 +900,7 @@ class RDBStorage(BaseStorage):
     def _get_trials(
         self,
         study_id: int,
-        states: Optional[Container[optuna.trial._state.TrialState]],
+        states: Optional[Container[TrialState]],
         excluded_trial_ids: Set[int],
     ) -> List[FrozenTrial]:
 

@@ -589,7 +589,7 @@ def _get_observation_pairs(
         else:
             signs.append(-1)
 
-    states: Optional[Container[TrialState]]
+    states: Container[TrialState]
     if constant_liar:
         states = (TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING)
     else:
