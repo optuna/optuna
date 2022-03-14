@@ -292,7 +292,7 @@ def _generate_contour_subplot(
         contours_coloring="heatmap",
         hoverinfo="none",
         line_smoothing=1.3,
-        reversescale=target is None and direction == StudyDirection.MINIMIZE,
+        reversescale=target is not None or direction == StudyDirection.MINIMIZE,
     )
 
     scatter = go.Scatter(
