@@ -386,6 +386,5 @@ def test_plot_parallel_coordinate_only_missing_params() -> None:
         )
     )
 
-    study = create_study()
     figure = plot_parallel_coordinate(study)
     assert len(figure.data) == 0
