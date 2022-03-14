@@ -277,7 +277,7 @@ class NSGAIIMultiObjectiveSampler(BaseMultiObjectiveSampler):
 
 def _fast_non_dominated_sort(
     population: List["multi_objective.trial.FrozenMultiObjectiveTrial"],
-    directions: List[optuna.study.StudyDirection],
+    directions: List["optuna.study.StudyDirection"],
 ) -> List[List["multi_objective.trial.FrozenMultiObjectiveTrial"]]:
     dominated_count: DefaultDict[int, int] = defaultdict(int)
     dominates_list = defaultdict(list)

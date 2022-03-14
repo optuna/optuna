@@ -351,7 +351,7 @@ class NSGAIISampler(BaseSampler):
     def _fast_non_dominated_sort(
         self,
         population: List[FrozenTrial],
-        directions: List[optuna.study.StudyDirection],
+        directions: List["optuna.study.StudyDirection"],
     ) -> List[List[FrozenTrial]]:
         dominated_count: DefaultDict[int, int] = defaultdict(int)
         dominates_list = defaultdict(list)
