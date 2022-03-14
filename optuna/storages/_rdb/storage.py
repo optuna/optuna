@@ -39,6 +39,7 @@ from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
 alembic_command = _LazyImport("alembic.command")
 alembic_config = _LazyImport("alembic.config")
 alembic_migration = _LazyImport("alembic.migration")
@@ -46,8 +47,8 @@ alembic_script = _LazyImport("alembic.script")
 
 
 if TYPE_CHECKING:
-    from alembic.script import ScriptDirectory
     from alembic.config import Config
+    from alembic.script import ScriptDirectory
 
 
 _RDB_MAX_FLOAT = np.finfo(np.float32).max
