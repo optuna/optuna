@@ -17,6 +17,7 @@ from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
 
+
 np = _LazyImport("numpy")
 
 

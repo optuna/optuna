@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from optuna._imports import _LazyImport
 
+
 if TYPE_CHECKING:
     import numpy as np
 else:

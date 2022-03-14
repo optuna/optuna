@@ -11,6 +11,7 @@ from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 
+
 if TYPE_CHECKING:
     import numpy
 else:

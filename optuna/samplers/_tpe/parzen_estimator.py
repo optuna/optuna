@@ -9,6 +9,7 @@ from optuna import distributions
 from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 
+
 if TYPE_CHECKING:
     import numpy as np
     from scipy import special as scipy_special

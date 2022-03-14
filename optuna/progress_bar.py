@@ -7,6 +7,7 @@ from optuna import logging as optuna_logging
 from optuna._experimental import experimental
 from optuna._imports import _LazyImport
 
+
 if TYPE_CHECKING:
     from tqdm import auto as tqdm_auto
 else:

@@ -4,9 +4,8 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Tuple
-from typing import Union
 from typing import TYPE_CHECKING
-
+from typing import Union
 
 from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
@@ -18,6 +17,7 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+
 
 if TYPE_CHECKING:
     import numpy

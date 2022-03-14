@@ -9,6 +9,7 @@ from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._state import TrialState
 
+
 np = _LazyImport("np")
 
 

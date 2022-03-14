@@ -21,6 +21,7 @@ from optuna.study import Study
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 
+
 if TYPE_CHECKING:
     import numpy as np
 else:

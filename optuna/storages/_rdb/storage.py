@@ -48,7 +48,6 @@ optuna_models = _LazyImport("optuna.storages._rdb.models")
 if TYPE_CHECKING:
     from alembic.config import Config
     from alembic.script import ScriptDirectory
-
     from sqlalchemy import engine
     from sqlalchemy import orm
 

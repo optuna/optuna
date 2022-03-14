@@ -6,6 +6,7 @@ from optuna._imports import _LazyImport
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 
+
 np = _LazyImport("numpy")
 
 

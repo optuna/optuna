@@ -5,6 +5,7 @@ from optuna._imports import _LazyImport
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
 
+
 if TYPE_CHECKING:
     import numpy as np
 else:

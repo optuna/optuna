@@ -8,8 +8,8 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import Union
 from typing import TYPE_CHECKING
+from typing import Union
 import warnings
 
 import optuna
@@ -23,9 +23,10 @@ from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
+
 if TYPE_CHECKING:
-    import numpy as np
     import cmaes
+    import numpy as np
 else:
     np = _LazyImport("numpy")
     cmaes = _LazyImport("cmaes")

@@ -2,9 +2,10 @@ from typing import Callable
 from typing import Optional
 from typing import TYPE_CHECKING
 
-from optuna._imports import _LazyImport
 from optuna._deprecated import deprecated
+from optuna._imports import _LazyImport
 from optuna.samplers._tpe.sampler import TPESampler
+
 
 if TYPE_CHECKING:
     import numpy as np
