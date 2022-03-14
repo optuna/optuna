@@ -8,7 +8,7 @@ from optuna.visualization import plot_slice
 
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
-def test_same_color_map(direction: str):
+def test_same_color_map(direction: str) -> None:
     study = prepare_study_with_trials(with_c_d=False, direction=direction)
 
     # This value is equivalent to `colorscale="blues"`.
