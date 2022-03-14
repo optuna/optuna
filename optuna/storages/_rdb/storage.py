@@ -14,12 +14,9 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
+from typing import TYPE_CHECKING
 import uuid
 
-import alembic.command
-import alembic.config
-import alembic.migration
-import alembic.script
 import numpy as np
 from sqlalchemy import func
 from sqlalchemy import orm
@@ -33,6 +30,7 @@ from sqlalchemy.sql import functions
 import optuna
 from optuna import distributions
 from optuna import version
+from optuna._imports import _LazyImport
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._rdb import models
@@ -40,6 +38,16 @@ from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+alembic_command = _LazyImport("alembic.command")
+alembic_config = _LazyImport("alembic.config")
+alembic_migration = _LazyImport("alembic.migration")
+alembic_script = _LazyImport("alembic.script")
+
+
+if TYPE_CHECKING:
+    from alembic.script import ScriptDirectory
+    from alembic.config import Config
 
 
 _RDB_MAX_FLOAT = np.finfo(np.float32).max
@@ -1174,7 +1182,7 @@ class _VersionManager(object):
 
         logging.getLogger("alembic").setLevel(logging.WARN)
 
-        context = alembic.migration.MigrationContext.configure(self.engine.connect())
+        context = alembic_migration.MigrationContext.configure(self.engine.connect())
         is_initialized = context.get_current_revision() is not None
 
         if is_initialized:
@@ -1191,7 +1199,7 @@ class _VersionManager(object):
 
     def _set_alembic_revision(self, revision: str) -> None:
 
-        context = alembic.migration.MigrationContext.configure(self.engine.connect())
+        context = alembic_migration.MigrationContext.configure(self.engine.connect())
         script = self._create_alembic_script()
         context.stamp(script, revision)
 
@@ -1229,7 +1237,7 @@ class _VersionManager(object):
 
     def get_current_version(self) -> str:
 
-        context = alembic.migration.MigrationContext.configure(self.engine.connect())
+        context = alembic_migration.MigrationContext.configure(self.engine.connect())
         version = context.get_current_revision()
         assert version is not None
 
@@ -1255,7 +1263,7 @@ class _VersionManager(object):
     def upgrade(self) -> None:
 
         config = self._create_alembic_config()
-        alembic.command.upgrade(config, "head")
+        alembic_command.upgrade(config, "head")
 
         with _create_scoped_session(self.scoped_session, True) as session:
             version_info = models.VersionInfoModel.find(session)
@@ -1274,17 +1282,17 @@ class _VersionManager(object):
 
             return version_info.schema_version == models.SCHEMA_VERSION
 
-    def _create_alembic_script(self) -> alembic.script.ScriptDirectory:
+    def _create_alembic_script(self) -> "ScriptDirectory":
 
         config = self._create_alembic_config()
-        script = alembic.script.ScriptDirectory.from_config(config)
+        script = alembic_script.ScriptDirectory.from_config(config)
         return script
 
-    def _create_alembic_config(self) -> alembic.config.Config:
+    def _create_alembic_config(self) -> "Config":
 
         alembic_dir = os.path.join(os.path.dirname(__file__), "alembic")
 
-        config = alembic.config.Config(os.path.join(os.path.dirname(__file__), "alembic.ini"))
+        config = alembic_config.Config(os.path.join(os.path.dirname(__file__), "alembic.ini"))
         config.set_main_option("script_location", escape_alembic_config_value(alembic_dir))
         config.set_main_option("sqlalchemy.url", escape_alembic_config_value(self.url))
         return config
