@@ -764,7 +764,7 @@ def _calculate_weights_below_for_multi_objective(
     indices: np.ndarray,
 ) -> np.ndarray:
     # Multi-objective TPE only sees the first parameter to determine the weights.
-    # In the call lf `sample_relative`, this logic makes sense because we only have the
+    # In the call of `sample_relative`, this logic makes sense because we only have the
     # intersection search space or group decomposed search space. This means one parameter
     # misses the one trial, then the other parameter must miss the trial, in this call of
     # `sample_relative`.
