@@ -9,15 +9,12 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
+from typing import TYPE_CHECKING
 import warnings
-
-from cmaes import CMA
-from cmaes import get_warm_start_mgd
-from cmaes import SepCMA
-import numpy as np
 
 import optuna
 from optuna import logging
+from optuna._imports import _LazyImport
 from optuna._transform import _SearchSpaceTransform
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
@@ -25,6 +22,13 @@ from optuna.samplers import BaseSampler
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+if TYPE_CHECKING:
+    import numpy as np
+    import cmaes
+else:
+    np = _LazyImport("numpy")
+    cmaes = _LazyImport("cmaes")
 
 
 _logger = logging.get_logger(__name__)
@@ -34,7 +38,7 @@ _EPS = 1e-10
 _SYSTEM_ATTR_MAX_LENGTH = 2045
 
 
-CmaClass = Union[CMA, SepCMA]
+CmaClass = Union["cmaes.CMA", "cmaes.SepCMA"]
 
 
 class CmaEsSampler(BaseSampler):
@@ -470,13 +474,13 @@ class CmaEsSampler(BaseSampler):
                 raise ValueError("No compatible source_trials")
 
             # TODO(c-bata): Add options to change prior parameters (alpha and gamma).
-            mean, sigma0, cov = get_warm_start_mgd(source_solutions)
+            mean, sigma0, cov = cmaes.get_warm_start_mgd(source_solutions)
 
         # Avoid ZeroDivisionError in cmaes.
         sigma0 = max(sigma0, _EPS)
 
         if self._use_separable_cma:
-            return SepCMA(
+            return cmaes.SepCMA(
                 mean=mean,
                 sigma=sigma0,
                 bounds=trans.bounds,
@@ -485,7 +489,7 @@ class CmaEsSampler(BaseSampler):
                 population_size=population_size,
             )
 
-        return CMA(
+        return cmaes.CMA(
             mean=mean,
             sigma=sigma0,
             cov=cov,
