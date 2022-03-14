@@ -3,13 +3,20 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
-
-import numpy as np
-import scipy.special
-from scipy.stats import truncnorm
+from typing import TYPE_CHECKING
 
 from optuna import distributions
+from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
+
+if TYPE_CHECKING:
+    import numpy as np
+    from scipy import special as scipy_special
+    from scipy import stats as scipy_stats
+else:
+    np = _LazyImport("numpy")
+    scipy_special = _LazyImport("scipy.special")
+    scipy_stats = _LazyImport("scipy.stats")
 
 
 EPS = 1e-12
@@ -35,7 +42,7 @@ class _ParzenEstimatorParameters(
             ("prior_weight", Optional[float]),
             ("consider_magic_clip", bool),
             ("consider_endpoints", bool),
-            ("weights", Callable[[int], np.ndarray]),
+            ("weights", Callable[[int], "np.ndarray"]),
             ("multivariate", bool),
         ],
     )
@@ -46,10 +53,10 @@ class _ParzenEstimatorParameters(
 class _ParzenEstimator:
     def __init__(
         self,
-        observations: Dict[str, np.ndarray],
+        observations: Dict[str, "np.ndarray"],
         search_space: Dict[str, BaseDistribution],
         parameters: _ParzenEstimatorParameters,
-        predetermined_weights: Optional[np.ndarray] = None,
+        predetermined_weights: Optional["np.ndarray"] = None,
     ) -> None:
 
         self._search_space = search_space
@@ -95,7 +102,7 @@ class _ParzenEstimator:
             self._sigmas[param_name] = sigmas
             self._categorical_weights[param_name] = categorical_weights
 
-    def sample(self, rng: np.random.RandomState, size: int) -> Dict[str, np.ndarray]:
+    def sample(self, rng: "np.random.RandomState", size: int) -> Dict[str, "np.ndarray"]:
 
         samples_dict = {}
         active = rng.choice(len(self._weights), size, p=self._weights)
@@ -127,7 +134,7 @@ class _ParzenEstimator:
                     samples = np.where(
                         samples < high,
                         samples,
-                        truncnorm.rvs(
+                        scipy_stats.truncnorm.rvs(
                             trunc_low,
                             trunc_high,
                             size=size,
@@ -140,7 +147,7 @@ class _ParzenEstimator:
         samples_dict = self._transform_from_uniform(samples_dict)
         return samples_dict
 
-    def log_pdf(self, samples_dict: Dict[str, np.ndarray]) -> np.ndarray:
+    def log_pdf(self, samples_dict: Dict[str, "np.ndarray"]) -> "np.ndarray":
 
         samples_dict = self._transform_to_uniform(samples_dict)
         n_observations = len(self._weights)
@@ -197,10 +204,10 @@ class _ParzenEstimator:
                     )
                     log_pdf = np.log(cdf + EPS) - np.log(p_accept + EPS)
             component_log_pdf += log_pdf
-        ret = scipy.special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
+        ret = scipy_special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
         return ret
 
-    def _calculate_weights(self, predetermined_weights: Optional[np.ndarray]) -> np.ndarray:
+    def _calculate_weights(self, predetermined_weights: Optional["np.ndarray"]) -> "np.ndarray":
 
         # We decide the weights.
         consider_prior = self._parameters.consider_prior
@@ -296,7 +303,9 @@ class _ParzenEstimator:
 
         return low, high, q
 
-    def _transform_to_uniform(self, samples_dict: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    def _transform_to_uniform(
+        self, samples_dict: Dict[str, "np.ndarray"]
+    ) -> Dict[str, "np.ndarray"]:
 
         transformed = {}
         for param_name, samples in samples_dict.items():
@@ -320,8 +329,8 @@ class _ParzenEstimator:
         return transformed
 
     def _transform_from_uniform(
-        self, samples_dict: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
+        self, samples_dict: Dict[str, "np.ndarray"]
+    ) -> Dict[str, "np.ndarray"]:
 
         transformed = {}
         for param_name, samples in samples_dict.items():
@@ -381,7 +390,7 @@ class _ParzenEstimator:
 
         return transformed
 
-    def _precompute_sigmas0(self, observations: Dict[str, np.ndarray]) -> Optional[float]:
+    def _precompute_sigmas0(self, observations: Dict[str, "np.ndarray"]) -> Optional[float]:
 
         n_observations = next(iter(observations.values())).size
         n_observations = max(n_observations, 1)
@@ -397,8 +406,8 @@ class _ParzenEstimator:
         return SIGMA0_MAGNITUDE * n_observations ** (-1.0 / (n_params + 4))
 
     def _calculate_categorical_params(
-        self, observations: np.ndarray, param_name: str
-    ) -> np.ndarray:
+        self, observations: "np.ndarray", param_name: str
+    ) -> "np.ndarray":
 
         # TODO(kstoneriv3): This the bandwidth selection rule might not be optimal.
         observations = observations.astype(int)
@@ -426,8 +435,8 @@ class _ParzenEstimator:
         return weights
 
     def _calculate_numerical_params(
-        self, observations: np.ndarray, param_name: str
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        self, observations: "np.ndarray", param_name: str
+    ) -> Tuple["np.ndarray", "np.ndarray"]:
 
         n_observations = self._n_observations
         consider_prior = self._parameters.consider_prior
@@ -493,18 +502,18 @@ class _ParzenEstimator:
         return mus, sigmas
 
     @staticmethod
-    def _normal_cdf(x: np.ndarray, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
+    def _normal_cdf(x: "np.ndarray", mu: "np.ndarray", sigma: "np.ndarray") -> "np.ndarray":
 
         mu, sigma = map(np.asarray, (mu, sigma))
         denominator = x - mu
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
         z = denominator / numerator
-        return 0.5 * (1 + scipy.special.erf(z))
+        return 0.5 * (1 + scipy_special.erf(z))
 
     @staticmethod
     def _sample_from_categorical_dist(
-        rng: np.random.RandomState, probabilities: np.ndarray
-    ) -> np.ndarray:
+        rng: "np.random.RandomState", probabilities: "np.ndarray"
+    ) -> "np.ndarray":
 
         n_samples = probabilities.shape[0]
         rnd_quantile = rng.rand(n_samples)
