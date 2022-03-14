@@ -3,12 +3,13 @@ import math
 from typing import KeysView
 from typing import List
 
-import numpy as np
-
 import optuna
+from optuna._imports import _LazyImport
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
 from optuna.trial._state import TrialState
+
+np = _LazyImport("np")
 
 
 def _get_best_intermediate_result_over_steps(

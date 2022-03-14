@@ -1,8 +1,13 @@
 import abc
+from typing import TYPE_CHECKING
 
-import numpy as np
-
+from optuna._imports import _LazyImport
 from optuna.study import Study
+
+if TYPE_CHECKING:
+    import numpy as np
+else:
+    np = _LazyImport("np")
 
 
 class BaseCrossover(object, metaclass=abc.ABCMeta):
@@ -31,11 +36,11 @@ class BaseCrossover(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def crossover(
         self,
-        parents_params: np.ndarray,
-        rng: np.random.RandomState,
+        parents_params: "np.ndarray",
+        rng: "np.random.RandomState",
         study: Study,
-        search_space_bounds: np.ndarray,
-    ) -> np.ndarray:
+        search_space_bounds: "np.ndarray",
+    ) -> "np.ndarray":
         """Perform crossover of selected parent individuals.
 
         This method is called in :func:`~optuna.samplers.NSGAIISampler.sample_relative`.

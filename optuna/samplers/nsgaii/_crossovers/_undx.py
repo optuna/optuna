@@ -1,10 +1,15 @@
 from typing import Optional
-
-import numpy as np
+from typing import TYPE_CHECKING
 
 from optuna._experimental import experimental
+from optuna._imports import _LazyImport
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
+
+if TYPE_CHECKING:
+    import numpy as np
+else:
+    np = _LazyImport("numpy")
 
 
 @experimental("3.0.0")
@@ -36,7 +41,7 @@ class UNDXCrossover(BaseCrossover):
         self._sigma_xi = sigma_xi
         self._sigma_eta = sigma_eta
 
-    def _distance_from_x_to_psl(self, parents_params: np.ndarray) -> np.floating:
+    def _distance_from_x_to_psl(self, parents_params: "np.ndarray") -> "np.floating":
 
         # The line connecting x1 to x2 is called psl (primary search line).
         # Compute the 2-norm of the vector orthogonal to psl from x3.
@@ -49,7 +54,9 @@ class UNDXCrossover(BaseCrossover):
 
         return m_12_3
 
-    def _orthonormal_basis_vector_to_psl(self, parents_params: np.ndarray, n: int) -> np.ndarray:
+    def _orthonormal_basis_vector_to_psl(
+        self, parents_params: "np.ndarray", n: int
+    ) -> "np.ndarray":
 
         # Compute orthogonal basis vectors for the subspace orthogonal to psl.
         e_12 = UNDXCrossover._normalized_x1_to_x2(
@@ -67,11 +74,11 @@ class UNDXCrossover(BaseCrossover):
 
     def crossover(
         self,
-        parents_params: np.ndarray,
-        rng: np.random.RandomState,
+        parents_params: "np.ndarray",
+        rng: "np.random.RandomState",
         study: Study,
-        search_space_bounds: np.ndarray,
-    ) -> np.ndarray:
+        search_space_bounds: "np.ndarray",
+    ) -> "np.ndarray":
 
         # https://ieeexplore.ieee.org/document/782672
         # Section 2 Unimodal Normal Distribution Crossover
@@ -105,7 +112,7 @@ class UNDXCrossover(BaseCrossover):
         return child_params
 
     @staticmethod
-    def _normalized_x1_to_x2(parents_params: np.ndarray) -> np.ndarray:
+    def _normalized_x1_to_x2(parents_params: "np.ndarray") -> "np.ndarray":
 
         # Compute the normalized vector from x1 to x2.
         v_12 = parents_params[1] - parents_params[0]

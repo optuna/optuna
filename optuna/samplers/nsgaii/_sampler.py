@@ -10,12 +10,12 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import TYPE_CHECKING
 import warnings
-
-import numpy as np
 
 import optuna
 from optuna._experimental import ExperimentalWarning
+from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.samplers._base import BaseSampler
 from optuna.samplers._random import RandomSampler
@@ -28,6 +28,11 @@ from optuna.study import StudyDirection
 from optuna.study._multi_objective import _dominates
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+if TYPE_CHECKING:
+    import numpy as np
+else:
+    np = _LazyImport("numpy")
 
 
 # Define key names of `Trial.system_attrs`.

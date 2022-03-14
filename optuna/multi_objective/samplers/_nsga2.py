@@ -10,13 +10,14 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
-import numpy as np
-
 import optuna
 from optuna import multi_objective
 from optuna._deprecated import deprecated
+from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.multi_objective.samplers import BaseMultiObjectiveSampler
+
+np = _LazyImport("numpy")
 
 
 # Define key names of `Trial.system_attrs`.

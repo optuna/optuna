@@ -1,10 +1,15 @@
 from typing import Callable
 from typing import Optional
+from typing import TYPE_CHECKING
 
-import numpy as np
-
+from optuna._imports import _LazyImport
 from optuna._deprecated import deprecated
 from optuna.samplers._tpe.sampler import TPESampler
+
+if TYPE_CHECKING:
+    import numpy as np
+else:
+    np = _LazyImport("numpy")
 
 
 EPS = 1e-12
@@ -14,7 +19,7 @@ def default_gamma(x: int) -> int:
     return int(np.floor(0.1 * x))
 
 
-def _default_weights_above(x: int) -> np.ndarray:
+def _default_weights_above(x: int) -> "np.ndarray":
     return np.ones(x)
 
 
@@ -108,7 +113,7 @@ class MOTPESampler(TPESampler):
         n_startup_trials: int = 10,
         n_ehvi_candidates: int = 24,
         gamma: Callable[[int], int] = default_gamma,
-        weights_above: Callable[[int], np.ndarray] = _default_weights_above,
+        weights_above: Callable[[int], "np.ndarray"] = _default_weights_above,
         seed: Optional[int] = None,
     ) -> None:
 

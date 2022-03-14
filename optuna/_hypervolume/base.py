@@ -1,6 +1,12 @@
 import abc
+from typing import TYPE_CHECKING
 
-import numpy as np
+from optuna._imports import _LazyImport
+
+if TYPE_CHECKING:
+    import numpy as np
+else:
+    np = _LazyImport("numpy")
 
 
 class BaseHypervolume(object, metaclass=abc.ABCMeta):
@@ -42,7 +48,7 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
             print("Hypervolume of the Pareto solutions is {}.".format(hypervolume))
     """
 
-    def compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+    def compute(self, solution_set: "np.ndarray", reference_point: "np.ndarray") -> float:
         """Compute the hypervolume for the given solution set and reference point.
 
         .. note::
@@ -61,7 +67,7 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
         return self._compute(solution_set, reference_point)
 
     @staticmethod
-    def _validate(solution_set: np.ndarray, reference_point: np.ndarray) -> None:
+    def _validate(solution_set: "np.ndarray", reference_point: "np.ndarray") -> None:
         # Validates that all points in the solution set dominate or equal the reference point.
         if not (solution_set <= reference_point).all():
             raise ValueError(
@@ -71,5 +77,5 @@ class BaseHypervolume(object, metaclass=abc.ABCMeta):
             )
 
     @abc.abstractmethod
-    def _compute(self, solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+    def _compute(self, solution_set: "np.ndarray", reference_point: "np.ndarray") -> float:
         raise NotImplementedError

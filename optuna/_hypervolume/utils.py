@@ -1,7 +1,14 @@
-import numpy as np
+from typing import TYPE_CHECKING
+
+from optuna._imports import _LazyImport
+
+if TYPE_CHECKING:
+    import numpy as np
+else:
+    np = _LazyImport("numpy")
 
 
-def _compute_2points_volume(point1: np.ndarray, point2: np.ndarray) -> float:
+def _compute_2points_volume(point1: "np.ndarray", point2: "np.ndarray") -> float:
     """Compute the hypervolume of the hypercube, whose diagonal endpoints are given 2 points.
 
     Args:
@@ -14,7 +21,7 @@ def _compute_2points_volume(point1: np.ndarray, point2: np.ndarray) -> float:
     return float(np.abs(np.prod(point1 - point2)))
 
 
-def _compute_2d(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
+def _compute_2d(solution_set: "np.ndarray", reference_point: "np.ndarray") -> float:
     """Compute the hypervolume for the two-dimensional space.
 
     This algorithm divides a hypervolume into

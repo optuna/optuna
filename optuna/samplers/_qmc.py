@@ -3,8 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-
-import numpy as np
+from typing import TYPE_CHECKING
 
 import optuna
 from optuna import logging
@@ -17,6 +16,11 @@ from optuna.samplers import BaseSampler
 from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+if TYPE_CHECKING:
+    import numpy as np
+else:
+    np = _LazyImport("numpy")
 
 
 _logger = logging.get_logger(__name__)
@@ -284,7 +288,7 @@ class QMCSampler(BaseSampler):
     ) -> None:
         self._independent_sampler.after_trial(study, trial, state, values)
 
-    def _sample_qmc(self, study: Study, search_space: Dict[str, BaseDistribution]) -> np.ndarray:
+    def _sample_qmc(self, study: Study, search_space: Dict[str, BaseDistribution]) -> "np.ndarray":
 
         # Lazy import because the `scipy.stats.qmc` is slow to import.
         qmc_module = _LazyImport("scipy.stats.qmc")

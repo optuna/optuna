@@ -1,7 +1,13 @@
-import numpy as np
+from typing import TYPE_CHECKING
 
+from optuna._imports import _LazyImport
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
+
+if TYPE_CHECKING:
+    import numpy as np
+else:
+    np = _LazyImport("numpy")
 
 
 class UniformCrossover(BaseCrossover):
@@ -28,11 +34,11 @@ class UniformCrossover(BaseCrossover):
 
     def crossover(
         self,
-        parents_params: np.ndarray,
-        rng: np.random.RandomState,
+        parents_params: "np.ndarray",
+        rng: "np.random.RandomState",
         study: Study,
-        search_space_bounds: np.ndarray,
-    ) -> np.ndarray:
+        search_space_bounds: "np.ndarray",
+    ) -> "np.ndarray":
 
         # https://www.researchgate.net/publication/201976488_Uniform_Crossover_in_Genetic_Algorithms
         # Section 1 Introduction

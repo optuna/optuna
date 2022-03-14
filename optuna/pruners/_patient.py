@@ -1,11 +1,12 @@
 from typing import Optional
 
-import numpy as np
-
 import optuna
 from optuna._experimental import experimental
+from optuna._imports import _LazyImport
 from optuna.pruners import BasePruner
 from optuna.study._study_direction import StudyDirection
+
+np = _LazyImport("numpy")
 
 
 @experimental("2.8.0")

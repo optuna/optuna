@@ -5,9 +5,10 @@ from typing import Dict
 from typing import List
 from typing import Tuple
 from typing import Union
+from typing import TYPE_CHECKING
 
-import numpy
 
+from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
@@ -17,6 +18,11 @@ from optuna.distributions import IntLogUniformDistribution
 from optuna.distributions import IntUniformDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
+
+if TYPE_CHECKING:
+    import numpy
+else:
+    numpy = _LazyImport("numpy")
 
 
 class _SearchSpaceTransform:
@@ -84,18 +90,18 @@ class _SearchSpaceTransform:
         self._transform_log = transform_log
 
     @property
-    def bounds(self) -> numpy.ndarray:
+    def bounds(self) -> "numpy.ndarray":
         return self._bounds
 
     @property
-    def column_to_encoded_columns(self) -> List[numpy.ndarray]:
+    def column_to_encoded_columns(self) -> List["numpy.ndarray"]:
         return self._column_to_encoded_columns
 
     @property
-    def encoded_column_to_column(self) -> numpy.ndarray:
+    def encoded_column_to_column(self) -> "numpy.ndarray":
         return self._encoded_column_to_column
 
-    def transform(self, params: Dict[str, Any]) -> numpy.ndarray:
+    def transform(self, params: Dict[str, Any]) -> "numpy.ndarray":
         """Transform a parameter configuration from actual values to continuous space.
 
         Args:
@@ -126,7 +132,7 @@ class _SearchSpaceTransform:
 
         return trans_params
 
-    def untransform(self, trans_params: numpy.ndarray) -> Dict[str, Any]:
+    def untransform(self, trans_params: "numpy.ndarray") -> Dict[str, Any]:
         """Untransform a parameter configuration from continuous space to actual values.
 
         Args:
@@ -163,7 +169,7 @@ class _SearchSpaceTransform:
 
 def _transform_search_space(
     search_space: Dict[str, BaseDistribution], transform_log: bool, transform_step: bool
-) -> Tuple[numpy.ndarray, List[numpy.ndarray], numpy.ndarray]:
+) -> Tuple["numpy.ndarray", List["numpy.ndarray"], "numpy.ndarray"]:
     assert len(search_space) > 0, "Cannot transform if no distributions are given."
 
     n_bounds = sum(

@@ -1,10 +1,15 @@
 from typing import Optional
-
-import numpy as np
+from typing import TYPE_CHECKING
 
 from optuna._experimental import experimental
+from optuna._imports import _LazyImport
 from optuna.samplers.nsgaii._crossovers._base import BaseCrossover
 from optuna.study import Study
+
+if TYPE_CHECKING:
+    import numpy as np
+else:
+    np = _LazyImport("numpy")
 
 
 @experimental("3.0.0")
@@ -34,11 +39,11 @@ class VSBXCrossover(BaseCrossover):
 
     def crossover(
         self,
-        parents_params: np.ndarray,
-        rng: np.random.RandomState,
+        parents_params: "np.ndarray",
+        rng: "np.random.RandomState",
         study: Study,
-        search_space_bounds: np.ndarray,
-    ) -> np.ndarray:
+        search_space_bounds: "np.ndarray",
+    ) -> "np.ndarray":
 
         # https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.422.952&rep=rep1&type=pdf
         # Section 3.2 Crossover Schemes (vSBX)

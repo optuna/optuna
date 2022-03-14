@@ -2,13 +2,13 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Optional
+from typing import TYPE_CHECKING
 import warnings
-
-import numpy as np
 
 import optuna
 from optuna import multi_objective
 from optuna._deprecated import deprecated
+from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.multi_objective.samplers import _MultiObjectiveSamplerAdapter
@@ -20,6 +20,11 @@ from optuna.samplers._tpe.multi_objective_sampler import default_gamma
 from optuna.study import create_study
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
+
+if TYPE_CHECKING:
+    import numpy as np
+else:
+    np = _LazyImport("numpy")
 
 
 @deprecated("2.4.0", "4.0.0")
@@ -113,7 +118,7 @@ class MOTPEMultiObjectiveSampler(BaseMultiObjectiveSampler):
         n_startup_trials: int = 10,
         n_ehvi_candidates: int = 24,
         gamma: Callable[[int], int] = default_gamma,
-        weights_above: Callable[[int], np.ndarray] = _default_weights_above,
+        weights_above: Callable[[int], "np.ndarray"] = _default_weights_above,
         seed: Optional[int] = None,
     ) -> None:
 
