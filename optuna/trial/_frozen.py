@@ -116,9 +116,9 @@ class FrozenTrial(BaseTrial):
             Dictionary that contains suggested parameters.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.trial.Trial` set with
-            :func:`optuna.trial.Trial.set_user_attr`.
+            :func:`~optuna.trial.Trial.set_user_attr`.
         intermediate_values:
-            Intermediate objective values set with :func:`optuna.trial.Trial.report`.
+            Intermediate objective values set with :func:`~optuna.trial.Trial.report`.
 
     Raises:
         :exc:`ValueError`:

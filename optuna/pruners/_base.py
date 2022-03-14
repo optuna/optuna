@@ -11,7 +11,7 @@ class BasePruner(object, metaclass=abc.ABCMeta):
         """Judge whether the trial should be pruned based on the reported values.
 
         Note that this method is not supposed to be called by library users. Instead,
-        :func:`optuna.trial.Trial.report` and :func:`optuna.trial.Trial.should_prune` provide
+        :func:`~optuna.trial.Trial.report` and :func:`~optuna.trial.Trial.should_prune` provide
         user interfaces to implement pruning mechanism in an objective function.
 
         Args:

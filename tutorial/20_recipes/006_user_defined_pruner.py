@@ -4,7 +4,7 @@
 User-Defined Pruner
 ===================
 
-In :mod:`optuna.pruners`, we described how an objective function can optionally include
+In :mod:`~optuna.pruners`, we described how an objective function can optionally include
 calls to a pruning feature which allows Optuna to terminate an optimization
 trial when intermediate results do not appear promising. In this document, we
 describe how to implement your own pruner, i.e., a custom strategy for

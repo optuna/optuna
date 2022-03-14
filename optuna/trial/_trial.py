@@ -35,7 +35,7 @@ class Trial(BaseTrial):
 
     Note that the direct use of this constructor is not recommended.
     This object is seamlessly instantiated and passed to the objective function behind
-    the :func:`optuna.study.Study.optimize()` method; hence library users do not care about
+    the :func:`~optuna.study.Study.optimize()` method; hence library users do not care about
     instantiation of this object.
 
     Args:
@@ -518,7 +518,7 @@ class Trial(BaseTrial):
             values, the suggestions will be the same.
 
         .. seealso::
-            Please refer to the example code in :func:`optuna.trial.Trial.report`.
+            Please refer to the example code in :func:`~optuna.trial.Trial.report`.
 
         Returns:
             A boolean value. If :obj:`True`, the trial should be pruned according to the
@@ -540,7 +540,7 @@ class Trial(BaseTrial):
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set user attributes to the trial.
 
-        The user attributes in the trial can be access via :func:`optuna.trial.Trial.user_attrs`.
+        The user attributes in the trial can be access via :func:`~optuna.trial.Trial.user_attrs`.
 
         .. seealso::
 

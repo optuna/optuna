@@ -60,7 +60,7 @@ class ChainerMNStudy(object):
 
     .. seealso::
         :class:`~optuna.integration.chainermn.ChainerMNStudy` provides the same interface as
-        :class:`~optuna.study.Study`. Please refer to :class:`optuna.study.Study` for further
+        :class:`~optuna.study.Study`. Please refer to :class:`~optuna.study.Study` for further
         details.
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/
@@ -106,7 +106,7 @@ class ChainerMNStudy(object):
     ) -> None:
         """Optimize an objective function.
 
-        This method provides the same interface as :func:`optuna.study.Study.optimize` except
+        This method provides the same interface as :func:`~optuna.study.Study.optimize` except
         the absence of ``n_jobs`` argument.
         """
 
@@ -150,7 +150,7 @@ class ChainerMNTrial(BaseTrial):
 
     .. seealso::
         :class:`~optuna.integration.chainermn.ChainerMNTrial` provides the same interface as
-        :class:`~optuna.trial.Trial`. Please refer to :class:`optuna.trial.Trial` for further
+        :class:`~optuna.trial.Trial`. Please refer to :class:`~optuna.trial.Trial` for further
         details.
 
     Args:

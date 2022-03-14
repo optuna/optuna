@@ -83,15 +83,15 @@ for _ in range(n_trials):
     study.tell(trial, val_accuracy)  # tell the pair of trial and objective value
 
 ###################################################################################################
-# The main difference is to use two methods: :func:`optuna.study.Study.ask`
-# and :func:`optuna.study.Study.tell`.
-# :func:`optuna.study.Study.ask` creates a trial that can sample hyperparameters, and
-# :func:`optuna.study.Study.tell` finishes the trial by passing ``trial`` and an objective value.
+# The main difference is to use two methods: :func:`~optuna.study.Study.ask`
+# and :func:`~optuna.study.Study.tell`.
+# :func:`~optuna.study.Study.ask` creates a trial that can sample hyperparameters, and
+# :func:`~optuna.study.Study.tell` finishes the trial by passing ``trial`` and an objective value.
 # You can apply Optuna's hyperparameter optimization to your original code
 # without an ``objective`` function.
 #
 # If you want to make your optimization faster with a pruner, you need to explicitly pass the state of trial
-# to the argument of :func:`optuna.study.Study.tell` method as follows:
+# to the argument of :func:`~optuna.study.Study.tell` method as follows:
 #
 # .. code-block:: python
 #
@@ -143,7 +143,7 @@ for _ in range(n_trials):
 ###################################################################################################
 # .. note::
 #
-#     :func:`optuna.study.Study.tell` method can take a trial number rather than the trial object.
+#     :func:`~optuna.study.Study.tell` method can take a trial number rather than the trial object.
 #     ``study.tell(trial.number, y)`` is equivalent to ``study.tell(trial, y)``.
 
 
@@ -158,7 +158,7 @@ for _ in range(n_trials):
 # in addition to the define-by-run example above.
 #
 # Define distributions for the hyperparameters before calling the
-# :func:`optuna.study.Study.ask` method for define-and-run API.
+# :func:`~optuna.study.Study.ask` method for define-and-run API.
 # For example,
 
 distributions = {
@@ -167,7 +167,7 @@ distributions = {
 }
 
 ###################################################################################################
-# Pass ``distributions`` to :func:`optuna.study.Study.ask` method at each call.
+# Pass ``distributions`` to :func:`~optuna.study.Study.ask` method at each call.
 # The retuned ``trial`` contains the suggested hyperparameters.
 
 study = optuna.create_study(direction="maximize")
@@ -209,7 +209,7 @@ def batched_objective(xs: np.ndarray, ys: np.ndarray):
 # and ``batched_objective`` is evaluated three times.
 # Thus, the number of trials is :math:`30`.
 # Note that you need to store either ``trial_ids`` or ``trial`` to call
-# :func:`optuna.study.Study.tell` method after the batched evaluations.
+# :func:`~optuna.study.Study.tell` method after the batched evaluations.
 
 batch_size = 10
 study = optuna.create_study(sampler=optuna.samplers.CmaEsSampler())

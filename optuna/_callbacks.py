@@ -10,7 +10,7 @@ from optuna.trial import TrialState
 class MaxTrialsCallback:
     """Set a maximum number of trials before ending the study.
 
-    While the :obj:`n_trials` argument of :obj:`optuna.optimize` sets the number of trials that
+    While the :obj:`n_trials` argument of :func:`~optuna.study.Study.optimize` sets the number of trials that
     will be run, you may want to continue running until you have a certain number of successfullly
     completed trials or stop the study when you have a certain number of trials that fail.
     This :obj:`MaxTrialsCallback` class allows you to set a maximum number of trials for a
@@ -62,7 +62,7 @@ class MaxTrialsCallback:
 class RetryFailedTrialCallback:
     """Retry a failed trial up to a maximum number of times.
 
-    When a trial fails, this callback can be used with the :class:`optuna.storage` class to
+    When a trial fails, this callback can be used with the :class:`~optuna.storage` class to
     recreate the trial in :obj:`TrialState.WAITING` to queue up the trial to be run again.
 
     This is helpful in environments where trials may fail due to external conditions, such as
@@ -93,7 +93,7 @@ class RetryFailedTrialCallback:
             If set to an integer, will only retry that many times.
         inherit_intermediate_values:
             Option to inherit `trial.intermediate_values` reported by
-            :func:`optuna.trial.Trial.report` from the failed trial. Default is :obj:`False`.
+            :func:`~optuna.trial.Trial.report` from the failed trial. Default is :obj:`False`.
     """
 
     def __init__(

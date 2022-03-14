@@ -4,7 +4,7 @@
 4. Easy Parallelization
 =======================
 
-It's straightforward to parallelize :func:`optuna.study.Study.optimize`.
+It's straightforward to parallelize :func:`~optuna.study.Study.optimize`.
 
 If you want to manually execute Optuna optimization:
 
@@ -25,7 +25,7 @@ Create a Study
 --------------
 
 You can create a study using ``optuna create-study`` command.
-Alternatively, in Python script you can use :func:`optuna.create_study`.
+Alternatively, in Python script you can use :func:`~optuna.create_study`.
 
 
 .. code-block:: bash
@@ -80,7 +80,7 @@ Process 2 (the same command as process 1):
     ...
 
 .. note::
-    ``n_trials`` is the number of trials each process will run, not the total number of trials across all processes. For example, the script given above runs 100 trials for each process, 100 trials * 2 processes = 200 trials. :class:`optuna.study.MaxTrialsCallback` can ensure how many times trials will be performed across all processes.
+    ``n_trials`` is the number of trials each process will run, not the total number of trials across all processes. For example, the script given above runs 100 trials for each process, 100 trials * 2 processes = 200 trials. :class:`~optuna.study.MaxTrialsCallback` can ensure how many times trials will be performed across all processes.
 
 .. note::
     We do not recommend SQLite for distributed optimizations at scale because it may cause deadlocks and serious performance issues. Please consider to use another database engine like PostgreSQL or MySQL.

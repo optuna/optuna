@@ -30,7 +30,7 @@ class HyperbandPruner(BasePruner):
         * Optuna uses :class:`~optuna.samplers.TPESampler` by default.
         * `The benchmark result
           <https://github.com/optuna/optuna/pull/828#issuecomment-575457360>`_
-          shows that :class:`optuna.pruners.HyperbandPruner` supports both samplers.
+          shows that :class:`~optuna.pruners.HyperbandPruner` supports both samplers.
 
     .. note::
         If you use ``HyperbandPruner`` with :class:`~optuna.samplers.TPESampler`,

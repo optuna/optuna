@@ -87,7 +87,7 @@ class CmaEsSampler(BaseSampler):
       <https://arxiv.org/abs/2012.06932>`_
 
     .. seealso::
-        You can also use :class:`optuna.integration.PyCmaSampler` which is a sampler using cma
+        You can also use :class:`~optuna.integration.PyCmaSampler` which is a sampler using cma
         library as the backend.
 
     Args:
@@ -121,7 +121,7 @@ class CmaEsSampler(BaseSampler):
             as the default.
 
             .. seealso::
-                :class:`optuna.samplers` module provides built-in independent samplers
+                :class:`~optuna.samplers` module provides built-in independent samplers
                 such as :class:`~optuna.samplers.RandomSampler` and
                 :class:`~optuna.samplers.TPESampler`.
 

@@ -17,7 +17,7 @@ let's optimize a simple quadratic function: :math:`(x - 2)^2`.
 
 
 ###################################################################################################
-# First of all, import :mod:`optuna`.
+# First of all, import :mod:`~optuna`.
 
 import optuna
 

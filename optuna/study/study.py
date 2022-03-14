@@ -333,7 +333,7 @@ class Study:
                 signal such as Ctrl+C or SIGTERM.
 
                 .. seealso::
-                    :class:`optuna.study.MaxTrialsCallback` can ensure how many times trials
+                    :class:`~optuna.study.MaxTrialsCallback` can ensure how many times trials
                     will be performed across all processes.
             timeout:
                 Stop study after the given number of second(s). If this argument is set to
@@ -1140,7 +1140,7 @@ def create_study(
             Or, if both ``direction`` and ``directions`` are specified.
 
     See also:
-        :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
+        :func:`~optuna.create_study` is an alias of :func:`~optuna.study.create_study`.
 
     See also:
         The :ref:`rdb` tutorial provides concrete examples to save and resume optimization using
@@ -1267,7 +1267,7 @@ def load_study(
             If ``study_name`` is :obj:`None` and the storage contains more than 1 study.
 
     See also:
-        :func:`optuna.load_study` is an alias of :func:`optuna.study.load_study`.
+        :func:`~optuna.load_study` is an alias of :func:`~optuna.study.load_study`.
 
     """
     if study_name is None:
@@ -1335,7 +1335,7 @@ def delete_study(
             :func:`~optuna.study.create_study` for further details.
 
     See also:
-        :func:`optuna.delete_study` is an alias of :func:`optuna.study.delete_study`.
+        :func:`~optuna.delete_study` is an alias of :func:`~optuna.study.delete_study`.
 
     """
 
@@ -1491,8 +1491,8 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
         List of study history summarized as :class:`~optuna.study.StudySummary` objects.
 
     See also:
-        :func:`optuna.get_all_study_summaries` is an alias of
-        :func:`optuna.study.get_all_study_summaries`.
+        :func:`~optuna.get_all_study_summaries` is an alias of
+        :func:`~optuna.study.get_all_study_summaries`.
 
     """
 

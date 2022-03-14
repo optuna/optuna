@@ -42,7 +42,7 @@ def plot_parallel_coordinate(
     Note that, if a parameter contains missing values, a trial with missing values is not plotted.
 
     .. seealso::
-        Please refer to :func:`optuna.visualization.plot_parallel_coordinate` for an example.
+        Please refer to :func:`~optuna.visualization.plot_parallel_coordinate` for an example.
 
     Example:
 

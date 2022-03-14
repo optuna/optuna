@@ -58,7 +58,7 @@ def plot_param_importances(
 
     .. seealso::
 
-        This function visualizes the results of :func:`optuna.importance.get_param_importances`.
+        This function visualizes the results of :func:`~optuna.importance.get_param_importances`.
 
     Args:
         study:

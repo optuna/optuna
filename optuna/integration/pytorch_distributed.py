@@ -30,7 +30,7 @@ class TorchDistributedTrial(optuna.trial.BaseTrial):
 
     .. seealso::
         :class:`~optuna.integration.TorchDistributedTrial` provides the same interface as
-        :class:`~optuna.trial.Trial`. Please refer to :class:`optuna.trial.Trial` for further
+        :class:`~optuna.trial.Trial`. Please refer to :class:`~optuna.trial.Trial` for further
         details.
 
     See `the example <https://github.com/optuna/optuna-examples/blob/main/

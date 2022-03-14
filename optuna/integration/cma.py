@@ -114,7 +114,7 @@ class PyCmaSampler(BaseSampler):
             as the default.
 
             .. seealso::
-                :class:`optuna.samplers` module provides built-in independent samplers
+                :class:`~optuna.samplers` module provides built-in independent samplers
                 such as :class:`~optuna.samplers.RandomSampler` and
                 :class:`~optuna.samplers.TPESampler`.
 

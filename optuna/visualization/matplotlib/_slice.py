@@ -38,7 +38,7 @@ def plot_slice(
     """Plot the parameter relationship as slice plot in a study with Matplotlib.
 
     .. seealso::
-        Please refer to :func:`optuna.visualization.plot_slice` for an example.
+        Please refer to :func:`~optuna.visualization.plot_slice` for an example.
 
     Example:
 

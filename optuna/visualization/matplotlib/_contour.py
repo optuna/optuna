@@ -46,7 +46,7 @@ def plot_contour(
     Note that, if a parameter contains missing values, a trial with missing values is not plotted.
 
     .. seealso::
-        Please refer to :func:`optuna.visualization.plot_contour` for an example.
+        Please refer to :func:`~optuna.visualization.plot_contour` for an example.
 
     Warnings:
         Output figures of this Matplotlib-based

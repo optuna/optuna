@@ -4,11 +4,11 @@
 5. Quick Visualization for Hyperparameter Optimization Analysis
 ===============================================================
 
-Optuna provides various visualization features in :mod:`optuna.visualization` to analyze optimization results visually.
+Optuna provides various visualization features in :mod:`~optuna.visualization` to analyze optimization results visually.
 
 This tutorial walks you through this module by visualizing the history of lightgbm model for breast cancer dataset.
 
-For visualizing multi-objective optimization (i.e., the usage of :func:`optuna.visualization.plot_pareto_front`),
+For visualizing multi-objective optimization (i.e., the usage of :func:`~optuna.visualization.plot_pareto_front`),
 please refer to the tutorial of :ref:`multi_objective`.
 """
 

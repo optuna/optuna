@@ -6,9 +6,9 @@
 
 For hyperparameter sampling, Optuna provides the following features:
 
-- :func:`optuna.trial.Trial.suggest_categorical` for categorical parameters
-- :func:`optuna.trial.Trial.suggest_int` for integer parameters
-- :func:`optuna.trial.Trial.suggest_float` for floating point parameters
+- :func:`~optuna.trial.Trial.suggest_categorical` for categorical parameters
+- :func:`~optuna.trial.Trial.suggest_int` for integer parameters
+- :func:`~optuna.trial.Trial.suggest_float` for floating point parameters
 
 With optional arguments of ``step`` and ``log``, we can discretize or take the logarithm of
 integer and floating point parameters.

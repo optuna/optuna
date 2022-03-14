@@ -8,11 +8,11 @@ class TrialPruned(OptunaError):
     """Exception for pruned trials.
 
     This error tells a trainer that the current :class:`~optuna.trial.Trial` was pruned. It is
-    supposed to be raised after :func:`optuna.trial.Trial.should_prune` as shown in the following
+    supposed to be raised after :func:`~optuna.trial.Trial.should_prune` as shown in the following
     example.
 
     See also:
-        :class:`optuna.TrialPruned` is an alias of :class:`optuna.exceptions.TrialPruned`.
+        :class:`~optuna.TrialPruned` is an alias of :class:`~optuna.exceptions.TrialPruned`.
 
     Example:
 

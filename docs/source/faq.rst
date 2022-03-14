@@ -123,7 +123,7 @@ How to suppress log messages of Optuna?
 ---------------------------------------
 
 By default, Optuna shows log messages at the ``optuna.logging.INFO`` level.
-You can change logging levels by using  :func:`optuna.logging.set_verbosity`.
+You can change logging levels by using  :func:`~optuna.logging.set_verbosity`.
 
 For instance, you can stop showing each trial result as follows:
 
@@ -136,7 +136,7 @@ For instance, you can stop showing each trial result as follows:
     # Logs like '[I 2020-07-21 13:41:45,627] Trial 0 finished with value:...' are disabled.
 
 
-Please refer to :class:`optuna.logging` for further details.
+Please refer to :class:`~optuna.logging` for further details.
 
 
 How to save machine learning models trained in objective functions?
@@ -146,7 +146,7 @@ Optuna saves hyperparameter values with its corresponding objective value to sto
 but it discards intermediate objects such as machine learning models and neural network weights.
 To save models or weights, please use features of the machine learning library you used.
 
-We recommend saving :obj:`optuna.trial.Trial.number` with a model in order to identify its corresponding trial.
+We recommend saving :obj:`~optuna.trial.Trial.number` with a model in order to identify its corresponding trial.
 For example, you can save SVM models trained in the objective function as follows:
 
 .. code-block:: python
@@ -508,8 +508,8 @@ The variations of parallelization are in the following three cases.
 1. Multi-threading parallelization with a single node
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Parallelization can be achieved by setting the argument ``n_jobs`` in :func:`optuna.study.Study.optimize`.
-However, the python code will not be faster due to GIL because :func:`optuna.study.Study.optimize` with ``n_jobs!=1`` uses multi-threading.
+Parallelization can be achieved by setting the argument ``n_jobs`` in :func:`~optuna.study.Study.optimize`.
+However, the python code will not be faster due to GIL because :func:`~optuna.study.Study.optimize` with ``n_jobs!=1`` uses multi-threading.
 
 While optimizing, it will be faster in limited situations, such as waiting for other server requests or C/C++ processing with numpy, etc., but it will not be faster in other cases.
 

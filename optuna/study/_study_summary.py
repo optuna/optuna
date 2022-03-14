@@ -15,7 +15,7 @@ _logger = logging.get_logger(__name__)
 class StudySummary(object):
     """Basic attributes and aggregated results of a :class:`~optuna.study.Study`.
 
-    See also :func:`optuna.study.get_all_study_summaries`.
+    See also :func:`~optuna.study.get_all_study_summaries`.
 
     Attributes:
         study_name:
@@ -28,11 +28,11 @@ class StudySummary(object):
         directions:
             A sequence of :class:`~optuna.study.StudyDirection` objects.
         best_trial:
-            :class:`optuna.trial.FrozenTrial` with best objective value in the
+            :class:`~optuna.trial.FrozenTrial` with best objective value in the
             :class:`~optuna.study.Study`.
         user_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.study.Study` set with
-            :func:`optuna.study.Study.set_user_attr`.
+            :func:`~optuna.study.Study.set_user_attr`.
         system_attrs:
             Dictionary that contains the attributes of the :class:`~optuna.study.Study` internally
             set by Optuna.

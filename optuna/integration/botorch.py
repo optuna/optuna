@@ -365,7 +365,7 @@ class BoTorchSampler(BaseSampler):
             The function should assume *maximization* of the objective.
 
             .. seealso::
-                See :func:`optuna.integration.botorch.qei_candidates_func` for an example.
+                See :func:`~optuna.integration.botorch.qei_candidates_func` for an example.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must

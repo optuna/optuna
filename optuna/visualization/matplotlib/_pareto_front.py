@@ -32,7 +32,7 @@ def plot_pareto_front(
     """Plot the Pareto front of a study.
 
     .. seealso::
-        Please refer to :func:`optuna.visualization.plot_pareto_front` for an example.
+        Please refer to :func:`~optuna.visualization.plot_pareto_front` for an example.
 
     Example:
 

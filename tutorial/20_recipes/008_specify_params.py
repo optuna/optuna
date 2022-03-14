@@ -20,7 +20,7 @@ First Scenario: Have Optuna evaluate your hyperparameters
 In this scenario, let's assume you have some out-of-box sets of hyperparameters but have not
 evaluated them yet and decided to use Optuna to find better sets of hyperparameters.
 
-Optuna has :func:`optuna.study.Study.enqueue_trial` which lets you pass those sets of
+Optuna has :func:`~optuna.study.Study.enqueue_trial` which lets you pass those sets of
 hyperparameters to Optuna and Optuna will evaluate them.
 
 This section walks you through how to use this lit API with `LightGBM <https://lightgbm.readthedocs.io/en/latest/>`_.
@@ -105,7 +105,7 @@ study.optimize(objective, n_trials=100, timeout=600)
 # you have already evaluated them but the results are not desirable so that you are thinking of
 # using Optuna.
 #
-# Optuna has :func:`optuna.study.Study.add_trial` which lets you register those results
+# Optuna has :func:`~optuna.study.Study.add_trial` which lets you register those results
 # to Optuna and then Optuna will sample hyperparameters taking them into account.
 #
 # In this section,  the ``objective`` is the same as the first scenario.

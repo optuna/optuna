@@ -36,7 +36,7 @@ def plot_edf(
     Note that only the complete trials are considered when plotting the EDF.
 
     .. seealso::
-        Please refer to :func:`optuna.visualization.plot_edf` for an example,
+        Please refer to :func:`~optuna.visualization.plot_edf` for an example,
         where this function can be replaced with it.
 
     .. note::

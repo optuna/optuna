@@ -286,10 +286,10 @@ class MultiObjectiveStudy(object):
     ) -> None:
         """Optimize an objective function.
 
-        This method is the same as :func:`optuna.study.Study.optimize` except for
+        This method is the same as :func:`~optuna.study.Study.optimize` except for
         taking an objective function that returns multi-objective values as the argument.
 
-        Please refer to the documentation of :func:`optuna.study.Study.optimize`
+        Please refer to the documentation of :func:`~optuna.study.Study.optimize`
         for further details.
 
         Example:
@@ -393,7 +393,7 @@ class MultiObjectiveStudy(object):
         You can fix the next sampling parameters which will be evaluated in your
         objective function.
 
-        Please refer to the documentation of :func:`optuna.study.Study.enqueue_trial`
+        Please refer to the documentation of :func:`~optuna.study.Study.enqueue_trial`
         for further details.
 
         Args:
