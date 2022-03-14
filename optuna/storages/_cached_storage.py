@@ -2,6 +2,7 @@ import copy
 import threading
 from typing import Any
 from typing import Callable
+from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -328,7 +329,7 @@ class _CachedStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
         if study_id not in self._studies:
             self.read_trials_from_remote_storage(study_id)

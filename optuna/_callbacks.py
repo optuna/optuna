@@ -1,5 +1,5 @@
+from typing import Container
 from typing import Optional
-from typing import Tuple
 
 import optuna
 from optuna._experimental import experimental
@@ -42,10 +42,11 @@ class MaxTrialsCallback:
         states:
             Tuple of the :class:`~optuna.trial.TrialState` to be counted
             towards the max trials limit. Default value is :obj:`(TrialState.COMPLETE,)`.
+            If :obj:`None`, count all states.
     """
 
     def __init__(
-        self, n_trials: int, states: Tuple[TrialState, ...] = (TrialState.COMPLETE,)
+        self, n_trials: int, states: Optional[Container[TrialState]] = (TrialState.COMPLETE,)
     ) -> None:
         self._n_trials = n_trials
         self._states = states

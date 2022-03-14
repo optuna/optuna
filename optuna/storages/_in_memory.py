@@ -3,6 +3,7 @@ from datetime import datetime
 import threading
 from typing import Any
 from typing import cast
+from typing import Container
 from typing import Dict
 from typing import Iterator
 from typing import List
@@ -428,7 +429,7 @@ class InMemoryStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
 
         with self._lock:

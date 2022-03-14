@@ -2,6 +2,7 @@ import copy
 import threading
 from typing import Any
 from typing import Callable
+from typing import Container
 from typing import Dict
 from typing import Iterable
 from typing import List
@@ -201,7 +202,7 @@ class Study:
     def get_trials(
         self,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
         """Return all trials in the study.
 
