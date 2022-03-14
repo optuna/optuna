@@ -8,11 +8,11 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
+from typing import TYPE_CHECKING
 import warnings
 
-import numpy as np
 
-from optuna._hypervolume import WFG
+from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.exceptions import ExperimentalWarning
 from optuna.logging import get_logger
@@ -27,6 +27,13 @@ from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
+
+if TYPE_CHECKING:
+    import numpy as np
+    from optuna import _hypervolume
+else:
+    np = _LazyImport("numpy")
+    _hypervolume = _LazyImport("optuna._hypervolume")
 
 
 EPS = 1e-12
@@ -43,7 +50,7 @@ def hyperopt_default_gamma(x: int) -> int:
     return min(int(np.ceil(0.25 * np.sqrt(x))), 25)
 
 
-def default_weights(x: int) -> np.ndarray:
+def default_weights(x: int) -> "np.ndarray":
 
     if x == 0:
         return np.asarray([])
@@ -226,7 +233,7 @@ class TPESampler(BaseSampler):
         n_startup_trials: int = 10,
         n_ei_candidates: int = 24,
         gamma: Callable[[int], int] = default_gamma,
-        weights: Callable[[int], np.ndarray] = default_weights,
+        weights: Callable[[int], "np.ndarray"] = default_weights,
         seed: Optional[int] = None,
         *,
         multivariate: bool = False,
@@ -452,9 +459,9 @@ class TPESampler(BaseSampler):
     @classmethod
     def _compare(
         cls,
-        samples: Dict[str, np.ndarray],
-        log_l: np.ndarray,
-        log_g: np.ndarray,
+        samples: Dict[str, "np.ndarray"],
+        log_l: "np.ndarray",
+        log_g: "np.ndarray",
     ) -> Dict[str, Union[float, int]]:
 
         sample_size = next(iter(samples.values())).size
@@ -528,7 +535,7 @@ class TPESampler(BaseSampler):
         self._random_sampler.after_trial(study, trial, state, values)
 
 
-def _calculate_nondomination_rank(loss_vals: np.ndarray) -> np.ndarray:
+def _calculate_nondomination_rank(loss_vals: "np.ndarray") -> "np.ndarray":
     vecs = loss_vals.copy()
 
     # Normalize values
@@ -647,7 +654,7 @@ def _get_observation_pairs(
 def _split_observation_pairs(
     loss_vals: List[Tuple[float, List[float]]],
     n_below: int,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple["np.ndarray", "np.ndarray"]:
 
     n_objectives = 1
     if len(loss_vals) > 0:
@@ -701,8 +708,8 @@ def _split_observation_pairs(
 
 
 def _build_observation_dict(
-    config_values: Dict[str, np.ndarray], indices: np.ndarray
-) -> Dict[str, np.ndarray]:
+    config_values: Dict[str, "np.ndarray"], indices: "np.ndarray"
+) -> Dict[str, "np.ndarray"]:
 
     observation_dict = {}
     for param_name, param_val in config_values.items():
@@ -712,16 +719,16 @@ def _build_observation_dict(
     return observation_dict
 
 
-def _compute_hypervolume(solution_set: np.ndarray, reference_point: np.ndarray) -> float:
-    return WFG().compute(solution_set, reference_point)
+def _compute_hypervolume(solution_set: "np.ndarray", reference_point: "np.ndarray") -> float:
+    return _hypervolume.WFG().compute(solution_set, reference_point)
 
 
 def _solve_hssp(
-    rank_i_loss_vals: np.ndarray,
-    rank_i_indices: np.ndarray,
+    rank_i_loss_vals: "np.ndarray",
+    rank_i_indices: "np.ndarray",
     subset_size: int,
-    reference_point: np.ndarray,
-) -> np.ndarray:
+    reference_point: "np.ndarray",
+) -> "np.ndarray":
     """Solve a hypervolume subset selection problem (HSSP) via a greedy algorithm.
 
     This method is a 1-1/e approximation algorithm to solve HSSP.
@@ -732,7 +739,7 @@ def _solve_hssp(
     - `Greedy Hypervolume Subset Selection in Low Dimensions
        <https://ieeexplore.ieee.org/document/7570501>`_
     """
-    selected_vecs = []  # type: List[np.ndarray]
+    selected_vecs = []  # type: List["np.ndarray"]
     selected_indices = []  # type: List[int]
     contributions = [
         _compute_hypervolume(np.asarray([v]), reference_point) for v in rank_i_loss_vals
@@ -759,10 +766,10 @@ def _solve_hssp(
 
 
 def _calculate_weights_below_for_multi_objective(
-    config_values: Dict[str, np.ndarray],
+    config_values: Dict[str, "np.ndarray"],
     loss_vals: List[Tuple[float, List[float]]],
-    indices: np.ndarray,
-) -> np.ndarray:
+    indices: "np.ndarray",
+) -> "np.ndarray":
     # Multi-objective TPE only sees the first parameter to determine the weights.
     # In the call of `sample_relative`, this logic makes sense because we only have the
     # intersection search space or group decomposed search space. This means one parameter
