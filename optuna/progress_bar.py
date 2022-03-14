@@ -1,11 +1,16 @@
 import logging
 from typing import Any
 from typing import Optional
-
-from tqdm.auto import tqdm
+from typing import TYPE_CHECKING
 
 from optuna import logging as optuna_logging
 from optuna._experimental import experimental
+from optuna._imports import _LazyImport
+
+if TYPE_CHECKING:
+    from tqdm import auto as tqdm_auto
+else:
+    tqdm_auto = _LazyImport("tqdm.auto")
 
 
 _tqdm_handler: Optional["_TqdmLoggingHandler"] = None
@@ -16,7 +21,7 @@ class _TqdmLoggingHandler(logging.StreamHandler):
     def emit(self, record: Any) -> None:
         try:
             msg = self.format(record)
-            tqdm.write(msg)
+            tqdm_auto.tqdm.write(msg)
             self.flush()
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -54,17 +59,17 @@ class _ProgressBar(object):
     def _init_valid(self) -> None:
 
         if self._n_trials is not None:
-            self._progress_bar = tqdm(total=self._n_trials)
+            self._progress_bar = tqdm_auto.tqdm(total=self._n_trials)
 
         else:
             fmt = "{percentage:3.0f}%|{bar}| {elapsed}/{desc}"
-            self._progress_bar = tqdm(total=self._timeout, bar_format=fmt)
+            self._progress_bar = tqdm_auto.tqdm(total=self._timeout, bar_format=fmt)
 
             # Using description string instead postfix string
             # to display formatted timeout, since postfix carries
             # extra comma space auto-format.
             # https://github.com/tqdm/tqdm/issues/712
-            total = tqdm.format_interval(self._timeout)
+            total = tqdm_auto.tqdm.format_interval(self._timeout)
             self._progress_bar.set_description_str(total)
 
         global _tqdm_handler
