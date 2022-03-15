@@ -292,7 +292,8 @@ class RDBStorage(BaseStorage):
             study = optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
             directions = list(directions)
             current_directions = [
-                d.direction for d in optuna_rdb_models.StudyDirectionModel.where_study_id(study_id, session)
+                d.direction
+                for d in optuna_rdb_models.StudyDirectionModel.where_study_id(study_id, session)
             ]
             if (
                 len(current_directions) > 0
@@ -306,8 +307,10 @@ class RDBStorage(BaseStorage):
                 )
 
             for objective, d in enumerate(directions):
-                direction_model = optuna_rdb_models.StudyDirectionModel.find_by_study_and_objective(
-                    study, objective, session
+                direction_model = (
+                    optuna_rdb_models.StudyDirectionModel.find_by_study_and_objective(
+                        study, objective, session
+                    )
                 )
                 if direction_model is None:
                     direction_model = optuna_rdb_models.StudyDirectionModel(
@@ -321,7 +324,9 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session, True) as session:
             study = optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
-            attribute = optuna_rdb_models.StudyUserAttributeModel.find_by_study_and_key(study, key, session)
+            attribute = optuna_rdb_models.StudyUserAttributeModel.find_by_study_and_key(
+                study, key, session
+            )
             if attribute is None:
                 attribute = optuna_rdb_models.StudyUserAttributeModel(
                     study_id=study_id, key=key, value_json=json.dumps(value)
@@ -334,7 +339,9 @@ class RDBStorage(BaseStorage):
 
         with _create_scoped_session(self.scoped_session, True) as session:
             study = optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
-            attribute = optuna_rdb_models.StudySystemAttributeModel.find_by_study_and_key(study, key, session)
+            attribute = optuna_rdb_models.StudySystemAttributeModel.find_by_study_and_key(
+                study, key, session
+            )
             if attribute is None:
                 attribute = optuna_rdb_models.StudySystemAttributeModel(
                     study_id=study_id, key=key, value_json=json.dumps(value)
@@ -380,7 +387,9 @@ class RDBStorage(BaseStorage):
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that that study exists.
             optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
-            attributes = optuna_rdb_models.StudyUserAttributeModel.where_study_id(study_id, session)
+            attributes = optuna_rdb_models.StudyUserAttributeModel.where_study_id(
+                study_id, session
+            )
             user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
         return user_attrs
@@ -390,7 +399,9 @@ class RDBStorage(BaseStorage):
         with _create_scoped_session(self.scoped_session) as session:
             # Ensure that that study exists.
             optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session)
-            attributes = optuna_rdb_models.StudySystemAttributeModel.where_study_id(study_id, session)
+            attributes = optuna_rdb_models.StudySystemAttributeModel.where_study_id(
+                study_id, session
+            )
             system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
         return system_attrs
@@ -401,7 +412,9 @@ class RDBStorage(BaseStorage):
             # Ensure trial exists.
             optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
 
-            attributes = optuna_rdb_models.TrialUserAttributeModel.where_trial_id(trial_id, session)
+            attributes = optuna_rdb_models.TrialUserAttributeModel.where_trial_id(
+                trial_id, session
+            )
             user_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
         return user_attrs
@@ -412,7 +425,9 @@ class RDBStorage(BaseStorage):
             # Ensure trial exists.
             optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
 
-            attributes = optuna_rdb_models.TrialSystemAttributeModel.where_trial_id(trial_id, session)
+            attributes = optuna_rdb_models.TrialSystemAttributeModel.where_trial_id(
+                trial_id, session
+            )
             system_attrs = {attr.key: json.loads(attr.value_json) for attr in attributes}
 
         return system_attrs
@@ -423,10 +438,12 @@ class RDBStorage(BaseStorage):
             summarized_trial = (
                 session.query(
                     optuna_rdb_models.TrialModel.study_id,
-                    sqlalchemy_sql_functions.min(optuna_rdb_models.TrialModel.datetime_start).label(
-                        "datetime_start"
+                    sqlalchemy_sql_functions.min(
+                        optuna_rdb_models.TrialModel.datetime_start
+                    ).label("datetime_start"),
+                    sqlalchemy_sql_functions.count(optuna_rdb_models.TrialModel.trial_id).label(
+                        "n_trial"
                     ),
-                    sqlalchemy_sql_functions.count(optuna_rdb_models.TrialModel.trial_id).label("n_trial"),
                 )
                 .group_by(optuna_rdb_models.TrialModel.study_id)
                 .with_labels()
@@ -450,7 +467,9 @@ class RDBStorage(BaseStorage):
                 _user_attrs[attribute_model.study_id].append(attribute_model)
 
             _system_attrs = defaultdict(list)
-            for attribute_model in session.query(optuna_rdb_models.StudySystemAttributeModel).all():
+            for attribute_model in session.query(
+                optuna_rdb_models.StudySystemAttributeModel
+            ).all():
                 _system_attrs[attribute_model.study_id].append(attribute_model)
 
             study_summaries = []
@@ -483,7 +502,9 @@ class RDBStorage(BaseStorage):
                                 optuna_rdb_models.TrialParamModel.param_value,
                                 optuna_rdb_models.TrialParamModel.distribution_json,
                             )
-                            .filter(optuna_rdb_models.TrialParamModel.trial_id == best_trial.trial_id)
+                            .filter(
+                                optuna_rdb_models.TrialParamModel.trial_id == best_trial.trial_id
+                            )
                             .all()
                         )
                         param_dict = {}
@@ -502,8 +523,10 @@ class RDBStorage(BaseStorage):
                         system_attrs = optuna_rdb_models.TrialSystemAttributeModel.where_trial_id(
                             best_trial.trial_id, session
                         )
-                        intermediate = optuna_rdb_models.TrialIntermediateValueModel.where_trial_id(
-                            best_trial.trial_id, session
+                        intermediate = (
+                            optuna_rdb_models.TrialIntermediateValueModel.where_trial_id(
+                                best_trial.trial_id, session
+                            )
                         )
                         best_trial_frozen = FrozenTrial(
                             best_trial.number,
@@ -569,7 +592,9 @@ class RDBStorage(BaseStorage):
                     # Locking within a study is necessary since the creation of a trial is not an
                     # atomic operation. More precisely, the trial number computed in
                     # `_get_prepared_new_trial` is prone to race conditions without this lock.
-                    optuna_rdb_models.StudyModel.find_or_raise_by_id(study_id, session, for_update=True)
+                    optuna_rdb_models.StudyModel.find_or_raise_by_id(
+                        study_id, session, for_update=True
+                    )
 
                     trial = self._get_prepared_new_trial(study_id, template_trial, session)
                     break  # Successfully created trial.
@@ -603,7 +628,10 @@ class RDBStorage(BaseStorage):
             return frozen
 
     def _get_prepared_new_trial(
-        self, study_id: int, template_trial: Optional[FrozenTrial], session: "sqlalchemy_orm.Session"
+        self,
+        study_id: int,
+        template_trial: Optional[FrozenTrial],
+        session: "sqlalchemy_orm.Session",
     ) -> "optuna_rdb_models.TrialModel":
         if template_trial is None:
             trial = optuna_rdb_models.TrialModel(
@@ -674,7 +702,9 @@ class RDBStorage(BaseStorage):
 
         try:
             with _create_scoped_session(self.scoped_session) as session:
-                trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session, for_update=True)
+                trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(
+                    trial_id, session, for_update=True
+                )
                 self.check_trial_is_updatable(trial_id, trial.state)
 
                 if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
@@ -806,7 +836,9 @@ class RDBStorage(BaseStorage):
         self.check_trial_is_updatable(trial_id, trial.state)
         value = self._ensure_numerical_limit(value)
 
-        trial_value = optuna_rdb_models.TrialValueModel.find_by_trial_and_objective(trial, objective, session)
+        trial_value = optuna_rdb_models.TrialValueModel.find_by_trial_and_objective(
+            trial, objective, session
+        )
         if trial_value is None:
             trial_value = optuna_rdb_models.TrialValueModel(
                 trial_id=trial_id, objective=objective, value=value
@@ -825,15 +857,21 @@ class RDBStorage(BaseStorage):
             )
 
     def _set_trial_intermediate_value_without_commit(
-        self, session: "sqlalchemy_orm.Session", trial_id: int, step: int, intermediate_value: float
+        self,
+        session: "sqlalchemy_orm.Session",
+        trial_id: int,
+        step: int,
+        intermediate_value: float,
     ) -> None:
 
         trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
         intermediate_value = self._ensure_numerical_limit(intermediate_value)
 
-        trial_intermediate_value = optuna_rdb_models.TrialIntermediateValueModel.find_by_trial_and_step(
-            trial, step, session
+        trial_intermediate_value = (
+            optuna_rdb_models.TrialIntermediateValueModel.find_by_trial_and_step(
+                trial, step, session
+            )
         )
         if trial_intermediate_value is None:
             trial_intermediate_value = optuna_rdb_models.TrialIntermediateValueModel(
@@ -855,7 +893,9 @@ class RDBStorage(BaseStorage):
         trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        attribute = optuna_rdb_models.TrialUserAttributeModel.find_by_trial_and_key(trial, key, session)
+        attribute = optuna_rdb_models.TrialUserAttributeModel.find_by_trial_and_key(
+            trial, key, session
+        )
         if attribute is None:
             attribute = optuna_rdb_models.TrialUserAttributeModel(
                 trial_id=trial_id, key=key, value_json=json.dumps(value)
@@ -876,7 +916,9 @@ class RDBStorage(BaseStorage):
         trial = optuna_rdb_models.TrialModel.find_or_raise_by_id(trial_id, session)
         self.check_trial_is_updatable(trial_id, trial.state)
 
-        attribute = optuna_rdb_models.TrialSystemAttributeModel.find_by_trial_and_key(trial, key, session)
+        attribute = optuna_rdb_models.TrialSystemAttributeModel.find_by_trial_and_key(
+            trial, key, session
+        )
         if attribute is None:
             attribute = optuna_rdb_models.TrialSystemAttributeModel(
                 trial_id=trial_id, key=key, value_json=json.dumps(value)
@@ -952,9 +994,17 @@ class RDBStorage(BaseStorage):
                     session.query(optuna_rdb_models.TrialModel)
                     .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.params))
                     .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.values))
-                    .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.user_attributes))
-                    .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.system_attributes))
-                    .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.intermediate_values))
+                    .options(
+                        sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.user_attributes)
+                    )
+                    .options(
+                        sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.system_attributes)
+                    )
+                    .options(
+                        sqlalchemy_orm.selectinload(
+                            optuna_rdb_models.TrialModel.intermediate_values
+                        )
+                    )
                     .filter(
                         optuna_rdb_models.TrialModel.trial_id.in_(trial_ids),
                         optuna_rdb_models.TrialModel.study_id == study_id,
@@ -976,9 +1026,17 @@ class RDBStorage(BaseStorage):
                     session.query(optuna_rdb_models.TrialModel)
                     .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.params))
                     .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.values))
-                    .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.user_attributes))
-                    .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.system_attributes))
-                    .options(sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.intermediate_values))
+                    .options(
+                        sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.user_attributes)
+                    )
+                    .options(
+                        sqlalchemy_orm.selectinload(optuna_rdb_models.TrialModel.system_attributes)
+                    )
+                    .options(
+                        sqlalchemy_orm.selectinload(
+                            optuna_rdb_models.TrialModel.intermediate_values
+                        )
+                    )
                     .filter(optuna_rdb_models.TrialModel.study_id == study_id)
                     .all()
                 )
@@ -988,7 +1046,9 @@ class RDBStorage(BaseStorage):
 
         return trials
 
-    def _build_frozen_trial_from_trial_model(self, trial: "optuna_rdb_models.TrialModel") -> FrozenTrial:
+    def _build_frozen_trial_from_trial_model(
+        self, trial: "optuna_rdb_models.TrialModel"
+    ) -> FrozenTrial:
 
         values: Optional[List[float]]
         if trial.values:
@@ -1193,7 +1253,8 @@ class _VersionManager(object):
                 return
 
             version_info = optuna_rdb_models.VersionInfoModel(
-                schema_version=optuna_rdb_models.SCHEMA_VERSION, library_version=version.__version__
+                schema_version=optuna_rdb_models.SCHEMA_VERSION,
+                library_version=version.__version__,
             )
             session.add(version_info)
 
