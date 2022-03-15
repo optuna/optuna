@@ -1284,11 +1284,11 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         study.enqueue_trial(params={"x": 1})
 
         # Study summary with only enqueued trials should have null datetime_start
-        summaries = study._storage.get_all_study_summaries()
+        summaries = study._storage.get_all_study_summaries(include_best_trial=True)
         assert summaries[0].datetime_start is None
 
         # Study summary with completed trials should have nonnull datetime_start
         study.optimize(objective, n_trials=1)
         study.enqueue_trial(params={"x": 1})
-        summaries = study._storage.get_all_study_summaries()
+        summaries = study._storage.get_all_study_summaries(include_best_trial=True)
         assert summaries[0].datetime_start is not None
