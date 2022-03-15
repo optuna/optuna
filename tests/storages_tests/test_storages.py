@@ -61,7 +61,7 @@ def test_create_new_study(storage_mode: str) -> None:
 
         study_id = storage.create_new_study()
 
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=True)
         assert len(summaries) == 1
         assert summaries[0]._study_id == study_id
         assert summaries[0].study_name.startswith(DEFAULT_STUDY_NAME_PREFIX)
@@ -69,7 +69,7 @@ def test_create_new_study(storage_mode: str) -> None:
         study_id2 = storage.create_new_study()
         # Study id must be unique.
         assert study_id != study_id2
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=True)
         assert len(summaries) == 2
         assert {s._study_id for s in summaries} == {study_id, study_id2}
         assert all(s.study_name.startswith(DEFAULT_STUDY_NAME_PREFIX) for s in summaries)
@@ -89,7 +89,7 @@ def test_create_new_study_unique_id(storage_mode: str) -> None:
         if not isinstance(storage, (RDBStorage, _CachedStorage)):
             # TODO(ytsmiling) Fix RDBStorage so that it does not reuse study_id.
             assert len({study_id, study_id2, study_id3}) == 3
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=True)
         assert {s._study_id for s in summaries} == {study_id, study_id3}
 
 
@@ -144,7 +144,9 @@ def test_delete_study_after_create_multiple_studies(storage_mode: str) -> None:
 
         storage.delete_study(study_id2)
 
-        studies = {s._study_id: s for s in storage.get_all_study_summaries()}
+        studies = {
+            s._study_id: s for s in storage.get_all_study_summaries(include_best_trial=True)
+        }
         assert study_id1 in studies
         assert study_id2 not in studies
         assert study_id3 in studies
@@ -759,11 +761,12 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_all_study_summaries(storage_mode: str) -> None:
+@pytest.mark.parametrize("include_best_trial", [True, False])
+def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         expected_summaries, _ = _setup_studies(storage, n_study=10, n_trial=10, seed=46)
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=include_best_trial)
         assert len(summaries) == len(expected_summaries)
         for _, expected_summary in expected_summaries.items():
             summary: Optional[StudySummary] = None
@@ -778,9 +781,12 @@ def test_get_all_study_summaries(storage_mode: str) -> None:
             assert summary.n_trials == expected_summary.n_trials
             assert summary.user_attrs == expected_summary.user_attrs
             assert summary.system_attrs == expected_summary.system_attrs
-            if expected_summary.best_trial is not None:
-                assert summary.best_trial is not None
-                assert summary.best_trial == expected_summary.best_trial
+            if include_best_trial:
+                if expected_summary.best_trial is not None:
+                    assert summary.best_trial is not None
+                    assert summary.best_trial == expected_summary.best_trial
+            else:
+                assert summary.best_trial is None
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

@@ -299,17 +299,22 @@ def test_trial_set_and_get_system_attrs(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_all_study_summaries(storage_mode: str) -> None:
+@pytest.mark.parametrize("include_best_trial", [True, False])
+def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
         study.optimize(Func(), n_trials=5)
 
-        summaries = get_all_study_summaries(study._storage)
+        summaries = get_all_study_summaries(study._storage, include_best_trial)
         summary = [s for s in summaries if s._study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 5
+        if include_best_trial:
+            assert summary.best_trial is not None
+        else:
+            assert summary.best_trial is None
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -1279,11 +1284,11 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         study.enqueue_trial(params={"x": 1})
 
         # Study summary with only enqueued trials should have null datetime_start
-        summaries = study._storage.get_all_study_summaries()
+        summaries = study._storage.get_all_study_summaries(include_best_trial=True)
         assert summaries[0].datetime_start is None
 
         # Study summary with completed trials should have nonnull datetime_start
         study.optimize(objective, n_trials=1)
         study.enqueue_trial(params={"x": 1})
-        summaries = study._storage.get_all_study_summaries()
+        summaries = study._storage.get_all_study_summaries(include_best_trial=True)
         assert summaries[0].datetime_start is not None

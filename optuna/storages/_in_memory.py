@@ -151,19 +151,22 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].system_attrs
 
-    def get_all_study_summaries(self) -> List[StudySummary]:
+    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
 
         with self._lock:
-            return [self._build_study_summary(study_id) for study_id in self._studies]
+            return [
+                self._build_study_summary(study_id, include_best_trial)
+                for study_id in self._studies
+            ]
 
-    def _build_study_summary(self, study_id: int) -> StudySummary:
+    def _build_study_summary(self, study_id: int, include_best_trial: bool = True) -> StudySummary:
         study = self._studies[study_id]
         return StudySummary(
             study_name=study.name,
             direction=None,
             directions=study.directions,
             best_trial=copy.deepcopy(self._get_trial(study.best_trial_id))
-            if study.best_trial_id is not None
+            if study.best_trial_id is not None and include_best_trial
             else None,
             user_attrs=copy.deepcopy(study.user_attrs),
             system_attrs=copy.deepcopy(study.system_attrs),
