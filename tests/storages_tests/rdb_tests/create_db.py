@@ -8,7 +8,7 @@ you have to edit `optuna/version.py` since we add a suffix to a version in the m
 > cat optuna/version.py
 __version__ = "3.0.0b0.dev"
 
-In the case, please temporarily remove the suffix when running this script.
+Please temporarily remove the suffix when running this script.
 After generating an asset, the change should be reverted.
 
 If you want to generate a DB file for older versions of Optuna, you have to install it.
