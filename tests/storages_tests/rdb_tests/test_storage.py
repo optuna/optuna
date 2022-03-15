@@ -35,7 +35,7 @@ from optuna.trial import Trial
 
 from .create_db import mo_objective_test_upgrade
 from .create_db import objective_test_upgrade
-from .create_db import objective_test_upgrade_v3_distribution
+from .create_db import objective_test_upgrade_distribution
 
 
 def test_init() -> None:
@@ -322,7 +322,7 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         assert isinstance(new_distribution_dict["z"], CategoricalDistribution)
 
         # check if Study.optimize can run on new storage
-        new_study.optimize(objective_test_upgrade_v3_distribution, n_trials=1)
+        new_study.optimize(objective_test_upgrade_distribution, n_trials=1)
 
 
 def test_record_heartbeat() -> None:
