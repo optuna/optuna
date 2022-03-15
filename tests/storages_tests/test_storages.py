@@ -61,7 +61,7 @@ def test_create_new_study(storage_mode: str) -> None:
 
         study_id = storage.create_new_study()
 
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=True)
         assert len(summaries) == 1
         assert summaries[0]._study_id == study_id
         assert summaries[0].study_name.startswith(DEFAULT_STUDY_NAME_PREFIX)
@@ -69,7 +69,7 @@ def test_create_new_study(storage_mode: str) -> None:
         study_id2 = storage.create_new_study()
         # Study id must be unique.
         assert study_id != study_id2
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=True)
         assert len(summaries) == 2
         assert {s._study_id for s in summaries} == {study_id, study_id2}
         assert all(s.study_name.startswith(DEFAULT_STUDY_NAME_PREFIX) for s in summaries)
@@ -89,7 +89,7 @@ def test_create_new_study_unique_id(storage_mode: str) -> None:
         if not isinstance(storage, (RDBStorage, _CachedStorage)):
             # TODO(ytsmiling) Fix RDBStorage so that it does not reuse study_id.
             assert len({study_id, study_id2, study_id3}) == 3
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=True)
         assert {s._study_id for s in summaries} == {study_id, study_id3}
 
 
@@ -144,7 +144,9 @@ def test_delete_study_after_create_multiple_studies(storage_mode: str) -> None:
 
         storage.delete_study(study_id2)
 
-        studies = {s._study_id: s for s in storage.get_all_study_summaries()}
+        studies = {
+            s._study_id: s for s in storage.get_all_study_summaries(include_best_trial=True)
+        }
         assert study_id1 in studies
         assert study_id2 not in studies
         assert study_id3 in studies

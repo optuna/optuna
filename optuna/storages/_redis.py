@@ -313,7 +313,7 @@ class RedisStorage(BaseStorage):
             self._key_study_param_distribution(study_id), pickle.dumps(param_distribution)
         )
 
-    def get_all_study_summaries(self, include_best_trial: bool = True) -> List[StudySummary]:
+    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
 
         queries = []
         study_ids = [pickle.loads(sid) for sid in self._redis.lrange("study_list", 0, -1)]

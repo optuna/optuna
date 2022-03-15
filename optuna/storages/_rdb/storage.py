@@ -391,7 +391,7 @@ class RDBStorage(BaseStorage):
 
         return system_attrs
 
-    def get_all_study_summaries(self, include_best_trial: bool = True) -> List[StudySummary]:
+    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
 
         with _create_scoped_session(self.scoped_session) as session:
             summarized_trial = (

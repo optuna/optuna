@@ -150,7 +150,7 @@ class InMemoryStorage(BaseStorage):
             self._check_study_id(study_id)
             return self._studies[study_id].system_attrs
 
-    def get_all_study_summaries(self, include_best_trial: bool = True) -> List[StudySummary]:
+    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
 
         with self._lock:
             return [
