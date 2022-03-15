@@ -73,9 +73,6 @@ def objective_test_upgrade_distribution(trial: optuna.trial.Trial) -> float:
     y2 = trial.suggest_int("y2", 1, 20, log=True)
     y3 = trial.suggest_int("y3", 5, 15, step=3)
     z = cast(float, trial.suggest_categorical("z", [-5, 0, 5]))
-    trial.set_system_attr("a", 0)
-    trial.set_user_attr("b", 1)
-    trial.report(0.5, step=0)
     return x1**2 + x2**2 + x3**2 + y1**2 + y2**2 + y3**2 + z**2
 
 
