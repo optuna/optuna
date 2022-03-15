@@ -3,13 +3,21 @@ from typing import Dict
 from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
+from typing import TYPE_CHECKING
 
 import numpy as np
-import scipy.special
-from scipy.stats import truncnorm
 
 from optuna import distributions
+from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
+
+
+if TYPE_CHECKING:
+    import scipy.special as scipy_special
+    import scipy.stats as scipy_stats
+else:
+    scipy_special = _LazyImport("scipy.special")
+    scipy_stats = _LazyImport("scipy.stats")
 
 
 EPS = 1e-12
@@ -127,7 +135,7 @@ class _ParzenEstimator:
                     samples = np.where(
                         samples < high,
                         samples,
-                        truncnorm.rvs(
+                        scipy_stats.truncnorm.rvs(
                             trunc_low,
                             trunc_high,
                             size=size,
@@ -197,7 +205,7 @@ class _ParzenEstimator:
                     )
                     log_pdf = np.log(cdf + EPS) - np.log(p_accept + EPS)
             component_log_pdf += log_pdf
-        ret = scipy.special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
+        ret = scipy_special.logsumexp(component_log_pdf + np.log(self._weights), axis=1)
         return ret
 
     def _calculate_weights(self, predetermined_weights: Optional[np.ndarray]) -> np.ndarray:
@@ -499,7 +507,7 @@ class _ParzenEstimator:
         denominator = x - mu
         numerator = np.maximum(np.sqrt(2) * sigma, EPS)
         z = denominator / numerator
-        return 0.5 * (1 + scipy.special.erf(z))
+        return 0.5 * (1 + scipy_special.erf(z))
 
     @staticmethod
     def _sample_from_categorical_dist(
