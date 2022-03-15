@@ -36,7 +36,6 @@ if TYPE_CHECKING:
     import alembic.config as alembic_config
     import alembic.migration as alembic_migration
     import alembic.script as alembic_script
-
     import sqlalchemy
     import sqlalchemy.engine as sqlalchemy_engine
     import sqlalchemy.exc as sqlalchemy_exc
