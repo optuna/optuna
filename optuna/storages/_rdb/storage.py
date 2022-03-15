@@ -40,16 +40,16 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
-alembic_command = _LazyImport("alembic.command")
-alembic_config = _LazyImport("alembic.config")
-alembic_migration = _LazyImport("alembic.migration")
-alembic_script = _LazyImport("alembic.script")
-
-
 if TYPE_CHECKING:
-    from alembic.config import Config
-    from alembic.script import ScriptDirectory
-
+    import alembic.command as alembic_command
+    import alembic.config as alembic_config
+    import alembic.migration as alembic_migration
+    import alembic.script as alembic_script
+else:
+    alembic_command = _LazyImport("alembic.command")
+    alembic_config = _LazyImport("alembic.config")
+    alembic_migration = _LazyImport("alembic.migration")
+    alembic_script = _LazyImport("alembic.script")
 
 _RDB_MAX_FLOAT = np.finfo(np.float32).max
 _RDB_MIN_FLOAT = np.finfo(np.float32).min
@@ -1283,13 +1283,13 @@ class _VersionManager(object):
 
             return version_info.schema_version == models.SCHEMA_VERSION
 
-    def _create_alembic_script(self) -> "ScriptDirectory":
+    def _create_alembic_script(self) -> "alembic_script.ScriptDirectory":
 
         config = self._create_alembic_config()
         script = alembic_script.ScriptDirectory.from_config(config)
         return script
 
-    def _create_alembic_config(self) -> "Config":
+    def _create_alembic_config(self) -> "alembic_config.Config":
 
         alembic_dir = os.path.join(os.path.dirname(__file__), "alembic")
 
