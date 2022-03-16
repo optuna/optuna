@@ -307,8 +307,10 @@ class Study:
         default choice for the sampler is TPE.
         See also :class:`~optuna.samplers.TPESampler` for more details on 'TPE'.
 
-        An optimization will be stopped when receiving a termination signal such as SIGINT and SIGTERM.
-        Unlike other signals, trial is automatically failed when receiving SIGINT (ctrl+c).
+        An optimization will be stopped when receiving a termination signal such as SIGINT and
+        SIGTERM. Unlike other signals, trial is automatically and cleanly failed when receiving
+        SIGINT (Ctrl+C). If :obj:`n_jobs` is greater than one or if another signal than SIGINT
+        is used, the interrupted trial state won't be properly updated.
 
         Example:
 
