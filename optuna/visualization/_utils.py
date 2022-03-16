@@ -17,8 +17,6 @@ from optuna.visualization import _plotly_imports
 
 __all__ = ["is_available"]
 
-COLOR_SCALE = "blues"
-
 
 def is_available() -> bool:
     """Returns whether visualization with plotly is available or not.
@@ -35,6 +33,12 @@ def is_available() -> bool:
     """
 
     return _plotly_imports._imports.is_successful()
+
+
+if is_available():
+    import plotly.express as px
+
+    COLOR_SCALE = px.colors.sequential.Blues
 
 
 def _check_plot_args(
