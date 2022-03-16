@@ -59,7 +59,7 @@ def _check_single_value(
     failure_message = None
 
     try:
-        value = float(original_value)
+        value = float(original_value)  # type: ignore
     except (
         ValueError,
         TypeError,
