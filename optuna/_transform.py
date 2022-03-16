@@ -319,7 +319,7 @@ def _untransform_numerical_param(
     elif isinstance(d, DiscreteUniformDistribution):
         # Clip since result may slightly exceed range due to round-off errors.
         param = float(
-            min(max(numpy.round((trans_param - d.low) / d.q) * d.q + d.low, d.low), d.high)
+            numpy.clip(numpy.round((trans_param - d.low) / d.q) * d.q + d.low, d.low, d.high)
         )
     elif isinstance(d, FloatDistribution):
         if d.log:
@@ -330,9 +330,8 @@ def _untransform_numerical_param(
                 param = min(param, numpy.nextafter(d.high, d.high - 1))
         elif d.step is not None:
             param = float(
-                min(
-                    max(numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low),
-                    d.high,
+                numpy.clip(
+                    numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high
                 )
             )
         else:
@@ -341,20 +340,26 @@ def _untransform_numerical_param(
             else:
                 param = min(trans_param, numpy.nextafter(d.high, d.high - 1))
     elif isinstance(d, IntUniformDistribution):
-        param = int(numpy.clip(numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high))
+        param = int(
+            numpy.clip(numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high)
+        )
     elif isinstance(d, IntLogUniformDistribution):
         if transform_log:
-            param = int(min(max(numpy.round(math.exp(trans_param)), d.low), d.high))
+            param = int(numpy.clip(numpy.round(math.exp(trans_param)), d.low, d.high))
         else:
             param = int(trans_param)
     elif isinstance(d, IntDistribution):
         if d.log:
             if transform_log:
-                param = int(min(max(numpy.round(math.exp(trans_param)), d.low), d.high))
+                param = int(numpy.clip(numpy.round(math.exp(trans_param)), d.low, d.high))
             else:
                 param = int(trans_param)
         else:
-            param = int(numpy.clip(numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high))
+            param = int(
+                numpy.clip(
+                    numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high
+                )
+            )
     else:
         assert False, "Should not reach. Unexpected distribution."
 
