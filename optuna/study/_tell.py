@@ -19,7 +19,7 @@ _logger = logging.get_logger(__name__)
 
 
 def _check_and_convert_to_values(
-    n_objectives: int, original_value: Union[float, Sequence[float]], trial_number: int
+    n_objectives: int, original_value: Optional[Union[float, Sequence[float]]], trial_number: int
 ) -> Tuple[Optional[List[float]], Optional[str]]:
     if isinstance(original_value, Sequence):
         if n_objectives != len(original_value):
@@ -32,7 +32,7 @@ def _check_and_convert_to_values(
                 ),
             )
         else:
-            _original_values = list(original_value)
+            _original_values: Sequence[Optional[float]] = list(original_value)
     else:
         _original_values = [original_value]
 
@@ -53,7 +53,7 @@ def _check_and_convert_to_values(
 
 
 def _check_single_value(
-    original_value: float, trial_number: int
+    original_value: Optional[float], trial_number: int
 ) -> Tuple[Optional[float], Optional[str]]:
     value = None
     failure_message = None
@@ -155,19 +155,6 @@ def _tell_with_warning(
         )
         return copy.deepcopy(frozen_trial)
 
-    if state is None and values is None:
-        state = TrialState.FAIL
-        message_values_and_state_not_specified = (
-            "Study.tell is called with `values` and `state` set to None but "
-            "you have to specify either `values` or `state` at least. "
-            "`values` is required if a trial finishes successfully or "
-            "`state` is required if a trial is fails or pruned."
-        )
-        if not suppress_warning:
-            warnings.warn(message_values_and_state_not_specified)
-        else:
-            warning_message = message_values_and_state_not_specified
-
     if state == TrialState.PRUNED:
         # Register the last intermediate value if present as the value of the trial.
         # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
@@ -177,29 +164,22 @@ def _tell_with_warning(
         if last_step is not None:
             values = [frozen_trial.intermediate_values[last_step]]
 
-    if values is not None:
-        values, values_conversion_failure_message = _check_and_convert_to_values(
-            len(study.directions), values, trial_number
-        )
+    values, values_conversion_failure_message = _check_and_convert_to_values(
+        len(study.directions), values, trial_number
+    )
 
-        if state is None:
-            if values_conversion_failure_message is None:
-                state = TrialState.COMPLETE
+    # When called from `Study.optimize` and `state` is pruned, the given `values` contains
+    # the intermediate value with the largest step so far. In this case, the value is
+    # allowed to be NaN and errors should not be raised.
+    if state is not TrialState.PRUNED and values_conversion_failure_message is not None:
+        state = TrialState.FAIL
+        if not suppress_warning:
+            warnings.warn(values_conversion_failure_message)
+        else:
+            warning_message = values_conversion_failure_message
 
-            # This path is reached when the objective returns invalid data
-            # including NaN or non-numerical points during Study.optimize.
-            else:
-                state = TrialState.FAIL
-                if not suppress_warning:
-                    warnings.warn(values_conversion_failure_message)
-                else:
-                    warning_message = values_conversion_failure_message
-
-        # When called from `Study.optimize` and `state` is pruned, the given `values` contains
-        # the intermediate value with the largest step so far. In this case, the value is
-        # allowed to be NaN and errors should not be raised.
-        elif state != TrialState.PRUNED and values_conversion_failure_message is not None:
-            raise ValueError(values_conversion_failure_message)
+    elif state is None and values_conversion_failure_message is None:
+        state = TrialState.COMPLETE
 
     assert state is not None
 
