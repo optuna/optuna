@@ -73,6 +73,9 @@ def plot_pareto_front(
         axis_order:
             A list of indices indicating the axis order. If :obj:`None` is specified,
             default order is used.
+        targets:
+            A function that returns a tuple of target values to display.
+            The argument to this function is :class:`~optuna.trial.FrozenTrial`.
         constraints_func:
             An optional function that computes the objective constraints. It must take a
             :class:`~optuna.trial.FrozenTrial` and return the constraints. The return value must
