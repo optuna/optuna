@@ -159,6 +159,8 @@ def plot_pareto_front(
                 f"Given `axis_order` {axis_order} contains invalid index {min(axis_order)} "
                 "lower than 0."
             )
+        if targets is not None:
+            raise ValueError("axis_order and targets cannot be specified at the same time")
 
     def _make_scatter_object(
         trials: Sequence[FrozenTrial],
