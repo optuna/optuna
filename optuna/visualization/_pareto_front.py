@@ -97,19 +97,17 @@ def plot_pareto_front(
 
     n_dim = len(study.directions)
 
-    class TargetNames:
-        def __init__(self):
+    class TargetNames(FrozenTrial):
+        def __init__(self) -> None:
             self.values = target_names
 
     if target_names is None:
         target_names = [f"Objective {i}" for i in range(n_dim)]
-        if targets is None:
-            pass
-        else:
-            target_names = targets(TargetNames())
-
-    elif len(target_names) != n_dim:
+    elif target_names is not None and len(target_names) != n_dim:
         raise ValueError(f"The length of `target_names` is supposed to be {n_dim}.")
+
+    if target_names is None and targets is not None:
+        target_names = targets(TargetNames())  # type: ignore
 
     if constraints_func is not None:
         feasible_trials = []
@@ -167,7 +165,7 @@ def plot_pareto_front(
         hovertemplate: str,
         infeasible: bool = False,
         dominated_trials: bool = False,
-        axis_order: List[int] = None,
+        axis_order: Optional[List[int]] = None,
         targets: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
     ) -> Union["go.Scatter", "go.Scatter3d"]:
         return _make_scatter_object_base(
@@ -229,12 +227,13 @@ def plot_pareto_front(
                 ),
             ]
 
-        layout = go.Layout(
-            title="Pareto-front Plot",
-            xaxis_title=target_names[axis_order[0]],
-            yaxis_title=target_names[axis],
-        )
-        fig.append({"data": data, "layout": layout})
+        if target_names is not None:
+            layout = go.Layout(
+                title="Pareto-front Plot",
+                xaxis_title=target_names[axis_order[0]],
+                yaxis_title=target_names[axis],
+            )
+            fig.append({"data": data, "layout": layout})
 
     return fig
 
@@ -266,7 +265,7 @@ def _make_scatter_object_base(
     hovertemplate: str,
     infeasible: bool = False,
     dominated_trials: bool = False,
-    axis_order: List[int] = None,
+    axis_order: Optional[List[int]] = None,
     targets: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
 ) -> Union["go.Scatter", "go.Scatter3d"]:
     # assert n_dim in (2, 3)
@@ -277,26 +276,29 @@ def _make_scatter_object_base(
         infeasible=infeasible,
     )
 
-    if targets is None:
-        return go.Scatter(
-            x=[t.values[axis_order[0]] for t in trials],
-            y=[t.values[axis_order[1]] for t in trials],
-            text=[_make_hovertext(t) for t in trials],
-            mode="markers",
-            hovertemplate=hovertemplate,
-            marker=marker,
-            showlegend=False,
-        )
+    if axis_order is not None:
+        if targets is None:
+            return go.Scatter(
+                x=[t.values[axis_order[0]] for t in trials],
+                y=[t.values[axis_order[1]] for t in trials],
+                text=[_make_hovertext(t) for t in trials],
+                mode="markers",
+                hovertemplate=hovertemplate,
+                marker=marker,
+                showlegend=False,
+            )
+        else:
+            return go.Scatter(
+                x=[targets(t)[0] for t in trials],
+                y=[targets(t)[axis_order[1]] for t in trials],
+                text=[_make_hovertext(t) for t in trials],
+                mode="markers",
+                hovertemplate=hovertemplate,
+                marker=marker,
+                showlegend=False,
+            )
     else:
-        return go.Scatter(
-            x=[targets(t)[0] for t in trials],
-            y=[targets(t)[axis_order[1]] for t in trials],
-            text=[_make_hovertext(t) for t in trials],
-            mode="markers",
-            hovertemplate=hovertemplate,
-            marker=marker,
-            showlegend=False,
-        )
+        raise ValueError("axis_order is None")
 
 
 def _make_hovertext(trial: FrozenTrial) -> str:
