@@ -1338,3 +1338,50 @@ def test_read_trials_from_remote_storage(storage_mode: str) -> None:
 
         study_id = storage.create_new_study()
         storage.read_trials_from_remote_storage(study_id)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
+def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+    max_retry = 3
+    n_trials = 5
+
+    with StorageSupplier(
+        storage_mode,
+        heartbeat_interval=heartbeat_interval,
+        grace_period=grace_period,
+        failed_trial_callback=RetryFailedTrialCallback(max_retry=max_retry),
+    ) as storage:
+        study = optuna.create_study(storage=storage)
+
+        # Make repeatedly failed and retried trials by heartbeat.
+        for _ in range(n_trials):
+            trial = study.ask()
+            storage.record_heartbeat(trial._trial_id)
+            time.sleep(grace_period + 1)
+            optuna.storages.fail_stale_trials(study)
+
+        trials = study.trials
+
+        assert len(trials) == n_trials + 1
+
+        assert "failed_trial" not in trials[0].system_attrs
+        assert "retry_history" not in trials[0].system_attrs
+
+        # The trials 1-3 are retried ones originating from the trial 0.
+        assert trials[1].system_attrs["failed_trial"] == 0
+        assert trials[1].system_attrs["retry_history"] == [0]
+
+        assert trials[2].system_attrs["failed_trial"] == 0
+        assert trials[2].system_attrs["retry_history"] == [0, 1]
+
+        assert trials[3].system_attrs["failed_trial"] == 0
+        assert trials[3].system_attrs["retry_history"] == [0, 1, 2]
+
+        # Trials 4 and later are the newly started ones and
+        # they are retried after exceeding max_retry.
+        assert "failed_trial" not in trials[4].system_attrs
+        assert "retry_history" not in trials[4].system_attrs
+        assert trials[5].system_attrs["failed_trial"] == 4
+        assert trials[5].system_attrs["retry_history"] == [4]
