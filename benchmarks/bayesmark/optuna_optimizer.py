@@ -74,6 +74,7 @@ class OptunaOptimizer(AbstractOptimizer):
             log = config["space"] == "log"
 
             if config["space"] == "logit":
+                assert 0 < low <= high < 1
                 low = np.log(low / (1 - low))
                 high = np.log(high / (1 - high))
 
