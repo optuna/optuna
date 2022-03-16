@@ -179,7 +179,7 @@ def plot_pareto_front(
             infeasible=infeasible,
             dominated_trials=dominated_trials,
             axis_order=axis_order,
-            targets=targets
+            targets=targets,
         )
 
     fig = []
@@ -234,7 +234,7 @@ def plot_pareto_front(
             xaxis_title=target_names[axis_order[0]],
             yaxis_title=target_names[axis],
         )
-        fig.append({"data": data, "layout":layout})
+        fig.append({"data": data, "layout": layout})
 
     return fig
 
