@@ -27,6 +27,7 @@ def plot_pareto_front(
     study: Study,
     *,
     target_names: Optional[List[str]] = None,
+    targets: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
     include_dominated_trials: bool = True,
     axis_order: Optional[List[int]] = None,
     constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
@@ -95,11 +96,18 @@ def plot_pareto_front(
     _imports.check()
 
     n_dim = len(study.directions)
-    if n_dim not in (2, 3):
-        raise ValueError("`plot_pareto_front` function only supports 2 or 3 objective studies.")
+
+    class TargetNames:
+        def __init__(self):
+            self.values = target_names
 
     if target_names is None:
         target_names = [f"Objective {i}" for i in range(n_dim)]
+        if targets is None:
+            pass
+        else:
+            target_names = targets(TargetNames())
+
     elif len(target_names) != n_dim:
         raise ValueError(f"The length of `target_names` is supposed to be {n_dim}.")
 
@@ -157,65 +165,76 @@ def plot_pareto_front(
         hovertemplate: str,
         infeasible: bool = False,
         dominated_trials: bool = False,
+        axis_order: List[int] = None,
+        targets: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
     ) -> Union["go.Scatter", "go.Scatter3d"]:
         return _make_scatter_object_base(
             n_dim,
             trials,
-            axis_order,  # type: ignore
+            # axis_order,  # type: ignore
             include_dominated_trials,
             hovertemplate=hovertemplate,
             infeasible=infeasible,
             dominated_trials=dominated_trials,
+            axis_order=axis_order,
+            targets=targets
         )
 
-    if constraints_func is None:
-        data = [
-            _make_scatter_object(
-                non_best_trials,
-                hovertemplate="%{text}<extra>Trial</extra>",
-                dominated_trials=True,
-            ),
-            _make_scatter_object(
-                best_trials,
-                hovertemplate="%{text}<extra>Best Trial</extra>",
-                dominated_trials=False,
-            ),
-        ]
-    else:
-        data = [
-            _make_scatter_object(
-                infeasible_trials,
-                hovertemplate="%{text}<extra>Infeasible Trial</extra>",
-                infeasible=True,
-            ),
-            _make_scatter_object(
-                non_best_trials,
-                hovertemplate="%{text}<extra>Feasible Trial</extra>",
-                dominated_trials=True,
-            ),
-            _make_scatter_object(
-                best_trials,
-                hovertemplate="%{text}<extra>Best Trial</extra>",
-                dominated_trials=False,
-            ),
-        ]
+    fig = []
+    for idx, axis in enumerate(axis_order):
+        if idx == 0:
+            continue
 
-    if n_dim == 2:
+        if constraints_func is None:
+            data = [
+                _make_scatter_object(
+                    non_best_trials,
+                    hovertemplate="%{text}<extra>Trial</extra>",
+                    dominated_trials=True,
+                    axis_order=[axis_order[0], axis],
+                    targets=targets,
+                ),
+                _make_scatter_object(
+                    best_trials,
+                    hovertemplate="%{text}<extra>Best Trial</extra>",
+                    dominated_trials=False,
+                    axis_order=[axis_order[0], axis],
+                    targets=targets,
+                ),
+            ]
+        else:
+            data = [
+                _make_scatter_object(
+                    infeasible_trials,
+                    hovertemplate="%{text}<extra>Infeasible Trial</extra>",
+                    infeasible=True,
+                    axis_order=[axis_order[0], axis],
+                    targets=targets,
+                ),
+                _make_scatter_object(
+                    non_best_trials,
+                    hovertemplate="%{text}<extra>Feasible Trial</extra>",
+                    dominated_trials=True,
+                    axis_order=[axis_order[0], axis],
+                    targets=targets,
+                ),
+                _make_scatter_object(
+                    best_trials,
+                    hovertemplate="%{text}<extra>Best Trial</extra>",
+                    dominated_trials=False,
+                    axis_order=[axis_order[0], axis],
+                    targets=targets,
+                ),
+            ]
+
         layout = go.Layout(
             title="Pareto-front Plot",
             xaxis_title=target_names[axis_order[0]],
-            yaxis_title=target_names[axis_order[1]],
+            yaxis_title=target_names[axis],
         )
-    else:
-        layout = go.Layout(
-            title="Pareto-front Plot",
-            scene={
-                "xaxis_title": target_names[axis_order[0]],
-                "yaxis_title": target_names[axis_order[1]],
-                "zaxis_title": target_names[axis_order[2]],
-            },
-        )
-    return go.Figure(data=data, layout=layout)
+        fig.append({"data": data, "layout":layout})
+
+    return fig
 
 
 def _get_non_pareto_front_trials(
@@ -241,20 +260,22 @@ def _make_json_compatible(value: Any) -> Any:
 def _make_scatter_object_base(
     n_dim: int,
     trials: Sequence[FrozenTrial],
-    axis_order: List[int],
     include_dominated_trials: bool,
     hovertemplate: str,
     infeasible: bool = False,
     dominated_trials: bool = False,
+    axis_order: List[int] = None,
+    targets: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
 ) -> Union["go.Scatter", "go.Scatter3d"]:
-    assert n_dim in (2, 3)
+    # assert n_dim in (2, 3)
     marker = _make_marker(
         trials,
         include_dominated_trials,
         dominated_trials=dominated_trials,
         infeasible=infeasible,
     )
-    if n_dim == 2:
+
+    if targets is None:
         return go.Scatter(
             x=[t.values[axis_order[0]] for t in trials],
             y=[t.values[axis_order[1]] for t in trials],
@@ -265,11 +286,9 @@ def _make_scatter_object_base(
             showlegend=False,
         )
     else:
-        assert n_dim == 3
-        return go.Scatter3d(
-            x=[t.values[axis_order[0]] for t in trials],
-            y=[t.values[axis_order[1]] for t in trials],
-            z=[t.values[axis_order[2]] for t in trials],
+        return go.Scatter(
+            x=[targets(t)[0] for t in trials],
+            y=[targets(t)[axis_order[1]] for t in trials],
             text=[_make_hovertext(t) for t in trials],
             mode="markers",
             hovertemplate=hovertemplate,
