@@ -3,6 +3,7 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import NamedTuple
 from typing import Optional
 from typing import Sequence
 from typing import Union
@@ -20,6 +21,15 @@ if _imports.is_successful():
     from optuna.visualization._plotly_imports import go
 
 _logger = optuna.logging.get_logger(__name__)
+
+
+class _ParetoFrontInfo(NamedTuple):
+    n_dim: int
+    target_names: List[str]
+    best_trials: List[FrozenTrial]
+    non_best_trials: Optional[List[FrozenTrial]]
+    infeasible_trials: Optional[List[FrozenTrial]]
+    axis_order: List[int]
 
 
 @experimental("2.4.0")
@@ -94,6 +104,83 @@ def plot_pareto_front(
 
     _imports.check()
 
+    info = _get_pareto_front_info(
+        study, target_names, include_dominated_trials, axis_order, constraints_func
+    )
+
+    def _make_scatter_object(
+        trials: Optional[Sequence[FrozenTrial]],
+        hovertemplate: str,
+        infeasible: bool = False,
+        dominated_trials: bool = False,
+    ) -> Union["go.Scatter", "go.Scatter3d"]:
+        return _make_scatter_object_base(
+            info.n_dim,
+            trials or [],
+            info.axis_order,
+            include_dominated_trials,
+            hovertemplate=hovertemplate,
+            infeasible=infeasible,
+            dominated_trials=dominated_trials,
+        )
+
+    if constraints_func is None:
+        data = [
+            _make_scatter_object(
+                info.non_best_trials,
+                hovertemplate="%{text}<extra>Trial</extra>",
+                dominated_trials=True,
+            ),
+            _make_scatter_object(
+                info.best_trials,
+                hovertemplate="%{text}<extra>Best Trial</extra>",
+                dominated_trials=False,
+            ),
+        ]
+    else:
+        data = [
+            _make_scatter_object(
+                info.infeasible_trials,
+                hovertemplate="%{text}<extra>Infeasible Trial</extra>",
+                infeasible=True,
+            ),
+            _make_scatter_object(
+                info.non_best_trials,
+                hovertemplate="%{text}<extra>Feasible Trial</extra>",
+                dominated_trials=True,
+            ),
+            _make_scatter_object(
+                info.best_trials,
+                hovertemplate="%{text}<extra>Best Trial</extra>",
+                dominated_trials=False,
+            ),
+        ]
+
+    if info.n_dim == 2:
+        layout = go.Layout(
+            title="Pareto-front Plot",
+            xaxis_title=info.target_names[info.axis_order[0]],
+            yaxis_title=info.target_names[info.axis_order[1]],
+        )
+    else:
+        layout = go.Layout(
+            title="Pareto-front Plot",
+            scene={
+                "xaxis_title": info.target_names[info.axis_order[0]],
+                "yaxis_title": info.target_names[info.axis_order[1]],
+                "zaxis_title": info.target_names[info.axis_order[2]],
+            },
+        )
+    return go.Figure(data=data, layout=layout)
+
+
+def _get_pareto_front_info(
+    study: Study,
+    target_names: Optional[List[str]] = None,
+    include_dominated_trials: bool = True,
+    axis_order: Optional[List[int]] = None,
+    constraints_func: Optional[Callable[[FrozenTrial], Sequence[float]]] = None,
+) -> _ParetoFrontInfo:
     n_dim = len(study.directions)
     if n_dim not in (2, 3):
         raise ValueError("`plot_pareto_front` function only supports 2 or 3 objective studies.")
@@ -152,70 +239,14 @@ def plot_pareto_front(
                 "lower than 0."
             )
 
-    def _make_scatter_object(
-        trials: Sequence[FrozenTrial],
-        hovertemplate: str,
-        infeasible: bool = False,
-        dominated_trials: bool = False,
-    ) -> Union["go.Scatter", "go.Scatter3d"]:
-        return _make_scatter_object_base(
-            n_dim,
-            trials,
-            axis_order,  # type: ignore
-            include_dominated_trials,
-            hovertemplate=hovertemplate,
-            infeasible=infeasible,
-            dominated_trials=dominated_trials,
-        )
-
-    if constraints_func is None:
-        data = [
-            _make_scatter_object(
-                non_best_trials,
-                hovertemplate="%{text}<extra>Trial</extra>",
-                dominated_trials=True,
-            ),
-            _make_scatter_object(
-                best_trials,
-                hovertemplate="%{text}<extra>Best Trial</extra>",
-                dominated_trials=False,
-            ),
-        ]
-    else:
-        data = [
-            _make_scatter_object(
-                infeasible_trials,
-                hovertemplate="%{text}<extra>Infeasible Trial</extra>",
-                infeasible=True,
-            ),
-            _make_scatter_object(
-                non_best_trials,
-                hovertemplate="%{text}<extra>Feasible Trial</extra>",
-                dominated_trials=True,
-            ),
-            _make_scatter_object(
-                best_trials,
-                hovertemplate="%{text}<extra>Best Trial</extra>",
-                dominated_trials=False,
-            ),
-        ]
-
-    if n_dim == 2:
-        layout = go.Layout(
-            title="Pareto-front Plot",
-            xaxis_title=target_names[axis_order[0]],
-            yaxis_title=target_names[axis_order[1]],
-        )
-    else:
-        layout = go.Layout(
-            title="Pareto-front Plot",
-            scene={
-                "xaxis_title": target_names[axis_order[0]],
-                "yaxis_title": target_names[axis_order[1]],
-                "zaxis_title": target_names[axis_order[2]],
-            },
-        )
-    return go.Figure(data=data, layout=layout)
+    return _ParetoFrontInfo(
+        n_dim=n_dim,
+        target_names=target_names,
+        best_trials=best_trials,
+        non_best_trials=non_best_trials,
+        infeasible_trials=infeasible_trials,
+        axis_order=axis_order,
+    )
 
 
 def _get_non_pareto_front_trials(
