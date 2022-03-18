@@ -321,7 +321,7 @@ def test_upgrade_distributions(optuna_version: str) -> None:
         assert isinstance(new_distribution_dict["y2"], IntDistribution)
         assert isinstance(new_distribution_dict["z"], CategoricalDistribution)
 
-        # check if Study.optimize can run on new storage
+        # Check if Study.optimize can run on new storage.
         new_study.optimize(objective_test_upgrade_distributions, n_trials=1)
 
 

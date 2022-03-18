@@ -78,7 +78,7 @@ def migrate_new_distribution(distribution_json: str) -> str:
     distribution = json_to_distribution(distribution_json)
     new_distribution: BaseDistribution
 
-    # float distributions
+    # Float distributions.
     if isinstance(distribution, UniformDistribution):
         new_distribution = FloatDistribution(
             low=distribution.low,
@@ -101,7 +101,7 @@ def migrate_new_distribution(distribution_json: str) -> str:
             step=distribution.q,
         )
 
-    # int distributions
+    # Integer distributions.
     elif isinstance(distribution, IntUniformDistribution):
         new_distribution = IntDistribution(
             low=distribution.low,
@@ -117,7 +117,7 @@ def migrate_new_distribution(distribution_json: str) -> str:
             step=distribution.step,
         )
 
-    # categorical distribution
+    # Categorical distribution.
     else:
         new_distribution = distribution
 
@@ -128,7 +128,7 @@ def restore_old_distribution(distribution_json: str) -> str:
     distribution = json_to_distribution(distribution_json)
     old_distribution: BaseDistribution
 
-    # float distributions
+    # Float distributions.
     if isinstance(distribution, FloatDistribution):
         if distribution.log:
             old_distribution = LogUniformDistribution(
@@ -148,7 +148,7 @@ def restore_old_distribution(distribution_json: str) -> str:
                     high=distribution.high,
                 )
 
-    # integer distributions
+    # Integer distributions.
     elif isinstance(distribution, IntDistribution):
         if distribution.log:
             old_distribution = IntLogUniformDistribution(
@@ -163,7 +163,7 @@ def restore_old_distribution(distribution_json: str) -> str:
                 step=distribution.step,
             )
 
-    # categorical distribution
+    # Categorical distribution.
     else:
         old_distribution = distribution
 
