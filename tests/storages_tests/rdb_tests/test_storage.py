@@ -13,9 +13,9 @@ from packaging import version
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+import optuna
 from optuna import create_study
 from optuna import load_study
-from optuna import version as optuna_version
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import FloatDistribution
@@ -45,7 +45,7 @@ def test_init() -> None:
 
     version_info = session.query(VersionInfoModel).first()
     assert version_info.schema_version == SCHEMA_VERSION
-    assert version_info.library_version == optuna_version.__version__
+    assert version_info.library_version == optuna.version.__version__
 
     assert storage.get_current_version() == storage.get_head_version()
     assert storage.get_all_versions() == [
