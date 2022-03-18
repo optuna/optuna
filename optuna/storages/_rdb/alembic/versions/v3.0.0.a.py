@@ -35,6 +35,13 @@ from optuna.distributions import UniformDistribution
 from optuna.trial import TrialState
 
 
+# revision identifiers, used by Alembic.
+revision = "v3.0.0.a"
+down_revision = "v2.6.0.a"
+branch_labels = None
+depends_on = None
+
+
 MAX_INDEXED_STRING_LENGTH = 512
 
 
@@ -73,13 +80,6 @@ class TrialParamModel(BaseModel):
     trial = orm.relationship(
         TrialModel, backref=orm.backref("params", cascade="all, delete-orphan")
     )
-
-
-# revision identifiers, used by Alembic.
-revision = "v3.0.0.a"
-down_revision = "v2.6.0.a"
-branch_labels = None
-depends_on = None
 
 
 def migrate_new_distribution(distribution_json: str) -> str:
