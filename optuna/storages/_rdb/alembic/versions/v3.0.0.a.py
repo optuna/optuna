@@ -63,10 +63,6 @@ class TrialModel(BaseModel):
     datetime_start = Column(DateTime)
     datetime_complete = Column(DateTime)
 
-    study = orm.relationship(
-        StudyModel, backref=orm.backref("trials", cascade="all, delete-orphan")
-    )
-
 
 class TrialParamModel(BaseModel):
     __tablename__ = "trial_params"
@@ -76,10 +72,6 @@ class TrialParamModel(BaseModel):
     param_name = Column(String(MAX_INDEXED_STRING_LENGTH))
     param_value = Column(Float)
     distribution_json = Column(Text())
-
-    trial = orm.relationship(
-        TrialModel, backref=orm.backref("params", cascade="all, delete-orphan")
-    )
 
 
 def migrate_new_distribution(distribution_json: str) -> str:
