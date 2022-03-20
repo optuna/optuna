@@ -233,13 +233,15 @@ class RedisStorage(BaseStorage):
                     )
                 )
 
-        with self._redis.pipeline() as pipe:
-            pipe.multi()
-            pipe.set(self._key_study_direction(study_id), pickle.dumps(directions))
-            study_summary = self._get_study_summary(study_id)
-            study_summary._directions = list(directions)
-            pipe.set(self._key_study_summary(study_id), pickle.dumps(study_summary))
-            pipe.execute()
+        queries: Mapping[Union[str, bytes], Union[bytes, float, int, str]]
+        queries = dict()
+
+        queries[self._key_study_direction(study_id)] = pickle.dumps(directions)
+        study_summary = self._get_study_summary(study_id)
+        study_summary._directions = list(directions)
+        queries[self._key_study_summary(study_id)] = pickle.dumps(study_summary)
+
+        self._redis.mset(queries)
 
     def set_study_user_attr(self, study_id: int, key: str, value: Any) -> None:
 
