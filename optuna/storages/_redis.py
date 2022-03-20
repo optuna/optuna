@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 import copy
 from datetime import datetime
 import pickle
@@ -10,6 +11,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
+from typing import Union
 
 import optuna
 from optuna import distributions
@@ -463,19 +465,19 @@ class RedisStorage(BaseStorage):
 
         trial = self.get_trial(trial_id)
 
-        with self._redis.pipeline() as pipe:
-            pipe.multi()
-            # Set study param distribution.
-            param_distribution[param_name] = distribution
-            pipe.set(
-                self._key_study_param_distribution(study_id), pickle.dumps(param_distribution)
-            )
+        queries: Mapping[Union[str, bytes], Union[bytes, float, int, str]]
+        queries = dict()
 
-            # Set params.
-            trial.params[param_name] = distribution.to_external_repr(param_value_internal)
-            trial.distributions[param_name] = distribution
-            pipe.set(self._key_trial(trial_id), pickle.dumps(trial))
-            pipe.execute()
+        # Set study param distribution.
+        param_distribution[param_name] = distribution
+        queries[self._key_study_param_distribution(study_id)] = pickle.dumps(param_distribution)
+
+        # Set params.
+        trial.params[param_name] = distribution.to_external_repr(param_value_internal)
+        trial.distributions[param_name] = distribution
+        queries[self._key_trial(trial_id)] = pickle.dumps(trial)
+
+        self._redis.mset(queries)
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
 
