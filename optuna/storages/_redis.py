@@ -629,14 +629,6 @@ class RedisStorage(BaseStorage):
 
         self._redis.set(self._key_trial(trial_id), pickle.dumps(trial))
 
-    def _del_trial(self, trial_id: int) -> None:
-
-        with self._redis.pipeline() as pipe:
-            pipe.multi()
-            pipe.delete(self._key_trial(trial_id))
-            pipe.delete("trial_id:{:010d}:study_id".format(trial_id))
-            pipe.execute()
-
     def _get_study_trials(self, study_id: int) -> List[int]:
 
         self._check_study_id(study_id)
