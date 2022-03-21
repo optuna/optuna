@@ -2,12 +2,15 @@ from typing import cast
 
 import pytest
 
+from optuna.distributions import FloatDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.study import create_study
 from optuna.trial import create_trial
+from optuna.trial import TrialState
 from optuna.visualization import is_available
 from optuna.visualization._utils import _check_plot_args
+from optuna.visualization._utils import _filter_inf_trials
 from optuna.visualization._utils import _is_log_scale
 
 
@@ -59,3 +62,57 @@ def test_check_plot_args() -> None:
 
     with pytest.warns(UserWarning):
         _check_plot_args(study, lambda t: cast(float, t.value), "Objective Value")
+
+
+@pytest.mark.parametrize(
+    "value, expected", [(float("inf"), 1), (-float("inf"), 1), (0.0, 2), (float("nan"), 2)]
+)
+def test_filter_inf_trials(value: float, expected: int) -> None:
+
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"x": 1.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=value,
+            params={"x": 0.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+
+    trials = _filter_inf_trials(study.get_trials(states=(TrialState.COMPLETE,)))
+    assert len(trials) == expected
+    assert [t.number == num for t, num in zip(trials, range(expected))]
+
+
+@pytest.mark.parametrize(
+    "value, expected", [(float("inf"), 1), (-float("inf"), 1), (0.0, 2), (float("nan"), 2)]
+)
+def test_filter_inf_trials_intermediate(value: float, expected: int) -> None:
+
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"x": 1.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+            intermediate_values={i: i for i in range(10)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"x": 0.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+            intermediate_values={i: i if i % 2 == 0 else value for i in range(10)},
+        )
+    )
+
+    trials = _filter_inf_trials(study.get_trials(states=(TrialState.COMPLETE,)))
+    assert len(trials) == expected
+    assert [t.number == num for t, num in zip(trials, range(expected))]
