@@ -6,6 +6,9 @@ from typing import Sequence
 from typing import Union
 import warnings
 
+import numpy as np
+
+import optuna
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
@@ -16,6 +19,7 @@ from optuna.visualization import _plotly_imports
 
 
 __all__ = ["is_available"]
+_logger = optuna.logging.get_logger(__name__)
 
 
 def is_available() -> bool:
@@ -99,3 +103,26 @@ def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
     if _is_numerical(trials, p_name):
         return values
     return list(map(str, values))
+
+
+def _filter_inf_trials(trials: List[FrozenTrial]) -> List[FrozenTrial]:
+
+    filtered_trials: List[FrozenTrial] = []
+    for trial in trials:
+        intermediate_values = list(trial.intermediate_values.values())
+        if trial.value is not None and np.isinf(trial.value):
+            _logger.info(
+                f"Trial {trial.number} is omitted in visualization ",
+                "because its objective value is inf.",
+            )
+
+        elif any(np.isinf(intermediate_values)):
+            _logger.info(
+                f"Trial {trial.number} is omitted in visualization ",
+                "because one or more intermediate values are inf.",
+            )
+
+        else:
+            filtered_trials.append(trial)
+
+    return filtered_trials
