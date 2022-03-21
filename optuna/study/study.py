@@ -151,6 +151,10 @@ class Study:
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
+
+        .. seealso::
+            The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this method.
+
         """
 
         return _get_pareto_front_trials(self)
