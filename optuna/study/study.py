@@ -153,7 +153,8 @@ class Study:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
 
         .. seealso::
-            The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this method.
+            The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this
+            method.
 
         """
 
