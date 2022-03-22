@@ -130,6 +130,11 @@ class Study:
         Raises:
             :exc:`RuntimeError`:
                 If the study has more than one direction.
+
+        .. seealso::
+            The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this
+            method.
+
         """
 
         if self._is_multi_objective():
@@ -151,11 +156,6 @@ class Study:
 
         Returns:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
-
-        .. seealso::
-            The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this
-            method.
-
         """
 
         return _get_pareto_front_trials(self)
