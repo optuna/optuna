@@ -130,6 +130,11 @@ class Study:
         Raises:
             :exc:`RuntimeError`:
                 If the study has more than one direction.
+
+        .. seealso::
+            The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this
+            method.
+
         """
 
         if self._is_multi_objective():
