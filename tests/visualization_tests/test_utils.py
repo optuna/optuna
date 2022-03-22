@@ -87,7 +87,7 @@ def test_filter_inf_trials(value: float, expected: int) -> None:
 
     trials = _filter_inf_trials(study.get_trials(states=(TrialState.COMPLETE,)))
     assert len(trials) == expected
-    assert [t.number == num for t, num in zip(trials, range(expected))]
+    assert all([t.number == num for t, num in zip(trials, range(expected))])
 
 
 @pytest.mark.parametrize(
@@ -115,4 +115,4 @@ def test_filter_inf_trials_intermediate(value: float, expected: int) -> None:
 
     trials = _filter_inf_trials(study.get_trials(states=(TrialState.COMPLETE,)))
     assert len(trials) == expected
-    assert [t.number == num for t, num in zip(trials, range(expected))]
+    assert all([t.number == num for t, num in zip(trials, range(expected))])
