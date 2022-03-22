@@ -1,7 +1,7 @@
 """
 .. _reuse_best_trial:
 
-Re-use the best values
+Re-use the best parameters
 ==========================
 
 In some cases, you may want to re-evaluate the objective function with the best
