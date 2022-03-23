@@ -1,5 +1,4 @@
 from collections import defaultdict
-import math
 from typing import Callable
 from typing import cast
 from typing import DefaultDict
@@ -140,7 +139,6 @@ def _get_parallel_coordinate_plot(
     cat_param_names = []
     cat_param_values = []
     cat_param_ticks = []
-    log_param_names = []
     param_values = []
     var_names = [target_name]
     numeric_cat_params_indices: List[int] = []
@@ -148,10 +146,7 @@ def _get_parallel_coordinate_plot(
     for param_index, p_name in enumerate(sorted_params):
         values = [t.params[p_name] if p_name in t.params else np.nan for t in trials]
 
-        if _is_log_scale(trials, p_name):
-            values = [math.log10(v) for v in values]
-            log_param_names.append(p_name)
-        elif _is_categorical(trials, p_name):
+        if _is_categorical(trials, p_name):
             vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
 
             if _is_numerical(trials, p_name):
@@ -165,8 +160,13 @@ def _get_parallel_coordinate_plot(
             cat_param_values.append([v[0] for v in vocab_item_sorted])
             cat_param_ticks.append([v[1] for v in vocab_item_sorted])
 
-        p_min = min(values)
-        p_max = max(values)
+        if _is_log_scale(trials, p_name):
+            values_for_lc = [np.log10(v) for v in values]
+        else:
+            values_for_lc = values
+
+        p_min = min(values_for_lc)
+        p_max = max(values_for_lc)
         p_w = p_max - p_min
 
         if p_w == 0.0:
@@ -174,7 +174,7 @@ def _get_parallel_coordinate_plot(
             for i in range(len(values)):
                 dims_obj_base[i].append(center)
         else:
-            for i, v in enumerate(values):
+            for i, v in enumerate(values_for_lc):
                 dims_obj_base[i].append((v - p_min) / p_w * obj_w + obj_min)
 
         var_names.append(p_name if len(p_name) < 20 else "{}...".format(p_name[:17]))
