@@ -61,7 +61,7 @@ class WeightsAndBiasesCallback(object):
             study = optuna.create_study(study_name="my_study")
 
             wandb_kwargs = {"project": "my-project"}
-            wandbc = WeightsAndBiasesCallback(study_name=study.name, andb_kwargs=wandb_kwargs)
+            wandbc = WeightsAndBiasesCallback(study_name=study.name, wandb_kwargs=wandb_kwargs)
 
             study.optimize(objective, n_trials=10, callbacks=[wandbc])
 
