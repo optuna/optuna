@@ -117,6 +117,9 @@ study.optimize(objective, n_trials=30, timeout=300)
 
 print("Number of finished trials: ", len(study.trials))
 
+###################################################################################################
+# Pareto-front as the list of FrozenTrial 
+print(study.best_trials)
 
 ###################################################################################################
 # Check trials on pareto front visually
