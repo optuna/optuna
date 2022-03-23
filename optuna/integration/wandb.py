@@ -62,7 +62,7 @@ class WeightsAndBiasesCallback(object):
 
             wandb_kwargs = {"project": "my-project"}
             wandbc = WeightsAndBiasesCallback(study_name=study.name, andb_kwargs=wandb_kwargs)
-            
+
             study.optimize(objective, n_trials=10, callbacks=[wandbc])
 
     Args:
@@ -113,7 +113,16 @@ class WeightsAndBiasesCallback(object):
         self._wandb_kwargs = wandb_kwargs or {}
         self._study_name = study_name
 
+        iapi = wandb.InternalApi()
+        self._api = wandb.Api()
+        project = wandb_kwargs.get("project")
+        entity = wandb_kwargs.get("entity")
+
+        project = self._api.settings["project"] or "uncategorized"
+        entity = self._api.settings["entity"] or iapi.default_entity
         self._as_sweeps = as_sweeps
+
+        self._run_path = f"{entity}/{project}/%s"
 
         self._tags = self._wandb_kwargs.pop("tags", [])
         self._tags.append(self._study_name)
@@ -147,25 +156,25 @@ class WeightsAndBiasesCallback(object):
         metrics = {name: value for name, value in zip(names, trial.values)}
         attributes = {"direction": [d.name for d in study.directions]}
 
-        if not self._as_sweeps:
-            run = wandb.run
+        run_id = trial._user_attrs.get("run_id")
+
+        if not (self._as_sweeps and run_id):
+            run = wandb.run or self._initialize_run()
+            run.log({**trial.params, **metrics})
 
         else:
-
             # If user is already logging wandb metrics from inside a trial
             # reuse that run to log these study metrics
-            run_id = trial._user_attrs.get("run_id")
-            resume = "must" if bool(run_id) else None
+            run = self._api.run(self._run_path % run_id)
 
-            run = wandb.init(id=run_id, resume=resume, tags=self._tags, **self._wandb_kwargs)
             run.name = f"trial-{trial._trial_id}/{run.name}"
+            run.summary.update({**trial.params, **metrics})
 
         run.config.update(attributes)
-        run.log({**trial.params, **metrics})
 
-        if self._as_sweeps:
+        if self._as_sweeps and wandb.run:
             run.finish()
 
     def _initialize_run(self) -> None:
         """Initializes Weights & Biases run."""
-        wandb.init(tags=self._tags, **self._wandb_kwargs)
+        return wandb.init(tags=self._tags, **self._wandb_kwargs)
