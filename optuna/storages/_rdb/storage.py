@@ -33,6 +33,7 @@ from sqlalchemy.sql import functions
 import optuna
 from optuna import distributions
 from optuna import version
+from optuna._deprecated import deprecated
 from optuna.storages._base import BaseStorage
 from optuna.storages._base import DEFAULT_STUDY_NAME_PREFIX
 from optuna.storages._rdb import models
@@ -648,6 +649,11 @@ class RDBStorage(BaseStorage):
 
         return trial
 
+    @deprecated(
+        "3.0.0",
+        "5.0.0",
+        text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
+    )
     def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
 
         try:
@@ -768,6 +774,11 @@ class RDBStorage(BaseStorage):
             return float(np.sign(value) * float("inf"))
         return value
 
+    @deprecated(
+        "3.0.0",
+        "5.0.0",
+        text="Use :func:`~optuna.storages.RDBStorage.set_trial_state_values` instead.",
+    )
     def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
 
         with _create_scoped_session(self.scoped_session) as session:
@@ -775,6 +786,33 @@ class RDBStorage(BaseStorage):
             self.check_trial_is_updatable(trial_id, trial.state)
             for objective, v in enumerate(values):
                 self._set_trial_value_without_commit(session, trial_id, objective, v)
+
+    def set_trial_state_values(
+        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+    ) -> bool:
+
+        try:
+            with _create_scoped_session(self.scoped_session) as session:
+                trial = models.TrialModel.find_or_raise_by_id(trial_id, session, for_update=True)
+                self.check_trial_is_updatable(trial_id, trial.state)
+
+                if values is not None:
+                    for objective, v in enumerate(values):
+                        self._set_trial_value_without_commit(session, trial_id, objective, v)
+
+                if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
+                    return False
+
+                trial.state = state
+
+                if state == TrialState.RUNNING:
+                    trial.datetime_start = datetime.now()
+
+                if state.is_finished():
+                    trial.datetime_complete = datetime.now()
+        except IntegrityError:
+            return False
+        return True
 
     def _set_trial_value_without_commit(
         self, session: orm.Session, trial_id: int, objective: int, value: float
@@ -1099,7 +1137,7 @@ class RDBStorage(BaseStorage):
         confirmed_stale_trial_ids = []
 
         for trial_id in stale_trial_ids:
-            if self.set_trial_state(trial_id, TrialState.FAIL):
+            if self.set_trial_state_values(trial_id, state=TrialState.FAIL):
                 confirmed_stale_trial_ids.append(trial_id)
 
         return confirmed_stale_trial_ids
