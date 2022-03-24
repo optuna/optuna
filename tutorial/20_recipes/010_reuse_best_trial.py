@@ -92,8 +92,8 @@ detailed_objective(study.best_trial)  # calculate acc, f1, recall, and precision
 # and behaves differently from :class:`~optuna.trial.Trial` in some situations.
 # For example, pruning does not work because :class:`~optuna.trial.FrozenTrial.should_prune`
 # always returns ``False``.
-
-##################################################################################################
 #
 # .. note::
-#    Check out :ref:`multi_objective` to see the  :class:`~optuna.study.Study.best_trials` in action.
+#     For multi-objective optimization as demonstrated by :ref:`multi_objective`,
+# :func:`~optuna.study.Study.best_trials` returns a list of `:class:`~optuna.trial.FrozenTrial`
+# on Pareto front. So we can re-use each trial in the list by the similar way above.
