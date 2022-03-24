@@ -17,6 +17,7 @@ from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _get_param_values
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
+from optuna.visualization._utils import _is_reverse_scale
 from optuna.visualization._utils import COLOR_SCALE
 
 
@@ -292,7 +293,7 @@ def _generate_contour_subplot(
         contours_coloring="heatmap",
         hoverinfo="none",
         line_smoothing=1.3,
-        reversescale=target is not None or direction == StudyDirection.MINIMIZE,
+        reversescale=_is_reverse_scale(target, direction),
     )
 
     scatter = go.Scatter(

@@ -11,6 +11,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.study import Study
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.visualization import _plotly_imports
 
@@ -105,3 +106,9 @@ def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
     if _is_numerical(trials, p_name):
         return values
     return list(map(str, values))
+
+
+def _is_reverse_scale(
+    target: Optional[Callable[[FrozenTrial], float]], direction: StudyDirection
+) -> bool:
+    return target is not None or direction == StudyDirection.MINIMIZE
