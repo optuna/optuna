@@ -95,7 +95,7 @@ detailed_objective(study.best_trial)  # calculate acc, f1, recall, and precision
 
 ##################################################################################################
 #
-#.. note::
+# .. note::
 #    Check out :ref:`multi_objective` to see the  :class:`~optuna.study.Study.best_trials` in action.
 
 
