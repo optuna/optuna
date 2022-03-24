@@ -368,7 +368,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
 def test_color_map(direction: str) -> None:
     study = prepare_study_with_trials(with_c_d=False, direction=direction)
 
-    # `target` is not `None`.
+    # `target` is `None`.
     line = plot_parallel_coordinate(study).data[0]["line"]
     assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
     if direction == "minimize":

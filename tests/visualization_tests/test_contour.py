@@ -289,7 +289,7 @@ def test_plot_contour_mixture_category_types() -> None:
 def test_color_map(direction: str) -> None:
     study = prepare_study_with_trials(with_c_d=False, direction=direction)
 
-    # `target` is not `None`.
+    # `target` is `None`.
     contour = plot_contour(study).data[0]
     assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
     if direction == "minimize":
