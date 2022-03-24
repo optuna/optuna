@@ -139,6 +139,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
+            "catboost>=0.26",
             "chainer>=5.0.0",
             "cma",
             "lightgbm",
@@ -171,7 +172,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "fastai",
         ],
         "benchmark": [
-            "asv",
+            "asv>=0.5.0",
             "virtualenv",
             "botorch",
         ],
