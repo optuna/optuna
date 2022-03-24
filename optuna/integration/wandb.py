@@ -164,7 +164,7 @@ class WeightsAndBiasesCallback(object):
 
         else:
             # If user is already logging wandb metrics from inside a trial
-            # reuse that run to log these study metrics
+            # reuse that run to log these study metrics.
             run = self._api.run(self._run_path % run_id)
 
             run.name = f"trial-{trial._trial_id}/{run.name}"
