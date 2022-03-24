@@ -109,19 +109,11 @@ def _filter_inf_trials(trials: List[FrozenTrial]) -> List[FrozenTrial]:
 
     filtered_trials: List[FrozenTrial] = []
     for trial in trials:
-        intermediate_values = list(trial.intermediate_values.values())
         if trial.value is not None and np.isinf(trial.value):
             _logger.info(
                 f"Trial {trial.number} is omitted in visualization ",
                 "because its objective value is inf.",
             )
-
-        elif any(np.isinf(intermediate_values)):
-            _logger.info(
-                f"Trial {trial.number} is omitted in visualization ",
-                "because one or more intermediate values are inf.",
-            )
-
         else:
             filtered_trials.append(trial)
 

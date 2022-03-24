@@ -88,31 +88,3 @@ def test_filter_inf_trials(value: float, expected: int) -> None:
     trials = _filter_inf_trials(study.get_trials(states=(TrialState.COMPLETE,)))
     assert len(trials) == expected
     assert all([t.number == num for t, num in zip(trials, range(expected))])
-
-
-@pytest.mark.parametrize(
-    "value, expected", [(float("inf"), 1), (-float("inf"), 1), (0.0, 2), (float("nan"), 2)]
-)
-def test_filter_inf_trials_intermediate(value: float, expected: int) -> None:
-
-    study = create_study()
-    study.add_trial(
-        create_trial(
-            value=0.0,
-            params={"x": 1.0},
-            distributions={"x": FloatDistribution(0.0, 1.0)},
-            intermediate_values={i: i for i in range(10)},
-        )
-    )
-    study.add_trial(
-        create_trial(
-            value=0.0,
-            params={"x": 0.0},
-            distributions={"x": FloatDistribution(0.0, 1.0)},
-            intermediate_values={i: i if i % 2 == 0 else value for i in range(10)},
-        )
-    )
-
-    trials = _filter_inf_trials(study.get_trials(states=(TrialState.COMPLETE,)))
-    assert len(trials) == expected
-    assert all([t.number == num for t, num in zip(trials, range(expected))])
