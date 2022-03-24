@@ -117,6 +117,7 @@ study.optimize(objective, n_trials=30, timeout=300)
 
 print("Number of finished trials: ", len(study.trials))
 
+
 ###################################################################################################
 # Check trials on pareto front visually
 optuna.visualization.plot_pareto_front(study, target_names=["FLOPS", "accuracy"])
