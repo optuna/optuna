@@ -95,5 +95,5 @@ detailed_objective(study.best_trial)  # calculate acc, f1, recall, and precision
 #
 # .. note::
 #     For multi-objective optimization as demonstrated by :ref:`multi_objective`,
-#     :func:`~optuna.study.Study.best_trials` returns a list of :class:`~optuna.trial.FrozenTrial`
+#     :attr:`~optuna.study.Study.best_trials` returns a list of :class:`~optuna.trial.FrozenTrial`
 #     on Pareto front. So we can re-use each trial in the list by the similar way above.
