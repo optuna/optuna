@@ -12,16 +12,16 @@ from optuna.testing.integration import DeterministicPruner
 def test_mxnet_pruning_callback() -> None:
     def objective(trial: optuna.trial.Trial, eval_metric: Union[list, str]) -> float:
 
-        # Symbol
+        # Symbol.
         data = mx.symbol.Variable("data")
         data = mx.symbol.FullyConnected(data=data, num_hidden=1)
         data = mx.symbol.Activation(data=data, act_type="sigmoid")
         mlp = mx.symbol.SoftmaxOutput(data=data, name="softmax")
 
-        # Optimizer
+        # Optimizer.
         optimizer = mx.optimizer.RMSProp()
 
-        # Dataset
+        # Dataset.
         train_data = mx.io.NDArrayIter(
             data=np.zeros((16, 20), np.float32),
             label=np.zeros((16,), np.int32),

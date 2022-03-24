@@ -65,7 +65,7 @@ def test_catboost_pruning_callback_init_param(metric: str, eval_set_index: int) 
             callbacks=[pruning_callback],
         )
 
-        # evoke pruning manually.
+        # Invoke pruning manually.
         pruning_callback.check_pruned()
 
         return 1.0
@@ -110,13 +110,13 @@ def test_catboost_pruning_callback_errors(metric: str, eval_set_index: int) -> N
             callbacks=[pruning_callback],
         )
 
-        # evoke pruning manually.
+        # Invoke pruning manually.
         pruning_callback.check_pruned()
 
         return 1.0
 
-    # Unknown validation name or metric
+    # Unknown validation name or metric.
     study = optuna.create_study(pruner=DeterministicPruner(False))
-    # catboost terminates with a SystemError.
+    # Catboost terminates with a SystemError.
     with pytest.raises(SystemError):
         study.optimize(objective, n_trials=1)

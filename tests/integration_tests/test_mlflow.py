@@ -484,7 +484,7 @@ def test_log_metric_none(tmpdir: py.path.local) -> None:
     first_run = mlfl_client.get_run(first_run_id)
     first_run_dict = first_run.to_dictionary()
 
-    # when `values` is `None`, do not save values with metric names
+    # When `values` is `None`, do not save values with metric names.
     assert metric_name not in first_run_dict["data"]["metrics"]
 
 
