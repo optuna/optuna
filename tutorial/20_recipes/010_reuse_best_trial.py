@@ -1,8 +1,8 @@
 """
 .. _reuse_best_trial:
 
-Re-use the best parameters
-==========================
+Re-use the best trial
+======================
 
 In some cases, you may want to re-evaluate the objective function with the best
 hyperparameters again after the hyperparameter optimization.
@@ -92,3 +92,10 @@ detailed_objective(study.best_trial)  # calculate acc, f1, recall, and precision
 # and behaves differently from :class:`~optuna.trial.Trial` in some situations.
 # For example, pruning does not work because :class:`~optuna.trial.FrozenTrial.should_prune`
 # always returns ``False``.
+
+##################################################################################################
+#
+#.. note::
+#    Check out :ref:`multi_objective` to see the  :class:`~optuna.study.Study.best_trials` in action.
+
+
