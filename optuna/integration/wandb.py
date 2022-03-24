@@ -115,8 +115,8 @@ class WeightsAndBiasesCallback(object):
 
         iapi = wandb.InternalApi()
         self._api = wandb.Api()
-        project = wandb_kwargs.get("project")
-        entity = wandb_kwargs.get("entity")
+        project = self._wandb_kwargs.get("project")
+        entity = self._wandb_kwargs.get("entity")
 
         project = self._api.settings["project"] or "uncategorized"
         entity = self._api.settings["entity"] or iapi.default_entity
@@ -175,6 +175,6 @@ class WeightsAndBiasesCallback(object):
         if self._as_sweeps and wandb.run:
             run.finish()
 
-    def _initialize_run(self) -> None:
+    def _initialize_run(self) -> wandb.sdk.wandb_run.Run:
         """Initializes Weights & Biases run."""
         return wandb.init(tags=self._tags, **self._wandb_kwargs)
