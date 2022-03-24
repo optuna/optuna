@@ -115,11 +115,11 @@ class WeightsAndBiasesCallback(object):
 
         iapi = wandb.InternalApi()
         self._api = wandb.Api()
-        project = self._wandb_kwargs.get("project")
-        entity = self._wandb_kwargs.get("entity")
+        project = self._wandb_kwargs.get("project", self._api.settings["project"])
+        entity = self._wandb_kwargs.get("entity", self._api.settings["entity"])
 
-        project = self._api.settings["project"] or "uncategorized"
-        entity = self._api.settings["entity"] or iapi.default_entity
+        project = project or "uncategorized"
+        entity = entity or iapi.default_entity
         self._as_sweeps = as_sweeps
 
         self._run_path = f"{entity}/{project}/%s"
