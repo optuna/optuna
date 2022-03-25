@@ -513,7 +513,10 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def best_index_(self) -> int:
-        """Index which corresponds to the best candidate parameter setting."""
+        """Trial number which corresponds to the best candidate parameter setting.
+
+        Retuned value is equivant to ``optuna_search.best_trial_.number``.
+        """
 
         return self.study_.best_trial.number
 
