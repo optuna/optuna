@@ -105,14 +105,15 @@ def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
     return list(map(str, values))
 
 
-def _filter_inf_trials(trials: List[FrozenTrial]) -> List[FrozenTrial]:
+def _filter_nonfinite(trials: List[FrozenTrial]) -> List[FrozenTrial]:
 
     filtered_trials: List[FrozenTrial] = []
     for trial in trials:
-        if trial.value is not None and np.isinf(trial.value):
+        # Not a Number, positive infinity and negative infinity are considered to be non-finite.
+        if trial.value is not None and not np.isfinite(trial.value):
             _logger.info(
                 f"Trial {trial.number} is omitted in visualization ",
-                "because its objective value is inf.",
+                "because its objective value is inf or nan.",
             )
         else:
             filtered_trials.append(trial)

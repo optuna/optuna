@@ -10,7 +10,7 @@ from optuna.trial import create_trial
 from optuna.trial import TrialState
 from optuna.visualization import is_available
 from optuna.visualization._utils import _check_plot_args
-from optuna.visualization._utils import _filter_inf_trials
+from optuna.visualization._utils import _filter_nonfinite
 from optuna.visualization._utils import _is_log_scale
 
 
@@ -65,7 +65,7 @@ def test_check_plot_args() -> None:
 
 
 @pytest.mark.parametrize(
-    "value, expected", [(float("inf"), 1), (-float("inf"), 1), (0.0, 2), (float("nan"), 2)]
+    "value, expected", [(float("inf"), 1), (-float("inf"), 1), (float("nan"), 1), (0.0, 2)]
 )
 def test_filter_inf_trials(value: float, expected: int) -> None:
 
@@ -85,6 +85,6 @@ def test_filter_inf_trials(value: float, expected: int) -> None:
         )
     )
 
-    trials = _filter_inf_trials(study.get_trials(states=(TrialState.COMPLETE,)))
+    trials = _filter_nonfinite(study.get_trials(states=(TrialState.COMPLETE,)))
     assert len(trials) == expected
     assert all([t.number == num for t, num in zip(trials, range(expected))])
