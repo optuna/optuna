@@ -515,9 +515,7 @@ class OptunaSearchCV(BaseEstimator):
     def best_index_(self) -> int:
         """Index which corresponds to the best candidate parameter setting."""
 
-        df = self.trials_dataframe()
-
-        return df["value"].idxmin()
+        return self.study_.best_trial.number
 
     @property
     def best_params_(self) -> Dict[str, Any]:
