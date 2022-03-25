@@ -180,7 +180,9 @@ class WeightsAndBiasesCallback(object):
         """Initializes Weights & Biases run."""
         run = wandb.init(tags=self._tags, **self._wandb_kwargs)
         if not isinstance(run, wandb.sdk.wandb_run.Run):
-            raise OSError("Cannot create a Run."
-                          "Expected wandb.sdk.wandb_run.Run as a return."
-                          "Got: %s" % (type(run)))
+            raise OSError(
+                "Cannot create a Run."
+                "Expected wandb.sdk.wandb_run.Run as a return."
+                "Got: %s" % (type(run))
+            )
         return run
