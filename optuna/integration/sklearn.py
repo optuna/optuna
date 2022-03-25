@@ -518,7 +518,7 @@ class OptunaSearchCV(BaseEstimator):
         Retuned value is equivant to ``optuna_search.best_trial_.number``.
         """
 
-        return self.study_.best_trial.number
+        return self.best_trial_.number
 
     @property
     def best_params_(self) -> Dict[str, Any]:
