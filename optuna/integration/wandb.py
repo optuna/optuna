@@ -12,7 +12,6 @@ from optuna._imports import try_import
 with try_import() as _imports:
     import wandb
 
-
 @experimental("2.9.0")
 class WeightsAndBiasesCallback(object):
     """Callback to track Optuna trials with Weights & Biases.
