@@ -160,7 +160,8 @@ class WeightsAndBiasesCallback(object):
 
         if not (self._as_sweeps and run_id):
             run = wandb.run or self._initialize_run()
-            run.log({**trial.params, **metrics})
+            step = trial.number if wandb.run else None
+            run.log({**trial.params, **metrics}, step=step)
 
         else:
             # If user is already logging wandb metrics from inside a trial
