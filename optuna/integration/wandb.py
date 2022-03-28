@@ -57,6 +57,7 @@ class WeightsAndBiasesCallback(object):
                 x = trial.suggest_float("x", -10, 10)
                 return (x - 2) ** 2
 
+
             study = optuna.create_study(study_name="my_study")
 
             wandb_kwargs = {"project": "my-project"}
