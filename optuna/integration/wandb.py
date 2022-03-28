@@ -1,3 +1,4 @@
+import os
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -11,6 +12,7 @@ from optuna._imports import try_import
 
 with try_import() as _imports:
     import wandb
+
 
 @experimental("2.9.0")
 class WeightsAndBiasesCallback(object):
@@ -113,13 +115,12 @@ class WeightsAndBiasesCallback(object):
         self._wandb_kwargs = wandb_kwargs or {}
         self._study_name = study_name
 
-        iapi = wandb.InternalApi()
         self._api = wandb.Api()
         project = self._wandb_kwargs.get("project", self._api.settings["project"])
         entity = self._wandb_kwargs.get("entity", self._api.settings["entity"])
 
         project = project or "uncategorized"
-        entity = entity or iapi.default_entity
+        entity = entity or self._api.default_entity
         self._as_sweeps = as_sweeps
 
         self._run_path = os.path.join(entity, project)
@@ -159,8 +160,9 @@ class WeightsAndBiasesCallback(object):
         run_id = trial._user_attrs.get("run_id")
 
         if not (self._as_sweeps and run_id):
-            run = wandb.run or self._initialize_run()
+
             step = trial.number if wandb.run else None
+            run = wandb.run or self._initialize_run()
             run.log({**trial.params, **metrics}, step=step)
 
         else:

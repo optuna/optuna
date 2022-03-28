@@ -139,7 +139,7 @@ def test_log_api_call_count(wandb: mock.MagicMock) -> None:
 def test_values_registered_on_epoch(
     wandb: mock.MagicMock, metric: str, expected: List[str]
 ) -> None:
-    def assert_call_args(log_func: mock.MagicMock, regular: bool):
+    def assert_call_args(log_func: mock.MagicMock, regular: bool) -> None:
         kall = log_func.call_args
         assert list(kall[0][0].keys()) == expected
 
@@ -178,7 +178,7 @@ def test_values_registered_on_epoch(
 def test_multiobjective_values_registered_on_epoch(
     wandb: mock.MagicMock, metrics: Union[str, Sequence[str]], expected: List[str]
 ) -> None:
-    def assert_call_args(log_func: mock.MagicMock, regular: bool):
+    def assert_call_args(log_func: mock.MagicMock, regular: bool) -> None:
 
         kall = log_func.call_args
         assert list(kall[0][0].keys()) == expected
