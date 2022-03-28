@@ -170,7 +170,7 @@ class WeightsAndBiasesCallback(object):
             # reuse that run to log these study metrics.
             run = self._api.run(os.path.join(self._run_path, run_id))
 
-            run.name = f"trial-{trial._trial_id}/{run.name}"
+            run.name = f"trial-{trial.number}/{run.name}"
             run.summary.update({**trial.params, **metrics})
 
         run.config.update({**attributes, **trial.params})
