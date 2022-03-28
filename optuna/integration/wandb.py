@@ -99,7 +99,7 @@ class WeightsAndBiasesCallback(object):
         study_name: str,
         metric_name: Union[str, Sequence[str]] = "value",
         wandb_kwargs: Optional[Dict[str, Any]] = None,
-        as_sweeps: Optional[bool] = False,
+        as_sweeps: bool = False,
     ) -> None:
 
         _imports.check()
