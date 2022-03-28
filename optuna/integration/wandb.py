@@ -178,7 +178,7 @@ class WeightsAndBiasesCallback(object):
         if self._as_sweeps and wandb.run:
             run.finish()
 
-    def _initialize_run(self) -> wandb.sdk.wandb_run.Run:
+    def _initialize_run(self) -> "wandb.sdk.wandb_run.Run":
         """Initializes Weights & Biases run."""
         run = wandb.init(tags=self._tags, **self._wandb_kwargs)
         if not isinstance(run, wandb.sdk.wandb_run.Run):
