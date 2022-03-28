@@ -82,7 +82,6 @@ def _create_scoped_session(
         session.close()
 
 
-# TODO(HideakiImamura): Replace the URL of the FAQ page after the release of v3.0.0.
 class RDBStorage(BaseStorage):
     """Storage class for RDB backend.
 
@@ -151,12 +150,8 @@ class RDBStorage(BaseStorage):
         If you want to detect a failure of trials, please use the heartbeat
         mechanism. Set ``heartbeat_interval``, ``grace_period``, and `failed_trial_callback``
         appropriately according to your use case. For more details, please refer to the
-        `FAQ page`_ and `Example page
+        :ref:`tutorial <heartbeat_monitoring>` and `Example page
         <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`_.
-
-    .. _FAQ page:
-        https://optuna.readthedocs.io/en/v3.0.0-a1/faq.html#can-i-monitor-trials-and-make-them-
-        failed-automatically-when-they-are-killed-unexpectedly
 
     .. seealso::
         You can use :class:`~optuna.storages.RetryFailedTrialCallback` to automatically retry
