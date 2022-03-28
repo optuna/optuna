@@ -157,7 +157,7 @@ class WeightsAndBiasesCallback(object):
         metrics = {name: value for name, value in zip(names, trial.values)}
         attributes = {"direction": [d.name for d in study.directions]}
 
-        run_id = trial._user_attrs.get("run_id")
+        run_id = trial.user_attrs.get("run_id")
 
         if not (self._as_sweeps and run_id):
 
