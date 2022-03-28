@@ -170,7 +170,7 @@ class WeightsAndBiasesCallback(object):
             run.name = f"trial-{trial._trial_id}/{run.name}"
             run.summary.update({**trial.params, **metrics})
 
-        run.config.update(attributes)
+        run.config.update({**attributes, **trial.params})
 
         if self._as_sweeps and wandb.run:
             run.finish()
