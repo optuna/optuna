@@ -121,7 +121,7 @@ class WeightsAndBiasesCallback(object):
         entity = entity or iapi.default_entity
         self._as_sweeps = as_sweeps
 
-        self._run_path = f"{entity}/{project}/%s"
+        self._run_path = os.path.join(entity, project)
 
         self._tags = self._wandb_kwargs.pop("tags", [])
         self._tags.append(self._study_name)
