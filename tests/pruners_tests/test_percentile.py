@@ -186,7 +186,7 @@ def test_get_percentile_intermediate_result_over_trials() -> None:
 
         # Set trial states complete because this method ignores incomplete trials.
         for trial_id in trial_ids:
-            _study._storage.set_trial_state(trial_id, TrialState.COMPLETE)
+            _study._storage.set_trial_state_values(trial_id, state=TrialState.COMPLETE)
 
         return _study
 

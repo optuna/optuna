@@ -220,33 +220,6 @@ class InMemoryStorage(BaseStorage):
             datetime_complete=None,
         )
 
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-
-        with self._lock:
-            trial = self._get_trial(trial_id)
-            self.check_trial_is_updatable(trial_id, trial.state)
-
-            trial = copy.copy(trial)
-            self.check_trial_is_updatable(trial_id, trial.state)
-
-            if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
-                return False
-
-            trial.state = state
-
-            if state == TrialState.RUNNING:
-                trial.datetime_start = datetime.now()
-
-            if state.is_finished():
-                trial.datetime_complete = datetime.now()
-                self._set_trial(trial_id, trial)
-                study_id = self._trial_id_to_study_id_and_number[trial_id][0]
-                self._update_cache(trial_id, study_id)
-            else:
-                self._set_trial(trial_id, trial)
-
-            return True
-
     def set_trial_param(
         self,
         trial_id: int,
@@ -327,17 +300,33 @@ class InMemoryStorage(BaseStorage):
             distribution = trial.distributions[param_name]
             return distribution.to_internal_repr(trial.params[param_name])
 
-    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
+    def set_trial_state_values(
+        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+    ) -> bool:
 
         with self._lock:
-            trial = self._get_trial(trial_id)
+            trial = copy.copy(self._get_trial(trial_id))
             self.check_trial_is_updatable(trial_id, trial.state)
 
-            trial = copy.copy(trial)
-            self.check_trial_is_updatable(trial_id, trial.state)
+            if state == TrialState.RUNNING and trial.state != TrialState.WAITING:
+                return False
 
-            trial.values = values
-            self._set_trial(trial_id, trial)
+            trial.state = state
+            if values is not None:
+                trial.values = values
+
+            if state == TrialState.RUNNING:
+                trial.datetime_start = datetime.now()
+
+            if state.is_finished():
+                trial.datetime_complete = datetime.now()
+                self._set_trial(trial_id, trial)
+                study_id = self._trial_id_to_study_id_and_number[trial_id][0]
+                self._update_cache(trial_id, study_id)
+            else:
+                self._set_trial(trial_id, trial)
+
+            return True
 
     def _update_cache(self, trial_id: int, study_id: int) -> None:
 

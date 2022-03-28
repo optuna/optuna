@@ -4,6 +4,7 @@ from typing import Any
 from typing import IO
 from typing import Optional
 from typing import Type
+from typing import Union
 
 import fakeredis
 
@@ -35,7 +36,14 @@ class StorageSupplier(object):
         self.tempfile: Optional[IO[Any]] = None
         self.extra_args = kwargs
 
-    def __enter__(self) -> optuna.storages.BaseStorage:
+    def __enter__(
+        self,
+    ) -> Union[
+        optuna.storages.InMemoryStorage,
+        optuna.storages._CachedStorage,
+        optuna.storages.RDBStorage,
+        optuna.storages.RedisStorage,
+    ]:
 
         if self.storage_specifier == "inmemory":
             if len(self.extra_args) > 0:
