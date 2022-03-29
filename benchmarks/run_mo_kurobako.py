@@ -43,7 +43,7 @@ def run(args: argparse.Namespace) -> None:
             k = 2
         n_objective = 2
 
-        python_command = f"benchmarks/problems/wfg/wfg.py \
+        python_command = f"benchmarks/problems/wfg/problem.py \
             {n_wfg} {n_dim} {n_objective} {k}"
         cmd = (
             f"{kurobako_cmd} problem command python {python_command}"

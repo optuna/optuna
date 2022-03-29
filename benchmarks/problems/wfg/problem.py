@@ -6,8 +6,8 @@ import sys
 
 from kurobako import problem
 
-from func import shape_functions
-from func import transformation_functions
+import shape_functions
+import transformation_functions
 
 
 class BaseWFG(object):
