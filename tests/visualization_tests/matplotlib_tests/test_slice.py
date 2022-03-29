@@ -1,4 +1,4 @@
-import sys
+from io import BytesIO
 
 from matplotlib.collections import PathCollection
 import matplotlib.pyplot as plt
@@ -27,7 +27,7 @@ def test_plot_slice() -> None:
     study = prepare_study_with_trials(no_trials=True)
     figure = plot_slice(study)
     assert len(figure.findobj(PathCollection)) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     study = prepare_study_with_trials(with_c_d=False)
 
@@ -37,7 +37,7 @@ def test_plot_slice() -> None:
     assert len(figure[0].findobj(PathCollection)) == 1
     assert len(figure[1].findobj(PathCollection)) == 1
     assert figure[0].yaxis.label.get_text() == "Objective Value"
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Scatter plot data is available as PathCollection.
     data0 = figure[0].findobj(PathCollection)[0].get_offsets().data
@@ -52,7 +52,7 @@ def test_plot_slice() -> None:
 
     data0 = figure.findobj(PathCollection)[0].get_offsets().data
     assert np.allclose(data0, [[1.0, 0.0], [2.5, 1.0]])
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
@@ -62,7 +62,7 @@ def test_plot_slice() -> None:
 
     data0 = figure.findobj(PathCollection)[0].get_offsets().data
     assert np.allclose(data0, [[1.0, 2.0], [2.5, 1.0]])
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with a customized target name.
     figure = plot_slice(study, target_name="Target Name")
@@ -70,7 +70,7 @@ def test_plot_slice() -> None:
     assert len(figure[0].findobj(PathCollection)) == 1
     assert len(figure[1].findobj(PathCollection)) == 1
     assert figure[0].yaxis.label.get_text() == "Target Name"
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with wrong parameters.
     with pytest.raises(ValueError):

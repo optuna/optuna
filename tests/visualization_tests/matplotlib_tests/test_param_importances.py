@@ -1,5 +1,5 @@
+from io import BytesIO
 import math
-import sys
 
 from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
@@ -25,7 +25,7 @@ def test_plot_param_importances() -> None:
     study = create_study()
     figure = plot_param_importances(study)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     study = prepare_study_with_trials(with_c_d=True)
 
@@ -42,7 +42,7 @@ def test_plot_param_importances() -> None:
     assert set(labels) == set(("param_b", "param_d"))  # "param_a", "param_c" are conditional.
     assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert figure.xaxis.label.get_text() == "Importance for Objective Value"
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with an evaluator.
     plot_param_importances(study, evaluator=MeanDecreaseImpurityImportanceEvaluator())
@@ -56,7 +56,7 @@ def test_plot_param_importances() -> None:
     assert set(labels) == set(("param_b", "param_d"))  # "param_a", "param_c" are conditional.
     assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert figure.xaxis.label.get_text() == "Importance for Objective Value"
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with a trial to select parameter.
     figure = plot_param_importances(study, params=["param_b"])
@@ -70,7 +70,7 @@ def test_plot_param_importances() -> None:
     assert set(labels) == set(("param_b",))
     assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert figure.xaxis.label.get_text() == "Importance for Objective Value"
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with a customized target value.
     with pytest.warns(UserWarning):
@@ -85,13 +85,13 @@ def test_plot_param_importances() -> None:
     assert set(labels) == set(("param_b", "param_d"))  # "param_a", "param_c" are conditional.
     assert math.isclose(1.0, sum(i for i in plotted_data), abs_tol=1e-5)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with a customized target name.
     figure = plot_param_importances(study, target_name="Target Name")
     assert len(figure.get_lines()) == 0
     assert figure.xaxis.label.get_text() == "Importance for Target Name"
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
     # Test with wrong parameters.
     with pytest.raises(ValueError):
@@ -106,7 +106,7 @@ def test_plot_param_importances() -> None:
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_param_importances(study)
     assert len(figure.get_lines()) == 0
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
 
 def test_importance_scores_rendering() -> None:
@@ -119,7 +119,7 @@ def test_importance_scores_rendering() -> None:
     importances = [patch.get_width() for patch in ax.patches]
     labels = [obj for obj in text_objects if obj.get_position()[0] in importances]
     assert len(labels) == 2
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
 
 
 def test_switch_label_when_param_insignificant() -> None:
@@ -138,4 +138,4 @@ def test_switch_label_when_param_insignificant() -> None:
     # Test if label for `y` param has been switched to `<0.01`.
     labels = ax.figure.findobj(lambda obj: "<0.01" in str(obj))
     assert len(labels) == 1
-    plt.savefig(sys.stdout.buffer)
+    plt.savefig(BytesIO())
