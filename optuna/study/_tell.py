@@ -164,22 +164,23 @@ def _tell_with_warning(
         if last_step is not None:
             values = [frozen_trial.intermediate_values[last_step]]
 
-    values, values_conversion_failure_message = _check_and_convert_to_values(
-        len(study.directions), values, trial_number
-    )
+    if values is not None:
+        values, values_conversion_failure_message = _check_and_convert_to_values(
+            len(study.directions), values, trial_number
+        )
 
-    # When called from `Study.optimize` and `state` is pruned, the given `values` contains
-    # the intermediate value with the largest step so far. In this case, the value is
-    # allowed to be NaN and errors should not be raised.
-    if state is not TrialState.PRUNED and values_conversion_failure_message is not None:
-        state = TrialState.FAIL
-        if not suppress_warning:
-            warnings.warn(values_conversion_failure_message)
-        else:
-            warning_message = values_conversion_failure_message
+        # When called from `Study.optimize` and `state` is pruned, the given `values` contains
+        # the intermediate value with the largest step so far. In this case, the value is
+        # allowed to be NaN and errors should not be raised.
+        if state is not TrialState.PRUNED and values_conversion_failure_message is not None:
+            state = TrialState.FAIL
+            if not suppress_warning:
+                warnings.warn(values_conversion_failure_message)
+            else:
+                warning_message = values_conversion_failure_message
 
-    elif state is None and values_conversion_failure_message is None:
-        state = TrialState.COMPLETE
+        elif state is None and values_conversion_failure_message is None:
+            state = TrialState.COMPLETE
 
     assert state is not None
 
