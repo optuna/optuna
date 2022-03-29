@@ -198,10 +198,7 @@ def _tell_with_warning(
     except Exception:
         raise
     finally:
-        if values is not None:
-            study._storage.set_trial_values(trial_id, values)
-
-        study._storage.set_trial_state(trial_id, state)
+        study._storage.set_trial_state_values(trial_id, state, values)
 
     frozen_trial = copy.deepcopy(study._storage.get_trial(trial_id))
     if warning_message is not None:
