@@ -1,13 +1,13 @@
-import itertools
 import sys
+import itertools
 from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
 
-from matplotlib.collections import PathCollection
 import matplotlib.pyplot as plt
+from matplotlib.collections import PathCollection
 import numpy as np
 import pytest
 
@@ -113,6 +113,8 @@ def test_plot_pareto_front_2d(
         targets=targets,
     )
     assert len(figure.get_lines()) == 0
+    plt.savefig(sys.stdout.buffer)
+    
     if axis_order is None:
         assert figure.get_xlabel() == target_names[0]
         assert figure.get_ylabel() == target_names[1]
@@ -159,6 +161,7 @@ def test_plot_pareto_front_3d(
         axis_order=axis_order,
     )
     assert len(figure.get_lines()) == 0
+    plt.savefig(sys.stdout.buffer)
 
     # Test with three trials.
     study.enqueue_trial({"x": 1, "y": 1, "z": 1})
@@ -191,6 +194,7 @@ def test_plot_pareto_front_3d(
     assert exists_pareto_front
     if include_dominated_trials:
         assert exists_dominated_trials
+    plt.savefig(sys.stdout.buffer)
 
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
@@ -259,7 +263,7 @@ def test_plot_pareto_front_3d(
     assert exists_pareto_front
     if include_dominated_trials:
         assert exists_dominated_trials
-
+    plt.savefig(sys.stdout.buffer)
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
