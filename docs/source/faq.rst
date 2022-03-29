@@ -535,6 +535,8 @@ However, if you are in the environment where you can not install a client/server
 
 For more information about 3., see TutorialEasyParallelization_.
 
+.. _heartbeat_monitoring:
+
 Can I monitor trials and make them failed automatically when they are killed unexpectedly?
 ------------------------------------------------------------------------------------------
 
