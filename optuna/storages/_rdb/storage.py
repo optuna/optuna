@@ -152,6 +152,18 @@ class RDBStorage(BaseStorage):
         https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.create_engine.params.
         pool_pre_ping
 
+    .. note::
+        Mainly in a cluster environment, running trials are often killed unexpectedly.
+        If you want to detect a failure of trials, please use the heartbeat
+        mechanism. Set ``heartbeat_interval``, ``grace_period``, and ``failed_trial_callback``
+        appropriately according to your use case. For more details, please refer to the
+        :ref:`tutorial <heartbeat_monitoring>` and `Example page
+        <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`_.
+
+    .. seealso::
+        You can use :class:`~optuna.storages.RetryFailedTrialCallback` to automatically retry
+        failed trials detected by heartbeat.
+
     Raises:
         :exc:`ValueError`:
             If the given `heartbeat_interval` or `grace_period` is not a positive integer.
