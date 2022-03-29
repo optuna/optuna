@@ -1,13 +1,13 @@
-import sys
 import itertools
+import sys
 from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
 
-import matplotlib.pyplot as plt
 from matplotlib.collections import PathCollection
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -114,7 +114,7 @@ def test_plot_pareto_front_2d(
     )
     assert len(figure.get_lines()) == 0
     plt.savefig(sys.stdout.buffer)
-    
+
     if axis_order is None:
         assert figure.get_xlabel() == target_names[0]
         assert figure.get_ylabel() == target_names[1]
@@ -264,6 +264,7 @@ def test_plot_pareto_front_3d(
     if include_dominated_trials:
         assert exists_dominated_trials
     plt.savefig(sys.stdout.buffer)
+
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")
 @pytest.mark.parametrize("include_dominated_trials", [False, True])
