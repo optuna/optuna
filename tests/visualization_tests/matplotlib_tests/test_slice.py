@@ -1,4 +1,7 @@
+import sys
+
 from matplotlib.collections import PathCollection
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -24,15 +27,20 @@ def test_plot_slice() -> None:
     study = prepare_study_with_trials(no_trials=True)
     figure = plot_slice(study)
     assert len(figure.findobj(PathCollection)) == 0
+    plt.savefig(sys.stdout.buffer)
 
     study = prepare_study_with_trials(with_c_d=False)
 
     # Test with a trial.
     figure = plot_slice(study)
     assert len(figure) == 2
+    plt.savefig(sys.stdout.buffer)
     assert len(figure[0].findobj(PathCollection)) == 1
+    plt.savefig(sys.stdout.buffer)
     assert len(figure[1].findobj(PathCollection)) == 1
+    plt.savefig(sys.stdout.buffer)
     assert figure[0].yaxis.label.get_text() == "Objective Value"
+    plt.savefig(sys.stdout.buffer)
 
     # Scatter plot data is available as PathCollection.
     data0 = figure[0].findobj(PathCollection)[0].get_offsets().data
@@ -60,8 +68,11 @@ def test_plot_slice() -> None:
     # Test with a customized target name.
     figure = plot_slice(study, target_name="Target Name")
     assert len(figure) == 2
+    plt.savefig(sys.stdout.buffer)
     assert len(figure[0].findobj(PathCollection)) == 1
+    plt.savefig(sys.stdout.buffer)
     assert len(figure[1].findobj(PathCollection)) == 1
+    plt.savefig(sys.stdout.buffer)
     assert figure[0].yaxis.label.get_text() == "Target Name"
 
     # Test with wrong parameters.
@@ -77,7 +88,9 @@ def test_plot_slice() -> None:
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_slice(study)
     assert len(figure.get_lines()) == 0
+    plt.savefig(sys.stdout.buffer)
     assert len(figure.findobj(PathCollection)) == 0
+    plt.savefig(sys.stdout.buffer)
 
 
 def test_plot_slice_log_scale() -> None:
@@ -97,18 +110,23 @@ def test_plot_slice_log_scale() -> None:
     # Plot a parameter.
     figure = plot_slice(study, params=["y_log"])
     assert len(figure.findobj(PathCollection)) == 1
+    plt.savefig(sys.stdout.buffer)
     assert figure.xaxis.label.get_text() == "y_log"
     assert figure.xaxis.get_scale() == "log"
     figure = plot_slice(study, params=["x_linear"])
     assert len(figure.findobj(PathCollection)) == 1
+    plt.savefig(sys.stdout.buffer)
     assert figure.xaxis.label.get_text() == "x_linear"
     assert figure.xaxis.get_scale() == "linear"
 
     # Plot multiple parameters.
     figure = plot_slice(study)
     assert len(figure) == 2
+    plt.savefig(sys.stdout.buffer)
     assert len(figure[0].findobj(PathCollection)) == 1
+    plt.savefig(sys.stdout.buffer)
     assert len(figure[1].findobj(PathCollection)) == 1
+    plt.savefig(sys.stdout.buffer)
     assert figure[0].xaxis.label.get_text() == "x_linear"
     assert figure[1].xaxis.label.get_text() == "y_log"
     assert figure[0].xaxis.get_scale() == "linear"
