@@ -21,7 +21,6 @@ def check_trial_state(study: Study, state: TrialState) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_catch_exception(storage_mode: str) -> None:
-
     def func_value_error(_: Trial) -> float:
         raise ValueError
 
@@ -33,7 +32,6 @@ def test_optimize_catch_exception(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_exception(storage_mode: str) -> None:
-
     def func_value_error(_: Trial) -> float:
         raise ValueError
 
@@ -45,7 +43,6 @@ def test_optimize_exception(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_none(storage_mode: str) -> None:
-
     def func_none(_: Trial) -> float:
         return None  # type: ignore
 
@@ -57,7 +54,6 @@ def test_optimize_none(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_nan(storage_mode: str) -> None:
-
     def func_nan(_: Trial) -> float:
         return float("nan")
 
@@ -69,7 +65,6 @@ def test_optimize_nan(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_nonnumerical(storage_mode: str) -> None:
-
     def func_nonnumerical(_: Trial) -> float:
         return "value"  # type: ignore
 
@@ -81,7 +76,6 @@ def test_optimize_nonnumerical(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_optimize_invoke_tell_with_suppressing_warning(storage_mode: str) -> None:
-
     def func_numerical(trial: Trial) -> float:
         return trial.suggest_float("v", 0, 10)
 
