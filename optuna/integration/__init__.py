@@ -9,6 +9,7 @@ _import_structure = {
     "allennlp": ["AllenNLPExecutor", "AllenNLPPruningCallback"],
     "botorch": ["BoTorchSampler"],
     "catalyst": ["CatalystPruningCallback"],
+    "catboost": ["CatBoostPruningCallback"],
     "chainer": ["ChainerPruningExtension"],
     "chainermn": ["ChainerMNStudy"],
     "cma": ["CmaEsSampler", "PyCmaSampler"],
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
     from optuna.integration.allennlp import AllenNLPPruningCallback  # NOQA
     from optuna.integration.botorch import BoTorchSampler  # NOQA
     from optuna.integration.catalyst import CatalystPruningCallback  # NOQA
+    from optuna.integration.catboost import CatBoostPruningCallback  # NOQA
     from optuna.integration.chainer import ChainerPruningExtension  # NOQA
     from optuna.integration.chainermn import ChainerMNStudy  # NOQA
     from optuna.integration.cma import CmaEsSampler  # NOQA
