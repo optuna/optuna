@@ -205,7 +205,7 @@ def _get_parallel_coordinate_plot(
     xs = [range(len(sorted_params) + 1) for _ in range(len(dims_obj_base))]
     segments = [np.column_stack([x, y]) for x, y in zip(xs, dims_obj_base)]
     lc = LineCollection(segments, cmap=cmap)
-    lc.set_array(np.asarray([target(t) for t in trials]))
+    lc.set_array(obj_org)
     axcb = fig.colorbar(lc, pad=0.1)
     axcb.set_label(target_name)
     plt.xticks(range(len(sorted_params) + 1), var_names, rotation=330)
