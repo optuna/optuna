@@ -3,6 +3,7 @@ from typing import Callable
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Union
 import warnings
 
@@ -99,3 +100,30 @@ def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
     if _is_numerical(trials, p_name):
         return values
     return list(map(str, values))
+
+
+def _get_skipped_trial_numbers(
+    trials: List[FrozenTrial], used_param_names: Sequence[str]
+) -> Set[int]:
+    """Utility function for ``plot_parallel_coordinate``.
+
+    If trial's parameters does not contain a parameter in ``used_param_names``,
+    ``plot_parallel_coordinate`` methods do not use such trails.
+
+    Args:
+        trials:
+            List of ``FrozenTrials``.
+        used_param_names:
+            The parameter names used in ``plot_parallel_coordinate``.
+
+    Returns:
+        A list of invalid trial numbers.
+    """
+
+    skipped_trial_numbers = set()
+    for trial in trials:
+        for used_param in used_param_names:
+            if used_param not in trial.params.keys():
+                skipped_trial_numbers.add(trial.number)
+                break
+    return skipped_trial_numbers
