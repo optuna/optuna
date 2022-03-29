@@ -178,17 +178,6 @@ def _tell_with_warning(
             else:
                 warning_message = values_conversion_failure_message
 
-    else:
-        # When called from `Study.optimize` and `state` is pruned, the given `values` contains
-        # the intermediate value with the largest step so far. In this case, the value is
-        # allowed to be NaN and errors should not be raised.
-        if state is not TrialState.PRUNED and values_conversion_failure_message is not None:
-            state = TrialState.FAIL
-            if not suppress_warning:
-                warnings.warn(values_conversion_failure_message)
-            else:
-                warning_message = values_conversion_failure_message
-
     assert state is not None
 
     try:
