@@ -224,12 +224,16 @@ def test_delete_study_command() -> None:
         # Create study.
         command = ["optuna", "create-study", "--storage", storage_url, "--study-name", study_name]
         subprocess.check_call(command)
-        assert study_name in {s.study_name: s for s in storage.get_all_study_summaries()}
+        assert study_name in {
+            s.study_name: s for s in storage.get_all_study_summaries(include_best_trial=True)
+        }
 
         # Delete study.
         command = ["optuna", "delete-study", "--storage", storage_url, "--study-name", study_name]
         subprocess.check_call(command)
-        assert study_name not in {s.study_name: s for s in storage.get_all_study_summaries()}
+        assert study_name not in {
+            s.study_name: s for s in storage.get_all_study_summaries(include_best_trial=True)
+        }
 
 
 @pytest.mark.skip_coverage
@@ -279,11 +283,11 @@ def test_studies_command(output_format: Optional[str]) -> None:
         storage_url = str(storage.engine.url)
 
         # First study.
-        study_1 = optuna.create_study(storage)
+        study_1 = optuna.create_study(storage=storage)
 
         # Second study.
         study_2 = optuna.create_study(
-            storage, study_name="study_2", directions=["minimize", "maximize"]
+            storage=storage, study_name="study_2", directions=["minimize", "maximize"]
         )
         study_2.optimize(objective_func_multi_objective, n_trials=10)
 
@@ -332,11 +336,11 @@ def test_studies_command_flatten(output_format: Optional[str]) -> None:
         storage_url = str(storage.engine.url)
 
         # First study.
-        study_1 = optuna.create_study(storage)
+        study_1 = optuna.create_study(storage=storage)
 
         # Second study.
         study_2 = optuna.create_study(
-            storage, study_name="study_2", directions=["minimize", "maximize"]
+            storage=storage, study_name="study_2", directions=["minimize", "maximize"]
         )
         study_2.optimize(objective_func_multi_objective, n_trials=10)
 
@@ -403,7 +407,7 @@ def test_trials_command(objective: Callable[[Trial], float], output_format: Opti
         study_name = "test_study"
         n_trials = 10
 
-        study = optuna.create_study(storage, study_name=study_name)
+        study = optuna.create_study(storage=storage, study_name=study_name)
         study.optimize(objective, n_trials=n_trials)
         attrs = (
             "number",
@@ -486,7 +490,7 @@ def test_trials_command_flatten(
         study_name = "test_study"
         n_trials = 10
 
-        study = optuna.create_study(storage, study_name=study_name)
+        study = optuna.create_study(storage=storage, study_name=study_name)
         study.optimize(objective, n_trials=n_trials)
         attrs = (
             "number",
@@ -565,7 +569,7 @@ def test_best_trial_command(
         study_name = "test_study"
         n_trials = 10
 
-        study = optuna.create_study(storage, study_name=study_name)
+        study = optuna.create_study(storage=storage, study_name=study_name)
         study.optimize(objective, n_trials=n_trials)
         attrs = (
             "number",
@@ -649,7 +653,7 @@ def test_best_trial_command_flatten(
         study_name = "test_study"
         n_trials = 10
 
-        study = optuna.create_study(storage, study_name=study_name)
+        study = optuna.create_study(storage=storage, study_name=study_name)
         study.optimize(objective, n_trials=n_trials)
         attrs = (
             "number",
@@ -726,7 +730,7 @@ def test_best_trials_command(output_format: Optional[str]) -> None:
         n_trials = 10
 
         study = optuna.create_study(
-            storage, study_name=study_name, directions=("minimize", "minimize")
+            storage=storage, study_name=study_name, directions=("minimize", "minimize")
         )
         study.optimize(objective_func_multi_objective, n_trials=n_trials)
         attrs = (
@@ -811,7 +815,7 @@ def test_best_trials_command_flatten(output_format: Optional[str]) -> None:
         n_trials = 10
 
         study = optuna.create_study(
-            storage, study_name=study_name, directions=("minimize", "minimize")
+            storage=storage, study_name=study_name, directions=("minimize", "minimize")
         )
         study.optimize(objective_func_multi_objective, n_trials=n_trials)
         attrs = (

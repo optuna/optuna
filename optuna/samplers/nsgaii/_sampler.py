@@ -108,7 +108,9 @@ class NSGAIISampler(BaseSampler):
             If ``crossover`` is not instance of :class:`~optuna.samplers.nsgaii.BaseCrossover`.
             Or, if ``population_size <= n_parents``.
             The `n_parents` is determined by each crossover.
-            For `undx` and `spx`, ``n_parents=3``, and for the other algorithms, ``n_parents=2``.
+            For :class:`~optuna.samplers.nsgaii.UNDXCrossover` and
+            :class:`~optuna.samplers.nsgaii.SPXCrossover`, ``n_parents=3``, and for the other
+            algorithms, ``n_parents=2``.
     """
 
     def __init__(

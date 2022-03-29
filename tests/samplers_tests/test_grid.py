@@ -39,7 +39,7 @@ def test_study_optimize_with_single_search_space() -> None:
         "e": [0.1],
         "a": list(range(0, 100, 20)),
     }
-    study = optuna.create_study(sampler=samplers.GridSampler(search_space))
+    study = optuna.create_study(sampler=samplers.GridSampler(search_space))  # type: ignore
     study.optimize(objective)
 
     def sorted_values(
@@ -48,13 +48,13 @@ def test_study_optimize_with_single_search_space() -> None:
 
         return OrderedDict(sorted(d.items())).values()
 
-    all_grids = itertools.product(*sorted_values(search_space))
+    all_grids = itertools.product(*sorted_values(search_space))  # type: ignore
     all_suggested_values = [tuple([p for p in sorted_values(t.params)]) for t in study.trials]
     assert set(all_grids) == set(all_suggested_values)
 
     # Test a non-existing parameter name in the grid.
     search_space = {"a": list(range(0, 100, 20))}
-    study = optuna.create_study(sampler=samplers.GridSampler(search_space))
+    study = optuna.create_study(sampler=samplers.GridSampler(search_space))  # type: ignore
     with pytest.raises(ValueError):
         study.optimize(objective)
 
@@ -66,7 +66,7 @@ def test_study_optimize_with_single_search_space() -> None:
         "d": [0],
         "e": [0.1],
     }
-    study = optuna.create_study(sampler=samplers.GridSampler(search_space))
+    study = optuna.create_study(sampler=samplers.GridSampler(search_space))  # type: ignore
     with pytest.warns(UserWarning):
         study.optimize(objective)
 

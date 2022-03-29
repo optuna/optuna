@@ -1,6 +1,7 @@
 import math
 from typing import Any
 from typing import Callable
+from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -588,7 +589,7 @@ def _get_observation_pairs(
         else:
             signs.append(-1)
 
-    states: Tuple[TrialState, ...]
+    states: Container[TrialState]
     if constant_liar:
         states = (TrialState.COMPLETE, TrialState.PRUNED, TrialState.RUNNING)
     else:
@@ -632,9 +633,8 @@ def _get_observation_pairs(
 
         # We extract param_value from the trial.
         for param_name in param_names:
-            raw_param_value = trial.params.get(param_name, None)
             param_value: Optional[float]
-            if raw_param_value is not None:
+            if param_name in trial.params:
                 distribution = trial.distributions[param_name]
                 param_value = distribution.to_internal_repr(trial.params[param_name])
             else:
@@ -764,7 +764,7 @@ def _calculate_weights_below_for_multi_objective(
     indices: np.ndarray,
 ) -> np.ndarray:
     # Multi-objective TPE only sees the first parameter to determine the weights.
-    # In the call lf `sample_relative`, this logic makes sense because we only have the
+    # In the call of `sample_relative`, this logic makes sense because we only have the
     # intersection search space or group decomposed search space. This means one parameter
     # misses the one trial, then the other parameter must miss the trial, in this call of
     # `sample_relative`.
@@ -776,6 +776,7 @@ def _calculate_weights_below_for_multi_objective(
 
     # Calculate weights based on hypervolume contributions.
     n_below = len(lvals)
+    weights_below: np.ndarray
     if n_below == 0:
         weights_below = np.asarray([])
     elif n_below == 1:
