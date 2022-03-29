@@ -155,7 +155,7 @@ class RDBStorage(BaseStorage):
     .. note::
         Mainly in a cluster environment, running trials are often killed unexpectedly.
         If you want to detect a failure of trials, please use the heartbeat
-        mechanism. Set ``heartbeat_interval``, ``grace_period``, and `failed_trial_callback``
+        mechanism. Set ``heartbeat_interval``, ``grace_period``, and ``failed_trial_callback``
         appropriately according to your use case. For more details, please refer to the
         :ref:`tutorial <heartbeat_monitoring>` and `Example page
         <https://github.com/optuna/optuna-examples/blob/main/pytorch/pytorch_checkpoint.py>`_.
