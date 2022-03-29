@@ -1,13 +1,12 @@
-import sys
-
 import itertools
+import sys
 from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Tuple
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import pytest
 
 from optuna.distributions import CategoricalDistribution
