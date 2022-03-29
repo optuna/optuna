@@ -110,7 +110,7 @@ def _filter_nonfinite(trials: List[FrozenTrial]) -> List[FrozenTrial]:
     filtered_trials: List[FrozenTrial] = []
     for trial in trials:
         # Not a Number, positive infinity and negative infinity are considered to be non-finite.
-        if trial.value is not None and not np.isfinite(trial.value):
+        if trial.values is not None and not all(np.isfinite(trial.values)):
             _logger.info(
                 f"Trial {trial.number} is omitted in visualization ",
                 "because its objective value is inf or nan.",

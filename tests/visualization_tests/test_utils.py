@@ -88,3 +88,36 @@ def test_filter_inf_trials(value: float, expected: int) -> None:
     trials = _filter_nonfinite(study.get_trials(states=(TrialState.COMPLETE,)))
     assert len(trials) == expected
     assert all([t.number == num for t, num in zip(trials, range(expected))])
+
+
+@pytest.mark.parametrize(
+    "value, expected", [(float("inf"), 1), (-float("inf"), 1), (float("nan"), 1), (0.0, 3)]
+)
+def test_filter_inf_trials_multiobjective(value: float, expected: int) -> None:
+
+    study = create_study(directions=["minimize", "maximize"])
+    study.add_trial(
+        create_trial(
+            values=[0.0, 1.0],
+            params={"x": 1.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[0.0, value],
+            params={"x": 0.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[value, value],
+            params={"x": 0.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+
+    trials = _filter_nonfinite(study.get_trials(states=(TrialState.COMPLETE,)))
+    assert len(trials) == expected
+    assert all([t.number == num for t, num in zip(trials, range(expected))])
