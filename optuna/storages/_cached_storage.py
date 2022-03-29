@@ -2,6 +2,7 @@ import copy
 import threading
 from typing import Any
 from typing import Callable
+from typing import Container
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -156,9 +157,9 @@ class _CachedStorage(BaseStorage):
 
         return self._backend.get_study_system_attrs(study_id)
 
-    def get_all_study_summaries(self) -> List[StudySummary]:
+    def get_all_study_summaries(self, include_best_trial: bool) -> List[StudySummary]:
 
-        return self._backend.get_all_study_summaries()
+        return self._backend.get_all_study_summaries(include_best_trial=include_best_trial)
 
     def create_new_trial(self, study_id: int, template_trial: Optional[FrozenTrial] = None) -> int:
 
@@ -179,38 +180,6 @@ class _CachedStorage(BaseStorage):
             if frozen_trial.state != TrialState.WAITING:
                 study.owned_or_finished_trial_ids.add(frozen_trial._trial_id)
         return trial_id
-
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-
-        with self._lock:
-            cached_trial = self._get_cached_trial(trial_id)
-            if cached_trial is not None:
-                # When a waiting trial is updated to running, its `datetime_start` must be
-                # updated. However, a waiting trials is never cached so we do not have to account
-                # for this case.
-                assert cached_trial.state != TrialState.WAITING
-
-                self._check_trial_is_updatable(cached_trial)
-                ret = self._backend.set_trial_state(trial_id, state)
-
-                cached_trial.state = state
-                if cached_trial.state.is_finished():
-                    backend_trial = self._backend.get_trial(trial_id)
-                    cached_trial.datetime_complete = backend_trial.datetime_complete
-                return ret
-
-        ret = self._backend.set_trial_state(trial_id, state)
-        if (
-            ret
-            and state == TrialState.RUNNING
-            and trial_id in self._trial_id_to_study_id_and_number
-        ):
-            # Cache when the local thread pop WAITING trial and start evaluation.
-            with self._lock:
-                study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
-                self._add_trials_to_cache(study_id, [self._backend.get_trial(trial_id)])
-                self._studies[study_id].owned_or_finished_trial_ids.add(trial_id)
-        return ret
 
     def set_trial_param(
         self,
@@ -264,14 +233,41 @@ class _CachedStorage(BaseStorage):
 
         return self._backend.get_best_trial(study_id)
 
-    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
+    def set_trial_state_values(
+        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+    ) -> bool:
 
         with self._lock:
             cached_trial = self._get_cached_trial(trial_id)
             if cached_trial is not None:
+                # When a waiting trial is updated to running, its `datetime_start` must be
+                # updated. However, a waiting trials is never cached so we do not have to account
+                # for this case.
+                assert cached_trial.state != TrialState.WAITING
+
                 self._check_trial_is_updatable(cached_trial)
-                cached_trial.values = values
-        self._backend.set_trial_values(trial_id, values=values)
+                ret = self._backend.set_trial_state_values(trial_id, state=state, values=values)
+
+                if values is not None:
+                    cached_trial.values = values
+                cached_trial.state = state
+                if cached_trial.state.is_finished():
+                    backend_trial = self._backend.get_trial(trial_id)
+                    cached_trial.datetime_complete = backend_trial.datetime_complete
+                return ret
+
+        ret = self._backend.set_trial_state_values(trial_id, state=state, values=values)
+        if (
+            ret
+            and state == TrialState.RUNNING
+            and trial_id in self._trial_id_to_study_id_and_number
+        ):
+            # Cache when the local thread pop WAITING trial and start evaluation.
+            with self._lock:
+                study_id, _ = self._trial_id_to_study_id_and_number[trial_id]
+                self._add_trials_to_cache(study_id, [self._backend.get_trial(trial_id)])
+                self._studies[study_id].owned_or_finished_trial_ids.add(trial_id)
+        return ret
 
     def set_trial_intermediate_value(
         self, trial_id: int, step: int, intermediate_value: float
@@ -328,7 +324,7 @@ class _CachedStorage(BaseStorage):
         self,
         study_id: int,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
         if study_id not in self._studies:
             self.read_trials_from_remote_storage(study_id)
@@ -385,7 +381,7 @@ class _CachedStorage(BaseStorage):
         confirmed_stale_trial_ids = []
 
         for trial_id in stale_trial_ids:
-            if self.set_trial_state(trial_id, TrialState.FAIL):
+            if self.set_trial_state_values(trial_id, state=TrialState.FAIL):
                 confirmed_stale_trial_ids.append(trial_id)
 
         return confirmed_stale_trial_ids
