@@ -71,7 +71,7 @@ def test_plot_slice() -> None:
     assert len(figure[1].findobj(PathCollection)) == 1
     assert figure[0].yaxis.label.get_text() == "Target Name"
     plt.savefig(sys.stdout.buffer)
-    
+
     # Test with wrong parameters.
     with pytest.raises(ValueError):
         plot_slice(study, params=["optuna"])

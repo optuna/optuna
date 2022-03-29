@@ -198,6 +198,7 @@ def test_plot_contour_log_scale_and_str_category() -> None:
     subplots = [plot for plot in figure.flatten() if plot.has_data()]
     expected = {"param_a": [1e-6, 1e-5], "param_b": [0.0, 1.0], "param_c": [0.0, 1.0]}
     ranges = itertools.permutations(expected.keys(), 2)
+    plt.savefig(sys.stdout.buffer)
 
     for plot, (yrange, xrange) in zip(subplots, ranges):
         # Take 5% axis padding into account.
@@ -232,6 +233,7 @@ def test_plot_contour_mixture_category_types() -> None:
     figure = plot_contour(study)
     assert figure.get_xlim() == (-0.05, 1.05)
     assert figure.get_ylim() == (100.95, 102.05)
+    plt.savefig(sys.stdout.buffer)
 
 
 @pytest.mark.parametrize(
