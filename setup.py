@@ -124,7 +124,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             # after solving https://github.com/optuna/optuna/issues/3366
             "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
+            "fastai ; python_version>'3.6'",
+            "click<8.1.0",  # See https://github.com/tiangolo/typer/pull/375.
         ],
         "tests": [
             "fakeredis",
@@ -169,7 +170,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             # after solving https://github.com/optuna/optuna/issues/3366
             "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
+            "fastai ; python_version>'3.6'",
+            "click<8.1.0",  # See https://github.com/tiangolo/typer/pull/375.
         ],
         "benchmark": [
             "asv>=0.5.0",
