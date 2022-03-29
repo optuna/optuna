@@ -1,6 +1,8 @@
+import sys
 from typing import Sequence
 
 import numpy as np
+import matplotlib.pyplot as plt
 import pytest
 
 from optuna.study import create_study
@@ -27,13 +29,16 @@ def test_plot_optimization_history(direction: str) -> None:
     # Test with no studies.
     figure = plot_edf([])
     assert len(figure.get_lines()) == 0
+    plt.savefig(sys.stdout.buffer)
 
     # Test with no trials.
     figure = plot_edf(create_study(direction=direction))
     assert len(figure.get_lines()) == 0
+    plt.savefig(sys.stdout.buffer)
 
     figure = plot_edf([create_study(direction=direction), create_study(direction=direction)])
     assert len(figure.get_lines()) == 0
+    plt.savefig(sys.stdout.buffer)
 
     # Test with a study.
     study0 = create_study(direction=direction)
@@ -43,6 +48,7 @@ def test_plot_optimization_history(direction: str) -> None:
     _validate_edf_values(lines[0].get_ydata())
     assert len(lines) == 1
     assert figure.xaxis.label.get_text() == "Objective Value"
+    plt.savefig(sys.stdout.buffer)
 
     # Test with two studies.
     study1 = create_study(direction=direction)
@@ -52,6 +58,7 @@ def test_plot_optimization_history(direction: str) -> None:
     for line in lines:
         _validate_edf_values(line.get_ydata())
     assert len(lines) == 2
+    plt.savefig(sys.stdout.buffer)
 
     figure = plot_edf((study0, study1))
     lines = figure.get_lines()
@@ -67,6 +74,7 @@ def test_plot_optimization_history(direction: str) -> None:
     lines = figure.get_lines()
     _validate_edf_values(lines[0].get_ydata())
     assert len(lines) == 1
+    plt.savefig(sys.stdout.buffer)
 
     # Test with a customized target name.
     study0 = create_study(direction=direction)
@@ -76,3 +84,4 @@ def test_plot_optimization_history(direction: str) -> None:
     _validate_edf_values(lines[0].get_ydata())
     assert len(figure.get_lines()) == 1
     assert figure.xaxis.label.get_text() == "Target Name"
+    plt.savefig(sys.stdout.buffer)
