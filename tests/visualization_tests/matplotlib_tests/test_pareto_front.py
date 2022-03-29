@@ -1,4 +1,5 @@
 import itertools
+import sys
 from typing import Callable
 from typing import List
 from typing import Optional
@@ -6,6 +7,7 @@ from typing import Sequence
 from typing import Union
 
 from matplotlib.collections import PathCollection
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -42,6 +44,7 @@ def test_plot_pareto_front_2d(
     )
 
     assert len(figure.get_lines()) == 0
+    plt.savefig(sys.stdout.buffer)
 
     # Test with three trials.
     study.enqueue_trial({"x": 1, "y": 1})
@@ -56,6 +59,7 @@ def test_plot_pareto_front_2d(
         targets=targets,
     )
     assert len(figure.get_lines()) == 0
+    plt.savefig(sys.stdout.buffer)
 
     if axis_order is not None:
         pareto_front_points = np.array([[1.0, 0.0], [0.0, 1.0]])[:, axis_order]
