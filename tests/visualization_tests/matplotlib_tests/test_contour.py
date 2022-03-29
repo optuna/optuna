@@ -1,3 +1,5 @@
+import sys
+
 import itertools
 from typing import Iterable
 from typing import List
@@ -5,6 +7,7 @@ from typing import Optional
 from typing import Tuple
 
 import numpy as np
+import matplotlib.pyplot as plt
 import pytest
 
 from optuna.distributions import CategoricalDistribution
@@ -85,6 +88,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
     study_without_trials = prepare_study_with_trials(no_trials=True)
     figure = plot_contour(study_without_trials, params=params)
     assert len(figure.get_lines()) == 0
+    plt.savefig(sys.stdout.buffer)
 
     # Test whether trials with `ValueError`s are ignored.
 
@@ -96,6 +100,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
     study.optimize(fail_objective, n_trials=1, catch=(ValueError,))
     figure = plot_contour(study, params=params)
     assert len(figure.get_lines()) == 0
+    plt.savefig(sys.stdout.buffer)
 
     # Test with some trials.
     study = prepare_study_with_trials()
@@ -108,8 +113,10 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
     if params is not None and len(params) < 3:
         if len(params) <= 1:
             assert len(figure.get_lines()) == 0
+            plt.savefig(sys.stdout.buffer)
         elif len(params) == 2:
             assert len(figure.get_lines()) == 0
+            plt.savefig(sys.stdout.buffer)
     elif params is None:
         assert figure.shape == (len(study.best_params), len(study.best_params))
         for i in range(len(study.best_params)):
@@ -134,6 +141,7 @@ def test_plot_contour_customized_target(params: List[str]) -> None:
         figure = plot_contour(study, params=params, target=lambda t: t.params["param_d"])
     if len(params) == 2:
         assert len(figure.get_lines()) == 0
+        plt.savefig(sys.stdout.buffer)
     else:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
@@ -153,6 +161,7 @@ def test_plot_contour_customized_target_name(params: List[str]) -> None:
     figure = plot_contour(study, params=params, target_name="Target Name")
     if len(params) == 2:
         assert len(figure.get_lines()) == 0
+        plt.savefig(sys.stdout.buffer)
     else:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
@@ -238,6 +247,7 @@ def test_generate_contour_plot_for_few_observations(params: List[str]) -> None:
     study = prepare_study_with_trials(less_than_two=True)
     figure = plot_contour(study, params)
     assert not figure.has_data()
+    plt.savefig(sys.stdout.buffer)
 
 
 def all_equal(iterable: Iterable) -> bool:
