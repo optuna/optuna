@@ -370,7 +370,7 @@ class _Studies(_BaseCommand):
     def take_action(self, parsed_args: Namespace) -> None:
 
         storage_url = _check_storage_url(self.app_args.storage)
-        summaries = optuna.get_all_study_summaries(storage=storage_url)
+        summaries = optuna.get_all_study_summaries(storage_url, include_best_trial=False)
 
         records = []
         for s in summaries:

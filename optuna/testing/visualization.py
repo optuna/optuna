@@ -10,6 +10,7 @@ def prepare_study_with_trials(
     more_than_three: bool = False,
     with_c_d: bool = True,
     n_objectives: int = 1,
+    direction: str = "minimize",
 ) -> Study:
 
     """Prepare a study for tests.
@@ -26,13 +27,14 @@ def prepare_study_with_trials(
             'param_b', 'param_c', and 'param_d'. Otherwise, there are only two
             hyperparameters ('param_a' and 'param_b').
         n_objectives: Number of objective values.
+        direction: Study's optimization direction.
 
     Returns:
         :class:`~optuna.study.Study`
 
     """
 
-    study = create_study(directions=["minimize"] * n_objectives)
+    study = create_study(directions=[direction] * n_objectives)
     if no_trials:
         return study
     study.add_trial(

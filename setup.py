@@ -109,7 +109,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow ; python_version>'3.6'",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=1.5.0",
+            "pytorch-lightning>=1.5.0,<1.6.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.10.0 ; sys_platform=='darwin'",
@@ -124,7 +124,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             # after solving https://github.com/optuna/optuna/issues/3366
             "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
+            "fastai ; python_version>'3.6'",
+            "click<8.1.0",  # See https://github.com/tiangolo/typer/pull/375.
         ],
         "tests": [
             "fakeredis",
@@ -139,6 +140,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
+            "catboost>=0.26",
             "chainer>=5.0.0",
             "cma",
             "lightgbm",
@@ -153,7 +155,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             "tensorflow ; python_version>'3.6'",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=1.5.0",
+            "pytorch-lightning>=1.5.0,<1.6.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.10.0 ; sys_platform=='darwin'",
@@ -168,10 +170,11 @@ def get_extras_require() -> Dict[str, List[str]]:
             # after solving https://github.com/optuna/optuna/issues/3366
             "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
+            "fastai ; python_version>'3.6'",
+            "click<8.1.0",  # See https://github.com/tiangolo/typer/pull/375.
         ],
         "benchmark": [
-            "asv",
+            "asv>=0.5.0",
             "virtualenv",
             "botorch",
         ],

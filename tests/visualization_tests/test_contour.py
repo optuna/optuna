@@ -17,6 +17,7 @@ from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_contour
 from optuna.visualization._contour import _generate_contour_subplot
+from optuna.visualization._utils import COLOR_SCALE
 
 
 RANGE_TYPE = Union[Tuple[str, str], Tuple[float, float]]
@@ -282,3 +283,21 @@ def test_plot_contour_mixture_category_types() -> None:
         assert figure.layout["yaxis"]["range"] == (100.95, 102.05)
     assert figure.layout["xaxis"]["type"] == "category"
     assert figure.layout["yaxis"]["type"] != "category"
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_color_map(direction: str) -> None:
+    study = prepare_study_with_trials(with_c_d=False, direction=direction)
+
+    # `target` is `None`.
+    contour = plot_contour(study).data[0]
+    assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
+    if direction == "minimize":
+        assert contour["reversescale"]
+    else:
+        assert not contour["reversescale"]
+
+    # When `target` is not `None`, `reversescale` is always `True`.
+    contour = plot_contour(study, target=lambda t: t.number).data[0]
+    assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
+    assert contour["reversescale"]

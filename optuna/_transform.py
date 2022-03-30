@@ -266,9 +266,8 @@ def _untransform_numerical_param(
                 param = min(param, numpy.nextafter(d.high, d.high - 1))
         elif d.step is not None:
             param = float(
-                min(
-                    max(numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low),
-                    d.high,
+                numpy.clip(
+                    numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high
                 )
             )
         else:
@@ -279,11 +278,15 @@ def _untransform_numerical_param(
     elif isinstance(d, IntDistribution):
         if d.log:
             if transform_log:
-                param = int(min(max(numpy.round(math.exp(trans_param)), d.low), d.high))
+                param = int(numpy.clip(numpy.round(math.exp(trans_param)), d.low, d.high))
             else:
                 param = int(trans_param)
         else:
-            param = int(numpy.round((trans_param - d.low) / d.step) * d.step + d.low)
+            param = int(
+                numpy.clip(
+                    numpy.round((trans_param - d.low) / d.step) * d.step + d.low, d.low, d.high
+                )
+            )
     else:
         assert False, "Should not reach. Unexpected distribution."
 
