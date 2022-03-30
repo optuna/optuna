@@ -3,7 +3,6 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 
-import optuna
 from optuna._experimental import experimental
 from optuna.study import Study
 from optuna.trial import FrozenTrial
@@ -15,8 +14,6 @@ from optuna.visualization.matplotlib._matplotlib_imports import _imports
 if _imports.is_successful():
     from optuna.visualization.matplotlib._matplotlib_imports import Axes
     from optuna.visualization.matplotlib._matplotlib_imports import plt
-
-_logger = optuna.logging.get_logger(__name__)
 
 
 @experimental("2.8.0")
