@@ -264,10 +264,10 @@ def _get_pareto_front_info(
             return len(trials_with_values[0][1])
         return None
 
-    n_targets = (
-        _infer_n_targets(best_trials_with_values)
-        or _infer_n_targets(non_best_trials_with_values)
-        or _infer_n_targets(infeasible_trials_with_values)
+    # Check for `non_best_trials_with_values` can be skipped, because if `best_trials_with_values`
+    # is empty, then `non_best_trials_with_values` will also be empty.
+    n_targets = _infer_n_targets(best_trials_with_values) or _infer_n_targets(
+        infeasible_trials_with_values
     )
     if n_targets is None:
         if target_names is not None:
