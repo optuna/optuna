@@ -438,47 +438,40 @@ def test_categorical_distribution_different_sequence_types() -> None:
 
 def test_convert_old_distribution_to_new_distribution() -> None:
     ud = distributions.UniformDistribution(low=0, high=10)
-    assert (
-        distributions._convert_old_distribution_to_new_distribution(ud)
-        == distributions.FloatDistribution(low=0, high=10, log=False, step=None)
-    )
+    assert distributions._convert_old_distribution_to_new_distribution(
+        ud
+    ) == distributions.FloatDistribution(low=0, high=10, log=False, step=None)
 
     dud = distributions.DiscreteUniformDistribution(low=0, high=10, q=2)
-    assert (
-        distributions._convert_old_distribution_to_new_distribution(dud)
-        == distributions.FloatDistribution(low=0, high=10, log=False, step=2)
-    )
+    assert distributions._convert_old_distribution_to_new_distribution(
+        dud
+    ) == distributions.FloatDistribution(low=0, high=10, log=False, step=2)
 
     lud = distributions.LogUniformDistribution(low=1, high=10)
-    assert (
-        distributions._convert_old_distribution_to_new_distribution(lud)
-        == distributions.FloatDistribution(low=1, high=10, log=True, step=None)
-    )
+    assert distributions._convert_old_distribution_to_new_distribution(
+        lud
+    ) == distributions.FloatDistribution(low=1, high=10, log=True, step=None)
 
     id = distributions.IntUniformDistribution(low=0, high=10)
-    assert (
-        distributions._convert_old_distribution_to_new_distribution(id)
-        == distributions.IntDistribution(low=0, high=10, log=False, step=1)
-    )
+    assert distributions._convert_old_distribution_to_new_distribution(
+        id
+    ) == distributions.IntDistribution(low=0, high=10, log=False, step=1)
 
     idd = distributions.IntUniformDistribution(low=0, high=10, step=2)
-    assert (
-        distributions._convert_old_distribution_to_new_distribution(idd)
-        == distributions.IntDistribution(low=0, high=10, log=False, step=2)
-    )
+    assert distributions._convert_old_distribution_to_new_distribution(
+        idd
+    ) == distributions.IntDistribution(low=0, high=10, log=False, step=2)
 
     ild = distributions.IntLogUniformDistribution(low=1, high=10)
-    assert (
-        distributions._convert_old_distribution_to_new_distribution(ild)
-        == distributions.IntDistribution(low=1, high=10, log=True, step=1)
-    )
+    assert distributions._convert_old_distribution_to_new_distribution(
+        ild
+    ) == distributions.IntDistribution(low=1, high=10, log=True, step=1)
 
     # No conversion happens for CategoricalDistribution.
     cd = distributions.CategoricalDistribution(choices=["a", "b", "c"])
-    assert (
-        distributions._convert_old_distribution_to_new_distribution(cd)
-        == distributions.CategoricalDistribution(choices=["a", "b", "c"])
-    )
+    assert distributions._convert_old_distribution_to_new_distribution(
+        cd
+    ) == distributions.CategoricalDistribution(choices=["a", "b", "c"])
 
     # No conversion happens for new distributions.
     fd = distributions.FloatDistribution(low=0, high=10, log=False, step=None)
