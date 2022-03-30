@@ -23,16 +23,22 @@ def test_tell() -> None:
     assert len(study.trials) == 2
     assert len(study.get_trials(states=(TrialState.COMPLETE,))) == 2
 
+    # `trial` could be int.
     study.tell(study.ask().number, 1.0)
     assert len(study.trials) == 3
     assert len(study.get_trials(states=(TrialState.COMPLETE,))) == 3
 
-    study.tell(study.ask(), state=TrialState.PRUNED)
+    # Inf is supported as values.
+    study.tell(study.ask(), float("inf"))
     assert len(study.trials) == 4
+    assert len(study.get_trials(states=(TrialState.COMPLETE,))) == 4
+
+    study.tell(study.ask(), state=TrialState.PRUNED)
+    assert len(study.trials) == 5
     assert len(study.get_trials(states=(TrialState.PRUNED,))) == 1
 
     study.tell(study.ask(), state=TrialState.FAIL)
-    assert len(study.trials) == 5
+    assert len(study.trials) == 6
     assert len(study.get_trials(states=(TrialState.FAIL,))) == 1
 
 
@@ -68,31 +74,74 @@ def test_tell_pruned() -> None:
 def test_tell_automatically_fail() -> None:
     study = create_study()
 
-    # Check invalid values, e.g. ones that cannot be cast to float.
+    # Check invalid values, e.g. str cannot be cast to float.
     with pytest.warns(UserWarning):
         study.tell(study.ask(), "a")  # type: ignore
         assert len(study.trials) == 1
         assert study.trials[-1].state == TrialState.FAIL
         assert study.trials[-1].values is None
 
+    # Check invalid values, e.g. `None` that cannot be cast to float.
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), None)  # type: ignore
+        assert len(study.trials) == 2
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
     # Check number of values.
     with pytest.warns(UserWarning):
         study.tell(study.ask(), [])
-        assert len(study.trials) == 2
+        assert len(study.trials) == 3
         assert study.trials[-1].state == TrialState.FAIL
         assert study.trials[-1].values is None
 
     # Check wrong number of values, e.g. two values for single direction.
     with pytest.warns(UserWarning):
         study.tell(study.ask(), [1.0, 2.0])
-        assert len(study.trials) == 3
+        assert len(study.trials) == 4
         assert study.trials[-1].state == TrialState.FAIL
         assert study.trials[-1].values is None
 
     # Both state and values are not specified.
     with pytest.warns(UserWarning):
         study.tell(study.ask())
-        assert len(study.trials) == 4
+        assert len(study.trials) == 5
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    # Nan is not supported.
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), float("nan"))
+        assert len(study.trials) == 6
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+
+def test_tell_multi_objective() -> None:
+    study = create_study(directions=["minimize", "maximize"])
+    study.tell(study.ask(), [1.0, 2.0])
+    assert len(study.trials) == 1
+
+
+def test_tell_multi_objective_automatically_fail() -> None:
+    # Number of values doesn't match the length of directions.
+    study = create_study(directions=["minimize", "maximize"])
+
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [])
+        assert len(study.trials) == 1
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [1.0])
+        assert len(study.trials) == 2
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [1.0, 2.0, 3.0])
+        assert len(study.trials) == 3
         assert study.trials[-1].state == TrialState.FAIL
         assert study.trials[-1].values is None
 
@@ -119,34 +168,6 @@ def test_tell_invalid() -> None:
     # It must be Trial or int for trial.
     with pytest.raises(TypeError):
         study.tell("1", 1.0)  # type: ignore
-
-
-def test_tell_multi_objective() -> None:
-    study = create_study(directions=["minimize", "maximize"])
-    study.tell(study.ask(), [1.0, 2.0])
-    assert len(study.trials) == 1
-
-
-def test_tell_multi_objective_automatically_fail() -> None:
-    study = create_study(directions=["minimize", "maximize"])
-
-    with pytest.warns(UserWarning):
-        study.tell(study.ask(), [])
-        assert len(study.trials) == 1
-        assert study.trials[-1].state == TrialState.FAIL
-        assert study.trials[-1].values is None
-
-    with pytest.warns(UserWarning):
-        study.tell(study.ask(), [1.0])
-        assert len(study.trials) == 2
-        assert study.trials[-1].state == TrialState.FAIL
-        assert study.trials[-1].values is None
-
-    with pytest.warns(UserWarning):
-        study.tell(study.ask(), [1.0, 2.0, 3.0])
-        assert len(study.trials) == 3
-        assert study.trials[-1].state == TrialState.FAIL
-        assert study.trials[-1].values is None
 
 
 def test_tell_duplicate_tell() -> None:
