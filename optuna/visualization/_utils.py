@@ -117,15 +117,19 @@ def _filter_nonfinite(
     trials: List[FrozenTrial], target: Optional[Callable[[FrozenTrial], float]] = None
 ) -> List[FrozenTrial]:
 
+    # For multi-objective optimization target must be specified to select
+    # one of objective values to filter trials by (and plot by later on).
+    # This function is not raising when target is missing, sice we're
+    # assuming plot args have been sanitized before.
+    if target is None:
+
+        def _target(t: FrozenTrial) -> float:
+            return cast(float, t.value)
+
+        target = _target
+
     filtered_trials: List[FrozenTrial] = []
     for trial in trials:
-        if target is None:
-
-            def _target(t: FrozenTrial) -> float:
-                return cast(float, t.value)
-
-            target = _target
-
         # Not a Number, positive infinity and negative infinity are considered to be non-finite.
         if not np.isfinite(target(trial)):
             _logger.info(
