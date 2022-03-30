@@ -45,7 +45,6 @@ depends_on = None
 MAX_INDEXED_STRING_LENGTH = 512
 BATCH_SIZE = 5000
 
-
 BaseModel = declarative_base()
 
 
