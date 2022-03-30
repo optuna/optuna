@@ -12,6 +12,7 @@ from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.study import Study
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.visualization import _plotly_imports
 
@@ -34,6 +35,12 @@ def is_available() -> bool:
     """
 
     return _plotly_imports._imports.is_successful()
+
+
+if is_available():
+    import plotly.express as px
+
+    COLOR_SCALE = px.colors.sequential.Blues
 
 
 def _check_plot_args(
@@ -127,3 +134,9 @@ def _get_skipped_trial_numbers(
                 skipped_trial_numbers.add(trial.number)
                 break
     return skipped_trial_numbers
+
+
+def _is_reverse_scale(
+    target: Optional[Callable[[FrozenTrial], float]], direction: StudyDirection
+) -> bool:
+    return target is not None or direction == StudyDirection.MINIMIZE
