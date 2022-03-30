@@ -1,6 +1,5 @@
 import copy
 import pickle
-import threading
 import time
 from typing import Any
 from typing import Callable
@@ -35,37 +34,12 @@ from optuna.trial import TrialState
 CallbackFuncType = Callable[[Study, FrozenTrial], None]
 
 
-def func(trial: Trial, x_max: float = 1.0) -> float:
-
-    x = trial.suggest_float("x", -x_max, x_max)
+def func(trial: Trial) -> float:
+    x = trial.suggest_float("x", 0, 10)
     y = trial.suggest_float("y", 20, 30, log=True)
     z = trial.suggest_categorical("z", (-1.0, 1.0))
     assert isinstance(z, float)
     return (x - 2) ** 2 + (y - 25) ** 2 + z
-
-
-class Func(object):
-    def __init__(self, sleep_sec: Optional[float] = None) -> None:
-
-        self.n_calls = 0
-        self.sleep_sec = sleep_sec
-        self.lock = threading.Lock()
-        self.x_max = 10.0
-
-    def __call__(self, trial: Trial) -> float:
-
-        with self.lock:
-            self.n_calls += 1
-            x_max = self.x_max
-            self.x_max *= 0.9
-
-        # Sleep for testing parallelism
-        if self.sleep_sec is not None:
-            time.sleep(self.sleep_sec)
-
-        value = func(trial, x_max)
-        check_params(trial.params)
-        return value
 
 
 def check_params(params: Dict[str, Any]) -> None:
@@ -163,7 +137,7 @@ def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) ->
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
-        study.optimize(Func(), n_trials=5)
+        study.optimize(func, n_trials=5)
 
         summaries = get_all_study_summaries(study._storage, include_best_trial)
         summary = [s for s in summaries if s._study_id == study._study_id][0]
