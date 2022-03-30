@@ -729,4 +729,7 @@ def _convert_old_distribution_to_new_distribution(
     else:
         new_distribution = distribution
 
+    if new_distribution != distribution:
+        warnings.warn(f"{distribution} is internally converted to {new_distribution}")
+
     return new_distribution
