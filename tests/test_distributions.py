@@ -467,6 +467,8 @@ def test_convert_old_distribution_to_new_distribution() -> None:
         ild
     ) == distributions.IntDistribution(low=1, high=10, log=True, step=1)
 
+
+def test_convert_old_distribution_to_new_distribution_noop() -> None:
     # No conversion happens for CategoricalDistribution.
     cd = distributions.CategoricalDistribution(choices=["a", "b", "c"])
     assert distributions._convert_old_distribution_to_new_distribution(
