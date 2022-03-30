@@ -28,11 +28,11 @@ _logger = optuna.logging.get_logger(__name__)
 
 class _ParetoFrontInfo(NamedTuple):
     n_targets: int
-    target_names: List[str]
-    best_trials_with_values: List[Tuple[FrozenTrial, Sequence[float]]]
+    target_names: Sequence[str]
+    best_trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
     non_best_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
     infeasible_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
-    axis_order: List[int]
+    axis_order: Sequence[int]
 
 
 @experimental("2.4.0")
@@ -345,7 +345,7 @@ def _make_json_compatible(value: Any) -> Any:
 
 def _make_scatter_object(
     n_targets: int,
-    axis_order: List[int],
+    axis_order: Sequence[int],
     include_dominated_trials: bool,
     trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]],
     hovertemplate: str,
