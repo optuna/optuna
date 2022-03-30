@@ -6,6 +6,7 @@ Create Date: 2021-11-21 23:48:42.424430
 
 """
 from typing import Any
+from typing import List
 
 from alembic import op
 from sqlalchemy import Column
@@ -43,6 +44,7 @@ depends_on = None
 
 
 MAX_INDEXED_STRING_LENGTH = 512
+BATCH_SIZE = 5000
 
 
 BaseModel = declarative_base()
@@ -170,6 +172,13 @@ def restore_old_distribution(distribution_json: str) -> str:
     return distribution_to_json(old_distribution)
 
 
+def persist(session: orm.Session, distributions: List[BaseDistribution]) -> None:
+    if len(distributions) == 0:
+        return
+    session.bulk_save_objects(distributions)
+    session.commit()
+
+
 def upgrade() -> None:
     bind = op.get_bind()
     inspector = Inspector.from_engine(bind)
@@ -179,13 +188,19 @@ def upgrade() -> None:
 
     session = orm.Session(bind=bind)
     try:
-        distributions = session.query(TrialParamModel).all()
-        for distribution in distributions:
+        distributions: List[BaseDistribution] = []
+        for distribution in session.query(TrialParamModel).yield_per(BATCH_SIZE):
             distribution.distribution_json = migrate_new_distribution(
                 distribution.distribution_json,
             )
-        session.bulk_save_objects(distributions)
-        session.commit()
+            distributions.append(distribution)
+
+            if len(distributions) == BATCH_SIZE:
+                persist(session, distributions)
+                distributions = []
+
+        persist(session, distributions)
+
     except SQLAlchemyError as e:
         session.rollback()
         raise e
@@ -202,13 +217,19 @@ def downgrade() -> None:
 
     session = orm.Session(bind=bind)
     try:
-        distributions = session.query(TrialParamModel).all()
-        for distribution in distributions:
+        distributions = []
+        for distribution in session.query(TrialParamModel).yield_per(BATCH_SIZE):
             distribution.distribution_json = restore_old_distribution(
                 distribution.distribution_json,
             )
-        session.bulk_save_objects(distributions)
-        session.commit()
+            distributions.append(distribution)
+
+            if len(distributions) == BATCH_SIZE:
+                persist(session, distributions)
+                distributions = []
+
+        persist(session, distributions)
+
     except SQLAlchemyError as e:
         session.rollback()
         raise e
