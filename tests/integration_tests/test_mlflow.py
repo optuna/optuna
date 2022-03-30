@@ -496,24 +496,8 @@ def test_log_params(tmpdir: py.path.local) -> None:
 
     mlflc = MLflowCallback(tracking_uri=tracking_uri, metric_name=metric_name)
     study = optuna.create_study(study_name=study_name)
-<<<<<<< HEAD
-    mlflc._initialize_experiment(study)
-
-    with mlflow.start_run():
-
-        trial = optuna.trial.create_trial(
-            params=params,
-            distributions={
-                param1_name: optuna.distributions.CategoricalDistribution(["a", "b"]),
-                param2_name: optuna.distributions.FloatDistribution(0, 10),
-            },
-            value=5.0,
-        )
-        mlflc._log_params(trial.params)
-=======
     study.enqueue_trial({"x": 1.0, "y": 1.0, "z": 1.0})
     study.optimize(_objective_func, n_trials=1, callbacks=[mlflc])
->>>>>>> master
 
     mlfl_client = MlflowClient(tracking_uri)
     experiments = mlfl_client.list_experiments()
