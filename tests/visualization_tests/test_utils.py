@@ -7,6 +7,7 @@ from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
 from optuna.study import create_study
 from optuna.trial import create_trial
+from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization import is_available
 from optuna.visualization._utils import _check_plot_args
@@ -91,9 +92,21 @@ def test_filter_inf_trials(value: float, expected: int) -> None:
 
 
 @pytest.mark.parametrize(
-    "value, expected", [(float("inf"), 1), (-float("inf"), 1), (float("nan"), 1), (0.0, 3)]
+    "value,objective_selected,expected",
+    [
+        (float("inf"), 0, 2),
+        (-float("inf"), 0, 2),
+        (float("nan"), 0, 2),
+        (0.0, 0, 3),
+        (float("inf"), 1, 1),
+        (-float("inf"), 1, 1),
+        (float("nan"), 1, 1),
+        (0.0, 1, 3),
+    ],
 )
-def test_filter_inf_trials_multiobjective(value: float, expected: int) -> None:
+def test_filter_inf_trials_multiobjective(
+    value: float, objective_selected: int, expected: int
+) -> None:
 
     study = create_study(directions=["minimize", "maximize"])
     study.add_trial(
@@ -118,6 +131,9 @@ def test_filter_inf_trials_multiobjective(value: float, expected: int) -> None:
         )
     )
 
-    trials = _filter_nonfinite(study.get_trials(states=(TrialState.COMPLETE,)))
+    def _target(t: FrozenTrial) -> float:
+        return t.values[objective_selected]
+
+    trials = _filter_nonfinite(study.get_trials(states=(TrialState.COMPLETE,)), target=_target)
     assert len(trials) == expected
     assert all([t.number == num for t, num in zip(trials, range(expected))])

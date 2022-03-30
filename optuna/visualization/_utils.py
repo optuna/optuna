@@ -1,5 +1,6 @@
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import List
 from typing import Optional
 from typing import Sequence
@@ -105,12 +106,21 @@ def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
     return list(map(str, values))
 
 
-def _filter_nonfinite(trials: List[FrozenTrial]) -> List[FrozenTrial]:
+def _filter_nonfinite(
+    trials: List[FrozenTrial], target: Optional[Callable[[FrozenTrial], float]] = None
+) -> List[FrozenTrial]:
 
     filtered_trials: List[FrozenTrial] = []
     for trial in trials:
+        if target is None:
+
+            def _target(t: FrozenTrial) -> float:
+                return cast(float, t.value)
+
+            target = _target
+
         # Not a Number, positive infinity and negative infinity are considered to be non-finite.
-        if trial.values is not None and not all(np.isfinite(trial.values)):
+        if not np.isfinite(target(trial)):
             _logger.info(
                 f"Trial {trial.number} is omitted in visualization ",
                 "because its objective value is inf or nan.",
