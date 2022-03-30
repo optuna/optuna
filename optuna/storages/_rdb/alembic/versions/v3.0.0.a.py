@@ -42,7 +42,6 @@ down_revision = "v2.6.0.a"
 branch_labels = None
 depends_on = None
 
-
 MAX_INDEXED_STRING_LENGTH = 512
 BATCH_SIZE = 5000
 
