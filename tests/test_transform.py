@@ -189,10 +189,7 @@ def test_search_space_transform_untransform_params() -> None:
 @pytest.mark.parametrize(
     "distribution",
     [
-        DiscreteUniformDistribution(0, 1, q=0.2),
         FloatDistribution(0, 1, step=0.2),
-        IntUniformDistribution(2, 4),
-        IntLogUniformDistribution(1, 10),
         IntDistribution(2, 4),
         IntDistribution(1, 10, log=True),
     ],
@@ -203,12 +200,8 @@ def test_transform_untransform_params_at_bounds(
     EPS = 1e-12
 
     # Skip the following two conditions that do not clip in `_untransform_numerical_param`:
-    # 1. `IntLogUniformDistribution` without `transform_log`
-    # 2. `IntDistribution(log=True)` without `transform_log`
-    if not transform_log and (
-        isinstance(distribution, IntLogUniformDistribution)
-        or (isinstance(distribution, IntDistribution) and distribution.log)
-    ):
+    # 1. `IntDistribution(log=True)` without `transform_log`
+    if not transform_log and (isinstance(distribution, IntDistribution) and distribution.log):
         return
 
     trans = _SearchSpaceTransform({"x0": distribution}, transform_log, transform_step)

@@ -391,7 +391,7 @@ def test_plot_parallel_coordinate_only_missing_params() -> None:
             value=0.0,
             params={"param_a": 1e-6},
             distributions={
-                "param_a": LogUniformDistribution(1e-7, 1e-2),
+                "param_a": FloatDistribution(1e-7, 1e-2, log=True),
             },
         )
     )
@@ -400,7 +400,7 @@ def test_plot_parallel_coordinate_only_missing_params() -> None:
             value=1.0,
             params={"param_b": 200},
             distributions={
-                "param_b": LogUniformDistribution(1, 1000),
+                "param_b": FloatDistribution(1, 1000, log=True),
             },
         )
     )
