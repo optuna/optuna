@@ -111,30 +111,20 @@ def plot_pareto_front(
         study, target_names, include_dominated_trials, axis_order, constraints_func
     )
 
-    def _make_scatter_object(
-        trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]],
-        hovertemplate: str,
-        infeasible: bool = False,
-        dominated_trials: bool = False,
-    ) -> Union["go.Scatter", "go.Scatter3d"]:
-        return _make_scatter_object_base(
-            info.n_targets,
-            trials_with_values or [],
-            info.axis_order,
-            include_dominated_trials,
-            hovertemplate=hovertemplate,
-            infeasible=infeasible,
-            dominated_trials=dominated_trials,
-        )
-
     if constraints_func is None:
         data = [
             _make_scatter_object(
+                info.n_targets,
+                info.axis_order,
+                include_dominated_trials,
                 info.non_best_trials_with_values,
                 hovertemplate="%{text}<extra>Trial</extra>",
                 dominated_trials=True,
             ),
             _make_scatter_object(
+                info.n_targets,
+                info.axis_order,
+                include_dominated_trials,
                 info.best_trials_with_values,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
                 dominated_trials=False,
@@ -143,16 +133,25 @@ def plot_pareto_front(
     else:
         data = [
             _make_scatter_object(
+                info.n_targets,
+                info.axis_order,
+                include_dominated_trials,
                 info.infeasible_trials_with_values,
                 hovertemplate="%{text}<extra>Infeasible Trial</extra>",
                 infeasible=True,
             ),
             _make_scatter_object(
+                info.n_targets,
+                info.axis_order,
+                include_dominated_trials,
                 info.non_best_trials_with_values,
                 hovertemplate="%{text}<extra>Feasible Trial</extra>",
                 dominated_trials=True,
             ),
             _make_scatter_object(
+                info.n_targets,
+                info.axis_order,
+                include_dominated_trials,
                 info.best_trials_with_values,
                 hovertemplate="%{text}<extra>Best Trial</extra>",
                 dominated_trials=False,
@@ -344,15 +343,17 @@ def _make_json_compatible(value: Any) -> Any:
         return str(value)
 
 
-def _make_scatter_object_base(
+def _make_scatter_object(
     n_targets: int,
-    trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]],
     axis_order: List[int],
     include_dominated_trials: bool,
+    trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]],
     hovertemplate: str,
     infeasible: bool = False,
     dominated_trials: bool = False,
 ) -> Union["go.Scatter", "go.Scatter3d"]:
+    trials_with_values = trials_with_values or []
+
     assert n_targets in (2, 3)
     marker = _make_marker(
         [trial for trial, _ in trials_with_values],
