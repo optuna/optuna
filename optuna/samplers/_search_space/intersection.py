@@ -38,7 +38,10 @@ class IntersectionSearchSpace(object):
 
         Args:
             study:
-                A study with completed trials.
+                A study with completed trials. After
+                :class:`~optuna.samplers.IntersectionSearchSpace` is instantiated,
+                :func:`~optuna.samplers.IntersectionSearchSpace.calculate` must be called
+                for the same ``study``.
             ordered_dict:
                 A boolean flag determining the return type.
                 If :obj:`False`, the returned object will be a :obj:`dict`.
@@ -48,9 +51,6 @@ class IntersectionSearchSpace(object):
         Returns:
             A dictionary containing the parameter names and parameter's distributions.
 
-        Raises:
-            ValueError:
-                If different studies are passed into this method.
         """
 
         if self._study_id is None:

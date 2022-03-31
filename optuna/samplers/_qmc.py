@@ -125,12 +125,6 @@ class QMCSampler(BaseSampler):
             .. seealso::
                 See parameter ``seed`` in :class:`~optuna.samplers.QMCSampler`.
 
-
-    Raises:
-        ValueError:
-            If ``qmc_type`` is not one of 'halton' and 'sobol`.
-
-
     Example:
 
         Optimize a simple quadratic function by using :class:`~optuna.samplers.QMCSampler`.
