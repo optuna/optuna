@@ -11,12 +11,12 @@ import pytest
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.study import create_study
-from optuna.study import StudyDirection
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
 from optuna.trial import Trial
 from optuna.visualization import plot_contour
 from optuna.visualization._contour import _generate_contour_subplot
+from optuna.visualization._utils import _is_reverse_scale
 from optuna.visualization._utils import COLOR_SCALE
 
 
@@ -138,19 +138,16 @@ def test_generate_contour_plot_for_few_observations() -> None:
 
     study = prepare_study_with_trials(less_than_two=True)
     trials = study.trials
+    reverse_scale = _is_reverse_scale(study, target=None)
 
     # `x_axis` has one observation.
     params = ["param_a", "param_b"]
-    contour, scatter = _generate_contour_subplot(
-        trials, params[0], params[1], StudyDirection.MINIMIZE
-    )
+    contour, scatter = _generate_contour_subplot(trials, params[0], params[1], reverse_scale)
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
     # `y_axis` has one observation.
     params = ["param_b", "param_a"]
-    contour, scatter = _generate_contour_subplot(
-        trials, params[0], params[1], StudyDirection.MINIMIZE
-    )
+    contour, scatter = _generate_contour_subplot(trials, params[0], params[1], reverse_scale)
     assert contour.x is None and contour.y is None and scatter.x is None and scatter.y is None
 
 
