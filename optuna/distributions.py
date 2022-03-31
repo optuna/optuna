@@ -117,20 +117,18 @@ class FloatDistribution(BaseDistribution):
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
+            ``low`` must be less than or equal to ``high``. If ``log`` is :obj:`True`,
+            ``low`` must be larger than 0.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+            ``high`` must be greater than or equal to ``low``.
         log:
             If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
+            This parameter must be :obj:`False` when the parameter ``step`` is not :obj:`None`.
         step:
-            A discretization step. This parameter must be :obj:`None`
-            when the parameter ``log`` is :obj:`True`.
+            A discretization step. ``step`` must be larger than 0.
+            This parameter must be :obj:`None` when the parameter ``log`` is :obj:`True`.
 
-    Raises:
-        ValueError:
-            If ``low`` value is larger than ``high`` value.
-            If ``log`` is :obj:`True` and ``low`` value is less or equal to 0.0.
-            If ``log`` is :obj:`True` and ``step`` is not :obj:`None`.
-            If ``step`` is less or equal to 0.
     """
 
     def __init__(
@@ -198,12 +196,11 @@ class UniformDistribution(FloatDistribution):
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
+            ``low`` must be less than or equal to ``high``.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+            ``high`` must be greater than or equal to ``low``.
 
-    Raises:
-        ValueError:
-            If ``low`` value is larger than ``high`` value.
     """
 
     def __init__(self, low: float, high: float) -> None:
@@ -226,13 +223,11 @@ class LogUniformDistribution(FloatDistribution):
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
+            and must be larger than 0. ``low`` must be less than or equal to ``high``.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+            ``high`` must be greater than or equal to ``low``.
 
-    Raises:
-        ValueError:
-            If ``low`` value is larger than ``high`` value, or ``low`` value is smaller than or
-            equal to 0.
     """
 
     def __init__(self, low: float, high: float) -> None:
@@ -260,21 +255,19 @@ class DiscreteUniformDistribution(FloatDistribution):
     Args:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
+            ``low`` must be less than or equal to ``high``.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+            ``high`` must be greater than or equal to ``low``.
         q:
-            A discretization step.
-
-    Raises:
-        ValueError:
-            If ``low`` value is larger than ``high`` value, or ``q`` value is smaller or
-            equal to 0.
+            A discretization step. ``q`` must be larger than 0.
 
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+
     """
 
     def __init__(self, low: float, high: float, q: float) -> None:
@@ -318,20 +311,18 @@ class IntDistribution(BaseDistribution):
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
+            ``low`` must be less than or equal to ``high``. If ``log`` is :obj:`True`,
+            ``low`` must be larger than or equal to 1.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+            ``high`` must be greater than or equal to ``low``.
         log:
             If ``log`` is :obj:`True`, this distribution is in log-scaled domain.
+            This parameter must be :obj:`False` when the parameter ``step`` is not 1.
         step:
-            A discretization step. This parameter must be 1
+            A discretization step. ``step`` must be a positive integer. This parameter must be 1
             when the parameter ``log`` is :obj:`True`.
 
-    Raises:
-        ValueError:
-            If ``low`` value is larger than ``high`` value.
-            If ``low`` value is less than 1 when ``log`` is :obj:`True`.
-            If ``step`` is not positive value.
-            If ``log`` is :obj:`True` and ``step``!= 1.
     """
 
     def __init__(self, low: int, high: int, log: bool = False, step: int = 1) -> None:
@@ -402,15 +393,13 @@ class IntUniformDistribution(IntDistribution):
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
+            ``low`` must be less than or equal to ``high``.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+            ``high`` must be greater than or equal to ``low``.
         step:
-            A step for spacing between values.
+            A discretization step. ``step`` must be a positive integer.
 
-    Raises:
-        ValueError:
-            If ``low`` value is larger than ``high`` value, or ``step`` value is smaller or
-            equal to 0.
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
@@ -431,11 +420,13 @@ class IntLogUniformDistribution(IntDistribution):
 
     Attributes:
         low:
-            Lower endpoint of the range of the distribution. ``low`` is included in the range.
+            Lower endpoint of the range of the distribution. ``low`` is included in the range
+            and must be larger than or equal to 1. ``low`` must be less than or equal to ``high``.
         high:
             Upper endpoint of the range of the distribution. ``high`` is included in the range.
+            ``high`` must be greater than or equal to ``low``.
         step:
-            A step for spacing between values.
+            A discretization step. ``step`` must be a positive integer.
 
             .. warning::
                 Deprecated in v2.0.0. ``step`` argument will be removed in the future.
@@ -447,9 +438,6 @@ class IntLogUniformDistribution(IntDistribution):
                 User-defined samplers may continue to use other values besides 1 during the
                 deprecation.
 
-    Raises:
-        ValueError:
-            If ``low`` value is larger than ``high`` value, or ``low`` value is smaller than 1.
     """
 
     def __init__(self, low: int, high: int, step: int = 1) -> None:
@@ -469,7 +457,7 @@ class CategoricalDistribution(BaseDistribution):
 
     Args:
         choices:
-            Parameter value candidates.
+            Parameter value candidates. ``choices`` must have one element at least.
 
     .. note::
 
@@ -481,9 +469,6 @@ class CategoricalDistribution(BaseDistribution):
         choices:
             Parameter value candidates.
 
-    Raises:
-        ValueError:
-            If ``choices`` do not contain any elements.
     """
 
     def __init__(self, choices: Sequence[CategoricalChoiceType]) -> None:
@@ -545,9 +530,6 @@ def json_to_distribution(json_str: str) -> BaseDistribution:
     Returns:
         A deserialized distribution.
 
-    Raises:
-        ValueError:
-            If the unknown class is specified.
     """
 
     json_dict = json.loads(json_str)
@@ -619,17 +601,17 @@ def check_distribution_compatibility(
 ) -> None:
     """A function to check compatibility of two distributions.
 
+    It checks whether ``dist_old`` and ``dist_new`` are the same kind of distributions.
+    If ``dist_old`` is :class:`~optuna.distributions.CategoricalDistribution`,
+    it further checks ``choices`` are the same between ``dist_old`` and ``dist_new``.
     Note that this method is not supposed to be called by library users.
 
     Args:
-        dist_old: A distribution previously recorded in storage.
-        dist_new: A distribution newly added to storage.
+        dist_old:
+            A distribution previously recorded in storage.
+        dist_new:
+            A distribution newly added to storage.
 
-    Raises:
-        ValueError:
-            If different distribution kinds are set to ``dist_old`` and ``dist_new``,
-            or ``dist_old.choices`` doesn't match ``dist_new.choices``
-            for :class:`~optuna.distributions.CategoricalDistribution`.
     """
 
     if dist_old.__class__ != dist_new.__class__:
