@@ -42,9 +42,9 @@ def is_available() -> bool:
 
 
 if is_available():
-    import plotly.express as px
+    import plotly.colors
 
-    COLOR_SCALE = px.colors.sequential.Blues
+    COLOR_SCALE = plotly.colors.sequential.Blues
 
 
 def _check_plot_args(
