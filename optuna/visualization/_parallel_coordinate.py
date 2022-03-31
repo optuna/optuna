@@ -98,7 +98,11 @@ def _get_parallel_coordinate_plot(
 ) -> "go.Figure":
 
     layout = go.Layout(title="Parallel Coordinate Plot")
-    reverse_scale = _is_reverse_scale(target, study.direction)
+    # `target` isn't `None` for multi-objective study and
+    # accessing `study.direction` raises `RuntimeError`.
+    reverse_scale = (
+        _is_reverse_scale(target, study.direction) if not study._is_multi_objective() else True
+    )
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
