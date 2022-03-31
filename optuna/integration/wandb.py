@@ -73,11 +73,6 @@ class WeightsAndBiasesCallback(object):
             Please refer to `Weights & Biases API documentation
             <https://docs.wandb.ai/ref/python/init>`_ for more details.
 
-    Raises:
-        :exc:`ValueError`:
-            If there are missing or extra metric names in multi-objective optimization.
-        :exc:`TypeError`:
-            When metric names are not passed as sequence.
     """
 
     def __init__(

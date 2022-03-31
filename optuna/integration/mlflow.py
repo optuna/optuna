@@ -135,11 +135,6 @@ class MLflowCallback(object):
         Anyone using ``nest_trials=True`` should migrate to ``mlflow_kwargs={"nested": True}``
         to avoid raising :exc:`TypeError`.
 
-    Raises:
-        :exc:`ValueError`:
-            If there are missing or extra metric names in multi-objective optimization.
-        :exc:`TypeError`:
-            When metric names are not passed as sequence.
     """
 
     def __init__(
