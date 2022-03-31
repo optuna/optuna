@@ -79,10 +79,6 @@ class _DeferredImportExceptionContextManager(object):
     def check(self) -> None:
         """Check whether the context manager has caught any exceptions.
 
-        Raises:
-            :exc:`ImportError`:
-                If any exception was caught from the caught exception.
-
         """
         if self._deferred is not None:
             exc_value, message = self._deferred
