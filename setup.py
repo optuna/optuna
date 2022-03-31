@@ -37,7 +37,8 @@ def get_install_requires() -> List[str]:
         "packaging>=20.0",
         # TODO(kstoneriv3): remove this after deprecation of Python 3.6
         "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
-        "sqlalchemy>=1.1.0",
+        # TODO(nzw0301): remove upper constraint after fixing PyTorchLightning's test failed tests.
+        "sqlalchemy>=1.1.0,<1.4.33",
         "tqdm",
         "typing_extensions",
         "PyYAML",  # Only used in `optuna/cli.py`.
