@@ -1,3 +1,4 @@
+import copy
 from typing import Any
 from typing import List
 from typing import Sequence
@@ -28,22 +29,9 @@ def _multiobjective_func(trial: optuna.trial.Trial) -> Tuple[float, float]:
     return first_objective, second_objective
 
 
-def _objective_func_with_run_id(trial: optuna.trial.Trial) -> float:
-
-    trial.set_user_attr("run_id", "test-id")
-    return _objective_func(trial)
-
-
-def _multiobjective_func_with_run_id(trial: optuna.trial.Trial) -> Tuple[float, float]:
-
-    trial.set_user_attr("run_id", "test-id")
-    return _multiobjective_func(trial)
-
-
 @mock.patch("optuna.integration.wandb.wandb")
 def test_run_initialized(wandb: mock.MagicMock) -> None:
 
-    wandb.Api().settings.__getitem__.return_value = "mock"
     wandb.sdk.wandb_run.Run = mock.MagicMock
 
     wandb_kwargs = {
@@ -51,12 +39,39 @@ def test_run_initialized(wandb: mock.MagicMock) -> None:
         "group": "summary",
         "job_type": "logging",
         "mode": "offline",
+        "tags": ["test_study"],
     }
 
-    WeightsAndBiasesCallback(
-        study_name="test_study", metric_name="mse", wandb_kwargs=wandb_kwargs, as_sweeps=False
+    WeightsAndBiasesCallback(metric_name="mse", wandb_kwargs=wandb_kwargs, as_multirun=False)
+    wandb.init.assert_called_once_with(
+        project="optuna", group="summary", job_type="logging", mode="offline", tags=["test_study"]
     )
 
+    wandbc = WeightsAndBiasesCallback(
+        metric_name="mse", wandb_kwargs=wandb_kwargs, as_multirun=True
+    )
+    wandb.run = None
+
+    study = optuna.create_study(direction="minimize")
+    _wrapped_func = wandbc.track_in_wandb(_objective_func)
+    study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
+
+    wandb.init = mock.MagicMock()
+    study_id = study._study_id
+    frozen_trial = study.trials[0]
+    trial_id = study._storage.get_trial_id_from_study_id_trial_number(
+        study_id, frozen_trial.number
+    )
+    trial = optuna.Trial(study, trial_id)
+
+    _ = _wrapped_func(trial)
+
+    wandb.init.assert_called_once_with(
+        project="optuna", group="summary", job_type="logging", mode="offline", tags=["test_study"]
+    )
+
+    wandb.init = mock.MagicMock()
+    study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
     wandb.init.assert_called_once_with(
         project="optuna", group="summary", job_type="logging", mode="offline", tags=["test_study"]
     )
@@ -65,71 +80,75 @@ def test_run_initialized(wandb: mock.MagicMock) -> None:
 @mock.patch("optuna.integration.wandb.wandb")
 def test_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
 
-    wandb.Api().settings.__getitem__.return_value = "mock"
+    # Vanilla update
     wandb.sdk.wandb_run.Run = mock.MagicMock
 
     study = optuna.create_study(direction="minimize")
-    wandbc = WeightsAndBiasesCallback(study_name=study.study_name)
+    wandbc = WeightsAndBiasesCallback()
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
 
     expected = {"direction": ["MINIMIZE"]}
     wandb.run.config.update.assert_called_once_with(expected)
 
+    #
+    wandb_kwargs = {"tags": ["test_study"]}
+    wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs, as_multirun=True)
+    wandb.run = mock.MagicMock()
+    _wrapped_func = wandbc.track_in_wandb(_objective_func)
+    study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
+    wandb.run.config.update.assert_called_once_with(expected)
+
     wandb.run = None
-
-    wandbc = WeightsAndBiasesCallback(study_name=study.study_name, as_sweeps=True)
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
-
     wandb.init().config.update.assert_called_once_with(expected)
-
-    study.optimize(_objective_func_with_run_id, n_trials=1, callbacks=[wandbc])
-
-    wandb.Api().run().config.update.assert_called_once_with(expected)
 
 
 @mock.patch("optuna.integration.wandb.wandb")
 def test_multiobjective_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
 
-    wandb.Api().settings.__getitem__.return_value = "mock"
     wandb.sdk.wandb_run.Run = mock.MagicMock
 
     study = optuna.create_study(directions=["minimize", "maximize"])
-    wandbc = WeightsAndBiasesCallback(study_name=study.study_name)
+    wandbc = WeightsAndBiasesCallback()
     study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
 
     expected = {"direction": ["MINIMIZE", "MAXIMIZE"]}
     wandb.run.config.update.assert_called_once_with(expected)
 
-    wandb.run = None
+    wandb_kwargs = {"tags": ["test_study"]}
+    wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs, as_multirun=True)
+    wandb.run = mock.MagicMock()
+    _wrapped_func = wandbc.track_in_wandb(_multiobjective_func)
+    study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
+    wandb.run.config.update.assert_called_once_with(expected)
 
-    wandbc = WeightsAndBiasesCallback(study_name=study.study_name, as_sweeps=True)
+    wandb.run = None
     study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
     wandb.init().config.update.assert_called_once_with(expected)
-
-    study.optimize(_multiobjective_func_with_run_id, n_trials=1, callbacks=[wandbc])
-    wandb.Api().run().config.update.assert_called_once_with(expected)
 
 
 @mock.patch("optuna.integration.wandb.wandb")
 def test_log_api_call_count(wandb: mock.MagicMock) -> None:
 
-    wandb.Api().settings.__getitem__.return_value = "mock"
     wandb.sdk.wandb_run.Run = mock.MagicMock
 
     study = optuna.create_study()
-    wandbc = WeightsAndBiasesCallback(study_name=study.study_name)
+    wandbc = WeightsAndBiasesCallback()
     target_n_trials = 10
     study.optimize(_objective_func, n_trials=target_n_trials, callbacks=[wandbc])
     assert wandb.run.log.call_count == target_n_trials
 
-    wandb.run = None
+    wandb_kwargs = {"tags": ["test_study"]}
+    wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs, as_multirun=True)
+    wandb.run = mock.MagicMock()
+    _wrapped_func = wandbc.track_in_wandb(_objective_func)
+    study.optimize(_wrapped_func, n_trials=target_n_trials, callbacks=[wandbc])
 
-    wandbc = WeightsAndBiasesCallback(study_name=study.study_name, as_sweeps=True)
+    assert wandb.run.log.call_count == target_n_trials
+
+    wandb.run = None
     study.optimize(_objective_func, n_trials=target_n_trials, callbacks=[wandbc])
     assert wandb.init().log.call_count == target_n_trials
-
-    study.optimize(_objective_func_with_run_id, n_trials=target_n_trials, callbacks=[wandbc])
-    assert wandb.Api().run().summary.update.call_count == target_n_trials
 
 
 @pytest.mark.parametrize(
@@ -142,28 +161,32 @@ def test_values_registered_on_epoch(
     def assert_call_args(log_func: mock.MagicMock, regular: bool) -> None:
         kall = log_func.call_args
         assert list(kall[0][0].keys()) == expected
+        assert kall[1] == {"step": 0 if regular else None}
 
-        if regular:
-            assert kall[1] == {"step": 0}
-
-    wandb.Api().settings.__getitem__.return_value = "mock"
     wandb.sdk.wandb_run.Run = mock.MagicMock
 
-    study = optuna.create_study()
-    wandbc = WeightsAndBiasesCallback(study_name=study.study_name, metric_name=metric)
+    base_study = optuna.create_study()
+
+    study = copy.deepcopy(base_study)
+    wandbc = WeightsAndBiasesCallback(metric_name=metric)
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
     assert_call_args(wandb.run.log, bool(wandb.run))
 
-    wandb.run = None
+    wandb_kwargs = {"tags": [study.study_name]}
 
+    study = copy.deepcopy(base_study)
+    wandb.run = mock.MagicMock()
     wandbc = WeightsAndBiasesCallback(
-        study_name=study.study_name, metric_name=metric, as_sweeps=True
+        metric_name=metric, wandb_kwargs=wandb_kwargs, as_multirun=True
     )
+    _wrapped_func = wandbc.track_in_wandb(_objective_func)
+    study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
+    assert_call_args(wandb.run.log, bool(wandb.run))
+
+    study = copy.deepcopy(base_study)
+    wandb.run = None
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
     assert_call_args(wandb.init().log, bool(wandb.run))
-
-    study.optimize(_objective_func_with_run_id, n_trials=1, callbacks=[wandbc])
-    assert_call_args(wandb.Api().run().summary.update, bool(wandb.run))
 
 
 @pytest.mark.parametrize(
@@ -183,38 +206,42 @@ def test_multiobjective_values_registered_on_epoch(
         kall = log_func.call_args
         assert list(kall[0][0].keys()) == expected
 
-        if regular:
-            assert kall[1] == {"step": 0}
+        assert kall[1] == {"step": 0 if regular else None}
 
-    wandb.Api().settings.__getitem__.return_value = "mock"
     wandb.sdk.wandb_run.Run = mock.MagicMock
 
-    study = optuna.create_study(directions=["minimize", "maximize"])
-    wandbc = WeightsAndBiasesCallback(study_name=study.study_name, metric_name=metrics)
+    base_study = optuna.create_study(directions=["minimize", "maximize"])
+
+    study = copy.deepcopy(base_study)
+    wandbc = WeightsAndBiasesCallback(metric_name=metrics)
     study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
     assert_call_args(wandb.run.log, bool(wandb.run))
 
-    wandb.run = None
+    wandb_kwargs = {"tags": [study.study_name]}
 
+    study = copy.deepcopy(base_study)
     wandbc = WeightsAndBiasesCallback(
-        study_name=study.study_name, as_sweeps=True, metric_name=metrics
+        as_multirun=True, metric_name=metrics, wandb_kwargs=wandb_kwargs
     )
+    wandb.run = mock.MagicMock()
+    _wrapped_func = wandbc.track_in_wandb(_multiobjective_func)
+    study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
+    assert_call_args(wandb.run.log, bool(wandb.run))
+
+    wandb.run = None
+    study = copy.deepcopy(base_study)
     study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
     assert_call_args(wandb.init().log, bool(wandb.run))
-
-    study.optimize(_multiobjective_func_with_run_id, n_trials=1, callbacks=[wandbc])
-    assert_call_args(wandb.Api().run().summary.update, bool(wandb.run))
 
 
 @pytest.mark.parametrize("metrics", [["foo"], ["foo", "bar", "baz"]])
 @mock.patch("optuna.integration.wandb.wandb")
 def test_multiobjective_raises_on_name_mismatch(wandb: mock.MagicMock, metrics: List[str]) -> None:
 
-    wandb.Api().settings.__getitem__.return_value = "mock"
     wandb.sdk.wandb_run.Run = mock.MagicMock
 
     study = optuna.create_study(directions=["minimize", "maximize"])
-    wandbc = WeightsAndBiasesCallback(study_name=study.study_name, metric_name=metrics)
+    wandbc = WeightsAndBiasesCallback(metric_name=metrics)
 
     with pytest.raises(ValueError):
         study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
@@ -224,4 +251,10 @@ def test_multiobjective_raises_on_name_mismatch(wandb: mock.MagicMock, metrics: 
 def test_multiobjective_raises_on_type_mismatch(metrics: Any) -> None:
 
     with pytest.raises(TypeError):
-        WeightsAndBiasesCallback(study_name="test_study", metric_name=metrics)
+        WeightsAndBiasesCallback(metric_name=metrics)
+
+
+@mock.patch("optuna.integration.wandb.wandb")
+def test_multirun_without_tags(wandb: mock.MagicMock) -> None:
+    with pytest.raises(RuntimeError):
+        WeightsAndBiasesCallback(as_multirun=True)
