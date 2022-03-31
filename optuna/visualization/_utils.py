@@ -36,10 +36,7 @@ def is_available() -> bool:
     return _plotly_imports._imports.is_successful()
 
 
-if is_available():
-    import plotly.express as px
-
-    COLOR_SCALE = px.colors.sequential.Blues
+COLOR_SCALE = "Blues"
 
 
 def _check_plot_args(
