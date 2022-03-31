@@ -142,7 +142,6 @@ def _filter_nonfinite(
     return filtered_trials
 
 
-def _is_reverse_scale(
-    target: Optional[Callable[[FrozenTrial], float]], direction: StudyDirection
-) -> bool:
-    return target is not None or direction == StudyDirection.MINIMIZE
+def _is_reverse_scale(study: Study, target: Optional[Callable[[FrozenTrial], float]]) -> bool:
+
+    return target is not None or study.direction == StudyDirection.MINIMIZE
