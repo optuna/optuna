@@ -301,3 +301,9 @@ def test_color_map(direction: str) -> None:
     contour = plot_contour(study, target=lambda t: t.number).data[0]
     assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
     assert contour["reversescale"]
+
+    # Multi-objective optimization.
+    study = prepare_study_with_trials(with_c_d=False, n_objectives=2, direction=direction)
+    contour = plot_contour(study, target=lambda t: t.number).data[0]
+    assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
+    assert contour["reversescale"]
