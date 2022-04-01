@@ -78,11 +78,6 @@ def plot_slice(
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-            optimization.
     """
 
     _imports.check()

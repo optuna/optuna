@@ -60,7 +60,7 @@ def plot_pareto_front(
     Args:
         study:
             A :class:`~optuna.study.Study` object whose trials are plotted for their objective
-            values.
+            values. ``study.n_objectives`` must be eigher 2 or 3.
         target_names:
             Objective name list used as the axis titles. If :obj:`None` is specified,
             "Objective {objective_index}" is used instead.
@@ -68,7 +68,7 @@ def plot_pareto_front(
             A flag to include all dominated trial's objective values.
         axis_order:
             A list of indices indicating the axis order. If :obj:`None` is specified,
-            default order is used.
+            default order is used. ``axis_order`` and ``targets`` cannot be used at the same time.
 
             .. warning::
                 Deprecated in v3.0.0. This feature will be removed in the future. The removal of
@@ -77,6 +77,8 @@ def plot_pareto_front(
         targets:
             A function that returns a tuple of target values to display.
             The argument to this function is :class:`~optuna.trial.FrozenTrial`.
+            ``targets`` must be :obj:`None` or return 2 or 3 values.
+            ``axis_order`` and ``targets`` cannot be used at the same time.
 
             .. note::
                 Added in v3.0.0 as an experimental feature. The interface may change in newer
@@ -85,18 +87,6 @@ def plot_pareto_front(
 
     Returns:
         A :class:`matplotlib.axes.Axes` object.
-
-    Raises:
-        :exc:`ValueError`:
-            If ``targets`` is :obj:`None` when your objective studies have more than 3 objectives.
-        :exc:`ValueError`:
-            If ``targets`` returns something other than sequence.
-        :exc:`ValueError`:
-            If the number of target values to display isn't 2 or 3.
-        :exc:`ValueError`:
-            If ``targets`` is specified for empty studies and ``target_names`` is :obj:`None`.
-        :exc:`ValueError`:
-            If using both ``targets`` and ``axis_order``.
     """
 
     _imports.check()
