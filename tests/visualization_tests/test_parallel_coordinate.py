@@ -286,7 +286,7 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
 
 
 def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
-    # Test with sample from mulitiple distributions including categorical params
+    # Test with sample from multiple distributions including categorical params
     # that can be interpreted as numeric params.
     study_multi_distro_params = create_study()
     study_multi_distro_params.add_trial(
@@ -381,9 +381,15 @@ def test_color_map(direction: str) -> None:
     assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
     assert line["reversescale"]
 
+    # Multi-objective optimization.
+    study = prepare_study_with_trials(with_c_d=False, n_objectives=2, direction=direction)
+    line = plot_parallel_coordinate(study, target=lambda t: t.number).data[0]["line"]
+    assert COLOR_SCALE == [v[1] for v in line["colorscale"]]
+    assert line["reversescale"]
+
 
 def test_plot_parallel_coordinate_only_missing_params() -> None:
-    # All trials contains only a part of parameters,
+    # All trials contain only a part of parameters,
     # the plot returns an empty figure.
     study = create_study()
     study.add_trial(
