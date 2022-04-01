@@ -1,6 +1,7 @@
 import copy
 from datetime import datetime
 import itertools
+import pickle
 import random
 import time
 from typing import Any
@@ -61,7 +62,7 @@ def test_create_new_study(storage_mode: str) -> None:
 
         study_id = storage.create_new_study()
 
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=True)
         assert len(summaries) == 1
         assert summaries[0]._study_id == study_id
         assert summaries[0].study_name.startswith(DEFAULT_STUDY_NAME_PREFIX)
@@ -69,7 +70,7 @@ def test_create_new_study(storage_mode: str) -> None:
         study_id2 = storage.create_new_study()
         # Study id must be unique.
         assert study_id != study_id2
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=True)
         assert len(summaries) == 2
         assert {s._study_id for s in summaries} == {study_id, study_id2}
         assert all(s.study_name.startswith(DEFAULT_STUDY_NAME_PREFIX) for s in summaries)
@@ -89,7 +90,7 @@ def test_create_new_study_unique_id(storage_mode: str) -> None:
         if not isinstance(storage, (RDBStorage, _CachedStorage)):
             # TODO(ytsmiling) Fix RDBStorage so that it does not reuse study_id.
             assert len({study_id, study_id2, study_id3}) == 3
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=True)
         assert {s._study_id for s in summaries} == {study_id, study_id3}
 
 
@@ -144,7 +145,9 @@ def test_delete_study_after_create_multiple_studies(storage_mode: str) -> None:
 
         storage.delete_study(study_id2)
 
-        studies = {s._study_id: s for s in storage.get_all_study_summaries()}
+        studies = {
+            s._study_id: s for s in storage.get_all_study_summaries(include_best_trial=True)
+        }
         assert study_id1 in studies
         assert study_id2 not in studies
         assert study_id3 in studies
@@ -446,6 +449,9 @@ def test_set_trial_state(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
 
+        if isinstance(storage, (InMemoryStorage, _CachedStorage)):
+            pytest.skip("InMemoryStorage and _CachedStorage does not have set_trial_state()")
+            return  # needed for mypy
         study_id = storage.create_new_study()
         trial_ids = [storage.create_new_trial(study_id) for _ in ALL_STATES]
 
@@ -476,6 +482,42 @@ def test_set_trial_state(storage_mode: str) -> None:
                 # Cannot update states of finished trials.
                 with pytest.raises(RuntimeError):
                     storage.set_trial_state(trial_id, state2)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_trial_state_values_for_state(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+
+        study_id = storage.create_new_study()
+        trial_ids = [storage.create_new_trial(study_id) for _ in ALL_STATES]
+
+        for trial_id, state in zip(trial_ids, ALL_STATES):
+            if state == TrialState.WAITING:
+                continue
+            assert storage.get_trial(trial_id).state == TrialState.RUNNING
+            datetime_start_prev = storage.get_trial(trial_id).datetime_start
+            storage.set_trial_state_values(
+                trial_id, state=state, values=(0.0,) if state.is_finished() else None
+            )
+            assert storage.get_trial(trial_id).state == state
+            # Repeated state changes to RUNNING should not trigger further datetime_start changes.
+            if state == TrialState.RUNNING:
+                assert storage.get_trial(trial_id).datetime_start == datetime_start_prev
+            if state.is_finished():
+                assert storage.get_trial(trial_id).datetime_complete is not None
+            else:
+                assert storage.get_trial(trial_id).datetime_complete is None
+
+        for state in ALL_STATES:
+            if not state.is_finished():
+                continue
+            trial_id = storage.create_new_trial(study_id)
+            storage.set_trial_state_values(trial_id, state=state, values=(0.0,))
+            for state2 in ALL_STATES:
+                # Cannot update states of finished trials.
+                with pytest.raises(RuntimeError):
+                    storage.set_trial_state_values(trial_id, state=state2)
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -554,7 +596,7 @@ def test_set_trial_param(storage_mode: str) -> None:
                 trial_id_2, "y", 2, CategoricalDistribution(choices=("Meguro", "Shibuya", "Ebisu"))
             )
 
-        storage.set_trial_state(trial_id_2, TrialState.COMPLETE)
+        storage.set_trial_state_values(trial_id_2, state=TrialState.COMPLETE)
         # Cannot assign params to finished trial.
         with pytest.raises(RuntimeError):
             storage.set_trial_param(trial_id_2, "y", 2, distribution_y_1)
@@ -582,6 +624,9 @@ def test_set_trial_values(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
 
+        if isinstance(storage, (InMemoryStorage, _CachedStorage)):
+            pytest.skip("InMemoryStorage and _CachedStorage does not have set_trial_values()")
+            return  # needed for mypy
         # Setup test across multiple studies and trials.
         study_id = storage.create_new_study()
         trial_id_1 = storage.create_new_trial(study_id)
@@ -617,6 +662,48 @@ def test_set_trial_values(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_set_trial_state_values_for_values(storage_mode: str) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+
+        # Setup test across multiple studies and trials.
+        study_id = storage.create_new_study()
+        trial_id_1 = storage.create_new_trial(study_id)
+        trial_id_2 = storage.create_new_trial(study_id)
+        trial_id_3 = storage.create_new_trial(storage.create_new_study())
+        trial_id_4 = storage.create_new_trial(study_id)
+        trial_id_5 = storage.create_new_trial(study_id)
+
+        # Test setting new value.
+        storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE, values=(0.5,))
+        storage.set_trial_state_values(
+            trial_id_3, state=TrialState.COMPLETE, values=(float("inf"),)
+        )
+        storage.set_trial_state_values(
+            trial_id_4, state=TrialState.WAITING, values=(0.1, 0.2, 0.3)
+        )
+        storage.set_trial_state_values(
+            trial_id_5, state=TrialState.WAITING, values=[0.1, 0.2, 0.3]
+        )
+
+        assert storage.get_trial(trial_id_1).value == 0.5
+        assert storage.get_trial(trial_id_2).value is None
+        assert storage.get_trial(trial_id_3).value == float("inf")
+        assert storage.get_trial(trial_id_4).values == [0.1, 0.2, 0.3]
+        assert storage.get_trial(trial_id_5).values == [0.1, 0.2, 0.3]
+
+        non_existent_trial_id = max(trial_id_1, trial_id_2, trial_id_3, trial_id_4, trial_id_5) + 1
+        with pytest.raises(KeyError):
+            storage.set_trial_state_values(
+                non_existent_trial_id, state=TrialState.COMPLETE, values=(1,)
+            )
+
+        # Cannot change values of finished trials.
+        with pytest.raises(RuntimeError):
+            storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE, values=(1,))
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_set_trial_intermediate_value(storage_mode: str) -> None:
 
     with StorageSupplier(storage_mode) as storage:
@@ -646,7 +733,7 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         with pytest.raises(KeyError):
             storage.set_trial_intermediate_value(non_existent_trial_id, 0, 0.2)
 
-        storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
+        storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
         # Cannot change values of finished trials.
         with pytest.raises(RuntimeError):
             storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
@@ -699,7 +786,7 @@ def test_set_trial_user_attr(storage_mode: str) -> None:
             storage.set_trial_user_attr(non_existent_trial_id, "key", "value")
 
         # Cannot set attributes of finished trials.
-        storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
+        storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
         with pytest.raises(RuntimeError):
             storage.set_trial_user_attr(trial_id_1, "key", "value")
 
@@ -753,17 +840,18 @@ def test_set_trial_system_attr(storage_mode: str) -> None:
             storage.set_trial_system_attr(non_existent_trial_id, "key", "value")
 
         # Cannot set attributes of finished trials.
-        storage.set_trial_state(trial_id_1, TrialState.COMPLETE)
+        storage.set_trial_state_values(trial_id_1, state=TrialState.COMPLETE)
         with pytest.raises(RuntimeError):
             storage.set_trial_system_attr(trial_id_1, "key", "value")
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_all_study_summaries(storage_mode: str) -> None:
+@pytest.mark.parametrize("include_best_trial", [True, False])
+def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         expected_summaries, _ = _setup_studies(storage, n_study=10, n_trial=10, seed=46)
-        summaries = storage.get_all_study_summaries()
+        summaries = storage.get_all_study_summaries(include_best_trial=include_best_trial)
         assert len(summaries) == len(expected_summaries)
         for _, expected_summary in expected_summaries.items():
             summary: Optional[StudySummary] = None
@@ -778,9 +866,12 @@ def test_get_all_study_summaries(storage_mode: str) -> None:
             assert summary.n_trials == expected_summary.n_trials
             assert summary.user_attrs == expected_summary.user_attrs
             assert summary.system_attrs == expected_summary.system_attrs
-            if expected_summary.best_trial is not None:
-                assert summary.best_trial is not None
-                assert summary.best_trial == expected_summary.best_trial
+            if include_best_trial:
+                if expected_summary.best_trial is not None:
+                    assert summary.best_trial is not None
+                    assert summary.best_trial == expected_summary.best_trial
+            else:
+                assert summary.best_trial is None
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -978,6 +1069,8 @@ def _setup_studies(
         if direction is None:
             direction = generator.choice([StudyDirection.MINIMIZE, StudyDirection.MAXIMIZE])
         storage.set_study_directions(study_id, (direction,))
+        storage.set_study_user_attr(study_id, "u", i)
+        storage.set_study_system_attr(study_id, "s", i)
         best_trial = None
         trials = {}
         datetime_start = None
@@ -1003,8 +1096,8 @@ def _setup_studies(
             study_name=study_name,
             direction=direction,
             best_trial=best_trial,
-            user_attrs={},
-            system_attrs={},
+            user_attrs={"u": i},
+            system_attrs={"s": i},
             n_trials=len(trials),
             datetime_start=datetime_start,
             study_id=study_id,
@@ -1330,3 +1423,74 @@ def test_read_trials_from_remote_storage(storage_mode: str) -> None:
 
         study_id = storage.create_new_study()
         storage.read_trials_from_remote_storage(study_id)
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
+def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+    max_retry = 3
+    n_trials = 5
+
+    with StorageSupplier(
+        storage_mode,
+        heartbeat_interval=heartbeat_interval,
+        grace_period=grace_period,
+        failed_trial_callback=RetryFailedTrialCallback(max_retry=max_retry),
+    ) as storage:
+        study = optuna.create_study(storage=storage)
+
+        # Make repeatedly failed and retried trials by heartbeat.
+        for _ in range(n_trials):
+            trial = study.ask()
+            storage.record_heartbeat(trial._trial_id)
+            time.sleep(grace_period + 1)
+            optuna.storages.fail_stale_trials(study)
+
+        trials = study.trials
+
+        assert len(trials) == n_trials + 1
+
+        assert "failed_trial" not in trials[0].system_attrs
+        assert "retry_history" not in trials[0].system_attrs
+
+        # The trials 1-3 are retried ones originating from the trial 0.
+        assert trials[1].system_attrs["failed_trial"] == 0
+        assert trials[1].system_attrs["retry_history"] == [0]
+
+        assert trials[2].system_attrs["failed_trial"] == 0
+        assert trials[2].system_attrs["retry_history"] == [0, 1]
+
+        assert trials[3].system_attrs["failed_trial"] == 0
+        assert trials[3].system_attrs["retry_history"] == [0, 1, 2]
+
+        # Trials 4 and later are the newly started ones and
+        # they are retried after exceeding max_retry.
+        assert "failed_trial" not in trials[4].system_attrs
+        assert "retry_history" not in trials[4].system_attrs
+        assert trials[5].system_attrs["failed_trial"] == 4
+        assert trials[5].system_attrs["retry_history"] == [4]
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_pickle_storage(storage_mode: str) -> None:
+    if "redis" in storage_mode:
+        pytest.skip("Redis storage is not picklable")
+
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+        storage.set_study_system_attr(study_id, "key", "pickle")
+
+        restored_storage = pickle.loads(pickle.dumps(storage))
+
+        storage_system_attrs = storage.get_study_system_attrs(study_id)
+        restored_storage_system_attrs = restored_storage.get_study_system_attrs(study_id)
+        assert storage_system_attrs == restored_storage_system_attrs == {"key": "pickle"}
+
+        if isinstance(storage, RDBStorage):
+            assert storage.url == restored_storage.url
+            assert storage.engine_kwargs == restored_storage.engine_kwargs
+            assert storage.skip_compatibility_check == restored_storage.skip_compatibility_check
+            assert storage.engine != restored_storage.engine
+            assert storage.scoped_session != restored_storage.scoped_session
+            assert storage._version_manager != restored_storage._version_manager

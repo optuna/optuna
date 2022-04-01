@@ -13,23 +13,25 @@ Sampling Algorithms
 
 Samplers basically continually narrow down the search space using the records of suggested parameter values and evaluated objective values,
 leading to an optimal search space which giving off parameters leading to better objective values.
-More detailed explanation of how samplers suggest parameters is in :class:`optuna.samplers.BaseSampler`.
+More detailed explanation of how samplers suggest parameters is in :class:`~optuna.samplers.BaseSampler`.
 
 Optuna provides the following sampling algorithms:
 
-- Grid Search implemented in :class:`optuna.samplers.GridSampler`
+- Grid Search implemented in :class:`~optuna.samplers.GridSampler`
 
-- Random Search implemented in :class:`optuna.samplers.RandomSampler`
+- Random Search implemented in :class:`~optuna.samplers.RandomSampler`
 
-- Tree-structured Parzen Estimator algorithm implemented in :class:`optuna.samplers.TPESampler`
+- Tree-structured Parzen Estimator algorithm implemented in :class:`~optuna.samplers.TPESampler`
 
-- CMA-ES based algorithm implemented in :class:`optuna.samplers.CmaEsSampler`
+- CMA-ES based algorithm implemented in :class:`~optuna.samplers.CmaEsSampler`
 
-- Algorithm to enable partial fixed parameters implemented in :class:`optuna.samplers.PartialFixedSampler`
+- Algorithm to enable partial fixed parameters implemented in :class:`~optuna.samplers.PartialFixedSampler`
 
-- Nondominated Sorting Genetic Algorithm II implemented in :class:`optuna.samplers.NSGAIISampler`
+- Nondominated Sorting Genetic Algorithm II implemented in :class:`~optuna.samplers.NSGAIISampler`
 
-The default sampler is :class:`optuna.samplers.TPESampler`.
+- A Quasi Monte Carlo sampling algorithm implemented in :class:`~optuna.samplers.QMCSampler`
+
+The default sampler is :class:`~optuna.samplers.TPESampler`.
 
 Switching Samplers
 ------------------
@@ -64,23 +66,23 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 #
 # Optuna provides the following pruning algorithms:
 #
-# - Median pruning algorithm implemented in :class:`optuna.pruners.MedianPruner`
+# - Median pruning algorithm implemented in :class:`~optuna.pruners.MedianPruner`
 #
-# - Non-pruning algorithm implementd in :class:`optuna.pruners.NopPruner`
+# - Non-pruning algorithm implemented in :class:`~optuna.pruners.NopPruner`
 #
-# - Algorithm to operate pruner with tolerance implemented in :class:`optuna.pruners.PatientPruner`
+# - Algorithm to operate pruner with tolerance implemented in :class:`~optuna.pruners.PatientPruner`
 #
-# - Algorithm to prune specified percentile of trials implemented in :class:`optuna.pruners.PercentilePruner`
+# - Algorithm to prune specified percentile of trials implemented in :class:`~optuna.pruners.PercentilePruner`
 #
-# - Asynchronous Successive Halving algorithm implemented in :class:`optuna.pruners.SuccessiveHalvingPruner`
+# - Asynchronous Successive Halving algorithm implemented in :class:`~optuna.pruners.SuccessiveHalvingPruner`
 #
-# - Hyperband algorithm implemented in :class:`optuna.pruners.HyperbandPruner`
+# - Hyperband algorithm implemented in :class:`~optuna.pruners.HyperbandPruner`
 #
-# - Threshold pruning algorithm implemented in :class:`optuna.pruners.ThresholdPruner`
+# - Threshold pruning algorithm implemented in :class:`~optuna.pruners.ThresholdPruner`
 #
-# We use :class:`optuna.pruners.MedianPruner` in most examples,
-# though basically it is outperformed by :class:`optuna.pruners.SuccessiveHalvingPruner` and
-# :class:`optuna.pruners.HyperbandPruner` as in `this benchmark result <https://github.com/optuna/optuna/wiki/Benchmarks-with-Kurobako>`_.
+# We use :class:`~optuna.pruners.MedianPruner` in most examples,
+# though basically it is outperformed by :class:`~optuna.pruners.SuccessiveHalvingPruner` and
+# :class:`~optuna.pruners.HyperbandPruner` as in `this benchmark result <https://github.com/optuna/optuna/wiki/Benchmarks-with-Kurobako>`_.
 #
 #
 # Activating Pruners
@@ -90,7 +92,7 @@ print(f"Sampler is {study.sampler.__class__.__name__}")
 # :func:`~optuna.trial.Trial.should_prune` decides termination of the trial that does not meet a predefined condition.
 #
 # We would recommend using integration modules for major machine learning frameworks.
-# Exclusive list is :mod:`optuna.integration` and usecases are available in  `optuna/examples <https://github.com/optuna/optuna-examples/>`_.
+# Exclusive list is :mod:`~optuna.integration` and usecases are available in `~optuna/examples <https://github.com/optuna/optuna-examples/>`_.
 
 
 import logging
@@ -143,8 +145,8 @@ study.optimize(objective, n_trials=20)
 #
 # From the benchmark results which are available at `optuna/optuna - wiki "Benchmarks with Kurobako" <https://github.com/optuna/optuna/wiki/Benchmarks-with-Kurobako>`_, at least for not deep learning tasks, we would say that
 #
-# * For :class:`optuna.samplers.RandomSampler`, :class:`optuna.pruners.MedianPruner` is the best.
-# * For :class:`optuna.samplers.TPESampler`, :class:`optuna.pruners.Hyperband` is the best.
+# * For :class:`~optuna.samplers.RandomSampler`, :class:`~optuna.pruners.MedianPruner` is the best.
+# * For :class:`~optuna.samplers.TPESampler`, :class:`~optuna.pruners.Hyperband` is the best.
 #
 # However, note that the benchmark is not deep learning.
 # For deep learning tasks,
@@ -170,7 +172,7 @@ study.optimize(objective, n_trials=20)
 # -------------------------------
 # To implement pruning mechanism in much simpler forms, Optuna provides integration modules for the following libraries.
 #
-# For the complete list of Optuna's integration modules, see :mod:`optuna.integration`.
+# For the complete list of Optuna's integration modules, see :mod:`~optuna.integration`.
 #
 # For example, :class:`~optuna.integration.XGBoostPruningCallback` introduces pruning without directly changing the logic of training iteration.
 # (See also `example <https://github.com/optuna/optuna-examples/tree/main/xgboost/xgboost_integration.py>`_ for the entire script.)

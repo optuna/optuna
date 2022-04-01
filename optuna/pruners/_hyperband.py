@@ -1,7 +1,7 @@
 import math
+from typing import Container
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Union
 
 import optuna
@@ -299,7 +299,7 @@ class HyperbandPruner(BasePruner):
             def get_trials(
                 self,
                 deepcopy: bool = True,
-                states: Optional[Tuple[TrialState, ...]] = None,
+                states: Optional[Container[TrialState]] = None,
             ) -> List["optuna.trial.FrozenTrial"]:
                 trials = super().get_trials(deepcopy=deepcopy, states=states)
                 pruner = self.pruner
