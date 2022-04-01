@@ -105,9 +105,11 @@ class FrozenTrial(BaseTrial):
             :class:`TrialState` of the :class:`~optuna.trial.Trial`.
         value:
             Objective value of the :class:`~optuna.trial.Trial`.
+            ``value`` and ``values`` must not be specified at the same time.
         values:
             Sequence of objective values of the :class:`~optuna.trial.Trial`.
             The length is greater than 1 if the problem is multi-objective optimization.
+            ``value`` and ``values`` must not be specified at the same time.
         datetime_start:
             Datetime where the :class:`~optuna.trial.Trial` started.
         datetime_complete:
@@ -120,9 +122,6 @@ class FrozenTrial(BaseTrial):
         intermediate_values:
             Intermediate objective values set with :func:`optuna.trial.Trial.report`.
 
-    Raises:
-        :exc:`ValueError`:
-            If both ``value`` and ``values`` are specified.
     """
 
     def __init__(
@@ -563,10 +562,12 @@ def create_trial(
             Trial state.
         value:
             Trial objective value. Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
+            ``value`` and ``values`` must not be specified at the same time.
         values:
             Sequence of the trial objective values. The length is greater than 1 if the problem is
             multi-objective optimization.
             Must be specified if ``state`` is :class:`TrialState.COMPLETE`.
+            ``value`` and ``values`` must not be specified at the same time.
         params:
             Dictionary with suggested parameters of the trial.
         distributions:
@@ -580,10 +581,6 @@ def create_trial(
 
     Returns:
         Created trial.
-
-    Raises:
-        :exc:`ValueError`:
-            If both ``value`` and ``values`` are specified.
     """
 
     params = params or {}
