@@ -73,7 +73,9 @@ jobs:
             --ignore tests/integration_tests/test_fastaiv2.py \
             --ignore tests/integration_tests/test_pytorch_lightning.py
         else
-          pytest -s tests/integration_tests
+          pytest -s tests/integration_tests \
+            --ignore tests/integration_tests/allennlp_tests/ \
+            --ignore tests/integration_tests/test_fastaiv2.py
         fi
 
     - name: Tests MPI

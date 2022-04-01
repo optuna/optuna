@@ -117,12 +117,12 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.12.0+cpu ; sys_platform!='darwin'",
             # TODO(himkt): Remove `nltk` after solving
             # https://github.com/allenai/allennlp/issues/5521
-            "nltk<3.6.6",
+            # "nltk<3.6.6",
             # TODO(himkt): Remove upper bound constraint
             # after solving https://github.com/optuna/optuna/issues/3366
-            "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
+            # "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai ; python_version>'3.6'",
+            # "fastai ; python_version>'3.6'",
         ],
         "tests": [
             "fakeredis",
@@ -161,12 +161,12 @@ def get_extras_require() -> Dict[str, List[str]]:
             "torchvision==0.12.0+cpu ; sys_platform!='darwin'",
             # TODO(himkt): Remove `nltk` after solving
             # https://github.com/allenai/allennlp/issues/5521
-            "nltk<3.6.6",
+            # "nltk<3.6.6",
             # TODO(himkt): Remove upper bound constraint
             # after solving https://github.com/optuna/optuna/issues/3366
-            "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
+            # "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai ; python_version>'3.6'",
+            # "fastai ; python_version>'3.6'",
         ],
         "benchmark": [
             "asv>=0.5.0",
