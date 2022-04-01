@@ -90,7 +90,6 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
     expected = {"direction": ["MINIMIZE"]}
     wandb.run.config.update.assert_called_once_with(expected)
 
-    #
     wandb_kwargs = {"tags": ["test_study"]}
     wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs, as_multirun=True)
     wandb.run = mock.MagicMock()
