@@ -97,7 +97,7 @@ def test_run_trial_exception(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_optimize_invoke_tell_with_suppressing_warning(storage_mode: str) -> None:
+def test_run_trial_invoke_tell_with_suppressing_warning(storage_mode: str) -> None:
     def func_numerical(trial: Trial) -> float:
         return trial.suggest_float("v", 0, 10)
 
