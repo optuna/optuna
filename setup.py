@@ -125,7 +125,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6' and python_version<'3.10'",
             "botorch>=0.4.0 ; python_version>'3.6' and python_version<'3.10'",
             "fastai ; python_version>'3.6' and python_version<'3.10'",
-            "click<8.1.0",  # See https://github.com/tiangolo/typer/pull/375.
         ],
         "tests": [
             "fakeredis",
@@ -171,7 +170,6 @@ def get_extras_require() -> Dict[str, List[str]]:
             "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6' and python_version<'3.10'",
             "botorch>=0.4.0 ; python_version>'3.6' and python_version<'3.10'",
             "fastai ; python_version>'3.6' and python_version<'3.10'",
-            "click<8.1.0",  # See https://github.com/tiangolo/typer/pull/375.
         ],
         "benchmark": [
             "asv>=0.5.0",
