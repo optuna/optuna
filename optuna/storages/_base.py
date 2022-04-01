@@ -334,31 +334,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def set_trial_state(self, trial_id: int, state: TrialState) -> bool:
-        """Update the state of a trial.
-
-        Args:
-            trial_id:
-                ID of the trial.
-            state:
-                New state of the trial.
-
-        Returns:
-            :obj:`True` if the state is successfully updated.
-            :obj:`False` if the state is kept the same.
-            The latter happens when this method tries to update the state of
-            :obj:`~optuna.trial.TrialState.RUNNING` trial to
-            :obj:`~optuna.trial.TrialState.RUNNING`.
-
-        Raises:
-            :exc:`KeyError`:
-                If no trial with the matching ``trial_id`` exists.
-            :exc:`RuntimeError`:
-                If the trial is already finished.
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def set_trial_param(
         self,
         trial_id: int,
@@ -445,16 +420,28 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         return trial.distributions[param_name].to_internal_repr(trial.params[param_name])
 
     @abc.abstractmethod
-    def set_trial_values(self, trial_id: int, values: Sequence[float]) -> None:
-        """Set return values of an objective function.
+    def set_trial_state_values(
+        self, trial_id: int, state: TrialState, values: Optional[Sequence[float]] = None
+    ) -> bool:
+        """Update the state and values of a trial.
 
-        This method overwrites any existing trial values.
+        Set return values of an objective function to values argument.
+        If values argument is not :obj:`None`, this method overwrites any existing trial values.
 
         Args:
             trial_id:
                 ID of the trial.
+            state:
+                New state of the trial.
             values:
                 Values of the objective function.
+
+        Returns:
+            :obj:`True` if the state is successfully updated.
+            :obj:`False` if the state is kept the same.
+            The latter happens when this method tries to update the state of
+            :obj:`~optuna.trial.TrialState.RUNNING` trial to
+            :obj:`~optuna.trial.TrialState.RUNNING`.
 
         Raises:
             :exc:`KeyError`:

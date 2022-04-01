@@ -12,7 +12,6 @@ import numpy as np
 
 from optuna.logging import get_logger
 from optuna.study import Study
-from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
@@ -20,6 +19,8 @@ from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
+from optuna.visualization._utils import _is_reverse_scale
+from optuna.visualization._utils import COLOR_SCALE
 
 
 if _imports.is_successful():
@@ -97,6 +98,7 @@ def _get_parallel_coordinate_plot(
 ) -> "go.Figure":
 
     layout = go.Layout(title="Parallel Coordinate Plot")
+    reverse_scale = _is_reverse_scale(target, study.direction)
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
@@ -118,15 +120,25 @@ def _get_parallel_coordinate_plot(
             return cast(float, t.value)
 
         target = _target
-        reversescale = study.direction == StudyDirection.MINIMIZE
-    else:
-        reversescale = True
+
+    skipped_trial_ids = set()
+    for trial in trials:
+        for used_param in sorted_params:
+            if used_param not in trial.params.keys():
+                skipped_trial_ids.add(trial.number)
+                break
+
+    objectives = tuple([target(t) for t in trials if t.number not in skipped_trial_ids])
+
+    if len(objectives) == 0:
+        _logger.warning("Your study has only completed trials with missing parameters.")
+        return go.Figure(data=[], layout=layout)
 
     dims: List[Dict[str, Any]] = [
         {
             "label": target_name,
-            "values": tuple([target(t) for t in trials]),
-            "range": (min([target(t) for t in trials]), max([target(t) for t in trials])),
+            "values": objectives,
+            "range": (min(objectives), max(objectives)),
         }
     ]
 
@@ -134,6 +146,9 @@ def _get_parallel_coordinate_plot(
     for dim_index, p_name in enumerate(sorted_params, start=1):
         values = []
         for t in trials:
+            if t.number in skipped_trial_ids:
+                continue
+
             if p_name in t.params:
                 values.append(t.params[p_name])
 
@@ -197,10 +212,10 @@ def _get_parallel_coordinate_plot(
             labelside="bottom",
             line={
                 "color": dims[0]["values"],
-                "colorscale": "blues",
+                "colorscale": COLOR_SCALE,
                 "colorbar": {"title": target_name},
                 "showscale": True,
-                "reversescale": reversescale,
+                "reversescale": reverse_scale,
             },
         )
     ]
