@@ -111,10 +111,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-lightning>=1.5.0 ; python_version>'3.6'",
             "skorch",
             "catalyst>=21.3",
-            "torch==1.11.0 ; sys_platform=='darwin'",
-            "torch==1.11.0+cpu ; sys_platform!='darwin'",
-            "torchvision==0.12.0 ; sys_platform=='darwin'",
-            "torchvision==0.12.0+cpu ; sys_platform!='darwin'",
+            "torch==1.11.0",
+            "torchvision==0.12.0",
             # TODO(himkt): Remove `nltk` after solving
             # https://github.com/allenai/allennlp/issues/5521
             # "nltk<3.6.6",
@@ -155,10 +153,8 @@ def get_extras_require() -> Dict[str, List[str]]:
             "pytorch-lightning>=1.5.0 ; python_version>'3.6'",
             "skorch",
             "catalyst>=21.3",
-            "torch==1.11.0 ; sys_platform=='darwin'",
-            "torch==1.11.0+cpu ; sys_platform!='darwin'",
-            "torchvision==0.12.0 ; sys_platform=='darwin'",
-            "torchvision==0.12.0+cpu ; sys_platform!='darwin'",
+            "torch==1.11.0",
+            "torchvision==0.12.0",
             # TODO(himkt): Remove `nltk` after solving
             # https://github.com/allenai/allennlp/issues/5521
             # "nltk<3.6.6",
