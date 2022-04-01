@@ -32,7 +32,6 @@ on:
         type: boolean
         default: true
 
-
 jobs:
   benchmarks:
     runs-on: ubuntu-latest
