@@ -136,7 +136,7 @@ def partial_report(args: argparse.Namespace) -> None:
     # https://github.com/uber/bayesmark/blob/8c420e935718f0d6867153b781e58943ecaf2338/bayesmark/experiment_analysis.py#L324-L328
     scores = summary["mean"].sel({"objective": cc.VISIBLE_TO_OPT}, drop=True)[{"iter": -1}]
     leaderboard = (100 * (1 - scores)).to_series().to_dict()
-    sorted_lb = {k: v for k, v in sorted(leaderboard.items(), key=lambda item: item[1])}
+    sorted_lb = {k: v for k, v in sorted(leaderboard.items(), key=lambda i: i[1], reverse=True)}
 
     filename = f"{args.dataset}-{args.model}-partial-report.json"
     with open(os.path.join("partial", filename), "w") as file:

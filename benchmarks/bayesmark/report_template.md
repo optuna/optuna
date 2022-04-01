@@ -5,7 +5,7 @@
 * Number of Datasets: {num_datasets}
 * Number of Problems: {num_problems}
 
-Final score for each problem is calculated as `100 x (1-loss)`. Solver with lowest score in each problem wins. For more details visit [bayesmark docs.](https://bayesmark.readthedocs.io/en/stable/scoring.html)
+Final score for each problem is calculated as `100 x (1-loss)`. Solver with highest score in each problem wins. For more details visit [bayesmark docs.](https://bayesmark.readthedocs.io/en/stable/scoring.html)
 
 ## Table of Contents
 
