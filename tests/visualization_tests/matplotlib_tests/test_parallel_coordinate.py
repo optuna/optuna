@@ -1,5 +1,5 @@
 from io import BytesIO
-import math
+import string
 
 from matplotlib.collections import LineCollection
 import matplotlib.pyplot as plt
@@ -40,13 +40,8 @@ def test_plot_parallel_coordinate() -> None:
     assert axes[1].get_ylim() == (0.0, 2.0)
     # axes[2] is `param_a`'s vertical line.
     assert axes[2].get_ylim() == (1.0, 2.5)
-    # Since the value of param_a in trial#1 is missing, the value is replaced with nan.
-    param_a_data = axes[2].get_lines()[0].get_ydata().tolist()
-    assert [param_a_data[0], param_a_data[2]] == [1.0, 2.5]
-    assert math.isnan(param_a_data[1])
     # axes[3] is `param_b`'s vertical line.
     assert axes[3].get_ylim() == (0.0, 2.0)
-    assert axes[3].get_lines()[0].get_ydata().tolist() == [2.0, 0.0, 1.0]
     line_collections = figure.findobj(LineCollection)
     assert len(line_collections) == 1
     # `objective`'s vertical line.
@@ -63,13 +58,11 @@ def test_plot_parallel_coordinate() -> None:
     assert len(axes) == 2 + 1
     assert axes[1].get_ylabel() == "Objective Value"
     assert axes[1].get_ylim() == (0.0, 2.0)
-    assert len(figure.findobj(LineCollection)) == 1
-    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 2.0, 1.0]
     assert axes[2].get_ylim() == (1.0, 2.5)
-    # Since the value of param_a in trial#1 is missing, the value is replaced with nan.
-    param_a_data = axes[2].get_lines()[0].get_ydata().tolist()
-    assert [param_a_data[0], param_a_data[2]] == [1.0, 2.5]
-    assert math.isnan(param_a_data[1])
+    line_collections = figure.findobj(LineCollection)
+    assert len(line_collections) == 1
+    # `objective`'s vertical line.
+    assert line_collections[0].get_array().tolist() == [0.0, 2.0, 1.0]
     xticklabels = axes[0].get_xticklabels()
     assert xticklabels[0].get_text() == "Objective Value"
     assert xticklabels[1].get_text() == "param_a"
@@ -84,13 +77,10 @@ def test_plot_parallel_coordinate() -> None:
     assert len(axes) == 2 + 1
     assert axes[1].get_ylabel() == "Objective Value"
     assert axes[1].get_ylim() == (0.0, 2.0)
-    assert len(figure.findobj(LineCollection)) == 1
-    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [2.0, 0.0, 1.0]
     assert axes[2].get_ylim() == (1.0, 2.5)
-    # Since the value of param_a in trial#1 is missing, the value is replaced with nan.
-    param_a_data = axes[2].get_lines()[0].get_ydata().tolist()
-    assert [param_a_data[0], param_a_data[2]] == [1.0, 2.5]
-    assert math.isnan(param_a_data[1])
+    line_collections = figure.findobj(LineCollection)
+    assert len(line_collections) == 1
+    assert line_collections[0].get_array().tolist() == [2.0, 0.0, 1.0]
     xticklabels = axes[0].get_xticklabels()
     assert xticklabels[0].get_text() == "Objective Value"
     assert xticklabels[1].get_text() == "param_a"
@@ -102,15 +92,11 @@ def test_plot_parallel_coordinate() -> None:
     assert len(axes) == 3 + 1
     assert axes[1].get_ylabel() == "Target Name"
     assert axes[1].get_ylim() == (0.0, 2.0)
-    assert len(figure.findobj(LineCollection)) == 1
-    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 2.0, 1.0]
     assert axes[2].get_ylim() == (1.0, 2.5)
-    # Since the value of param_a in trial#1 is missing, the value is replaced with nan.
-    param_a_data = axes[2].get_lines()[0].get_ydata().tolist()
-    assert [param_a_data[0], param_a_data[2]] == [1.0, 2.5]
-    assert math.isnan(param_a_data[1])
     assert axes[3].get_ylim() == (0.0, 2.0)
-    assert axes[3].get_lines()[0].get_ydata().tolist() == [2.0, 0.0, 1.0]
+    line_collections = figure.findobj(LineCollection)
+    assert len(line_collections) == 1
+    assert line_collections[0].get_array().tolist() == [0.0, 2.0, 1.0]
     xticklabels = axes[0].get_xticklabels()
     assert xticklabels[0].get_text() == "Target Name"
     assert xticklabels[1].get_text() == "param_a"
@@ -161,14 +147,12 @@ def test_plot_parallel_coordinate_categorical_params() -> None:
     assert len(axes) == 3 + 1
     assert axes[1].get_ylabel() == "Objective Value"
     assert axes[1].get_ylim() == (0.0, 2.0)
-    assert len(figure.findobj(LineCollection)) == 1
-    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 2.0]
     assert axes[2].get_ylim() == (0, 1)
-    assert axes[2].get_lines()[0].get_ydata().tolist() == [0, 1]
     assert [lien.get_text() for lien in axes[2].get_yticklabels()] == ["preferred", "opt"]
     assert axes[3].get_ylim() == (0, 1)
-    assert axes[3].get_lines()[0].get_ydata().tolist() == [0, 1]
     assert [lien.get_text() for lien in axes[3].get_yticklabels()] == ["net", "una"]
+    assert len(figure.findobj(LineCollection)) == 1
+    assert figure.findobj(LineCollection)[0].get_array().tolist() == [0.0, 2.0]
     xticklabels = axes[0].get_xticklabels()
     assert xticklabels[0].get_text() == "Objective Value"
     assert xticklabels[1].get_text() == "category_a"
@@ -221,15 +205,19 @@ def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
     assert len(figure.findobj(LineCollection)) == 1
     # Objective values are not sorted by the other parameters,
     # unlike Plotly's parallel_coordinate.
-    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 1.0, 2.0]
-    assert axes[2].get_ylim() == (0, 1)
-    assert axes[2].get_lines()[0].get_ydata().tolist() == [0, 1, 1]
+    assert figure.findobj(LineCollection)[0].get_array().tolist() == [0.0, 1.0, 2.0]
+    num_choices = 2
+    assert axes[2].get_ylim() == (0, num_choices - 1)
     assert [int(label.get_text()) for label in axes[2].get_yticklabels()] == [1, 2]
-    assert [label.get_position()[1] for label in axes[2].get_yticklabels()] == [0, 1]
-    assert axes[3].get_ylim() == (0, 2)
-    assert axes[3].get_lines()[0].get_ydata().tolist() == [2, 0, 1]
+    assert [label.get_position()[1] for label in axes[2].get_yticklabels()] == list(
+        range(num_choices)
+    )
+    num_choices = 3
+    assert axes[3].get_ylim() == (0, num_choices)
     assert [int(label.get_text()) for label in axes[3].get_yticklabels()] == [10, 20, 30]
-    assert [label.get_position()[1] for label in axes[3].get_yticklabels()] == [0, 1, 2]
+    assert [label.get_position()[1] for label in axes[3].get_yticklabels()] == list(
+        range(num_choices)
+    )
     xticklabels = axes[0].get_xticklabels()
     assert xticklabels[0].get_text() == "Objective Value"
     assert xticklabels[1].get_text() == "category_a"
@@ -238,7 +226,7 @@ def test_plot_parallel_coordinate_categorical_numeric_params() -> None:
 
 
 def test_plot_parallel_coordinate_log_params() -> None:
-    # Test with log params
+    # Test with log params.
     study_log_params = create_study()
     study_log_params.add_trial(
         create_trial(
@@ -276,15 +264,9 @@ def test_plot_parallel_coordinate_log_params() -> None:
     assert axes[1].get_ylabel() == "Objective Value"
     assert axes[1].get_ylim() == (0.0, 1.0)
     assert len(figure.findobj(LineCollection)) == 1
-    assert figure.findobj(LineCollection)[0].get_array().tolist()[:-1] == [0.0, 1.0, 0.1]
-    assert axes[2].get_ylim() == (-6.0, -4.0)
-    assert axes[2].get_lines()[0].get_ydata().tolist() == [-6, math.log10(2e-5), -4]
-    assert axes[3].get_ylim() == (1.0, math.log10(200))
-    assert axes[3].get_lines()[0].get_ydata().tolist() == [
-        1.0,
-        math.log10(200),
-        math.log10(30),
-    ]
+    assert figure.findobj(LineCollection)[0].get_array().tolist() == [0.0, 1.0, 0.1]
+    assert axes[2].get_ylim() == (1e-6, 1e-4)
+    assert axes[3].get_ylim() == (10.0, 200)
     xticklabels = axes[0].get_xticklabels()
     assert xticklabels[0].get_text() == "Objective Value"
     assert xticklabels[1].get_text() == "param_a"
@@ -334,8 +316,8 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
 def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
     # Test with sample from multiple distributions including categorical params
     # that can be interpreted as numeric params.
-    study_multi_distro_params = create_study()
-    study_multi_distro_params.add_trial(
+    study = create_study()
+    study.add_trial(
         create_trial(
             value=0.0,
             params={"param_a": "preferred", "param_b": 2, "param_c": 30, "param_d": 2},
@@ -348,7 +330,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
         )
     )
 
-    study_multi_distro_params.add_trial(
+    study.add_trial(
         create_trial(
             value=1.0,
             params={"param_a": "opt", "param_b": 1, "param_c": 200, "param_d": 2},
@@ -361,7 +343,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
         )
     )
 
-    study_multi_distro_params.add_trial(
+    study.add_trial(
         create_trial(
             value=2.0,
             params={"param_a": "preferred", "param_b": 10, "param_c": 10, "param_d": 1},
@@ -374,7 +356,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
         )
     )
 
-    study_multi_distro_params.add_trial(
+    study.add_trial(
         create_trial(
             value=3.0,
             params={"param_a": "opt", "param_b": 2, "param_c": 10, "param_d": -1},
@@ -386,6 +368,38 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
             },
         )
     )
+    figure = plot_parallel_coordinate(study)
+    axes = figure.get_figure().axes
+    assert len(axes) == 5 + 1
+    assert axes[1].get_ylabel() == "Objective Value"
+    assert axes[1].get_ylim() == (0.0, 3.0)
+    assert len(figure.findobj(LineCollection)) == 1
+    # Objective values are not sorted by the other parameters,
+    # unlike Plotly's parallel_coordinate.
+    assert figure.findobj(LineCollection)[0].get_array().tolist() == [0.0, 1.0, 2.0, 3.0]
+    num_choices = 2
+    assert axes[2].get_ylim() == (0, num_choices - 1)
+    assert [lien.get_text() for lien in axes[2].get_yticklabels()] == ["preferred", "opt"]
+    assert [label.get_position()[1] for label in axes[2].get_yticklabels()] == list(
+        range(num_choices)
+    )
+    num_choices = 3
+    assert axes[3].get_ylim() == (0.0, num_choices - 1)
+    assert [int(label.get_text()) for label in axes[3].get_yticklabels()] == [1, 2, 10]
+    assert [label.get_position()[1] for label in axes[3].get_yticklabels()] == list(
+        range(num_choices)
+    )
+    assert axes[4].get_ylim() == (10, 200)
+    num_choices = 3
+    assert axes[5].get_ylim() == (0.0, num_choices - 1)
+    assert [int(label.get_text()) for label in axes[5].get_yticklabels()] == [-1, 1, 2]
+    assert [label.get_position()[1] for label in axes[5].get_yticklabels()] == list(
+        range(num_choices)
+    )
+    xticklabels = axes[0].get_xticklabels()
+    assert xticklabels[0].get_text() == "Objective Value"
+    for index, postfix in zip(range(1, 5), string.ascii_lowercase):
+        assert xticklabels[index].get_text() == f"param_{postfix}"
     plt.savefig(BytesIO())
 
 
