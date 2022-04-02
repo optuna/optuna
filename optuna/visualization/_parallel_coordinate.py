@@ -12,7 +12,6 @@ import numpy as np
 
 from optuna.logging import get_logger
 from optuna.study import Study
-from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 from optuna.visualization._plotly_imports import _imports
@@ -20,6 +19,8 @@ from optuna.visualization._utils import _check_plot_args
 from optuna.visualization._utils import _is_categorical
 from optuna.visualization._utils import _is_log_scale
 from optuna.visualization._utils import _is_numerical
+from optuna.visualization._utils import _is_reverse_scale
+from optuna.visualization._utils import COLOR_SCALE
 
 
 if _imports.is_successful():
@@ -97,6 +98,7 @@ def _get_parallel_coordinate_plot(
 ) -> "go.Figure":
 
     layout = go.Layout(title="Parallel Coordinate Plot")
+    reverse_scale = _is_reverse_scale(study, target)
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 
@@ -118,9 +120,6 @@ def _get_parallel_coordinate_plot(
             return cast(float, t.value)
 
         target = _target
-        reversescale = study.direction == StudyDirection.MINIMIZE
-    else:
-        reversescale = True
 
     skipped_trial_ids = set()
     for trial in trials:
@@ -213,10 +212,10 @@ def _get_parallel_coordinate_plot(
             labelside="bottom",
             line={
                 "color": dims[0]["values"],
-                "colorscale": "blues",
+                "colorscale": COLOR_SCALE,
                 "colorbar": {"title": target_name},
                 "showscale": True,
-                "reversescale": reversescale,
+                "reversescale": reverse_scale,
             },
         )
     ]
