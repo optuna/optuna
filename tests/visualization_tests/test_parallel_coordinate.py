@@ -364,7 +364,7 @@ def test_plot_parallel_coordinate_with_categorical_numeric_params() -> None:
 
 
 def test_plot_parallel_coordinate_only_missing_params() -> None:
-    # All trials contains only a part of parameters,
+    # When all trials contain only a part of parameters,
     # the plot returns an empty figure.
     study = create_study()
     study.add_trial(
