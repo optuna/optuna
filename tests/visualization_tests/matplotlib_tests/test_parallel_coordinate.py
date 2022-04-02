@@ -292,7 +292,22 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
     # Both hyperparameters contain unique values.
     figure = plot_parallel_coordinate(study_categorical_params)
     assert len(figure.get_lines()) == 0
-    # TODO(nzw0301): add tests here
+    axes = figure.get_figure().axes
+    assert len(axes) == 3 + 1
+    assert axes[1].get_ylabel() == "Objective Value"
+    assert axes[1].get_ylim() == (-0.1, 0.1)
+    assert len(figure.findobj(LineCollection)) == 1
+    # Objective values are not sorted by the other parameters,
+    # unlike Plotly's parallel_coordinate.
+    assert figure.findobj(LineCollection)[0].get_array().tolist() == [0.0]
+    assert axes[2].get_ylim() == (-0.05, 0.05)
+    assert [lien.get_text() for lien in axes[2].get_yticklabels()] == ["preferred"]
+    assert [label.get_position()[1] for label in axes[2].get_yticklabels()] == [0]
+    assert axes[3].get_ylim() == (28.5, 31.5)
+    xticklabels = axes[0].get_xticklabels()
+    assert xticklabels[0].get_text() == "Objective Value"
+    assert xticklabels[1].get_text() == "category_a"
+    assert xticklabels[2].get_text() == "param_b"
     plt.savefig(BytesIO())
 
     study_categorical_params.add_trial(
@@ -308,8 +323,22 @@ def test_plot_parallel_coordinate_unique_hyper_param() -> None:
 
     # Still "category_a" contains unique suggested value during the optimization.
     figure = plot_parallel_coordinate(study_categorical_params)
-    assert len(figure.get_lines()) == 0
-    # TODO(nzw0301): add tests here
+    axes = figure.get_figure().axes
+    assert len(axes) == 3 + 1
+    assert axes[1].get_ylabel() == "Objective Value"
+    assert axes[1].get_ylim() == (0.0, 2.0)
+    assert len(figure.findobj(LineCollection)) == 1
+    # Objective values are not sorted by the other parameters,
+    # unlike Plotly's parallel_coordinate.
+    assert figure.findobj(LineCollection)[0].get_array().tolist() == [0.0, 2.0]
+    assert axes[2].get_ylim() == (-0.05, 0.05)
+    assert [lien.get_text() for lien in axes[2].get_yticklabels()] == ["preferred"]
+    assert [label.get_position()[1] for label in axes[2].get_yticklabels()] == [0]
+    assert axes[3].get_ylim() == (20, 30)
+    xticklabels = axes[0].get_xticklabels()
+    assert xticklabels[0].get_text() == "Objective Value"
+    assert xticklabels[1].get_text() == "category_a"
+    assert xticklabels[2].get_text() == "param_b"
     plt.savefig(BytesIO())
 
 
@@ -428,3 +457,4 @@ def test_plot_parallel_coordinate_only_missing_params() -> None:
 
     figure = plot_parallel_coordinate(study)
     assert len(figure.data) == 1
+    plt.savefig(BytesIO())
