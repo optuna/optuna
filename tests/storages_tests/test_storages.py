@@ -1,6 +1,7 @@
 import copy
 from datetime import datetime
 import itertools
+import pickle
 import random
 import time
 from typing import Any
@@ -1469,3 +1470,27 @@ def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> No
         assert "retry_history" not in trials[4].system_attrs
         assert trials[5].system_attrs["failed_trial"] == 4
         assert trials[5].system_attrs["retry_history"] == [4]
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_pickle_storage(storage_mode: str) -> None:
+    if "redis" in storage_mode:
+        pytest.skip("Redis storage is not picklable")
+
+    with StorageSupplier(storage_mode) as storage:
+        study_id = storage.create_new_study()
+        storage.set_study_system_attr(study_id, "key", "pickle")
+
+        restored_storage = pickle.loads(pickle.dumps(storage))
+
+        storage_system_attrs = storage.get_study_system_attrs(study_id)
+        restored_storage_system_attrs = restored_storage.get_study_system_attrs(study_id)
+        assert storage_system_attrs == restored_storage_system_attrs == {"key": "pickle"}
+
+        if isinstance(storage, RDBStorage):
+            assert storage.url == restored_storage.url
+            assert storage.engine_kwargs == restored_storage.engine_kwargs
+            assert storage.skip_compatibility_check == restored_storage.skip_compatibility_check
+            assert storage.engine != restored_storage.engine
+            assert storage.scoped_session != restored_storage.scoped_session
+            assert storage._version_manager != restored_storage._version_manager
