@@ -242,7 +242,6 @@ class Study:
             A list of :class:`~optuna.trial.FrozenTrial` objects.
         """
 
-        self._storage.read_trials_from_remote_storage(self._study_id)
         return self._storage.get_all_trials(self._study_id, deepcopy=deepcopy, states=states)
 
     @property
@@ -479,9 +478,6 @@ class Study:
                 warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
 
         fixed_distributions = fixed_distributions or {}
-
-        # Sync storage once every trial.
-        self._storage.read_trials_from_remote_storage(self._study_id)
 
         trial_id = self._pop_waiting_trial_id()
         if trial_id is None:

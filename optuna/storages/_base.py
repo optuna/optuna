@@ -678,19 +678,6 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         """
         return self.get_trial(trial_id).system_attrs
 
-    def read_trials_from_remote_storage(self, study_id: int) -> None:
-        """Make an internal cache of trials up-to-date.
-
-        Args:
-            study_id:
-                ID of the study.
-
-        Raises:
-            :exc:`KeyError`:
-                If no study with the matching ``study_id`` exists.
-        """
-        raise NotImplementedError
-
     def remove_session(self) -> None:
         """Clean up all connections to a database."""
         pass

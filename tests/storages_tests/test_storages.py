@@ -1414,17 +1414,6 @@ def test_fail_stale_trials_raw(storage_mode: str) -> None:
         assert storage.fail_stale_trials(study_id) == []
 
 
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_read_trials_from_remote_storage(storage_mode: str) -> None:
-
-    with StorageSupplier(storage_mode) as storage:
-        with pytest.raises(KeyError):
-            storage.read_trials_from_remote_storage(-1)
-
-        study_id = storage.create_new_study()
-        storage.read_trials_from_remote_storage(study_id)
-
-
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES_HEARTBEAT)
 def test_retry_failed_trial_callback_repetitive_failure(storage_mode: str) -> None:
     heartbeat_interval = 1

@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import pytest
+
 import optuna
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._cached_storage import RDBStorage
@@ -28,7 +30,18 @@ def test_create_trial() -> None:
     storage.create_new_trial(study_id)
 
 
-def test_set_trial_state_values() -> None:
+def test_read_trials_from_remote_storage(storage_mode: str) -> None:
+    base_storage = RDBStorage("sqlite:///:memory:")
+    storage = _CachedStorage(base_storage)
+
+    with pytest.raises(KeyError):
+        storage.read_trials_from_remote_storage(-1)
+
+    study_id = storage.create_new_study()
+    storage.read_trials_from_remote_storage(study_id)
+
+
+def test_set_trial_state() -> None:
     base_storage = RDBStorage("sqlite:///:memory:")
     storage = _CachedStorage(base_storage)
     study_id = storage.create_new_study("test-study")
