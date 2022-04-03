@@ -1,21 +1,27 @@
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
 import warnings
 
+import numpy as np
+
+import optuna
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.study import Study
+from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.visualization import _plotly_imports
 
 
 __all__ = ["is_available"]
+_logger = optuna.logging.get_logger(__name__)
 
 
 def is_available() -> bool:
@@ -33,6 +39,12 @@ def is_available() -> bool:
     """
 
     return _plotly_imports._imports.is_successful()
+
+
+if is_available():
+    import plotly.colors
+
+    COLOR_SCALE = plotly.colors.sequential.Blues
 
 
 def _check_plot_args(
@@ -99,3 +111,37 @@ def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
     if _is_numerical(trials, p_name):
         return values
     return list(map(str, values))
+
+
+def _filter_nonfinite(
+    trials: List[FrozenTrial], target: Optional[Callable[[FrozenTrial], float]] = None
+) -> List[FrozenTrial]:
+
+    # For multi-objective optimization target must be specified to select
+    # one of objective values to filter trials by (and plot by later on).
+    # This function is not raising when target is missing, sice we're
+    # assuming plot args have been sanitized before.
+    if target is None:
+
+        def _target(t: FrozenTrial) -> float:
+            return cast(float, t.value)
+
+        target = _target
+
+    filtered_trials: List[FrozenTrial] = []
+    for trial in trials:
+        # Not a Number, positive infinity and negative infinity are considered to be non-finite.
+        if not np.isfinite(target(trial)):
+            _logger.info(
+                f"Trial {trial.number} is omitted in visualization ",
+                "because its objective value is inf or nan.",
+            )
+        else:
+            filtered_trials.append(trial)
+
+    return filtered_trials
+
+
+def _is_reverse_scale(study: Study, target: Optional[Callable[[FrozenTrial], float]]) -> bool:
+
+    return target is not None or study.direction == StudyDirection.MINIMIZE
