@@ -64,11 +64,12 @@ def test_target_is_not_none_and_study_is_multi_obj() -> None:
     # Multiple sub-figures.
     study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=True)
     plot_contour(study, target=lambda t: t.values[0])
-
+    plt.savefig(BytesIO())
+    
     # Single figure.
     study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=False)
     plot_contour(study, target=lambda t: t.values[0])
-
+    plt.savefig(BytesIO())
 
 @pytest.mark.parametrize(
     "params",
@@ -109,6 +110,8 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
         plot_contour(study, ["optuna", "Optuna"])
 
     figure = plot_contour(study, params=params)
+    plt.savefig(BytesIO())
+
     if params is not None and len(params) < 3:
         if len(params) <= 1:
             assert len(figure.get_lines()) == 0
@@ -267,6 +270,7 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
     study = prepare_study_with_trials()
     params = ["param_a", "param_b", "param_c"]
     subplots = plot_contour(study, params=params)
+    plt.savefig(BytesIO())
     # `subplots` should look like this:
     # param_a [[subplot 1, subplot 2, subplot 3],
     # param_b  [subplot 4, subplot 4, subplot 6],

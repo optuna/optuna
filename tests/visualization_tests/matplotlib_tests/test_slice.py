@@ -86,6 +86,7 @@ def test_plot_slice() -> None:
     figure = plot_slice(study)
     assert len(figure.get_lines()) == 0
     assert len(figure.findobj(PathCollection)) == 0
+    plt.savefig(BytesIO())
 
 
 def test_plot_slice_log_scale() -> None:
@@ -111,6 +112,7 @@ def test_plot_slice_log_scale() -> None:
     assert len(figure.findobj(PathCollection)) == 1
     assert figure.xaxis.label.get_text() == "x_linear"
     assert figure.xaxis.get_scale() == "linear"
+    plt.savefig(BytesIO())
 
     # Plot multiple parameters.
     figure = plot_slice(study)
@@ -121,3 +123,4 @@ def test_plot_slice_log_scale() -> None:
     assert figure[1].xaxis.label.get_text() == "y_log"
     assert figure[0].xaxis.get_scale() == "linear"
     assert figure[1].xaxis.get_scale() == "log"
+    plt.savefig(BytesIO())

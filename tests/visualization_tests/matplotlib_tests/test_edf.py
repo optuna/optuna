@@ -65,6 +65,7 @@ def test_plot_optimization_history(direction: str) -> None:
     for line in lines:
         _validate_edf_values(line.get_ydata())
     assert len(lines) == 2
+    plt.savefig(BytesIO())
 
     # Test with a customized target value.
     study0 = create_study(direction=direction)
