@@ -42,7 +42,7 @@ def run(args: argparse.Namespace) -> None:
 
     for sampler, sampler_kwargs in zip(sampler_list, sampler_kwargs_list):
         name = f"{args.name_prefix}_{sampler}"
-        python_command = f"mo_runner.py {sampler} {sampler_kwargs}"
+        python_command = f"{args.path_to_create_study} {sampler} {sampler_kwargs}"
         cmd = (
             f"{kurobako_cmd} solver --name {name} command python {python_command}"
             f"| tee -a {solvers_filename}"
@@ -51,7 +51,7 @@ def run(args: argparse.Namespace) -> None:
 
     # Create study.
     cmd = (
-        f"{kurobako_cmd} studies --budget 300 "
+        f"{kurobako_cmd} studies --budget 10 "
         f"--solvers $(cat {solvers_filename}) --problems $(cat {problems_filename}) "
         f"--repeats {args.n_runs} --seed {args.seed} "
         f"> {study_json_filename}"
@@ -88,15 +88,22 @@ def run(args: argparse.Namespace) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--path-to-kurobako", type=str, default="")
+    parser.add_argument(
+        "--path-to-create-study", type=str, default="benchmarks/mo_create_study.py"
+    )
     parser.add_argument("--name-prefix", type=str, default="")
     parser.add_argument("--n-runs", type=int, default=1)
-    parser.add_argument("--n-jobs", type=int, default=1)
+    parser.add_argument("--n-jobs", type=int, default=8)
     parser.add_argument(
         "--sampler-list",
         type=str,
         default="RandomSampler TPESampler NSGAIISampler",
     )
-    parser.add_argument("--sampler-kwargs-list", type=str, default="{} {} {}")
+    parser.add_argument(
+        "--sampler-kwargs-list",
+        type=str,
+        default=r'{} \{"multivariate":true,"constant_liar":true\} {}',
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--data-dir", type=str, default="data")
     parser.add_argument("--out-dir", type=str, default="out")

@@ -1,9 +1,10 @@
+import json
 import sys
+
 from kurobako import solver
 from kurobako.solver.optuna import OptunaSolverFactory
-import optuna
 
-# import json
+import optuna
 
 
 optuna.logging.disable_default_handler()
@@ -25,15 +26,14 @@ def create_study(seed: int) -> optuna.Study:
     if sampler_cls is None:
         raise ValueError("Unknown sampler: {}.".format(sampler_name))
 
-    # TODO(drumehiron): sampler_kwargs
-    # sampler_kwargs = json.loads(sys.argv[2])
-    # try:
-    #     sampler_kwargs["seed"] = seed
-    #     sampler = sampler_cls(**sampler_kwargs)
-    # except:
-    #     del sampler_kwargs["seed"]
-    #     sampler = sampler_cls(**sampler_kwargs)
-    sampler = sampler_cls()
+    try:
+        # sampler_kwargs["seed"] = seed
+        json_str = json.dumps(sys.argv[2])
+        sampler_kwargs = json.loads(json_str)
+        sampler = sampler_cls(**sampler_kwargs)
+    except Exception:
+        # del sampler_kwargs["seed"]
+        sampler = sampler_cls()
 
     return optuna.create_study(
         directions=directions,
