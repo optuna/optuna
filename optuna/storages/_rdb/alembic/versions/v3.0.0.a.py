@@ -77,7 +77,10 @@ class TrialParamModel(BaseModel):
 
 def migrate_new_distribution(distribution_json: str) -> str:
     distribution = json_to_distribution(distribution_json)
-    new_distribution = _convert_old_distribution_to_new_distribution(distribution)
+    new_distribution = _convert_old_distribution_to_new_distribution(
+        distribution,
+        suppress_warning=True,
+    )
     return distribution_to_json(new_distribution)
 
 

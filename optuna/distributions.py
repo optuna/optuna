@@ -682,6 +682,7 @@ def _get_single_value(distribution: BaseDistribution) -> Union[int, float, Categ
 
 def _convert_old_distribution_to_new_distribution(
     distribution: BaseDistribution,
+    suppress_warning: bool = False,
 ) -> BaseDistribution:
 
     new_distribution: BaseDistribution
@@ -729,7 +730,14 @@ def _convert_old_distribution_to_new_distribution(
     else:
         new_distribution = distribution
 
-    if new_distribution != distribution:
-        warnings.warn(f"{distribution} is internally converted to {new_distribution}")
+    if new_distribution != distribution and not suppress_warning:
+        message = (
+            f"{distribution} is deprecated and internally converted to {new_distribution}."
+            f" If you see this message, please update your source code to use"
+            f" {new_distribution.__class__.__name__} instead of"
+            f" {distribution.__class__.__name__}."
+            " See https://github.com/optuna/optuna/issues/2941."
+        )
+        warnings.warn(message)
 
     return new_distribution
