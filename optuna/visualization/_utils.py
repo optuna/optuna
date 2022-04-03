@@ -133,8 +133,8 @@ def _filter_nonfinite(
         # Not a Number, positive infinity and negative infinity are considered to be non-finite.
         if not np.isfinite(target(trial)):
             _logger.info(
-                f"Trial {trial.number} is omitted in visualization ",
-                "because its objective value is inf or nan.",
+                f"Trial {trial.number} is omitted in visualization "
+                "because its objective value is inf or nan."
             )
         else:
             filtered_trials.append(trial)
