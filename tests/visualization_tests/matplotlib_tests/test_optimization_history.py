@@ -155,6 +155,7 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())
 
+
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     n_studies = 10
@@ -220,6 +221,7 @@ def test_plot_optimization_history_with_error_bar(direction: str) -> None:
     figure = plot_optimization_history(studies, error_bar=True)
     assert len(figure.get_lines()) == 0
     plt.savefig(BytesIO())
+
 
 @pytest.mark.parametrize("direction", ["minimize", "maximize"])
 def test_error_bar_in_optimization_history(direction: str) -> None:

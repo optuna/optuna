@@ -65,11 +65,12 @@ def test_target_is_not_none_and_study_is_multi_obj() -> None:
     study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=True)
     plot_contour(study, target=lambda t: t.values[0])
     plt.savefig(BytesIO())
-    
+
     # Single figure.
     study = prepare_study_with_trials(more_than_three=True, n_objectives=2, with_c_d=False)
     plot_contour(study, target=lambda t: t.values[0])
     plt.savefig(BytesIO())
+
 
 @pytest.mark.parametrize(
     "params",
