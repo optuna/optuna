@@ -30,7 +30,7 @@ def test_create_trial() -> None:
     storage.create_new_trial(study_id)
 
 
-def test_read_trials_from_remote_storage(storage_mode: str) -> None:
+def test_read_trials_from_remote_storage() -> None:
     base_storage = RDBStorage("sqlite:///:memory:")
     storage = _CachedStorage(base_storage)
 
