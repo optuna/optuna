@@ -1401,7 +1401,7 @@ def test_fail_stale_trials(storage_mode: str, grace_period: Optional[int]) -> No
 
 
 @pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
-def test_fail_stale_trials_raw(storage_mode: str) -> None:
+def test_get_stale_trial_ids(storage_mode: str) -> None:
     heartbeat_interval = 1
     grace_period = 2
 
@@ -1409,9 +1409,14 @@ def test_fail_stale_trials_raw(storage_mode: str) -> None:
         assert isinstance(storage, (RDBStorage, RedisStorage))
         storage.heartbeat_interval = heartbeat_interval
         storage.grace_period = grace_period
+        study = optuna.create_study(storage=storage)
 
-        study_id = storage.create_new_study()
-        assert storage.fail_stale_trials(study_id) == []
+        with pytest.warns(UserWarning):
+            trial = study.ask()
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+        assert len(storage._get_stale_trial_ids(study._study_id)) == 1
+        assert storage._get_stale_trial_ids(study._study_id)[0] == trial._trial_id
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
