@@ -1,3 +1,4 @@
+import logging
 from typing import cast
 
 import pytest
@@ -168,6 +169,6 @@ def test_filter_inf_trials_message(caplog: LogCaptureFixture, with_message: bool
         assert msg in caplog.text
         for record in caplog.records:
             if record.msg == msg:
-                assert record.levelname == "INFO"
+                assert record.levelno == logging.WARNING
     else:
         assert msg not in caplog.text
