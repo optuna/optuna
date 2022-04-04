@@ -172,7 +172,7 @@ class WeightsAndBiasesCallback(object):
             run = wandb.run  # Uses global run when `as_multirun` is set to False.
             if not run:
                 run = self._initialize_run()
-                run.name = "trial/{trial.number}/{run.name}"
+                run.name = f"trial/{trial.number}/{run.name}"
 
             return func(trial)
 
