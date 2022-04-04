@@ -1276,6 +1276,14 @@ def test_tell_invalid() -> None:
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.WAITING)
 
+    # `value` must be None for `TrialState.PRUNED`
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), values=1, state=TrialState.PRUNED)
+
+    # `value` must be None for `TrialState.FAIL`
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), values=1, state=TrialState.FAIL)
+
     # Trial that has not been asked for cannot be told.
     with pytest.raises(ValueError):
         study.tell(study.ask().number + 1, 1.0)
