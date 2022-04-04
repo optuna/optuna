@@ -164,6 +164,7 @@ class WeightsAndBiasesCallback(object):
         if self._as_multirun:
             run.finish()
 
+    @experimental("3.0.0")
     def track_in_wandb(self, func: ObjectiveFuncType) -> ObjectiveFuncType:
         @functools.wraps(func)
         def wrapper(trial: optuna.trial.Trial) -> Union[float, Sequence[float]]:
