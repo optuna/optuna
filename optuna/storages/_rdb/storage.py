@@ -1144,16 +1144,6 @@ class RDBStorage(BaseStorage):
             else:
                 heartbeat.heartbeat = session.execute(func.now()).scalar()
 
-    def fail_stale_trials(self, study_id: int) -> List[int]:
-        stale_trial_ids = self._get_stale_trial_ids(study_id)
-        confirmed_stale_trial_ids = []
-
-        for trial_id in stale_trial_ids:
-            if self.set_trial_state_values(trial_id, state=TrialState.FAIL):
-                confirmed_stale_trial_ids.append(trial_id)
-
-        return confirmed_stale_trial_ids
-
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
         assert self.heartbeat_interval is not None
         if self.grace_period is None:
