@@ -2,11 +2,13 @@ from typing import Callable
 from typing import Optional
 from unittest import mock
 
+from _pytest.logging import LogCaptureFixture
 import pytest
 
 from optuna import create_study
 from optuna import Trial
 from optuna import TrialPruned
+from optuna import logging
 from optuna.study import _optimize
 from optuna.study._tell import _tell_with_warning
 from optuna.testing.storage import STORAGE_MODES
@@ -15,53 +17,81 @@ from optuna.trial import TrialState
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_run_trial(storage_mode: str) -> None:
+def test_run_trial(storage_mode: str, caplog: LogCaptureFixture) -> None:
+    logging.enable_propagation()
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
+        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: 1.0, catch=())
         assert frozen_trial.state == TrialState.COMPLETE
         assert frozen_trial.value == 1.0
+        assert "Trial 0 finished with value: 1.0 and parameters" in caplog.text
 
+        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: float("inf"), catch=())
         assert frozen_trial.state == TrialState.COMPLETE
         assert frozen_trial.value == float("inf")
+        assert "Trial 1 finished with value: inf and parameters" in caplog.text
 
+        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: +float("inf"), catch=())
         assert frozen_trial.state == TrialState.COMPLETE
         assert frozen_trial.value == +float("inf")
+        assert "Trial 2 finished with value: inf and parameters" in caplog.text
 
+        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: -float("inf"), catch=())
         assert frozen_trial.state == TrialState.COMPLETE
         assert frozen_trial.value == -float("inf")
+        assert "Trial 3 finished with value: -inf and parameters" in caplog.text
+
+    logging.disable_propagation()
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_run_trial_automatically_fail(storage_mode: str) -> None:
+def test_run_trial_automatically_fail(storage_mode: str, caplog: LogCaptureFixture) -> None:
+
+    logging.enable_propagation()
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
+        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: float("nan"), catch=())
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
+        assert "Trial 0 failed because of the following error:" in caplog.text
+        assert "The objective function returned nan." in caplog.text
 
+        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: None, catch=())  # type: ignore
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
+        assert "Trial 1 failed because of the following error:" in caplog.text
+        assert "The value None could not be cast to float." in caplog.text
 
+        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: object(), catch=())  # type: ignore
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
+        assert "Trial 2 failed because of the following error:" in caplog.text
+        assert "The value <object object at" in caplog.text
+        assert "> could not be cast to float." in caplog.text
 
+        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: [0, 1], catch=())  # type: ignore
         assert frozen_trial.state == TrialState.FAIL
         assert frozen_trial.value is None
+        assert "Trial 3 failed because of the following error: The number" in caplog.text
+        assert "of the values 2 did not match the number of the objectives 1." in caplog.text
+
+    logging.disable_propagation()
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_run_trial_pruned(storage_mode: str) -> None:
+def test_run_trial_pruned(storage_mode: str, caplog: LogCaptureFixture) -> None:
     def gen_func(intermediate: Optional[float] = None) -> Callable[[Trial], float]:
         def func(trial: Trial) -> float:
             if intermediate is not None:
@@ -70,20 +100,30 @@ def test_run_trial_pruned(storage_mode: str) -> None:
 
         return func
 
+    logging.enable_propagation()
+
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
+        caplog.clear()
         frozen_trial = _optimize._run_trial(study, gen_func(), catch=())
         assert frozen_trial.state == TrialState.PRUNED
         assert frozen_trial.value is None
+        assert "Trial 0 pruned." in caplog.text
 
+        caplog.clear()
         frozen_trial = _optimize._run_trial(study, gen_func(intermediate=1), catch=())
         assert frozen_trial.state == TrialState.PRUNED
         assert frozen_trial.value == 1
+        assert "Trial 1 pruned." in caplog.text
 
+        caplog.clear()
         frozen_trial = _optimize._run_trial(study, gen_func(intermediate=float("nan")), catch=())
         assert frozen_trial.state == TrialState.PRUNED
         assert frozen_trial.value is None
+        assert "Trial 2 pruned." in caplog.text
+
+    logging.disable_propagation()
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
