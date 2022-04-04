@@ -107,6 +107,12 @@ def test_run_trial_exception(storage_mode: str) -> None:
         with pytest.raises(ValueError):
             _optimize._run_trial(study, func_value_error, ())
 
+    # Test trial with unacceptable exception.
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        with pytest.raises(ValueError):
+            _optimize._run_trial(study, func_value_error, (ArithmeticError,))
+
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_run_trial_invoke_tell_with_suppressing_warning(storage_mode: str) -> None:
