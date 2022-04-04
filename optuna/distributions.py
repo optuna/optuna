@@ -680,6 +680,8 @@ def _get_single_value(distribution: BaseDistribution) -> Union[int, float, Categ
     assert False
 
 
+# TODO(himkt): Remove this method with the deletion of deprecated distributions.
+# https://github.com/optuna/optuna/issues/2941
 def _warn_old_distribution_conversion(
     old_distribution_class_name: str,
     distribution_class_name: str,
@@ -694,6 +696,8 @@ def _warn_old_distribution_conversion(
     warnings.warn(message)
 
 
+# TODO(himkt): Remove this method with the deletion of deprecated distributions.
+# https://github.com/optuna/optuna/issues/2941
 def _convert_old_distribution_to_new_distribution(
     distribution: BaseDistribution,
     suppress_warning: bool = False,
