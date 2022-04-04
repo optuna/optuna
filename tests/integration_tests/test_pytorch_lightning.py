@@ -139,17 +139,18 @@ def test_pytorch_lightning_pruning_callback_ddp_monitor(
     storage_mode: str,
 ) -> None:
     def objective(trial: optuna.trial.Trial) -> float:
-
+        callback = PyTorchLightningPruningCallback(trial, monitor="accuracy")
         trainer = pl.Trainer(
             max_epochs=2,
             accelerator="ddp_cpu",
             num_processes=2,
             enable_checkpointing=False,
-            callbacks=[PyTorchLightningPruningCallback(trial, monitor="accuracy")],
+            callbacks=[callback],
         )
 
         model = ModelDDP()
         trainer.fit(model)
+        callback.post_process(trial)
 
         return 1.0
 
