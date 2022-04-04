@@ -162,6 +162,7 @@ class WeightsAndBiasesCallback(object):
         run.config.update({**attributes})
 
         if self._as_multirun:
+            run.tags = tuple(self._wandb_kwargs.get("tags", ())) + (study.study_name, )
             run.finish()
 
     @experimental("3.0.0")
