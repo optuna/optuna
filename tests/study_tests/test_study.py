@@ -1135,7 +1135,9 @@ def test_ask_distribution_conversion() -> None:
 
     study = create_study()
 
-    with patch("optuna.distributions._warn_old_distribution_conversion",) as mock_obj:
+    with patch(
+        "optuna.distributions._warn_old_distribution_conversion",
+    ) as mock_obj:
         trial = study.ask(fixed_distributions=fixed_distributions)
         assert mock_obj.call_count == 6
         mock_obj.call_args_list == [
@@ -1172,7 +1174,9 @@ def test_ask_distribution_conversion_noop() -> None:
 
     study = create_study()
 
-    with patch("optuna.distributions._warn_old_distribution_conversion",) as mock_obj:
+    with patch(
+        "optuna.distributions._warn_old_distribution_conversion",
+    ) as mock_obj:
         trial = study.ask(fixed_distributions=fixed_distributions)
         assert mock_obj.call_count == 0
 
