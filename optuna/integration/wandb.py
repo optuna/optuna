@@ -55,7 +55,7 @@ class WeightsAndBiasesCallback(object):
                 return (x - 2) ** 2
 
 
-            study = optuna.create_study(multirun_tag="my_study")
+            study = optuna.create_study()
 
             wandb_kwargs = {"project": "my-project"}
             wandbc = WeightsAndBiasesCallback(wandb_kwargs=wandb_kwargs)
@@ -78,8 +78,6 @@ class WeightsAndBiasesCallback(object):
         as_multirun:
             Creates new runs for each trial. Useful for generating W&B Sweeps like
             panels (for ex., parameter importance, parallel coordinates, etc).
-        multirun_tag:
-            Tag name to tag runs which are generated during the study.
 
     Raises:
         :exc:`ValueError`:
@@ -105,8 +103,6 @@ class WeightsAndBiasesCallback(object):
             )
 
         self._wandb_kwargs = wandb_kwargs or {}
-        tags = self._wandb_kwargs.get("tags")
-
 
         self._metric_name = metric_name
         self._as_multirun = as_multirun
@@ -152,10 +148,10 @@ class WeightsAndBiasesCallback(object):
 
         run.log({**trial.params, **metrics}, step=step)
 
-        run.config.update({**attributes})
+        run.config.update({**attributes, **trial.params})
 
         if self._as_multirun:
-            run.tags = tuple(self._wandb_kwargs.get("tags", ())) + (study.study_name, )
+            run.tags = tuple(self._wandb_kwargs.get("tags", ())) + (study.study_name,)
             run.finish()
 
     @experimental("3.0.0")
