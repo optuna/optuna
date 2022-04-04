@@ -10,11 +10,11 @@ from optuna.storages._redis import RedisStorage
 
 
 __all__ = [
-    "RetryFailedTrialCallback",
     "BaseStorage",
     "InMemoryStorage",
     "RDBStorage",
     "RedisStorage",
+    "RetryFailedTrialCallback",
     "_CachedStorage",
     "fail_stale_trials",
 ]
