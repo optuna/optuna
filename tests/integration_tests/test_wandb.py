@@ -82,28 +82,27 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
 
     # Vanilla update
     wandb.sdk.wandb_run.Run = mock.MagicMock
+    expected = {"direction": ["MINIMIZE"], "x": 1.1, "y": 2.2}
+    trial_params = {"x": 1.1, "y": 2.2}
 
     study = optuna.create_study(direction="minimize", study_name="test_study")
     wandbc = WeightsAndBiasesCallback()
+    study.enqueue_trial(trial_params)
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
 
-    expected = {"direction": ["MINIMIZE"]}
-    wandb.run.config.update.call_args[0][0].pop("x")
-    wandb.run.config.update.call_args[0][0].pop("y")
     wandb.run.config.update.assert_called_once_with(expected)
 
     wandbc = WeightsAndBiasesCallback(as_multirun=True)
     wandb.run = mock.MagicMock()
     _wrapped_func = wandbc.track_in_wandb(_objective_func)
+
+    study.enqueue_trial(trial_params)
     study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
-    wandb.run.config.update.call_args[0][0].pop("x")
-    wandb.run.config.update.call_args[0][0].pop("y")
     wandb.run.config.update.assert_called_once_with(expected)
 
     wandb.run = None
+    study.enqueue_trial(trial_params)
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
-    wandb.init().config.update.call_args[0][0].pop("x")
-    wandb.init().config.update.call_args[0][0].pop("y")
     wandb.init().config.update.assert_called_once_with(expected)
 
 
@@ -111,28 +110,27 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
 def test_multiobjective_attributes_set_on_epoch(wandb: mock.MagicMock) -> None:
 
     wandb.sdk.wandb_run.Run = mock.MagicMock
+    trial_params = {"x": 1.1, "y": 2.2}
+    expected = {"direction": ["MINIMIZE", "MAXIMIZE"], "x": 1.1, "y": 2.2}
 
     study = optuna.create_study(directions=["minimize", "maximize"])
     wandbc = WeightsAndBiasesCallback()
-    study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
 
-    expected = {"direction": ["MINIMIZE", "MAXIMIZE"]}
-    wandb.run.config.update.call_args[0][0].pop("x")
-    wandb.run.config.update.call_args[0][0].pop("y")
+    study.enqueue_trial(trial_params)
+    study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
     wandb.run.config.update.assert_called_once_with(expected)
 
     wandbc = WeightsAndBiasesCallback(as_multirun=True)
     wandb.run = mock.MagicMock()
     _wrapped_func = wandbc.track_in_wandb(_multiobjective_func)
+
+    study.enqueue_trial(trial_params)
     study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
-    wandb.run.config.update.call_args[0][0].pop("x")
-    wandb.run.config.update.call_args[0][0].pop("y")
     wandb.run.config.update.assert_called_once_with(expected)
 
     wandb.run = None
+    study.enqueue_trial({"x": 1.1, "y": 2.2})
     study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
-    wandb.init().config.update.call_args[0][0].pop("x")
-    wandb.init().config.update.call_args[0][0].pop("y")
     wandb.init().config.update.assert_called_once_with(expected)
 
 
