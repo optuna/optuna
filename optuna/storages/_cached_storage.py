@@ -51,6 +51,7 @@ class _CachedStorage(BaseStorage):
         self._backend = backend
         self._studies: Dict[int, _StudyInfo] = {}
         self._trial_id_to_study_id_and_number: Dict[int, Tuple[int, int]] = {}
+        self._study_id_and_number_to_trial_id: Dict[Tuple[int, int], int] = {}
         self._lock = threading.Lock()
 
     def __getstate__(self) -> Dict[Any, Any]:
@@ -77,6 +78,9 @@ class _CachedStorage(BaseStorage):
             if study_id in self._studies:
                 for trial_id in self._studies[study_id].trials:
                     if trial_id in self._trial_id_to_study_id_and_number:
+                        del self._study_id_and_number_to_trial_id[
+                            self._trial_id_to_study_id_and_number[trial_id]
+                        ]
                         del self._trial_id_to_study_id_and_number[trial_id]
                 del self._studies[study_id]
 
@@ -226,7 +230,11 @@ class _CachedStorage(BaseStorage):
 
     def get_trial_id_from_study_id_trial_number(self, study_id: int, trial_number: int) -> int:
 
-        # TODO(hvy): Optimize to not issue a query to the backend storage.
+        key = (study_id, trial_number)
+        with self._lock:
+            if key in self._study_id_and_number_to_trial_id:
+                return self._study_id_and_number_to_trial_id[key]
+
         return self._backend.get_trial_id_from_study_id_trial_number(study_id, trial_number)
 
     def get_best_trial(self, study_id: int) -> FrozenTrial:
@@ -364,6 +372,7 @@ class _CachedStorage(BaseStorage):
                 study_id,
                 trial.number,
             )
+            self._study_id_and_number_to_trial_id[(study_id, trial.number)] = trial._trial_id
             study.trials[trial.number] = trial
 
     @staticmethod

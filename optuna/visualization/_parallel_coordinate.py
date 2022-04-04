@@ -98,7 +98,7 @@ def _get_parallel_coordinate_plot(
 ) -> "go.Figure":
 
     layout = go.Layout(title="Parallel Coordinate Plot")
-    reverse_scale = _is_reverse_scale(target, study.direction)
+    reverse_scale = _is_reverse_scale(study, target)
 
     trials = [trial for trial in study.trials if trial.state == TrialState.COMPLETE]
 

@@ -1,5 +1,4 @@
 import os
-import pickle
 import shutil
 import sys
 import tempfile
@@ -152,18 +151,6 @@ def create_test_storage(engine_kwargs: Optional[Dict[str, Any]] = None) -> RDBSt
 
     storage = RDBStorage("sqlite:///:memory:", engine_kwargs=engine_kwargs)
     return storage
-
-
-def test_pickle_storage() -> None:
-
-    storage = create_test_storage()
-    restored_storage = pickle.loads(pickle.dumps(storage))
-    assert storage.url == restored_storage.url
-    assert storage.engine_kwargs == restored_storage.engine_kwargs
-    assert storage.skip_compatibility_check == restored_storage.skip_compatibility_check
-    assert storage.engine != restored_storage.engine
-    assert storage.scoped_session != restored_storage.scoped_session
-    assert storage._version_manager != restored_storage._version_manager
 
 
 def test_create_scoped_session() -> None:
