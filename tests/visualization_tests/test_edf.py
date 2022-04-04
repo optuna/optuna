@@ -6,6 +6,10 @@ import pytest
 from optuna.study import create_study
 from optuna.visualization import plot_edf
 
+import sys
+
+import matplotlib.pyplot as plt
+
 
 def test_target_is_none_and_study_is_multi_obj() -> None:
 
@@ -28,13 +32,16 @@ def test_plot_optimization_history(direction: str) -> None:
     # Test with no studies.
     figure = plot_edf([])
     assert len(figure.data) == 0
+    plt.savefig(sys.stdout.buffer)
 
     # Test with no trials.
     figure = plot_edf(create_study(direction=direction))
     assert len(figure.data) == 0
+    plt.savefig(sys.stdout.buffer)
 
     figure = plot_edf([create_study(direction=direction), create_study(direction=direction)])
     assert len(figure.data) == 0
+    plt.savefig(sys.stdout.buffer)
 
     # Test with a study.
     study0 = create_study(direction=direction)
@@ -43,6 +50,7 @@ def test_plot_optimization_history(direction: str) -> None:
     _validate_edf_values(figure.data[0]["y"])
     assert len(figure.data) == 1
     assert figure.layout.xaxis.title.text == "Objective Value"
+    plt.savefig(sys.stdout.buffer)
 
     # Test with two studies.
     study1 = create_study(direction=direction)
@@ -51,10 +59,13 @@ def test_plot_optimization_history(direction: str) -> None:
     for points in figure.data:
         _validate_edf_values(points["y"])
     assert len(figure.data) == 2
+    plt.savefig(sys.stdout.buffer)
+
     figure = plot_edf((study0, study1))
     for points in figure.data:
         _validate_edf_values(points["y"])
     assert len(figure.data) == 2
+    plt.savefig(sys.stdout.buffer)
 
     # Test with a customized target value.
     study0 = create_study(direction=direction)
@@ -63,6 +74,7 @@ def test_plot_optimization_history(direction: str) -> None:
         figure = plot_edf(study0, target=lambda t: t.params["x"])
     _validate_edf_values(figure.data[0]["y"])
     assert len(figure.data) == 1
+    plt.savefig(sys.stdout.buffer)
 
     # Test with a customized target name.
     study0 = create_study(direction=direction)
@@ -71,3 +83,4 @@ def test_plot_optimization_history(direction: str) -> None:
     _validate_edf_values(figure.data[0]["y"])
     assert len(figure.data) == 1
     assert figure.layout.xaxis.title.text == "Target Name"
+    plt.savefig(sys.stdout.buffer)
