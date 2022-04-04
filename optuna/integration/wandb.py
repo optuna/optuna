@@ -107,13 +107,6 @@ class WeightsAndBiasesCallback(object):
         self._wandb_kwargs = wandb_kwargs or {}
         tags = self._wandb_kwargs.get("tags")
 
-        if as_multirun and not (
-            tags and isinstance(tags, Sequence) and all(map(lambda x: isinstance(x, str), tags))
-        ):
-            raise RuntimeError(
-                "atleast one `tag` in `wandb_kwargs` is necessary "
-                "when `as_multirun` is set to `True`."
-            )
 
         self._metric_name = metric_name
         self._as_multirun = as_multirun
