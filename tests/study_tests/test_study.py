@@ -1260,6 +1260,18 @@ def test_tell_multi_objective_automatically_fail() -> None:
         assert study.trials[-1].state == TrialState.FAIL
         assert study.trials[-1].values is None
 
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [1.0, None])  # type: ignore
+        assert len(study.trials) == 4
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [None, None])  # type: ignore
+        assert len(study.trials) == 5
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
 
 def test_tell_invalid() -> None:
     study = create_study()
