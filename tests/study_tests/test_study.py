@@ -1134,7 +1134,17 @@ def test_ask_distribution_conversion() -> None:
     }
 
     study = create_study()
-    trial = study.ask(fixed_distributions=fixed_distributions)
+
+    with patch("optuna.distributions._warn_old_distribution_conversion",) as mock_obj:
+        trial = study.ask(fixed_distributions=fixed_distributions)
+        assert mock_obj.call_count == 6
+        mock_obj.call_args_list == [
+            (("UniformDistribution", "FloatDistribution"),),
+            (("DiscreteUniformDistribution", "FloatDistribution"),),
+            (("LogUniformDistribution", "FloatDistribution"),),
+            (("IntUniformDistribution", "IntDistribution"),),
+            (("IntLogUniformDistribution", "IntDistribution"),),
+        ]
 
     expected_distributions = {
         "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
@@ -1161,7 +1171,10 @@ def test_ask_distribution_conversion_noop() -> None:
     }
 
     study = create_study()
-    trial = study.ask(fixed_distributions=fixed_distributions)
+
+    with patch("optuna.distributions._warn_old_distribution_conversion",) as mock_obj:
+        trial = study.ask(fixed_distributions=fixed_distributions)
+        assert mock_obj.call_count == 0
 
     # Check fixed_distributions doesn't change.
     assert trial.distributions == fixed_distributions
