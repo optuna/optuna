@@ -1140,7 +1140,7 @@ def test_ask_distribution_conversion() -> None:
     ) as mock_obj:
         trial = study.ask(fixed_distributions=fixed_distributions)
         assert mock_obj.call_count == 6
-        mock_obj.call_args_list == [
+        assert mock_obj.call_args_list == [
             (("UniformDistribution", "FloatDistribution"),),
             (("DiscreteUniformDistribution", "FloatDistribution"),),
             (("LogUniformDistribution", "FloatDistribution"),),
