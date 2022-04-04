@@ -682,22 +682,6 @@ def _get_single_value(distribution: BaseDistribution) -> Union[int, float, Categ
 
 # TODO(himkt): Remove this method with the deletion of deprecated distributions.
 # https://github.com/optuna/optuna/issues/2941
-def _warn_old_distribution_conversion(
-    old_distribution_class_name: str,
-    distribution_class_name: str,
-) -> None:
-    message = (
-        f"{old_distribution_class_name} is deprecated and internally converted to"
-        f" {distribution_class_name}. If you see this message, please update your"
-        f" source code to use {distribution_class_name} instead of"
-        f" {old_distribution_class_name}."
-        " See https://github.com/optuna/optuna/issues/2941."
-    )
-    warnings.warn(message)
-
-
-# TODO(himkt): Remove this method with the deletion of deprecated distributions.
-# https://github.com/optuna/optuna/issues/2941
 def _convert_old_distribution_to_new_distribution(
     distribution: BaseDistribution,
     suppress_warning: bool = False,
@@ -749,9 +733,13 @@ def _convert_old_distribution_to_new_distribution(
         new_distribution = distribution
 
     if new_distribution != distribution and not suppress_warning:
-        _warn_old_distribution_conversion(
-            distribution.__class__.__name__,
-            new_distribution.__class__.__name__,
+        message = (
+            f"{distribution} is deprecated and internally converted to"
+            f" {new_distribution}. If you see this message, please update your"
+            f" source code to use {new_distribution.__class__.__name__} instead of"
+            f" {distribution.__class__.__name__}."
+            " See https://github.com/optuna/optuna/issues/2941."
         )
+        warnings.warn(message, FutureWarning)
 
     return new_distribution
