@@ -1,6 +1,6 @@
 from typing import Union
 
-from optuna._callbacks import RetryFailedTrialCallback  # NOQA
+from optuna._callbacks import RetryFailedTrialCallback
 from optuna.storages._base import BaseStorage
 from optuna.storages._cached_storage import _CachedStorage
 from optuna.storages._heartbeat import fail_stale_trials
@@ -10,6 +10,7 @@ from optuna.storages._redis import RedisStorage
 
 
 __all__ = [
+    "RetryFailedTrialCallback",
     "BaseStorage",
     "InMemoryStorage",
     "RDBStorage",
