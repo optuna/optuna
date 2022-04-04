@@ -81,7 +81,6 @@ jobs:
             --ignore tests/integration_tests/test_pytorch_ignite.py \
             --ignore tests/integration_tests/test_pytorch_lightning.py \
             --ignore tests/integration_tests/test_skorch.py \
-            --ignore tests/integration_tests/test_tfkeras.py \
             --ignore tests/integration_tests/test_fastaiv2.py
         else
           pytest -s tests/integration_tests
