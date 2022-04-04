@@ -1145,6 +1145,7 @@ def test_ask_distribution_conversion() -> None:
             (("DiscreteUniformDistribution", "FloatDistribution"),),
             (("LogUniformDistribution", "FloatDistribution"),),
             (("IntUniformDistribution", "IntDistribution"),),
+            (("IntUniformDistribution", "IntDistribution"),),
             (("IntLogUniformDistribution", "IntDistribution"),),
         ]
 
