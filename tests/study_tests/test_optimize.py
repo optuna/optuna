@@ -6,9 +6,9 @@ from _pytest.logging import LogCaptureFixture
 import pytest
 
 from optuna import create_study
+from optuna import logging
 from optuna import Trial
 from optuna import TrialPruned
-from optuna import logging
 from optuna.study import _optimize
 from optuna.study._tell import _tell_with_warning
 from optuna.testing.storage import STORAGE_MODES
