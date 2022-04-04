@@ -167,8 +167,11 @@ def test_filter_inf_trials_message(caplog: LogCaptureFixture, with_message: bool
 
     if with_message:
         assert msg in caplog.text
+        n_filtered_as_inf = 0
         for record in caplog.records:
             if record.msg == msg:
                 assert record.levelno == logging.WARNING
+                n_filtered_as_inf += 1
+        assert n_filtered_as_inf == 1
     else:
         assert msg not in caplog.text
