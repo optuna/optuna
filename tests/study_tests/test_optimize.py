@@ -20,9 +20,21 @@ def test_run_trial(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
+        frozen_trial = _optimize._run_trial(study, lambda _: 1.0, catch=())
+        assert frozen_trial.state == TrialState.COMPLETE
+        assert frozen_trial.value == 1.0
+
         frozen_trial = _optimize._run_trial(study, lambda _: float("inf"), catch=())
         assert frozen_trial.state == TrialState.COMPLETE
         assert frozen_trial.value == float("inf")
+
+        frozen_trial = _optimize._run_trial(study, lambda _: +float("inf"), catch=())
+        assert frozen_trial.state == TrialState.COMPLETE
+        assert frozen_trial.value == +float("inf")
+
+        frozen_trial = _optimize._run_trial(study, lambda _: -float("inf"), catch=())
+        assert frozen_trial.state == TrialState.COMPLETE
+        assert frozen_trial.value == -float("inf")
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
