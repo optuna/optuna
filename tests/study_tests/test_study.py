@@ -1169,13 +1169,7 @@ def test_ask_distribution_conversion_noop() -> None:
 
     study = create_study()
 
-    with pytest.warns(
-        None,
-        match="See https://github.com/optuna/optuna/issues/2941",
-    ) as record:
-
-        trial = study.ask(fixed_distributions=fixed_distributions)
-        assert len(record) == 0
+    trial = study.ask(fixed_distributions=fixed_distributions)
 
     # Check fixed_distributions doesn't change.
     assert trial.distributions == fixed_distributions

@@ -740,13 +740,7 @@ def test_create_trial_distribution_conversion_noop() -> None:
         "cd": distributions.CategoricalDistribution(choices=["a", "b", "c"]),
     }
 
-    with pytest.warns(
-        None,
-        match="See https://github.com/optuna/optuna/issues/2941",
-    ) as record:
-
-        trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
-        assert len(record) == 0
+    trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
 
     # Check fixed_distributions doesn't change.
     assert trial.distributions == fixed_distributions
