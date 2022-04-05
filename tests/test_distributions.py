@@ -473,7 +473,7 @@ def test_convert_old_distribution_to_new_distribution_noop() -> None:
     cd = distributions.CategoricalDistribution(choices=["a", "b", "c"])
     assert distributions._convert_old_distribution_to_new_distribution(
         cd
-    ) == distributions.CategoricalDistribution(choices=["a", "b", "c"])
+    ) == cd
 
     # No conversion happens for new distributions.
     fd = distributions.FloatDistribution(low=0, high=10, log=False, step=None)
