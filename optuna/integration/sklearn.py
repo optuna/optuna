@@ -699,6 +699,9 @@ class OptunaSearchCV(BaseEstimator):
 
         _imports.check()
 
+        if not isinstance(param_distributions, dict):
+            raise TypeError("param_distributions must be a dictionary.")
+
         # TODO(himkt): Remove this method with the deletion of deprecated distributions.
         # https://github.com/optuna/optuna/issues/2941
         param_distributions = {
@@ -736,9 +739,6 @@ class OptunaSearchCV(BaseEstimator):
 
         if not hasattr(self.estimator, "fit"):
             raise ValueError("estimator must be a scikit-learn estimator.")
-
-        if type(self.param_distributions) is not dict:
-            raise ValueError("param_distributions must be a dictionary.")
 
         for name, distribution in self.param_distributions.items():
             if not isinstance(distribution, distributions.BaseDistribution):
