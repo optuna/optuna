@@ -119,7 +119,7 @@ print("Number of finished trials: ", len(study.trials))
 
 
 ###################################################################################################
-# Check trials on pareto front visually.
+# Check trials on Pareto front visually.
 optuna.visualization.plot_pareto_front(study, target_names=["FLOPS", "accuracy"])
 
 
