@@ -1,4 +1,5 @@
 from typing import Callable
+from typing import Generator
 from typing import Optional
 from unittest import mock
 
@@ -16,13 +17,22 @@ from optuna.testing.storage import StorageSupplier
 from optuna.trial import TrialState
 
 
-@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_run_trial(storage_mode: str, caplog: LogCaptureFixture) -> None:
+@pytest.fixture(autouse=True)
+def logging_setup() -> Generator[None, None, None]:
     # We need to reconstruct our default handler to properly capture stderr.
     logging._reset_library_root_logger()
     logging.enable_default_handler()
     logging.set_verbosity(logging.INFO)
     logging.enable_propagation()
+
+    yield
+
+    # After testing, restore default propagation setting.
+    logging.disable_propagation()
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_run_trial(storage_mode: str, caplog: LogCaptureFixture) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
@@ -56,13 +66,6 @@ def test_run_trial(storage_mode: str, caplog: LogCaptureFixture) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_run_trial_automatically_fail(storage_mode: str, caplog: LogCaptureFixture) -> None:
-    # We need to reconstruct our default handler to properly capture stderr.
-    logging._reset_library_root_logger()
-    logging.enable_default_handler()
-    logging.set_verbosity(logging.INFO)
-    logging.enable_propagation()
-
-    logging.enable_propagation()
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
@@ -108,12 +111,6 @@ def test_run_trial_pruned(storage_mode: str, caplog: LogCaptureFixture) -> None:
             raise TrialPruned
 
         return func
-
-    # We need to reconstruct our default handler to properly capture stderr.
-    logging._reset_library_root_logger()
-    logging.enable_default_handler()
-    logging.set_verbosity(logging.INFO)
-    logging.enable_propagation()
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
