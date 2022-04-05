@@ -741,7 +741,7 @@ def test_create_trial_distribution_conversion_noop() -> None:
     }
 
     with pytest.warns(
-        Warning,
+        None,
         match="See https://github.com/optuna/optuna/issues/2941",
     ) as record:
 

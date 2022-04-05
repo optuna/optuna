@@ -1170,7 +1170,7 @@ def test_ask_distribution_conversion_noop() -> None:
     study = create_study()
 
     with pytest.warns(
-        Warning,
+        None,
         match="See https://github.com/optuna/optuna/issues/2941",
     ) as record:
 
