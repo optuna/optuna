@@ -10,10 +10,10 @@ import optuna
 optuna.logging.disable_default_handler()
 
 
-def create_study(seed: int) -> optuna.Study:
+def create_study() -> optuna.Study:
 
     n_objectives = 2
-    directions = ["minimize" for _ in range(n_objectives)]
+    directions = ["minimize"] * n_objectives
 
     sampler_name = sys.argv[1]
 
