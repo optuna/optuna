@@ -698,10 +698,13 @@ def test_create_trial_distribution_conversion() -> None:
         "ild": distributions.IntLogUniformDistribution(low=1, high=10),
     }
 
-    with pytest.warns(FutureWarning):
-        with patch("optuna.distributions.warnings.warn", side_effect=warnings.warn) as mock_obj:
-            trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
-            assert mock_obj.call_count == 6
+    with pytest.warns(
+        FutureWarning,
+        match="See https://github.com/optuna/optuna/issues/2941",
+    ) as record:
+
+        trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
+        assert len(record) == 6
 
     expected_distributions = {
         "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
@@ -737,9 +740,13 @@ def test_create_trial_distribution_conversion_noop() -> None:
         "cd": distributions.CategoricalDistribution(choices=["a", "b", "c"]),
     }
 
-    with patch("optuna.distributions.warnings.warn", side_effect=warnings.warn) as mock_obj:
+    with pytest.warns(
+        Warning,
+        match="See https://github.com/optuna/optuna/issues/2941",
+    ) as record:
+
         trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
-        assert mock_obj.call_count == 0
+        assert len(record) == 0
 
     # Check fixed_distributions doesn't change.
     assert trial.distributions == fixed_distributions

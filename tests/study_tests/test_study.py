@@ -12,7 +12,6 @@ from typing import Optional
 from unittest.mock import Mock  # NOQA
 from unittest.mock import patch
 import uuid
-import warnings
 
 import _pytest.capture
 import pytest
@@ -1136,10 +1135,13 @@ def test_ask_distribution_conversion() -> None:
 
     study = create_study()
 
-    with pytest.warns(FutureWarning):
-        with patch("optuna.distributions.warnings.warn", side_effect=warnings.warn) as mock_obj:
-            trial = study.ask(fixed_distributions=fixed_distributions)
-            assert mock_obj.call_count == 6
+    with pytest.warns(
+        FutureWarning,
+        match="See https://github.com/optuna/optuna/issues/2941",
+    ) as record:
+
+        trial = study.ask(fixed_distributions=fixed_distributions)
+        assert len(record) == 6
 
     expected_distributions = {
         "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
@@ -1167,9 +1169,13 @@ def test_ask_distribution_conversion_noop() -> None:
 
     study = create_study()
 
-    with patch("optuna.distributions.warnings.warn", side_effect=warnings.warn) as mock_obj:
+    with pytest.warns(
+        Warning,
+        match="See https://github.com/optuna/optuna/issues/2941",
+    ) as record:
+
         trial = study.ask(fixed_distributions=fixed_distributions)
-        assert mock_obj.call_count == 0
+        assert len(record) == 0
 
     # Check fixed_distributions doesn't change.
     assert trial.distributions == fixed_distributions
