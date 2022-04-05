@@ -320,3 +320,41 @@ def test_objective_error_score_invalid() -> None:
 
     with pytest.raises(ValueError, match="error_score must be 'raise' or numeric."):
         optuna_search.fit(X)
+
+
+# TODO(himkt): Remove this method with the deletion of deprecated distributions.
+# https://github.com/optuna/optuna/issues/2941
+def test_optuna_search_convert_deprecated_distribution() -> None:
+
+    param_dist = {
+        "ud": distributions.UniformDistribution(low=0, high=10),
+        "dud": distributions.DiscreteUniformDistribution(low=0, high=10, q=2),
+        "lud": distributions.LogUniformDistribution(low=1, high=10),
+        "id": distributions.IntUniformDistribution(low=0, high=10),
+        "idd": distributions.IntUniformDistribution(low=0, high=10, step=2),
+        "ild": distributions.IntLogUniformDistribution(low=1, high=10),
+    }
+
+    expected_param_dist = {
+        "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
+        "dud": distributions.FloatDistribution(low=0, high=10, log=False, step=2),
+        "lud": distributions.FloatDistribution(low=1, high=10, log=True, step=None),
+        "id": distributions.IntDistribution(low=0, high=10, log=False, step=1),
+        "idd": distributions.IntDistribution(low=0, high=10, log=False, step=2),
+        "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
+    }
+
+    optuna_search = integration.OptunaSearchCV(
+        KernelDensity(),
+        param_dist,
+    )
+
+    assert optuna_search.param_distributions == expected_param_dist
+
+    # It confirms that ask doesn't convert non-deprecated distributions.
+    optuna_search = integration.OptunaSearchCV(
+        KernelDensity(),
+        expected_param_dist,
+    )
+
+    assert optuna_search.param_distributions == expected_param_dist
