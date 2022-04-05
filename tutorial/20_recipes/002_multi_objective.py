@@ -126,7 +126,7 @@ optuna.visualization.plot_pareto_front(study, target_names=["FLOPS", "accuracy"]
 ###################################################################################################
 # Fetch the list of trials on the Pareto front with :attr:`~optuna.study.Study.best_trials`.
 #
-# For example, the following code picks the trial with the highest accuracy from the Pareto front.
+# For example, the following code shows the number of trials on the Pareto front and picks the trial with the highest accuracy.
 
 print(f"Number of trials on the Pareto front: {len(study.best_trials)}")
 
