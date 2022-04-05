@@ -366,7 +366,7 @@ def test_botorch_constraints_func_late() -> None:
     study.sampler = sampler
 
     # Warns when `train_con` contains NaN. Should not raise but will with NaN for previous trials
-    # that were not computed with contraints.
+    # that were not computed with constraints.
     with pytest.warns(UserWarning):
         study.optimize(lambda t: t.suggest_float("x0", 0, 1), n_trials=2)
 
@@ -413,7 +413,7 @@ def test_botorch_distributions() -> None:
 
 def test_botorch_invalid_different_studies() -> None:
     # Using the same sampler with different studies should yield an error since the sampler is
-    # stateful holding the computed constraints. Two studies are considefered different if their
+    # stateful holding the computed constraints. Two studies are considered different if their
     # IDs differ.
     # We use the RDB storage since this check does not work for the in-memory storage where all
     # study IDs are identically 0.

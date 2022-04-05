@@ -127,7 +127,7 @@ def test_optimize_trivial_in_memory_resume() -> None:
 
 def test_optimize_trivial_rdb_resume_study() -> None:
 
-    study = create_study("sqlite:///:memory:")
+    study = create_study(storage="sqlite:///:memory:")
     study.optimize(func, n_trials=10)
     check_study(study)
 
@@ -299,17 +299,22 @@ def test_trial_set_and_get_system_attrs(storage_mode: str) -> None:
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_get_all_study_summaries(storage_mode: str) -> None:
+@pytest.mark.parametrize("include_best_trial", [True, False])
+def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
         study.optimize(Func(), n_trials=5)
 
-        summaries = get_all_study_summaries(study._storage)
+        summaries = get_all_study_summaries(study._storage, include_best_trial)
         summary = [s for s in summaries if s._study_id == study._study_id][0]
 
         assert summary.study_name == study.study_name
         assert summary.n_trials == 5
+        if include_best_trial:
+            assert summary.best_trial is not None
+        else:
+            assert summary.best_trial is None
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -410,15 +415,15 @@ def test_delete_study(storage_mode: str) -> None:
     with StorageSupplier(storage_mode) as storage:
         # Test deleting a non-existing study.
         with pytest.raises(KeyError):
-            delete_study("invalid-study-name", storage)
+            delete_study(study_name="invalid-study-name", storage=storage)
 
         # Test deleting an existing study.
         study = create_study(storage=storage, load_if_exists=False)
-        delete_study(study.study_name, storage)
+        delete_study(study_name=study.study_name, storage=storage)
 
         # Test failed to delete the study which is already deleted.
         with pytest.raises(KeyError):
-            delete_study(study.study_name, storage)
+            delete_study(study_name=study.study_name, storage=storage)
 
 
 @pytest.mark.parametrize("from_storage_mode", STORAGE_MODES)
@@ -647,12 +652,13 @@ def test_enqueue_trial_properly_sets_user_attr(storage_mode: str) -> None:
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
+    fixed_value = 11
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
         assert len(study.trials) == 0
 
-        study.enqueue_trial(params={"x": 11})
+        study.enqueue_trial(params={"x": fixed_value})
 
         def objective(trial: Trial) -> float:
 
@@ -661,7 +667,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
         with pytest.warns(UserWarning):
             study.optimize(objective, n_trials=1)
         t = study.trials[0]
-        assert -10 <= t.params["x"] <= 10
+        assert t.params["x"] == fixed_value
 
     # Internal logic might differ when distribution contains a single element.
     # Test it explicitly.
@@ -669,7 +675,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
         study = create_study(storage=storage)
         assert len(study.trials) == 0
 
-        study.enqueue_trial(params={"x": 11})
+        study.enqueue_trial(params={"x": fixed_value})
 
         def objective(trial: Trial) -> float:
 
@@ -678,7 +684,7 @@ def test_enqueue_trial_with_out_of_range_parameters(storage_mode: str) -> None:
         with pytest.warns(UserWarning):
             study.optimize(objective, n_trials=1)
         t = study.trials[0]
-        assert t.params["x"] == 1
+        assert t.params["x"] == fixed_value
 
 
 @patch("optuna.study._optimize.gc.collect")
@@ -730,6 +736,19 @@ def test_optimize_with_progbar_timeout(capsys: _pytest.capture.CaptureFixture) -
 
     assert "00:02/00:02" in err
     assert "100%" in err
+
+
+def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
+
+    study = create_study()
+    with pytest.warns(
+        UserWarning, match="The timeout-based progress bar is not supported with n_jobs != 1."
+    ):
+        study.optimize(lambda _: 1.0, timeout=2.0, show_progress_bar=True, n_jobs=2)
+    _, err = capsys.readouterr()
+
+    # Testing for a character that forms progress bar borders.
+    assert "|" not in err
 
 
 @pytest.mark.parametrize(
@@ -826,19 +845,6 @@ def test_optimize_without_progbar_no_constraints(
 
     study = create_study()
     study.optimize(_objective, n_jobs=n_jobs)
-    _, err = capsys.readouterr()
-
-    # Testing for a character that forms progress bar borders.
-    assert "|" not in err
-
-
-def test_optimize_with_progbar_parallel_timeout(capsys: _pytest.capture.CaptureFixture) -> None:
-
-    study = create_study()
-    with pytest.warns(
-        UserWarning, match="The timeout-based progress bar is not supported with n_jobs != 1."
-    ):
-        study.optimize(lambda _: 1.0, timeout=2.0, show_progress_bar=True, n_jobs=2)
     _, err = capsys.readouterr()
 
     # Testing for a character that forms progress bar borders.
@@ -1094,11 +1100,11 @@ def test_ask() -> None:
 def test_ask_enqueue_trial() -> None:
     study = create_study()
 
-    study.enqueue_trial({"x": 0.5}, user_attrs={"memo", "this is memo"})
+    study.enqueue_trial({"x": 0.5}, user_attrs={"memo": "this is memo"})
 
     trial = study.ask()
     assert trial.suggest_float("x", 0, 1) == 0.5
-    assert trial.user_attrs == {"memo", "this is memo"}
+    assert trial.user_attrs == {"memo": "this is memo"}
 
 
 def test_ask_fixed_search_space() -> None:
@@ -1278,11 +1284,11 @@ def test_study_summary_datetime_start_calculation(storage_mode: str) -> None:
         study.enqueue_trial(params={"x": 1})
 
         # Study summary with only enqueued trials should have null datetime_start
-        summaries = study._storage.get_all_study_summaries()
+        summaries = study._storage.get_all_study_summaries(include_best_trial=True)
         assert summaries[0].datetime_start is None
 
         # Study summary with completed trials should have nonnull datetime_start
         study.optimize(objective, n_trials=1)
         study.enqueue_trial(params={"x": 1})
-        summaries = study._storage.get_all_study_summaries()
+        summaries = study._storage.get_all_study_summaries(include_best_trial=True)
         assert summaries[0].datetime_start is not None

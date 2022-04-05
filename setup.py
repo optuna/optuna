@@ -39,6 +39,7 @@ def get_install_requires() -> List[str]:
         "scipy!=1.4.0" if sys.version[:3] == "3.6" else "scipy>=1.7.0",
         "sqlalchemy>=1.1.0",
         "tqdm",
+        "typing_extensions",
         "PyYAML",  # Only used in `optuna/cli.py`.
     ]
     return requirements
@@ -105,10 +106,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            "tensorflow",
+            "tensorflow ; python_version>'3.6'",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=1.5.0",
+            "pytorch-lightning>=1.5.0,<1.6.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.10.0 ; sys_platform=='darwin'",
@@ -119,9 +120,11 @@ def get_extras_require() -> Dict[str, List[str]]:
             # TODO(himkt): Remove `nltk` after solving
             # https://github.com/allenai/allennlp/issues/5521
             "nltk<3.6.6",
-            "allennlp>=2.2.0 ; python_version>'3.6'",
+            # TODO(himkt): Remove upper bound constraint
+            # after solving https://github.com/optuna/optuna/issues/3366
+            "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
+            "fastai ; python_version>'3.6'",
         ],
         "tests": [
             "fakeredis",
@@ -136,6 +139,7 @@ def get_extras_require() -> Dict[str, List[str]]:
             # optuna/visualization/param_importances.py.
         ],
         "integration": [
+            "catboost>=0.26",
             "chainer>=5.0.0",
             "cma",
             "lightgbm",
@@ -147,10 +151,10 @@ def get_extras_require() -> Dict[str, List[str]]:
             "scikit-learn>=0.24.2",
             "scikit-optimize",
             "xgboost",
-            "tensorflow",
+            "tensorflow ; python_version>'3.6'",
             "tensorflow-datasets",
             "pytorch-ignite",
-            "pytorch-lightning>=1.5.0",
+            "pytorch-lightning>=1.5.0,<1.6.0",
             "skorch",
             "catalyst>=21.3",
             "torch==1.10.0 ; sys_platform=='darwin'",
@@ -161,12 +165,14 @@ def get_extras_require() -> Dict[str, List[str]]:
             # TODO(himkt): Remove `nltk` after solving
             # https://github.com/allenai/allennlp/issues/5521
             "nltk<3.6.6",
-            "allennlp>=2.2.0 ; python_version>'3.6'",
+            # TODO(himkt): Remove upper bound constraint
+            # after solving https://github.com/optuna/optuna/issues/3366
+            "allennlp>=2.2.0,<2.9.1 ; python_version>'3.6'",
             "botorch>=0.4.0 ; python_version>'3.6'",
-            "fastai",
+            "fastai ; python_version>'3.6'",
         ],
         "benchmark": [
-            "asv",
+            "asv>=0.5.0",
             "virtualenv",
             "botorch",
         ],
@@ -194,6 +200,11 @@ setup(
     author="Takuya Akiba",
     author_email="akiba@preferred.jp",
     url="https://optuna.org/",
+    project_urls={
+        "Source": "https://github.com/optuna/optuna",
+        "Documentation": "https://optuna.readthedocs.io",
+        "Bug Tracker": "https://github.com/optuna/optuna/issues",
+    },
     packages=find_packages(exclude=("tests", "tests.*", "benchmarks")),
     package_data={
         "optuna": [

@@ -248,7 +248,8 @@ class _Objective(object):
 
         if is_classifier(estimator):
             partial_fit_params = self.fit_params.copy()
-            classes = np.unique(self.y)
+            y = self.y.values if isinstance(self.y, pd.Series) else self.y
+            classes = np.unique(y)
 
             partial_fit_params.setdefault("classes", classes)
 
@@ -512,11 +513,12 @@ class OptunaSearchCV(BaseEstimator):
 
     @property
     def best_index_(self) -> int:
-        """Index which corresponds to the best candidate parameter setting."""
+        """Trial number which corresponds to the best candidate parameter setting.
 
-        df = self.trials_dataframe()
+        Retuned value is equivant to ``optuna_search.best_trial_.number``.
+        """
 
-        return df["value"].idxmin()
+        return self.best_trial_.number
 
     @property
     def best_params_(self) -> Dict[str, Any]:

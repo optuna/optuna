@@ -108,6 +108,12 @@ class FloatDistribution(BaseDistribution):
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_float`, and passed to
     :mod:`~optuna.samplers` in general.
 
+    .. note::
+        When ``step`` is not :obj:`None`, if the range :math:`[\\mathsf{low}, \\mathsf{high}]`
+        is not divisible by :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced
+        with the maximum of :math:`k \\times \\mathsf{step} + \\mathsf{low} < \\mathsf{high}`,
+        where :math:`k` is an integer.
+
     Attributes:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
@@ -251,7 +257,7 @@ class DiscreteUniformDistribution(FloatDistribution):
         :math:`\\mathsf{high}` will be replaced with the maximum of :math:`k q + \\mathsf{low}
         < \\mathsf{high}`, where :math:`k` is an integer.
 
-    Attributes:
+    Args:
         low:
             Lower endpoint of the range of the distribution. ``low`` is included in the range.
         high:
@@ -263,6 +269,12 @@ class DiscreteUniformDistribution(FloatDistribution):
         ValueError:
             If ``low`` value is larger than ``high`` value, or ``q`` value is smaller or
             equal to 0.
+
+    Attributes:
+        low:
+            Lower endpoint of the range of the distribution. ``low`` is included in the range.
+        high:
+            Upper endpoint of the range of the distribution. ``high`` is included in the range.
     """
 
     def __init__(self, low: float, high: float, q: float) -> None:
@@ -278,7 +290,17 @@ class DiscreteUniformDistribution(FloatDistribution):
 
     @property
     def q(self) -> float:
+        """Discretization step.
+
+        :class:`~optuna.distributions.DiscreteUniformDistribution` is a subtype of
+        :class:`~optuna.distributions.FloatDistribution`.
+        This property is a proxy for its ``step`` attribute.
+        """
         return cast(float, self.step)
+
+    @q.setter
+    def q(self, v: float) -> None:
+        self.step = v
 
 
 class IntDistribution(BaseDistribution):
@@ -286,6 +308,12 @@ class IntDistribution(BaseDistribution):
 
     This object is instantiated by :func:`~optuna.trial.Trial.suggest_int`, and passed to
     :mod:`~optuna.samplers` in general.
+
+    .. note::
+        When ``step`` is not :obj:`None`, if the range :math:`[\\mathsf{low}, \\mathsf{high}]`
+        is not divisible by :math:`\\mathsf{step}`, :math:`\\mathsf{high}` will be replaced
+        with the maximum of :math:`k \\times \\mathsf{step} + \\mathsf{low} < \\mathsf{high}`,
+        where :math:`k` is an integer.
 
     Attributes:
         low:

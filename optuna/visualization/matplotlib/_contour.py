@@ -1,6 +1,4 @@
-from collections import defaultdict
 from typing import Callable
-from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -187,15 +185,25 @@ def _set_cmap(study: Study, target: Optional[Callable[[FrozenTrial], float]]) ->
     return plt.get_cmap(cmap)
 
 
-def _convert_categorical2int(values: List[str]) -> Tuple[List[int], List[str], List[int]]:
-    vocab = defaultdict(lambda: len(vocab))  # type: DefaultDict[str, int]
-    [vocab[v] for v in sorted(values)]
-    values_converted = [vocab[v] for v in values]
-    vocab_item_sorted = sorted(vocab.items(), key=lambda x: x[1])
-    cat_param_labels = [v[0] for v in vocab_item_sorted]
-    cat_param_pos = [v[1] for v in vocab_item_sorted]
+class _LabelEncoder:
+    def __init__(self) -> None:
+        self.labels: List[str] = []
 
-    return values_converted, cat_param_labels, cat_param_pos
+    def fit(self, labels: List[str]) -> "_LabelEncoder":
+        self.labels = sorted(set(labels))
+        return self
+
+    def transform(self, labels: List[str]) -> List[int]:
+        return [self.labels.index(label) for label in labels]
+
+    def fit_transform(self, labels: List[str]) -> List[int]:
+        return self.fit(labels).transform(labels)
+
+    def get_labels(self) -> List[str]:
+        return self.labels
+
+    def get_indices(self) -> List[int]:
+        return list(range(len(self.labels)))
 
 
 def _calculate_griddata(
@@ -226,8 +234,18 @@ def _calculate_griddata(
     x_values = []
     y_values = []
     z_values = []
+    x_range_values = []
+    y_range_values = []
     for trial in trials:
-        if x_param not in trial.params or y_param not in trial.params:
+        contains_x_param = x_param in trial.params
+        if contains_x_param:
+            x_range_values.append(trial.params[x_param])
+
+        contains_y_param = y_param in trial.params
+        if contains_y_param:
+            y_range_values.append(trial.params[y_param])
+
+        if not contains_x_param or not contains_y_param:
             continue
         x_values.append(trial.params[x_param])
         y_values.append(trial.params[y_param])
@@ -285,31 +303,29 @@ def _calculate_griddata(
     cat_param_labels_y = []  # type: List[str]
     cat_param_pos_y = []  # type: List[int]
     if not _is_numerical(trials, x_param):
-        x_values = [str(x) for x in x_values]
-        (
-            x_values,
-            cat_param_labels_x,
-            cat_param_pos_x,
-        ) = _convert_categorical2int(x_values)
+        enc = _LabelEncoder()
+        x_range_values = enc.fit_transform(list(map(str, x_range_values)))
+        x_values = enc.transform(list(map(str, x_values)))
+        cat_param_labels_x = enc.get_labels()
+        cat_param_pos_x = enc.get_indices()
     if not _is_numerical(trials, y_param):
-        y_values = [str(y) for y in y_values]
-        (
-            y_values,
-            cat_param_labels_y,
-            cat_param_pos_y,
-        ) = _convert_categorical2int(y_values)
+        enc = _LabelEncoder()
+        y_range_values = enc.fit_transform(list(map(str, y_range_values)))
+        y_values = enc.transform(list(map(str, y_values)))
+        cat_param_labels_y = enc.get_labels()
+        cat_param_pos_y = enc.get_indices()
 
     # Calculate min and max of x and y.
-    x_values_min = min(x_values)
-    x_values_max = max(x_values)
-    y_values_min = min(y_values)
-    y_values_max = max(y_values)
+    x_values_min = min(x_range_values)
+    x_values_max = max(x_range_values)
+    y_values_min = min(y_range_values)
+    y_values_max = max(y_range_values)
 
     # Calculate grid data points.
     # For x and y, create 1-D array of evenly spaced coordinates on linear or log scale.
-    xi = np.array([])
-    yi = np.array([])
-    zi = np.array([])
+    xi: np.ndarray = np.array([])
+    yi: np.ndarray = np.array([])
+    zi: np.ndarray = np.array([])
 
     if _is_log_scale(trials, x_param):
         padding_x = (np.log10(x_values_max) - np.log10(x_values_min)) * AXES_PADDING_RATIO

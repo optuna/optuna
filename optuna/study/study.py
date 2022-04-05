@@ -2,6 +2,7 @@ import copy
 import threading
 from typing import Any
 from typing import Callable
+from typing import Container
 from typing import Dict
 from typing import Iterable
 from typing import List
@@ -19,8 +20,8 @@ from optuna import pruners
 from optuna import samplers
 from optuna import storages
 from optuna import trial as trial_module
+from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated
-from optuna._experimental import experimental
 from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.study._multi_objective import _get_pareto_front_trials
@@ -129,6 +130,11 @@ class Study:
         Raises:
             :exc:`RuntimeError`:
                 If the study has more than one direction.
+
+        .. seealso::
+            The :ref:`reuse_best_trial` tutorial provides a detailed example of how to use this
+            method.
+
         """
 
         if self._is_multi_objective():
@@ -201,7 +207,7 @@ class Study:
     def get_trials(
         self,
         deepcopy: bool = True,
-        states: Optional[Tuple[TrialState, ...]] = None,
+        states: Optional[Container[TrialState]] = None,
     ) -> List[FrozenTrial]:
         """Return all trials in the study.
 
@@ -307,6 +313,11 @@ class Study:
         default choice for the sampler is TPE.
         See also :class:`~optuna.samplers.TPESampler` for more details on 'TPE'.
 
+        Optimization will be stopped when receiving a termination signal such as SIGINT and
+        SIGTERM. Unlike other signals, a trial is automatically and cleanly failed when receiving
+        SIGINT (Ctrl+C). If :obj:`n_jobs` is greater than one or if another signal than SIGINT
+        is used, the interrupted trial state won't be properly updated.
+
         Example:
 
             .. testcode::
@@ -377,7 +388,8 @@ class Study:
             show_progress_bar:
                 Flag to show progress bars or not. To disable progress bar, set this :obj:`False`.
                 Currently, progress bar is experimental feature and disabled
-                when ``n_jobs`` :math:`\\ne 1`.
+                when ``n_trials`` is :obj:`None``, ``timeout`` not is :obj:`None`, and
+                ``n_jobs`` :math:`\\ne 1`.
 
         Raises:
             RuntimeError:
@@ -461,6 +473,10 @@ class Study:
         Returns:
             A :class:`~optuna.trial.Trial`.
         """
+
+        if not self._optimize_lock.locked():
+            if self._storage.is_heartbeat_enabled():
+                warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
 
         fixed_distributions = fixed_distributions or {}
 
@@ -658,10 +674,7 @@ class Study:
         except Exception:
             raise
         finally:
-            if values is not None:
-                self._storage.set_trial_values(trial_id, values)
-
-            self._storage.set_trial_state(trial_id, state)
+            self._storage.set_trial_state_values(trial_id, state, values)
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
@@ -825,7 +838,6 @@ class Study:
 
         self._stop_flag = True
 
-    @experimental("1.2.0")
     def enqueue_trial(
         self, params: Dict[str, Any], user_attrs: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -874,7 +886,6 @@ class Study:
             )
         )
 
-    @experimental("2.0.0")
     def add_trial(self, trial: FrozenTrial) -> None:
         """Add trial to study.
 
@@ -940,7 +951,6 @@ class Study:
 
         self._storage.create_new_trial(self._study_id, template_trial=trial)
 
-    @experimental("2.5.0")
     def add_trials(self, trials: Iterable[FrozenTrial]) -> None:
         """Add trials to study.
 
@@ -996,12 +1006,10 @@ class Study:
 
     def _pop_waiting_trial_id(self) -> Optional[int]:
 
-        # TODO(c-bata): Reduce database query counts for extracting waiting trials.
-        for trial in self._storage.get_all_trials(self._study_id, deepcopy=False):
-            if trial.state != TrialState.WAITING:
-                continue
-
-            if not self._storage.set_trial_state(trial._trial_id, TrialState.RUNNING):
+        for trial in self._storage.get_all_trials(
+            self._study_id, deepcopy=False, states=(TrialState.WAITING,)
+        ):
+            if not self._storage.set_trial_state_values(trial._trial_id, state=TrialState.RUNNING):
                 continue
 
             _logger.debug("Trial {} popped from the trial queue.".format(trial.number))
@@ -1045,14 +1053,24 @@ class Study:
             assert False, "Should not reach."
 
 
+@convert_positional_args(
+    previous_positional_arg_names=[
+        "storage",
+        "sampler",
+        "pruner",
+        "study_name",
+        "direction",
+        "load_if_exists",
+    ],
+)
 def create_study(
+    *,
     storage: Optional[Union[str, storages.BaseStorage]] = None,
     sampler: Optional["samplers.BaseSampler"] = None,
     pruner: Optional[pruners.BasePruner] = None,
     study_name: Optional[str] = None,
     direction: Optional[Union[str, StudyDirection]] = None,
     load_if_exists: bool = False,
-    *,
     directions: Optional[Sequence[Union[str, StudyDirection]]] = None,
 ) -> Study:
     """Create a new :class:`~optuna.study.Study`.
@@ -1131,6 +1149,10 @@ def create_study(
     See also:
         :func:`optuna.create_study` is an alias of :func:`optuna.study.create_study`.
 
+    See also:
+        The :ref:`rdb` tutorial provides concrete examples to save and resume optimization using
+        RDB.
+
     """
 
     if direction is None and directions is None:
@@ -1185,7 +1207,16 @@ def create_study(
     return study
 
 
+@convert_positional_args(
+    previous_positional_arg_names=[
+        "study_name",
+        "storage",
+        "sampler",
+        "pruner",
+    ],
+)
 def load_study(
+    *,
     study_name: Optional[str],
     storage: Union[str, storages.BaseStorage],
     sampler: Optional["samplers.BaseSampler"] = None,
@@ -1262,7 +1293,14 @@ def load_study(
     return Study(study_name=study_name, storage=storage, sampler=sampler, pruner=pruner)
 
 
+@convert_positional_args(
+    previous_positional_arg_names=[
+        "study_name",
+        "storage",
+    ],
+)
 def delete_study(
+    *,
     study_name: str,
     storage: Union[str, storages.BaseStorage],
 ) -> None:
@@ -1313,8 +1351,17 @@ def delete_study(
     storage.delete_study(study_id)
 
 
-@experimental("2.8.0")
+@convert_positional_args(
+    previous_positional_arg_names=[
+        "from_study_name",
+        "from_storage",
+        "to_storage",
+        "to_study_name",
+    ],
+    warning_stacklevel=3,
+)
 def copy_study(
+    *,
     from_study_name: str,
     from_storage: Union[str, storages.BaseStorage],
     to_storage: Union[str, storages.BaseStorage],
@@ -1324,6 +1371,10 @@ def copy_study(
 
     The direction(s) of the objective(s) in the study, trials, user attributes and system
     attributes are copied.
+
+    .. note::
+        :func:`~optuna.copy_study` copies a study even if the optimization is working on.
+        It means users will get a copied study that contains a trial that is not finished.
 
     Example:
 
@@ -1403,7 +1454,9 @@ def copy_study(
     to_study.add_trials(from_study.get_trials(deepcopy=False))
 
 
-def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[StudySummary]:
+def get_all_study_summaries(
+    storage: Union[str, storages.BaseStorage], include_best_trial: bool = True
+) -> List[StudySummary]:
     """Get all history of studies stored in a specified storage.
 
     Example:
@@ -1442,6 +1495,9 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
         storage:
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
             :func:`~optuna.study.create_study` for further details.
+        include_best_trial:
+            Include the best trials if exist. It potentially increases the number of queries and
+            may take longer to fetch summaries depending on the storage.
 
     Returns:
         List of study history summarized as :class:`~optuna.study.StudySummary` objects.
@@ -1453,4 +1509,4 @@ def get_all_study_summaries(storage: Union[str, storages.BaseStorage]) -> List[S
     """
 
     storage = storages.get_storage(storage)
-    return storage.get_all_study_summaries()
+    return storage.get_all_study_summaries(include_best_trial=include_best_trial)

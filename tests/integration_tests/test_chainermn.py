@@ -120,7 +120,7 @@ class TestChainerMNStudy(object):
 
         with MultiNodeStorageSupplier(storage_mode, comm) as storage:
             # Create study_name for each rank.
-            name = create_study(storage).study_name
+            name = create_study(storage=storage).study_name
             study = Study(name, storage)
 
             with pytest.raises(ValueError):
@@ -129,7 +129,7 @@ class TestChainerMNStudy(object):
     @staticmethod
     def test_init_with_incompatible_storage(comm: CommunicatorBase) -> None:
 
-        study = create_study(InMemoryStorage(), study_name="in-memory-study")
+        study = create_study(storage=InMemoryStorage(), study_name="in-memory-study")
 
         with pytest.raises(ValueError):
             ChainerMNStudy(study, comm)
@@ -256,7 +256,7 @@ class TestChainerMNStudy(object):
         sampler: Optional[BaseSampler] = None,
     ) -> Study:
 
-        name_local = create_study(storage).study_name if comm.rank == 0 else None
+        name_local = create_study(storage=storage).study_name if comm.rank == 0 else None
         name_bcast = comm.mpi_comm.bcast(name_local)
 
         return Study(name_bcast, storage, pruner=pruner, sampler=sampler)

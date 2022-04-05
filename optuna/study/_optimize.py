@@ -29,7 +29,6 @@ from optuna import logging
 from optuna import progress_bar as pbar_module
 from optuna import storages
 from optuna import trial as trial_module
-from optuna.exceptions import ExperimentalWarning
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
@@ -187,15 +186,14 @@ def _run_trial(
     func: "optuna.study.study.ObjectiveFuncType",
     catch: Tuple[Type[Exception], ...],
 ) -> trial_module.Trial:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", ExperimentalWarning)
+    if study._storage.is_heartbeat_enabled():
         optuna.storages.fail_stale_trials(study)
 
     trial = study.ask()
 
     state: Optional[TrialState] = None
     values: Optional[List[float]] = None
-    func_err: Optional[Exception] = None
+    func_err: Optional[Union[Exception, KeyboardInterrupt]] = None
     func_err_fail_exc_info: Optional[Any] = None
     # Set to a string if `func` returns correctly but the return value violates assumptions.
     values_conversion_failure_message: Optional[str] = None
@@ -215,7 +213,7 @@ def _run_trial(
         # TODO(mamu): Handle multi-objective cases.
         state = TrialState.PRUNED
         func_err = e
-    except Exception as e:
+    except (Exception, KeyboardInterrupt) as e:
         state = TrialState.FAIL
         func_err = e
         func_err_fail_exc_info = sys.exc_info()
