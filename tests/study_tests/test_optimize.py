@@ -50,18 +50,10 @@ def test_run_trial(storage_mode: str, caplog: LogCaptureFixture) -> None:
         assert "Trial 1 finished with value: inf and parameters" in caplog.text
 
         caplog.clear()
-        frozen_trial = _optimize._run_trial(study, lambda _: +float("inf"), catch=())
-        assert frozen_trial.state == TrialState.COMPLETE
-        assert frozen_trial.value == +float("inf")
-        assert "Trial 2 finished with value: inf and parameters" in caplog.text
-
-        caplog.clear()
         frozen_trial = _optimize._run_trial(study, lambda _: -float("inf"), catch=())
         assert frozen_trial.state == TrialState.COMPLETE
         assert frozen_trial.value == -float("inf")
-        assert "Trial 3 finished with value: -inf and parameters" in caplog.text
-
-    logging.disable_propagation()
+        assert "Trial 2 finished with value: -inf and parameters" in caplog.text
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
@@ -99,8 +91,6 @@ def test_run_trial_automatically_fail(storage_mode: str, caplog: LogCaptureFixtu
         assert "Trial 3 failed because of the following error: The number" in caplog.text
         assert "of the values 2 did not match the number of the objectives 1." in caplog.text
 
-    logging.disable_propagation()
-
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_run_trial_pruned(storage_mode: str, caplog: LogCaptureFixture) -> None:
@@ -132,8 +122,6 @@ def test_run_trial_pruned(storage_mode: str, caplog: LogCaptureFixture) -> None:
         assert frozen_trial.state == TrialState.PRUNED
         assert frozen_trial.value is None
         assert "Trial 2 pruned." in caplog.text
-
-    logging.disable_propagation()
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
