@@ -23,6 +23,7 @@ from optuna import trial as trial_module
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated
 from optuna._imports import _LazyImport
+from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _check_and_convert_to_values
@@ -479,6 +480,10 @@ class Study:
                 warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
 
         fixed_distributions = fixed_distributions or {}
+        fixed_distributions = {
+            key: _convert_old_distribution_to_new_distribution(dist)
+            for key, dist in fixed_distributions.items()
+        }
 
         # Sync storage once every trial.
         self._storage.read_trials_from_remote_storage(self._study_id)

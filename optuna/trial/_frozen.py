@@ -10,6 +10,7 @@ import warnings
 from optuna import distributions
 from optuna import logging
 from optuna._deprecated import deprecated
+from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -560,6 +561,10 @@ def create_trial(
 
     params = params or {}
     distributions = distributions or {}
+    distributions = {
+        key: _convert_old_distribution_to_new_distribution(dist)
+        for key, dist in distributions.items()
+    }
     user_attrs = user_attrs or {}
     system_attrs = system_attrs or {}
     intermediate_values = intermediate_values or {}

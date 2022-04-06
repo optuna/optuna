@@ -24,6 +24,7 @@ from optuna import study as study_module
 from optuna import TrialPruned
 from optuna._experimental import experimental
 from optuna._imports import try_import
+from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.study import StudyDirection
 from optuna.trial import FrozenTrial
 from optuna.trial import Trial
@@ -698,6 +699,16 @@ class OptunaSearchCV(BaseEstimator):
 
         _imports.check()
 
+        if not isinstance(param_distributions, dict):
+            raise TypeError("param_distributions must be a dictionary.")
+
+        # TODO(himkt): Remove this method with the deletion of deprecated distributions.
+        # https://github.com/optuna/optuna/issues/2941
+        param_distributions = {
+            key: _convert_old_distribution_to_new_distribution(dist)
+            for key, dist in param_distributions.items()
+        }
+
         self.cv = cv
         self.enable_pruning = enable_pruning
         self.error_score = error_score
@@ -728,9 +739,6 @@ class OptunaSearchCV(BaseEstimator):
 
         if not hasattr(self.estimator, "fit"):
             raise ValueError("estimator must be a scikit-learn estimator.")
-
-        if type(self.param_distributions) is not dict:
-            raise ValueError("param_distributions must be a dictionary.")
 
         for name, distribution in self.param_distributions.items():
             if not isinstance(distribution, distributions.BaseDistribution):

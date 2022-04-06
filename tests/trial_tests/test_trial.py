@@ -678,6 +678,74 @@ def test_create_trial(state: TrialState) -> None:
         create_trial(state=state, value=value, values=(value,))
 
 
+# Deprecated distributions are internally converted to corresponding distributions.
+def test_create_trial_distribution_conversion() -> None:
+    fixed_params = {
+        "ud": 0,
+        "dud": 2,
+        "lud": 1,
+        "id": 0,
+        "idd": 2,
+        "ild": 1,
+    }
+
+    fixed_distributions = {
+        "ud": distributions.UniformDistribution(low=0, high=10),
+        "dud": distributions.DiscreteUniformDistribution(low=0, high=10, q=2),
+        "lud": distributions.LogUniformDistribution(low=1, high=10),
+        "id": distributions.IntUniformDistribution(low=0, high=10),
+        "idd": distributions.IntUniformDistribution(low=0, high=10, step=2),
+        "ild": distributions.IntLogUniformDistribution(low=1, high=10),
+    }
+
+    with pytest.warns(
+        FutureWarning,
+        match="See https://github.com/optuna/optuna/issues/2941",
+    ) as record:
+
+        trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
+        assert len(record) == 6
+
+    expected_distributions = {
+        "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
+        "dud": distributions.FloatDistribution(low=0, high=10, log=False, step=2),
+        "lud": distributions.FloatDistribution(low=1, high=10, log=True, step=None),
+        "id": distributions.IntDistribution(low=0, high=10, log=False, step=1),
+        "idd": distributions.IntDistribution(low=0, high=10, log=False, step=2),
+        "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
+    }
+
+    assert trial.distributions == expected_distributions
+
+
+# It confirms that ask doesn't convert non-deprecated distributions.
+def test_create_trial_distribution_conversion_noop() -> None:
+    fixed_params = {
+        "ud": 0,
+        "dud": 2,
+        "lud": 1,
+        "id": 0,
+        "idd": 2,
+        "ild": 1,
+        "cd": "a",
+    }
+
+    fixed_distributions = {
+        "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
+        "dud": distributions.FloatDistribution(low=0, high=10, log=False, step=2),
+        "lud": distributions.FloatDistribution(low=1, high=10, log=True, step=None),
+        "id": distributions.IntDistribution(low=0, high=10, log=False, step=1),
+        "idd": distributions.IntDistribution(low=0, high=10, log=False, step=2),
+        "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
+        "cd": distributions.CategoricalDistribution(choices=["a", "b", "c"]),
+    }
+
+    trial = create_trial(params=fixed_params, distributions=fixed_distributions, value=1)
+
+    # Check fixed_distributions doesn't change.
+    assert trial.distributions == fixed_distributions
+
+
 def test_suggest_with_multi_objectives() -> None:
     study = create_study(directions=["maximize", "maximize"])
 

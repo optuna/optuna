@@ -23,6 +23,7 @@ from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 
+from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.distributions import DiscreteUniformDistribution
 from optuna.distributions import distribution_to_json
@@ -76,51 +77,10 @@ class TrialParamModel(BaseModel):
 
 def migrate_new_distribution(distribution_json: str) -> str:
     distribution = json_to_distribution(distribution_json)
-    new_distribution: BaseDistribution
-
-    # Float distributions.
-    if isinstance(distribution, UniformDistribution):
-        new_distribution = FloatDistribution(
-            low=distribution.low,
-            high=distribution.high,
-            log=False,
-            step=None,
-        )
-    elif isinstance(distribution, LogUniformDistribution):
-        new_distribution = FloatDistribution(
-            low=distribution.low,
-            high=distribution.high,
-            log=True,
-            step=None,
-        )
-    elif isinstance(distribution, DiscreteUniformDistribution):
-        new_distribution = FloatDistribution(
-            low=distribution.low,
-            high=distribution.high,
-            log=False,
-            step=distribution.q,
-        )
-
-    # Integer distributions.
-    elif isinstance(distribution, IntUniformDistribution):
-        new_distribution = IntDistribution(
-            low=distribution.low,
-            high=distribution.high,
-            log=False,
-            step=distribution.step,
-        )
-    elif isinstance(distribution, IntLogUniformDistribution):
-        new_distribution = IntDistribution(
-            low=distribution.low,
-            high=distribution.high,
-            log=True,
-            step=distribution.step,
-        )
-
-    # Categorical distribution.
-    else:
-        new_distribution = distribution
-
+    new_distribution = _convert_old_distribution_to_new_distribution(
+        distribution,
+        suppress_warning=True,
+    )
     return distribution_to_json(new_distribution)
 
 

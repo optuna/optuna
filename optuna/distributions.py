@@ -678,3 +678,65 @@ def _get_single_value(distribution: BaseDistribution) -> Union[int, float, Categ
     elif isinstance(distribution, CategoricalDistribution):
         return distribution.choices[0]
     assert False
+
+
+# TODO(himkt): Remove this method with the deletion of deprecated distributions.
+# https://github.com/optuna/optuna/issues/2941
+def _convert_old_distribution_to_new_distribution(
+    distribution: BaseDistribution,
+    suppress_warning: bool = False,
+) -> BaseDistribution:
+
+    new_distribution: BaseDistribution
+
+    # Float distributions.
+    if isinstance(distribution, UniformDistribution):
+        new_distribution = FloatDistribution(
+            low=distribution.low,
+            high=distribution.high,
+            log=False,
+            step=None,
+        )
+    elif isinstance(distribution, LogUniformDistribution):
+        new_distribution = FloatDistribution(
+            low=distribution.low,
+            high=distribution.high,
+            log=True,
+            step=None,
+        )
+    elif isinstance(distribution, DiscreteUniformDistribution):
+        new_distribution = FloatDistribution(
+            low=distribution.low,
+            high=distribution.high,
+            log=False,
+            step=distribution.q,
+        )
+
+    # Integer distributions.
+    elif isinstance(distribution, IntUniformDistribution):
+        new_distribution = IntDistribution(
+            low=distribution.low,
+            high=distribution.high,
+            log=False,
+            step=distribution.step,
+        )
+    elif isinstance(distribution, IntLogUniformDistribution):
+        new_distribution = IntDistribution(
+            low=distribution.low,
+            high=distribution.high,
+            log=True,
+            step=distribution.step,
+        )
+
+    # Categorical distribution.
+    else:
+        new_distribution = distribution
+
+    if new_distribution != distribution and not suppress_warning:
+        message = (
+            f"{distribution} is deprecated and internally converted to"
+            f" {new_distribution}. See https://github.com/optuna/optuna/issues/2941."
+        )
+        warnings.warn(message, FutureWarning)
+
+    return new_distribution
