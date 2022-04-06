@@ -4,9 +4,9 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
-from matplotlib.collections import LineCollection
 import numpy as np
 import pytest
+from pytest import WarningsRecorder
 
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
@@ -292,7 +292,7 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
 
 
 @pytest.mark.parametrize("value", [float("inf"), -float("inf")])
-def test_nonfinite_removed(value: float) -> None:
+def test_nonfinite_removed(recwarn: WarningsRecorder, value: float) -> None:
 
     study = create_study()
     study.add_trial(
@@ -327,19 +327,20 @@ def test_nonfinite_removed(value: float) -> None:
     )
 
     # To check if contour lines have been rendered (meaning +-inf trials were removed),
-    # we are looking if artists responsible for drawing them are preset.
-    # This is not perfect as LineCollection instances are not exclusive to contour lines,
-    # and afaik can't be traced back to plot type they make up for.
-    figure = plot_contour(study)
-    line_artists = [line for line in figure.get_children() if isinstance(line, LineCollection)]
-    assert len(line_artists) > 1
+    # we should be looking if artists responsible for drawing them are preset in the final plot.
+    # Turns out it's difficult to do reliably (No information which artists are responsible for
+    # drawing contours) so instead we are checking for warning raised by matplotlib
+    # when contour plot fails. TODO(xadrianzetx) Find a better way to test this.
+    plot_contour(study)
+    for record in recwarn.list:
+        assert "No contour levels were found within the data range" not in str(record.message)
 
 
 @pytest.mark.parametrize(
     "objective,value",
     [(0, float("inf")), (0, -float("inf")), (1, float("inf")), (1, -float("inf"))],
 )
-def test_nonfinite_multiobjective(objective: int, value: float) -> None:
+def test_nonfinite_multiobjective(recwarn: WarningsRecorder, objective: int, value: float) -> None:
 
     study = create_study(directions=["minimize", "maximize"])
     study.add_trial(
@@ -373,6 +374,6 @@ def test_nonfinite_multiobjective(objective: int, value: float) -> None:
         )
     )
 
-    figure = plot_contour(study, target=lambda t: t.values[objective])
-    line_artists = [line for line in figure.get_children() if isinstance(line, LineCollection)]
-    assert len(line_artists) > 1
+    plot_contour(study, target=lambda t: t.values[objective])
+    for record in recwarn.list:
+        assert "No contour levels were found within the data range" not in str(record.message)
