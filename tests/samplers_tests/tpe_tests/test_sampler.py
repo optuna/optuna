@@ -757,6 +757,7 @@ def test_get_observation_pairs() -> None:
     def objective(trial: Trial) -> float:
 
         x = trial.suggest_int("x", 5, 5)
+        z = trial.suggest_categorical("z", [None])
         if trial.number == 0:
             return x
         elif trial.number == 1:
@@ -789,11 +790,19 @@ def test_get_observation_pairs() -> None:
         {"y": [None, None, None, None]},
         scores,
     )
+    assert _tpe.sampler._get_observation_pairs(study, ["z"], False) == (
+        {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
+        scores,
+    )
     assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         scores,
     )
     assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
+    assert _tpe.sampler._get_observation_pairs(study, ["z"], True) == (
+        {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
+        scores,
+    )
 
     # Test direction=maximize.
     study = optuna.create_study(direction="maximize")
@@ -814,11 +823,19 @@ def test_get_observation_pairs() -> None:
         {"y": [None, None, None, None]},
         scores,
     )
+    assert _tpe.sampler._get_observation_pairs(study, ["z"], False) == (
+        {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
+        scores,
+    )
     assert _tpe.sampler._get_observation_pairs(study, ["x"], True) == (
         {"x": [5.0, 5.0, 5.0, 5.0]},
         scores,
     )
     assert _tpe.sampler._get_observation_pairs(study, ["y"], True) == ({"y": []}, [])
+    assert _tpe.sampler._get_observation_pairs(study, ["z"], True) == (
+        {"z": [0, 0, 0, 0]},  # The internal representation of 'None' for z is 0
+        scores,
+    )
 
     def objective2(trial: Trial) -> float:
 
