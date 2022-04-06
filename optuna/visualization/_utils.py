@@ -114,7 +114,9 @@ def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
 
 
 def _filter_nonfinite(
-    trials: List[FrozenTrial], target: Optional[Callable[[FrozenTrial], float]] = None
+    trials: List[FrozenTrial],
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    with_message: bool = True,
 ) -> List[FrozenTrial]:
 
     # For multi-objective optimization target must be specified to select
@@ -132,10 +134,11 @@ def _filter_nonfinite(
     for trial in trials:
         # Not a Number, positive infinity and negative infinity are considered to be non-finite.
         if not np.isfinite(target(trial)):
-            _logger.info(
-                f"Trial {trial.number} is omitted in visualization "
-                "because its objective value is inf or nan."
-            )
+            if with_message:
+                _logger.warning(
+                    f"Trial {trial.number} is omitted in visualization "
+                    "because its objective value is inf or nan."
+                )
         else:
             filtered_trials.append(trial)
 
