@@ -25,10 +25,10 @@ from optuna._deprecated import deprecated
 from optuna._imports import _LazyImport
 from optuna.distributions import BaseDistribution
 from optuna.study._multi_objective import _get_pareto_front_trials
-from optuna.study._optimize import _check_and_convert_to_values
 from optuna.study._optimize import _optimize
 from optuna.study._study_direction import StudyDirection
 from optuna.study._study_summary import StudySummary  # NOQA
+from optuna.study._tell import _tell_with_warning
 from optuna.trial import create_trial
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
@@ -497,9 +497,9 @@ class Study:
         self,
         trial: Union[trial_module.Trial, int],
         values: Optional[Union[float, Sequence[float]]] = None,
-        state: TrialState = TrialState.COMPLETE,
+        state: Optional[TrialState] = None,
         skip_if_finished: bool = False,
-    ) -> None:
+    ) -> FrozenTrial:
         """Finish a trial created with :func:`~optuna.study.Study.ask`.
 
         .. seealso::
@@ -559,9 +559,14 @@ class Study:
                 is :class:`~optuna.trial.TrialState.FAIL` or
                 :class:`~optuna.trial.TrialState.PRUNED`.
             state:
-                State to be reported. Must be :class:`~optuna.trial.TrialState.COMPLETE`,
+                State to be reported. Must be :obj:`None`,
+                :class:`~optuna.trial.TrialState.COMPLETE`,
                 :class:`~optuna.trial.TrialState.FAIL` or
                 :class:`~optuna.trial.TrialState.PRUNED`.
+                If ``state`` is :obj:`None`,
+                it will be updated to :class:`~optuna.trial.TrialState.COMPLETE`
+                or :class:`~optuna.trial.TrialState.FAIL` depending on whether
+                validation for ``values`` reported succeed or not.
             skip_if_finished:
                 Flag to control whether exception should be raised when values for already
                 finished trial are told. If :obj:`True`, tell is skipped without any error
@@ -572,8 +577,6 @@ class Study:
                 If ``trial`` is not a :class:`~optuna.trial.Trial` or an :obj:`int`.
             ValueError:
                 If any of the following.
-                ``values`` is a sequence but its length does not match the number of objectives
-                for its associated study.
                 ``state`` is :class:`~optuna.trial.TrialState.COMPLETE` but
                 ``values`` is :obj:`None`.
                 ``state`` is :class:`~optuna.trial.TrialState.FAIL` or
@@ -585,96 +588,15 @@ class Study:
                 :class:`~optuna.trial.TrialState.PRUNED`.
                 ``trial`` is a trial number but no
                 trial exists with that number.
+
+        Returns:
+            A :class:`~optuna.trial.FrozenTrial` representing the resulting trial.
+            A returned trial is deep copied thus user can modify it as needed.
         """
 
-        if not isinstance(trial, (trial_module.Trial, int)):
-            raise TypeError("Trial must be a trial object or trial number.")
-
-        if state == TrialState.COMPLETE:
-            if values is None:
-                raise ValueError(
-                    "No values were told. Values are required when state is TrialState.COMPLETE."
-                )
-        elif state in (TrialState.PRUNED, TrialState.FAIL):
-            if values is not None:
-                raise ValueError(
-                    "Values were told. Values cannot be specified when state is "
-                    "TrialState.PRUNED or TrialState.FAIL."
-                )
-        else:
-            raise ValueError(f"Cannot tell with state {state}.")
-
-        if isinstance(trial, trial_module.Trial):
-            trial_number = trial.number
-            trial_id = trial._trial_id
-        elif isinstance(trial, int):
-            trial_number = trial
-            try:
-                trial_id = self._storage.get_trial_id_from_study_id_trial_number(
-                    self._study_id, trial_number
-                )
-            except NotImplementedError as e:
-                warnings.warn(
-                    "Study.tell may be slow because the trial was represented by its number but "
-                    f"the storage {self._storage.__class__.__name__} does not implement the "
-                    "method required to map numbers back. Please provide the trial object "
-                    "to avoid performance degradation."
-                )
-
-                trials = self.get_trials(deepcopy=False)
-
-                if len(trials) <= trial_number:
-                    raise ValueError(
-                        f"Cannot tell for trial with number {trial_number} since it has not been "
-                        "created."
-                    ) from e
-
-                trial_id = trials[trial_number]._trial_id
-            except KeyError as e:
-                raise ValueError(
-                    f"Cannot tell for trial with number {trial_number} since it has not been "
-                    "created."
-                ) from e
-        else:
-            assert False, "Should not reach."
-
-        frozen_trial = self._storage.get_trial(trial_id)
-
-        if frozen_trial.state.is_finished() and skip_if_finished:
-            _logger.info(
-                f"Skipped telling trial {trial_number} with values "
-                f"{values} and state {state} since trial was already finished. "
-                f"Finished trial has values {frozen_trial.values} and state {frozen_trial.state}."
-            )
-            return
-
-        if state == TrialState.PRUNED:
-            # Register the last intermediate value if present as the value of the trial.
-            # TODO(hvy): Whether a pruned trials should have an actual value can be discussed.
-            assert values is None
-
-            last_step = frozen_trial.last_step
-            if last_step is not None:
-                values = [frozen_trial.intermediate_values[last_step]]
-
-        if values is not None:
-            values, values_conversion_failure_message = _check_and_convert_to_values(
-                len(self.directions), values, trial_number
-            )
-            # When called from `Study.optimize` and `state` is pruned, the given `values` contains
-            # the intermediate value with the largest step so far. In this case, the value is
-            # allowed to be NaN and errors should not be raised.
-            if state != TrialState.PRUNED and values_conversion_failure_message is not None:
-                raise ValueError(values_conversion_failure_message)
-
-        try:
-            # Sampler defined trial post-processing.
-            study = pruners._filter_study(self, frozen_trial)
-            self.sampler.after_trial(study, frozen_trial, state, values)
-        except Exception:
-            raise
-        finally:
-            self._storage.set_trial_state_values(trial_id, state, values)
+        return _tell_with_warning(
+            study=self, trial=trial, values=values, state=state, skip_if_finished=skip_if_finished
+        )
 
     def set_user_attr(self, key: str, value: Any) -> None:
         """Set a user attribute to the study.
@@ -1027,23 +949,22 @@ class Study:
     ) -> None:
         self.tell(trial, values, state)
 
-    def _log_completed_trial(self, trial: trial_module.Trial, values: Sequence[float]) -> None:
-
+    def _log_completed_trial(self, trial: trial_module.FrozenTrial) -> None:
         if not _logger.isEnabledFor(logging.INFO):
             return
 
-        if len(values) > 1:
+        if len(trial.values) > 1:
             _logger.info(
                 "Trial {} finished with values: {} and parameters: {}. ".format(
-                    trial.number, values, trial.params
+                    trial.number, trial.values, trial.params
                 )
             )
-        elif len(values) == 1:
+        elif len(trial.values) == 1:
             _logger.info(
                 "Trial {} finished with value: {} and parameters: {}. "
                 "Best is trial {} with value: {}.".format(
                     trial.number,
-                    values[0],
+                    trial.values[0],
                     trial.params,
                     self.best_trial.number,
                     self.best_value,
