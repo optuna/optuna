@@ -77,6 +77,9 @@ class SimulatedAnnealingSampler(optuna.samplers.BaseSampler):
             if not isinstance(param_distribution, optuna.distributions.FloatDistribution):
                 raise NotImplementedError("Only suggest_float() is supported")
 
+            assert param_distribution.step is None, "step is not supported"
+            assert not param_distribution.log, "log is not supported"
+
             current_value = self._current_trial.params[param_name]
             width = (param_distribution.high - param_distribution.low) * 0.1
             neighbor_low = max(current_value - width, param_distribution.low)
