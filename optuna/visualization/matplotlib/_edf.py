@@ -148,7 +148,7 @@ def _get_edf_plot(
             for study in studies
         )
     )
-    all_trials = _filter_nonfinite(all_trials, target)
+    all_trials = _filter_nonfinite(all_trials, target, with_message=False)
 
     if len(all_trials) == 0:
         _logger.warning("There are no complete trials.")
