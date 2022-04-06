@@ -9,6 +9,7 @@ import plotly
 import pytest
 
 from optuna.distributions import CategoricalDistribution
+from optuna.distributions import FloatDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
@@ -304,3 +305,86 @@ def test_color_map(direction: str) -> None:
     contour = plot_contour(study, target=lambda t: t.number).data[0]
     assert COLOR_SCALE == [v[1] for v in contour["colorscale"]]
     assert contour["reversescale"]
+
+
+@pytest.mark.parametrize("value", [float("inf"), -float("inf")])
+def test_nonfinite_removed(value: float) -> None:
+
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1.0, "param_b": 0.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 1.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 0.0, "param_b": 10.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 10.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=value,
+            params={"param_a": 0.0, "param_b": 1.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 1.0),
+            },
+        )
+    )
+
+    figure = plot_contour(study)
+    zvals = itertools.chain.from_iterable(figure.data[0]["z"])
+    assert value not in zvals
+
+
+@pytest.mark.parametrize(
+    "objective,value",
+    [(0, float("inf")), (0, -float("inf")), (1, float("inf")), (1, -float("inf"))],
+)
+def test_nonfinite_multiobjective(objective: int, value: float) -> None:
+
+    study = create_study(directions=["minimize", "maximize"])
+    study.add_trial(
+        create_trial(
+            values=[0.0, 1.0],
+            params={"param_a": 1.0, "param_b": 0.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 1.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[0.0, 1.0],
+            params={"param_a": 0.0, "param_b": 10.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 10.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[value, value],
+            params={"param_a": 0.0, "param_b": 1.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 1.0),
+            },
+        )
+    )
+
+    figure = plot_contour(study, target=lambda t: t.values[objective])
+    zvals = itertools.chain.from_iterable(figure.data[0]["z"])
+    assert value not in zvals
