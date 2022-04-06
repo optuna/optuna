@@ -1,7 +1,10 @@
+import logging
 from typing import cast
 
 import pytest
+from pytest import LogCaptureFixture
 
+import optuna
 from optuna.distributions import FloatDistribution
 from optuna.distributions import LogUniformDistribution
 from optuna.distributions import UniformDistribution
@@ -137,3 +140,38 @@ def test_filter_inf_trials_multiobjective(
     trials = _filter_nonfinite(study.get_trials(states=(TrialState.COMPLETE,)), target=_target)
     assert len(trials) == expected
     assert all([t.number == num for t, num in zip(trials, range(expected))])
+
+
+@pytest.mark.parametrize("with_message", [True, False])
+def test_filter_inf_trials_message(caplog: LogCaptureFixture, with_message: bool) -> None:
+
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"x": 1.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=float("inf"),
+            params={"x": 0.0},
+            distributions={"x": FloatDistribution(0.0, 1.0)},
+        )
+    )
+
+    optuna.logging.enable_propagation()
+    _filter_nonfinite(study.get_trials(states=(TrialState.COMPLETE,)), with_message=with_message)
+    msg = "Trial 1 is omitted in visualization because its objective value is inf or nan."
+
+    if with_message:
+        assert msg in caplog.text
+        n_filtered_as_inf = 0
+        for record in caplog.records:
+            if record.msg == msg:
+                assert record.levelno == logging.WARNING
+                n_filtered_as_inf += 1
+        assert n_filtered_as_inf == 1
+    else:
+        assert msg not in caplog.text
