@@ -98,7 +98,7 @@ def _get_optimization_history_plot(
 
     layout = go.Layout(
         title="Optimization History Plot",
-        xaxis={"title": "#Trials"},
+        xaxis={"title": "trial number"},
         yaxis={"title": target_name},
     )
 

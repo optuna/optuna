@@ -312,7 +312,7 @@ def _make_marker(
             "color": [t.number for t in trials],
             "colorscale": "Blues",
             "colorbar": {
-                "title": "#Trials",
+                "title": "trial number",
             },
         }
     else:
