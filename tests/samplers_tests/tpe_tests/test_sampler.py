@@ -758,9 +758,8 @@ def test_get_observation_pairs() -> None:
 
         x = trial.suggest_int("x", 5, 5)
         z = trial.suggest_categorical("z", [None])
-        z  # Use z here
         if trial.number == 0:
-            return x
+            return x * int(z == None)
         elif trial.number == 1:
             trial.report(1, 4)
             trial.report(2, 7)
