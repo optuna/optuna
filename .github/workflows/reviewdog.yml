@@ -1,14 +1,19 @@
-name: reviewdog-suggester
+name: Reviewdog
 
 on:
-  pull_request: {}
+  pull_request:
+    types: [opened, review_requested]
 
 jobs:
   reviewdog:
     runs-on: ubuntu-latest
 
+    if: github.event.action == 'opened' || github.event.requested_team.name == 'reviewdog'
+
     steps:
-    - uses: actions/checkout@v2
+
+    - name: Checkout
+      uses: actions/checkout@v2
 
     - uses: actions/setup-python@v2
       with:
@@ -20,25 +25,12 @@ jobs:
         pip install --progress-bar off -U .[checking]
 
     - name: Black
-      run: black .
+      run: |
+        black .
+        blackdoc .
+        isort .
 
     - name: Reviewdog
       uses: reviewdog/action-suggester@v1
       with:
-        tool_name: black
-
-    - name: Blackdoc
-      run: blackdoc .
-
-    - name: Reviewdog
-      uses: reviewdog/action-suggester@v1
-      with:
-        tool_name: blackdoc
-
-    - name: Isort
-      run: isort .
-
-    - name: Reviewdog
-      uses: reviewdog/action-suggester@v1
-      with:
-        tool_name: isort
+        tool_name: formatters
