@@ -4,6 +4,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+from matplotlib.collections import LineCollection
 import numpy as np
 import pytest
 
@@ -288,3 +289,90 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
         xlims = [ax.get_xlim() for ax in subplots[:, index]]
         assert all_equal(xlims)
         assert all(range_covers(param_range_with_padding, xlim) for xlim in xlims)
+
+
+@pytest.mark.parametrize("value", [float("inf"), -float("inf")])
+def test_nonfinite_removed(value: float) -> None:
+
+    study = create_study()
+    study.add_trial(
+        create_trial(
+            value=0.0,
+            params={"param_a": 1.0, "param_b": 0.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 1.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=1.0,
+            params={"param_a": 0.0, "param_b": 10.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 10.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            value=value,
+            params={"param_a": 0.0, "param_b": 1.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 1.0),
+            },
+        )
+    )
+
+    # To check if contour lines have been rendered (meaning +-inf trials were removed),
+    # we are looking if artists responsible for drawing them are preset.
+    # This is not perfect as LineCollection instances are not exclusive to contour lines,
+    # and afaik can't be traced back to plot type they make up for.
+    figure = plot_contour(study)
+    line_artists = [line for line in figure.get_children() if isinstance(line, LineCollection)]
+    assert len(line_artists) > 1
+
+
+@pytest.mark.parametrize(
+    "objective,value",
+    [(0, float("inf")), (0, -float("inf")), (1, float("inf")), (1, -float("inf"))],
+)
+def test_nonfinite_multiobjective(objective: int, value: float) -> None:
+
+    study = create_study(directions=["minimize", "maximize"])
+    study.add_trial(
+        create_trial(
+            values=[1.0, 0.0],
+            params={"param_a": 1.0, "param_b": 0.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 1.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[0.0, 1.0],
+            params={"param_a": 0.0, "param_b": 10.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 10.0),
+            },
+        )
+    )
+    study.add_trial(
+        create_trial(
+            values=[value, value],
+            params={"param_a": 0.0, "param_b": 1.0},
+            distributions={
+                "param_a": FloatDistribution(0.0, 1.0),
+                "param_b": FloatDistribution(0.0, 1.0),
+            },
+        )
+    )
+
+    figure = plot_contour(study, target=lambda t: t.values[objective])
+    line_artists = [line for line in figure.get_children() if isinstance(line, LineCollection)]
+    assert len(line_artists) > 1
