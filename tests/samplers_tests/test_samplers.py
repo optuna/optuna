@@ -562,7 +562,7 @@ def test_multi_objective_sample_independent(
 
         if isinstance(distribution, FloatDistribution):
             if distribution.step is not None:
-                # Check the value is a multiple of `distribution.q` which is
+                # Check the value is a multiple of `distribution.step` which is
                 # the quantization interval of the distribution.
                 value -= distribution.low
                 value /= distribution.step
