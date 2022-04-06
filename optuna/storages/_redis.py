@@ -738,6 +738,19 @@ class RedisStorage(BaseStorage):
             pickle.dumps(self._get_redis_time()),
         )
 
+    @deprecated(
+        "3.0.0",
+        "5.0.0",
+        text="Use :func:`~optuna.storages.fail_stale_trials` instead.",
+    )
+    def fail_stale_trials(self, study_id: int) -> List[int]:
+        confirmed = []
+        for trial_id in self._get_stale_trial_ids(study_id):
+            if self.set_trial_state_values(trial_id, state=TrialState.FAIL):
+                confirmed.append(trial_id)
+
+        return confirmed
+
     def _get_stale_trial_ids(self, study_id: int) -> List[int]:
         assert self.heartbeat_interval is not None
 
