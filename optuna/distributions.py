@@ -735,10 +735,7 @@ def _convert_old_distribution_to_new_distribution(
     if new_distribution != distribution and not suppress_warning:
         message = (
             f"{distribution} is deprecated and internally converted to"
-            f" {new_distribution}. If you see this message, please update your"
-            f" source code to use {new_distribution.__class__.__name__} instead of"
-            f" {distribution.__class__.__name__}."
-            " See https://github.com/optuna/optuna/issues/2941."
+            f" {new_distribution}. See https://github.com/optuna/optuna/issues/2941."
         )
         warnings.warn(message, FutureWarning)
 
