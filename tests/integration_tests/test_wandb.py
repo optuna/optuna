@@ -164,7 +164,7 @@ def test_log_api_call_count(wandb: mock.MagicMock) -> None:
 def test_values_registered_on_epoch(
     wandb: mock.MagicMock, metric: str, expected: List[str]
 ) -> None:
-    def assert_call_args(log_func: mock.MagicMock, regular: bool) -> None:
+    def assert_call_args(log_func: mock.MagicMock, expected: List[str], regular: bool) -> None:
         kall = log_func.call_args
         assert list(kall[0][0].keys()) == expected
         assert kall[1] == {"step": 0 if regular else None}
@@ -176,19 +176,19 @@ def test_values_registered_on_epoch(
     study = copy.deepcopy(base_study)
     wandbc = WeightsAndBiasesCallback(metric_name=metric)
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
-    assert_call_args(wandb.run.log, bool(wandb.run))
+    assert_call_args(wandb.run.log, expected, bool(wandb.run))
 
     study = copy.deepcopy(base_study)
     wandb.run = mock.MagicMock()
     wandbc = WeightsAndBiasesCallback(metric_name=metric, as_multirun=True)
     _wrapped_func = wandbc.track_in_wandb(_objective_func)
     study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
-    assert_call_args(wandb.run.log, bool(wandb.run))
+    assert_call_args(wandb.run.log, [*expected, "trial_number"], bool(wandb.run))
 
     study = copy.deepcopy(base_study)
     wandb.run = None
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
-    assert_call_args(wandb.init().log, bool(wandb.run))
+    assert_call_args(wandb.init().log, [*expected, "trial_number"], bool(wandb.run))
 
 
 @pytest.mark.parametrize(
@@ -203,11 +203,9 @@ def test_values_registered_on_epoch(
 def test_multiobjective_values_registered_on_epoch(
     wandb: mock.MagicMock, metrics: Union[str, Sequence[str]], expected: List[str]
 ) -> None:
-    def assert_call_args(log_func: mock.MagicMock, regular: bool) -> None:
-
+    def assert_call_args(log_func: mock.MagicMock, expected: List[str], regular: bool) -> None:
         kall = log_func.call_args
         assert list(kall[0][0].keys()) == expected
-
         assert kall[1] == {"step": 0 if regular else None}
 
     wandb.sdk.wandb_run.Run = mock.MagicMock
@@ -217,19 +215,19 @@ def test_multiobjective_values_registered_on_epoch(
     study = copy.deepcopy(base_study)
     wandbc = WeightsAndBiasesCallback(metric_name=metrics)
     study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
-    assert_call_args(wandb.run.log, bool(wandb.run))
+    assert_call_args(wandb.run.log, expected, bool(wandb.run))
 
     study = copy.deepcopy(base_study)
     wandbc = WeightsAndBiasesCallback(as_multirun=True, metric_name=metrics)
     wandb.run = mock.MagicMock()
     _wrapped_func = wandbc.track_in_wandb(_multiobjective_func)
     study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
-    assert_call_args(wandb.run.log, bool(wandb.run))
+    assert_call_args(wandb.run.log, [*expected, "trial_number"], bool(wandb.run))
 
     wandb.run = None
     study = copy.deepcopy(base_study)
     study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
-    assert_call_args(wandb.init().log, bool(wandb.run))
+    assert_call_args(wandb.init().log, [*expected, "trial_number"], bool(wandb.run))
 
 
 @pytest.mark.parametrize("metrics", [["foo"], ["foo", "bar", "baz"]])

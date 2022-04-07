@@ -134,6 +134,10 @@ class WeightsAndBiasesCallback(object):
                 names = [*self._metric_name]
 
         metrics = {name: value for name, value in zip(names, trial.values)}
+
+        if self._as_multirun:
+            metrics["trial_number"] = trial.number
+
         attributes = {"direction": [d.name for d in study.directions]}
 
         step = trial.number if wandb.run else None
