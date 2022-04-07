@@ -4,7 +4,6 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import Union
 import warnings
 
 import optuna
@@ -15,11 +14,8 @@ from optuna._deprecated import deprecated
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalChoiceType
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.trial._base import BaseTrial
 
 
@@ -155,19 +151,7 @@ class Trial(BaseTrial):
             :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
-        if step is not None:
-            if log:
-                raise ValueError("The parameter `step` is not supported when `log` is True.")
-            else:
-                distribution: Union[
-                    DiscreteUniformDistribution, LogUniformDistribution, UniformDistribution
-                ] = DiscreteUniformDistribution(low=low, high=high, q=step)
-        else:
-            if log:
-                distribution = LogUniformDistribution(low=low, high=high)
-            else:
-                distribution = UniformDistribution(low=low, high=high)
-
+        distribution = FloatDistribution(low, high, log=log, step=step)
         self._check_distribution(name, distribution)
 
         return self._suggest(name, distribution)
@@ -320,32 +304,12 @@ class Trial(BaseTrial):
                     The ``step != 1`` and ``log`` arguments cannot be used at the same time.
                     To set the ``log`` argument to :obj:`True`, set the ``step`` argument to 1.
 
-        Raises:
-            :exc:`ValueError`:
-                If ``step != 1`` and ``log = True`` are specified.
-
         .. seealso::
             :ref:`configurations` tutorial describes more details and flexible usages.
         """
 
-        if step != 1:
-            if log:
-                raise ValueError(
-                    "The parameter `step != 1` is not supported when `log` is True."
-                    "The specified `step` is {}.".format(step)
-                )
-            else:
-                distribution: Union[
-                    IntUniformDistribution, IntLogUniformDistribution
-                ] = IntUniformDistribution(low=low, high=high, step=step)
-        else:
-            if log:
-                distribution = IntLogUniformDistribution(low=low, high=high)
-            else:
-                distribution = IntUniformDistribution(low=low, high=high, step=step)
-
+        distribution = IntDistribution(low=low, high=high, log=log, step=step)
         self._check_distribution(name, distribution)
-
         return int(self._suggest(name, distribution))
 
     def suggest_categorical(

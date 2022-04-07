@@ -235,10 +235,6 @@ class MultiObjectiveTrial(object):
     # This method would be helpful to use the existing pruning
     # integrations for multi-objective optimization.
 
-    def _get_values(self) -> List[Optional[float]]:
-        trial = self._trial.study._storage.get_trial(self._trial._trial_id)
-        return [trial.intermediate_values.get(i) for i in range(self._n_objectives)]
-
 
 @deprecated("2.4.0", "4.0.0")
 class FrozenMultiObjectiveTrial(object):
