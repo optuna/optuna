@@ -68,7 +68,7 @@ def _check_single_value(
 
     if value is not None and math.isnan(value):
         value = None
-        failure_message = f"The objective function returned {original_value}."
+        failure_message = f"The value {original_value} is not acceptable."
 
     return value, failure_message
 
