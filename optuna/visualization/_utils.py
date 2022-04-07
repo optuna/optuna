@@ -129,7 +129,7 @@ def _get_skipped_trial_numbers(
             The parameter names used in ``plot_parallel_coordinate``.
 
     Returns:
-        A list of invalid trial numbers.
+        A set of invalid trial numbers.
     """
 
     skipped_trial_numbers = set()
