@@ -2,8 +2,7 @@ from matplotlib.collections import PathCollection
 import numpy as np
 import pytest
 
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.study import create_study
 from optuna.testing.visualization import prepare_study_with_trials
 from optuna.trial import create_trial
@@ -88,8 +87,8 @@ def test_plot_slice_log_scale() -> None:
             value=0.0,
             params={"x_linear": 1.0, "y_log": 1e-3},
             distributions={
-                "x_linear": UniformDistribution(0.0, 3.0),
-                "y_log": LogUniformDistribution(1e-5, 1.0),
+                "x_linear": FloatDistribution(0.0, 3.0),
+                "y_log": FloatDistribution(1e-5, 1.0, log=True),
             },
         )
     )
