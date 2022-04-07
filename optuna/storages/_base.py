@@ -730,6 +730,8 @@ class BaseStorage(object, metaclass=abc.ABCMeta):
         Args:
             study_id:
                 ID of the study.
+        Returns:
+            List of IDs of trials whose heartbeat has not been updated for a long time.
         """
         return []
 
