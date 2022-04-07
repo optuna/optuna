@@ -102,7 +102,7 @@ def _get_contour_plot(
     layout = go.Layout(title="Contour Plot")
 
     trials = _filter_nonfinite(
-        [trial for trial in study.trials if trial.state == TrialState.COMPLETE], target=target
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
     )
 
     if len(trials) == 0:

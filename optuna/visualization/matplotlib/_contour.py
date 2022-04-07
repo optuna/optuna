@@ -116,7 +116,7 @@ def _get_contour_plot(
 
     # Calculate basic numbers for plotting.
     trials = _filter_nonfinite(
-        [trial for trial in study.trials if trial.state == TrialState.COMPLETE], target=target
+        study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
     )
 
     if len(trials) == 0:
