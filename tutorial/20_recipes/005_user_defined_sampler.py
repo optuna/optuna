@@ -74,11 +74,16 @@ class SimulatedAnnealingSampler(optuna.samplers.BaseSampler):
         # the objective function passed to the study.
         params = {}
         for param_name, param_distribution in search_space.items():
-            if not isinstance(param_distribution, optuna.distributions.FloatDistribution):
-                raise NotImplementedError("Only suggest_float() is supported")
-
-            assert param_distribution.step is None, "step is not supported"
-            assert not param_distribution.log, "log is not supported"
+            if (
+                not isinstance(param_distribution, optuna.distributions.FloatDistribution)
+                or (param_distribution.step is not None and param_distribution.step != 1)
+                or param_distribution.log
+            ):
+                msg = (
+                    "Only suggest_float() with `step` `None` or 1.0 and"
+                    " `log` `False` is supported"
+                )
+                raise NotImplementedError(msg)
 
             current_value = self._current_trial.params[param_name]
             width = (param_distribution.high - param_distribution.low) * 0.1
