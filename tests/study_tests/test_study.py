@@ -9,7 +9,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from unittest.mock import Mock  # NOQA
+from unittest.mock import Mock
 from unittest.mock import patch
 import uuid
 
@@ -304,7 +304,7 @@ def test_get_all_study_summaries(storage_mode: str, include_best_trial: bool) ->
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
-        study.optimize(Func(), n_trials=5)
+        study.optimize(func, n_trials=5)
 
         summaries = get_all_study_summaries(study._storage, include_best_trial)
         summary = [s for s in summaries if s._study_id == study._study_id][0]
@@ -1003,23 +1003,23 @@ def test_log_completed_trial_skip_storage_access() -> None:
 
     # Create a trial to retrieve it as the `study.best_trial`.
     study.optimize(lambda _: 0.0, n_trials=1)
-    trial = Trial(study, study._storage.create_new_trial(study._study_id))
+    frozen_trial = study.best_trial
 
     storage = study._storage
 
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, [1.0])
+        study._log_completed_trial(frozen_trial)
         # Trial.best_trial and Trial.best_params access storage.
         assert mock_object.call_count == 2
 
     logging.set_verbosity(logging.WARNING)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, [1.0])
+        study._log_completed_trial(frozen_trial)
         assert mock_object.call_count == 0
 
     logging.set_verbosity(logging.DEBUG)
     with patch.object(storage, "get_best_trial", wraps=storage.get_best_trial) as mock_object:
-        study._log_completed_trial(trial, [1.0])
+        study._log_completed_trial(frozen_trial)
         assert mock_object.call_count == 2
 
 
@@ -1134,30 +1134,173 @@ def test_tell() -> None:
     assert len(study.trials) == 1
     assert len(study.get_trials(states=(TrialState.COMPLETE,))) == 1
 
-    study.tell(study.ask(), state=TrialState.PRUNED)
+    study.tell(study.ask(), [1.0])
     assert len(study.trials) == 2
+    assert len(study.get_trials(states=(TrialState.COMPLETE,))) == 2
+
+    # `trial` could be int.
+    study.tell(study.ask().number, 1.0)
+    assert len(study.trials) == 3
+    assert len(study.get_trials(states=(TrialState.COMPLETE,))) == 3
+
+    # Inf is supported as values.
+    study.tell(study.ask(), float("inf"))
+    assert len(study.trials) == 4
+    assert len(study.get_trials(states=(TrialState.COMPLETE,))) == 4
+
+    study.tell(study.ask(), state=TrialState.PRUNED)
+    assert len(study.trials) == 5
     assert len(study.get_trials(states=(TrialState.PRUNED,))) == 1
 
     study.tell(study.ask(), state=TrialState.FAIL)
-    assert len(study.trials) == 3
+    assert len(study.trials) == 6
     assert len(study.get_trials(states=(TrialState.FAIL,))) == 1
 
+
+def test_tell_pruned() -> None:
+    study = create_study()
+
+    study.tell(study.ask(), state=TrialState.PRUNED)
+    assert study.trials[-1].value is None
+    assert study.trials[-1].state == TrialState.PRUNED
+
+    # Store the last intermediates as value.
+    trial = study.ask()
+    trial.report(2.0, step=1)
+    study.tell(trial, state=TrialState.PRUNED)
+    assert study.trials[-1].value == 2.0
+    assert study.trials[-1].state == TrialState.PRUNED
+
+    # Inf is also supported as a value.
+    trial = study.ask()
+    trial.report(float("inf"), step=1)
+    study.tell(trial, state=TrialState.PRUNED)
+    assert study.trials[-1].value == float("inf")
+    assert study.trials[-1].state == TrialState.PRUNED
+
+    # NaN is not supported as a value.
+    trial = study.ask()
+    trial.report(float("nan"), step=1)
+    study.tell(trial, state=TrialState.PRUNED)
+    assert study.trials[-1].value is None
+    assert study.trials[-1].state == TrialState.PRUNED
+
+
+def test_tell_automatically_fail() -> None:
+    study = create_study()
+
+    # Check invalid values, e.g. str cannot be cast to float.
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), "a")  # type: ignore
+        assert len(study.trials) == 1
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    # Check invalid values, e.g. `None` that cannot be cast to float.
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), None)  # type: ignore
+        assert len(study.trials) == 2
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    # Check number of values.
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [])
+        assert len(study.trials) == 3
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    # Check wrong number of values, e.g. two values for single direction.
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [1.0, 2.0])
+        assert len(study.trials) == 4
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    # Both state and values are not specified.
+    with pytest.warns(UserWarning):
+        study.tell(study.ask())
+        assert len(study.trials) == 5
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    # Nan is not supported.
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), float("nan"))
+        assert len(study.trials) == 6
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+
+def test_tell_multi_objective() -> None:
+    study = create_study(directions=["minimize", "maximize"])
+    study.tell(study.ask(), [1.0, 2.0])
+    assert len(study.trials) == 1
+
+
+def test_tell_multi_objective_automatically_fail() -> None:
+    # Number of values doesn't match the length of directions.
+    study = create_study(directions=["minimize", "maximize"])
+
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [])
+        assert len(study.trials) == 1
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [1.0])
+        assert len(study.trials) == 2
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [1.0, 2.0, 3.0])
+        assert len(study.trials) == 3
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [1.0, None])  # type: ignore
+        assert len(study.trials) == 4
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+    with pytest.warns(UserWarning):
+        study.tell(study.ask(), [None, None])  # type: ignore
+        assert len(study.trials) == 5
+        assert study.trials[-1].state == TrialState.FAIL
+        assert study.trials[-1].values is None
+
+
+def test_tell_invalid() -> None:
+    study = create_study()
+
+    # Missing values for completions.
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), state=TrialState.COMPLETE)
+
+    # `state` must be None or finished state
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.RUNNING)
 
+    # `state` must be None or finished state
     with pytest.raises(ValueError):
         study.tell(study.ask(), state=TrialState.WAITING)
 
+    # `value` must be None for `TrialState.PRUNED`
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), values=1, state=TrialState.PRUNED)
 
-def test_tell_trial_variations() -> None:
-    study = create_study()
-
-    study.tell(study.ask().number, 1.0)
+    # `value` must be None for `TrialState.FAIL`
+    with pytest.raises(ValueError):
+        study.tell(study.ask(), values=1, state=TrialState.FAIL)
 
     # Trial that has not been asked for cannot be told.
     with pytest.raises(ValueError):
         study.tell(study.ask().number + 1, 1.0)
 
+    # It must be Trial or int for trial.
     with pytest.raises(TypeError):
         study.tell("1", 1.0)  # type: ignore
 
@@ -1173,45 +1316,6 @@ def test_tell_duplicate_tell() -> None:
 
     with pytest.raises(RuntimeError):
         study.tell(trial, 1.0, skip_if_finished=False)
-
-
-def test_tell_values() -> None:
-    study = create_study()
-
-    study.tell(study.ask(), 1.0)
-
-    study.tell(study.ask(), [1.0])
-
-    # Check invalid values, e.g. ones that cannot be cast to float.
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), "a")  # type: ignore
-
-    # Check number of values.
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), [])
-
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), [1.0, 2.0])
-
-    study = create_study(directions=["minimize", "maximize"])
-    study.tell(study.ask(), [1.0, 2.0])
-
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), [])
-
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), [1.0])
-
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), [1.0, 2.0, 3.0])
-
-    # Missing values for completions.
-    with pytest.raises(ValueError):
-        study.tell(study.ask(), state=TrialState.COMPLETE)
-
-    # Default state is `TrialState.COMPLETE` for which values are required.
-    with pytest.raises(ValueError):
-        study.tell(study.ask())
 
 
 def test_tell_storage_not_implemented_trial_number() -> None:
@@ -1233,23 +1337,6 @@ def test_tell_storage_not_implemented_trial_number() -> None:
 
             with pytest.raises(ValueError):
                 study.tell(study.ask().number + 1, 1.0)
-
-
-def test_tell_pruned_values() -> None:
-    # See also `test_run_trial_with_trial_pruned`.
-    study = create_study()
-
-    trial = study.ask()
-
-    trial.report(2.0, step=1)
-
-    study.tell(trial, state=TrialState.PRUNED)
-    assert study.trials[-1].value == 2.0
-
-    trial = study.ask()
-
-    study.tell(trial, state=TrialState.PRUNED)
-    assert study.trials[-1].value is None
 
 
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)

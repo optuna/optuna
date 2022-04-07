@@ -1,49 +1,173 @@
+from typing import Callable
+from typing import Generator
+from typing import Optional
+from unittest import mock
+
+from _pytest.logging import LogCaptureFixture
 import pytest
 
 from optuna import create_study
+from optuna import logging
 from optuna import Trial
+from optuna import TrialPruned
 from optuna.study import _optimize
+from optuna.study._tell import _tell_with_warning
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import TrialState
 
 
+@pytest.fixture(autouse=True)
+def logging_setup() -> Generator[None, None, None]:
+    # We need to reconstruct our default handler to properly capture stderr.
+    logging._reset_library_root_logger()
+    logging.enable_default_handler()
+    logging.set_verbosity(logging.INFO)
+    logging.enable_propagation()
+
+    yield
+
+    # After testing, restore default propagation setting.
+    logging.disable_propagation()
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
-def test_run_trial(storage_mode: str) -> None:
+def test_run_trial(storage_mode: str, caplog: LogCaptureFixture) -> None:
 
     with StorageSupplier(storage_mode) as storage:
         study = create_study(storage=storage)
 
-        # Test trial with acceptable exception.
-        def func_value_error(_: Trial) -> float:
+        caplog.clear()
+        frozen_trial = _optimize._run_trial(study, lambda _: 1.0, catch=())
+        assert frozen_trial.state == TrialState.COMPLETE
+        assert frozen_trial.value == 1.0
+        assert "Trial 0 finished with value: 1.0 and parameters" in caplog.text
 
-            raise ValueError
+        caplog.clear()
+        frozen_trial = _optimize._run_trial(study, lambda _: float("inf"), catch=())
+        assert frozen_trial.state == TrialState.COMPLETE
+        assert frozen_trial.value == float("inf")
+        assert "Trial 1 finished with value: inf and parameters" in caplog.text
 
-        trial = _optimize._run_trial(study, func_value_error, catch=(ValueError,))
-        frozen_trial = study._storage.get_trial(trial._trial_id)
+        caplog.clear()
+        frozen_trial = _optimize._run_trial(study, lambda _: -float("inf"), catch=())
+        assert frozen_trial.state == TrialState.COMPLETE
+        assert frozen_trial.value == -float("inf")
+        assert "Trial 2 finished with value: -inf and parameters" in caplog.text
 
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_run_trial_automatically_fail(storage_mode: str, caplog: LogCaptureFixture) -> None:
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+
+        caplog.clear()
+        frozen_trial = _optimize._run_trial(study, lambda _: float("nan"), catch=())
+        assert frozen_trial.state == TrialState.FAIL
+        assert frozen_trial.value is None
+        assert "Trial 0 failed because of the following error:" in caplog.text
+        assert "The objective function returned nan." in caplog.text
+
+        caplog.clear()
+        frozen_trial = _optimize._run_trial(study, lambda _: None, catch=())  # type: ignore
+        assert frozen_trial.state == TrialState.FAIL
+        assert frozen_trial.value is None
+        assert "Trial 1 failed because of the following error:" in caplog.text
+        assert "The value None could not be cast to float." in caplog.text
+
+        caplog.clear()
+        frozen_trial = _optimize._run_trial(study, lambda _: object(), catch=())  # type: ignore
+        assert frozen_trial.state == TrialState.FAIL
+        assert frozen_trial.value is None
+        assert "Trial 2 failed because of the following error:" in caplog.text
+        assert "The value <object object at" in caplog.text
+        assert "> could not be cast to float." in caplog.text
+
+        caplog.clear()
+        frozen_trial = _optimize._run_trial(study, lambda _: [0, 1], catch=())  # type: ignore
+        assert frozen_trial.state == TrialState.FAIL
+        assert frozen_trial.value is None
+        assert "Trial 3 failed because of the following error: The number" in caplog.text
+        assert "of the values 2 did not match the number of the objectives 1." in caplog.text
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_run_trial_pruned(storage_mode: str, caplog: LogCaptureFixture) -> None:
+    def gen_func(intermediate: Optional[float] = None) -> Callable[[Trial], float]:
+        def func(trial: Trial) -> float:
+            if intermediate is not None:
+                trial.report(step=1, value=intermediate)
+            raise TrialPruned
+
+        return func
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+
+        caplog.clear()
+        frozen_trial = _optimize._run_trial(study, gen_func(), catch=())
+        assert frozen_trial.state == TrialState.PRUNED
+        assert frozen_trial.value is None
+        assert "Trial 0 pruned." in caplog.text
+
+        caplog.clear()
+        frozen_trial = _optimize._run_trial(study, gen_func(intermediate=1), catch=())
+        assert frozen_trial.state == TrialState.PRUNED
+        assert frozen_trial.value == 1
+        assert "Trial 1 pruned." in caplog.text
+
+        caplog.clear()
+        frozen_trial = _optimize._run_trial(study, gen_func(intermediate=float("nan")), catch=())
+        assert frozen_trial.state == TrialState.PRUNED
+        assert frozen_trial.value is None
+        assert "Trial 2 pruned." in caplog.text
+
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_run_trial_catch_exception(storage_mode: str) -> None:
+    def func_value_error(_: Trial) -> float:
+        raise ValueError
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        frozen_trial = _optimize._run_trial(study, func_value_error, catch=(ValueError,))
         assert frozen_trial.state == TrialState.FAIL
 
-        # Test trial with unacceptable exception.
+
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_run_trial_exception(storage_mode: str) -> None:
+    def func_value_error(_: Trial) -> float:
+        raise ValueError
+
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
         with pytest.raises(ValueError):
-            _optimize._run_trial(study, func_value_error, catch=(ArithmeticError,))
+            _optimize._run_trial(study, func_value_error, ())
 
-        # Test trial with invalid objective value: None
-        def func_none(_: Trial) -> float:
+    # Test trial with unacceptable exception.
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
+        with pytest.raises(ValueError):
+            _optimize._run_trial(study, func_value_error, (ArithmeticError,))
 
-            return None  # type: ignore
 
-        trial = _optimize._run_trial(study, func_none, catch=(Exception,))
-        frozen_trial = study._storage.get_trial(trial._trial_id)
+@pytest.mark.parametrize("storage_mode", STORAGE_MODES)
+def test_run_trial_invoke_tell_with_suppressing_warning(storage_mode: str) -> None:
+    def func_numerical(trial: Trial) -> float:
+        return trial.suggest_float("v", 0, 10)
 
-        assert frozen_trial.state == TrialState.FAIL
+    with StorageSupplier(storage_mode) as storage:
+        study = create_study(storage=storage)
 
-        # Test trial with invalid objective value: nan
-        def func_nan(_: Trial) -> float:
-
-            return float("nan")
-
-        trial = _optimize._run_trial(study, func_nan, catch=(Exception,))
-        frozen_trial = study._storage.get_trial(trial._trial_id)
-
-        assert frozen_trial.state == TrialState.FAIL
+        with mock.patch(
+            "optuna.study._optimize._tell_with_warning", side_effect=_tell_with_warning
+        ) as mock_obj:
+            _optimize._run_trial(study, func_numerical, ())
+            mock_obj.assert_called_once_with(
+                study=mock.ANY,
+                trial=mock.ANY,
+                values=mock.ANY,
+                state=mock.ANY,
+                suppress_warning=True,
+            )

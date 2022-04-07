@@ -1414,6 +1414,25 @@ def test_fail_stale_trials_raw(storage_mode: str) -> None:
         assert storage.fail_stale_trials(study_id) == []
 
 
+@pytest.mark.parametrize("storage_mode", ["sqlite", "redis"])
+def test_get_stale_trial_ids(storage_mode: str) -> None:
+    heartbeat_interval = 1
+    grace_period = 2
+
+    with StorageSupplier(storage_mode) as storage:
+        assert isinstance(storage, (RDBStorage, RedisStorage))
+        storage.heartbeat_interval = heartbeat_interval
+        storage.grace_period = grace_period
+        study = optuna.create_study(storage=storage)
+
+        with pytest.warns(UserWarning):
+            trial = study.ask()
+        storage.record_heartbeat(trial._trial_id)
+        time.sleep(grace_period + 1)
+        assert len(storage._get_stale_trial_ids(study._study_id)) == 1
+        assert storage._get_stale_trial_ids(study._study_id)[0] == trial._trial_id
+
+
 @pytest.mark.parametrize("storage_mode", STORAGE_MODES)
 def test_read_trials_from_remote_storage(storage_mode: str) -> None:
 
