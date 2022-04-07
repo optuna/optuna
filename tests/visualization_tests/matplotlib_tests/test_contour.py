@@ -336,10 +336,8 @@ def test_nonfinite_removed(recwarn: WarningsRecorder, value: float) -> None:
         assert "No contour levels were found within the data range" not in str(record.message)
 
 
-@pytest.mark.parametrize(
-    "objective,value",
-    [(0, float("inf")), (0, -float("inf")), (1, float("inf")), (1, -float("inf"))],
-)
+@pytest.mark.parametrize("objective", (0, 1))
+@pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_nonfinite_multiobjective(recwarn: WarningsRecorder, objective: int, value: float) -> None:
 
     study = create_study(directions=["minimize", "maximize"])
