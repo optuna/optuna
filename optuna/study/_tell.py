@@ -15,6 +15,10 @@ from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
 
+# This is used for propagating warning message to Study.optimize.
+STUDY_TELL_WARNING_KEY = "STUDY_TELL_WARNING"
+
+
 _logger = logging.get_logger(__name__)
 
 
@@ -190,6 +194,7 @@ def _tell_with_warning(
         study._storage.set_trial_state_values(trial_id, state, values)
 
     frozen_trial = copy.deepcopy(study._storage.get_trial(trial_id))
+
     if warning_message is not None:
-        frozen_trial.set_system_attr("study_tell_warning", warning_message)
+        frozen_trial.set_system_attr(STUDY_TELL_WARNING_KEY, warning_message)
     return frozen_trial
