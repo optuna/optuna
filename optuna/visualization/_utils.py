@@ -124,7 +124,7 @@ def _get_skipped_trial_numbers(
 
     Args:
         trials:
-            List of ``FrozenTrials``.
+            List of ``FrozenTrial``s.
         used_param_names:
             The parameter names used in ``plot_parallel_coordinate``.
 
