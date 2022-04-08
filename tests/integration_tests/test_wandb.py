@@ -146,7 +146,7 @@ def test_log_api_call_count(wandb: mock.MagicMock) -> None:
     assert wandb.run.log.call_count == target_n_trials
 
     wandbc = WeightsAndBiasesCallback(as_multirun=True)
-    wandb.run = mock.MagicMock()
+    wandb.run.reset_mock()
     _wrapped_func = wandbc.track_in_wandb(_objective_func)
     study.optimize(_wrapped_func, n_trials=target_n_trials, callbacks=[wandbc])
 
