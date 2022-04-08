@@ -89,6 +89,7 @@ def test_plot_optimization_history(direction: str) -> None:
     assert figure.xaxis.label.get_text() == "Target Name"
     plt.savefig(BytesIO())
 
+
 @pytest.mark.parametrize("value", [float("inf"), -float("inf"), float("nan")])
 def test_nonfinite_removed(value: int) -> None:
 
