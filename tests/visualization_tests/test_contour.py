@@ -346,10 +346,8 @@ def test_nonfinite_removed(value: float) -> None:
     assert value not in zvals
 
 
-@pytest.mark.parametrize(
-    "objective,value",
-    [(0, float("inf")), (0, -float("inf")), (1, float("inf")), (1, -float("inf"))],
-)
+@pytest.mark.parametrize("objective", (0, 1))
+@pytest.mark.parametrize("value", (float("inf"), -float("inf")))
 def test_nonfinite_multiobjective(objective: int, value: float) -> None:
 
     study = create_study(directions=["minimize", "maximize"])
