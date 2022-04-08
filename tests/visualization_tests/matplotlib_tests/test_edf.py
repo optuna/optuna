@@ -87,10 +87,7 @@ def test_plot_optimization_history(direction: str) -> None:
     _validate_edf_values(lines[0].get_ydata())
     assert len(figure.get_lines()) == 1
     assert figure.xaxis.label.get_text() == "Target Name"
-<<<<<<< HEAD
     plt.savefig(BytesIO())
-=======
-
 
 @pytest.mark.parametrize("value", [float("inf"), -float("inf"), float("nan")])
 def test_nonfinite_removed(value: int) -> None:
@@ -113,6 +110,7 @@ def test_nonfinite_removed(value: int) -> None:
 
     figure = plot_edf(study)
     assert all(np.isfinite(figure.get_lines()[0].get_xdata()))
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize(
@@ -146,4 +144,4 @@ def test_nonfinite_multiobjective(objective: int, value: int) -> None:
 
     figure = plot_edf(study, target=lambda t: t.values[objective])
     assert all(np.isfinite(figure.get_lines()[0].get_xdata()))
->>>>>>> d1c02d8bd3e24ff8ef8cc55837dffd02c06a3a2a
+    plt.savefig(BytesIO())
