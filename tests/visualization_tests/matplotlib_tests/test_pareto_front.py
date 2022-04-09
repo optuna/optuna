@@ -59,7 +59,6 @@ def test_plot_pareto_front_2d(
         targets=targets,
     )
     assert len(figure.get_lines()) == 0
-    plt.savefig(BytesIO())
 
     if axis_order is not None:
         pareto_front_points = np.array([[1.0, 0.0], [0.0, 1.0]])[:, axis_order]
@@ -77,6 +76,7 @@ def test_plot_pareto_front_2d(
     assert exists_pareto_front
     if include_dominated_trials:
         assert exists_dominated_trials
+    plt.savefig(BytesIO())
 
     # Test with `target_names` argument.
     with pytest.raises(ValueError):
@@ -113,7 +113,6 @@ def test_plot_pareto_front_2d(
         targets=targets,
     )
     assert len(figure.get_lines()) == 0
-    plt.savefig(BytesIO())
 
     if axis_order is None:
         assert figure.get_xlabel() == target_names[0]
@@ -138,6 +137,7 @@ def test_plot_pareto_front_2d(
     assert exists_pareto_front
     if include_dominated_trials:
         assert exists_dominated_trials
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.filterwarnings("ignore::optuna.exceptions.ExperimentalWarning")

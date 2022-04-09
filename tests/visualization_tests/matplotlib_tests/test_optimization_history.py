@@ -88,6 +88,7 @@ def test_plot_optimization_history_with_multiple_studies(direction: str) -> None
     studies = [create_study(direction=direction) for _ in range(n_studies)]
     figure = plot_optimization_history(studies)
     assert len(figure.get_lines()) == 0
+    plt.savefig(BytesIO())
 
     def objective(trial: Trial) -> float:
 
@@ -234,10 +235,10 @@ def test_error_bar_in_optimization_history(direction: str) -> None:
         study.enqueue_trial({"x": x})
         study.optimize(objective, n_trials=1)
     figure = plot_optimization_history(studies, error_bar=True)
-    plt.savefig(BytesIO())
     mean = np.mean(suggested_params)
     std = np.std(suggested_params)
 
     np.testing.assert_almost_equal(figure.get_lines()[0].get_ydata(), mean)
     np.testing.assert_almost_equal(figure.get_lines()[1].get_ydata(), mean - std)
     np.testing.assert_almost_equal(figure.get_lines()[2].get_ydata(), mean + std)
+    plt.savefig(BytesIO())

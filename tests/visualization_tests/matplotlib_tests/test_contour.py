@@ -111,15 +111,12 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
         plot_contour(study, ["optuna", "Optuna"])
 
     figure = plot_contour(study, params=params)
-    plt.savefig(BytesIO())
 
     if params is not None and len(params) < 3:
         if len(params) <= 1:
             assert len(figure.get_lines()) == 0
-            plt.savefig(BytesIO())
         elif len(params) == 2:
             assert len(figure.get_lines()) == 0
-            plt.savefig(BytesIO())
     elif params is None:
         assert figure.shape == (len(study.best_params), len(study.best_params))
         for i in range(len(study.best_params)):
@@ -128,6 +125,7 @@ def test_plot_contour(params: Optional[List[str]]) -> None:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
             assert figure[i][0].yaxis.label.get_text() == list(params)[i]
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize(
@@ -144,11 +142,11 @@ def test_plot_contour_customized_target(params: List[str]) -> None:
         figure = plot_contour(study, params=params, target=lambda t: t.params["param_d"])
     if len(params) == 2:
         assert len(figure.get_lines()) == 0
-        plt.savefig(BytesIO())
     else:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
             assert figure[i][0].yaxis.label.get_text() == list(params)[i]
+    plt.savefig(BytesIO())
 
 
 @pytest.mark.parametrize(
@@ -164,11 +162,11 @@ def test_plot_contour_customized_target_name(params: List[str]) -> None:
     figure = plot_contour(study, params=params, target_name="Target Name")
     if len(params) == 2:
         assert len(figure.get_lines()) == 0
-        plt.savefig(BytesIO())
     else:
         assert figure.shape == (len(params), len(params))
         for i in range(len(params)):
             assert figure[i][0].yaxis.label.get_text() == list(params)[i]
+    plt.savefig(BytesIO())
 
 
 def test_plot_contour_log_scale_and_str_category() -> None:
@@ -202,12 +200,12 @@ def test_plot_contour_log_scale_and_str_category() -> None:
     subplots = [plot for plot in figure.flatten() if plot.has_data()]
     expected = {"param_a": [1e-6, 1e-5], "param_b": [0.0, 1.0], "param_c": [0.0, 1.0]}
     ranges = itertools.permutations(expected.keys(), 2)
-    plt.savefig(BytesIO())
 
     for plot, (yrange, xrange) in zip(subplots, ranges):
         # Take 5% axis padding into account.
         np.testing.assert_allclose(plot.get_xlim(), expected[xrange], atol=5e-2)
         np.testing.assert_allclose(plot.get_ylim(), expected[yrange], atol=5e-2)
+    plt.savefig(BytesIO())
 
 
 def test_plot_contour_mixture_category_types() -> None:
@@ -271,7 +269,6 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
     study = prepare_study_with_trials()
     params = ["param_a", "param_b", "param_c"]
     subplots = plot_contour(study, params=params)
-    plt.savefig(BytesIO())
     # `subplots` should look like this:
     # param_a [[subplot 1, subplot 2, subplot 3],
     # param_b  [subplot 4, subplot 4, subplot 6],
@@ -304,3 +301,4 @@ def test_contour_subplots_have_correct_axis_labels_and_ranges() -> None:
         xlims = [ax.get_xlim() for ax in subplots[:, index]]
         assert all_equal(xlims)
         assert all(range_covers(param_range_with_padding, xlim) for xlim in xlims)
+    plt.savefig(BytesIO())
