@@ -1,4 +1,3 @@
-import itertools
 from typing import Callable
 from typing import cast
 from typing import List
@@ -133,22 +132,6 @@ def _get_edf_plot(
         _logger.warning("There are no studies.")
         return go.Figure(data=[], layout=layout)
 
-    all_trials = list(
-        itertools.chain.from_iterable(
-            (
-                trial
-                for trial in study.get_trials(deepcopy=False)
-                if trial.state == TrialState.COMPLETE
-            )
-            for study in studies
-        )
-    )
-    all_trials = _filter_nonfinite(all_trials, target, with_message=False)
-
-    if len(all_trials) == 0:
-        _logger.warning("There are no complete trials.")
-        return go.Figure(data=[], layout=layout)
-
     if target is None:
 
         def _target(t: FrozenTrial) -> float:
@@ -156,19 +139,26 @@ def _get_edf_plot(
 
         target = _target
 
-    min_x_value = min(target(trial) for trial in all_trials)
-    max_x_value = max(target(trial) for trial in all_trials)
-    x_values = np.linspace(min_x_value, max_x_value, 100)
-
-    traces = []
+    all_values: List[np.ndarray] = []
     for study in studies:
         trials = _filter_nonfinite(
             study.get_trials(deepcopy=False, states=(TrialState.COMPLETE,)), target=target
         )
 
-        values = np.asarray([target(trial) for trial in trials])
-        y_values = np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size
+        values = np.array([target(trial) for trial in trials])
+        all_values.append(values)
 
+    if all(len(values) == 0 for values in all_values):
+        _logger.warning("There are no complete trials.")
+        return go.Figure(data=[], layout=layout)
+
+    min_x_value = np.min(all_values)
+    max_x_value = np.max(all_values)
+    x_values = np.linspace(min_x_value, max_x_value, 100)
+
+    traces = []
+    for values, study in zip(all_values, studies):
+        y_values = np.sum(values[:, np.newaxis] <= x_values, axis=0) / values.size
         traces.append(go.Scatter(x=x_values, y=y_values, name=study.study_name, mode="lines"))
 
     figure = go.Figure(data=traces, layout=layout)
