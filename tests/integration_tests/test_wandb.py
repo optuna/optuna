@@ -53,18 +53,10 @@ def test_run_initialized(wandb: mock.MagicMock) -> None:
     wandb.run = None
 
     study = optuna.create_study(direction="minimize")
-    _wrapped_func = wandbc.track_in_wandb(_objective_func)
-    study.optimize(_wrapped_func, n_trials=1, callbacks=[wandbc])
-
-    wandb.init = mock.MagicMock()
-    study_id = study._study_id
-    frozen_trial = study.trials[0]
-    trial_id = study._storage.get_trial_id_from_study_id_trial_number(
-        study_id, frozen_trial.number
-    )
-    trial = optuna.Trial(study, trial_id)
-
-    _ = _wrapped_func(trial)
+    _wrapped_func = wandbc.track_in_wandb(lambda t: 1.0)
+    wandb.init.reset_mock()
+    trial = optuna.create_trial(value=1.0)
+    _wrapped_func(trial)
 
     wandb.init.assert_called_once_with(
         project="optuna", group="summary", job_type="logging", mode="offline", tags=["test-tag"]
