@@ -62,7 +62,7 @@ def test_run_initialized(wandb: mock.MagicMock) -> None:
         project="optuna", group="summary", job_type="logging", mode="offline", tags=["test-tag"]
     )
 
-    wandb.init = mock.MagicMock()
+    wandb.init.reset_mock()
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
     wandb.init.assert_called_once_with(
         project="optuna", group="summary", job_type="logging", mode="offline", tags=["test-tag"]
