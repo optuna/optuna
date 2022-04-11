@@ -29,7 +29,7 @@ _logger = optuna.logging.get_logger(__name__)
 class _ParetoFrontInfo(NamedTuple):
     n_targets: int
     target_names: Sequence[str]
-    best_trials_with_values: Sequence[Tuple[FrozenTrial, Sequence[float]]]
+    best_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
     non_best_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
     infeasible_trials_with_values: Optional[Sequence[Tuple[FrozenTrial, Sequence[float]]]]
     axis_order: Sequence[int]
@@ -308,7 +308,7 @@ def _get_pareto_front_info(
     return _ParetoFrontInfo(
         n_targets=n_targets,
         target_names=target_names,
-        best_trials_with_values=best_trials_with_values,  # type: ignore
+        best_trials_with_values=best_trials_with_values,
         non_best_trials_with_values=non_best_trials_with_values,
         infeasible_trials_with_values=infeasible_trials_with_values,
         axis_order=axis_order,

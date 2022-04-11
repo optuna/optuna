@@ -129,7 +129,7 @@ def _get_pareto_front_2d(info: _ParetoFrontInfo) -> "Axes":
             color=cmap(0),
             label="Trial",
         )
-    if len(info.best_trials_with_values) > 0:
+    if info.best_trials_with_values is not None and len(info.best_trials_with_values) > 0:
         ax.scatter(
             x=[values[info.axis_order[0]] for _, values in info.best_trials_with_values],
             y=[values[info.axis_order[1]] for _, values in info.best_trials_with_values],
@@ -164,7 +164,7 @@ def _get_pareto_front_3d(info: _ParetoFrontInfo) -> "Axes":
             label="Trial",
         )
 
-    if len(info.best_trials_with_values):
+    if info.best_trials_with_values is not None and len(info.best_trials_with_values):
         ax.scatter(
             xs=[values[info.axis_order[0]] for _, values in info.best_trials_with_values],
             ys=[values[info.axis_order[1]] for _, values in info.best_trials_with_values],
