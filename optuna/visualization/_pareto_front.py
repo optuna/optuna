@@ -312,7 +312,7 @@ def _make_marker(
             "color": [t.number for t in trials],
             "colorscale": "Blues",
             "colorbar": {
-                "title": "Trial Number",
+                "title": "Trial",
             },
         }
     else:
@@ -321,7 +321,7 @@ def _make_marker(
             "color": [t.number for t in trials],
             "colorscale": "Reds",
             "colorbar": {
-                "title": "Best Trials Number",
+                "title": "Best Trial",
                 "x": 1.1 if include_dominated_trials else 1,
                 "xpad": 40,
             },
