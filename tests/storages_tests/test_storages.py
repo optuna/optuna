@@ -19,8 +19,7 @@ import optuna
 from optuna import Study
 from optuna._callbacks import RetryFailedTrialCallback
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
 from optuna.storages import _CachedStorage
 from optuna.storages import BaseStorage
 from optuna.storages import InMemoryStorage
@@ -382,7 +381,7 @@ def test_create_new_trial_with_template_trial(storage_mode: str) -> None:
         datetime_start=start_time,
         datetime_complete=complete_time,
         params={"x": 0.5},
-        distributions={"x": UniformDistribution(0, 1)},
+        distributions={"x": FloatDistribution(0, 1)},
         user_attrs={"foo": "bar"},
         system_attrs={"baz": 123},
         intermediate_values={1: 10, 2: 100, 3: 1000},
@@ -558,10 +557,10 @@ def test_set_trial_param(storage_mode: str) -> None:
         trial_id_3 = storage.create_new_trial(storage.create_new_study())
 
         # Setup distributions.
-        distribution_x = UniformDistribution(low=1.0, high=2.0)
+        distribution_x = FloatDistribution(low=1.0, high=2.0)
         distribution_y_1 = CategoricalDistribution(choices=("Shibuya", "Ebisu", "Meguro"))
         distribution_y_2 = CategoricalDistribution(choices=("Shibuya", "Shinsen"))
-        distribution_z = LogUniformDistribution(low=1.0, high=100.0)
+        distribution_z = FloatDistribution(low=1.0, high=100.0, log=True)
 
         # Set new params.
         storage.set_trial_param(trial_id_1, "x", 0.5, distribution_x)
@@ -586,8 +585,6 @@ def test_set_trial_param(storage_mode: str) -> None:
         assert storage.get_trial_params(trial_id_2) == {"x": 0.3, "z": 0.1}
 
         # Set params with distributions that do not match previous ones.
-        with pytest.raises(ValueError):
-            storage.set_trial_param(trial_id_2, "x", 0.5, distribution_z)
         with pytest.raises(ValueError):
             storage.set_trial_param(trial_id_2, "y", 0.5, distribution_z)
         # Choices in CategoricalDistribution should match including its order.
@@ -1107,13 +1104,13 @@ def _setup_studies(
 
 def _generate_trial(generator: random.Random) -> FrozenTrial:
     example_params = {
-        "paramA": (generator.uniform(0, 1), UniformDistribution(0, 1)),
-        "paramB": (generator.uniform(1, 2), LogUniformDistribution(1, 2)),
+        "paramA": (generator.uniform(0, 1), FloatDistribution(0, 1)),
+        "paramB": (generator.uniform(1, 2), FloatDistribution(1, 2, log=True)),
         "paramC": (
             generator.choice(["CatA", "CatB", "CatC"]),
             CategoricalDistribution(("CatA", "CatB", "CatC")),
         ),
-        "paramD": (generator.uniform(-3, 0), UniformDistribution(-3, 0)),
+        "paramD": (generator.uniform(-3, 0), FloatDistribution(-3, 0)),
         "paramE": (generator.choice([0.1, 0.2]), CategoricalDistribution((0.1, 0.2))),
     }
     example_attrs = {

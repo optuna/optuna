@@ -773,7 +773,7 @@ class _Ask(_BaseCommand):
 
         if parsed_args.search_space is not None:
             # The search space is expected to be a JSON serialized string, e.g.
-            # '{"x": {"name": "UniformDistribution", "attributes": {"low": 0.0, "high": 1.0}},
+            # '{"x": {"name": "FloatDistribution", "attributes": {"low": 0.0, "high": 1.0}},
             #   "y": ...}'.
             search_space = {
                 name: optuna.distributions.json_to_distribution(json.dumps(dist))

@@ -11,11 +11,8 @@ import pytest
 from optuna import create_study
 from optuna.distributions import BaseDistribution
 from optuna.distributions import CategoricalDistribution
-from optuna.distributions import DiscreteUniformDistribution
-from optuna.distributions import IntLogUniformDistribution
-from optuna.distributions import IntUniformDistribution
-from optuna.distributions import LogUniformDistribution
-from optuna.distributions import UniformDistribution
+from optuna.distributions import FloatDistribution
+from optuna.distributions import IntDistribution
 from optuna.testing.storage import STORAGE_MODES
 from optuna.testing.storage import StorageSupplier
 from optuna.trial import BaseTrial
@@ -72,7 +69,7 @@ def _create_frozen_trial() -> FrozenTrial:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
-        distributions={"x": UniformDistribution(5, 12)},
+        distributions={"x": FloatDistribution(5, 12)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -89,7 +86,7 @@ def test_repr() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 10},
-        distributions={"x": UniformDistribution(5, 12)},
+        distributions={"x": FloatDistribution(5, 12)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -134,7 +131,7 @@ def test_suggest_float() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 0.2},
-        distributions={"x": UniformDistribution(0.0, 1.0)},
+        distributions={"x": FloatDistribution(0.0, 1.0)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -159,7 +156,7 @@ def test_suggest_uniform() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 0.2},
-        distributions={"x": UniformDistribution(0.0, 1.0)},
+        distributions={"x": FloatDistribution(0.0, 1.0)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -181,7 +178,7 @@ def test_suggest_loguniform() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 0.99},
-        distributions={"x": LogUniformDistribution(0.1, 1.0)},
+        distributions={"x": FloatDistribution(0.1, 1.0, log=True)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -202,7 +199,7 @@ def test_suggest_discrete_uniform() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 0.9},
-        distributions={"x": DiscreteUniformDistribution(0.0, 1.0, q=0.1)},
+        distributions={"x": FloatDistribution(0.0, 1.0, step=0.1)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -223,7 +220,7 @@ def test_suggest_int() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 1},
-        distributions={"x": IntUniformDistribution(0, 10)},
+        distributions={"x": IntDistribution(0, 10)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -245,7 +242,7 @@ def test_suggest_int_log() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params={"x": 1},
-        distributions={"x": IntLogUniformDistribution(1, 10)},
+        distributions={"x": IntDistribution(1, 10, log=True)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -315,7 +312,7 @@ def test_not_contained_param() -> None:
     trial = create_trial(
         value=0.2,
         params={"x": 1.0},
-        distributions={"x": UniformDistribution(1.0, 10.0)},
+        distributions={"x": FloatDistribution(1.0, 10.0)},
     )
     with pytest.warns(UserWarning):
         assert trial.suggest_float("x", 10.0, 100.0) == 1.0
@@ -323,7 +320,7 @@ def test_not_contained_param() -> None:
     trial = create_trial(
         value=0.2,
         params={"x": 1.0},
-        distributions={"x": LogUniformDistribution(1.0, 10.0)},
+        distributions={"x": FloatDistribution(1.0, 10.0, log=True)},
     )
     with pytest.warns(UserWarning):
         assert trial.suggest_float("x", 10.0, 100.0, log=True) == 1.0
@@ -331,7 +328,7 @@ def test_not_contained_param() -> None:
     trial = create_trial(
         value=0.2,
         params={"x": 1.0},
-        distributions={"x": DiscreteUniformDistribution(1.0, 10.0, 1.0)},
+        distributions={"x": FloatDistribution(1.0, 10.0, step=1.0)},
     )
     with pytest.warns(UserWarning):
         assert trial.suggest_float("x", 10.0, 100.0, step=1.0) == 1.0
@@ -339,7 +336,7 @@ def test_not_contained_param() -> None:
     trial = create_trial(
         value=0.2,
         params={"x": 1.0},
-        distributions={"x": IntUniformDistribution(1, 10)},
+        distributions={"x": IntDistribution(1, 10)},
     )
     with pytest.warns(UserWarning):
         assert trial.suggest_int("x", 10, 100) == 1
@@ -347,7 +344,7 @@ def test_not_contained_param() -> None:
     trial = create_trial(
         value=0.2,
         params={"x": 1},
-        distributions={"x": IntUniformDistribution(1, 10, 1)},
+        distributions={"x": IntDistribution(1, 10)},
     )
     with pytest.warns(UserWarning):
         assert trial.suggest_int("x", 10, 100, 1) == 1
@@ -355,7 +352,7 @@ def test_not_contained_param() -> None:
     trial = create_trial(
         value=0.2,
         params={"x": 1},
-        distributions={"x": IntLogUniformDistribution(1, 10)},
+        distributions={"x": IntDistribution(1, 10, log=True)},
     )
     with pytest.warns(UserWarning):
         assert trial.suggest_int("x", 10, 100, log=True) == 1
@@ -449,11 +446,11 @@ def test_validate() -> None:
     # Invalid: Inconsistent `params` and `distributions`
     inconsistent_pairs: List[Tuple[Dict[str, Any], Dict[str, BaseDistribution]]] = [
         # `params` has an extra element.
-        ({"x": 0.1, "y": 0.5}, {"x": UniformDistribution(0, 1)}),
+        ({"x": 0.1, "y": 0.5}, {"x": FloatDistribution(0, 1)}),
         # `distributions` has an extra element.
-        ({"x": 0.1}, {"x": UniformDistribution(0, 1), "y": LogUniformDistribution(0.1, 1.0)}),
+        ({"x": 0.1}, {"x": FloatDistribution(0, 1), "y": FloatDistribution(0.1, 1.0, log=True)}),
         # The value of `x` isn't contained in the distribution.
-        ({"x": -0.5}, {"x": UniformDistribution(0, 1)}),
+        ({"x": -0.5}, {"x": FloatDistribution(0, 1)}),
     ]
 
     for params, distributions in inconsistent_pairs:
@@ -493,7 +490,7 @@ def test_params() -> None:
         datetime_start=datetime.datetime.now(),
         datetime_complete=datetime.datetime.now(),
         params=params,
-        distributions={"x": UniformDistribution(0, 10)},
+        distributions={"x": FloatDistribution(0, 10)},
         user_attrs={},
         system_attrs={},
         intermediate_values={},
@@ -510,7 +507,7 @@ def test_params() -> None:
 
 def test_distributions() -> None:
 
-    distributions = {"x": UniformDistribution(0, 10)}
+    distributions = {"x": FloatDistribution(0, 10)}
     trial = FrozenTrial(
         number=0,
         trial_id=0,
@@ -526,7 +523,7 @@ def test_distributions() -> None:
     )
     assert trial.distributions == distributions
 
-    distributions = {"x": UniformDistribution(1, 9)}
+    distributions = {"x": FloatDistribution(1, 9)}
     trial.distributions = dict(distributions)
     assert trial.distributions == distributions
 
@@ -556,7 +553,7 @@ def test_called_single_methods_when_multi() -> None:
     state = TrialState.COMPLETE
     values = (0.2, 0.3)
     params = {"x": 10}
-    distributions: Dict[str, BaseDistribution] = {"x": UniformDistribution(5, 12)}
+    distributions: Dict[str, BaseDistribution] = {"x": FloatDistribution(5, 12)}
     user_attrs = {"foo": "bar"}
     system_attrs = {"baz": "qux"}
     intermediate_values = {0: 0.0, 1: 0.1, 2: 0.1}
@@ -593,7 +590,7 @@ def test_init() -> None:
             datetime_start=datetime.datetime.now(),
             datetime_complete=datetime.datetime.now(),
             params={},
-            distributions={"x": UniformDistribution(0, 10)},
+            distributions={"x": FloatDistribution(0, 10)},
             user_attrs={},
             system_attrs={},
             intermediate_values={},

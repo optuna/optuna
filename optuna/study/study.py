@@ -23,6 +23,7 @@ from optuna import trial as trial_module
 from optuna._convert_positional_args import convert_positional_args
 from optuna._deprecated import deprecated
 from optuna._imports import _LazyImport
+from optuna.distributions import _convert_old_distribution_to_new_distribution
 from optuna.distributions import BaseDistribution
 from optuna.study._multi_objective import _get_pareto_front_trials
 from optuna.study._optimize import _optimize
@@ -453,7 +454,7 @@ class Study:
 
                 distributions = {
                     "optimizer": optuna.distributions.CategoricalDistribution(["adam", "sgd"]),
-                    "lr": optuna.distributions.LogUniformDistribution(0.0001, 0.1),
+                    "lr": optuna.distributions.FloatDistribution(0.0001, 0.1, log=True),
                 }
 
                 # You can pass the distributions previously defined.
@@ -479,6 +480,10 @@ class Study:
                 warnings.warn("Heartbeat of storage is supposed to be used with Study.optimize.")
 
         fixed_distributions = fixed_distributions or {}
+        fixed_distributions = {
+            key: _convert_old_distribution_to_new_distribution(dist)
+            for key, dist in fixed_distributions.items()
+        }
 
         # Sync storage once every trial.
         self._storage.read_trials_from_remote_storage(self._study_id)
@@ -818,7 +823,7 @@ class Study:
             .. testcode::
 
                 import optuna
-                from optuna.distributions import UniformDistribution
+                from optuna.distributions import FloatDistribution
 
 
                 def objective(trial):
@@ -831,7 +836,7 @@ class Study:
 
                 trial = optuna.trial.create_trial(
                     params={"x": 2.0},
-                    distributions={"x": UniformDistribution(0, 10)},
+                    distributions={"x": FloatDistribution(0, 10)},
                     value=4.0,
                 )
 
@@ -883,7 +888,6 @@ class Study:
             .. testcode::
 
                 import optuna
-                from optuna.distributions import UniformDistribution
 
 
                 def objective(trial):

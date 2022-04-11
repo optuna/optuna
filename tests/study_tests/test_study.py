@@ -1109,7 +1109,7 @@ def test_ask_enqueue_trial() -> None:
 
 def test_ask_fixed_search_space() -> None:
     fixed_distributions = {
-        "x": distributions.UniformDistribution(0, 1),
+        "x": distributions.FloatDistribution(0, 1),
         "y": distributions.CategoricalDistribution(["bacon", "spam"]),
     }
 
@@ -1120,6 +1120,59 @@ def test_ask_fixed_search_space() -> None:
     assert len(trial.params) == 2
     assert 0 <= params["x"] < 1
     assert params["y"] in ["bacon", "spam"]
+
+
+# Deprecated distributions are internally converted to corresponding distributions.
+def test_ask_distribution_conversion() -> None:
+    fixed_distributions = {
+        "ud": distributions.UniformDistribution(low=0, high=10),
+        "dud": distributions.DiscreteUniformDistribution(low=0, high=10, q=2),
+        "lud": distributions.LogUniformDistribution(low=1, high=10),
+        "id": distributions.IntUniformDistribution(low=0, high=10),
+        "idd": distributions.IntUniformDistribution(low=0, high=10, step=2),
+        "ild": distributions.IntLogUniformDistribution(low=1, high=10),
+    }
+
+    study = create_study()
+
+    with pytest.warns(
+        FutureWarning,
+        match="See https://github.com/optuna/optuna/issues/2941",
+    ) as record:
+
+        trial = study.ask(fixed_distributions=fixed_distributions)
+        assert len(record) == 6
+
+    expected_distributions = {
+        "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
+        "dud": distributions.FloatDistribution(low=0, high=10, log=False, step=2),
+        "lud": distributions.FloatDistribution(low=1, high=10, log=True, step=None),
+        "id": distributions.IntDistribution(low=0, high=10, log=False, step=1),
+        "idd": distributions.IntDistribution(low=0, high=10, log=False, step=2),
+        "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
+    }
+
+    assert trial.distributions == expected_distributions
+
+
+# It confirms that ask doesn't convert non-deprecated distributions.
+def test_ask_distribution_conversion_noop() -> None:
+    fixed_distributions = {
+        "ud": distributions.FloatDistribution(low=0, high=10, log=False, step=None),
+        "dud": distributions.FloatDistribution(low=0, high=10, log=False, step=2),
+        "lud": distributions.FloatDistribution(low=1, high=10, log=True, step=None),
+        "id": distributions.IntDistribution(low=0, high=10, log=False, step=1),
+        "idd": distributions.IntDistribution(low=0, high=10, log=False, step=2),
+        "ild": distributions.IntDistribution(low=1, high=10, log=True, step=1),
+        "cd": distributions.CategoricalDistribution(choices=["a", "b", "c"]),
+    }
+
+    study = create_study()
+
+    trial = study.ask(fixed_distributions=fixed_distributions)
+
+    # Check fixed_distributions doesn't change.
+    assert trial.distributions == fixed_distributions
 
 
 def test_tell() -> None:
