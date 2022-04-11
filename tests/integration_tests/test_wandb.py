@@ -97,21 +97,22 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock, as_multirun: bool) -> No
 
     # Vanilla update
     wandb.sdk.wandb_run.Run = mock.MagicMock
-    expected = {"direction": ["MINIMIZE"], "x": 1.1, "y": 2.2}
+    expected = {"direction": ["MINIMIZE"]}
     trial_params = {"x": 1.1, "y": 2.2}
+    expected_with_params = {"direction": ["MINIMIZE"], "x": 1.1, "y": 2.2}
 
     study = optuna.create_study(direction="minimize")
     wandbc = WeightsAndBiasesCallback(as_multirun=as_multirun)
     study.enqueue_trial(trial_params)
     study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
 
-    wandb.run.config.update.assert_called_once_with(expected)
-
     if as_multirun:
         wandb.run = None
         study.enqueue_trial(trial_params)
         study.optimize(_objective_func, n_trials=1, callbacks=[wandbc])
-        wandb.init().config.update.assert_called_once_with(expected)
+        wandb.init().config.update.assert_called_once_with(expected_with_params)
+    else:
+        wandb.run.config.update.assert_called_once_with(expected)
 
 
 @mock.patch("optuna.integration.wandb.wandb")
@@ -120,20 +121,22 @@ def test_multiobjective_attributes_set_on_epoch(wandb: mock.MagicMock, as_multir
 
     wandb.sdk.wandb_run.Run = mock.MagicMock
     trial_params = {"x": 1.1, "y": 2.2}
-    expected = {"direction": ["MINIMIZE", "MAXIMIZE"], "x": 1.1, "y": 2.2}
+    expected = {"direction": ["MINIMIZE", "MAXIMIZE"]}
+    expected_with_params = {"direction": ["MINIMIZE"], "x": 1.1, "y": 2.2}
 
     study = optuna.create_study(directions=["minimize", "maximize"])
     wandbc = WeightsAndBiasesCallback(as_multirun=as_multirun)
 
     study.enqueue_trial(trial_params)
     study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
-    wandb.run.config.update.assert_called_once_with(expected)
 
     if as_multirun:
         wandb.run = None
         study.enqueue_trial(trial_params)
         study.optimize(_multiobjective_func, n_trials=1, callbacks=[wandbc])
-        wandb.init().config.update.assert_called_once_with(expected)
+        wandb.init().config.update.assert_called_once_with(expected_with_params)
+    else:
+        wandb.run.config.update.assert_called_once_with(expected)
 
 
 @mock.patch("optuna.integration.wandb.wandb")
