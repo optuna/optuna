@@ -122,7 +122,7 @@ def test_multiobjective_attributes_set_on_epoch(wandb: mock.MagicMock, as_multir
     wandb.sdk.wandb_run.Run = mock.MagicMock
     trial_params = {"x": 1.1, "y": 2.2}
     expected = {"direction": ["MINIMIZE", "MAXIMIZE"]}
-    expected_with_params = {"direction": ["MINIMIZE"], "x": 1.1, "y": 2.2}
+    expected_with_params = {"direction": ["MINIMIZE", "MAXIMIZE"], "x": 1.1, "y": 2.2}
 
     study = optuna.create_study(directions=["minimize", "maximize"])
     wandbc = WeightsAndBiasesCallback(as_multirun=as_multirun)
