@@ -229,10 +229,8 @@ def _get_pareto_front_info(
 
     _targets = targets
     if _targets is None:
-        if len(study.directions) == 2:
-            _targets = _targets_default_2d
-        elif len(study.directions) == 3:
-            _targets = _targets_default_3d
+        if len(study.directions) in (2, 3):
+            _targets = _targets_default
         else:
             raise ValueError(
                 "`plot_pareto_front` function only supports 2 or 3 objective"
@@ -315,12 +313,8 @@ def _get_pareto_front_info(
     )
 
 
-def _targets_default_2d(trial: FrozenTrial) -> Sequence[float]:
-    return trial.values[0], trial.values[1]
-
-
-def _targets_default_3d(trial: FrozenTrial) -> Sequence[float]:
-    return trial.values[0], trial.values[1], trial.values[2]
+def _targets_default(trial: FrozenTrial) -> Sequence[float]:
+    return trial.values
 
 
 def _get_non_pareto_front_trials(
