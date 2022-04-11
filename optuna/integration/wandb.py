@@ -152,11 +152,12 @@ class WeightsAndBiasesCallback(object):
 
         run.log({**trial.params, **metrics}, step=step)
 
-        run.config.update({**attributes, **trial.params})
-
         if self._as_multirun:
+            run.config.update({**attributes, **trial.params})
             run.tags = tuple(self._wandb_kwargs.get("tags", ())) + (study.study_name,)
             run.finish()
+        else:
+            run.config.update(attributes)
 
     @experimental("3.0.0")
     def track_in_wandb(self, func: ObjectiveFuncType) -> ObjectiveFuncType:
