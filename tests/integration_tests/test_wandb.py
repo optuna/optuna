@@ -97,7 +97,7 @@ def test_attributes_set_on_epoch(wandb: mock.MagicMock, as_multirun: bool) -> No
 
     # Vanilla update.
     wandb.sdk.wandb_run.Run = mock.MagicMock
-    expected = {"direction": ["MINIMIZE"]}
+    expected_config = {"direction": ["MINIMIZE"]}
     trial_params = {"x": 1.1, "y": 2.2}
     expected_with_params = {"direction": ["MINIMIZE"], "x": 1.1, "y": 2.2}
 
