@@ -95,7 +95,7 @@ def test_run_initialized(wandb: mock.MagicMock) -> None:
 @pytest.mark.parametrize("as_multirun", [True, False])
 def test_attributes_set_on_epoch(wandb: mock.MagicMock, as_multirun: bool) -> None:
 
-    # Vanilla update
+    # Vanilla update.
     wandb.sdk.wandb_run.Run = mock.MagicMock
     expected = {"direction": ["MINIMIZE"]}
     trial_params = {"x": 1.1, "y": 2.2}
