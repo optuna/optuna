@@ -24,7 +24,7 @@ jobs:
         python -m pip install -U pip
         pip install --progress-bar off -U .[checking]
 
-    - name: Black
+    - name: Apply formatters
       run: |
         black .
         blackdoc .
