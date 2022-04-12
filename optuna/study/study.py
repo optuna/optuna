@@ -1155,7 +1155,7 @@ def load_study(
         study_name:
             Study's name. Each study has a unique name as an identifier. If :obj:`None`, checks
             whether the storage contains a single study, and if so loads that study.
-            ``study_name`` is required if the storage contains more than 1 studies.
+            ``study_name`` is required if there are multiple studies in the storage.
         storage:
             Database URL such as ``sqlite:///example.db``. Please see also the documentation of
             :func:`~optuna.study.create_study` for further details.
