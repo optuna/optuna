@@ -1,0 +1,4 @@
+
+{"command":{"path":"python3","args":["benchmarks/naslib/problem.py","nasbench201","cifar10"]}}
+{"command":{"path":"python3","args":["benchmarks/naslib/problem.py","nasbench201","cifar100"]}}
+{"command":{"path":"python3","args":["benchmarks/naslib/problem.py","nasbench201","ImageNet16-120"]}}

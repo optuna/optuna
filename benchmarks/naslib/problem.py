@@ -21,7 +21,7 @@ from naslib.utils import get_dataset_api  # NOQA
 
 
 class NASLibProblemFactory(problem.ProblemFactory):
-    def __init__(self, search_space: Graph, **config: Dict[str, Any]) -> None:
+    def __init__(self, search_space: Graph, **config: Any) -> None:
         self._search_space = search_space
         self._config = config
 
@@ -43,7 +43,7 @@ class NASLibProblemFactory(problem.ProblemFactory):
             self._converter = lambda x: [int(z) for z in x]
         else:
             raise NotImplementedError(f"{self._search_space} is not supported")
-        
+
         dummy = self._search_space.copy()
         dummy.sample_random_architecture()
         config_copy = config.copy()
@@ -52,21 +52,16 @@ class NASLibProblemFactory(problem.ProblemFactory):
         out = dummy.query(**config_copy)
         steps = len(out) - 1
         return problem.ProblemSpec(
-            name=f"{self._search_space}",
-            params=params,
-            values=[problem.Var("value")],
-            steps=steps
+            name=f"{self._search_space}", params=params, values=[problem.Var("value")], steps=steps
         )
 
     def create_problem(self, seed: int) -> problem.Problem:
         # Pylance wrongly reports type error here
-        return NASLibProblem(self._search_space, self._converter, **self._config)  # type: ignore
+        return NASLibProblem(self._search_space, self._converter, **self._config)
 
 
 class NASLibProblem(problem.Problem):
-    def __init__(
-        self, search_space: Graph, converter: Any, direction: str, **config: Dict[str, Any]
-    ) -> None:
+    def __init__(self, search_space: Graph, converter: Any, direction: str, **config: Any) -> None:
         """"""
         # params
         # metric      : Metric to query for
@@ -156,10 +151,12 @@ if __name__ == "__main__":
     config = default_config
     if len(sys.argv) >= 1 + 3:
         config.update(ast.literal_eval(sys.argv[3]))
-    config["search_space"] = search_spaces[search_space_name]
-    config["direction"] = optimize_direction[config["metric"]]  # type: ignore
+    search_space = search_spaces[search_space_name]
+
+    assert isinstance(config["metric"], str)
+    config["direction"] = optimize_direction[config["metric"]]
     config["metric"] = Metric[config["metric"]]
     config["dataset"] = dataset
     config["dataset_api"] = get_dataset_api(search_space_name, dataset)
-    runner = problem.ProblemRunner(NASLibProblemFactory(**config))  # type: ignore
+    runner = problem.ProblemRunner(NASLibProblemFactory(search_space, **config))
     runner.run()

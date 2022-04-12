@@ -1,0 +1,3 @@
+
+{"name":"performance-benchmarks_RandomSampler_NopPruner","optuna":{"loglevel":"debug","sampler":"RandomSampler","sampler_kwargs":"{}","pruner":"NopPruner","pruner_kwargs":"{}"}}
+{"name":"performance-benchmarks_TPESampler_NopPruner","optuna":{"loglevel":"debug","sampler":"TPESampler","sampler_kwargs":"{}","pruner":"NopPruner","pruner_kwargs":"{}"}}
