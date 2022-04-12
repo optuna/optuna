@@ -22,13 +22,6 @@ def run(args: argparse.Namespace) -> None:
         "nasbench201 cifar10",
         "nasbench201 cifar100",
         "nasbench201 ImageNet16-120",
-        # "transbench101_micro class_scene",
-        # "transbench101_micro class_object",
-        # "transbench101_micro jigsaw",
-        # "transbench101_micro room_layout",
-        # "transbench101_micro segmentsemantic",
-        # "transbench101_micro normal",
-        # "transbench101_micro autoencoder",
     ]
 
     for searchspace_dataset in searchspace_datasets:

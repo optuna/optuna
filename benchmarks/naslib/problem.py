@@ -16,7 +16,6 @@ import naslib.search_spaces as ss  # NOQA
 from naslib.search_spaces.core.graph import Graph  # NOQA
 from naslib.search_spaces.core.query_metrics import Metric  # NOQA
 import naslib.search_spaces.nasbench201.graph as nasbench201_graph  # NOQA
-import naslib.search_spaces.transbench101.graph as transbench101_graph  # NOQA
 from naslib.utils import get_dataset_api  # NOQA
 
 
@@ -26,16 +25,7 @@ class NASLibProblemFactory(problem.ProblemFactory):
         self._config = config
 
     def specification(self) -> problem.ProblemSpec:
-        if isinstance(self._search_space, ss.TransBench101SearchSpaceMicro):
-            params = [
-                problem.Var(f"x{i}", problem.CategoricalRange(transbench101_graph.OP_NAMES))
-                for i in range(6)
-            ]
-            self._converter = lambda x: [int(z) for z in x]
-        # elif isinstance(self._search_space, ss.NATSBenchSizeSearchSpace):
-        #     params = [problem.Var(f"x{i}", problem.DiscreteRange(1, 8)) for i in range(5)]
-        #     self._converter = lambda x: [z * 8 for z in x]
-        elif isinstance(self._search_space, ss.NasBench201SearchSpace):
+        if isinstance(self._search_space, ss.NasBench201SearchSpace):
             params = [
                 problem.Var(f"x{i}", problem.CategoricalRange(nasbench201_graph.OP_NAMES))
                 for i in range(6)
@@ -56,7 +46,6 @@ class NASLibProblemFactory(problem.ProblemFactory):
         )
 
     def create_problem(self, seed: int) -> problem.Problem:
-        # Pylance wrongly reports type error here
         return NASLibProblem(self._search_space, self._converter, **self._config)
 
 
@@ -139,14 +128,7 @@ if __name__ == "__main__":
     search_space_name = sys.argv[1]
     dataset = sys.argv[2]
     search_spaces = {
-        # "nasbench101": ss.NasBench101SearchSpace(),
         "nasbench201": ss.NasBench201SearchSpace(),
-        # "darts": ss.DartsSearchSpace(),
-        # "nlp": ss.NasBenchNLPSearchSpace(),
-        # "natsbenchsize": ss.NATSBenchSizeSearchSpace(),
-        "transbench101_micro": ss.TransBench101SearchSpaceMicro(dataset),
-        # 'transbench101_macro': ss.TransBench101SearchSpaceMacro(),
-        # "asr": ss.NasBenchASRSearchSpace(),
     }
     config = default_config
     if len(sys.argv) >= 1 + 3:
