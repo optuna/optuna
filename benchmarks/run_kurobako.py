@@ -12,11 +12,11 @@ def run(args: argparse.Namespace) -> None:
 
     os.makedirs(args.out_dir, exist_ok=True)
     study_json_fn = os.path.join(args.out_dir, "studies.json")
-    subprocess.check_call(f"echo -n >| {study_json_fn}", shell=True)
+    subprocess.check_call(f"echo >| {study_json_fn}", shell=True)
     solvers_filename = os.path.join(args.out_dir, "solvers.json")
-    subprocess.check_call(f"echo -n >| {solvers_filename}", shell=True)
+    subprocess.check_call(f"echo >| {solvers_filename}", shell=True)
     problems_filename = os.path.join(args.out_dir, "problems.json")
-    subprocess.check_call(f"echo -n >| {problems_filename}", shell=True)
+    subprocess.check_call(f"echo >| {problems_filename}", shell=True)
 
     # Create HPO bench problem.
     datasets = [
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument("--n-jobs", type=int, default=10)
     parser.add_argument("--sampler-list", type=str, default="RandomSampler TPESampler")
     parser.add_argument(
-        "--sampler-kwargs-list", type=str, default='{} {"multivariate":true,"constant_liar":true}'
+        "--sampler-kwargs-list", type=str, default='{} {\\\"multivariate\\\":true\,\\\"constant_liar\\\":true}'
     )
     parser.add_argument("--pruner-list", type=str, default="NopPruner")
     parser.add_argument("--pruner-kwargs-list", type=str, default="{}")
