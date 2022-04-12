@@ -13,7 +13,6 @@ import optuna
 from optuna.distributions import CategoricalDistribution
 from optuna.distributions import FloatDistribution
 from optuna.distributions import IntDistribution
-from optuna.distributions import LogUniformDistribution
 from optuna.study import Study
 from optuna.study._study_direction import StudyDirection
 from optuna.trial import FrozenTrial
@@ -77,10 +76,7 @@ def _is_log_scale(trials: List[FrozenTrial], param: str) -> bool:
         if param in trial.params:
             dist = trial.distributions[param]
 
-            if isinstance(dist, LogUniformDistribution):
-                return True
-
-            elif isinstance(dist, (FloatDistribution, IntDistribution)):
+            if isinstance(dist, (FloatDistribution, IntDistribution)):
                 if dist.log:
                     return True
 
@@ -114,7 +110,9 @@ def _get_param_values(trials: List[FrozenTrial], p_name: str) -> List[Any]:
 
 
 def _filter_nonfinite(
-    trials: List[FrozenTrial], target: Optional[Callable[[FrozenTrial], float]] = None
+    trials: List[FrozenTrial],
+    target: Optional[Callable[[FrozenTrial], float]] = None,
+    with_message: bool = True,
 ) -> List[FrozenTrial]:
 
     # For multi-objective optimization target must be specified to select
@@ -132,10 +130,11 @@ def _filter_nonfinite(
     for trial in trials:
         # Not a Number, positive infinity and negative infinity are considered to be non-finite.
         if not np.isfinite(target(trial)):
-            _logger.info(
-                f"Trial {trial.number} is omitted in visualization "
-                "because its objective value is inf or nan."
-            )
+            if with_message:
+                _logger.warning(
+                    f"Trial {trial.number} is omitted in visualization "
+                    "because its objective value is inf or nan."
+                )
         else:
             filtered_trials.append(trial)
 
