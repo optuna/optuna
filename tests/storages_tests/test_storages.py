@@ -717,10 +717,11 @@ def test_set_trial_intermediate_value(storage_mode: str) -> None:
         storage.set_trial_intermediate_value(trial_id_3, 0, 0.1)
         storage.set_trial_intermediate_value(trial_id_3, 1, 0.4)
         storage.set_trial_intermediate_value(trial_id_3, 2, 0.5)
+        storage.set_trial_intermediate_value(trial_id_3, 3, float("inf"))
 
         assert storage.get_trial(trial_id_1).intermediate_values == {0: 0.3, 2: 0.4}
         assert storage.get_trial(trial_id_2).intermediate_values == {}
-        assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5}
+        assert storage.get_trial(trial_id_3).intermediate_values == {0: 0.1, 1: 0.4, 2: 0.5, 3: float("inf")}
 
         # Test setting existing step.
         storage.set_trial_intermediate_value(trial_id_1, 0, 0.2)
