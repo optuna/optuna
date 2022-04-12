@@ -172,6 +172,7 @@ class WeightsAndBiasesCallback(object):
 
                 wandbc = WeightsandBiasesCallback()
 
+
                 @wandbc.track_in_wandb()
                 def objective_function(trial: optuna.trial.Trial) -> float:
                     accuracy = np.random.random()
