@@ -56,10 +56,6 @@ class BaseImportanceEvaluator(object, metaclass=abc.ABCMeta):
             An :class:`collections.OrderedDict` where the keys are parameter names and the values
             are assessed importances.
 
-        Raises:
-            :exc:`ValueError`:
-                If ``target`` is :obj:`None` and ``study`` is being used for multi-objective
-                optimization.
         """
         # TODO(hvy): Reconsider the interface as logic might violate DRY among multiple evaluators.
         raise NotImplementedError
